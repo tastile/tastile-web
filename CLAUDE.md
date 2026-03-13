@@ -19,6 +19,6 @@ Landing page, dashboard, iOS PWA, and billing for Tastile.
 - /app/* — iOS PWA companion
 
 ## Commands
-- `pnpm dev` — Start dev server
-- `pnpm build` — Production build
-- `pnpm lint` — Run linter
+- `bun dev` — Start dev server
+- `bun run build` — Production build
+- `bun run lint` — Run linter
