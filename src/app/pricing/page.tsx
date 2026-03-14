@@ -5,11 +5,16 @@ import { useState } from 'react'
 
 export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [interval, setInterval] = useState<'monthly' | 'yearly'>('monthly')
 
   const handleUpgrade = async () => {
     setIsLoading(true)
     try {
-      const res = await fetch('/api/stripe/checkout', { method: 'POST' })
+      const res = await fetch('/api/stripe/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ interval }),
+      })
       const { url } = await res.json()
       if (url) {
         window.location.href = url
@@ -92,9 +97,19 @@ export default function PricingPage() {
             </div>
             <h2 className="text-2xl font-semibold text-white dark:text-zinc-900">Pro</h2>
             <p className="mt-2 text-zinc-300 dark:text-zinc-600">For serious execution control</p>
+            <div className="mt-3 flex gap-2">
+              <button
+                onClick={() => setInterval('monthly')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${interval === 'monthly' ? 'bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100' : 'bg-zinc-800 text-zinc-400 dark:bg-zinc-200 dark:text-zinc-600'}`}
+              >Monthly</button>
+              <button
+                onClick={() => setInterval('yearly')}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${interval === 'yearly' ? 'bg-white text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100' : 'bg-zinc-800 text-zinc-400 dark:bg-zinc-200 dark:text-zinc-600'}`}
+              >Yearly <span className="text-green-400">save 17%</span></button>
+            </div>
             <div className="mt-4 flex items-baseline">
-              <span className="text-4xl font-bold text-white dark:text-zinc-900">$5</span>
-              <span className="ml-2 text-zinc-300 dark:text-zinc-600">/month</span>
+              <span className="text-4xl font-bold text-white dark:text-zinc-900">{interval === 'monthly' ? '$5' : '$50'}</span>
+              <span className="ml-2 text-zinc-300 dark:text-zinc-600">/{interval === 'monthly' ? 'month' : 'year'}</span>
             </div>
 
             <ul className="mt-8 space-y-4">

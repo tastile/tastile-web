@@ -5,10 +5,15 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 })
 
 export const PLANS = {
-  free: { name: 'Free', price: null },
-  pro: {
-    name: 'Pro',
-    priceId: process.env.STRIPE_PRO_PRICE_ID!,
-    amount: 500, // $5.00
+  free: { name: 'Free', priceId: null },
+  pro_monthly: {
+    name: 'Pro (Monthly)',
+    priceId: process.env.STRIPE_PRO_MONTHLY_PRICE_ID!,
+    amount: 500, // $5.00/month
+  },
+  pro_yearly: {
+    name: 'Pro (Yearly)',
+    priceId: process.env.STRIPE_PRO_YEARLY_PRICE_ID!,
+    amount: 5000, // $50.00/year
   },
 } as const
