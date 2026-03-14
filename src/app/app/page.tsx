@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+
 export default function AppPage() {
-  return <div>App</div>
+  redirect('/app/now')
 }
