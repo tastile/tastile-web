@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AccountMenu } from './account-menu'
 import { LayoutDashboard, CalendarDays, Layers, Settings, ListTodo, Calendar } from 'lucide-react'
+import { TastileLogo } from '@/components/TastileLogo'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -25,7 +26,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Desktop Sidebar - hidden on mobile/tablet */}
       <aside className="hidden lg:flex flex-col justify-between w-[220px] shrink-0 bg-[#FAFAFA] border-r border-zinc-100 p-5">
         <div className="space-y-7">
-          <span className="font-[family-name:var(--font-outfit)] text-[22px] font-extrabold text-black">
+          <span className="flex items-center gap-2 font-[family-name:var(--font-outfit)] text-[22px] font-extrabold text-black">
+            <TastileLogo size={22} className="text-black" />
             Tastile
           </span>
           <nav className="flex flex-col gap-1">
