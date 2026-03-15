@@ -47,6 +47,7 @@ export default function NowPage() {
       .from('tiles')
       .insert({
         user_id: user.id,
+        local_tile_id: crypto.randomUUID(),
         title: newTitle.trim(),
         lifecycle: 'Ready'
       })
