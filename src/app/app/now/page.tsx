@@ -156,7 +156,7 @@ export default function NowPage() {
       <div className="flex-1 flex flex-col gap-5 p-5 md:p-7 lg:px-12 lg:py-10 overflow-auto">
         {/* Desktop header */}
         <div className="hidden lg:flex items-center justify-between">
-          <h1 className="font-[family-name:var(--font-outfit)] text-[28px] font-extrabold text-black">
+          <h1 className="text-[28px] font-extrabold text-black">
             Today
           </h1>
           <span className="text-sm text-zinc-500">{dateStr} · {timeStr}</span>
@@ -171,18 +171,18 @@ export default function NowPage() {
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
                 <span className="text-[10px] lg:text-[11px] font-semibold tracking-wider text-zinc-400">ACTIVE</span>
               </div>
-              <span className="text-[13px] text-zinc-500 font-[family-name:var(--font-outfit)] font-medium">
+              <span className="text-[13px] text-zinc-500 font-medium">
                 {formatTime(remaining)} left
                 <span className="hidden lg:inline"> · {Math.round(progress * 100)}% complete</span>
               </span>
             </div>
             {/* Title */}
-            <h2 className="font-[family-name:var(--font-outfit)] text-[22px] lg:text-[32px] font-extrabold text-white leading-tight">
+            <h2 className="text-[22px] lg:text-[32px] font-extrabold text-white leading-tight">
               {activeTile.title}
             </h2>
             {/* Timer + Progress */}
             <div className="flex items-end justify-between">
-              <span className="font-[family-name:var(--font-outfit)] text-[56px] lg:text-[80px] font-black text-white leading-none tracking-tight">
+              <span className="text-[56px] lg:text-[80px] font-black text-white leading-none tracking-tight">
                 {formatTime(remaining)}
               </span>
               <div className="hidden lg:flex flex-col items-end gap-2.5">
@@ -245,7 +245,7 @@ export default function NowPage() {
             <div className="flex gap-2.5 lg:gap-3">
               {nextUpTiles.map(tile => (
                 <div key={tile.id} className="flex-1 bg-zinc-100 rounded-[14px] lg:rounded-[16px] p-3.5 lg:p-[18px] flex flex-col gap-2">
-                  <span className="font-[family-name:var(--font-outfit)] text-sm lg:text-base font-bold text-black">
+                  <span className="text-sm lg:text-base font-bold text-black">
                     {tile.title}
                   </span>
                   <div className="flex items-center justify-between text-zinc-500">
@@ -321,7 +321,7 @@ export default function NowPage() {
       <div className="hidden md:flex flex-col gap-5 w-[320px] lg:w-[320px] shrink-0 bg-[#FAFAFA] border-l border-zinc-100 p-7 lg:px-6 lg:py-10 overflow-auto">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <span className="font-[family-name:var(--font-outfit)] text-base lg:text-lg font-extrabold text-black">
+          <span className="text-base lg:text-lg font-extrabold text-black">
             Timeline
           </span>
           <span className="text-[13px] text-zinc-400">
@@ -332,19 +332,19 @@ export default function NowPage() {
         {/* Stats */}
         <div className="flex gap-0 bg-zinc-100 rounded-xl p-3.5 lg:p-0 lg:bg-transparent">
           <div className="flex-1 flex flex-col gap-0.5">
-            <span className="font-[family-name:var(--font-outfit)] text-sm lg:text-[14px] font-extrabold text-black">
+            <span className="text-sm lg:text-[14px] font-extrabold text-black">
               {formatDuration(totalPlannedSec)}
             </span>
             <span className="text-[10px] lg:text-[11px] text-zinc-400">Planned</span>
           </div>
           <div className="flex-1 flex flex-col gap-0.5">
-            <span className="font-[family-name:var(--font-outfit)] text-sm lg:text-[14px] font-extrabold text-black">
+            <span className="text-sm lg:text-[14px] font-extrabold text-black">
               {formatDuration(totalDoneSec)}
             </span>
             <span className="text-[10px] lg:text-[11px] text-zinc-400">Done</span>
           </div>
           <div className="flex-1 flex flex-col gap-0.5">
-            <span className="font-[family-name:var(--font-outfit)] text-sm lg:text-[14px] font-extrabold text-black">
+            <span className="text-sm lg:text-[14px] font-extrabold text-black">
               {formatDuration(totalRemainingSec)}
             </span>
             <span className="text-[10px] lg:text-[11px] text-zinc-400">Remaining</span>
@@ -366,7 +366,7 @@ export default function NowPage() {
                       : 'bg-zinc-100 h-10 lg:h-[40px] border border-zinc-200'
                 }`}
               >
-                <span className={`font-[family-name:var(--font-outfit)] text-[13px] font-${isActive ? 'bold' : 'semibold'} ${
+                <span className={`text-[13px] font-${isActive ? 'bold' : 'semibold'} ${
                   isActive ? 'text-white' : i < 3 ? 'text-zinc-500' : 'text-zinc-400'
                 }`}>
                   {tile.title}
@@ -395,12 +395,12 @@ export default function NowPage() {
               <span className="text-[11px] font-semibold text-amber-600">Time&apos;s up</span>
             </div>
             {/* Title */}
-            <h2 className="font-[family-name:var(--font-outfit)] text-[26px] font-extrabold text-black leading-tight">
+            <h2 className="text-[26px] font-extrabold text-black leading-tight">
               {activeTile.title}
             </h2>
             {/* Elapsed */}
             <div className="flex items-center gap-2">
-              <span className="font-[family-name:var(--font-outfit)] text-[48px] font-black text-black tracking-tight leading-none">
+              <span className="text-[48px] font-black text-black tracking-tight leading-none">
                 {formatTime(elapsed)}
               </span>
               <span className="text-sm text-zinc-500">elapsed</span>

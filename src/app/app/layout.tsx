@@ -26,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       {/* Desktop Sidebar - hidden on mobile/tablet */}
       <aside className="hidden lg:flex flex-col justify-between w-[220px] shrink-0 bg-[#FAFAFA] border-r border-zinc-100 p-5">
         <div className="space-y-7">
-          <span className="flex items-center gap-2 font-[family-name:var(--font-outfit)] text-[22px] font-extrabold text-black">
+          <span className="flex items-center gap-2 text-[22px] font-extrabold text-black">
             <TastileLogo size={22} className="text-black" />
             Tastile
           </span>
@@ -57,7 +57,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             email={user.email || ''}
           />
           <div className="min-w-0">
-            <p className="font-[family-name:var(--font-outfit)] text-[13px] font-bold text-black truncate">{displayName}</p>
+            <p className="text-[13px] font-bold text-black truncate">{displayName}</p>
             <p className="text-[11px] text-zinc-500">{plan === 'pro' ? 'Pro' : 'Free'}</p>
           </div>
         </div>
@@ -67,7 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="lg:hidden flex flex-col w-full">
         {/* Mobile Header */}
         <header className="flex items-center justify-between h-12 px-5 border-b border-zinc-100">
-          <span className="font-[family-name:var(--font-outfit)] text-[20px] font-extrabold text-black">
+          <span className="text-[20px] font-extrabold text-black">
             Tastile
           </span>
           <div className="flex items-center gap-3">
