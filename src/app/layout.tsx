@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Tastile — Execution Control",
   description: "Stop managing tasks. Start controlling execution.",
   metadataBase: new URL("https://tastile.app"),
+  manifest: "/manifest.json",
   openGraph: {
     title: "Tastile — Execution Control",
     description: "Stop managing tasks. Start controlling execution.",
