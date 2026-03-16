@@ -1,5 +1,5 @@
 // src/lib/core/event.ts
-import { TileId, EventId, CommandId } from '../domain/ids'
+import { TileId, EventId, CommandId, RequestId } from '../domain/ids'
 import { Actor } from '../domain/actor'
 import { Tile, StartSource, SegmentMode } from '../domain/tile'
 
@@ -79,23 +79,25 @@ export interface EventEnvelope {
   occurred_at: Date
   actor: Actor
   caused_by_command_id: CommandId | null
-  request_id: string | null
+  request_id: RequestId | null
   event: Event
 }
 
 export const EventEnvelope = {
-  create: (
+  create(
     event: Event,
     aggregateId: string,
     actor: Actor,
     causedBy: CommandId | null = null
-  ): EventEnvelope => ({
-    event_id: EventId.new(),
-    aggregate_id: aggregateId,
-    occurred_at: new Date(),
-    actor,
-    caused_by_command_id: causedBy,
-    request_id: null,
-    event,
-  }),
+  ): EventEnvelope {
+    return {
+      event_id: EventId.new(),
+      aggregate_id: aggregateId,
+      occurred_at: new Date(),
+      actor,
+      caused_by_command_id: causedBy,
+      request_id: null,
+      event,
+    }
+  },
 }

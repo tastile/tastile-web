@@ -3,6 +3,7 @@ import { v4 as uuidv4, validate as isUuid } from 'uuid';
 export type TileId = string & { readonly __brand: 'TileId' };
 export type EventId = string & { readonly __brand: 'EventId' };
 export type CommandId = string & { readonly __brand: 'CommandId' };
+export type RequestId = string & { readonly __brand: 'RequestId' };
 export type SegmentId = string & { readonly __brand: 'SegmentId' };
 export type PromptId = string & { readonly __brand: 'PromptId' };
 
@@ -31,6 +32,11 @@ export const EventId = {
 export const CommandId = {
   new: () => createId<CommandId>(),
   fromString: (s: string) => parseId<CommandId>(s, 'CommandId'),
+};
+
+export const RequestId = {
+  new: () => createId<RequestId>(),
+  fromString: (s: string) => parseId<RequestId>(s, 'RequestId'),
 };
 
 export const SegmentId = {
