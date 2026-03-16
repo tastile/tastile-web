@@ -61,8 +61,8 @@ export class CommandHandler {
         }))
         break
 
-      case 'complete_and_start_next': {
-        const completedAt = envelope.command.completed_at || now
+      case 'complete_tile': {
+        const completedAt = envelope.command.completed_at
         events.push(this.wrap(envelope, `tile:${envelope.command.tile_id}`, {
           type: 'segment_ended',
           tile_id: envelope.command.tile_id,
@@ -129,7 +129,7 @@ export class CommandHandler {
       case 'end_break':
         events.push(this.wrap(envelope, 'execution:singleton', {
           type: 'break_ended',
-          ended_at: envelope.command.ended_at || now,
+          ended_at: envelope.command.ended_at,
         }))
         break
     }

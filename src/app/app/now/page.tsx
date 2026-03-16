@@ -1,18 +1,13 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
   Check, Pause, Plus, ArrowUp, Timer, ChevronRight,
 } from 'lucide-react'
-
-interface Tile {
-  id: string
-  title: string
-  lifecycle: string
-  updated_at: string
-  estimated_duration_sec: number | null
-}
+import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
+import { Actor } from '@/lib/domain/actor'
+import { TileId } from '@/lib/domain/ids'
+import { TileLifecycle, StartSource } from '@/lib/domain/tile'
 
 function formatTime(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60)
@@ -30,47 +25,37 @@ function formatDuration(sec: number): string {
   return `${m} min`
 }
 
+const DEFAULT_DURATION_SEC = 25 * 60
+
 export default function NowPage() {
-  const [tiles, setTiles] = useState<Tile[]>([])
-  const [loading, setLoading] = useState(true)
+  const { state, loading, execute } = useExecutionEngine()
   const [newTitle, setNewTitle] = useState('')
   const [elapsed, setElapsed] = useState(0)
   const [showIntervention, setShowIntervention] = useState(false)
-  const supabase = createClient()
 
-  const loadTiles = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data } = await supabase
-      .from('tiles')
-      .select('id, title, lifecycle, updated_at, estimated_duration_sec')
-      .eq('user_id', user.id)
-      .is('deleted_at', null)
-      .order('updated_at', { ascending: false })
-      .limit(20)
-
-    setTiles(data || [])
-    setLoading(false)
-  }, [supabase])
-
-  useEffect(() => {
-    loadTiles()
-  }, [loadTiles])
-
-  const activeTile = tiles.find(t => t.lifecycle === 'Started')
-  const readyTiles = tiles.filter(t => t.lifecycle === 'Ready')
+  // Derive data from engine state
+  const tiles = Array.from(state.tiles.values())
+  const activeTile = state.execution.active_tile_id
+    ? state.tiles.get(state.execution.active_tile_id)
+    : null
+  const readyTiles = tiles.filter(t => t.core.lifecycle === TileLifecycle.Ready)
   const nextUpTiles = readyTiles.slice(0, 2)
-  const duration = activeTile?.estimated_duration_sec ?? 25 * 60
+  const doneTiles = tiles.filter(t => t.core.lifecycle === TileLifecycle.Done)
 
-  // Timer
+  // Timer based on execution state
+  const phaseEndsAt = state.execution.phase_ends_at
+  const phaseStartedAt = state.execution.phase_started_at
+  const duration = phaseEndsAt && phaseStartedAt
+    ? (phaseEndsAt.getTime() - phaseStartedAt.getTime()) / 1000
+    : DEFAULT_DURATION_SEC
+
   useEffect(() => {
-    if (!activeTile) {
+    if (!activeTile || !phaseStartedAt) {
       setElapsed(0)
       setShowIntervention(false)
       return
     }
-    const start = new Date(activeTile.updated_at).getTime()
+    const start = phaseStartedAt.getTime()
     const tick = () => {
       const now = Date.now()
       const sec = Math.floor((now - start) / 1000)
@@ -82,7 +67,7 @@ export default function NowPage() {
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [activeTile, duration, showIntervention])
+  }, [activeTile, phaseStartedAt, duration, showIntervention])
 
   const remaining = Math.max(0, duration - elapsed)
   const progress = duration > 0 ? Math.min(1, elapsed / duration) : 0
@@ -90,45 +75,57 @@ export default function NowPage() {
   async function createTile(e: React.FormEvent) {
     e.preventDefault()
     if (!newTitle.trim()) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    await supabase.from('tiles').insert({
-      user_id: user.id,
-      local_tile_id: crypto.randomUUID(),
-      title: newTitle.trim(),
-      lifecycle: 'Ready',
-    })
+    const tileId = TileId.new()
+    await execute(
+      {
+        type: 'create_tile',
+        tile_id: tileId,
+        title: newTitle.trim(),
+        next_action: null,
+        done_definition: null,
+      },
+      Actor.human('current-user')
+    )
     setNewTitle('')
-    loadTiles()
   }
 
-  async function startTile(tileId: string) {
-    await supabase
-      .from('tiles')
-      .update({ lifecycle: 'Started', updated_at: new Date().toISOString() })
-      .eq('id', tileId)
-    loadTiles()
+  async function startTile(tileId: TileId) {
+    await execute(
+      {
+        type: 'start_tile',
+        tile_id: tileId,
+        started_at: new Date(),
+        source: StartSource.Manual,
+      },
+      Actor.human('current-user')
+    )
   }
 
-  async function completeTile(tileId: string) {
-    await supabase
-      .from('tiles')
-      .update({ lifecycle: 'Done', updated_at: new Date().toISOString() })
-      .eq('id', tileId)
+  async function completeTile(tileId: TileId) {
+    await execute(
+      {
+        type: 'complete_tile',
+        tile_id: tileId,
+        completed_at: new Date(),
+        next_tile_id: null,
+      },
+      Actor.human('current-user')
+    )
     setShowIntervention(false)
-    loadTiles()
   }
 
   async function extendTime(minutes: number) {
     if (!activeTile) return
-    // Push updated_at forward to extend the timer
-    const newStart = new Date(Date.now() - (elapsed * 1000) + (minutes * 60 * 1000))
-    await supabase
-      .from('tiles')
-      .update({ updated_at: newStart.toISOString() })
-      .eq('id', activeTile.id)
+    await execute(
+      {
+        type: 'extend_phase',
+        tile_id: activeTile.core.id,
+        delta_min: minutes,
+        reason: null,
+      },
+      Actor.human('current-user')
+    )
     setShowIntervention(false)
-    loadTiles()
   }
 
   const now = new Date()
@@ -143,11 +140,10 @@ export default function NowPage() {
     )
   }
 
-  // Calculate planned total
-  const plannedTiles = tiles.filter(t => t.lifecycle !== 'Done')
-  const totalPlannedSec = plannedTiles.reduce((sum, t) => sum + (t.estimated_duration_sec ?? 25 * 60), 0)
-  const doneTiles = tiles.filter(t => t.lifecycle === 'Done')
-  const totalDoneSec = doneTiles.reduce((sum, t) => sum + (t.estimated_duration_sec ?? 25 * 60), 0)
+  // Calculate stats
+  const plannedTiles = tiles.filter(t => t.core.lifecycle !== TileLifecycle.Done)
+  const totalPlannedSec = plannedTiles.length * DEFAULT_DURATION_SEC
+  const totalDoneSec = doneTiles.length * DEFAULT_DURATION_SEC
   const totalRemainingSec = Math.max(0, totalPlannedSec - totalDoneSec)
 
   return (
@@ -178,7 +174,7 @@ export default function NowPage() {
             </div>
             {/* Title */}
             <h2 className="text-[22px] lg:text-[32px] font-extrabold text-white leading-tight">
-              {activeTile.title}
+              {activeTile.core.title}
             </h2>
             {/* Timer + Progress */}
             <div className="flex items-end justify-between">
@@ -188,7 +184,7 @@ export default function NowPage() {
               <div className="hidden lg:flex flex-col items-end gap-2.5">
                 {/* Desktop buttons */}
                 <button
-                  onClick={() => completeTile(activeTile.id)}
+                  onClick={() => completeTile(activeTile.core.id)}
                   className="flex items-center gap-2 bg-white rounded-xl h-11 px-6 text-sm font-semibold text-black hover:bg-zinc-100 transition-colors"
                 >
                   <Check size={14} />
@@ -207,7 +203,7 @@ export default function NowPage() {
                 </div>
               </div>
             </div>
-            {/* Progress bar - mobile/tablet only visible in mobile, desktop in row above */}
+            {/* Progress bar - mobile/tablet only */}
             <div className="lg:hidden">
               <div className="bg-zinc-800 rounded h-1 w-full">
                 <div className="bg-white rounded h-1 transition-all" style={{ width: `${progress * 100}%` }} />
@@ -216,7 +212,7 @@ export default function NowPage() {
             {/* Mobile action buttons */}
             <div className="flex gap-2 lg:hidden">
               <button
-                onClick={() => completeTile(activeTile.id)}
+                onClick={() => completeTile(activeTile.core.id)}
                 className="flex items-center justify-center gap-1.5 bg-white rounded-[10px] h-10 flex-1 text-[13px] font-semibold text-black"
               >
                 <Check size={14} />
@@ -244,13 +240,13 @@ export default function NowPage() {
             </div>
             <div className="flex gap-2.5 lg:gap-3">
               {nextUpTiles.map(tile => (
-                <div key={tile.id} className="flex-1 bg-zinc-100 rounded-[14px] lg:rounded-[16px] p-3.5 lg:p-[18px] flex flex-col gap-2">
+                <div key={tile.core.id} className="flex-1 bg-zinc-100 rounded-[14px] lg:rounded-[16px] p-3.5 lg:p-[18px] flex flex-col gap-2">
                   <span className="text-sm lg:text-base font-bold text-black">
-                    {tile.title}
+                    {tile.core.title}
                   </span>
                   <div className="flex items-center justify-between text-zinc-500">
                     <span className="text-xs">
-                      {formatDuration(tile.estimated_duration_sec ?? 25 * 60)}
+                      {formatDuration(DEFAULT_DURATION_SEC)}
                     </span>
                     <span className="flex gap-0.5">
                       <span className="w-1 h-1 rounded-full bg-zinc-400" />
@@ -259,7 +255,7 @@ export default function NowPage() {
                     </span>
                   </div>
                   <button
-                    onClick={() => startTile(tile.id)}
+                    onClick={() => startTile(tile.core.id)}
                     className="flex items-center justify-center gap-1 bg-black rounded-lg h-8 lg:h-9 text-white text-xs lg:text-sm font-semibold"
                   >
                     Start <ChevronRight size={12} />
@@ -277,17 +273,17 @@ export default function NowPage() {
             <span className="text-[11px] text-zinc-300">{formatDuration(totalPlannedSec)} planned</span>
           </div>
           <div className="flex items-center gap-[3px] bg-zinc-100 rounded-xl h-12 px-3 overflow-hidden relative">
-            {tiles.filter(t => t.lifecycle !== 'Done').slice(0, 4).map((tile, i) => (
+            {tiles.filter(t => t.core.lifecycle !== TileLifecycle.Done).slice(0, 4).map((tile, i) => (
               <div
-                key={tile.id}
+                key={tile.core.id}
                 className={`flex items-center justify-center rounded-md h-8 px-3 shrink-0 ${
-                  i === 0 && activeTile?.id === tile.id
+                  i === 0 && activeTile?.core.id === tile.core.id
                     ? 'bg-black text-white'
                     : 'bg-zinc-200 text-zinc-500'
                 }`}
               >
                 <span className="text-[9px] font-semibold truncate max-w-[80px]">
-                  {tile.title.length > 12 ? tile.title.slice(0, 12) + '…' : tile.title}
+                  {tile.core.title.length > 12 ? tile.core.title.slice(0, 12) + '…' : tile.core.title}
                 </span>
               </div>
             ))}
@@ -353,11 +349,11 @@ export default function NowPage() {
 
         {/* Timeline Items */}
         <div className="flex flex-col gap-1.5 flex-1">
-          {tiles.filter(t => t.lifecycle !== 'Done').map((tile, i) => {
-            const isActive = activeTile?.id === tile.id
+          {tiles.filter(t => t.core.lifecycle !== TileLifecycle.Done).map((tile, i) => {
+            const isActive = activeTile?.core.id === tile.core.id
             return (
               <div
-                key={tile.id}
+                key={tile.core.id}
                 className={`flex items-center justify-between rounded-xl px-3.5 ${
                   isActive
                     ? 'bg-black h-14 lg:h-[56px]'
@@ -369,7 +365,7 @@ export default function NowPage() {
                 <span className={`text-[13px] font-${isActive ? 'bold' : 'semibold'} ${
                   isActive ? 'text-white' : i < 3 ? 'text-zinc-500' : 'text-zinc-400'
                 }`}>
-                  {tile.title}
+                  {tile.core.title}
                 </span>
                 <span className={`text-[11px] ${
                   isActive ? 'text-zinc-400' : 'text-zinc-400'
@@ -396,7 +392,7 @@ export default function NowPage() {
             </div>
             {/* Title */}
             <h2 className="text-[26px] font-extrabold text-black leading-tight">
-              {activeTile.title}
+              {activeTile.core.title}
             </h2>
             {/* Elapsed */}
             <div className="flex items-center gap-2">
@@ -408,7 +404,7 @@ export default function NowPage() {
             {/* Buttons */}
             <div className="flex flex-col gap-2.5">
               <button
-                onClick={() => completeTile(activeTile.id)}
+                onClick={() => completeTile(activeTile.core.id)}
                 className="flex items-center justify-center gap-2 bg-black rounded-[14px] h-[52px] text-white text-[15px] font-semibold hover:bg-zinc-800 transition-colors"
               >
                 <Check size={16} />

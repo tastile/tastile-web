@@ -4,7 +4,7 @@ import { AppState } from './state'
 import { CommandEnvelope } from './command'
 import { TileId } from '../domain/ids'
 import { Actor } from '../domain/actor'
-import { TileLifecycle } from '../domain/tile'
+import { TileLifecycle, StartSource } from '../domain/tile'
 
 describe('CommandHandler', () => {
   it('should handle CreateTile command', () => {
@@ -34,7 +34,7 @@ describe('CommandHandler', () => {
     handler.handle(createEnvelope, state)
     // Then start it
     const startEnvelope = CommandEnvelope.create(
-      { type: 'start_tile', tile_id: tileId, started_at: null, source: 'manual' as any },
+      { type: 'start_tile', tile_id: tileId, started_at: new Date(), source: StartSource.Manual },
       Actor.human('user-1')
     )
     const events = handler.handle(startEnvelope, state)
@@ -49,7 +49,7 @@ describe('CommandHandler', () => {
     const state = AppState.initial()
     const handler = new CommandHandler()
     const envelope = CommandEnvelope.create(
-      { type: 'start_tile', tile_id: TileId.new(), started_at: null, source: 'manual' as any },
+      { type: 'start_tile', tile_id: TileId.new(), started_at: new Date(), source: StartSource.Manual },
       Actor.human('user-1')
     )
     expect(() => handler.handle(envelope, state)).toThrow()

@@ -36,7 +36,7 @@ export function validate(command: Command, state: AppState): void {
       break
     }
 
-    case 'complete_and_start_next': {
+    case 'complete_tile': {
       const tile = state.tiles.get(command.tile_id)
       if (!tile) {
         throw new ValidationError(`Tile ${command.tile_id} not found`)

@@ -1,5 +1,6 @@
 import { TileId, CommandId, RequestId } from '../domain/ids'
 import { Actor } from '../domain/actor'
+import { StartSource } from '../domain/tile'
 
 // --- Payload Interfaces ---
 
@@ -13,7 +14,7 @@ export interface CreateTilePayload {
 export interface StartTilePayload {
   tile_id: TileId
   started_at: Date
-  source: 'manual' | 'auto_next'
+  source: StartSource
 }
 
 export interface DeferTilePayload {

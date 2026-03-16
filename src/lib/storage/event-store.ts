@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { EventEnvelope, Event } from '../core/event'
-import { EventId } from '../domain/ids'
+import { EventId, CommandId } from '../domain/ids'
 import { Actor } from '../domain/actor'
 
 // Database row shape for the events table
@@ -101,7 +101,7 @@ export class EventStore {
         type: row.actor_type,
         id: row.actor_id,
       } as Actor,
-      caused_by_command_id: row.caused_by_command_id as EventId | null,
+      caused_by_command_id: row.caused_by_command_id as CommandId | null,
       request_id: row.request_id,
       event: eventPayload,
     }

@@ -2,12 +2,12 @@ import { describe, it, expect } from 'vitest'
 import { validate, ValidationError } from './validate'
 import { AppState } from './state'
 import { TileId } from '../domain/ids'
-import { Tile, TileLifecycle } from '../domain/tile'
+import { Tile, TileLifecycle, StartSource } from '../domain/tile'
 
 describe('Validation', () => {
   it('should reject StartTile for non-existent tile', () => {
     const state = AppState.initial()
-    const cmd = { type: 'start_tile' as const, tile_id: TileId.new(), started_at: null, source: 'manual' as any }
+    const cmd = { type: 'start_tile' as const, tile_id: TileId.new(), started_at: new Date(), source: StartSource.Manual }
     expect(() => validate(cmd, state)).toThrow(ValidationError)
   })
 
@@ -15,13 +15,13 @@ describe('Validation', () => {
     const state = AppState.initial()
     const tile = Tile.create(TileId.new(), 'Task')
     state.tiles.set(tile.core.id, tile)
-    const cmd = { type: 'start_tile' as const, tile_id: tile.core.id, started_at: null, source: 'manual' as any }
+    const cmd = { type: 'start_tile' as const, tile_id: tile.core.id, started_at: new Date(), source: StartSource.Manual }
     expect(() => validate(cmd, state)).not.toThrow()
   })
 
-  it('should reject CompleteAndStartNext when no active tile', () => {
+  it('should reject CompleteTile when no active tile', () => {
     const state = AppState.initial()
-    const cmd = { type: 'complete_and_start_next' as const, tile_id: TileId.new(), completed_at: null, next_tile_id: null }
+    const cmd = { type: 'complete_tile' as const, tile_id: TileId.new(), completed_at: new Date(), next_tile_id: null }
     expect(() => validate(cmd, state)).toThrow(ValidationError)
   })
 
@@ -36,7 +36,7 @@ describe('Validation', () => {
     const tile = Tile.create(TileId.new(), 'Task')
     tile.core.lifecycle = TileLifecycle.Started
     state.tiles.set(tile.core.id, tile)
-    const cmd = { type: 'start_tile' as const, tile_id: tile.core.id, started_at: null, source: 'manual' as any }
+    const cmd = { type: 'start_tile' as const, tile_id: tile.core.id, started_at: new Date(), source: StartSource.Manual }
     expect(() => validate(cmd, state)).toThrow(ValidationError)
   })
 })
