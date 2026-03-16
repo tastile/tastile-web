@@ -17,4 +17,19 @@ describe('Execution', () => {
     expect(exec.phase_started_at).toBe(now);
     expect(exec.phase_ends_at).toBe(end);
   });
+
+  it('should initialize with null pending_prompt_id', () => {
+    const exec = Execution.initial();
+    expect(exec.pending_prompt_id).toBeNull();
+  });
+
+  it('should support all PhaseKind enum values', () => {
+    // Verify all enum values exist and are distinct
+    const phaseKinds = [PhaseKind.Work, PhaseKind.Break, PhaseKind.Idle];
+    const uniqueValues = new Set(phaseKinds);
+    expect(uniqueValues.size).toBe(3);
+    expect(phaseKinds).toContain('work');
+    expect(phaseKinds).toContain('break');
+    expect(phaseKinds).toContain('idle');
+  });
 });
