@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest"
   },
   "dependencies": {
     "@stripe/stripe-js": "^8.9.0",
@@ -23,11 +24,15 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "@vitest/ui": "^4.1.0",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "uuid": "^13.0.0",
+    "vitest": "^4.1.0"
   },
   "trustedDependencies": [
     "unrs-resolver"
