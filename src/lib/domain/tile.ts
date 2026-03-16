@@ -46,7 +46,6 @@ export interface TileCore {
 
 export interface WorkFacts {
   segments: Segment[]
-  workedMinutes: () => number
 }
 
 export interface Annotation {
@@ -70,16 +69,16 @@ export const Tile = {
     },
     work: {
       segments: [],
-      workedMinutes() {
-        return this.segments.reduce((total, seg) => {
-          if (!seg.end_at) return total
-          const ms = seg.end_at.getTime() - seg.start_at.getTime()
-          return total + Math.floor(ms / 60000)
-        }, 0)
-      },
     },
     annotation: {
       semantic_role: SemanticRole.Default,
     },
   }),
+  workedMinutes: (segments: Segment[]): number => {
+    return segments.reduce((total, seg) => {
+      if (!seg.end_at || seg.mode !== SegmentMode.Work) return total
+      const ms = seg.end_at.getTime() - seg.start_at.getTime()
+      return total + Math.floor(ms / 60000)
+    }, 0)
+  },
 }
