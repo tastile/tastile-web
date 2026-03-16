@@ -10,34 +10,35 @@ function createId<T extends string>(): T {
   return uuidv4() as T;
 }
 
-function parseId<T extends string>(s: string): T {
+function parseId<T extends string>(s: string, typeName?: string): T {
   if (!isUuid(s)) {
-    throw new Error(`Invalid UUID format: ${s}`);
+    const ctx = typeName ? ` for ${typeName}` : '';
+    throw new Error(`Invalid UUID format${ctx}: ${s}`);
   }
   return s as T;
 }
 
 export const TileId = {
   new: () => createId<TileId>(),
-  fromString: (s: string) => parseId<TileId>(s),
+  fromString: (s: string) => parseId<TileId>(s, 'TileId'),
 };
 
 export const EventId = {
   new: () => createId<EventId>(),
-  fromString: (s: string) => parseId<EventId>(s),
+  fromString: (s: string) => parseId<EventId>(s, 'EventId'),
 };
 
 export const CommandId = {
   new: () => createId<CommandId>(),
-  fromString: (s: string) => parseId<CommandId>(s),
+  fromString: (s: string) => parseId<CommandId>(s, 'CommandId'),
 };
 
 export const SegmentId = {
   new: () => createId<SegmentId>(),
-  fromString: (s: string) => parseId<SegmentId>(s),
+  fromString: (s: string) => parseId<SegmentId>(s, 'SegmentId'),
 };
 
 export const PromptId = {
   new: () => createId<PromptId>(),
-  fromString: (s: string) => parseId<PromptId>(s),
+  fromString: (s: string) => parseId<PromptId>(s, 'PromptId'),
 };
