@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Outfit, Inter } from "next/font/google";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { themeScript } from '@/lib/theme-script';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,11 +41,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${inter.variable} antialiased`}
       >
+        <GoogleAnalytics measurementId={gaMeasurementId} />
         {children}
       </body>
     </html>
