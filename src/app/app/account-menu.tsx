@@ -110,7 +110,7 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
 
           <div className="py-1">
             <a
-              href="/dashboard/settings"
+              href="/dashboard/account"
               className="block px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-hover"
             >
               Account settings
