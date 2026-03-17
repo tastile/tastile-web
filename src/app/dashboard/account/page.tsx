@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { TileStatistics } from '@/components/account/TileStatistics'
 
 type TabId = 'profile' | 'subscription' | 'statistics' | 'usage'
 
@@ -70,9 +71,7 @@ export default function AccountPage() {
             <p className="text-foreground-secondary">
               View your tile usage and completion metrics.
             </p>
-            <div className="p-4 bg-surface-secondary rounded-lg border border-border">
-              <p className="text-sm text-foreground-tertiary">Statistics coming soon...</p>
-            </div>
+            <TileStatistics />
           </div>
         )}
 
