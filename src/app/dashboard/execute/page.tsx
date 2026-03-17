@@ -4,9 +4,7 @@ import { useMemo } from 'react'
 import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
 import { ActiveExecutionBar } from '@/components/execution/ActiveExecutionBar'
 import { TileCardCompact } from '@/components/tiles/TileCardCompact'
-import { TimelineView } from '@/components/timeline/TimelineView'
 import { TileCardExpandable } from '@/components/tiles/TileCardExpandable'
-import { buildTimelineView } from '@/lib/core/reducer'
 import { selectNextTile } from '@/lib/scheduler/simple-jit'
 import { getTileLifecycle } from '@/lib/domain/tile'
 import { Actor } from '@/lib/domain/actor'
@@ -21,7 +19,15 @@ export default function ExecutePage() {
 
   const activeTile = state.execution.activeTileId ? state.tiles.get(state.execution.activeTileId) ?? null : null
   const suggestion = useMemo(() => selectNextTile(state), [state])
-  const timeline = useMemo(() => buildTimelineView(state), [state])
+  const timelineTiles = useMemo(() => {
+    return Array.from(state.tiles.values())
+      .filter(tile => getTileLifecycle(tile) !== 'done')
+      .sort((a, b) => {
+        const aTime = a.temporal.fixedStart?.getTime() ?? Infinity
+        const bTime = b.temporal.fixedStart?.getTime() ?? Infinity
+        return aTime - bTime
+      })
+  }, [state])
 
   async function startTile(tileId: TileId) {
     await execute(
@@ -98,7 +104,14 @@ export default function ExecutePage() {
 
         <div className="rounded-xl bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Timeline</h2>
-          <TimelineView mode="compact" segments={timeline} />
+          <div className="space-y-2">
+            {timelineTiles.map(tile => (
+              <TileCardCompact key={tile.core.id} tile={tile} onStart={startTile} loading={loading} />
+            ))}
+            {timelineTiles.length === 0 && (
+              <p className="text-sm text-foreground-muted">No upcoming tiles</p>
+            )}
+          </div>
         </div>
       </div>
 

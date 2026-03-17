@@ -2,7 +2,6 @@
 
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { TileCardCompact } from '@/components/tiles/TileCardCompact'
-import { TimelineView } from '@/components/timeline/TimelineView'
 import { Tile } from '@/lib/domain/tile'
 import { TileId } from '@/lib/domain/ids'
 
@@ -11,17 +10,11 @@ interface RightSidebarProps {
   nextTile: Tile | null
   nextReason?: string
   onStartSuggested?: (tileId: TileId) => void
-  timelineSegments: Array<{
-    id: string
-    time: string
-    type: 'work' | 'break' | 'fixed'
-    title: string
-    status: 'done' | 'active' | 'scheduled'
-  }>
+  timelineTiles: Tile[]
   loading?: boolean
 }
 
-export function RightSidebar({ nextTile, nextReason, onStartSuggested, timelineSegments, loading = false }: RightSidebarProps) {
+export function RightSidebar({ nextTile, nextReason, onStartSuggested, timelineTiles, loading = false }: RightSidebarProps) {
   const { t } = useTranslation()
 
   return (
@@ -39,8 +32,13 @@ export function RightSidebar({ nextTile, nextReason, onStartSuggested, timelineS
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {t('sidebar.timeline')}
         </h3>
-        <div className="overflow-auto">
-          <TimelineView mode="compact" segments={timelineSegments} />
+        <div className="space-y-2 overflow-auto">
+          {timelineTiles.map(tile => (
+            <TileCardCompact key={tile.core.id} tile={tile} onStart={onStartSuggested} loading={loading} />
+          ))}
+          {timelineTiles.length === 0 && (
+            <p className="text-sm text-foreground-muted">{t('tiles.noTiles')}</p>
+          )}
         </div>
       </div>
     </aside>
