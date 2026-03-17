@@ -11,9 +11,13 @@ import { selectNextTile } from '@/lib/scheduler/simple-jit'
 import { getTileLifecycle } from '@/lib/domain/tile'
 import { Actor } from '@/lib/domain/actor'
 import { TileId } from '@/lib/domain/ids'
+import { useDialogStore } from '@/lib/stores/dialog-store'
+import { DeferTileDialog } from '@/components/tiles/dialogs/DeferTileDialog'
+import { DeleteTileDialog } from '@/components/tiles/dialogs/DeleteTileDialog'
 
 export default function ExecutePage() {
   const { state, loading, execute } = useExecutionEngine()
+  const { openDeferDialog, openDeleteDialog } = useDialogStore()
 
   const activeTile = state.execution.activeTileId ? state.tiles.get(state.execution.activeTileId) ?? null : null
   const suggestion = useMemo(() => selectNextTile(state), [state])
@@ -35,6 +39,38 @@ export default function ExecutePage() {
         completed_at: new Date(),
         next_tile_id: null,
       },
+      Actor.human('self')
+    )
+  }
+
+  async function handleDefer(tileId: string) {
+    const tile = state.tiles.get(tileId as any)
+    if (!tile) return
+    openDeferDialog(tile, 'defer')
+  }
+
+  async function handleInterrupt(tileId: string) {
+    const tile = state.tiles.get(tileId as any)
+    if (!tile) return
+    openDeferDialog(tile, 'interrupt')
+  }
+
+  async function handleDeferConfirm(tileId: string, nextStartAt: Date) {
+    await execute(
+      { type: 'defer_tile', tile_id: tileId as any, deferred_at: new Date(), next_start_at: nextStartAt },
+      Actor.human('self')
+    )
+  }
+
+  async function handleDelete(tileId: string) {
+    const tile = state.tiles.get(tileId as any)
+    if (!tile) return
+    openDeleteDialog(tile)
+  }
+
+  async function handleDeleteConfirm(tileId: string) {
+    await execute(
+      { type: 'delete_tile', tile_id: tileId as any, deleted_at: new Date() },
       Actor.human('self')
     )
   }
@@ -88,10 +124,10 @@ export default function ExecutePage() {
                 defaultExpanded={false}
                 onStart={startTile}
                 onComplete={completeActive}
-                onDefer={(id) => console.log('Defer', id)}
-                onInterrupt={(id) => console.log('Interrupt', id)}
+                onDefer={handleDefer}
+                onInterrupt={handleInterrupt}
                 onEdit={(id) => console.log('Edit', id)}
-                onDelete={(id) => console.log('Delete', id)}
+                onDelete={handleDelete}
               />
             ))}
           {state.tiles.size === 0 ? (
@@ -99,6 +135,10 @@ export default function ExecutePage() {
           ) : null}
         </div>
       </div>
+
+      {/* Dialogs */}
+      <DeferTileDialog onConfirm={handleDeferConfirm} />
+      <DeleteTileDialog onConfirm={handleDeleteConfirm} />
     </div>
   )
 }
