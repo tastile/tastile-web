@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
 import { ActiveExecutionBar } from '@/components/execution/ActiveExecutionBar'
-import { NextTileCard } from '@/components/tiles/NextTileCard'
+import { TileCardCompact } from '@/components/tiles/TileCardCompact'
 import { TimelineView } from '@/components/timeline/TimelineView'
 import { TileCardExpandable } from '@/components/tiles/TileCardExpandable'
 import { buildTimelineView } from '@/lib/core/reducer'
@@ -57,7 +57,7 @@ export default function ExecutePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Next Tile</h2>
-          <NextTileCard tile={suggestion?.tile ?? null} reason={suggestion?.reason} onStart={startTile} loading={loading} />
+          <TileCardCompact tile={suggestion?.tile ?? null} onStart={startTile} loading={loading} />
         </div>
 
         <div className="rounded-xl bg-surface-1 p-4">
