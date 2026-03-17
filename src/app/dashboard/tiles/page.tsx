@@ -90,7 +90,7 @@ export default function TilesPage() {
         ))}
       </div>
       {state.tiles.size === 0 ? (
-        <p className="text-sm text-foreground-muted">No tiles yet. Use Cmd/Ctrl+N to create one.</p>
+        <p className="text-sm text-foreground-muted">No tiles yet. Click the + button to create one.</p>
       ) : null}
 
       {/* Dialogs */}

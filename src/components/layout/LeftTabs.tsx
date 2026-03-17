@@ -27,7 +27,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
       <button
         onClick={openQuickCreate}
         className="relative flex h-12 w-full items-center overflow-hidden rounded-xl bg-primary text-primary-fg transition-all"
-        title={`${t('nav.new')} (Cmd+N)`}
+        title={t('nav.new')}
       >
         <div className="flex w-10 shrink-0 items-center justify-center">
           <Plus className="h-5 w-5" />

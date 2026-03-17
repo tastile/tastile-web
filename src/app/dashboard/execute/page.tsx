@@ -165,7 +165,7 @@ export default function ExecutePage() {
               />
             ))}
           {state.tiles.size === 0 ? (
-            <p className="text-sm text-foreground-muted">No tiles yet. Create one with Cmd/Ctrl+N.</p>
+            <p className="text-sm text-foreground-muted">No tiles yet. Click the + button to create one.</p>
           ) : null}
         </div>
       </div>
