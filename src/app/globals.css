@@ -6,21 +6,21 @@
    Light Theme (Default)
    ============================================ */
 :root {
-  /* Surfaces - Supabase-style minimal difference */
-  --background: #fafafa;
+  /* Surfaces - Increased contrast for clarity */
+  --background: #f5f5f5;
   --surface-0: #fafafa;
-  --surface-1: #fbfbfb;
-  --surface-2: #f8f8f8;
-  --surface-elevated: #fcfcfc;
+  --surface-1: #efefef;
+  --surface-2: #ffffff;
+  --surface-elevated: #ffffff;
 
   /* Text */
   --foreground: #0a0a0a;
-  --foreground-muted: #737373;
+  --foreground-muted: #525252;
   --foreground-subtle: #a3a3a3;
 
   /* Borders (minimal use) */
-  --border: #e5e5e5;
-  --border-strong: #d4d4d4;
+  --border: #d4d4d4;
+  --border-strong: #a3a3a3;
 
   /* Interactive (monochrome) */
   --interactive-base: #0a0a0a;
@@ -39,21 +39,21 @@
    Gray Theme (Dark Gray)
    ============================================ */
 .theme-gray {
-  /* Surfaces - Minimal difference */
-  --background: #1a1a1a;
-  --surface-0: #1a1a1a;
-  --surface-1: #1b1b1b;
-  --surface-2: #191919;
-  --surface-elevated: #1c1c1c;
+  /* Surfaces - Increased contrast for clarity */
+  --background: #171717;
+  --surface-0: #1f1f1f;
+  --surface-1: #141414;
+  --surface-2: #262626;
+  --surface-elevated: #262626;
 
   /* Text */
   --foreground: #fafafa;
-  --foreground-muted: #a3a3a3;
+  --foreground-muted: #d4d4d4;
   --foreground-subtle: #737373;
 
   /* Borders (minimal use) */
-  --border: #404040;
-  --border-strong: #525252;
+  --border: #525252;
+  --border-strong: #737373;
 
   /* Interactive (monochrome) */
   --interactive-base: #fafafa;
@@ -70,21 +70,21 @@
    Dark Theme (True Black)
    ============================================ */
 .theme-dark {
-  /* Surfaces - Minimal difference */
+  /* Surfaces - Increased contrast for clarity */
   --background: #000000;
-  --surface-0: #000000;
-  --surface-1: #010101;
-  --surface-2: #020202;
-  --surface-elevated: #030303;
+  --surface-0: #0a0a0a;
+  --surface-1: #050505;
+  --surface-2: #171717;
+  --surface-elevated: #171717;
 
   /* Text */
   --foreground: #ffffff;
-  --foreground-muted: #a3a3a3;
+  --foreground-muted: #d4d4d4;
   --foreground-subtle: #737373;
 
   /* Borders (minimal use) */
-  --border: #262626;
-  --border-strong: #404040;
+  --border: #404040;
+  --border-strong: #525252;
 
   /* Interactive (monochrome) */
   --interactive-base: #ffffff;
