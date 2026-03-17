@@ -3,19 +3,19 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { AppState } from '../core/state'
-import { CommandHandler } from '../core/handler'
+import { cloneState, CommandHandler } from '../core/handler'
 import { EventStore } from '../storage/event-store'
 import { CommandEnvelope, Command } from '../core/command'
 import { Actor } from '../domain/actor'
 import { reduce } from '../core/reducer'
 
 export function useExecutionEngine() {
-  const [state, setState] = useState<AppState>(AppState.initial)
+  const [state, setState] = useState<AppState>(AppState.initial())
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const [userId, setUserId] = useState<string | null>(null)
+  const [supabase] = useState(() => createClient())
   const handlerRef = useRef(new CommandHandler())
   const eventStoreRef = useRef<EventStore | null>(null)
-  const userIdRef = useRef<string | null>(null)
 
   // Initialize: load user and event history
   useEffect(() => {
@@ -26,7 +26,7 @@ export function useExecutionEngine() {
         return
       }
 
-      userIdRef.current = user.id
+      setUserId(user.id)
       const eventStore = new EventStore(supabase, user.id)
       eventStoreRef.current = eventStore
 
@@ -42,12 +42,10 @@ export function useExecutionEngine() {
     }
 
     init()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [supabase])
 
   // Subscribe to new events via Supabase Realtime
   useEffect(() => {
-    const userId = userIdRef.current
     if (!userId) return
 
     const channel = supabase
@@ -63,7 +61,9 @@ export function useExecutionEngine() {
         (payload) => {
           if (!eventStoreRef.current) return
           try {
-            const eventEnvelope = eventStoreRef.current.deserialize(payload.new as any)
+            const eventEnvelope = eventStoreRef.current.deserialize(
+              payload.new as Parameters<EventStore['deserialize']>[0]
+            )
             setState(prev => {
               const newState: AppState = {
                 tiles: new Map(prev.tiles),
@@ -84,8 +84,7 @@ export function useExecutionEngine() {
     return () => {
       supabase.removeChannel(channel)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userIdRef.current])
+  }, [supabase, userId])
 
   // Execute command
   const execute = useCallback(async (command: Command, actor: Actor) => {
@@ -95,22 +94,19 @@ export function useExecutionEngine() {
 
     const envelope = CommandEnvelope.create(command, actor)
 
-    // Handle command (validates, generates events, applies to local state copy)
-    const stateCopy: AppState = {
-      tiles: new Map(state.tiles),
-      execution: { ...state.execution },
-      events: [...state.events],
-    }
-    const events = handlerRef.current.handle(envelope, stateCopy)
+    // Use setState functional form to get latest state
+    setState(prevState => {
+      const stateCopy = cloneState(prevState)
+      const events = handlerRef.current.handle(envelope, stateCopy)
 
-    // Persist events to Supabase
-    for (const evt of events) {
-      await eventStoreRef.current.append(evt)
-    }
+      // Persist events to Supabase (fire-and-forget for optimistic update)
+      Promise.all(events.map(evt => eventStoreRef.current!.append(evt))).catch(err => {
+        console.error('Failed to persist events:', err)
+      })
 
-    // Update local state (Realtime will also update, but do optimistic update too)
-    setState(stateCopy)
-  }, [state])
+      return stateCopy
+    })
+  }, [])
 
   return { state, loading, execute }
 }
