@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 import { EventEnvelope, Event } from '../core/event'
-import { EventId, CommandId } from '../domain/ids'
+import { EventId, CommandId, RequestId } from '../domain/ids'
 import { Actor } from '../domain/actor'
 
 // Database row shape for the events table
@@ -102,8 +102,78 @@ export class EventStore {
         id: row.actor_id,
       } as Actor,
       caused_by_command_id: row.caused_by_command_id as CommandId | null,
-      request_id: row.request_id,
-      event: eventPayload,
+      request_id: row.request_id as RequestId | null,
+      event: normalizeEvent(eventPayload),
     }
+  }
+}
+
+function normalizeEvent(event: Event): Event {
+  switch (event.type) {
+    case 'tile_started':
+      return { ...event, started_at: new Date(event.started_at) }
+    case 'tile_completed':
+      return { ...event, completed_at: new Date(event.completed_at) }
+    case 'tile_deferred':
+      return {
+        ...event,
+        deferred_at: new Date(event.deferred_at),
+        next_start_at: event.next_start_at ? new Date(event.next_start_at) : null,
+      }
+    case 'tile_deleted':
+      return { ...event, deleted_at: new Date(event.deleted_at) }
+    case 'segment_started':
+      return { ...event, started_at: new Date(event.started_at) }
+    case 'segment_ended':
+      return { ...event, ended_at: new Date(event.ended_at) }
+    case 'tile_created':
+      const temporal = event.tile.temporal ?? {
+        releaseAt: null,
+        dueAt: null,
+        fixedStart: null,
+        fixedEnd: null,
+        activeStart: null,
+        activeEnd: null,
+      }
+      const annotation = event.tile.annotation ?? {
+        semanticRole: 'work',
+        labels: [],
+        timedLabels: [],
+      }
+      return {
+        ...event,
+        tile: {
+          ...event.tile,
+          core: {
+            ...event.tile.core,
+            startedAt: event.tile.core.startedAt ? new Date(event.tile.core.startedAt) : null,
+            completedAt: event.tile.core.completedAt ? new Date(event.tile.core.completedAt) : null,
+          },
+          work: {
+            segments: event.tile.work.segments.map(seg => ({
+              ...seg,
+              startAt: new Date(seg.startAt),
+              endAt: seg.endAt ? new Date(seg.endAt) : null,
+            })),
+          },
+          temporal: {
+            ...temporal,
+            releaseAt: temporal.releaseAt ? new Date(temporal.releaseAt) : null,
+            dueAt: temporal.dueAt ? new Date(temporal.dueAt) : null,
+            fixedStart: temporal.fixedStart ? new Date(temporal.fixedStart) : null,
+            fixedEnd: temporal.fixedEnd ? new Date(temporal.fixedEnd) : null,
+            activeStart: temporal.activeStart ? new Date(temporal.activeStart) : null,
+            activeEnd: temporal.activeEnd ? new Date(temporal.activeEnd) : null,
+          },
+          annotation: {
+            ...annotation,
+            timedLabels: annotation.timedLabels.map(label => ({
+              ...label,
+              startAt: label.startAt ? new Date(label.startAt) : null,
+              endAt: label.endAt ? new Date(label.endAt) : null,
+            })),
+          },
+        },
+      }
   }
 }

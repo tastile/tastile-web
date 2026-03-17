@@ -1,69 +1,36 @@
-import { TileId, CommandId, RequestId } from '../domain/ids'
 import { Actor } from '../domain/actor'
-import { StartSource } from '../domain/tile'
-
-// --- Payload Interfaces ---
-
-export interface CreateTilePayload {
-  tile_id: TileId
-  title: string
-  next_action: string | null
-  done_definition: string | null
-}
-
-export interface StartTilePayload {
-  tile_id: TileId
-  started_at: Date
-  source: StartSource
-}
-
-export interface DeferTilePayload {
-  tile_id: TileId
-  reason: string | null
-  defer_until: Date | null
-}
-
-export interface CompleteTilePayload {
-  tile_id: TileId
-  completed_at: Date
-  next_tile_id: TileId | null
-}
-
-export interface ExtendPhasePayload {
-  tile_id: TileId
-  delta_min: number
-  reason: string | null
-}
-
-export interface AttachMemoPayload {
-  tile_id: TileId
-  text: string
-  memo_kind: 'note' | 'outcome' | 'learning'
-}
-
-export interface StartBreakPayload {
-  linked_tile_id: TileId | null
-  break_min: number
-  reason: string | null
-}
-
-export interface EndBreakPayload {
-  ended_at: Date
-}
-
-// --- Command Tagged Union ---
+import { CommandId, RequestId, TileId } from '../domain/ids'
+import { StartSource, Tile } from '../domain/tile'
 
 export type Command =
-  | ({ type: 'create_tile' } & CreateTilePayload)
-  | ({ type: 'start_tile' } & StartTilePayload)
-  | ({ type: 'defer_tile' } & DeferTilePayload)
-  | ({ type: 'complete_tile' } & CompleteTilePayload)
-  | ({ type: 'extend_phase' } & ExtendPhasePayload)
-  | ({ type: 'attach_memo' } & AttachMemoPayload)
-  | ({ type: 'start_break' } & StartBreakPayload)
-  | ({ type: 'end_break' } & EndBreakPayload)
-
-// --- Command Envelope ---
+  | {
+      type: 'create_tile'
+      tile_id: TileId
+      tile: Tile
+    }
+  | {
+      type: 'start_tile'
+      tile_id: TileId
+      started_at: Date
+      source: StartSource
+    }
+  | {
+      type: 'complete_tile'
+      tile_id: TileId
+      completed_at: Date
+      next_tile_id: TileId | null
+    }
+  | {
+      type: 'defer_tile'
+      tile_id: TileId
+      deferred_at: Date
+      next_start_at: Date | null
+    }
+  | {
+      type: 'delete_tile'
+      tile_id: TileId
+      deleted_at: Date
+    }
 
 export interface CommandEnvelope {
   command_id: CommandId
@@ -74,12 +41,12 @@ export interface CommandEnvelope {
 }
 
 export const CommandEnvelope = {
-  create(command: Command, actor: Actor, request_id: RequestId | null = null): CommandEnvelope {
+  create(command: Command, actor: Actor, requestId: RequestId | null = null): CommandEnvelope {
     return {
       command_id: CommandId.new(),
       actor,
       issued_at: new Date(),
-      request_id,
+      request_id: requestId,
       command,
     }
   },
