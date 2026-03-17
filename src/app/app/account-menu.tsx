@@ -3,15 +3,17 @@
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { ChevronUp } from 'lucide-react'
 
 interface AccountMenuProps {
   displayName: string
   avatarUrl: string | null
   plan: string
   email: string
+  menuPlacement?: 'up' | 'down' | 'right'
 }
 
-export function AccountMenu({ displayName, avatarUrl, plan, email }: AccountMenuProps) {
+export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement = 'down' }: AccountMenuProps) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -39,52 +41,67 @@ export function AccountMenu({ displayName, avatarUrl, plan, email }: AccountMenu
     .slice(0, 2)
     .toUpperCase()
 
+  const menuPositionClass =
+    menuPlacement === 'up'
+      ? 'right-0 bottom-full mb-2 origin-bottom'
+      : menuPlacement === 'right'
+      ? 'left-full bottom-0 ml-2 origin-bottom-left'
+      : 'right-0 top-full mt-2 origin-top'
+
   return (
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1.5 rounded-full focus:outline-none focus:ring-2 focus:ring-zinc-400"
+        className="shrink-0 flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-border"
       >
         {avatarUrl ? (
           <img
             src={avatarUrl}
             alt={displayName}
-            className="w-7 h-7 rounded-full"
+            className="block h-7 w-7 shrink-0 rounded-full object-cover"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="w-7 h-7 rounded-full bg-zinc-300 dark:bg-zinc-700 flex items-center justify-center text-xs font-medium text-zinc-700 dark:text-zinc-300">
+          <div className="h-7 w-7 shrink-0 rounded-full bg-surface-secondary flex items-center justify-center text-xs font-medium text-foreground-secondary">
             {initials}
           </div>
         )}
+        <ChevronUp
+          size={12}
+          className={`text-foreground-tertiary transition-transform duration-200 ${open ? 'rotate-0' : 'rotate-180'}`}
+          aria-hidden
+        />
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-2 w-64 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-50">
-          <div className="p-4 border-b border-zinc-100 dark:border-zinc-800">
+      <div
+        className={`absolute ${menuPositionClass} w-64 rounded-xl border border-border bg-surface shadow-lg z-50 transition-all duration-200 ${
+          open ? 'pointer-events-auto opacity-100 translate-y-0 scale-100' : 'pointer-events-none opacity-0 translate-y-1 scale-95'
+        }`}
+      >
+          <div className="p-4 border-b border-border-subtle">
             <div className="flex items-center gap-3">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
                   alt={displayName}
-                  className="w-10 h-10 rounded-full"
+                  className="block h-10 w-10 shrink-0 rounded-full object-cover"
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-zinc-300 dark:bg-zinc-700 flex items-center justify-center text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-surface-secondary flex items-center justify-center text-sm font-medium text-foreground-secondary">
                   {initials}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{displayName}</p>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">{email}</p>
+                <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
+                <p className="text-xs text-foreground-tertiary truncate">{email}</p>
               </div>
             </div>
             <div className="mt-2">
               <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
                 plan === 'pro'
                   ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
-                  : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                  : 'bg-surface-secondary text-foreground-secondary'
               }`}>
                 {plan === 'pro' ? 'Pro' : 'Free'}
               </span>
@@ -92,31 +109,26 @@ export function AccountMenu({ displayName, avatarUrl, plan, email }: AccountMenu
           </div>
 
           <div className="py-1">
-            {plan === 'pro' && (
-              <a
-                href="/dashboard"
-                className="block px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-              >
-                Dashboard
-              </a>
-            )}
-            {plan !== 'pro' && (
-              <a
-                href="/pricing"
-                className="block px-4 py-2 text-sm text-indigo-600 dark:text-indigo-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-              >
-                Upgrade to Pro
-              </a>
-            )}
+            <a
+              href="/dashboard/settings"
+              className="block px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-hover"
+            >
+              Account settings
+            </a>
+            <a
+              href={plan === 'pro' ? '/dashboard/billing' : '/pricing'}
+              className="block px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-hover"
+            >
+              {plan === 'pro' ? 'Billing' : 'Upgrade to Pro'}
+            </a>
             <button
               onClick={handleSignOut}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-surface-hover"
             >
               Sign out
             </button>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   )
 }
