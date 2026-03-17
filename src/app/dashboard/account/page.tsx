@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { TileStatistics } from '@/components/account/TileStatistics'
+import { SubscriptionSection } from '@/components/account/SubscriptionSection'
 
 type TabId = 'profile' | 'subscription' | 'statistics' | 'usage'
 
@@ -59,9 +60,7 @@ export default function AccountPage() {
             <p className="text-foreground-secondary">
               Manage your subscription plan and billing.
             </p>
-            <div className="p-4 bg-surface-secondary rounded-lg border border-border">
-              <p className="text-sm text-foreground-tertiary">Subscription details coming soon...</p>
-            </div>
+            <SubscriptionSection />
           </div>
         )}
 
