@@ -6,6 +6,8 @@ import { Actor } from '@/lib/domain/actor'
 import { useDialogStore } from '@/lib/stores/dialog-store'
 import { DeferTileDialog } from '@/components/tiles/dialogs/DeferTileDialog'
 import { DeleteTileDialog } from '@/components/tiles/dialogs/DeleteTileDialog'
+import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 export default function TilesPage() {
   const { state, loading, execute } = useExecutionEngine()
@@ -57,7 +59,18 @@ export default function TilesPage() {
     )
   }
 
-  if (loading) return <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-32" />
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <LoadingCard key={i} variant="comfortable" />
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

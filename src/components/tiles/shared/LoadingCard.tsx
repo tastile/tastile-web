@@ -1,6 +1,7 @@
 'use client'
 
-import { useTranslation } from '@/lib/i18n/use-translation'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
 import { cn } from '@/lib/utils/cn'
 
 interface LoadingCardProps {
@@ -8,16 +9,26 @@ interface LoadingCardProps {
 }
 
 export function LoadingCard({ variant = 'comfortable' }: LoadingCardProps) {
-  const { t } = useTranslation()
+  const isCompact = variant === 'compact'
+  const isDetailed = variant === 'detailed'
 
   return (
-    <div className={cn(
-      "rounded-xl bg-surface-1 text-sm text-foreground-muted",
-      variant === 'compact' && "p-3",
-      variant === 'comfortable' && "p-3",
-      variant === 'detailed' && "p-4"
-    )}>
-      {t('common.loading')}
+    <div
+      className={cn(
+        TILE_CARD_STYLES.base,
+        isCompact && TILE_CARD_STYLES.padding.compact,
+        !isCompact && !isDetailed && TILE_CARD_STYLES.padding.comfortable,
+        isDetailed && TILE_CARD_STYLES.padding.detailed
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-5 w-5 rounded-full" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          {!isCompact && <Skeleton className="h-3 w-1/2" />}
+        </div>
+        <Skeleton className="h-4 w-12" />
+      </div>
     </div>
   )
 }

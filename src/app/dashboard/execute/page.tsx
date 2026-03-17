@@ -12,6 +12,8 @@ import { TileId } from '@/lib/domain/ids'
 import { useDialogStore } from '@/lib/stores/dialog-store'
 import { DeferTileDialog } from '@/components/tiles/dialogs/DeferTileDialog'
 import { DeleteTileDialog } from '@/components/tiles/dialogs/DeleteTileDialog'
+import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
+import { Skeleton } from '@/components/ui/Skeleton'
 
 export default function ExecutePage() {
   const { state, loading, execute } = useExecutionEngine()
@@ -81,7 +83,26 @@ export default function ExecutePage() {
     )
   }
 
-  if (loading) return <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-32" />
+        <div className="rounded-xl bg-surface-1 p-4">
+          <Skeleton className="h-24 w-full" />
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-xl bg-surface-1 p-4">
+            <Skeleton className="mb-3 h-4 w-24" />
+            <LoadingCard variant="compact" />
+          </div>
+          <div className="rounded-xl bg-surface-1 p-4">
+            <Skeleton className="mb-3 h-4 w-24" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
