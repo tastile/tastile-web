@@ -3,6 +3,7 @@
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { getTileLifecycle, type Tile } from '@/lib/domain/tile'
 import type { TileId } from '@/lib/domain/ids'
+import { BUTTON_STYLES } from '@/lib/styles/button-styles'
 import { cn } from '@/lib/utils/cn'
 
 interface TileActionButtonsProps {
@@ -36,10 +37,8 @@ export function TileActionButtons({ tile, variant, ...actions }: TileActionButto
         onClick()
       }}
       className={cn(
-        "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
-        primary
-          ? "bg-primary text-primary-fg hover:bg-primary/90"
-          : "bg-surface-2 text-foreground hover:bg-surface-1"
+        "rounded-lg px-3 py-1.5 text-xs font-semibold",
+        primary ? BUTTON_STYLES.primary : BUTTON_STYLES.secondary
       )}
     >
       {children}

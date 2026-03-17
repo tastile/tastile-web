@@ -10,9 +10,10 @@ interface TileStatusIconProps {
   onClick?: () => void
   disabled?: boolean
   size?: number
+  className?: string
 }
 
-export function TileStatusIcon({ lifecycle, onClick, disabled = false, size = 20 }: TileStatusIconProps) {
+export function TileStatusIcon({ lifecycle, onClick, disabled = false, size = 20, className }: TileStatusIconProps) {
   const IconComponent = lifecycle === 'ready'
     ? Circle
     : lifecycle === 'started'
@@ -32,10 +33,11 @@ export function TileStatusIcon({ lifecycle, onClick, disabled = false, size = 20
       onClick={handleClick}
       disabled={disabled || !onClick}
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-lg transition-colors",
-        !disabled && onClick && "hover:bg-surface-2",
+        "flex shrink-0 items-center justify-center rounded-full transition-all",
+        !disabled && onClick && "hover:ring-2 hover:ring-border-strong hover:ring-offset-2 hover:ring-offset-background cursor-pointer",
         disabled && "opacity-50 cursor-not-allowed",
-        TILE_STATUS_COLORS[lifecycle]
+        TILE_STATUS_COLORS[lifecycle],
+        className
       )}
       aria-label={`Status: ${lifecycle}`}
     >

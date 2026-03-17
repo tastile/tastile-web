@@ -40,8 +40,8 @@ export type TileStatus = "ready" | "started" | "done";
  * Base styling configuration for tile card components
  */
 export const TILE_CARD_STYLES = {
-  base: "rounded-xl bg-surface-1 border border-surface-2 transition-colors",
-  hover: "hover:bg-surface-2",
+  base: "rounded-xl bg-surface-1 border border-surface-2 transition-all",
+  hover: "hover:bg-surface-2 hover:shadow-md hover:border-border-strong cursor-pointer",
   padding: {
     compact: "p-2.5",
     comfortable: "p-3",
