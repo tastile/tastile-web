@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { TileStatistics } from '@/components/account/TileStatistics'
 import { SubscriptionSection } from '@/components/account/SubscriptionSection'
+import { UsageDashboard } from '@/components/account/UsageDashboard'
 
 type TabId = 'profile' | 'subscription' | 'statistics' | 'usage'
 
@@ -80,9 +81,7 @@ export default function AccountPage() {
             <p className="text-foreground-secondary">
               Track your activity and productivity over time.
             </p>
-            <div className="p-4 bg-surface-secondary rounded-lg border border-border">
-              <p className="text-sm text-foreground-tertiary">Usage charts coming soon...</p>
-            </div>
+            <UsageDashboard />
           </div>
         )}
       </div>
