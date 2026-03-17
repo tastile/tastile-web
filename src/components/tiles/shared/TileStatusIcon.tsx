@@ -33,7 +33,7 @@ export function TileStatusIcon({ lifecycle, onClick, disabled = false, size = 20
       onClick={handleClick}
       disabled={disabled || !onClick}
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-full transition-all",
+        "flex shrink-0 items-center justify-center rounded-full transition-all relative",
         !disabled && onClick && "hover:ring-2 hover:ring-border-strong hover:ring-offset-2 hover:ring-offset-background cursor-pointer",
         disabled && "opacity-50 cursor-not-allowed",
         TILE_STATUS_COLORS[lifecycle],
@@ -41,7 +41,10 @@ export function TileStatusIcon({ lifecycle, onClick, disabled = false, size = 20
       )}
       aria-label={`Status: ${lifecycle}`}
     >
-      <IconComponent size={size} />
+      {lifecycle === 'started' && (
+        <div className="absolute inset-0 rounded-full bg-current animate-ping opacity-75" />
+      )}
+      <IconComponent size={size} className="relative z-10" />
     </button>
   )
 }
