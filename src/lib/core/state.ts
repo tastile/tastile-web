@@ -1,7 +1,6 @@
-// src/lib/core/state.ts
+import { Execution } from '../domain/execution'
 import { TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
-import { Execution } from '../domain/execution'
 import { EventEnvelope } from './event'
 
 export interface AppState {

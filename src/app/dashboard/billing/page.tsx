@@ -1,21 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function BillingPage() {
   const [plan, setPlan] = useState<string>('free')
   const [loading, setLoading] = useState(true)
   const [managingBilling, setManagingBilling] = useState(false)
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
-  useEffect(() => {
-    loadPlan()
-  }, [])
-
-  async function loadPlan() {
+  const loadPlan = useEffectEvent(async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
     const { data } = await supabase
       .from('profiles')
@@ -27,7 +26,11 @@ export default function BillingPage() {
       setPlan(data.plan)
     }
     setLoading(false)
-  }
+  })
+
+  useEffect(() => {
+    void loadPlan()
+  }, [])
 
   async function manageBilling() {
     setManagingBilling(true)

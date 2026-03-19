@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { PhaseKind } from '@/lib/domain/execution'
+import { TileStatusIcon } from '@/components/tiles/shared/TileStatusIcon'
 
 interface ActiveExecutionBarProps {
   activeTileTitle: string | null
@@ -11,10 +12,9 @@ interface ActiveExecutionBarProps {
 }
 
 export function ActiveExecutionBar({ activeTileTitle, phaseKind, phaseStartedAt, phaseEndsAt }: ActiveExecutionBarProps) {
-  const [nowMs, setNowMs] = useState(0)
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
   useEffect(() => {
-    setNowMs(Date.now())
     const interval = setInterval(() => {
       setNowMs(Date.now())
     }, 1000)
@@ -38,12 +38,8 @@ export function ActiveExecutionBar({ activeTileTitle, phaseKind, phaseStartedAt,
   const progress = Math.max(0, Math.min(100, (elapsed / totalSeconds) * 100))
 
   return (
-    <div className="flex items-center gap-6 max-w-2xl border-l-4 border-primary pl-4 py-4">
-      {/* Pulsing indicator */}
-      <div className="relative shrink-0">
-        <div className="h-3 w-3 rounded-full bg-primary" />
-        <div className="absolute inset-0 h-3 w-3 rounded-full bg-primary animate-ping opacity-75" />
-      </div>
+    <div className="flex items-center gap-6 max-w-2xl py-4">
+      <TileStatusIcon lifecycle="started" size={20} className="shrink-0" />
 
       <span className="text-base font-semibold text-foreground truncate">
         {activeTileTitle}

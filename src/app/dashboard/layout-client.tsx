@@ -5,7 +5,6 @@ import { QuickTileCreate } from '@/components/tiles/QuickTileCreate'
 import { RightSidebar } from '@/components/layout/RightSidebar'
 import { useEffect, useMemo } from 'react'
 import { useQuickCreateStore } from '@/lib/stores/quick-create-store'
-import { useThemeStore } from '@/lib/stores/theme-store'
 import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
 import { selectNextTile } from '@/lib/scheduler/simple-jit'
 import { getTileLifecycle } from '@/lib/domain/tile'
@@ -18,7 +17,6 @@ export function DashboardLayoutClient({
   children: React.ReactNode
 }) {
   const { open } = useQuickCreateStore()
-  const { theme } = useThemeStore()
   const { state, loading, execute } = useExecutionEngine()
 
   const suggestion = useMemo(() => selectNextTile(state), [state])
@@ -31,13 +29,6 @@ export function DashboardLayoutClient({
         return aTime - bTime
       })
   }, [state])
-
-  // Initialize theme on mount
-  useEffect(() => {
-    const root = document.documentElement
-    root.classList.remove('theme-light', 'theme-gray', 'theme-dark')
-    root.classList.add(`theme-${theme}`)
-  }, [theme])
 
   // Keyboard shortcut: Cmd+N
   useEffect(() => {

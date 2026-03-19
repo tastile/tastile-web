@@ -17,7 +17,8 @@ const dict = {
     navFeatures: "機能",
     navPricing: "料金",
     navDownload: "ダウンロード",
-    navCta: "ダウンロード",
+    navLogin: "ログイン",
+    navCta: "無料で始める",
     heroBadge: "Auto-scheduling execution",
     heroTitle: ["タスクを入れる。", "あとは、", "任せてください。"],
     heroBody: "次に何をすべきか、もう自分で考えなくていい。Tastileはタスクの優先順位・期限・あなたの状態を読み取り、最適なタイルをJITで自動選択します。あなたはただ、実行するだけ。",
@@ -60,6 +61,8 @@ const dict = {
     ctaBody: "Tastileがあなたの代わりに考えます。あなたはただ、実行するだけ。",
     ctaCta1: "無料で始める",
     ctaCta2: "アプリをダウンロード",
+    footerWebApp: "Webアプリ",
+    footerDownload: "ダウンロード",
     footerPrivacy: "プライバシー",
     footerTerms: "利用規約",
     footerPricing: "料金",
@@ -68,7 +71,8 @@ const dict = {
     navFeatures: "Features",
     navPricing: "Pricing",
     navDownload: "Download",
-    navCta: "Download",
+    navLogin: "Log In",
+    navCta: "Get Started Free",
     heroBadge: "Auto-scheduling execution",
     heroTitle: ["Add your tasks.", "The rest is", "on us."],
     heroBody: "Stop deciding what to do next. Tastile reads your priorities, deadlines, and energy — then picks the optimal tile for you. You just execute.",
@@ -111,6 +115,8 @@ const dict = {
     ctaBody: "Tastile thinks so you don't have to. You just execute.",
     ctaCta1: "Get Started Free",
     ctaCta2: "Download App",
+    footerWebApp: "Web App",
+    footerDownload: "Download",
     footerPrivacy: "Privacy",
     footerTerms: "Terms",
     footerPricing: "Pricing",
@@ -142,7 +148,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
         <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <TastileLogo size={22} className="text-zinc-900 dark:text-zinc-100" />
-            <span className="font-mono font-bold text-lg tracking-tight">tastile</span>
+            <span className="font-bold text-lg tracking-tight">tastile</span>
           </Link>
           <nav className="flex items-center gap-1">
             <Link href="#features" className="hidden sm:block px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
@@ -159,6 +165,12 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
               <LanguageToggle />
             </Suspense>
             <ThemeToggle />
+            <Link
+              href="/login"
+              className="hidden sm:block px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors"
+            >
+              {t.navLogin}
+            </Link>
             <Link
               href="/login"
               className="ml-1 px-4 py-2 rounded-md bg-zinc-900 dark:bg-zinc-100 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors"
@@ -333,12 +345,14 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
         <div className="mx-auto max-w-7xl px-6 flex flex-col sm:flex-row justify-between items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
             <TastileLogo size={18} className="text-zinc-900 dark:text-zinc-100" />
-            <span className="font-mono font-bold text-lg text-zinc-900 dark:text-zinc-100">tastile</span>
+            <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100">tastile</span>
           </Link>
           <div className="flex gap-6 text-sm text-zinc-500 dark:text-zinc-400">
+            <Link href="/login" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">{t.footerWebApp}</Link>
+            <Link href="/download" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">{t.footerDownload}</Link>
+            <Link href="/pricing" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">{t.footerPricing}</Link>
             <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">{t.footerPrivacy}</Link>
             <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">{t.footerTerms}</Link>
-            <Link href="/pricing" className="hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">{t.footerPricing}</Link>
           </div>
           <p className="text-xs text-zinc-400 dark:text-zinc-500">&copy; 2026 Tastile. All rights reserved.</p>
         </div>

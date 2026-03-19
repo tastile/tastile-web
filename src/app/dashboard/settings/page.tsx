@@ -1,132 +1,105 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
+import { useThemeStore } from '@/lib/stores/theme-store'
+import { useLocaleStore } from '@/lib/stores/locale-store'
+import { useTranslation } from '@/lib/i18n/use-translation'
 
 export default function SettingsPage() {
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [displayName, setDisplayName] = useState('')
-  const [saving, setSaving] = useState(false)
-  const supabase = createClient()
-
-  useEffect(() => {
-    loadProfile()
-  }, [])
-
-  async function loadProfile() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single()
-
-    if (data) {
-      setProfile(data)
-      setDisplayName(data.display_name || '')
-    }
-    setLoading(false)
-  }
-
-  async function saveProfile(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    await supabase
-      .from('profiles')
-      .update({ display_name: displayName })
-      .eq('id', user.id)
-
-    setSaving(false)
-  }
-
-  if (loading) {
-    return <p className="text-zinc-500 dark:text-zinc-400">Loading...</p>
-  }
+  const { theme, setTheme } = useThemeStore()
+  const { locale, setLocale } = useLocaleStore()
+  const { t } = useTranslation()
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">Settings</h1>
+    <div className="p-8">
+      <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
 
-      {/* Profile */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Profile</h2>
-        <form onSubmit={saveProfile} className="space-y-4">
-          <div>
-            <label className="block text-sm text-zinc-500 dark:text-zinc-400 mb-1">Display Name</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full rounded-lg border border-zinc-300 dark:border-zinc-700 px-3 py-2 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-sm font-medium text-white dark:text-zinc-900 disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save Profile'}
-          </button>
-        </form>
-      </div>
+      {/* Theme Settings */}
+      <section className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t('settings.theme')}</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          <ThemeButton
+            active={theme === 'light'}
+            onClick={() => setTheme('light')}
+            label={t('settings.themeLight')}
+            description="White background"
+          />
+          <ThemeButton
+            active={theme === 'gray'}
+            onClick={() => setTheme('gray')}
+            label={t('settings.themeGray')}
+            description="Gray background"
+          />
+          <ThemeButton
+            active={theme === 'dark'}
+            onClick={() => setTheme('dark')}
+            label={t('settings.themeDark')}
+            description="Dark background"
+          />
+        </div>
+      </section>
 
-      {/* Plan Info */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Plan</h2>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 capitalize">{profile?.plan || 'Free'}</p>
-            <p className="text-zinc-500 dark:text-zinc-400">
-              {profile?.plan === 'pro' ? '$5/month subscription' : 'Free tier'}
-            </p>
-          </div>
-          <Link
-            href="/dashboard/billing"
-            className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-4 py-2 text-sm font-medium text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-          >
-            Manage Billing
-          </Link>
+      {/* Language Settings */}
+      <section className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t('settings.language')}</h2>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <LanguageButton
+            active={locale === 'ja'}
+            onClick={() => setLocale('ja')}
+            label={t('settings.languageJa')}
+          />
+          <LanguageButton
+            active={locale === 'en'}
+            onClick={() => setLocale('en')}
+            label={t('settings.languageEn')}
+          />
         </div>
-        
-        <div className="mt-6 space-y-3">
-          <div>
-            <div className="flex justify-between text-sm">
-              <span className="text-zinc-600 dark:text-zinc-400">Tiles</span>
-              <span className="text-zinc-900 dark:text-zinc-100">
-                {profile?.plan === 'pro' ? '10,000 limit' : '50 limit'}
-              </span>
-            </div>
-          </div>
-          <div>
-            <div className="flex justify-between text-sm">
-              <span className="text-zinc-600 dark:text-zinc-400">History</span>
-              <span className="text-zinc-900 dark:text-zinc-100">
-                {profile?.plan === 'pro' ? '2 years' : '30 days'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Sync Status */}
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Sync</h2>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-zinc-900 dark:text-zinc-100">Cloud sync enabled</span>
-        </div>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
-          Your tiles are automatically synced across all your devices.
-        </p>
-      </div>
+      </section>
     </div>
+  )
+}
+
+interface ThemeButtonProps {
+  active: boolean
+  onClick: () => void
+  label: string
+  description: string
+}
+
+function ThemeButton({ active, onClick, label, description }: ThemeButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl px-5 py-4 text-left transition-shadow ${
+        active
+          ? 'bg-primary text-primary-fg shadow-lg'
+          : 'bg-surface-2 text-foreground shadow-md hover:shadow-lg'
+      }`}
+    >
+      <p className="text-sm font-semibold">{label}</p>
+      <p className="mt-1 text-xs opacity-80">{description}</p>
+    </button>
+  )
+}
+
+interface LanguageButtonProps {
+  active: boolean
+  onClick: () => void
+  label: string
+}
+
+function LanguageButton({ active, onClick, label }: LanguageButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-xl px-5 py-4 text-left transition-shadow ${
+        active
+          ? 'bg-primary text-primary-fg shadow-lg'
+          : 'bg-surface-2 text-foreground shadow-md hover:shadow-lg'
+      }`}
+    >
+      <p className="text-sm font-semibold">{label}</p>
+    </button>
   )
 }

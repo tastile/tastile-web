@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from 'react'
+import { SiteHeader } from "@/components/SiteHeader";
 
 export default function PricingPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -26,6 +27,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <SiteHeader />
       <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">

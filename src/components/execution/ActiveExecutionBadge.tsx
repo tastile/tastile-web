@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { mockExecutionState } from '@/lib/mock-data'
+import { TileStatusIcon } from '@/components/tiles/shared/TileStatusIcon'
 
 export function ActiveExecutionBadge() {
   const [elapsed, setElapsed] = useState(mockExecutionState.elapsedSeconds)
@@ -31,11 +32,7 @@ export function ActiveExecutionBadge() {
 
   return (
     <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-surface-1 border border-primary/30">
-      {/* Pulsing indicator */}
-      <div className="relative shrink-0">
-        <div className="h-2 w-2 rounded-full bg-primary" />
-        <div className="absolute inset-0 h-2 w-2 rounded-full bg-primary animate-ping opacity-75" />
-      </div>
+      <TileStatusIcon lifecycle="started" size={16} className="shrink-0" />
 
       <span className="text-sm font-semibold text-foreground">{activeTile.title}</span>
       <span className="text-sm font-mono font-semibold tabular-nums text-primary">

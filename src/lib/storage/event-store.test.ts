@@ -4,9 +4,16 @@ import { EventEnvelope } from '../core/event'
 import { Tile } from '../domain/tile'
 import { TileId } from '../domain/ids'
 import { Actor } from '../domain/actor'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+type MockInsertResult = { error: { message: string } | null }
+type MockSelectResult = { data: unknown[]; error: { message: string } | null }
 
 // Mock Supabase client
-function createMockSupabase(insertResult = { error: null }, selectResult = { data: [], error: null }) {
+function createMockSupabase(
+  insertResult: MockInsertResult = { error: null },
+  selectResult: MockSelectResult = { data: [], error: null }
+) {
   const fromMock = vi.fn().mockReturnValue({
     insert: vi.fn().mockResolvedValue(insertResult),
     select: vi.fn().mockReturnValue({
@@ -16,7 +23,7 @@ function createMockSupabase(insertResult = { error: null }, selectResult = { dat
       }),
     }),
   })
-  return { from: fromMock } as any
+  return { from: fromMock } as unknown as SupabaseClient
 }
 
 describe('EventStore', () => {
@@ -62,7 +69,7 @@ describe('EventStore', () => {
       event_id: 'event-123',
       aggregate_id: `tile:${tile.core.id}`,
       event_type: 'tile_created',
-      event_payload: { type: 'tile_created', tile } as any,
+      event_payload: { type: 'tile_created', tile } as const,
       payload_json: null,
       occurred_at: new Date().toISOString(),
       actor_type: 'system',

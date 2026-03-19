@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 interface Prompt {
@@ -14,15 +14,14 @@ interface Prompt {
 export default function PromptPage() {
   const [prompts, setPrompts] = useState<Prompt[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const [supabase] = useState(() => createClient())
 
-  useEffect(() => {
-    loadPrompts()
-  }, [])
-
-  async function loadPrompts() {
+  const loadPrompts = useEffectEvent(async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      setLoading(false)
+      return
+    }
 
     // For web, prompts are simulated based on tile state
     // In a real implementation, these would come from a prompts table
@@ -55,7 +54,11 @@ export default function PromptPage() {
 
     setPrompts(generatedPrompts)
     setLoading(false)
-  }
+  })
+
+  useEffect(() => {
+    void loadPrompts()
+  }, [])
 
   async function respondToPrompt(promptId: string, action: 'continue' | 'break' | 'complete') {
     const prompt = prompts.find(p => p.id === promptId)
@@ -75,7 +78,7 @@ export default function PromptPage() {
     }
     // 'continue' just dismisses the prompt
 
-    setPrompts(prompts.filter(p => p.id !== promptId))
+    setPrompts(current => current.filter(p => p.id !== promptId))
   }
 
   if (loading) {

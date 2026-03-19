@@ -1,7 +1,7 @@
 'use client'
 
 import { createBrowserClient } from '@supabase/ssr'
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 const SupabaseContext = createContext<ReturnType<typeof createBrowserClient> | undefined>(undefined)
 

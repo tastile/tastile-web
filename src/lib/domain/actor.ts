@@ -7,6 +7,6 @@ export interface Actor {
 
 export const Actor = {
   system: (): Actor => ({ type: 'system', id: 'system' }),
-  human: (userId: string): Actor => ({ type: 'human', id: userId }),
-  agent: (agentId: string): Actor => ({ type: 'agent', id: agentId }),
+  human: (id: string): Actor => ({ type: 'human', id }),
+  agent: (id: string): Actor => ({ type: 'agent', id }),
 }

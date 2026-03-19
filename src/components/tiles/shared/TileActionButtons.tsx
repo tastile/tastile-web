@@ -17,19 +17,14 @@ interface TileActionButtonsProps {
   onDelete?: (tileId: TileId) => void
 }
 
-export function TileActionButtons({ tile, variant, ...actions }: TileActionButtonsProps) {
-  const { t } = useTranslation()
-  const lifecycle = getTileLifecycle(tile)
+type ActionButtonProps = {
+  onClick: () => void
+  children: React.ReactNode
+  primary?: boolean
+}
 
-  const ButtonBase = ({
-    onClick,
-    children,
-    primary = false
-  }: {
-    onClick: () => void
-    children: React.ReactNode
-    primary?: boolean
-  }) => (
+function ActionButton({ onClick, children, primary = false }: ActionButtonProps) {
+  return (
     <button
       type="button"
       onClick={(e) => {
@@ -37,38 +32,43 @@ export function TileActionButtons({ tile, variant, ...actions }: TileActionButto
         onClick()
       }}
       className={cn(
-        "rounded-lg px-3 py-1.5 text-xs font-semibold",
+        'rounded-lg px-3 py-1.5 text-xs font-semibold',
         primary ? BUTTON_STYLES.primary : BUTTON_STYLES.secondary
       )}
     >
       {children}
     </button>
   )
+}
+
+export function TileActionButtons({ tile, variant, ...actions }: TileActionButtonsProps) {
+  const { t } = useTranslation()
+  const lifecycle = getTileLifecycle(tile)
 
   if (lifecycle === 'ready') {
     return (
       <div className="flex items-center gap-2 flex-wrap">
         {actions.onStart && (
-          <ButtonBase onClick={() => actions.onStart!(tile.core.id)} primary>
+          <ActionButton onClick={() => actions.onStart!(tile.core.id)} primary>
             {t('tiles.actions.start')}
-          </ButtonBase>
+          </ActionButton>
         )}
         {variant === 'full' && (
           <>
             {actions.onDefer && (
-              <ButtonBase onClick={() => actions.onDefer!(tile.core.id)}>
+              <ActionButton onClick={() => actions.onDefer!(tile.core.id)}>
                 {t('tiles.actions.defer')}
-              </ButtonBase>
+              </ActionButton>
             )}
             {actions.onEdit && (
-              <ButtonBase onClick={() => actions.onEdit!(tile.core.id)}>
+              <ActionButton onClick={() => actions.onEdit!(tile.core.id)}>
                 {t('tiles.actions.edit')}
-              </ButtonBase>
+              </ActionButton>
             )}
             {actions.onDelete && (
-              <ButtonBase onClick={() => actions.onDelete!(tile.core.id)}>
+              <ActionButton onClick={() => actions.onDelete!(tile.core.id)}>
                 {t('tiles.actions.delete')}
-              </ButtonBase>
+              </ActionButton>
             )}
           </>
         )}
@@ -80,26 +80,26 @@ export function TileActionButtons({ tile, variant, ...actions }: TileActionButto
     return (
       <div className="flex items-center gap-2 flex-wrap">
         {actions.onComplete && (
-          <ButtonBase onClick={() => actions.onComplete!(tile.core.id)} primary>
+          <ActionButton onClick={() => actions.onComplete!(tile.core.id)} primary>
             {t('tiles.actions.complete')}
-          </ButtonBase>
+          </ActionButton>
         )}
         {variant === 'full' && (
           <>
             {actions.onInterrupt && (
-              <ButtonBase onClick={() => actions.onInterrupt!(tile.core.id)}>
+              <ActionButton onClick={() => actions.onInterrupt!(tile.core.id)}>
                 {t('tiles.actions.interrupt')}
-              </ButtonBase>
+              </ActionButton>
             )}
             {actions.onEdit && (
-              <ButtonBase onClick={() => actions.onEdit!(tile.core.id)}>
+              <ActionButton onClick={() => actions.onEdit!(tile.core.id)}>
                 {t('tiles.actions.edit')}
-              </ButtonBase>
+              </ActionButton>
             )}
             {actions.onDelete && (
-              <ButtonBase onClick={() => actions.onDelete!(tile.core.id)}>
+              <ActionButton onClick={() => actions.onDelete!(tile.core.id)}>
                 {t('tiles.actions.delete')}
-              </ButtonBase>
+              </ActionButton>
             )}
           </>
         )}
@@ -111,9 +111,9 @@ export function TileActionButtons({ tile, variant, ...actions }: TileActionButto
   if (variant === 'full' && actions.onDelete) {
     return (
       <div className="flex items-center gap-2">
-        <ButtonBase onClick={() => actions.onDelete!(tile.core.id)}>
+        <ActionButton onClick={() => actions.onDelete!(tile.core.id)}>
           {t('tiles.actions.delete')}
-        </ButtonBase>
+        </ActionButton>
       </div>
     )
   }

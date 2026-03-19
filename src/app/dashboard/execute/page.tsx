@@ -52,33 +52,33 @@ export default function ExecutePage() {
   }
 
   async function handleDefer(tileId: string) {
-    const tile = state.tiles.get(tileId as any)
+    const tile = state.tiles.get(toTileId(tileId))
     if (!tile) return
     openDeferDialog(tile, 'defer')
   }
 
   async function handleInterrupt(tileId: string) {
-    const tile = state.tiles.get(tileId as any)
+    const tile = state.tiles.get(toTileId(tileId))
     if (!tile) return
     openDeferDialog(tile, 'interrupt')
   }
 
   async function handleDeferConfirm(tileId: string, nextStartAt: Date) {
     await execute(
-      { type: 'defer_tile', tile_id: tileId as any, deferred_at: new Date(), next_start_at: nextStartAt },
+      { type: 'defer_tile', tile_id: toTileId(tileId), deferred_at: new Date(), next_start_at: nextStartAt },
       Actor.human('self')
     )
   }
 
   async function handleDelete(tileId: string) {
-    const tile = state.tiles.get(tileId as any)
+    const tile = state.tiles.get(toTileId(tileId))
     if (!tile) return
     openDeleteDialog(tile)
   }
 
   async function handleDeleteConfirm(tileId: string) {
     await execute(
-      { type: 'delete_tile', tile_id: tileId as any, deleted_at: new Date() },
+      { type: 'delete_tile', tile_id: toTileId(tileId), deleted_at: new Date() },
       Actor.human('self')
     )
   }
@@ -176,3 +176,6 @@ export default function ExecutePage() {
     </div>
   )
 }
+  function toTileId(tileId: string) {
+    return TileId.fromString(tileId)
+  }

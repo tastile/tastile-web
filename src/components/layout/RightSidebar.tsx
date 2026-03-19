@@ -14,8 +14,9 @@ interface RightSidebarProps {
   loading?: boolean
 }
 
-export function RightSidebar({ nextTile, nextReason, onStartSuggested, timelineTiles, loading = false }: RightSidebarProps) {
+export function RightSidebar({ nextTile, nextReason: _nextReason, onStartSuggested, timelineTiles, loading = false }: RightSidebarProps) {
   const { t } = useTranslation()
+  void _nextReason
 
   return (
     <aside className="relative flex w-72 flex-col gap-3 bg-surface-0">

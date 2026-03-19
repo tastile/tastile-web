@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -55,53 +56,59 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
         className="shrink-0 flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-border"
       >
         {avatarUrl ? (
-          <img
+          <Image
             src={avatarUrl}
             alt={displayName}
+            width={28}
+            height={28}
             className="block h-7 w-7 shrink-0 rounded-full object-cover"
             referrerPolicy="no-referrer"
+            unoptimized
           />
         ) : (
-          <div className="h-7 w-7 shrink-0 rounded-full bg-surface-secondary flex items-center justify-center text-xs font-medium text-foreground-secondary">
+          <div className="h-7 w-7 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-xs font-medium text-foreground-muted">
             {initials}
           </div>
         )}
         <ChevronUp
           size={12}
-          className={`text-foreground-tertiary transition-transform duration-200 ${open ? 'rotate-0' : 'rotate-180'}`}
+          className={`text-foreground-muted transition-transform duration-200 ${open ? 'rotate-0' : 'rotate-180'}`}
           aria-hidden
         />
       </button>
 
       <div
-        className={`absolute ${menuPositionClass} w-64 rounded-xl border border-border bg-surface shadow-lg z-50 transition-all duration-200 ${
+        className={`absolute ${menuPositionClass} z-50 w-64 rounded-xl border border-border bg-surface-elevated shadow-lg transition-all duration-200 ${
           open ? 'pointer-events-auto opacity-100 translate-y-0 scale-100' : 'pointer-events-none opacity-0 translate-y-1 scale-95'
         }`}
       >
-          <div className="p-4 border-b border-border-subtle">
+          <div className="border-b border-border p-4">
             <div className="flex items-center gap-3">
               {avatarUrl ? (
-                <img
+                <Image
                   src={avatarUrl}
                   alt={displayName}
+                  width={40}
+                  height={40}
                   className="block h-10 w-10 shrink-0 rounded-full object-cover"
                   referrerPolicy="no-referrer"
+                  unoptimized
                 />
               ) : (
-                <div className="h-10 w-10 shrink-0 rounded-full bg-surface-secondary flex items-center justify-center text-sm font-medium text-foreground-secondary">
+                <div className="h-10 w-10 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-sm font-medium text-foreground-muted">
                   {initials}
                 </div>
               )}
               <div className="min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">{displayName}</p>
-                <p className="text-xs text-foreground-tertiary truncate">{email}</p>
+                <p className="text-xs text-foreground-muted truncate">{email}</p>
               </div>
             </div>
             <div className="mt-2">
               <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
                 plan === 'pro'
                   ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
-                  : 'bg-surface-secondary text-foreground-secondary'
+                  : 'bg-surface-2 text-foreground-muted'
               }`}>
                 {plan === 'pro' ? 'Pro' : 'Free'}
               </span>
@@ -111,19 +118,19 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
           <div className="py-1">
             <a
               href="/dashboard/account"
-              className="block px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-hover"
+              className="block px-4 py-2 text-sm text-foreground-muted hover:bg-surface-2"
             >
               Account settings
             </a>
             <a
               href={plan === 'pro' ? '/dashboard/billing' : '/pricing'}
-              className="block px-4 py-2 text-sm text-foreground-secondary hover:bg-surface-hover"
+              className="block px-4 py-2 text-sm text-foreground-muted hover:bg-surface-2"
             >
               {plan === 'pro' ? 'Billing' : 'Upgrade to Pro'}
             </a>
             <button
               onClick={handleSignOut}
-              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-surface-hover"
+              className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-surface-2"
             >
               Sign out
             </button>

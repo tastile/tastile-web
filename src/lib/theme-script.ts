@@ -2,16 +2,18 @@
 export const themeScript = `
 (function() {
   try {
-    const stored = localStorage.getItem('theme-storage');
+    const stored = localStorage.getItem('tastile-theme');
     if (stored) {
       const { state } = JSON.parse(stored);
       const theme = state?.theme || 'light';
       document.documentElement.classList.add('theme-' + theme);
     } else {
-      document.documentElement.classList.add('theme-light');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.add(prefersDark ? 'theme-gray' : 'theme-light');
     }
   } catch (e) {
-    document.documentElement.classList.add('theme-light');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.classList.add(prefersDark ? 'theme-gray' : 'theme-light');
   }
 })();
 `;

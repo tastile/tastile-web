@@ -1,11 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { useDialogStore } from '@/lib/stores/dialog-store'
 import { getCurrentLocalDate, getCurrentLocalTime, parseDateTimeParts } from '@/lib/utils/tile-formatters'
-import { cn } from '@/lib/utils/cn'
 
 interface DeferTileDialogProps {
   onConfirm: (tileId: string, nextStartAt: Date) => void
@@ -17,20 +16,15 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
   const [datePart, setDatePart] = useState('')
   const [timePart, setTimePart] = useState('')
 
-  // Initialize with current date/time when dialog opens
-  useEffect(() => {
-    if (deferDialog.open) {
-      setDatePart(getCurrentLocalDate())
-      setTimePart(getCurrentLocalTime())
-    }
-  }, [deferDialog.open])
-
   if (!deferDialog.open || !deferDialog.tile) return null
+
+  const resolvedDatePart = datePart || getCurrentLocalDate()
+  const resolvedTimePart = timePart || getCurrentLocalTime()
 
   const handleConfirm = () => {
     if (!deferDialog.tile) return
 
-    const nextStartAt = parseDateTimeParts(datePart, timePart)
+    const nextStartAt = parseDateTimeParts(resolvedDatePart, resolvedTimePart)
     if (!nextStartAt) {
       alert('Invalid date/time')
       return
@@ -41,6 +35,8 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
   }
 
   const handleCancel = () => {
+    setDatePart('')
+    setTimePart('')
     closeDeferDialog()
   }
 
@@ -79,13 +75,13 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
             <div className="flex gap-2">
               <input
                 type="date"
-                value={datePart}
+                value={resolvedDatePart}
                 onChange={(e) => setDatePart(e.target.value)}
                 className="flex-1 rounded-lg border border-surface-2 bg-surface-1 px-3 py-2 text-sm text-foreground"
               />
               <input
                 type="time"
-                value={timePart}
+                value={resolvedTimePart}
                 onChange={(e) => setTimePart(e.target.value)}
                 className="flex-1 rounded-lg border border-surface-2 bg-surface-1 px-3 py-2 text-sm text-foreground"
               />
