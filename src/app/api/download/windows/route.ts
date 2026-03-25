@@ -6,9 +6,6 @@ const DEFAULT_MANIFEST_URL =
   (SUPABASE_URL
     ? `${SUPABASE_URL}/storage/v1/object/public/releases/updates/desktop/manifest.json`
     : '')
-const LEGACY_DOWNLOAD_URL = SUPABASE_URL
-  ? `${SUPABASE_URL}/storage/v1/object/public/releases/tastile-0.1.0-setup.exe`
-  : 'https://tastile.app/download'
 
 type DesktopManifest = {
   latest_version?: string
@@ -17,7 +14,7 @@ type DesktopManifest = {
 
 export async function GET() {
   if (!DEFAULT_MANIFEST_URL) {
-    return NextResponse.redirect(LEGACY_DOWNLOAD_URL, 302)
+    return NextResponse.json({ error: 'desktop_download_unavailable' }, { status: 503 })
   }
 
   try {
@@ -32,5 +29,5 @@ export async function GET() {
     // fall through to legacy download path
   }
 
-  return NextResponse.redirect(LEGACY_DOWNLOAD_URL, 302)
+  return NextResponse.json({ error: 'desktop_download_unavailable' }, { status: 503 })
 }

@@ -28,15 +28,14 @@ describe('GET /api/download/windows', () => {
     expect(response.headers.get('location')).toBe('https://cdn.example.com/tastile-desktop-0.2.0.exe')
   })
 
-  it('falls back to legacy installer when manifest cannot be fetched', async () => {
+  it('returns service unavailable when manifest cannot be fetched', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
 
     const { GET } = await import('./route')
     const response = await GET()
 
-    expect(response.status).toBe(302)
-    expect(response.headers.get('location')).toBe(
-      'https://example.supabase.co/storage/v1/object/public/releases/tastile-0.1.0-setup.exe'
-    )
+    expect(response.status).toBe(503)
+    const payload = await response.json()
+    expect(payload.error).toBe('desktop_download_unavailable')
   })
 })
