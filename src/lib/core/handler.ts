@@ -282,7 +282,10 @@ export class CommandHandler {
       }
 
       case 'request_prompt': {
-        const prompt = state.execution.pendingPrompt ?? inferPromptFromState(state, command.tile_id, command.requested_at)
+        if (state.execution.pendingPrompt) {
+          return events
+        }
+        const prompt = inferPromptFromState(state, command.tile_id, command.requested_at)
         if (!prompt) return events
         events.push(
           this.wrap(envelope, 'execution:singleton', {

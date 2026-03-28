@@ -254,7 +254,7 @@ export function QuickTileCreate() {
 
     setSubmitting(true)
     try {
-      const e2eBypassAuth = process.env.E2E_BYPASS_AUTH === '1' || process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1'
+      const e2eBypassAuth = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1'
       const user = e2eBypassAuth
         ? { id: 'e2e-user' }
         : (await supabase.auth.getUser()).data.user

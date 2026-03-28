@@ -16,6 +16,7 @@ interface ActiveExecutionBarProps {
 
 export function ActiveExecutionBar({ activeTileTitle, phaseKind, phaseStartedAt, phaseEndsAt }: ActiveExecutionBarProps) {
   const [nowMs, setNowMs] = useState(() => Date.now())
+  const [requestPromptPending, setRequestPromptPending] = useState(false)
   const { state, execute } = useExecutionEngineContext()
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export function ActiveExecutionBar({ activeTileTitle, phaseKind, phaseStartedAt,
   }
 
   const phaseLabel = phaseKind === 'break' ? '休憩中' : '実行中'
-  const canRequestPrompt = Boolean(state.execution.activeTileId)
+  const canRequestPrompt = Boolean(state.execution.activeTileId) && !state.execution.pendingPrompt
 
   return (
     <div className="flex w-full min-w-0 max-w-2xl items-center gap-4 py-4">
@@ -53,16 +54,19 @@ export function ActiveExecutionBar({ activeTileTitle, phaseKind, phaseStartedAt,
           size={20}
           className="shrink-0"
           onClick={() => {
-            if (!canRequestPrompt) return
+            if (!canRequestPrompt || requestPromptPending) return
+            setRequestPromptPending(true)
             void execute(
               {
                 type: 'request_prompt',
-              tile_id: state.execution.activeTileId,
-              requested_at: new Date(),
-              reason: 'status_icon',
-            },
-            Actor.human('self')
-            )
+                tile_id: state.execution.activeTileId,
+                requested_at: new Date(),
+                reason: 'status_icon',
+              },
+              Actor.human('self')
+            ).finally(() => {
+              setRequestPromptPending(false)
+            })
           }}
         />
 

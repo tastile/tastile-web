@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 import { ActiveExecutionBar } from '@/components/execution/ActiveExecutionBar'
 import { TileCardCompact } from '@/components/tiles/TileCardCompact'
@@ -21,7 +21,8 @@ const MAX_VISIBLE_READY_TILES = 40
 export default function ExecutePage() {
   const { state, loading, execute } = useExecutionEngineContext()
   const { openDeferDialog, openDeleteDialog } = useDialogStore()
-  const projection = useMemo(() => buildDashboardProjection(state, new Date()), [state])
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs)), [state, nowMs])
   const visibleReadyTiles = useMemo(
     () => Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done').slice(0, MAX_VISIBLE_READY_TILES),
     [state.tiles]
@@ -29,6 +30,11 @@ export default function ExecutePage() {
   const omittedReadyTiles = Math.max(0, Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done').length - visibleReadyTiles.length)
 
   const activeTile = state.execution.activeTileId ? state.tiles.get(state.execution.activeTileId) ?? null : null
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   async function startTile(tileId: TileId) {
     await execute(

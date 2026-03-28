@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { renderHook, waitFor, act } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TileId } from '../domain/ids'
 import { Actor } from '../domain/actor'
 import type { Command } from '../core/command'
@@ -55,6 +55,10 @@ vi.mock('../wasm/core-engine', () => ({
 }))
 
 describe('useDaemonExecution', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   beforeEach(() => {
     readSnapshotMock.mockReset()
     sendCommandMock.mockReset()
@@ -235,7 +239,7 @@ describe('useDaemonExecution', () => {
           timeline: [],
         })
       )
-      .mockResolvedValueOnce(
+      .mockResolvedValue(
         snapshot({
           tiles: [
             {
@@ -251,10 +255,19 @@ describe('useDaemonExecution', () => {
         })
       )
 
-    const { result } = renderHook(() => useDaemonExecution())
+    const { result, unmount } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
-    await waitFor(() => expect(readSnapshotMock.mock.calls.length).toBeGreaterThanOrEqual(2))
-    expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-periodic-2'))
+    vi.useFakeTimers()
+    try {
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(25)
+      })
+      expect(readSnapshotMock.mock.calls.length).toBeGreaterThanOrEqual(2)
+      expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-periodic-2'))
+      unmount()
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('handles unauthenticated user by stopping loading without stream setup', async () => {

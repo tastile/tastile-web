@@ -10,12 +10,13 @@ export function ActiveExecutionBadge() {
   const { state, execute } = useExecutionEngineContext()
   const { t } = useTranslation()
   const [nowMs, setNowMs] = useState(() => Date.now())
+  const [requestPromptPending, setRequestPromptPending] = useState(false)
   const activeTile = state.execution.activeTileId ? state.tiles.get(state.execution.activeTileId) ?? null : null
   const remaining = useMemo(() => {
     if (!state.execution.phaseEndsAt) return 0
     return Math.max(0, Math.floor((state.execution.phaseEndsAt.getTime() - nowMs) / 1000))
   }, [state.execution.phaseEndsAt, nowMs])
-  const canRequestPrompt = Boolean(state.execution.activeTileId)
+  const canRequestPrompt = Boolean(state.execution.activeTileId) && !state.execution.pendingPrompt
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 1000)
@@ -39,18 +40,21 @@ export function ActiveExecutionBadge() {
           size={16}
           className="shrink-0"
           onClick={() => {
-            if (!canRequestPrompt) return
+            if (!canRequestPrompt || requestPromptPending) return
+            setRequestPromptPending(true)
             void execute(
               {
                 type: 'request_prompt',
-              tile_id: state.execution.activeTileId,
-              requested_at: new Date(),
-              reason: 'status_icon',
-            },
-            Actor.human('self')
-          )
-        }}
-      />
+                tile_id: state.execution.activeTileId,
+                requested_at: new Date(),
+                reason: 'status_icon',
+              },
+              Actor.human('self')
+            ).finally(() => {
+              setRequestPromptPending(false)
+            })
+          }}
+        />
 
       <span className="text-sm font-semibold text-foreground">{activeTile.core.title}</span>
       <span className="text-sm font-mono font-semibold tabular-nums text-primary">

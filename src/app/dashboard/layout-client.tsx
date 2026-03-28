@@ -3,7 +3,7 @@
 import { AppShell } from '@/components/layout/AppShell'
 import { QuickTileCreate } from '@/components/tiles/QuickTileCreate'
 import { RightSidebar } from '@/components/layout/RightSidebar'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuickCreateStore } from '@/lib/stores/quick-create-store'
 import { useExecutionEngineContext, ExecutionEngineProvider } from '@/lib/hooks/execution-engine-context'
 import { Actor } from '@/lib/domain/actor'
@@ -25,8 +25,9 @@ export function DashboardLayoutClient({
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { open } = useQuickCreateStore()
   const { state, execute } = useExecutionEngineContext()
+  const [nowMs, setNowMs] = useState(() => Date.now())
 
-  const projection = useMemo(() => buildDashboardProjection(state, new Date()), [state])
+  const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs)), [state, nowMs])
   const activeTimelineTitle = useMemo(
     () => state.timeline.find(item => item.status === 'active')?.title ?? null,
     [state.timeline]
@@ -44,6 +45,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   async function handlePromptSuggested(tileId: TileId) {
     await execute(

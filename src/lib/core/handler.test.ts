@@ -226,4 +226,53 @@ describe('CommandHandler', () => {
     expect(state.execution.activeTileId).toBe(toTileId)
     expect(state.execution.phaseKind).toBe('work')
   })
+
+  it('does not emit prompt_scheduled again when a pending prompt already exists', () => {
+    const state = AppState.initial()
+    const handler = new CommandHandler()
+    const actor = Actor.human('user-1')
+    const tileId = TileId.new()
+    const tile = Tile.create(tileId, 'Prompt target')
+    const at = new Date('2026-03-16T13:00:00.000Z')
+
+    handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'create_tile',
+          tile_id: tileId,
+          tile,
+        },
+        actor
+      ),
+      state
+    )
+
+    state.execution.pendingPrompt = {
+      promptId: 'existing-prompt',
+      tileId,
+      kind: 'end_tile',
+      severity: 'soft',
+      suggestedMinutes: null,
+      reasons: ['already_pending'],
+      actions: ['complete_tile', 'dismiss'],
+      scheduledAt: at,
+      reason: 'Already pending',
+    }
+
+    const events = handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'request_prompt',
+          tile_id: tileId,
+          requested_at: at,
+          reason: 'status_icon',
+        },
+        actor
+      ),
+      state
+    )
+
+    expect(events).toHaveLength(0)
+    expect(state.execution.pendingPrompt?.promptId).toBe('existing-prompt')
+  })
 })

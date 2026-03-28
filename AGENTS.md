@@ -6,10 +6,10 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 **Before doing ANYTHING in this codebase, you MUST read:**
 
-1. **`pomodoroom/CORE_POLICY.md`** - The philosophical foundation inherited from Pomodoroom
-2. **`tastile_docs_bundle/tastile_docs/01_Foundation_and_Core_Principles.md`** - Tastile v1 foundation
-3. **`tastile_docs_bundle/tastile_docs/03_Domain_Model_and_Tile_Conditions.md`** - Tile structure
-4. **`tastile_docs_bundle/tastile_docs/04_Command_Event_and_Reducer_Model.md`** - Write model
+1. **`../pomodoroom/CORE_POLICY.md`** - The philosophical foundation inherited from Pomodoroom
+2. **`../tastile_docs_bundle/tastile_docs/01_Foundation_and_Core_Principles.md`** - Tastile v1 foundation
+3. **`../tastile_docs_bundle/tastile_docs/03_Domain_Model_and_Tile_Conditions.md`** - Tile structure
+4. **`../tastile_docs_bundle/tastile_docs/04_Command_Event_and_Reducer_Model.md`** - Write model
 
 **These documents define absolute constraints that override all implementation decisions.**
 
@@ -189,28 +189,21 @@ Current UI components use `src/lib/mock-data.ts`. When implementing features:
 
 ## Current Implementation Status
 
-As of 2026-03-16:
-- ✅ Supabase schema + migrations (`events`, `tiles`, `profiles`)
-- ✅ `EventStore` stub for persistence (`src/lib/storage/event-store.ts`)
-- ⚠️ `use-execution-engine` hook exists BUT references non-existent imports
-- ✅ Dashboard shell UI (`/dashboard`) - **uses mock data**
-- ❌ **Domain model NOT implemented** - No Tile condition vectors
-- ❌ **Command/Event/Reducer NOT implemented** - Core engine missing
-- ❌ **AppState derivation NOT implemented** - No event replay logic
+As of 2026-03-28:
+- ✅ Supabase schema + migrations exist for `profiles`, `tiles`, and `events`
+- ✅ `Tile` domain model, command/event types, validator, reducer, and `CommandHandler` are present under `src/lib/domain` and `src/lib/core`
+- ✅ `use-execution-engine.ts` delegates to the daemon/WASM-backed execution hook
+- ✅ `/dashboard` routes consume derived execution state through the execution engine context and dashboard projection
+- ⚠️ The implementation still has architecture drift from the spec in places, especially around independent `Execution` snapshots, daemon/WASM compatibility layers, and quota/auth hardening
+- ⚠️ Some dashboard and storage behavior still depends on compatibility projections rather than a fully spec-aligned tile-truth model
 
-**The execution engine described in progress reports was NEVER committed to this repo.**
+### What Still Needs Work
 
-### What Actually Needs To Be Built
-
-To connect UI to real data, you must:
-1. Implement Tile domain model (7 condition layers) - see doc 03
-2. Implement Command types (StartTile, CompleteTile, etc.) - see doc 04
-3. Implement Event types (TileStarted, TileCompleted, etc.) - see doc 04
-4. Implement Validator (command acceptance rules)
-5. Implement Reducer (events → AppState transformation)
-6. Implement CommandHandler (command → validation → events → append → reduce)
-7. Connect `use-execution-engine` to real types
-8. Replace mock data in UI components with derived state from AppState
+To move from "working branch" to "spec-aligned release candidate", focus on:
+1. Reducing drift between the current `Execution` snapshot model and the tile-truth model in doc 03
+2. Tightening Supabase quota/auth behavior so runtime guarantees match the repo docs
+3. Removing remaining compatibility shortcuts in projection and storage code
+4. Expanding tests around dashboard execution flows, prompt behavior, and migrations
 
 Refer to Rust Core implementation as reference (`tastile-core/crates/`).
 
@@ -229,7 +222,7 @@ These documents are THE source of truth. Read them before implementing:
 - `../tastile-core/crates/` - Rust Core reference implementation
 
 ### Implementation Guides
-- Other files in `tastile_docs_bundle/tastile_docs/` (05-20) for specific subsystems
+- Other files in `../tastile_docs_bundle/tastile_docs/` (05-20) for specific subsystems
 
 ## Environment Variables
 

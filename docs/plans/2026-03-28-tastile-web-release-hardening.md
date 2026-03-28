@@ -31,11 +31,11 @@
 ### Task 1: Freeze The Target Model
 
 **Files:**
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\domain\tile.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\domain\execution.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\state.ts`
-- Test: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\command.test.ts`
-- Test: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\prompt-parity.test.ts`
+- Modify: `src/lib/domain/tile.ts`
+- Modify: `src/lib/domain/execution.ts`
+- Modify: `src/lib/core/state.ts`
+- Test: `src/lib/core/command.test.ts`
+- Test: `src/lib/core/prompt-parity.test.ts`
 
 **Step 1: Write failing tests for the target state shape**
 
@@ -68,12 +68,12 @@ git commit -m "refactor: align app state with tile-truth model"
 ### Task 2: Rebuild Command/Event/Reducer Around The Spec
 
 **Files:**
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\command.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\event.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\validate.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\handler.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\reducer\index.ts`
-- Test: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\core\handler.test.ts`
+- Modify: `src/lib/core/command.ts`
+- Modify: `src/lib/core/event.ts`
+- Modify: `src/lib/core/validate.ts`
+- Modify: `src/lib/core/handler.ts`
+- Modify: `src/lib/core/reducer/index.ts`
+- Test: `src/lib/core/handler.test.ts`
 
 **Step 1: Add failing tests for canonical command flows**
 
@@ -105,10 +105,10 @@ git commit -m "refactor: rebuild command event reducer pipeline"
 ### Task 3: Make Storage Honor Tile Conditions And Event Ordering
 
 **Files:**
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\storage\event-store.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\storage\tile-repository.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\supabase\migrations\20260317000001_free_tile_limit_100.sql`
-- Test: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\storage\event-store.test.ts`
+- Modify: `src/lib/storage/event-store.ts`
+- Modify: `src/lib/storage/tile-repository.ts`
+- Modify: `supabase/migrations/20260317000001_free_tile_limit_100.sql`
+- Test: `src/lib/storage/event-store.test.ts`
 
 **Step 1: Add failing storage tests**
 
@@ -140,14 +140,14 @@ git commit -m "fix: align storage with tile conditions and event ordering"
 ### Task 4: Reconnect Dashboard To Real Derived State
 
 **Files:**
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\hooks\use-daemon-execution.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\hooks\use-execution-engine.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\projection\dashboard-projection.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\app\dashboard\execute\page.tsx`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\app\dashboard\tiles\page.tsx`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\app\dashboard\history\page.tsx`
-- Remove or isolate: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\mock-data.ts`
-- Test: `C:\Users\rebui\Desktop\tastile\tastile-web\src\app\dashboard\history\page.test.tsx`
+- Modify: `src/lib/hooks/use-daemon-execution.ts`
+- Modify: `src/lib/hooks/use-execution-engine.ts`
+- Modify: `src/lib/projection/dashboard-projection.ts`
+- Modify: `src/app/dashboard/execute/page.tsx`
+- Modify: `src/app/dashboard/tiles/page.tsx`
+- Modify: `src/app/dashboard/history/page.tsx`
+- Remove or isolate: `src/lib/mock-data.ts`
+- Test: `src/app/dashboard/history/page.test.tsx`
 
 **Step 1: Add failing UI/projection tests**
 
@@ -178,12 +178,12 @@ git commit -m "feat: connect dashboard to derived execution state"
 ### Task 5: Normalize Auth And Environment For Production
 
 **Files:**
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\supabase\env.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\supabase\client.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\supabase\server.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\src\app\auth\callback\route.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\.env.local.example`
-- Test: `C:\Users\rebui\Desktop\tastile\tastile-web\src\lib\supabase\env.test.ts`
+- Modify: `src/lib/supabase/env.ts`
+- Modify: `src/lib/supabase/client.ts`
+- Modify: `src/lib/supabase/server.ts`
+- Modify: `src/app/auth/callback/route.ts`
+- Modify: `.env.local.example`
+- Test: `src/lib/supabase/env.test.ts`
 
 **Step 1: Add failing env tests**
 
@@ -214,10 +214,10 @@ git commit -m "fix: normalize supabase auth environment contract"
 ### Task 6: Add A Real Release Gate
 
 **Files:**
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\playwright.config.ts`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\e2e\*`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\package.json`
-- Modify: `C:\Users\rebui\Desktop\tastile\tastile-web\README.md`
+- Modify: `playwright.config.ts`
+- Modify: `e2e/*`
+- Modify: `package.json`
+- Modify: `README.md`
 
 **Step 1: Add failing E2E coverage**
 
