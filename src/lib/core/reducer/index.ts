@@ -30,6 +30,7 @@ export function reduce(state: AppState, event: Event): void {
         id: event.segment_id,
         startAt: event.started_at,
         endAt: null,
+        expectedEndAt: event.expected_end_at ?? null,
         mode: event.mode,
         sourceTileId: event.tile_id,
       }
@@ -146,6 +147,9 @@ function selectActiveSegment(state: AppState): { tile: StateTile; segment: Segme
 }
 
 function derivePhaseEndsAt(tile: StateTile, segment: Segment): Date | null {
+  if (segment.expectedEndAt) {
+    return segment.expectedEndAt
+  }
   if (segment.mode === 'break') {
     const restMin = tile.objective.targetRestMin ?? 5
     return new Date(segment.startAt.getTime() + restMin * 60 * 1000)

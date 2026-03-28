@@ -28,12 +28,12 @@ export function DashboardLayoutClient({
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { open } = useQuickCreateStore()
   const { state, execute } = useExecutionEngineContext()
-  const [nowMs, setNowMs] = useState(() => Date.now())
+  const [nowMs, setNowMs] = useState<number | null>(null)
 
-  const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs)), [state, nowMs])
+  const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs ?? 0)), [state, nowMs])
   const activeTimelineTitle = useMemo(
-    () => state.timeline.find(item => item.status === 'active')?.title ?? null,
-    [state.timeline]
+    () => projection.timeline.blocks.find(block => block.status === 'active')?.title ?? null,
+    [projection.timeline.blocks]
   )
 
   // Keyboard shortcut: Cmd+N
@@ -50,8 +50,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [open])
 
   useEffect(() => {
+    const seedTimer = window.setTimeout(() => setNowMs(Date.now()), 0)
     const interval = window.setInterval(() => setNowMs(Date.now()), 1000)
-    return () => window.clearInterval(interval)
+    return () => {
+      window.clearTimeout(seedTimer)
+      window.clearInterval(interval)
+    }
   }, [])
 
   async function handlePromptSuggested(tileId: TileId) {

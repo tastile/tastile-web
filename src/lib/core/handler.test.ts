@@ -308,9 +308,67 @@ describe('CommandHandler', () => {
     const events = handler.handle(envelope, state)
 
     const segmentEnded = events.find(event => event.event.type === 'segment_ended')
+    const segmentStarted = events.find(event => event.event.type === 'segment_started')
     expect(segmentEnded?.event.type).toBe('segment_ended')
     if (segmentEnded?.event.type === 'segment_ended') {
       expect(segmentEnded.event.ended_at).toEqual(issuedAt)
     }
+    expect(segmentStarted?.event.type).toBe('segment_started')
+    if (segmentStarted?.event.type === 'segment_started') {
+      expect(segmentStarted.event.expected_end_at?.toISOString()).toBe('2026-03-16T14:15:00.000Z')
+    }
+    expect(state.execution.phaseEndsAt?.toISOString()).toBe('2026-03-16T14:15:00.000Z')
+  })
+
+  it('generates a fresh prompt id each time a prompt is rescheduled', () => {
+    const state = AppState.initial()
+    const handler = new CommandHandler()
+    const actor = Actor.human('user-1')
+    const tileId = TileId.new()
+    const tile = Tile.create(tileId, 'Prompt target')
+    const startedAt = new Date('2026-03-16T15:00:00.000Z')
+
+    handler.handle(
+      CommandEnvelope.create({ type: 'create_tile', tile_id: tileId, tile }, actor),
+      state
+    )
+    handler.handle(
+      CommandEnvelope.create({ type: 'start_tile', tile_id: tileId, started_at: startedAt, source: 'manual' }, actor),
+      state
+    )
+
+    const first = handler.handle(
+      CommandEnvelope.create(
+        { type: 'request_prompt', tile_id: tileId, requested_at: new Date('2026-03-16T15:05:00.000Z'), reason: 'status_icon' },
+        actor
+      ),
+      state
+    )
+    const firstPrompt = first.find(event => event.event.type === 'prompt_scheduled')
+    if (!firstPrompt || firstPrompt.event.type !== 'prompt_scheduled') {
+      throw new Error('Expected first prompt_scheduled event')
+    }
+
+    handler.handle(
+      CommandEnvelope.create(
+        { type: 'clear_prompt', prompt_id: firstPrompt.event.prompt_id, reason: 'dismissed' },
+        actor
+      ),
+      state
+    )
+
+    const second = handler.handle(
+      CommandEnvelope.create(
+        { type: 'request_prompt', tile_id: tileId, requested_at: new Date('2026-03-16T15:06:00.000Z'), reason: 'status_icon' },
+        actor
+      ),
+      state
+    )
+    const secondPrompt = second.find(event => event.event.type === 'prompt_scheduled')
+    if (!secondPrompt || secondPrompt.event.type !== 'prompt_scheduled') {
+      throw new Error('Expected second prompt_scheduled event')
+    }
+
+    expect(secondPrompt.event.prompt_id).not.toBe(firstPrompt.event.prompt_id)
   })
 })

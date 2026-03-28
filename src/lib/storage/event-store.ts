@@ -132,7 +132,11 @@ function normalizeEvent(event: Event): Event | null {
     case 'tile_deleted':
       return { ...event, deleted_at: new Date(event.deleted_at) }
     case 'segment_started':
-      return { ...event, started_at: new Date(event.started_at) }
+      return {
+        ...event,
+        started_at: new Date(event.started_at),
+        expected_end_at: event.expected_end_at ? new Date(event.expected_end_at) : null,
+      }
     case 'segment_ended':
       return { ...event, ended_at: new Date(event.ended_at) }
     case 'break_started':
@@ -192,6 +196,7 @@ function normalizeEvent(event: Event): Event | null {
               ...seg,
               startAt: new Date(seg.startAt),
               endAt: seg.endAt ? new Date(seg.endAt) : null,
+              expectedEndAt: seg.expectedEndAt ? new Date(seg.expectedEndAt) : null,
             })),
           },
           temporal: {

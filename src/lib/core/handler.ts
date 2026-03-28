@@ -248,6 +248,7 @@ export class CommandHandler {
         const tile = state.tiles.get(command.tile_id)
         const openSegment = tile ? [...tile.work.segments].reverse().find(s => !s.endAt) : null
         if (!openSegment) return events
+        const expectedEndAt = new Date(envelope.issued_at.getTime() + command.delta_min * 60 * 1000)
         events.push(
           this.wrap(envelope, `tile:${command.tile_id}`, {
             type: 'segment_ended',
@@ -264,6 +265,7 @@ export class CommandHandler {
             tile_id: command.tile_id,
             mode: openSegment.mode,
             started_at: envelope.issued_at,
+            expected_end_at: expectedEndAt,
           })
         )
         return events
@@ -332,7 +334,7 @@ function inferPromptFromState(
   const openSegment = [...tile.work.segments].reverse().find(seg => !seg.endAt)
   if (openSegment?.mode === 'break') {
     return {
-      promptId: `manual-end-break-${tileId}`,
+      promptId: generatePromptId('manual-end-break', tileId),
       tileId,
       kind: 'end_break',
       severity: 'elevated',
@@ -346,7 +348,7 @@ function inferPromptFromState(
 
   if (tile.core.startedAt && !tile.core.completedAt) {
     return {
-      promptId: `manual-end-tile-${tileId}`,
+      promptId: generatePromptId('manual-end-tile', tileId),
       tileId,
       kind: 'end_tile',
       severity: 'soft',
@@ -359,7 +361,7 @@ function inferPromptFromState(
   }
 
   return {
-    promptId: `manual-start-tile-${tileId}`,
+    promptId: generatePromptId('manual-start-tile', tileId),
     tileId,
     kind: 'start_tile',
     severity: 'soft',
@@ -369,6 +371,10 @@ function inferPromptFromState(
     scheduledAt: at,
     reason: 'User requested',
   }
+}
+
+function generatePromptId(prefix: string, tileId: TileId | null): string {
+  return `${prefix}:${tileId ?? 'none'}:${EventId.new()}`
 }
 
 export function cloneState(state: AppState): AppState {

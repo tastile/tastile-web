@@ -26,7 +26,7 @@ DECLARE
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtext(NEW.user_id::text));
 
-  SELECT plan INTO user_plan FROM public.profiles WHERE id = NEW.user_id;
+  SELECT COALESCE(plan, 'free') INTO user_plan FROM public.profiles WHERE id = NEW.user_id;
 
   IF user_plan = 'pro' THEN
     max_tiles := 10000;
@@ -83,8 +83,18 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  SELECT current_active_tile_count(NEW.user_id)
-    INTO active_tiles;
+  SELECT COUNT(DISTINCT e.aggregate_id)
+    INTO active_tiles
+    FROM public.events e
+   WHERE e.user_id = NEW.user_id
+     AND e.event_type = 'tile_created'
+     AND NOT EXISTS (
+       SELECT 1
+         FROM public.events deleted
+        WHERE deleted.user_id = e.user_id
+          AND deleted.aggregate_id = e.aggregate_id
+          AND deleted.event_type = 'tile_deleted'
+     );
 
   IF active_tiles >= max_tiles THEN
     RAISE EXCEPTION 'Tile limit reached (% of %)', active_tiles, max_tiles;

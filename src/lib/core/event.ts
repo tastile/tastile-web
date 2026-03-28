@@ -34,6 +34,7 @@ export type Event =
       tile_id: TileId
       mode: SegmentMode
       started_at: Date
+      expected_end_at?: Date | null
     }
   | {
       type: 'segment_ended'
