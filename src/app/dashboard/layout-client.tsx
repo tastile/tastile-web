@@ -3,32 +3,42 @@
 import { AppShell } from '@/components/layout/AppShell'
 import { QuickTileCreate } from '@/components/tiles/QuickTileCreate'
 import { RightSidebar } from '@/components/layout/RightSidebar'
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuickCreateStore } from '@/lib/stores/quick-create-store'
-import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
-import { selectNextTile } from '@/lib/scheduler/simple-jit'
-import { getTileLifecycle } from '@/lib/domain/tile'
+import { useExecutionEngineContext, ExecutionEngineProvider } from '@/lib/hooks/execution-engine-context'
 import { Actor } from '@/lib/domain/actor'
 import { TileId } from '@/lib/domain/ids'
+import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
+
+const TIMELINE_MAX_VISIBLE_BLOCKS = 18
+const TIMELINE_MAX_CANVAS_HEIGHT_PX = 640
 
 export function DashboardLayoutClient({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { open } = useQuickCreateStore()
-  const { state, loading, execute } = useExecutionEngine()
+  return (
+    <ExecutionEngineProvider>
+      <DashboardLayoutInner>{children}</DashboardLayoutInner>
+    </ExecutionEngineProvider>
+  )
+}
 
-  const suggestion = useMemo(() => selectNextTile(state), [state])
-  const timelineTiles = useMemo(() => {
-    return Array.from(state.tiles.values())
-      .filter(tile => getTileLifecycle(tile) !== 'done')
-      .sort((a, b) => {
-        const aTime = a.temporal.fixedStart?.getTime() ?? Infinity
-        const bTime = b.temporal.fixedStart?.getTime() ?? Infinity
-        return aTime - bTime
-      })
-  }, [state])
+function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
+  const { open } = useQuickCreateStore()
+  const { state, execute } = useExecutionEngineContext()
+  const [nowMs, setNowMs] = useState<number | null>(null)
+
+  const projection = useMemo(
+    () => (nowMs === null ? null : buildDashboardProjection(state, new Date(nowMs))),
+    [state, nowMs]
+  )
+  const timelineBlocks = useMemo(() => projection?.timeline.blocks ?? [], [projection])
+  const activeTimelineTitle = useMemo(
+    () => timelineBlocks.find(block => block.status === 'active')?.title ?? null,
+    [timelineBlocks]
+  )
 
   // Keyboard shortcut: Cmd+N
   useEffect(() => {
@@ -43,9 +53,18 @@ export function DashboardLayoutClient({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [open])
 
-  async function handleStartSuggested(tileId: TileId) {
+  useEffect(() => {
+    const seedTimer = window.setTimeout(() => setNowMs(Date.now()), 0)
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => {
+      window.clearTimeout(seedTimer)
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  async function handlePromptSuggested(tileId: TileId) {
     await execute(
-      { type: 'start_tile', tile_id: tileId, started_at: new Date(), source: 'manual' },
+      { type: 'request_prompt', tile_id: tileId, requested_at: new Date(), reason: 'status_icon' },
       Actor.human('self')
     )
   }
@@ -55,20 +74,38 @@ export function DashboardLayoutClient({
       quickCreatePanel={<QuickTileCreate />}
       rightSidebar={
         <RightSidebar
-          nextTile={suggestion?.tile ?? null}
-          nextReason={suggestion?.reason}
-          onStartSuggested={handleStartSuggested}
-          timelineTiles={timelineTiles}
-          loading={loading}
+          nextTile={projection?.next.main ?? null}
+          nextQuickTiles={projection?.next.quick ?? []}
+          onPromptSuggested={handlePromptSuggested}
+          timelineItems={timelineBlocks.map(block => ({
+            id: block.id,
+            date: block.dateLabel,
+            time: block.timeLabel,
+            type: block.type,
+            title: block.title,
+            status: block.status,
+            topPx: block.topPx,
+            heightPx: block.heightPx,
+            lane: block.lane,
+            totalLanes: block.totalLanes,
+            startAt: block.startAt,
+            endAt: block.endAt,
+          }))}
+          timelineCanvasHeightPx={projection?.timeline.canvasHeightPx ?? 0}
+          timelineNowTopPx={projection?.timeline.nowTopPx ?? null}
+          timelineMarkers={projection?.timeline.markers ?? []}
+          timelineMaxVisibleBlocks={TIMELINE_MAX_VISIBLE_BLOCKS}
+          timelineMaxCanvasHeightPx={TIMELINE_MAX_CANVAS_HEIGHT_PX}
         />
       }
       executionState={{
         activeTileTitle: state.execution.activeTileId
-          ? state.tiles.get(state.execution.activeTileId)?.core.title ?? null
-          : null,
+          ? state.tiles.get(state.execution.activeTileId)?.core.title ?? activeTimelineTitle
+          : activeTimelineTitle,
         phaseKind: state.execution.phaseKind,
         phaseStartedAt: state.execution.phaseStartedAt,
         phaseEndsAt: state.execution.phaseEndsAt,
+        pendingPrompt: state.execution.pendingPrompt,
       }}
     >
       {children}

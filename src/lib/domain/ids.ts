@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid'
+import { v4 as uuidv4, validate as isUuid } from 'uuid'
 
 export type TileId = string & { readonly __brand: 'TileId' }
 export type UserId = string & { readonly __brand: 'UserId' }
@@ -42,4 +42,16 @@ export function createTileId(id: string): TileId {
 
 export function createUserId(id: string): UserId {
   return id as UserId
+}
+
+export function normalizeTileId(value: string | null | undefined): TileId | null {
+  if (typeof value !== 'string') return null
+  const raw = value.trim()
+  const unprefixed = raw.toLowerCase().startsWith('urn:uuid:') ? raw.slice('urn:uuid:'.length) : raw
+  if (!isUuid(unprefixed)) return null
+  return TileId.fromString(unprefixed.toLowerCase())
+}
+
+export function isValidTileId(value: string | null | undefined): value is TileId {
+  return normalizeTileId(value) !== null
 }

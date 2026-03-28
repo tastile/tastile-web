@@ -4,17 +4,26 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { TastileLogo } from '@/components/TastileLogo'
+import { tryGetSupabaseEnv } from '@/lib/supabase/env'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-  )
+  const env = tryGetSupabaseEnv()
+  const supabase = env
+    ? createBrowserClient(
+        env.url,
+        env.publishableKey
+      )
+    : null
 
   const handleGoogleLogin = async () => {
+    if (!supabase) {
+      setError('Supabase is not configured')
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -69,7 +78,7 @@ export default function LoginPage() {
 
           <button
             onClick={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={isLoading || !supabase}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm font-semibold text-zinc-900 dark:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
@@ -86,6 +95,12 @@ export default function LoginPage() {
               </>
             )}
           </button>
+
+          {!supabase ? (
+            <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
+              Supabase environment variables are not configured for this deployment.
+            </p>
+          ) : null}
 
           <p className="text-center text-xs text-zinc-400 dark:text-zinc-500">
             ログインすると、<Link href="/terms" className="underline hover:text-zinc-600 dark:hover:text-zinc-300">利用規約</Link>と<Link href="/privacy" className="underline hover:text-zinc-600 dark:hover:text-zinc-300">プライバシーポリシー</Link>に同意したものとみなされます

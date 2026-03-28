@@ -1,11 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
+import { useEffect, useMemo, useState } from 'react'
+import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 import { ActiveExecutionBar } from '@/components/execution/ActiveExecutionBar'
 import { TileCardCompact } from '@/components/tiles/TileCardCompact'
 import { TileCardExpandable } from '@/components/tiles/TileCardExpandable'
-import { selectNextTile } from '@/lib/scheduler/simple-jit'
 import { getTileLifecycle } from '@/lib/domain/tile'
 import { Actor } from '@/lib/domain/actor'
 import { TileId } from '@/lib/domain/ids'
@@ -14,22 +13,29 @@ import { DeferTileDialog } from '@/components/tiles/dialogs/DeferTileDialog'
 import { DeleteTileDialog } from '@/components/tiles/dialogs/DeleteTileDialog'
 import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { TimelineAxis } from '@/components/execution/TimelineAxis'
+import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
+
+const MAX_VISIBLE_READY_TILES = 40
 
 export default function ExecutePage() {
-  const { state, loading, execute } = useExecutionEngine()
+  const { state, loading, execute } = useExecutionEngineContext()
   const { openDeferDialog, openDeleteDialog } = useDialogStore()
+  const [nowMs, setNowMs] = useState(() => Date.now())
+  const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs)), [state, nowMs])
+  const readyTiles = useMemo(
+    () => Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done'),
+    [state.tiles]
+  )
+  const visibleReadyTiles = useMemo(() => readyTiles.slice(0, MAX_VISIBLE_READY_TILES), [readyTiles])
+  const omittedReadyTiles = Math.max(0, readyTiles.length - visibleReadyTiles.length)
 
   const activeTile = state.execution.activeTileId ? state.tiles.get(state.execution.activeTileId) ?? null : null
-  const suggestion = useMemo(() => selectNextTile(state), [state])
-  const timelineTiles = useMemo(() => {
-    return Array.from(state.tiles.values())
-      .filter(tile => getTileLifecycle(tile) !== 'done')
-      .sort((a, b) => {
-        const aTime = a.temporal.fixedStart?.getTime() ?? Infinity
-        const bTime = b.temporal.fixedStart?.getTime() ?? Infinity
-        return aTime - bTime
-      })
-  }, [state])
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNowMs(Date.now()), 1000)
+    return () => window.clearInterval(interval)
+  }, [])
 
   async function startTile(tileId: TileId) {
     await execute(
@@ -120,19 +126,26 @@ export default function ExecutePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-xl bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Next Tile</h2>
-          <TileCardCompact tile={suggestion?.tile ?? null} onStart={startTile} loading={loading} />
+          <TileCardCompact tile={projection.next.main} onStart={startTile} loading={loading} />
+          {projection.next.quick.length > 0 ? (
+            <div className="mt-2 flex gap-2 overflow-x-auto">
+              {projection.next.quick.map(tile => (
+                <TileCardCompact key={tile.core.id} tile={tile} onStart={startTile} />
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="rounded-xl bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Timeline</h2>
-          <div className="space-y-2">
-            {timelineTiles.map(tile => (
-              <TileCardCompact key={tile.core.id} tile={tile} onStart={startTile} loading={loading} />
-            ))}
-            {timelineTiles.length === 0 && (
-              <p className="text-sm text-foreground-muted">No upcoming tiles</p>
-            )}
-          </div>
+          <TimelineAxis
+            blocks={projection.timeline.blocks}
+            markers={projection.timeline.markers}
+            canvasHeightPx={projection.timeline.canvasHeightPx}
+            nowTopPx={projection.timeline.nowTopPx}
+            maxVisibleBlocks={48}
+            maxCanvasHeightPx={960}
+          />
         </div>
       </div>
 
@@ -149,9 +162,10 @@ export default function ExecutePage() {
           </button>
         </div>
         <div className="space-y-2">
-          {Array.from(state.tiles.values())
-            .filter(tile => getTileLifecycle(tile) !== 'done')
-            .map(tile => (
+          {omittedReadyTiles > 0 ? (
+            <p className="text-xs uppercase tracking-wider text-foreground-muted">+{omittedReadyTiles} omitted</p>
+          ) : null}
+          {visibleReadyTiles.map(tile => (
               <TileCardExpandable
                 key={tile.core.id}
                 tile={tile}
@@ -160,12 +174,11 @@ export default function ExecutePage() {
                 onComplete={completeActive}
                 onDefer={handleDefer}
                 onInterrupt={handleInterrupt}
-                onEdit={(id) => console.log('Edit', id)}
                 onDelete={handleDelete}
               />
             ))}
-          {state.tiles.size === 0 ? (
-            <p className="text-sm text-foreground-muted">No tiles yet. Click the + button to create one.</p>
+          {visibleReadyTiles.length === 0 ? (
+            <p className="text-sm text-foreground-muted">No ready tiles right now. Click the + button to create one.</p>
           ) : null}
         </div>
       </div>

@@ -1,0 +1,118 @@
+import { describe, expect, it, vi } from 'vitest'
+import { TileId } from '../domain/ids'
+import { DaemonClient } from './client'
+
+describe('DaemonClient', () => {
+  it('does not throw illegal invocation when using global fetch reference', async () => {
+    const originalFetch = globalThis.fetch
+    const fakeFetch = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          in_progress_tiles: [],
+          prompt_queue: [],
+          timeline: [],
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    })
+
+    globalThis.fetch = fakeFetch as unknown as typeof fetch
+    try {
+      const client = new DaemonClient({
+        baseUrl: 'https://daemon.example',
+      })
+      const snapshot = await client.readSnapshot()
+      expect(snapshot.timeline).toEqual([])
+      expect(fakeFetch).toHaveBeenCalledTimes(1)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('reads snapshot with auth header', async () => {
+    const fetchImpl = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          in_progress_tiles: [],
+          prompt_queue: [],
+          timeline: [],
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    })
+    const client = new DaemonClient({
+      baseUrl: 'https://daemon.example',
+      fetchImpl,
+      getAccessToken: async () => 'access-token-1',
+    })
+
+    const snapshot = await client.readSnapshot()
+
+    expect(snapshot).toEqual({
+      inProgressTiles: [],
+      promptQueue: [],
+      timeline: [],
+    })
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://daemon.example/execution/snapshot',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          authorization: 'Bearer access-token-1',
+        }),
+      })
+    )
+  })
+
+  it('sends command with auth header and receives accepted envelope', async () => {
+    const fetchImpl = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          accepted: true,
+          command_id: 'cmd-1',
+          request_id: 'req-1',
+        }),
+        {
+          status: 202,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    })
+
+    const client = new DaemonClient({
+      baseUrl: 'https://daemon.example',
+      fetchImpl,
+      getAccessToken: async () => 'access-token-1',
+    })
+
+    const result = await client.sendCommand({
+      type: 'start_tile',
+      tileId: TileId.fromString('tile-1'),
+      startedAt: new Date('2026-03-26T09:00:00.000Z'),
+      source: 'manual',
+    })
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1)
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://daemon.example/commands',
+      expect.objectContaining({
+        method: 'POST',
+        headers: expect.objectContaining({
+          authorization: 'Bearer access-token-1',
+          'content-type': 'application/json',
+        }),
+      })
+    )
+    expect(result).toEqual({
+      accepted: true,
+      commandId: 'cmd-1',
+      requestId: 'req-1',
+    })
+  })
+})

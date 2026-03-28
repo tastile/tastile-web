@@ -135,6 +135,13 @@ export const translations = {
       loading: '読み込み中',
     },
 
+    prompt: {
+      actions: {
+        extend: '延長',
+        endBreak: '休憩終了',
+      },
+    },
+
     // Tiles
     tiles: {
       actions: {
@@ -292,6 +299,13 @@ export const translations = {
       edit: 'Edit',
       close: 'Close',
       loading: 'Loading',
+    },
+
+    prompt: {
+      actions: {
+        extend: 'Extend',
+        endBreak: 'End break',
+      },
     },
 
     // Tiles

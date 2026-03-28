@@ -24,6 +24,7 @@ export interface Segment {
   id: SegmentId
   startAt: Date
   endAt: Date | null
+  expectedEndAt?: Date | null
   mode: SegmentMode
   sourceTileId: TileId
 }

@@ -58,7 +58,9 @@ export class EventStore {
       throw new Error(`Failed to load events: ${error.message}`)
     }
 
-    return (data || []).map((row: EventRow) => this.deserialize(row))
+    return (data || [])
+      .map((row: EventRow) => this.deserialize(row))
+      .filter((value): value is EventEnvelope => value !== null)
   }
 
   async loadSince(sinceEventId: EventId): Promise<EventEnvelope[]> {
@@ -83,14 +85,21 @@ export class EventStore {
       throw new Error(`Failed to load events since ${sinceEventId}: ${error.message}`)
     }
 
-    return (data || []).map((row: EventRow) => this.deserialize(row))
+    return (data || [])
+      .map((row: EventRow) => this.deserialize(row))
+      .filter((value): value is EventEnvelope => value !== null)
   }
 
-  deserialize(row: EventRow): EventEnvelope {
+  deserialize(row: EventRow): EventEnvelope | null {
     // Support both new event_payload and old payload_json column
     const eventPayload = row.event_payload ?? row.payload_json
     if (!eventPayload) {
       throw new Error(`Event row ${row.event_id} has no payload`)
+    }
+
+    const normalizedEvent = normalizeEvent(eventPayload)
+    if (!normalizedEvent) {
+      return null
     }
 
     return {
@@ -103,12 +112,12 @@ export class EventStore {
       } as Actor,
       caused_by_command_id: row.caused_by_command_id as CommandId | null,
       request_id: row.request_id as RequestId | null,
-      event: normalizeEvent(eventPayload),
+      event: normalizedEvent,
     }
   }
 }
 
-function normalizeEvent(event: Event): Event {
+function normalizeEvent(event: Event): Event | null {
   switch (event.type) {
     case 'tile_started':
       return { ...event, started_at: new Date(event.started_at) }
@@ -123,10 +132,40 @@ function normalizeEvent(event: Event): Event {
     case 'tile_deleted':
       return { ...event, deleted_at: new Date(event.deleted_at) }
     case 'segment_started':
-      return { ...event, started_at: new Date(event.started_at) }
+      return {
+        ...event,
+        started_at: new Date(event.started_at),
+        expected_end_at: event.expected_end_at ? new Date(event.expected_end_at) : null,
+      }
     case 'segment_ended':
       return { ...event, ended_at: new Date(event.ended_at) }
-    case 'tile_created':
+    case 'break_started':
+      return {
+        ...event,
+        started_at: new Date(event.started_at),
+        ends_at: new Date(event.ends_at),
+      }
+    case 'break_ended':
+      return {
+        ...event,
+        ended_at: new Date(event.ended_at),
+      }
+    case 'tile_interrupted':
+      return {
+        ...event,
+        interrupted_at: new Date(event.interrupted_at),
+      }
+    case 'prompt_scheduled':
+      return {
+        ...event,
+        scheduled_at: new Date(event.scheduled_at),
+      }
+    case 'prompt_cleared':
+      return {
+        ...event,
+        cleared_at: new Date(event.cleared_at),
+      }
+    case 'tile_created': {
       const temporal = event.tile.temporal ?? {
         releaseAt: null,
         dueAt: null,
@@ -140,6 +179,9 @@ function normalizeEvent(event: Event): Event {
         labels: [],
         timedLabels: [],
       }
+      const work = event.tile.work ?? { segments: [] }
+      const segments = Array.isArray(work.segments) ? work.segments : []
+      const timedLabels = Array.isArray(annotation.timedLabels) ? annotation.timedLabels : []
       return {
         ...event,
         tile: {
@@ -150,10 +192,11 @@ function normalizeEvent(event: Event): Event {
             completedAt: event.tile.core.completedAt ? new Date(event.tile.core.completedAt) : null,
           },
           work: {
-            segments: event.tile.work.segments.map(seg => ({
+            segments: segments.map(seg => ({
               ...seg,
               startAt: new Date(seg.startAt),
               endAt: seg.endAt ? new Date(seg.endAt) : null,
+              expectedEndAt: seg.expectedEndAt ? new Date(seg.expectedEndAt) : null,
             })),
           },
           temporal: {
@@ -167,7 +210,7 @@ function normalizeEvent(event: Event): Event {
           },
           annotation: {
             ...annotation,
-            timedLabels: annotation.timedLabels.map(label => ({
+            timedLabels: timedLabels.map(label => ({
               ...label,
               startAt: label.startAt ? new Date(label.startAt) : null,
               endAt: label.endAt ? new Date(label.endAt) : null,
@@ -175,5 +218,8 @@ function normalizeEvent(event: Event): Event {
           },
         },
       }
+    }
+    default:
+      return null
   }
 }

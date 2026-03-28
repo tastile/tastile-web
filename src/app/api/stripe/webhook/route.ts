@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(request: Request) {
+  let stripe
+  try {
+    stripe = getStripe()
+  } catch {
+    return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 })
+  }
+
   // Lazy load Supabase client to avoid build-time errors
   const { createClient } = await import('@supabase/supabase-js')
   
@@ -21,9 +28,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim()
+  if (!webhookSecret) {
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+  }
+
   let event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret)
   } catch {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }

@@ -6,6 +6,11 @@ import { RightSidebar } from './RightSidebar'
 import { MobileBottomTabs } from './MobileBottomTabs'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { PendingPrompt, PromptAction } from '@/lib/domain/execution'
+import { GlobalPromptBanner } from '@/components/execution/GlobalPromptBanner'
+import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
+import { Actor } from '@/lib/domain/actor'
+import { Command } from '@/lib/core/command'
 
 interface AppShellProps {
   children: React.ReactNode
@@ -16,13 +21,17 @@ interface AppShellProps {
     phaseKind: 'work' | 'break' | 'idle'
     phaseStartedAt: Date | null
     phaseEndsAt: Date | null
+    pendingPrompt?: PendingPrompt | null
   }
 }
 
 const RAIL_PINNED_KEY = 'dashboard-left-rail-pinned'
+const DEFAULT_PROMPT_EXTENSION_MINUTES = 5
 
 export function AppShell({ children, rightSidebar, quickCreatePanel, executionState }: AppShellProps) {
+  const { execute } = useExecutionEngineContext()
   const [showSidebar, setShowSidebar] = useState(true)
+  const [handlingPromptAction, setHandlingPromptAction] = useState(false)
   const [railPinned, setRailPinned] = useState(() => {
     if (typeof window === 'undefined') {
       return false
@@ -36,6 +45,35 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
 
   return (
     <div className="flex h-screen flex-col bg-surface-0">
+      <GlobalPromptBanner
+        prompt={executionState?.pendingPrompt ?? null}
+        onDismiss={() => {
+          const prompt = executionState?.pendingPrompt
+          if (!prompt) return
+          void execute({ type: 'clear_prompt', prompt_id: prompt.promptId, reason: 'dismissed' }, Actor.human('self'))
+        }}
+        onAction={(action) => {
+          const prompt = executionState?.pendingPrompt
+          if (!prompt || handlingPromptAction) return
+          void (async () => {
+            setHandlingPromptAction(true)
+            try {
+              const command = toPromptActionCommand(action, prompt)
+              if (command) {
+                await execute(command, Actor.human('self'))
+                await execute({ type: 'clear_prompt', prompt_id: prompt.promptId, reason: 'actioned' }, Actor.human('self'))
+              } else if (action === 'dismiss') {
+                await execute({ type: 'clear_prompt', prompt_id: prompt.promptId, reason: 'dismissed' }, Actor.human('self'))
+              } else {
+                await execute({ type: 'clear_prompt', prompt_id: prompt.promptId, reason: 'dismissed' }, Actor.human('self'))
+              }
+            } finally {
+              setHandlingPromptAction(false)
+            }
+          })()
+        }}
+      />
+
       {/* Header */}
       <div className="p-3">
         <Header
@@ -61,7 +99,7 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
         <div className="hidden lg:block">{quickCreatePanel}</div>
 
         <div className="hidden lg:block">
-          {showSidebar && (rightSidebar ?? <RightSidebar nextTile={null} timelineTiles={[]} loading={false} />)}
+          {showSidebar && (rightSidebar ?? <RightSidebar nextTile={null} timelineItems={[]} />)}
         </div>
       </div>
 
@@ -81,4 +119,32 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
       </button>
     </div>
   )
+}
+
+function toPromptActionCommand(
+  action: PromptAction,
+  prompt: PendingPrompt
+): Command | null {
+  const tileId = prompt.tileId
+  if (action === 'dismiss') return null
+  if (action === 'start_tile' && tileId) {
+    return { type: 'start_tile', tile_id: tileId, started_at: new Date(), source: 'prompt' }
+  }
+  if (action === 'complete_tile' && tileId) {
+    return { type: 'complete_tile', tile_id: tileId, completed_at: new Date(), next_tile_id: null }
+  }
+  if (action === 'defer_tile' && tileId) {
+    return { type: 'defer_tile', tile_id: tileId, deferred_at: new Date(), next_start_at: null }
+  }
+  if (action === 'extend_phase' && tileId) {
+    return {
+      type: 'extend_phase',
+      tile_id: tileId,
+      delta_min: prompt.suggestedMinutes ?? DEFAULT_PROMPT_EXTENSION_MINUTES,
+    }
+  }
+  if (action === 'end_break') {
+    return { type: 'end_break', tile_id: tileId, ended_at: new Date() }
+  }
+  return null
 }
