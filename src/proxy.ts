@@ -41,7 +41,7 @@ export async function proxy(request: NextRequest) {
 
   const protectedPaths = ['/dashboard', '/app']
   const isProtectedPath = protectedPaths.some(path =>
-    request.nextUrl.pathname.startsWith(path)
+    request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(`${path}/`)
   )
 
   if (isProtectedPath && !user) {

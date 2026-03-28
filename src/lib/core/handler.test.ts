@@ -275,4 +275,42 @@ describe('CommandHandler', () => {
     expect(events).toHaveLength(0)
     expect(state.execution.pendingPrompt?.promptId).toBe('existing-prompt')
   })
+
+  it('closes the current segment at now when extending a phase', () => {
+    const state = AppState.initial()
+    const handler = new CommandHandler()
+    const actor = Actor.human('user-1')
+    const tileId = TileId.new()
+    const startedAt = new Date('2026-03-16T14:00:00.000Z')
+    const issuedAt = new Date('2026-03-16T14:10:00.000Z')
+
+    handler.handle(
+      CommandEnvelope.create(
+        { type: 'create_tile', tile_id: tileId, tile: Tile.create(tileId, 'Extend target') },
+        actor
+      ),
+      state
+    )
+    handler.handle(
+      CommandEnvelope.create(
+        { type: 'start_tile', tile_id: tileId, started_at: startedAt, source: 'manual' },
+        actor
+      ),
+      state
+    )
+
+    const envelope = CommandEnvelope.create(
+      { type: 'extend_phase', tile_id: tileId, delta_min: 5 } as never,
+      actor
+    )
+    envelope.issued_at = issuedAt
+
+    const events = handler.handle(envelope, state)
+
+    const segmentEnded = events.find(event => event.event.type === 'segment_ended')
+    expect(segmentEnded?.event.type).toBe('segment_ended')
+    if (segmentEnded?.event.type === 'segment_ended') {
+      expect(segmentEnded.event.ended_at).toEqual(issuedAt)
+    }
+  })
 })

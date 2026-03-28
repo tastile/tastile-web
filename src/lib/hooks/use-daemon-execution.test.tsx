@@ -122,7 +122,7 @@ describe('useDaemonExecution', () => {
     expect(createWasmExecutionEngineMock).toHaveBeenCalledTimes(1)
     expect(readSnapshotMock).not.toHaveBeenCalled()
     expect(openExecutionStreamMock).not.toHaveBeenCalled()
-    expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-wasm'))
+    expect(result.current.state.execution.activeTileId).toEqual(TileId.fromString('tile-wasm'))
 
     await act(async () => {
       await result.current.execute(
@@ -255,10 +255,14 @@ describe('useDaemonExecution', () => {
         })
       )
 
-    const { result, unmount } = renderHook(() => useDaemonExecution())
-    await waitFor(() => expect(result.current.loading).toBe(false))
     vi.useFakeTimers()
     try {
+      const { result, unmount } = renderHook(() => useDaemonExecution())
+      await act(async () => {
+        await Promise.resolve()
+        await Promise.resolve()
+      })
+      expect(result.current.loading).toBe(false)
       await act(async () => {
         await vi.advanceTimersByTimeAsync(25)
       })
@@ -371,12 +375,34 @@ describe('useDaemonExecution', () => {
   })
 
   it('uses daemon backend by default when env is not set', async () => {
-    delete process.env.NEXT_PUBLIC_DAEMON_BASE_URL
     delete process.env.NEXT_PUBLIC_EXECUTION_BACKEND
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL = 'https://daemon.example'
     readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
     renderHook(() => useDaemonExecution())
     await waitFor(() => expect(readSnapshotMock.mock.calls.length).toBeGreaterThanOrEqual(1))
     expect(openExecutionStreamMock).toHaveBeenCalledTimes(1)
+    expect(wasmReadSnapshotMock).not.toHaveBeenCalled()
+  })
+
+  it('stops loading with a safe fallback when daemon snapshot read fails', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockRejectedValueOnce(new Error('network failure'))
+
+    const { result } = renderHook(() => useDaemonExecution())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.state.tiles.size).toBe(0)
+    expect(openExecutionStreamMock).not.toHaveBeenCalled()
+  })
+
+  it('stops loading with a safe fallback when wasm engine creation fails', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    createWasmExecutionEngineMock.mockRejectedValueOnce(new Error('wasm boot failed'))
+
+    const { result } = renderHook(() => useDaemonExecution())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.state.tiles.size).toBe(0)
     expect(wasmReadSnapshotMock).not.toHaveBeenCalled()
   })
 

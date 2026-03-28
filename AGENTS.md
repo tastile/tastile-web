@@ -81,7 +81,7 @@ tastile-web is NOT the primary Tastile experience. It exists to:
 
 Web implementation MUST follow the same Command/Event/Reducer pattern as Rust Core:
 
-```
+```text
 Command (intent)
   ↓
 Validation (can we accept this?)
@@ -105,7 +105,7 @@ Realtime subscription → sync to other devices
 - Events are immutable and append-only
 
 Key file structure (must be created):
-```
+```text
 src/lib/
 ├── domain/          # Tile model (7 condition layers), Execution, Actor, IDs
 ├── core/
@@ -227,7 +227,7 @@ These documents are THE source of truth. Read them before implementing:
 ## Environment Variables
 
 Required in `.env.local`:
-```
+```dotenv
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 SUPABASE_SERVICE_ROLE_KEY=

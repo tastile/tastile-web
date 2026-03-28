@@ -161,7 +161,7 @@ function normalizeEvent(event: Event): Event | null {
         ...event,
         cleared_at: new Date(event.cleared_at),
       }
-    case 'tile_created':
+    case 'tile_created': {
       const temporal = event.tile.temporal ?? {
         releaseAt: null,
         dueAt: null,
@@ -213,6 +213,7 @@ function normalizeEvent(event: Event): Event | null {
           },
         },
       }
+    }
     default:
       return null
   }

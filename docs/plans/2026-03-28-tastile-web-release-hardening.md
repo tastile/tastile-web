@@ -1,6 +1,6 @@
 # Tastile Web Release Hardening Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For AI agents:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** `tastile-web` を、設計文書と整合した最小限の本番投入可能状態まで引き上げる。
 
@@ -241,9 +241,7 @@ Run: `npm run test:e2e`
 Run:
 
 ```bash
-npm run lint
-npm test -- --run
-npm run build
+npm run check:release
 npm run test:e2e
 ```
 
@@ -256,9 +254,7 @@ git commit -m "chore: add release gate and deployment docs"
 
 ## Final Verification Checklist
 
-- `npm run lint`
-- `npm test -- --run`
-- `npm run build`
+- `npm run check:release`
 - `npm run test:e2e`
 - Manual verification:
   - Google login round-trip works in preview/prod env

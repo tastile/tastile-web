@@ -23,11 +23,12 @@ export default function ExecutePage() {
   const { openDeferDialog, openDeleteDialog } = useDialogStore()
   const [nowMs, setNowMs] = useState(() => Date.now())
   const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs)), [state, nowMs])
-  const visibleReadyTiles = useMemo(
-    () => Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done').slice(0, MAX_VISIBLE_READY_TILES),
+  const readyTiles = useMemo(
+    () => Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done'),
     [state.tiles]
   )
-  const omittedReadyTiles = Math.max(0, Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done').length - visibleReadyTiles.length)
+  const visibleReadyTiles = useMemo(() => readyTiles.slice(0, MAX_VISIBLE_READY_TILES), [readyTiles])
+  const omittedReadyTiles = Math.max(0, readyTiles.length - visibleReadyTiles.length)
 
   const activeTile = state.execution.activeTileId ? state.tiles.get(state.execution.activeTileId) ?? null : null
 
@@ -173,12 +174,11 @@ export default function ExecutePage() {
                 onComplete={completeActive}
                 onDefer={handleDefer}
                 onInterrupt={handleInterrupt}
-                onEdit={(id) => console.log('Edit', id)}
                 onDelete={handleDelete}
               />
             ))}
-          {state.tiles.size === 0 ? (
-            <p className="text-sm text-foreground-muted">No tiles yet. Click the + button to create one.</p>
+          {visibleReadyTiles.length === 0 ? (
+            <p className="text-sm text-foreground-muted">No ready tiles right now. Click the + button to create one.</p>
           ) : null}
         </div>
       </div>

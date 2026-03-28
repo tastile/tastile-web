@@ -17,6 +17,8 @@ export interface StreamConnection {
   close(): void
 }
 
+const MAX_SEEN_EVENT_IDS = 10_000
+
 export function openExecutionStream({
   baseUrl,
   getAccessToken,
@@ -60,7 +62,7 @@ export function openExecutionStream({
         const parsed = parseExecutionEvent(event.data)
         if (!parsed) return
         if (seenEventIds.has(parsed.eventId)) return
-        seenEventIds.add(parsed.eventId)
+        addSeenEventId(parsed.eventId)
         onEvent(parsed)
       }
       nextConnection.onerror = () => {
@@ -82,6 +84,15 @@ export function openExecutionStream({
         reconnectTimer = null
         void connect()
       }, reconnectDelayMs)
+    }
+  }
+
+  function addSeenEventId(eventId: string) {
+    seenEventIds.add(eventId)
+    if (seenEventIds.size <= MAX_SEEN_EVENT_IDS) return
+    const oldest = seenEventIds.values().next().value
+    if (oldest) {
+      seenEventIds.delete(oldest)
     }
   }
 }
@@ -107,6 +118,10 @@ function parseExecutionEvent(raw: string): DaemonExecutionEvent | null {
 }
 
 async function defaultConnect(url: string, token: string | null): Promise<StreamConnection> {
+  // Native EventSource cannot send Authorization headers. The query-param token
+  // preserves the current SSE path, but it exposes credentials to URL surfaces
+  // like logs/history/devtools. Prefer short-lived tokens here, or switch this
+  // stream to a fetch-based SSE client if header-based auth becomes necessary.
   const streamUrl = token
     ? `${url}${url.includes('?') ? '&' : '?'}access_token=${encodeURIComponent(token)}`
     : url

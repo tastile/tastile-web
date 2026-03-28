@@ -10,6 +10,9 @@ import { Actor } from '@/lib/domain/actor'
 import { TileId } from '@/lib/domain/ids'
 import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
 
+const TIMELINE_MAX_VISIBLE_BLOCKS = 18
+const TIMELINE_MAX_CANVAS_HEIGHT_PX = 640
+
 export function DashboardLayoutClient({
   children,
 }: {
@@ -83,8 +86,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           timelineCanvasHeightPx={projection.timeline.canvasHeightPx}
           timelineNowTopPx={projection.timeline.nowTopPx}
           timelineMarkers={projection.timeline.markers}
-          timelineMaxVisibleBlocks={18}
-          timelineMaxCanvasHeightPx={640}
+          timelineMaxVisibleBlocks={TIMELINE_MAX_VISIBLE_BLOCKS}
+          timelineMaxCanvasHeightPx={TIMELINE_MAX_CANVAS_HEIGHT_PX}
         />
       }
       executionState={{

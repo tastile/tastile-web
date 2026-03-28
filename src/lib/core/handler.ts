@@ -23,7 +23,7 @@ export class CommandHandler {
     const command = envelope.command
     const events: EventEnvelope[] = []
 
-      switch (command.type) {
+    switch (command.type) {
       case 'create_tile': {
         events.push(this.wrap(envelope, `tile:${command.tile_id}`, { type: 'tile_created', tile: command.tile }))
         return events
@@ -254,7 +254,7 @@ export class CommandHandler {
             segment_id: openSegment.id,
             tile_id: command.tile_id,
             mode: openSegment.mode,
-            ended_at: new Date(envelope.issued_at.getTime() + command.delta_min * 60 * 1000),
+            ended_at: envelope.issued_at,
           })
         )
         events.push(

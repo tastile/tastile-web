@@ -143,6 +143,22 @@ type PersistedWasmEvent = {
   actor: Actor
 }
 
+function isPersistedWasmEvent(value: unknown): value is PersistedWasmEvent {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  const row = value as Record<string, unknown>
+  const actor = row.actor
+  return (
+    !!row.command &&
+    typeof row.command === 'object' &&
+    !Array.isArray(row.command) &&
+    !!actor &&
+    typeof actor === 'object' &&
+    !Array.isArray(actor) &&
+    typeof (actor as Record<string, unknown>).type === 'string' &&
+    typeof (actor as Record<string, unknown>).id === 'string'
+  )
+}
+
 function replayPersistedWasmEvents(engine: WasmExecutionEngine): Promise<void> {
   const storage = getLocalStorage()
   if (!storage) return Promise.resolve()
@@ -157,7 +173,7 @@ function replayPersistedWasmEvents(engine: WasmExecutionEngine): Promise<void> {
   try {
     const parsed = JSON.parse(raw)
     if (Array.isArray(parsed)) {
-      entries = parsed as PersistedWasmEvent[]
+      entries = parsed.filter(isPersistedWasmEvent)
     }
   } catch {
     storage.removeItem(WASM_EVENT_LOG_STORAGE_KEY)

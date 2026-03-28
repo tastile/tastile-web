@@ -66,10 +66,10 @@ BEGIN
     WHERE id = NEW.user_id;
 
   IF user_plan = 'pro' THEN
-    RETURN NEW;
+    max_tiles := 10000;
+  ELSE
+    max_tiles := 100;
   END IF;
-
-  max_tiles := 100;
 
   SELECT EXISTS (
     SELECT 1
@@ -112,6 +112,8 @@ DECLARE
   max_tiles INTEGER;
   tile_count BIGINT;
 BEGIN
+  PERFORM set_config('search_path', 'public, pg_temp', true);
+
   caller_uid := auth.uid();
   IF caller_uid IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
