@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 
 export async function POST(request: Request) {
+  let stripe
+  try {
+    stripe = getStripe()
+  } catch {
+    return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 })
+  }
+
   // Lazy load Supabase client to avoid build-time errors
   const { createClient } = await import('@supabase/supabase-js')
   

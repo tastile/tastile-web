@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { stripe, PLANS } from '@/lib/stripe'
+import { getPlans, getStripe } from '@/lib/stripe'
 
 export async function POST(request: Request) {
+  let stripe
+  let plans
+  try {
+    stripe = getStripe()
+    plans = getPlans()
+  } catch {
+    return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 })
+  }
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -38,7 +47,7 @@ export async function POST(request: Request) {
     customer: customerId,
     mode: 'subscription',
     line_items: [{
-      price: interval === 'yearly' ? PLANS.pro_yearly.priceId : PLANS.pro_monthly.priceId,
+      price: interval === 'yearly' ? plans.pro_yearly.priceId : plans.pro_monthly.priceId,
       quantity: 1,
     }],
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?billing=success`,
