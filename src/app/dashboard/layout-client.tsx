@@ -30,10 +30,14 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const { state, execute } = useExecutionEngineContext()
   const [nowMs, setNowMs] = useState<number | null>(null)
 
-  const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs ?? 0)), [state, nowMs])
+  const projection = useMemo(
+    () => (nowMs === null ? null : buildDashboardProjection(state, new Date(nowMs))),
+    [state, nowMs]
+  )
+  const timelineBlocks = useMemo(() => projection?.timeline.blocks ?? [], [projection])
   const activeTimelineTitle = useMemo(
-    () => projection.timeline.blocks.find(block => block.status === 'active')?.title ?? null,
-    [projection.timeline.blocks]
+    () => timelineBlocks.find(block => block.status === 'active')?.title ?? null,
+    [timelineBlocks]
   )
 
   // Keyboard shortcut: Cmd+N
@@ -70,10 +74,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       quickCreatePanel={<QuickTileCreate />}
       rightSidebar={
         <RightSidebar
-          nextTile={projection.next.main}
-          nextQuickTiles={projection.next.quick}
+          nextTile={projection?.next.main ?? null}
+          nextQuickTiles={projection?.next.quick ?? []}
           onPromptSuggested={handlePromptSuggested}
-          timelineItems={projection.timeline.blocks.map(block => ({
+          timelineItems={timelineBlocks.map(block => ({
             id: block.id,
             date: block.dateLabel,
             time: block.timeLabel,
@@ -87,9 +91,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
             startAt: block.startAt,
             endAt: block.endAt,
           }))}
-          timelineCanvasHeightPx={projection.timeline.canvasHeightPx}
-          timelineNowTopPx={projection.timeline.nowTopPx}
-          timelineMarkers={projection.timeline.markers}
+          timelineCanvasHeightPx={projection?.timeline.canvasHeightPx ?? 0}
+          timelineNowTopPx={projection?.timeline.nowTopPx ?? null}
+          timelineMarkers={projection?.timeline.markers ?? []}
           timelineMaxVisibleBlocks={TIMELINE_MAX_VISIBLE_BLOCKS}
           timelineMaxCanvasHeightPx={TIMELINE_MAX_CANVAS_HEIGHT_PX}
         />

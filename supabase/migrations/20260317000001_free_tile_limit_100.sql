@@ -143,8 +143,18 @@ BEGIN
     max_tiles := 100;
   END IF;
 
-  SELECT current_active_tile_count(uid)
-    INTO tile_count;
+  SELECT COUNT(DISTINCT e.aggregate_id)
+    INTO tile_count
+    FROM public.events e
+   WHERE e.user_id = uid
+     AND e.event_type = 'tile_created'
+     AND NOT EXISTS (
+       SELECT 1
+         FROM public.events deleted
+        WHERE deleted.user_id = e.user_id
+          AND deleted.aggregate_id = e.aggregate_id
+          AND deleted.event_type = 'tile_deleted'
+     );
 
   RETURN jsonb_build_object(
     'plan', user_plan,
