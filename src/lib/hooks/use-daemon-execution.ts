@@ -277,7 +277,7 @@ function toCompatEvents(snapshot: ExecutionSnapshot): EventEnvelope[] {
     if (!row.tileId || row.tileId.startsWith('synthetic:')) continue
     events.push({
       event_id: EventId.fromString(`${row.id}-started`),
-      aggregate_id: row.tileId,
+      aggregate_id: `tile:${row.tileId}`,
       occurred_at: row.startAt,
       actor: system,
       caused_by_command_id: null,
@@ -291,7 +291,7 @@ function toCompatEvents(snapshot: ExecutionSnapshot): EventEnvelope[] {
     if (row.status === 'done' && row.endAt) {
       events.push({
         event_id: EventId.fromString(`${row.id}-completed`),
-        aggregate_id: row.tileId,
+        aggregate_id: `tile:${row.tileId}`,
         occurred_at: row.endAt,
         actor: system,
         caused_by_command_id: null,

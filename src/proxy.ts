@@ -3,7 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { getSupabaseEnv } from '@/lib/supabase/env'
 
 export async function proxy(request: NextRequest) {
-  const bypassAuth = process.env.E2E_BYPASS_AUTH === '1' || process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1'
+  const bypassAuth =
+    process.env.NODE_ENV !== 'production' &&
+    (process.env.E2E_BYPASS_AUTH === '1' || process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1')
   if (bypassAuth) {
     return NextResponse.next({ request })
   }

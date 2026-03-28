@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, type WheelEvent } from 'react'
 
 interface TimelineItem {
   id: string
@@ -52,19 +52,14 @@ export function TimelineAxis({
   const legacyItems = items ?? []
   const [zoom, setZoom] = useState(1)
   const [scope, setScope] = useState<'day' | 'around-now'>('day')
-
-  useEffect(() => {
-    const onWheel = (event: WheelEvent) => {
-      if (!event.ctrlKey) return
-      event.preventDefault()
-      setZoom(prev => {
-        const delta = event.deltaY > 0 ? -0.1 : 0.1
-        return Math.max(0.5, Math.min(3, prev + delta))
-      })
-    }
-    window.addEventListener('wheel', onWheel, { passive: false })
-    return () => window.removeEventListener('wheel', onWheel)
-  }, [])
+  const handleTimelineWheel = (event: WheelEvent<HTMLDivElement>) => {
+    if (!event.ctrlKey) return
+    event.preventDefault()
+    setZoom(prev => {
+      const delta = event.deltaY > 0 ? -0.1 : 0.1
+      return Math.max(0.5, Math.min(3, prev + delta))
+    })
+  }
 
   const effective = useMemo(() => {
     const source = blocks.length > 0 ? blocks : []
@@ -104,7 +99,11 @@ export function TimelineAxis({
     const omitted = Math.max(0, effective.length - visible.length)
 
     return (
-      <div className="relative w-full min-w-0 overflow-x-hidden overflow-y-auto rounded-lg bg-surface-1 p-2" style={{ maxHeight: viewportHeight }}>
+      <div
+        className="relative w-full min-w-0 overflow-x-hidden overflow-y-auto rounded-lg bg-surface-1 p-2"
+        style={{ maxHeight: viewportHeight }}
+        onWheel={handleTimelineWheel}
+      >
         {!compact ? (
           <div className="mb-2 flex items-center gap-2">
             <select

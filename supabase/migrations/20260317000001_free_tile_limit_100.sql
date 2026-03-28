@@ -1,6 +1,10 @@
 -- Free plan tile cap: 100 cloud-saved tiles
 -- Also provide quota RPC used by desktop/core pre-check.
 
+-- Remove legacy pro-only event gate so the tile-based quota is authoritative.
+DROP TRIGGER IF EXISTS enforce_event_limit ON public.events;
+DROP FUNCTION IF EXISTS check_event_limit();
+
 -- Keep legacy tiles-table trigger aligned with current limit policy.
 CREATE OR REPLACE FUNCTION check_tile_limit()
 RETURNS TRIGGER AS $$

@@ -26,6 +26,7 @@ interface AppShellProps {
 }
 
 const RAIL_PINNED_KEY = 'dashboard-left-rail-pinned'
+const DEFAULT_PROMPT_EXTENSION_MINUTES = 5
 
 export function AppShell({ children, rightSidebar, quickCreatePanel, executionState }: AppShellProps) {
   const { execute } = useExecutionEngineContext()
@@ -57,7 +58,7 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
           void (async () => {
             setHandlingPromptAction(true)
             try {
-              const command = toPromptActionCommand(action, prompt.tileId)
+              const command = toPromptActionCommand(action, prompt)
               if (command) {
                 await execute(command, Actor.human('self'))
                 await execute({ type: 'clear_prompt', prompt_id: prompt.promptId, reason: 'actioned' }, Actor.human('self'))
@@ -122,8 +123,9 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
 
 function toPromptActionCommand(
   action: PromptAction,
-  tileId: PendingPrompt['tileId']
+  prompt: PendingPrompt
 ): Command | null {
+  const tileId = prompt.tileId
   if (action === 'dismiss') return null
   if (action === 'start_tile' && tileId) {
     return { type: 'start_tile', tile_id: tileId, started_at: new Date(), source: 'prompt' }
@@ -135,7 +137,11 @@ function toPromptActionCommand(
     return { type: 'defer_tile', tile_id: tileId, deferred_at: new Date(), next_start_at: null }
   }
   if (action === 'extend_phase' && tileId) {
-    return { type: 'extend_phase', tile_id: tileId, delta_min: 5 }
+    return {
+      type: 'extend_phase',
+      tile_id: tileId,
+      delta_min: prompt.suggestedMinutes ?? DEFAULT_PROMPT_EXTENSION_MINUTES,
+    }
   }
   if (action === 'end_break') {
     return { type: 'end_break', tile_id: tileId, ended_at: new Date() }

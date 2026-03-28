@@ -66,4 +66,37 @@ describe('buildDashboardProjection', () => {
     expect(metrics?.countdownLabel).toBe('01:15:00')
     expect(metrics?.progressPercent).toBeCloseTo(16.7, 1)
   })
+
+  it('assigns shared total lanes for blocks that overlap near the end of a long block', () => {
+    const state = AppState.initial()
+    state.timeline = [
+      {
+        id: 'long',
+        tileId: TileId.fromString('tile-long'),
+        title: 'Long focus',
+        type: 'work',
+        status: 'scheduled',
+        startAt: new Date('2026-03-26T09:00:00.000Z'),
+        endAt: new Date('2026-03-26T10:40:00.000Z'),
+      },
+      {
+        id: 'late',
+        tileId: TileId.fromString('tile-late'),
+        title: 'Late overlap',
+        type: 'fixed',
+        status: 'scheduled',
+        startAt: new Date('2026-03-26T10:30:00.000Z'),
+        endAt: new Date('2026-03-26T10:50:00.000Z'),
+      },
+    ]
+
+    const view = buildDashboardProjection(state, new Date('2026-03-26T09:15:00.000Z'))
+    const long = view.timeline.blocks.find(block => block.id === 'long')
+    const late = view.timeline.blocks.find(block => block.id === 'late')
+
+    expect(long?.totalLanes).toBe(2)
+    expect(late?.totalLanes).toBe(2)
+    expect(long?.lane).toBe(0)
+    expect(late?.lane).toBe(1)
+  })
 })

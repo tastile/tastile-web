@@ -172,4 +172,46 @@ describe('GlobalPromptBanner', () => {
       expect.objectContaining({ type: 'human' })
     )
   })
+
+  it('AppShell uses suggested prompt minutes when extending a phase', async () => {
+    executeMock.mockReset()
+    executeMock.mockResolvedValue(undefined)
+    Object.defineProperty(window, 'localStorage', {
+      value: { getItem: vi.fn(() => null), setItem: vi.fn() },
+      configurable: true,
+    })
+
+    render(
+      <AppShell
+        executionState={{
+          activeTileTitle: 'Deep Work',
+          phaseKind: 'work',
+          phaseStartedAt: new Date('2026-03-26T09:00:00.000Z'),
+          phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          pendingPrompt: {
+            promptId: 'p-extend',
+            tileId: TileId.fromString('tile-extend'),
+            kind: 'end_tile',
+            severity: 'critical',
+            suggestedMinutes: 15,
+            reasons: ['work_phase_expired'],
+            actions: ['extend_phase', 'dismiss'],
+            scheduledAt: new Date('2026-03-26T09:25:00.000Z'),
+            reason: 'expired',
+          },
+        }}
+      >
+        <div>Child</div>
+      </AppShell>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'prompt.actions.extend' }))
+
+    await waitFor(() => expect(executeMock).toHaveBeenCalledTimes(2))
+    expect(executeMock).toHaveBeenNthCalledWith(
+      1,
+      { type: 'extend_phase', tile_id: 'tile-extend', delta_min: 15 },
+      expect.objectContaining({ type: 'human' })
+    )
+  })
 })

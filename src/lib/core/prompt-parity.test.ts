@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { AppState } from './state'
 import { reduce } from './reducer'
 import { Event } from './event'
+import { SegmentId, TileId } from '../domain/ids'
+import { Tile } from '../domain/tile'
 
 describe('prompt parity reducer behavior', () => {
   it('stores pending prompt on prompt_scheduled', () => {
@@ -62,6 +64,40 @@ describe('prompt parity reducer behavior', () => {
       } satisfies Event
     )
 
+    expect(state.execution.pendingPrompt).toBeNull()
+  })
+
+  it('does not synthesize pending prompts from lifecycle events during replay', () => {
+    const state = AppState.initial()
+    const tile = Tile.create(TileId.fromString('tile-replay'), 'Replay tile')
+
+    reduce(
+      state,
+      {
+        type: 'tile_created',
+        tile,
+      } satisfies Event
+    )
+    reduce(
+      state,
+      {
+        type: 'tile_started',
+        tile_id: tile.core.id,
+        started_at: new Date('2026-03-26T03:00:00.000Z'),
+      } satisfies Event
+    )
+    reduce(
+      state,
+      {
+        type: 'segment_started',
+        segment_id: SegmentId.fromString('segment-replay'),
+        tile_id: tile.core.id,
+        mode: 'work',
+        started_at: new Date('2026-03-26T03:00:00.000Z'),
+      } satisfies Event
+    )
+
+    expect(state.execution.activeTileId).toBe(tile.core.id)
     expect(state.execution.pendingPrompt).toBeNull()
   })
 })

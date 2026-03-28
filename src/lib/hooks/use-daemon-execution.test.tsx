@@ -204,6 +204,7 @@ describe('useDaemonExecution', () => {
     expect(result.current.state.tiles.size).toBe(1)
     expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-1'))
     expect(result.current.state.execution.pendingPrompt?.promptId).toBe('prompt-1')
+    expect(result.current.state.events[0]?.aggregate_id).toBe('tile:tile-1')
 
     const onEvent = openExecutionStreamMock.mock.calls[0][0].onEvent as (event: { eventId: string }) => void
     await act(async () => {

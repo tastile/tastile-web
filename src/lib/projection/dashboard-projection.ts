@@ -165,7 +165,7 @@ export function buildDashboardProjection(state: AppState, now: Date): DashboardP
 }
 
 function assignLanes(blocks: Array<{ topPx: number; heightPx: number; lane: number; totalLanes: number }>) {
-  const active: Array<{ bottom: number; lane: number }> = []
+  const active: Array<{ bottom: number; lane: number; block: { topPx: number; heightPx: number; lane: number; totalLanes: number } }> = []
   for (const block of blocks) {
     const top = block.topPx
     const bottom = block.topPx + block.heightPx
@@ -178,13 +178,10 @@ function assignLanes(blocks: Array<{ topPx: number; heightPx: number; lane: numb
     let lane = 0
     while (used.has(lane)) lane += 1
     block.lane = lane
-    active.push({ bottom, lane })
+    active.push({ bottom, lane, block })
     const total = Math.max(1, ...active.map(item => item.lane + 1))
-    block.totalLanes = total
-    for (const b of blocks) {
-      if (Math.abs(b.topPx - block.topPx) < block.heightPx) {
-        b.totalLanes = Math.max(b.totalLanes, total)
-      }
+    for (const item of active) {
+      item.block.totalLanes = Math.max(item.block.totalLanes, total)
     }
   }
 }
