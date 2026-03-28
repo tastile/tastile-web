@@ -1,6 +1,6 @@
 'use client'
 
-import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
+import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 import { TileCardExpandable } from '@/components/tiles/TileCardExpandable'
 import { Actor } from '@/lib/domain/actor'
 import { TileId } from '@/lib/domain/ids'
@@ -9,10 +9,17 @@ import { DeferTileDialog } from '@/components/tiles/dialogs/DeferTileDialog'
 import { DeleteTileDialog } from '@/components/tiles/dialogs/DeleteTileDialog'
 import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useMemo } from 'react'
+import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
+
+const MAX_VISIBLE_TILES = 60
 
 export default function TilesPage() {
-  const { state, loading, execute } = useExecutionEngine()
+  const { state, loading, execute } = useExecutionEngineContext()
   const { openDeferDialog, openDeleteDialog } = useDialogStore()
+  const projection = useMemo(() => buildDashboardProjection(state, new Date()), [state])
+  const visibleTiles = projection.tiles.ordered.slice(0, MAX_VISIBLE_TILES)
+  const omittedTiles = Math.max(0, projection.tiles.ordered.length - visibleTiles.length)
 
   function toTileId(tileId: string) {
     return TileId.fromString(tileId)
@@ -80,8 +87,13 @@ export default function TilesPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-foreground">Tiles</h1>
+      {omittedTiles > 0 ? (
+        <p className="text-xs uppercase tracking-wider text-foreground-muted">
+          +{omittedTiles} omitted
+        </p>
+      ) : null}
       <div className="space-y-2">
-        {Array.from(state.tiles.values()).map(tile => (
+        {visibleTiles.map(tile => (
           <TileCardExpandable
             key={tile.core.id}
             tile={tile}
@@ -94,7 +106,7 @@ export default function TilesPage() {
           />
         ))}
       </div>
-      {state.tiles.size === 0 ? (
+      {projection.tiles.ordered.length === 0 ? (
         <p className="text-sm text-foreground-muted">No tiles yet. Click the + button to create one.</p>
       ) : null}
 

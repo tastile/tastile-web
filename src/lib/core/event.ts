@@ -42,6 +42,43 @@ export type Event =
       mode: SegmentMode
       ended_at: Date
     }
+  | {
+      type: 'break_started'
+      linked_tile_id: TileId | null
+      started_at: Date
+      ends_at: Date
+      reason: string | null
+    }
+  | {
+      type: 'break_ended'
+      ended_at: Date
+    }
+  | {
+      type: 'tile_interrupted'
+      tile_id: TileId
+      interrupted_at: Date
+      source: 'fixed_schedule' | 'user_switch' | 'high_priority' | 'system_force'
+      reason: string | null
+      switched_to_tile_id: TileId | null
+    }
+  | {
+      type: 'prompt_scheduled'
+      prompt_id: string
+      tile_id: TileId | null
+      scheduled_at: Date
+      reason: string
+      kind: 'start_tile' | 'end_tile' | 'end_break'
+      severity: 'soft' | 'elevated' | 'critical'
+      suggested_minutes: number | null
+      reasons: string[]
+      actions: Array<'start_tile' | 'complete_tile' | 'extend_phase' | 'defer_tile' | 'end_break' | 'dismiss'>
+    }
+  | {
+      type: 'prompt_cleared'
+      prompt_id: string
+      cleared_at: Date
+      reason: string
+    }
 
 export interface EventEnvelope {
   event_id: EventId

@@ -5,7 +5,7 @@ import { useQuickCreateStore } from '@/lib/stores/quick-create-store'
 import { useIsDesktop } from '@/lib/hooks/use-media-query'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { Clock3, X } from 'lucide-react'
-import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
+import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 import { Tile, ObjectiveMode, SemanticRole } from '@/lib/domain/tile'
 import { TileId } from '@/lib/domain/ids'
 import { Actor } from '@/lib/domain/actor'
@@ -15,7 +15,7 @@ export function QuickTileCreate() {
   const { isOpen, close } = useQuickCreateStore()
   const isDesktop = useIsDesktop()
   const { t, locale } = useTranslation()
-  const { state, execute } = useExecutionEngine()
+  const { state, execute } = useExecutionEngineContext()
   const supabase = createClient()
 
   const [title, setTitle] = useState('')
@@ -227,7 +227,7 @@ export function QuickTileCreate() {
           }
         : null
     tile.core.doneDefinition = doneDefinition
-    tile.interruption.breakSplitsWork = breakSplitsWork
+    tile.interruption.breakSplitsWork = tileKind === 'work' ? breakSplitsWork : false
     tile.annotation.labels = buildLabels(resolvedProject, selectedTags)
     tile.core.nextAction =
       memoInput.trim() ||
@@ -254,9 +254,10 @@ export function QuickTileCreate() {
 
     setSubmitting(true)
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const e2eBypassAuth = process.env.E2E_BYPASS_AUTH === '1' || process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1'
+      const user = e2eBypassAuth
+        ? { id: 'e2e-user' }
+        : (await supabase.auth.getUser()).data.user
       if (!user) throw new Error(t('quickCreate.authRequired'))
 
       await execute(
@@ -320,7 +321,7 @@ export function QuickTileCreate() {
         <button
           onClick={close}
           className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-surface-2"
-          aria-label="Close panel"
+          aria-label={locale === 'ja' ? 'パネルを閉じる' : 'Close panel'}
         >
           <X className="h-4 w-4" />
         </button>

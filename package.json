@@ -2,12 +2,22 @@
   "name": "tastile-web",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.11.0"
+  },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build:core-wasm": "node scripts/build-core-wasm.mjs",
+    "build:app": "next build",
+    "build": "npm run build:core-wasm && npm run build:app",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "test:unit": "vitest --run",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test:unit",
+    "check:release": "npm run check && npm run build"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",
@@ -28,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@playwright/test": "^1.54.2",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",

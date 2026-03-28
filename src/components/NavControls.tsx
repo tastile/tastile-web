@@ -6,7 +6,7 @@ import { Sun, Moon, Globe, ChevronDown } from 'lucide-react'
 import { applyThemeMode, resolveThemeMode, type ThemeMode } from '@/lib/theme-mode'
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>(resolveThemeMode)
+  const [mode, setMode] = useState<ThemeMode>(() => resolveThemeMode())
 
   useEffect(() => {
     applyThemeMode(mode)

@@ -1,8 +1,17 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { getSupabaseEnv } from './env'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export function createClient() {
+  const { url, publishableKey } = getSupabaseEnv()
   return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+    url,
+    publishableKey
   )
+}
+
+export async function getBrowserAccessToken(supabase: SupabaseClient): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession()
+  if (error) return null
+  return data.session?.access_token ?? null
 }

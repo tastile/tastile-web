@@ -1,9 +1,9 @@
 'use client'
 
-import { useExecutionEngine } from '@/lib/hooks/use-execution-engine'
+import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 
 export function TileStatistics() {
-  const { state, loading } = useExecutionEngine()
+  const { state, loading } = useExecutionEngineContext()
 
   if (loading) {
     return (

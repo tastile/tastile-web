@@ -2,14 +2,16 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 import { createContext, useContext, useState } from 'react'
+import { getSupabaseEnv } from '@/lib/supabase/env'
 
 const SupabaseContext = createContext<ReturnType<typeof createBrowserClient> | undefined>(undefined)
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
+  const { url, publishableKey } = getSupabaseEnv()
   const [supabase] = useState(() => 
     createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+      url,
+      publishableKey
     )
   )
 

@@ -82,4 +82,148 @@ describe('CommandHandler', () => {
     expect(getTileLifecycle(state.tiles.get(tileId)!)).toBe('done')
     expect(state.execution.activeTileId).toBeNull()
   })
+
+  it('supports start_break -> end_break loop with break tile lifecycle', () => {
+    const state = AppState.initial()
+    const handler = new CommandHandler()
+    const tileId = TileId.new()
+    const actor = Actor.human('user-1')
+    const now = new Date('2026-03-16T10:00:00.000Z')
+    const tile = Tile.create(tileId, 'Deep work')
+    tile.objective.targetWorkMin = 15
+
+    handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'create_tile',
+          tile_id: tileId,
+          tile,
+        },
+        actor
+      ),
+      state
+    )
+
+    handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'start_tile',
+          tile_id: tileId,
+          started_at: now,
+          source: 'manual',
+        },
+        actor
+      ),
+      state
+    )
+
+    const startBreakEvents = handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'start_break',
+          linked_tile_id: tileId,
+          break_min: 5,
+          reason: 'regression break',
+        },
+        actor
+      ),
+      state
+    )
+
+    expect(startBreakEvents.map(e => e.event.type)).toContain('break_started')
+    expect(state.execution.phaseKind).toBe('break')
+    const breakTile = Array.from(state.tiles.values()).find(t => t.annotation.semanticRole === 'break')
+    expect(breakTile).toBeTruthy()
+    expect(state.execution.activeTileId).toBe(breakTile?.core.id)
+
+    const endBreakEvents = handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'end_break',
+          tile_id: null,
+          ended_at: new Date('2026-03-16T10:05:00.000Z'),
+        },
+        actor
+      ),
+      state
+    )
+
+    expect(endBreakEvents.map(e => e.event.type)).toContain('break_ended')
+    const endedBreakTile = Array.from(state.tiles.values()).find(t => t.annotation.semanticRole === 'break')
+    expect(endedBreakTile?.core.completedAt).not.toBeNull()
+    expect(state.execution.phaseKind).toBe('idle')
+    expect(state.execution.activeTileId).toBeNull()
+  })
+
+  it('allows parallel start on another tile while one is active (core parity)', () => {
+    const state = AppState.initial()
+    const handler = new CommandHandler()
+    const actor = Actor.human('user-1')
+    const tileA = TileId.new()
+    const tileB = TileId.new()
+    const now = new Date('2026-03-16T11:00:00.000Z')
+
+    handler.handle(CommandEnvelope.create({ type: 'create_tile', tile_id: tileA, tile: Tile.create(tileA, 'A') }, actor), state)
+    handler.handle(CommandEnvelope.create({ type: 'create_tile', tile_id: tileB, tile: Tile.create(tileB, 'B') }, actor), state)
+
+    handler.handle(
+      CommandEnvelope.create({ type: 'start_tile', tile_id: tileA, started_at: now, source: 'manual' }, actor),
+      state
+    )
+
+    expect(() =>
+      handler.handle(
+        CommandEnvelope.create(
+          { type: 'start_tile', tile_id: tileB, started_at: new Date('2026-03-16T11:01:00.000Z'), source: 'manual' },
+          actor
+        ),
+        state
+      )
+    ).not.toThrow()
+  })
+
+  it('interrupts current tile and switches active execution to target tile', () => {
+    const state = AppState.initial()
+    const handler = new CommandHandler()
+    const actor = Actor.human('user-1')
+    const fromTileId = TileId.new()
+    const toTileId = TileId.new()
+    const startAt = new Date('2026-03-16T12:00:00.000Z')
+    const switchAt = new Date('2026-03-16T12:07:00.000Z')
+
+    handler.handle(
+      CommandEnvelope.create(
+        { type: 'create_tile', tile_id: fromTileId, tile: Tile.create(fromTileId, 'Current Task') },
+        actor
+      ),
+      state
+    )
+    handler.handle(
+      CommandEnvelope.create({ type: 'create_tile', tile_id: toTileId, tile: Tile.create(toTileId, 'Next Task') }, actor),
+      state
+    )
+    handler.handle(
+      CommandEnvelope.create({ type: 'start_tile', tile_id: fromTileId, started_at: startAt, source: 'manual' }, actor),
+      state
+    )
+
+    const switchEvents = handler.handle(
+      CommandEnvelope.create(
+        {
+          type: 'switch_active_tile',
+          from_tile_id: fromTileId,
+          to_tile_id: toTileId,
+          switched_at: switchAt,
+          reason: 'manual switch',
+          interrupt_source: 'user_switch',
+        } as never,
+        actor
+      ),
+      state
+    )
+
+    expect(switchEvents.map(e => e.event.type)).toContain('tile_interrupted')
+    expect(state.execution.activeTileId).toBe(toTileId)
+    expect(state.execution.phaseKind).toBe('work')
+  })
 })

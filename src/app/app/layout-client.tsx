@@ -4,13 +4,23 @@ import { AppShell } from '@/components/layout/AppShell'
 import { QuickTileCreate } from '@/components/tiles/QuickTileCreate'
 import { useEffect } from 'react'
 import { useQuickCreateStore } from '@/lib/stores/quick-create-store'
+import { ExecutionEngineProvider, useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 
 export function AppLayoutClient({
   children,
 }: {
   children: React.ReactNode
 }) {
+  return (
+    <ExecutionEngineProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </ExecutionEngineProvider>
+  )
+}
+
+function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const { open } = useQuickCreateStore()
+  const { state } = useExecutionEngineContext()
 
   // Keyboard shortcut: Cmd+N
   useEffect(() => {
@@ -26,7 +36,18 @@ export function AppLayoutClient({
   }, [open])
 
   return (
-    <AppShell quickCreatePanel={<QuickTileCreate />}>
+    <AppShell
+      quickCreatePanel={<QuickTileCreate />}
+      executionState={{
+        activeTileTitle: state.execution.activeTileId
+          ? state.tiles.get(state.execution.activeTileId)?.core.title ?? null
+          : null,
+        phaseKind: state.execution.phaseKind,
+        phaseStartedAt: state.execution.phaseStartedAt,
+        phaseEndsAt: state.execution.phaseEndsAt,
+        pendingPrompt: state.execution.pendingPrompt,
+      }}
+    >
       {children}
     </AppShell>
   )
