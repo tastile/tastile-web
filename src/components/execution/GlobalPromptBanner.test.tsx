@@ -35,20 +35,48 @@ describe('GlobalPromptBanner', () => {
           tileId: null,
           kind: 'start_tile',
           severity: 'soft',
+          title: 'Resume Deep work',
+          body: 'Draft the outline',
+          why: 'This tile was already in flight and is the best resume candidate.',
           suggestedMinutes: 15,
           reasons: ['resume_in_flight'],
           actions: ['start_tile', 'defer_tile', 'dismiss'],
           scheduledAt: new Date('2026-03-26T03:00:00.000Z'),
           reason: 'resume',
         }}
+        onDismiss={vi.fn()}
       />
     )
 
-    expect(screen.getByText('Start tile')).toBeTruthy()
-    expect(screen.getByText('resume')).toBeTruthy()
+    expect(screen.getByText('Resume Deep work')).toBeTruthy()
+    expect(screen.getByText('Draft the outline')).toBeTruthy()
+    expect(screen.getByText('This tile was already in flight and is the best resume candidate.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'tiles.actions.start' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'tiles.actions.defer' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'common.close' })).toBeTruthy()
+  })
+
+  it('does not render dismiss control when the prompt is not dismissible', () => {
+    render(
+      <GlobalPromptBanner
+        prompt={{
+          promptId: 'p2',
+          tileId: TileId.fromString('tile-2'),
+          kind: 'end_tile',
+          severity: 'critical',
+          title: 'Close Deep work',
+          body: 'Decide whether to complete, extend, or defer the current tile.',
+          why: 'The current work phase reached its planned end.',
+          suggestedMinutes: null,
+          reasons: ['work_phase_expired'],
+          actions: ['complete_tile', 'extend_phase', 'defer_tile'],
+          scheduledAt: new Date('2026-03-26T03:10:00.000Z'),
+          reason: 'work_phase_expired',
+        }}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: 'common.close' })).toBeNull()
   })
 
   it('calls handlers for prompt actions', () => {

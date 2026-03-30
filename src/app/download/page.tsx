@@ -7,7 +7,7 @@ export const metadata = {
 };
 
 export default function DownloadPage() {
-  const version = "0.1.0";
+  const version = process.env.NEXT_PUBLIC_TASTILE_DESKTOP_VERSION ?? "0.1.0";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">

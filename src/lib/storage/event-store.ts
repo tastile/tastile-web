@@ -123,12 +123,20 @@ function normalizeEvent(event: Event): Event | null {
       return { ...event, started_at: new Date(event.started_at) }
     case 'tile_completed':
       return { ...event, completed_at: new Date(event.completed_at) }
+    case 'tile_closed':
+      return { ...event, closed_at: new Date(event.closed_at) }
     case 'tile_deferred':
       return {
         ...event,
         deferred_at: new Date(event.deferred_at),
         next_start_at: event.next_start_at ? new Date(event.next_start_at) : null,
       }
+    case 'active_tile_switched':
+      return { ...event, switched_at: new Date(event.switched_at) }
+    case 'set_focused_tile':
+      return { ...event, changed_at: new Date(event.changed_at) }
+    case 'phase_extended':
+      return { ...event, extended_at: new Date(event.extended_at) }
     case 'tile_deleted':
       return { ...event, deleted_at: new Date(event.deleted_at) }
     case 'segment_started':
@@ -155,6 +163,11 @@ function normalizeEvent(event: Event): Event | null {
         ...event,
         interrupted_at: new Date(event.interrupted_at),
       }
+    case 'memo_attached':
+      return {
+        ...event,
+        attached_at: new Date(event.attached_at),
+      }
     case 'prompt_scheduled':
       return {
         ...event,
@@ -164,6 +177,11 @@ function normalizeEvent(event: Event): Event | null {
       return {
         ...event,
         cleared_at: new Date(event.cleared_at),
+      }
+    case 'display_priority_changed':
+      return {
+        ...event,
+        changed_at: new Date(event.changed_at),
       }
     case 'tile_created': {
       const temporal = event.tile.temporal ?? {
@@ -220,6 +238,6 @@ function normalizeEvent(event: Event): Event | null {
       }
     }
     default:
-      return null
+      return event
   }
 }

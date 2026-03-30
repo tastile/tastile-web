@@ -3,11 +3,10 @@
 export const memory: WebAssembly.Memory;
 export const __wbg_wasmcoreengine_free: (a: number, b: number) => void;
 export const wasmcoreengine_execute: (a: number, b: number, c: number) => [number, number];
+export const wasmcoreengine_execute_with_ack_json: (a: number, b: number, c: number) => [number, number, number, number];
 export const wasmcoreengine_new: () => number;
 export const wasmcoreengine_read_snapshot_json: (a: number, b: number, c: number) => [number, number, number, number];
-export const Java_app_tastile_android_core_TastileCoreBridge_00024JniNativeBindings_dispatchCommand: (a: number, b: number, c: number) => number;
-export const Java_app_tastile_android_core_TastileCoreBridge_00024JniNativeBindings_getSnapshot: (a: number, b: number) => number;
-export const Java_app_tastile_android_core_TastileCoreBridge_00024JniNativeBindings_replaceEventLog: (a: number, b: number, c: number) => number;
+export const wasmcoreengine_replace_event_log_json: (a: number, b: number, c: number) => [number, number, number, number];
 export const __wbindgen_exn_store: (a: number) => void;
 export const __externref_table_alloc: () => number;
 export const __wbindgen_externrefs: WebAssembly.Table;

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 
-const CURRENT_VERSION = '0.1.0'
+const CURRENT_VERSION = process.env.TASTILE_DESKTOP_VERSION ?? '0.1.0'
 const DOWNLOAD_BASE = 'https://tastile.app/download'
 
 export async function GET() {

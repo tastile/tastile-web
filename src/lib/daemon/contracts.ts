@@ -48,12 +48,19 @@ function parsePromptQueueItem(raw: unknown): PromptQueueItemSnapshot {
     tileId: asNullableTileId(read(row, 'tile_id'), 'tile_id'),
     kind: asPromptKind(read(row, 'kind')),
     severity: asPromptSeverity(read(row, 'severity')),
+    title: asNullableString(readOptional(row, 'title'), 'title'),
+    body: asNullableString(readOptional(row, 'body'), 'body'),
+    why: asNullableString(readOptional(row, 'why'), 'why'),
     suggestedMinutes: asNullableNumber(read(row, 'suggested_minutes'), 'suggested_minutes'),
     reasons: asStringArray(read(row, 'reasons'), 'reasons'),
     actions: asPromptActionArray(read(row, 'actions'), 'actions'),
     scheduledAt: asDate(read(row, 'scheduled_at'), 'scheduled_at'),
     reason: asString(read(row, 'reason'), 'reason'),
     status: asPromptQueueStatus(read(row, 'status')),
+    expiresAt: readOptional(row, 'expires_at') === undefined
+      ? null
+      : asNullableDate(readOptional(row, 'expires_at'), 'expires_at'),
+    stale: asOptionalBoolean(readOptional(row, 'stale')) ?? false,
   }
 }
 
@@ -106,6 +113,18 @@ function asNullableNumber(value: unknown, field: string): number | null {
   if (value === null) return null
   if (typeof value === 'number' && Number.isFinite(value)) return value
   throw new Error(`Invalid ${field}: expected number|null`)
+}
+
+function asNullableString(value: unknown, field: string): string | null {
+  if (value === undefined || value === null) return null
+  if (typeof value === 'string') return value
+  throw new Error(`Invalid ${field}: expected string|null`)
+}
+
+function asOptionalBoolean(value: unknown): boolean | null {
+  if (value === undefined || value === null) return null
+  if (typeof value === 'boolean') return value
+  throw new Error('Invalid boolean field')
 }
 
 function asDate(value: unknown, field: string): Date {

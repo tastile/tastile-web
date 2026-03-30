@@ -34,11 +34,12 @@
     "react-dom": "19.2.3",
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.5.0",
+    "vercel": "^50.37.3",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "@playwright/test": "^1.54.2",
+    "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
@@ -50,6 +51,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "jsdom": "^29.0.0",
+    "supabase": "^2.84.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "uuid": "^13.0.0",

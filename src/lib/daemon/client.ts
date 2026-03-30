@@ -11,6 +11,22 @@ export interface DaemonClientOptions {
   getAccessToken?: AccessTokenProvider
 }
 
+export interface DaemonSessionRestoreRequest {
+  userId: string
+  email: string
+  accessToken: string
+  refreshToken: string
+  expiresAt?: string | null
+}
+
+export interface GoogleCalendarIntegrationSettings {
+  connected: boolean
+  canRead: boolean
+  canWrite: boolean
+  accountEmail: string | null
+  lastSyncedAt: string | null
+}
+
 export interface CommandAcceptedEnvelope {
   accepted: true
   commandId: string
@@ -47,6 +63,52 @@ export class DaemonClient {
     await assertOk(response, 'Failed to send daemon command')
     const payload = (await response.json()) as unknown
     return parseAcceptedEnvelope(payload)
+  }
+
+  async restoreSession(session: DaemonSessionRestoreRequest): Promise<void> {
+    const response = await this.fetchImpl(`${this.baseUrl}/auth/session/restore`, {
+      method: 'POST',
+      headers: await this.buildHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({
+        user_id: session.userId,
+        email: session.email,
+        access_token: session.accessToken,
+        refresh_token: session.refreshToken,
+        expires_at: session.expiresAt ?? null,
+      }),
+    })
+    await assertOk(response, 'Failed to restore daemon session')
+  }
+
+  async getIntegrationSettings(): Promise<GoogleCalendarIntegrationSettings> {
+    const response = await this.fetchImpl(`${this.baseUrl}/auth/integrations/settings`, {
+      method: 'GET',
+      headers: await this.buildHeaders(),
+    })
+    await assertOk(response, 'Failed to get integration settings')
+    const payload = (await response.json()) as unknown
+    return parseIntegrationSettings(payload)
+  }
+
+  async updateGoogleCalendarIntegration(
+    patch: Partial<GoogleCalendarIntegrationSettings>
+  ): Promise<GoogleCalendarIntegrationSettings> {
+    const response = await this.fetchImpl(`${this.baseUrl}/auth/integrations/settings`, {
+      method: 'POST',
+      headers: await this.buildHeaders({ 'content-type': 'application/json' }),
+      body: JSON.stringify({
+        google_calendar: {
+          ...(patch.connected !== undefined ? { connected: patch.connected } : {}),
+          ...(patch.canRead !== undefined ? { can_read: patch.canRead } : {}),
+          ...(patch.canWrite !== undefined ? { can_write: patch.canWrite } : {}),
+          ...(patch.accountEmail !== undefined ? { account_email: patch.accountEmail } : {}),
+          ...(patch.lastSyncedAt !== undefined ? { last_synced_at: patch.lastSyncedAt } : {}),
+        },
+      }),
+    })
+    await assertOk(response, 'Failed to update integration settings')
+    const payload = (await response.json()) as unknown
+    return parseIntegrationSettings(payload)
   }
 
   private async buildHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
@@ -110,4 +172,21 @@ function asString(value: unknown, field: string): string {
 function asNullableString(value: unknown, field: string): string | null {
   if (value === null) return null
   return asString(value, field)
+}
+
+function parseIntegrationSettings(raw: unknown): GoogleCalendarIntegrationSettings {
+  const row = asRecord(raw, 'integration settings')
+  const gc = asRecord(read(row, 'google_calendar', 'googleCalendar'), 'google_calendar')
+  return {
+    connected: asBoolean(read(gc, 'connected'), 'google_calendar.connected'),
+    canRead: asBoolean(read(gc, 'can_read', 'canRead'), 'google_calendar.can_read'),
+    canWrite: asBoolean(read(gc, 'can_write', 'canWrite'), 'google_calendar.can_write'),
+    accountEmail: asNullableString(read(gc, 'account_email', 'accountEmail'), 'google_calendar.account_email'),
+    lastSyncedAt: asNullableString(read(gc, 'last_synced_at', 'lastSyncedAt'), 'google_calendar.last_synced_at'),
+  }
+}
+
+function asBoolean(value: unknown, field: string): boolean {
+  if (typeof value === 'boolean') return value
+  throw new Error(`Invalid ${field}: expected boolean`)
 }

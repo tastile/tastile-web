@@ -18,6 +18,12 @@ export type Event =
       completed_at: Date
     }
   | {
+      type: 'tile_closed'
+      tile_id: TileId
+      reason: string | null
+      closed_at: Date
+    }
+  | {
       type: 'tile_deferred'
       tile_id: TileId
       deferred_at: Date
@@ -27,6 +33,23 @@ export type Event =
       type: 'tile_deleted'
       tile_id: TileId
       deleted_at: Date
+    }
+  | {
+      type: 'active_tile_switched'
+      from_tile_id: TileId
+      to_tile_id: TileId
+      switched_at: Date
+    }
+  | {
+      type: 'set_focused_tile'
+      tile_id: TileId | null
+      changed_at: Date
+    }
+  | {
+      type: 'phase_extended'
+      tile_id: TileId
+      delta_min: number
+      extended_at: Date
     }
   | {
       type: 'segment_started'
@@ -63,6 +86,13 @@ export type Event =
       switched_to_tile_id: TileId | null
     }
   | {
+      type: 'memo_attached'
+      tile_id: TileId | null
+      text: string
+      memo_kind: string | null
+      attached_at: Date
+    }
+  | {
       type: 'prompt_scheduled'
       prompt_id: string
       tile_id: TileId | null
@@ -79,6 +109,13 @@ export type Event =
       prompt_id: string
       cleared_at: Date
       reason: string
+    }
+  | {
+      type: 'display_priority_changed'
+      tile_id: TileId
+      old_priority: number
+      new_priority: number
+      changed_at: Date
     }
 
 export interface EventEnvelope {

@@ -38,4 +38,24 @@ describe('GET /api/download/windows', () => {
     const payload = await response.json()
     expect(payload.error).toBe('desktop_download_unavailable')
   })
+
+  it('returns service unavailable when manifest download url is not https', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          latest_version: '0.2.0',
+          download_url: 'http://cdn.example.com/tastile-desktop-0.2.0.exe',
+        }),
+      })
+    )
+
+    const { GET } = await import('./route')
+    const response = await GET()
+
+    expect(response.status).toBe(503)
+    const payload = await response.json()
+    expect(payload.error).toBe('desktop_download_unavailable')
+  })
 })

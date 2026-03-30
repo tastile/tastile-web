@@ -21,8 +21,17 @@ export async function GET() {
     const response = await fetch(DEFAULT_MANIFEST_URL, { cache: 'no-store' })
     if (response.ok) {
       const manifest = (await response.json()) as DesktopManifest
-      if (manifest.download_url && manifest.download_url.trim().length > 0) {
-        return NextResponse.redirect(manifest.download_url, 302)
+      const downloadUrl = manifest.download_url?.trim()
+      if (downloadUrl && downloadUrl.length > 0) {
+        try {
+          const parsed = new URL(downloadUrl)
+          if (parsed.protocol !== 'https:') {
+            return NextResponse.json({ error: 'desktop_download_unavailable' }, { status: 503 })
+          }
+          return NextResponse.redirect(parsed.toString(), 302)
+        } catch {
+          return NextResponse.json({ error: 'desktop_download_unavailable' }, { status: 503 })
+        }
       }
     }
   } catch {

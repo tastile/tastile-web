@@ -11,29 +11,42 @@ import { useDaemonExecution } from './use-daemon-execution'
 const {
   readSnapshotMock,
   sendCommandMock,
+  restoreSessionMock,
   getUserMock,
+  getSessionMock,
   getBrowserAccessTokenMock,
   openExecutionStreamMock,
   streamCloseMock,
   wasmReadSnapshotMock,
   wasmExecuteMock,
+  wasmExecuteWithAckMock,
+  wasmReplaceEventLogMock,
   createWasmExecutionEngineMock,
+  loadAllEventsMock,
+  appendEventMock,
 } = vi.hoisted(() => ({
   readSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
   sendCommandMock: vi.fn(),
+  restoreSessionMock: vi.fn(),
   getUserMock: vi.fn(),
+  getSessionMock: vi.fn(),
   getBrowserAccessTokenMock: vi.fn(),
   openExecutionStreamMock: vi.fn(),
   streamCloseMock: vi.fn(),
   wasmReadSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
   wasmExecuteMock: vi.fn(),
+  wasmExecuteWithAckMock: vi.fn(),
+  wasmReplaceEventLogMock: vi.fn(),
   createWasmExecutionEngineMock: vi.fn(),
+  loadAllEventsMock: vi.fn(),
+  appendEventMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
       getUser: getUserMock,
+      getSession: getSessionMock,
     },
   }),
   getBrowserAccessToken: getBrowserAccessTokenMock,
@@ -43,6 +56,7 @@ vi.mock('../daemon/client', () => ({
   DaemonClient: class {
     readSnapshot = readSnapshotMock
     sendCommand = sendCommandMock
+    restoreSession = restoreSessionMock
   },
 }))
 
@@ -54,6 +68,13 @@ vi.mock('../wasm/core-engine', () => ({
   createWasmExecutionEngine: createWasmExecutionEngineMock,
 }))
 
+vi.mock('../storage/event-store', () => ({
+  EventStore: class {
+    loadAll = loadAllEventsMock
+    append = appendEventMock
+  },
+}))
+
 describe('useDaemonExecution', () => {
   afterEach(() => {
     vi.useRealTimers()
@@ -62,13 +83,19 @@ describe('useDaemonExecution', () => {
   beforeEach(() => {
     readSnapshotMock.mockReset()
     sendCommandMock.mockReset()
+    restoreSessionMock.mockReset()
     getUserMock.mockReset()
+    getSessionMock.mockReset()
     getBrowserAccessTokenMock.mockReset()
     openExecutionStreamMock.mockReset()
     streamCloseMock.mockReset()
     wasmReadSnapshotMock.mockReset()
     wasmExecuteMock.mockReset()
+    wasmExecuteWithAckMock.mockReset()
+    wasmReplaceEventLogMock.mockReset()
     createWasmExecutionEngineMock.mockReset()
+    loadAllEventsMock.mockReset()
+    appendEventMock.mockReset()
     process.env.NEXT_PUBLIC_DAEMON_BASE_URL = 'https://daemon.example'
     delete process.env.NEXT_PUBLIC_EXECUTION_BACKEND
     process.env.NEXT_PUBLIC_DAEMON_REFRESH_MS = '60000'
@@ -76,7 +103,21 @@ describe('useDaemonExecution', () => {
     getUserMock.mockResolvedValue({
       data: { user: { id: 'user-1' } },
     })
+    getSessionMock.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'token-1',
+          refresh_token: 'refresh-token-1',
+          expires_at: 1774706400,
+          user: {
+            id: 'user-1',
+            email: 'user@example.com',
+          },
+        },
+      },
+    })
     getBrowserAccessTokenMock.mockResolvedValue('token-1')
+    restoreSessionMock.mockResolvedValue(undefined)
     openExecutionStreamMock.mockReturnValue({ close: streamCloseMock })
     sendCommandMock.mockResolvedValue({
       accepted: true,
@@ -85,9 +126,15 @@ describe('useDaemonExecution', () => {
     })
     wasmReadSnapshotMock.mockResolvedValue(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
     wasmExecuteMock.mockResolvedValue(undefined)
+    wasmExecuteWithAckMock.mockResolvedValue({ accepted: true, emittedEvents: [] })
+    wasmReplaceEventLogMock.mockResolvedValue(undefined)
+    loadAllEventsMock.mockResolvedValue([])
+    appendEventMock.mockResolvedValue(undefined)
     createWasmExecutionEngineMock.mockResolvedValue({
       readSnapshot: wasmReadSnapshotMock,
       execute: wasmExecuteMock,
+      executeWithAck: wasmExecuteWithAckMock,
+      replaceEventLog: wasmReplaceEventLogMock,
     })
   })
 
@@ -120,6 +167,8 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(createWasmExecutionEngineMock).toHaveBeenCalledTimes(1)
+    expect(loadAllEventsMock).toHaveBeenCalledTimes(1)
+    expect(wasmReplaceEventLogMock).toHaveBeenCalledWith([])
     expect(readSnapshotMock).not.toHaveBeenCalled()
     expect(openExecutionStreamMock).not.toHaveBeenCalled()
     expect(result.current.state.execution.activeTileId).toEqual(TileId.fromString('tile-wasm'))
@@ -134,8 +183,99 @@ describe('useDaemonExecution', () => {
         Actor.human('self')
       )
     })
-    expect(wasmExecuteMock).toHaveBeenCalledTimes(1)
+    expect(wasmExecuteWithAckMock).toHaveBeenCalledTimes(1)
     expect(wasmReadSnapshotMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('replays Supabase events into wasm on startup and persists emitted events after commands', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    getSessionMock.mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'token-1',
+          refresh_token: 'refresh-token-1',
+          expires_at: 1774706400,
+          user: {
+            id: 'user-1',
+            email: 'user@example.com',
+          },
+        },
+      },
+    })
+    loadAllEventsMock.mockResolvedValueOnce([
+      {
+        event_id: 'remote-event-1',
+        aggregate_id: 'tile:tile-remote',
+        occurred_at: new Date('2026-03-29T01:00:00.000Z'),
+        actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
+        caused_by_command_id: null,
+        request_id: null,
+        event: {
+          type: 'tile_started',
+          tile_id: TileId.fromString('tile-remote'),
+          started_at: new Date('2026-03-29T01:00:00.000Z'),
+        },
+      },
+    ])
+    wasmExecuteWithAckMock.mockResolvedValueOnce({
+      accepted: true,
+      emittedEvents: [
+        {
+          event_id: 'local-event-1',
+          aggregate_id: 'tile:tile-local',
+          occurred_at: new Date('2026-03-29T02:00:00.000Z'),
+          actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
+          caused_by_command_id: null,
+          request_id: null,
+          event: {
+            type: 'tile_started',
+            tile_id: TileId.fromString('tile-local'),
+            started_at: new Date('2026-03-29T02:00:00.000Z'),
+          },
+        },
+      ],
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(wasmReplaceEventLogMock).toHaveBeenCalledTimes(1)
+    expect(wasmReplaceEventLogMock).toHaveBeenCalledWith([
+      {
+        event_id: 'remote-event-1',
+        aggregate_id: 'tile:tile-remote',
+        occurred_at: new Date('2026-03-29T01:00:00.000Z'),
+        actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
+        caused_by_command_id: null,
+        request_id: null,
+        event: {
+          type: 'tile_started',
+          tile_id: TileId.fromString('tile-remote'),
+          started_at: new Date('2026-03-29T01:00:00.000Z'),
+        },
+      },
+    ])
+
+    await act(async () => {
+      await result.current.execute(
+        {
+          type: 'start_tile',
+          tile_id: TileId.fromString('tile-local'),
+          started_at: new Date('2026-03-29T02:00:00.000Z'),
+          source: 'manual',
+        },
+        Actor.human('self')
+      )
+    })
+
+    expect(wasmExecuteWithAckMock).toHaveBeenCalledTimes(1)
+    expect(appendEventMock).toHaveBeenCalledTimes(1)
+    expect(appendEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event_id: 'local-event-1',
+        aggregate_id: 'tile:tile-local',
+      })
+    )
   })
 
   it('hydrates from daemon snapshot and updates via stream events', async () => {
@@ -205,6 +345,13 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
 
     await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(restoreSessionMock).toHaveBeenCalledWith({
+      userId: 'user-1',
+      email: 'user@example.com',
+      accessToken: 'token-1',
+      refreshToken: 'refresh-token-1',
+      expiresAt: '2026-03-28T14:00:00.000Z',
+    })
     expect(result.current.state.tiles.size).toBe(1)
     expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-1'))
     expect(result.current.state.execution.pendingPrompt?.promptId).toBe('prompt-1')
@@ -275,6 +422,9 @@ describe('useDaemonExecution', () => {
   })
 
   it('handles unauthenticated user by stopping loading without stream setup', async () => {
+    getSessionMock.mockResolvedValueOnce({
+      data: { session: null },
+    })
     getUserMock.mockResolvedValueOnce({
       data: { user: null },
     })
@@ -283,6 +433,7 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(readSnapshotMock).not.toHaveBeenCalled()
+    expect(restoreSessionMock).not.toHaveBeenCalled()
     expect(openExecutionStreamMock).not.toHaveBeenCalled()
     expect(result.current.state.tiles.size).toBe(0)
   })
@@ -357,6 +508,7 @@ describe('useDaemonExecution', () => {
 
   it('executes with wasm backend even when unauthenticated', async () => {
     process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    getSessionMock.mockResolvedValueOnce({ data: { session: null } })
     getUserMock.mockResolvedValueOnce({ data: { user: null } })
     wasmReadSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
     const { result } = renderHook(() => useDaemonExecution())
@@ -374,14 +526,15 @@ describe('useDaemonExecution', () => {
     expect(wasmExecuteMock).toHaveBeenCalledTimes(1)
   })
 
-  it('uses daemon backend by default when env is not set', async () => {
+  it('uses wasm backend by default when env is not set', async () => {
     delete process.env.NEXT_PUBLIC_EXECUTION_BACKEND
     process.env.NEXT_PUBLIC_DAEMON_BASE_URL = 'https://daemon.example'
-    readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
+    wasmReadSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
     renderHook(() => useDaemonExecution())
-    await waitFor(() => expect(readSnapshotMock.mock.calls.length).toBeGreaterThanOrEqual(1))
-    expect(openExecutionStreamMock).toHaveBeenCalledTimes(1)
-    expect(wasmReadSnapshotMock).not.toHaveBeenCalled()
+    await waitFor(() => expect(wasmReadSnapshotMock.mock.calls.length).toBeGreaterThanOrEqual(1))
+    expect(createWasmExecutionEngineMock).toHaveBeenCalledTimes(1)
+    expect(openExecutionStreamMock).not.toHaveBeenCalled()
+    expect(readSnapshotMock).not.toHaveBeenCalled()
   })
 
   it('stops loading with a safe fallback when daemon snapshot read fails', async () => {

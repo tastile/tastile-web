@@ -12,9 +12,10 @@ import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
 import { createClient, getBrowserAccessToken } from '@/lib/supabase/client'
 import { createWasmExecutionEngine, WasmExecutionEngine } from '../wasm/core-engine'
+import { EventStore } from '../storage/event-store'
 
 const DEFAULT_DAEMON_BASE_URL = 'http://127.0.0.1:3140'
-const DEFAULT_EXECUTION_BACKEND = 'daemon'
+const DEFAULT_EXECUTION_BACKEND = 'wasm'
 const DEFAULT_DAEMON_REFRESH_MS = 5_000
 const WASM_EVENT_LOG_STORAGE_KEY = 'tastile:wasm-event-log:v1'
 
@@ -24,6 +25,7 @@ export function useDaemonExecution() {
   const [supabase] = useState(() => createClient())
   const clientRef = useRef<DaemonClient | null>(null)
   const wasmRef = useRef<WasmExecutionEngine | null>(null)
+  const eventStoreRef = useRef<EventStore | null>(null)
   const mountedRef = useRef(true)
   const refreshRequestRef = useRef(0)
   const appliedRefreshRef = useRef(0)
@@ -66,15 +68,36 @@ export function useDaemonExecution() {
         if (backend === 'wasm') {
           const wasm = await createWasmExecutionEngine()
           wasmRef.current = wasm
-          await replayPersistedWasmEvents(wasm)
+          const {
+            data: { session },
+          } = await supabase.auth.getSession()
+          if (session?.user) {
+            const eventStore = new EventStore(supabase, session.user.id)
+            eventStoreRef.current = eventStore
+            const events = await eventStore.loadAll()
+            await wasm.replaceEventLog(events)
+            refreshTimer = setInterval(() => {
+              void (async () => {
+                try {
+                  const latest = await eventStore.loadAll()
+                  await wasm.replaceEventLog(latest)
+                  await refreshSnapshot()
+                } catch (err) {
+                  console.error('Failed to refresh wasm event log from Supabase:', err)
+                }
+              })()
+            }, daemonRefreshMs)
+          } else {
+            await replayPersistedWasmEvents(wasm)
+          }
           await refreshSnapshot()
           return
         }
 
         const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        if (!active || !user) {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (!active || !session?.user) {
           if (active) setLoading(false)
           return
         }
@@ -83,6 +106,13 @@ export function useDaemonExecution() {
         clientRef.current = new DaemonClient({
           baseUrl,
           getAccessToken,
+        })
+        await clientRef.current.restoreSession({
+          userId: session.user.id,
+          email: session.user.email ?? '',
+          accessToken: session.access_token,
+          refreshToken: session.refresh_token,
+          expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
         })
 
         await refreshSnapshot()
@@ -129,8 +159,25 @@ export function useDaemonExecution() {
     if (client) {
       await client.sendCommand(toDaemonCommand(command))
     } else {
-      await wasm!.execute(command, actor)
-      persistWasmEvent(command, actor)
+      const eventStore = eventStoreRef.current
+      if (eventStore) {
+        const ack = await wasm!.executeWithAck(command, actor)
+        if (!ack.accepted) {
+          throw new Error(ack.error?.message ?? 'WASM command was rejected')
+        }
+        try {
+          for (const event of ack.emittedEvents) {
+            await eventStore.append(event)
+          }
+        } catch (err) {
+          const latest = await eventStore.loadAll()
+          await wasm!.replaceEventLog(latest)
+          throw err
+        }
+      } else {
+        await wasm!.execute(command, actor)
+        persistWasmEvent(command, actor)
+      }
     }
     await refreshSnapshot()
   }, [refreshSnapshot])

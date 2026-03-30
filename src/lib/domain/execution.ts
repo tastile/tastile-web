@@ -10,11 +10,16 @@ export interface PendingPrompt {
   tileId: TileId | null
   kind: PromptKind
   severity: PromptSeverity
+  title?: string | null
+  body?: string | null
+  why?: string | null
   suggestedMinutes: number | null
   reasons: string[]
   actions: PromptAction[]
   scheduledAt: Date
   reason: string
+  expiresAt?: Date | null
+  stale?: boolean
 }
 
 export interface Execution {

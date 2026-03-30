@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { TastileLogo } from '@/components/TastileLogo'
-import { tryGetSupabaseEnv } from '@/lib/supabase/env'
+import { buildSupabaseCallbackUrl, tryGetSupabaseEnv } from '@/lib/supabase/env'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
@@ -31,7 +31,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: buildSupabaseCallbackUrl(window.location.origin),
         },
       })
 

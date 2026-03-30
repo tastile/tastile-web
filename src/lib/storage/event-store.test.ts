@@ -126,16 +126,23 @@ describe('EventStore', () => {
     expect(envelope.event.tile.work.segments).toEqual([])
   })
 
-  it('should skip unknown event payloads without throwing', () => {
+  it('should preserve newly supported event payloads without throwing', () => {
     const supabase = createMockSupabase()
     const store = new EventStore(supabase, userId)
+    const attachedAt = new Date().toISOString()
     const row = {
       id: 'row-unknown',
       user_id: userId,
       event_id: 'event-unknown',
       aggregate_id: 'tile:unknown',
-      event_type: 'unknown',
-      event_payload: { type: 'memo_attached', memo: 'x' } as unknown,
+      event_type: 'memo_attached',
+      event_payload: {
+        type: 'memo_attached',
+        tile_id: null,
+        text: 'x',
+        memo_kind: null,
+        attached_at: attachedAt,
+      } as unknown,
       payload_json: null,
       occurred_at: new Date().toISOString(),
       actor_type: 'system',
@@ -146,7 +153,12 @@ describe('EventStore', () => {
     }
 
     const envelope = store.deserialize(row as never)
-    expect(envelope).toBeNull()
+    if (!envelope || envelope.event.type !== 'memo_attached') {
+      throw new Error('Expected memo_attached event')
+    }
+
+    expect(envelope.event.text).toBe('x')
+    expect(envelope.event.attached_at).toBeInstanceOf(Date)
   })
 
   it('should deserialize break_started and break_ended payload dates', () => {
