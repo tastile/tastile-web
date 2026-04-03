@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { SiteHeader } from "@/components/SiteHeader";
+import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
 
 export const metadata = {
   title: "Download Tastile — Execution Control",
   description: "Download Tastile for Windows. Start controlling your execution today.",
 };
 
-export default function DownloadPage() {
-  const version = process.env.NEXT_PUBLIC_TASTILE_DESKTOP_VERSION ?? "0.1.0";
+export default async function DownloadPage() {
+  const release = await fetchDesktopReleaseInfo();
+  const version = release?.latestVersion ?? "latest";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">

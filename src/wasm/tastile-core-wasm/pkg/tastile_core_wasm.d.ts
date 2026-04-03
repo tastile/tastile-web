@@ -6,9 +6,11 @@ export class WasmCoreEngine {
     [Symbol.dispose](): void;
     execute(command_json: string): void;
     execute_with_ack_json(command_json: string): string;
+    export_tiles_json(): string;
     constructor();
     read_snapshot_json(now_iso_utc?: string | null): string;
     replace_event_log_json(events_json: string): string;
+    replace_tiles_json(tiles_json: string): string;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -18,9 +20,11 @@ export interface InitOutput {
     readonly __wbg_wasmcoreengine_free: (a: number, b: number) => void;
     readonly wasmcoreengine_execute: (a: number, b: number, c: number) => [number, number];
     readonly wasmcoreengine_execute_with_ack_json: (a: number, b: number, c: number) => [number, number, number, number];
+    readonly wasmcoreengine_export_tiles_json: (a: number) => [number, number, number, number];
     readonly wasmcoreengine_new: () => number;
     readonly wasmcoreengine_read_snapshot_json: (a: number, b: number, c: number) => [number, number, number, number];
     readonly wasmcoreengine_replace_event_log_json: (a: number, b: number, c: number) => [number, number, number, number];
+    readonly wasmcoreengine_replace_tiles_json: (a: number, b: number, c: number) => [number, number, number, number];
     readonly __wbindgen_exn_store: (a: number) => void;
     readonly __externref_table_alloc: () => number;
     readonly __wbindgen_externrefs: WebAssembly.Table;

@@ -28,6 +28,19 @@ describe('GET /api/download/windows', () => {
     expect(response.headers.get('location')).toBe('https://cdn.example.com/tastile-desktop-0.2.0.exe')
   })
 
+  it('fetches the public updates manifest by default', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const { GET } = await import('./route')
+    await GET()
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://example.supabase.co/storage/v1/object/public/releases/updates/desktop/manifest.json',
+      { cache: 'no-store' }
+    )
+  })
+
   it('returns service unavailable when manifest cannot be fetched', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
 

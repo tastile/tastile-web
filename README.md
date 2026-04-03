@@ -9,6 +9,7 @@ This repository is not the primary Tastile product. The source of truth for the 
 - Keep the web client aligned with Tastile's command/event/reducer architecture
 - Make the repository reproducible for a fresh clone without tribal knowledge
 - Maintain a clear quality gate for contributors before code is merged or deployed
+- Keep the public download route pointed at the current desktop installer manifest
 
 ## Tech Stack
 
@@ -62,6 +63,11 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
 Additional pricing and analytics variables are documented in `.env.local.example`.
+
+Desktop download and versioning are resolved from the public installer manifest by default
+
+- `TASTILE_DESKTOP_MANIFEST_URL` optionally overrides the manifest URL
+- `NEXT_PUBLIC_TASTILE_DESKTOP_VERSION` and `TASTILE_DESKTOP_VERSION` are kept only for compatibility
 
 ## Installation
 

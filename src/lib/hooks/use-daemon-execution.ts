@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AppState } from '../core/state'
 import { Command, DaemonCommandRequest } from '../core/command'
-import { EventEnvelope } from '../core/event'
+import type { EventEnvelope } from '../core/event'
 import { DaemonClient } from '../daemon/client'
 import { openExecutionStream } from '../daemon/stream'
 import { Actor } from '../domain/actor'
@@ -17,7 +17,7 @@ import { EventStore } from '../storage/event-store'
 const DEFAULT_DAEMON_BASE_URL = 'http://127.0.0.1:3140'
 const DEFAULT_EXECUTION_BACKEND = 'wasm'
 const DEFAULT_DAEMON_REFRESH_MS = 5_000
-const WASM_EVENT_LOG_STORAGE_KEY = 'tastile:wasm-event-log:v1'
+const WASM_TILES_STORAGE_KEY = 'tastile:wasm-tiles:v1'
 
 export function useDaemonExecution() {
   const [state, setState] = useState<AppState>(AppState.initial())
@@ -74,21 +74,21 @@ export function useDaemonExecution() {
           if (session?.user) {
             const eventStore = new EventStore(supabase, session.user.id)
             eventStoreRef.current = eventStore
-            const events = await eventStore.loadAll()
-            await wasm.replaceEventLog(events)
+            const tiles = await eventStore.loadAllTiles()
+            await wasm.replaceTiles(tiles)
             refreshTimer = setInterval(() => {
               void (async () => {
                 try {
-                  const latest = await eventStore.loadAll()
-                  await wasm.replaceEventLog(latest)
+                  const latest = await eventStore.loadAllTiles()
+                  await wasm.replaceTiles(latest)
                   await refreshSnapshot()
                 } catch (err) {
-                  console.error('Failed to refresh wasm event log from Supabase:', err)
+                  console.error('Failed to refresh wasm tiles from Supabase:', err)
                 }
               })()
             }, daemonRefreshMs)
           } else {
-            await replayPersistedWasmEvents(wasm)
+            await replayPersistedWasmTiles(wasm)
           }
           await refreshSnapshot()
           return
@@ -166,17 +166,18 @@ export function useDaemonExecution() {
           throw new Error(ack.error?.message ?? 'WASM command was rejected')
         }
         try {
-          for (const event of ack.emittedEvents) {
-            await eventStore.append(event)
+          if (ack.emittedEvents.length > 0) {
+            const tiles = await wasm!.exportTiles()
+            await eventStore.replaceAllTiles(tiles)
           }
         } catch (err) {
-          const latest = await eventStore.loadAll()
-          await wasm!.replaceEventLog(latest)
+          const latest = await eventStore.loadAllTiles()
+          await wasm!.replaceTiles(latest)
           throw err
         }
       } else {
         await wasm!.execute(command, actor)
-        persistWasmEvent(command, actor)
+        await persistWasmTiles(wasm!)
       }
     }
     await refreshSnapshot()
@@ -185,73 +186,37 @@ export function useDaemonExecution() {
   return { state, loading, execute }
 }
 
-type PersistedWasmEvent = {
-  command: Command
-  actor: Actor
-}
-
-function isPersistedWasmEvent(value: unknown): value is PersistedWasmEvent {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
-  const row = value as Record<string, unknown>
-  const actor = row.actor
-  return (
-    !!row.command &&
-    typeof row.command === 'object' &&
-    !Array.isArray(row.command) &&
-    !!actor &&
-    typeof actor === 'object' &&
-    !Array.isArray(actor) &&
-    typeof (actor as Record<string, unknown>).type === 'string' &&
-    typeof (actor as Record<string, unknown>).id === 'string'
-  )
-}
-
-function replayPersistedWasmEvents(engine: WasmExecutionEngine): Promise<void> {
+function replayPersistedWasmTiles(engine: WasmExecutionEngine): Promise<void> {
   const storage = getLocalStorage()
   if (!storage) return Promise.resolve()
   let raw: string | null = null
   try {
-    raw = storage.getItem(WASM_EVENT_LOG_STORAGE_KEY)
+    raw = storage.getItem(WASM_TILES_STORAGE_KEY)
   } catch {
     return Promise.resolve()
   }
   if (!raw) return Promise.resolve()
-  let entries: PersistedWasmEvent[] = []
+  let tiles: Tile[] = []
   try {
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed)) {
-      entries = parsed.filter(isPersistedWasmEvent)
-    }
+    tiles = JSON.parse(raw) as Tile[]
   } catch {
-    storage.removeItem(WASM_EVENT_LOG_STORAGE_KEY)
+    storage.removeItem(WASM_TILES_STORAGE_KEY)
     return Promise.resolve()
   }
-  return entries.reduce((chain, entry) => {
-    return chain.then(async () => {
-      try {
-        await engine.executePayload(JSON.stringify({ command: entry.command, actor: entry.actor }))
-      } catch (err) {
-        console.warn('Skipping persisted wasm event replay due to execution error', err)
-      }
-    })
-  }, Promise.resolve())
+  return engine.replaceTiles(tiles).catch(err => {
+    console.warn('Skipping persisted wasm tile replay due to execution error', err)
+  })
 }
 
-function persistWasmEvent(command: Command, actor: Actor) {
-  if (!shouldPersistCommand(command)) return
+async function persistWasmTiles(engine: WasmExecutionEngine) {
   const storage = getLocalStorage()
   if (!storage) return
-  let entries: PersistedWasmEvent[] = []
   try {
-    const raw = storage.getItem(WASM_EVENT_LOG_STORAGE_KEY)
-    entries = raw ? (JSON.parse(raw) as PersistedWasmEvent[]) : []
-    if (!Array.isArray(entries)) entries = []
+    const tiles = await engine.exportTiles()
+    storage.setItem(WASM_TILES_STORAGE_KEY, JSON.stringify(tiles))
   } catch {
-    entries = []
+    return
   }
-  entries.push({ command, actor })
-  const capped = entries.slice(-1000)
-  storage.setItem(WASM_EVENT_LOG_STORAGE_KEY, JSON.stringify(capped))
 }
 
 function getLocalStorage(): Storage | null {
@@ -265,10 +230,6 @@ function getLocalStorage(): Storage | null {
   } catch {
     return null
   }
-}
-
-function shouldPersistCommand(command: Command): boolean {
-  return command.type !== 'request_prompt' && command.type !== 'clear_prompt'
 }
 
 function projectSnapshotToAppState(snapshot: ExecutionSnapshot): AppState {

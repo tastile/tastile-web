@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
-
-const CURRENT_VERSION = process.env.TASTILE_DESKTOP_VERSION ?? '0.1.0'
-const DOWNLOAD_BASE = 'https://tastile.app/download'
+import { fetchDesktopReleaseInfo } from '@/lib/desktop-release'
 
 export async function GET() {
+  const release = await fetchDesktopReleaseInfo()
+  if (!release) {
+    return NextResponse.json({ error: 'desktop_version_unavailable' }, { status: 503 })
+  }
+
   return NextResponse.json({
-    latest: CURRENT_VERSION,
-    download_url: `${DOWNLOAD_BASE}`,
+    latest: release.latestVersion,
+    download_url: release.downloadUrl,
     required: false,
-    release_notes: 'Initial release',
+    release_notes: release.notes,
   })
 }

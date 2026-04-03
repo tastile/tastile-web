@@ -4,6 +4,7 @@ import type { Actor } from '../domain/actor'
 import { EventId, CommandId, RequestId } from '../domain/ids'
 import type { ExecutionSnapshot } from '../domain/execution'
 import { parseExecutionSnapshot } from '../daemon/contracts'
+import type { Tile } from '../domain/tile'
 
 export interface WasmExecutionEngine {
   readSnapshot(): Promise<ExecutionSnapshot>
@@ -11,6 +12,8 @@ export interface WasmExecutionEngine {
   executePayload(payload: string): Promise<void>
   executeWithAck(command: Command, actor: Actor): Promise<WasmCommandAck>
   replaceEventLog(events: EventEnvelope[]): Promise<void>
+  replaceTiles(tiles: Tile[]): Promise<void>
+  exportTiles(): Promise<Tile[]>
 }
 
 export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> {
@@ -40,6 +43,15 @@ export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> 
       if (!ack.accepted) {
         throw new Error(ack.error?.message ?? 'Failed to replace wasm event log')
       }
+    },
+    async replaceTiles(tiles: Tile[]) {
+      const ack = parseCommandAck(JSON.parse(engine.replace_tiles_json(JSON.stringify(tiles))))
+      if (!ack.accepted) {
+        throw new Error(ack.error?.message ?? 'Failed to replace wasm tiles')
+      }
+    },
+    async exportTiles() {
+      return JSON.parse(engine.export_tiles_json()) as Tile[]
     },
   }
 }
@@ -92,6 +104,8 @@ type CoreWasmModule = {
     execute_with_ack_json: (commandJson: string) => string
     read_snapshot_json: (nowIsoUtc: string | null) => string
     replace_event_log_json: (eventsJson: string) => string
+    replace_tiles_json: (tilesJson: string) => string
+    export_tiles_json: () => string
   }
 }
 

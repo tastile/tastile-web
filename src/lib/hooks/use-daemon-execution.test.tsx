@@ -21,9 +21,11 @@ const {
   wasmExecuteMock,
   wasmExecuteWithAckMock,
   wasmReplaceEventLogMock,
+  wasmReplaceTilesMock,
+  wasmExportTilesMock,
   createWasmExecutionEngineMock,
-  loadAllEventsMock,
-  appendEventMock,
+  loadAllTilesMock,
+  replaceAllTilesMock,
 } = vi.hoisted(() => ({
   readSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
   sendCommandMock: vi.fn(),
@@ -37,9 +39,11 @@ const {
   wasmExecuteMock: vi.fn(),
   wasmExecuteWithAckMock: vi.fn(),
   wasmReplaceEventLogMock: vi.fn(),
+  wasmReplaceTilesMock: vi.fn(),
+  wasmExportTilesMock: vi.fn(),
   createWasmExecutionEngineMock: vi.fn(),
-  loadAllEventsMock: vi.fn(),
-  appendEventMock: vi.fn(),
+  loadAllTilesMock: vi.fn(),
+  replaceAllTilesMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -70,8 +74,8 @@ vi.mock('../wasm/core-engine', () => ({
 
 vi.mock('../storage/event-store', () => ({
   EventStore: class {
-    loadAll = loadAllEventsMock
-    append = appendEventMock
+    loadAllTiles = loadAllTilesMock
+    replaceAllTiles = replaceAllTilesMock
   },
 }))
 
@@ -94,8 +98,8 @@ describe('useDaemonExecution', () => {
     wasmExecuteWithAckMock.mockReset()
     wasmReplaceEventLogMock.mockReset()
     createWasmExecutionEngineMock.mockReset()
-    loadAllEventsMock.mockReset()
-    appendEventMock.mockReset()
+    loadAllTilesMock.mockReset()
+    replaceAllTilesMock.mockReset()
     process.env.NEXT_PUBLIC_DAEMON_BASE_URL = 'https://daemon.example'
     delete process.env.NEXT_PUBLIC_EXECUTION_BACKEND
     process.env.NEXT_PUBLIC_DAEMON_REFRESH_MS = '60000'
@@ -128,13 +132,17 @@ describe('useDaemonExecution', () => {
     wasmExecuteMock.mockResolvedValue(undefined)
     wasmExecuteWithAckMock.mockResolvedValue({ accepted: true, emittedEvents: [] })
     wasmReplaceEventLogMock.mockResolvedValue(undefined)
-    loadAllEventsMock.mockResolvedValue([])
-    appendEventMock.mockResolvedValue(undefined)
+    wasmReplaceTilesMock.mockResolvedValue(undefined)
+    wasmExportTilesMock.mockResolvedValue([])
+    loadAllTilesMock.mockResolvedValue([])
+    replaceAllTilesMock.mockResolvedValue(undefined)
     createWasmExecutionEngineMock.mockResolvedValue({
       readSnapshot: wasmReadSnapshotMock,
       execute: wasmExecuteMock,
       executeWithAck: wasmExecuteWithAckMock,
       replaceEventLog: wasmReplaceEventLogMock,
+      replaceTiles: wasmReplaceTilesMock,
+      exportTiles: wasmExportTilesMock,
     })
   })
 
@@ -167,8 +175,8 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(createWasmExecutionEngineMock).toHaveBeenCalledTimes(1)
-    expect(loadAllEventsMock).toHaveBeenCalledTimes(1)
-    expect(wasmReplaceEventLogMock).toHaveBeenCalledWith([])
+    expect(loadAllTilesMock).toHaveBeenCalledTimes(1)
+    expect(wasmReplaceTilesMock).toHaveBeenCalledWith([])
     expect(readSnapshotMock).not.toHaveBeenCalled()
     expect(openExecutionStreamMock).not.toHaveBeenCalled()
     expect(result.current.state.execution.activeTileId).toEqual(TileId.fromString('tile-wasm'))
@@ -202,21 +210,7 @@ describe('useDaemonExecution', () => {
         },
       },
     })
-    loadAllEventsMock.mockResolvedValueOnce([
-      {
-        event_id: 'remote-event-1',
-        aggregate_id: 'tile:tile-remote',
-        occurred_at: new Date('2026-03-29T01:00:00.000Z'),
-        actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
-        caused_by_command_id: null,
-        request_id: null,
-        event: {
-          type: 'tile_started',
-          tile_id: TileId.fromString('tile-remote'),
-          started_at: new Date('2026-03-29T01:00:00.000Z'),
-        },
-      },
-    ])
+    loadAllTilesMock.mockResolvedValueOnce([])
     wasmExecuteWithAckMock.mockResolvedValueOnce({
       accepted: true,
       emittedEvents: [
@@ -235,26 +229,13 @@ describe('useDaemonExecution', () => {
         },
       ],
     })
+    wasmExportTilesMock.mockResolvedValueOnce([])
 
     const { result } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(wasmReplaceEventLogMock).toHaveBeenCalledTimes(1)
-    expect(wasmReplaceEventLogMock).toHaveBeenCalledWith([
-      {
-        event_id: 'remote-event-1',
-        aggregate_id: 'tile:tile-remote',
-        occurred_at: new Date('2026-03-29T01:00:00.000Z'),
-        actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
-        caused_by_command_id: null,
-        request_id: null,
-        event: {
-          type: 'tile_started',
-          tile_id: TileId.fromString('tile-remote'),
-          started_at: new Date('2026-03-29T01:00:00.000Z'),
-        },
-      },
-    ])
+    expect(wasmReplaceTilesMock).toHaveBeenCalled()
+    expect(wasmReplaceTilesMock).toHaveBeenNthCalledWith(1, [])
 
     await act(async () => {
       await result.current.execute(
@@ -269,13 +250,7 @@ describe('useDaemonExecution', () => {
     })
 
     expect(wasmExecuteWithAckMock).toHaveBeenCalledTimes(1)
-    expect(appendEventMock).toHaveBeenCalledTimes(1)
-    expect(appendEventMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event_id: 'local-event-1',
-        aggregate_id: 'tile:tile-local',
-      })
-    )
+    expect(replaceAllTilesMock).toHaveBeenCalledTimes(1)
   })
 
   it('hydrates from daemon snapshot and updates via stream events', async () => {
