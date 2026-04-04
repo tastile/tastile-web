@@ -2,13 +2,17 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const __wbg_wasmcoreengine_free: (a: number, b: number) => void;
+export const wasmcoreengine_configure_sync_json: (a: number, b: number, c: number) => [number, number, number, number];
 export const wasmcoreengine_execute: (a: number, b: number, c: number) => [number, number];
 export const wasmcoreengine_execute_with_ack_json: (a: number, b: number, c: number) => [number, number, number, number];
 export const wasmcoreengine_export_tiles_json: (a: number) => [number, number, number, number];
 export const wasmcoreengine_new: () => number;
 export const wasmcoreengine_read_snapshot_json: (a: number, b: number, c: number) => [number, number, number, number];
+export const wasmcoreengine_read_sync_status_json: (a: number) => [number, number, number, number];
 export const wasmcoreengine_replace_event_log_json: (a: number, b: number, c: number) => [number, number, number, number];
 export const wasmcoreengine_replace_tiles_json: (a: number, b: number, c: number) => [number, number, number, number];
+export const wasmcoreengine_restore_sync_json: (a: number) => [number, number, number, number];
+export const wasmcoreengine_trigger_sync_json: (a: number) => [number, number, number, number];
 export const __wbindgen_exn_store: (a: number) => void;
 export const __externref_table_alloc: () => number;
 export const __wbindgen_externrefs: WebAssembly.Table;

@@ -75,6 +75,16 @@ export function useDaemonExecution() {
             const eventStore = new EventStore(supabase, session.user.id)
             eventStoreRef.current = eventStore
             const tiles = await eventStore.loadAllTiles()
+            await wasm.configureSync({
+              deviceId: 'web-device',
+              connected: true,
+              authenticated: true,
+              remoteTiles: tiles,
+            })
+            const restoreAck = await wasm.restoreSync()
+            if (!restoreAck.accepted) {
+              throw new Error(restoreAck.metadata.error ?? 'WASM restore sync was rejected')
+            }
             await wasm.replaceTiles(tiles)
             refreshTimer = setInterval(() => {
               void (async () => {
@@ -167,6 +177,10 @@ export function useDaemonExecution() {
         }
         try {
           if (ack.emittedEvents.length > 0) {
+            const syncAck = await wasm!.triggerSync()
+            if (!syncAck.accepted) {
+              throw new Error(syncAck.metadata.error ?? 'WASM trigger sync was rejected')
+            }
             const tiles = await wasm!.exportTiles()
             await eventStore.replaceAllTiles(tiles)
           }

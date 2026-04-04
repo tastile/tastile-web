@@ -11,6 +11,10 @@ export interface WasmExecutionEngine {
   execute(command: Command, actor: Actor): Promise<void>
   executePayload(payload: string): Promise<void>
   executeWithAck(command: Command, actor: Actor): Promise<WasmCommandAck>
+  configureSync(input: WasmSyncConfigureInput): Promise<WasmSyncCommandAck>
+  restoreSync(): Promise<WasmSyncCommandAck>
+  triggerSync(): Promise<WasmSyncCommandAck>
+  readSyncStatus(): Promise<WasmSyncStatus>
   replaceEventLog(events: EventEnvelope[]): Promise<void>
   replaceTiles(tiles: Tile[]): Promise<void>
   exportTiles(): Promise<Tile[]>
@@ -37,6 +41,24 @@ export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> 
       const payload = JSON.stringify({ command, actor })
       return parseCommandAck(JSON.parse(engine.execute_with_ack_json(payload)))
     },
+    async configureSync(input: WasmSyncConfigureInput) {
+      const payload = JSON.stringify({
+        device_id: input.deviceId,
+        connected: input.connected,
+        authenticated: input.authenticated,
+        remote_tiles: input.remoteTiles?.map(tile => toSnakeCaseDeep(tile)),
+      })
+      return parseSyncCommandAck(JSON.parse(engine.configure_sync_json(payload)))
+    },
+    async restoreSync() {
+      return parseSyncCommandAck(JSON.parse(engine.restore_sync_json()))
+    },
+    async triggerSync() {
+      return parseSyncCommandAck(JSON.parse(engine.trigger_sync_json()))
+    },
+    async readSyncStatus() {
+      return parseSyncStatus(JSON.parse(engine.read_sync_status_json()))
+    },
     async replaceEventLog(events: EventEnvelope[]) {
       const payload = JSON.stringify(events)
       const ack = parseCommandAck(JSON.parse(engine.replace_event_log_json(payload)))
@@ -62,6 +84,39 @@ export interface WasmCommandAck {
   error?: {
     code: string
     message: string
+  } | null
+}
+
+export interface WasmSyncConfigureInput {
+  deviceId?: string
+  connected?: boolean
+  authenticated?: boolean
+  remoteTiles?: Tile[]
+}
+
+export interface WasmSyncCommandAck {
+  accepted: boolean
+  metadata: {
+    uploaded?: number
+    downloaded?: number
+    applied?: number
+    failed?: number
+    conflicts?: number
+    error?: string
+  }
+}
+
+export interface WasmSyncStatus {
+  inProgress: boolean
+  lastAttemptAt: string | null
+  lastSuccessAt: string | null
+  lastError: string | null
+  lastResult: {
+    uploaded: number
+    downloaded: number
+    applied: number
+    failed: number
+    conflicts: number
   } | null
 }
 
@@ -103,6 +158,10 @@ type CoreWasmModule = {
     execute: (commandJson: string) => void
     execute_with_ack_json: (commandJson: string) => string
     read_snapshot_json: (nowIsoUtc: string | null) => string
+    configure_sync_json: (configJson: string) => string
+    restore_sync_json: () => string
+    trigger_sync_json: () => string
+    read_sync_status_json: () => string
     replace_event_log_json: (eventsJson: string) => string
     replace_tiles_json: (tilesJson: string) => string
     export_tiles_json: () => string
@@ -187,5 +246,55 @@ function normalizeEventDates(event: Record<string, unknown>) {
     }
   }
   return clone
+}
+
+function parseSyncCommandAck(raw: { accepted?: unknown; metadata?: unknown }): WasmSyncCommandAck {
+  const metadata = raw.metadata && typeof raw.metadata === 'object' ? (raw.metadata as Record<string, unknown>) : {}
+  return {
+    accepted: raw.accepted === true,
+    metadata: {
+      uploaded: typeof metadata.uploaded === 'number' ? metadata.uploaded : undefined,
+      downloaded: typeof metadata.downloaded === 'number' ? metadata.downloaded : undefined,
+      applied: typeof metadata.applied === 'number' ? metadata.applied : undefined,
+      failed: typeof metadata.failed === 'number' ? metadata.failed : undefined,
+      conflicts: typeof metadata.conflicts === 'number' ? metadata.conflicts : undefined,
+      error: typeof metadata.error === 'string' ? metadata.error : undefined,
+    },
+  }
+}
+
+function parseSyncStatus(raw: unknown): WasmSyncStatus {
+  const value = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const lastResultRaw =
+    value.last_result && typeof value.last_result === 'object'
+      ? (value.last_result as Record<string, unknown>)
+      : null
+  return {
+    inProgress: value.in_progress === true,
+    lastAttemptAt: typeof value.last_attempt_at === 'string' ? value.last_attempt_at : null,
+    lastSuccessAt: typeof value.last_success_at === 'string' ? value.last_success_at : null,
+    lastError: typeof value.last_error === 'string' ? value.last_error : null,
+    lastResult: lastResultRaw
+      ? {
+          uploaded: Number(lastResultRaw.uploaded ?? 0),
+          downloaded: Number(lastResultRaw.downloaded ?? 0),
+          applied: Number(lastResultRaw.applied ?? 0),
+          failed: Number(lastResultRaw.failed ?? 0),
+          conflicts: Number(lastResultRaw.conflicts ?? 0),
+        }
+      : null,
+  }
+}
+
+function toSnakeCaseDeep(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(item => toSnakeCaseDeep(item))
+  if (value instanceof Date) return value.toISOString()
+  if (!value || typeof value !== 'object') return value
+  const mapped: Record<string, unknown> = {}
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    const snake = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+    mapped[snake] = toSnakeCaseDeep(child)
+  }
+  return mapped
 }
 

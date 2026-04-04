@@ -23,6 +23,10 @@ const {
   wasmReplaceEventLogMock,
   wasmReplaceTilesMock,
   wasmExportTilesMock,
+  wasmConfigureSyncMock,
+  wasmRestoreSyncMock,
+  wasmTriggerSyncMock,
+  wasmReadSyncStatusMock,
   createWasmExecutionEngineMock,
   loadAllTilesMock,
   replaceAllTilesMock,
@@ -41,6 +45,10 @@ const {
   wasmReplaceEventLogMock: vi.fn(),
   wasmReplaceTilesMock: vi.fn(),
   wasmExportTilesMock: vi.fn(),
+  wasmConfigureSyncMock: vi.fn(),
+  wasmRestoreSyncMock: vi.fn(),
+  wasmTriggerSyncMock: vi.fn(),
+  wasmReadSyncStatusMock: vi.fn(),
   createWasmExecutionEngineMock: vi.fn(),
   loadAllTilesMock: vi.fn(),
   replaceAllTilesMock: vi.fn(),
@@ -97,6 +105,12 @@ describe('useDaemonExecution', () => {
     wasmExecuteMock.mockReset()
     wasmExecuteWithAckMock.mockReset()
     wasmReplaceEventLogMock.mockReset()
+    wasmReplaceTilesMock.mockReset()
+    wasmExportTilesMock.mockReset()
+    wasmConfigureSyncMock.mockReset()
+    wasmRestoreSyncMock.mockReset()
+    wasmTriggerSyncMock.mockReset()
+    wasmReadSyncStatusMock.mockReset()
     createWasmExecutionEngineMock.mockReset()
     loadAllTilesMock.mockReset()
     replaceAllTilesMock.mockReset()
@@ -134,6 +148,10 @@ describe('useDaemonExecution', () => {
     wasmReplaceEventLogMock.mockResolvedValue(undefined)
     wasmReplaceTilesMock.mockResolvedValue(undefined)
     wasmExportTilesMock.mockResolvedValue([])
+    wasmConfigureSyncMock.mockResolvedValue({ accepted: true, metadata: { configured: true } })
+    wasmRestoreSyncMock.mockResolvedValue({ accepted: true, metadata: { downloaded: 0, applied: 0 } })
+    wasmTriggerSyncMock.mockResolvedValue({ accepted: true, metadata: { uploaded: 0, downloaded: 0, applied: 0 } })
+    wasmReadSyncStatusMock.mockResolvedValue({ inProgress: false, lastError: null, lastAttemptAt: null, lastSuccessAt: null, lastResult: null })
     loadAllTilesMock.mockResolvedValue([])
     replaceAllTilesMock.mockResolvedValue(undefined)
     createWasmExecutionEngineMock.mockResolvedValue({
@@ -143,6 +161,10 @@ describe('useDaemonExecution', () => {
       replaceEventLog: wasmReplaceEventLogMock,
       replaceTiles: wasmReplaceTilesMock,
       exportTiles: wasmExportTilesMock,
+      configureSync: wasmConfigureSyncMock,
+      restoreSync: wasmRestoreSyncMock,
+      triggerSync: wasmTriggerSyncMock,
+      readSyncStatus: wasmReadSyncStatusMock,
     })
   })
 
@@ -236,6 +258,13 @@ describe('useDaemonExecution', () => {
 
     expect(wasmReplaceTilesMock).toHaveBeenCalled()
     expect(wasmReplaceTilesMock).toHaveBeenNthCalledWith(1, [])
+    expect(wasmConfigureSyncMock).toHaveBeenCalledWith({
+      deviceId: 'web-device',
+      connected: true,
+      authenticated: true,
+      remoteTiles: [],
+    })
+    expect(wasmRestoreSyncMock).toHaveBeenCalledTimes(1)
 
     await act(async () => {
       await result.current.execute(
@@ -250,6 +279,7 @@ describe('useDaemonExecution', () => {
     })
 
     expect(wasmExecuteWithAckMock).toHaveBeenCalledTimes(1)
+    expect(wasmTriggerSyncMock).toHaveBeenCalledTimes(1)
     expect(replaceAllTilesMock).toHaveBeenCalledTimes(1)
   })
 
