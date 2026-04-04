@@ -239,4 +239,69 @@ describe('DaemonClient', () => {
       })
     )
   })
+
+  it('reads daemon sync status', async () => {
+    const fetchImpl = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          in_progress: false,
+          last_attempt_at: '2026-04-04T00:00:00.000Z',
+          last_success_at: '2026-04-04T00:00:01.000Z',
+          last_error: null,
+          last_result: {
+            uploaded: 1,
+            downloaded: 2,
+            applied: 2,
+            failed: 0,
+            conflicts: 0,
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    })
+
+    const client = new DaemonClient({
+      baseUrl: 'https://daemon.example',
+      fetchImpl,
+    })
+
+    const status = await client.readSyncStatus()
+    expect(status.inProgress).toBe(false)
+    expect(status.lastResult?.downloaded).toBe(2)
+    expect(fetchImpl).toHaveBeenCalledWith(
+      'https://daemon.example/sync/status',
+      expect.objectContaining({ method: 'GET' })
+    )
+  })
+
+  it('reads daemon sync status when optional fields are missing', async () => {
+    const fetchImpl = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          in_progress: true,
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    })
+
+    const client = new DaemonClient({
+      baseUrl: 'https://daemon.example',
+      fetchImpl,
+    })
+
+    const status = await client.readSyncStatus()
+    expect(status).toEqual({
+      inProgress: true,
+      lastAttemptAt: null,
+      lastSuccessAt: null,
+      lastError: null,
+      lastResult: null,
+    })
+  })
 })

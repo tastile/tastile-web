@@ -6,7 +6,7 @@ import { RightSidebar } from './RightSidebar'
 import { MobileBottomTabs } from './MobileBottomTabs'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { PendingPrompt, PromptAction } from '@/lib/domain/execution'
+import { ExecutionSyncStatus, PendingPrompt, PromptAction } from '@/lib/domain/execution'
 import { GlobalPromptBanner } from '@/components/execution/GlobalPromptBanner'
 import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 import { Actor } from '@/lib/domain/actor'
@@ -22,6 +22,7 @@ interface AppShellProps {
     phaseStartedAt: Date | null
     phaseEndsAt: Date | null
     pendingPrompt?: PendingPrompt | null
+    syncStatus?: ExecutionSyncStatus | null
   }
 }
 

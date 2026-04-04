@@ -8,6 +8,7 @@ import { Menu, Bell } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { AccountMenu } from '@/app/app/account-menu'
+import { ExecutionSyncStatus } from '@/lib/domain/execution'
 
 interface HeaderProps {
   railPinned: boolean
@@ -17,6 +18,7 @@ interface HeaderProps {
     phaseKind: 'work' | 'break' | 'idle'
     phaseStartedAt: Date | null
     phaseEndsAt: Date | null
+    syncStatus?: ExecutionSyncStatus | null
   }
 }
 
@@ -83,6 +85,17 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
             phaseStartedAt={executionState?.phaseStartedAt ?? null}
             phaseEndsAt={executionState?.phaseEndsAt ?? null}
           />
+          {executionState?.syncStatus ? (
+            <span className="ml-3 text-xs text-foreground-muted" data-testid="sync-status-indicator">
+              {executionState.syncStatus.inProgress
+                ? 'sync in progress'
+                : executionState.syncStatus.lastError
+                  ? `sync error: ${executionState.syncStatus.lastError}`
+                  : executionState.syncStatus.lastResult
+                    ? `sync d:${executionState.syncStatus.lastResult.downloaded} u:${executionState.syncStatus.lastResult.uploaded}`
+                    : 'sync idle'}
+            </span>
+          ) : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">

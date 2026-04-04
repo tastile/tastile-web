@@ -1,5 +1,5 @@
 import { DaemonCommandRequest, fromDaemonCommandRequest } from '../core/command'
-import { ExecutionSnapshot } from '../domain/execution'
+import { ExecutionSnapshot, ExecutionSyncStatus } from '../domain/execution'
 import { parseExecutionSnapshot } from './contracts'
 
 export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
@@ -111,6 +111,16 @@ export class DaemonClient {
     return parseIntegrationSettings(payload)
   }
 
+  async readSyncStatus(): Promise<ExecutionSyncStatus> {
+    const response = await this.fetchImpl(`${this.baseUrl}/sync/status`, {
+      method: 'GET',
+      headers: await this.buildHeaders(),
+    })
+    await assertOk(response, 'Failed to read sync status')
+    const payload = (await response.json()) as unknown
+    return parseSyncStatus(payload)
+  }
+
   private async buildHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
     const headers: Record<string, string> = { ...(extra ?? {}) }
     const token = this.getAccessToken ? await this.getAccessToken() : null
@@ -189,4 +199,43 @@ function parseIntegrationSettings(raw: unknown): GoogleCalendarIntegrationSettin
 function asBoolean(value: unknown, field: string): boolean {
   if (typeof value === 'boolean') return value
   throw new Error(`Invalid ${field}: expected boolean`)
+}
+
+function asNumber(value: unknown, field: string): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  throw new Error(`Invalid ${field}: expected number`)
+}
+
+function asNullableObject(value: unknown, field: string): Record<string, unknown> | null {
+  if (value === null) return null
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>
+  throw new Error(`Invalid ${field}: expected object|null`)
+}
+
+function parseSyncStatus(raw: unknown): ExecutionSyncStatus {
+  const row = asRecord(raw, 'sync status')
+  const inProgressRaw =
+    'in_progress' in row ? row.in_progress : 'inProgress' in row ? row.inProgress : false
+  const lastAttemptRaw =
+    'last_attempt_at' in row ? row.last_attempt_at : 'lastAttemptAt' in row ? row.lastAttemptAt : null
+  const lastSuccessRaw =
+    'last_success_at' in row ? row.last_success_at : 'lastSuccessAt' in row ? row.lastSuccessAt : null
+  const lastErrorRaw = 'last_error' in row ? row.last_error : 'lastError' in row ? row.lastError : null
+  const lastResultInput = 'last_result' in row ? row.last_result : 'lastResult' in row ? row.lastResult : null
+  const lastResultRaw = asNullableObject(lastResultInput, 'last_result')
+  return {
+    inProgress: asBoolean(inProgressRaw, 'in_progress'),
+    lastAttemptAt: asNullableString(lastAttemptRaw, 'last_attempt_at'),
+    lastSuccessAt: asNullableString(lastSuccessRaw, 'last_success_at'),
+    lastError: asNullableString(lastErrorRaw, 'last_error'),
+    lastResult: lastResultRaw
+      ? {
+          uploaded: asNumber(read(lastResultRaw, 'uploaded'), 'last_result.uploaded'),
+          downloaded: asNumber(read(lastResultRaw, 'downloaded'), 'last_result.downloaded'),
+          applied: asNumber(read(lastResultRaw, 'applied'), 'last_result.applied'),
+          failed: asNumber(read(lastResultRaw, 'failed'), 'last_result.failed'),
+          conflicts: asNumber(read(lastResultRaw, 'conflicts'), 'last_result.conflicts'),
+        }
+      : null,
+  }
 }

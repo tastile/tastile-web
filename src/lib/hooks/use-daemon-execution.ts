@@ -21,6 +21,15 @@ const WASM_TILES_STORAGE_KEY = 'tastile:wasm-tiles:v1'
 const WASM_DEVICE_ID_STORAGE_KEY = 'tastile:wasm-device-id:v1'
 let runtimeWasmDeviceId: string | null = null
 
+async function readDaemonSyncStatusSafely(client: DaemonClient): Promise<ExecutionSyncStatus | null> {
+  try {
+    return await client.readSyncStatus()
+  } catch (err) {
+    console.warn('Failed to read daemon sync status', err)
+    return null
+  }
+}
+
 export function useDaemonExecution() {
   const [state, setState] = useState<AppState>(AppState.initial())
   const [loading, setLoading] = useState(true)
@@ -136,6 +145,10 @@ export function useDaemonExecution() {
           refreshToken: session.refresh_token,
           expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
         })
+        const daemonSyncStatus = await readDaemonSyncStatusSafely(clientRef.current)
+        if (daemonSyncStatus) {
+          syncStatusRef.current = daemonSyncStatus
+        }
 
         await refreshSnapshot()
         if (!active) return
@@ -144,16 +157,38 @@ export function useDaemonExecution() {
           baseUrl,
           getAccessToken,
           onEvent: () => {
-            void refreshSnapshot().catch(err => {
-              console.error('Failed to refresh daemon snapshot from stream event:', err)
-            })
+            void (async () => {
+              try {
+                const daemonClient = clientRef.current
+                if (daemonClient) {
+                  const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient)
+                  if (daemonSyncStatus) {
+                    syncStatusRef.current = daemonSyncStatus
+                  }
+                }
+                await refreshSnapshot()
+              } catch (err) {
+                console.error('Failed to refresh daemon snapshot from stream event:', err)
+              }
+            })()
           },
         })
         closeStream = stream.close
         refreshTimer = setInterval(() => {
-          void refreshSnapshot().catch(err => {
+          void (async () => {
+            try {
+              const daemonClient = clientRef.current
+              if (daemonClient) {
+                const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient)
+                if (daemonSyncStatus) {
+                  syncStatusRef.current = daemonSyncStatus
+                }
+              }
+              await refreshSnapshot()
+            } catch (err) {
             console.error('Failed to refresh daemon snapshot from periodic poll:', err)
-          })
+            }
+          })()
         }, daemonRefreshMs)
       } catch (err) {
         console.error(`Failed to initialize daemon execution (baseUrl=${baseUrl}):`, err)
@@ -180,6 +215,10 @@ export function useDaemonExecution() {
     }
     if (client) {
       await client.sendCommand(toDaemonCommand(command))
+      const daemonSyncStatus = await readDaemonSyncStatusSafely(client)
+      if (daemonSyncStatus) {
+        syncStatusRef.current = daemonSyncStatus
+      }
     } else {
       const eventStore = eventStoreRef.current
       if (eventStore) {
@@ -193,6 +232,7 @@ export function useDaemonExecution() {
             if (!syncAck.accepted) {
               throw new Error(syncAck.metadata.error ?? 'WASM trigger sync was rejected')
             }
+            syncStatusRef.current = await wasm!.readSyncStatus()
             const tiles = await wasm!.exportTiles()
             await eventStore.replaceAllTiles(tiles)
           }
