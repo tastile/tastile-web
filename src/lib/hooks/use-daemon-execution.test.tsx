@@ -327,6 +327,24 @@ describe('useDaemonExecution', () => {
     expect(wasmReplaceTilesMock).not.toHaveBeenCalled()
   })
 
+  it('surfaces wasm sync status counters with remote downloaded value', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    loadAllTilesMock.mockResolvedValueOnce([])
+    wasmReadSyncStatusMock.mockResolvedValueOnce({
+      inProgress: false,
+      lastError: null,
+      lastAttemptAt: '2026-04-04T00:00:00.000Z',
+      lastSuccessAt: '2026-04-04T00:00:01.000Z',
+      lastResult: { uploaded: 1, downloaded: 2, applied: 2, failed: 0, conflicts: 0 },
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(wasmReadSyncStatusMock).toHaveBeenCalledTimes(1)
+    expect((result.current.state.execution as { syncStatus?: { lastResult?: { downloaded?: number } | null } }).syncStatus?.lastResult?.downloaded).toBe(2)
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
   })

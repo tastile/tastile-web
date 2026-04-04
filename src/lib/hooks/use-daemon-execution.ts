@@ -7,7 +7,7 @@ import type { EventEnvelope } from '../core/event'
 import { DaemonClient } from '../daemon/client'
 import { openExecutionStream } from '../daemon/stream'
 import { Actor } from '../domain/actor'
-import { ExecutionSnapshot, PromptQueueItemSnapshot } from '../domain/execution'
+import { ExecutionSnapshot, ExecutionSyncStatus, PromptQueueItemSnapshot } from '../domain/execution'
 import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
 import { createClient, getBrowserAccessToken } from '@/lib/supabase/client'
@@ -28,6 +28,7 @@ export function useDaemonExecution() {
   const clientRef = useRef<DaemonClient | null>(null)
   const wasmRef = useRef<WasmExecutionEngine | null>(null)
   const eventStoreRef = useRef<EventStore | null>(null)
+  const syncStatusRef = useRef<ExecutionSyncStatus | null>(null)
   const mountedRef = useRef(true)
   const refreshRequestRef = useRef(0)
   const appliedRefreshRef = useRef(0)
@@ -56,7 +57,7 @@ export function useDaemonExecution() {
     if (!mountedRef.current) return
     if (requestId < appliedRefreshRef.current) return
     appliedRefreshRef.current = requestId
-    setState(projectSnapshotToAppState(snapshot))
+    setState(projectSnapshotToAppState(snapshot, syncStatusRef.current))
   }, [])
 
   useEffect(() => {
@@ -86,6 +87,8 @@ export function useDaemonExecution() {
               remoteTiles: tiles,
             })
             const restoreAck = await wasm.restoreSync()
+            const syncStatus = await wasm.readSyncStatus()
+            syncStatusRef.current = syncStatus
             if (!restoreAck.accepted) {
               console.warn('WASM restore sync was rejected, falling back to local tiles', restoreAck.metadata.error)
               await wasm.replaceTiles(tiles)
@@ -98,6 +101,8 @@ export function useDaemonExecution() {
                     const latest = await eventStore.loadAllTiles()
                     await wasm.replaceTiles(latest)
                   }
+                  const latestSyncStatus = await wasm.readSyncStatus()
+                  syncStatusRef.current = latestSyncStatus
                   await refreshSnapshot()
                 } catch (err) {
                   console.error('Failed to refresh wasm tiles from Supabase:', err)
@@ -278,7 +283,7 @@ function createWebDeviceId(): string {
   return `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function projectSnapshotToAppState(snapshot: ExecutionSnapshot): AppState {
+function projectSnapshotToAppState(snapshot: ExecutionSnapshot, syncStatus: ExecutionSyncStatus | null = null): AppState {
   const tiles = new Map<TileId, Tile>()
   const ensureTile = (tileId: TileId, title: string): Tile => {
     const existing = tiles.get(tileId)
@@ -326,6 +331,7 @@ function projectSnapshotToAppState(snapshot: ExecutionSnapshot): AppState {
       phaseStartedAt: activeStartAt,
       phaseEndsAt: activeEndsAt,
       pendingPrompt,
+      syncStatus,
     },
     timeline: snapshot.timeline,
     events,
