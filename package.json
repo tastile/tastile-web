@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build:core-wasm": "node scripts/build-core-wasm.mjs",
-    "check:core-wasm": "git diff --exit-code -- src/wasm/tastile-core-wasm/pkg && npm run build:core-wasm && git diff --exit-code -- src/wasm/tastile-core-wasm/pkg",
+    "check:core-wasm": "node scripts/check-core-wasm-freshness.mjs",
     "build:app": "next build",
     "build": "npm run build:core-wasm && npm run build:app",
     "start": "next start",
