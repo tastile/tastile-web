@@ -19,7 +19,7 @@ BEGIN
   IF caller_uid IS NULL THEN
     RAISE EXCEPTION 'Authentication required';
   END IF;
-  IF uid <> caller_uid THEN
+  IF uid IS DISTINCT FROM caller_uid THEN
     RAISE EXCEPTION 'Cannot access another user''s quota';
   END IF;
 
