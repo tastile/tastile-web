@@ -304,4 +304,42 @@ describe('DaemonClient', () => {
       lastResult: null,
     })
   })
+
+  it('normalizes malformed daemon sync counters to finite integers', async () => {
+    const fetchImpl = vi.fn(async () => {
+      return new Response(
+        JSON.stringify({
+          in_progress: false,
+          last_attempt_at: null,
+          last_success_at: null,
+          last_error: null,
+          last_result: {
+            uploaded: 'x',
+            downloaded: 3.9,
+            applied: -2,
+            failed: Infinity,
+            conflicts: null,
+          },
+        }),
+        {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }
+      )
+    })
+
+    const client = new DaemonClient({
+      baseUrl: 'https://daemon.example',
+      fetchImpl,
+    })
+
+    const status = await client.readSyncStatus()
+    expect(status.lastResult).toEqual({
+      uploaded: 0,
+      downloaded: 3,
+      applied: 0,
+      failed: 0,
+      conflicts: 0,
+    })
+  })
 })

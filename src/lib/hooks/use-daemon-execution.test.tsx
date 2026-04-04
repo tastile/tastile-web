@@ -412,6 +412,68 @@ describe('useDaemonExecution', () => {
     expect((result.current.state.execution as { syncStatus?: { lastResult?: { downloaded?: number } | null } }).syncStatus?.lastResult?.downloaded).toBe(3)
   })
 
+  it('refreshes sync status even when wasm trigger sync is rejected', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    loadAllTilesMock.mockResolvedValueOnce([])
+    wasmExecuteWithAckMock.mockResolvedValueOnce({
+      accepted: true,
+      emittedEvents: [
+        {
+          event_id: 'local-event-1',
+          aggregate_id: 'tile:tile-local',
+          occurred_at: new Date('2026-03-29T02:00:00.000Z'),
+          actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
+          caused_by_command_id: null,
+          request_id: null,
+          event: {
+            type: 'tile_started',
+            tile_id: TileId.fromString('tile-local'),
+            started_at: new Date('2026-03-29T02:00:00.000Z'),
+          },
+        },
+      ],
+    })
+    wasmTriggerSyncMock.mockResolvedValueOnce({
+      accepted: false,
+      metadata: { error: 'trigger rejected' },
+    })
+    wasmReadSyncStatusMock
+      .mockResolvedValueOnce({
+        inProgress: false,
+        lastError: null,
+        lastAttemptAt: null,
+        lastSuccessAt: null,
+        lastResult: null,
+      })
+      .mockResolvedValueOnce({
+        inProgress: false,
+        lastError: 'trigger rejected',
+        lastAttemptAt: '2026-04-04T00:00:02.000Z',
+        lastSuccessAt: null,
+        lastResult: { uploaded: 1, downloaded: 0, applied: 0, failed: 1, conflicts: 0 },
+      })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await expect(
+      act(async () => {
+        await result.current.execute(
+          {
+            type: 'start_tile',
+            tile_id: TileId.fromString('tile-local'),
+            started_at: new Date('2026-03-29T02:00:00.000Z'),
+            source: 'manual',
+          },
+          Actor.human('self')
+        )
+      })
+    ).rejects.toThrow('trigger rejected')
+
+    expect(wasmReadSyncStatusMock).toHaveBeenCalledTimes(2)
+    expect(wasmReplaceTilesMock).toHaveBeenCalledTimes(1)
+  })
+
   afterEach(() => {
     vi.unstubAllGlobals()
   })

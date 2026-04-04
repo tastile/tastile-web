@@ -196,7 +196,7 @@ describe('GlobalPromptBanner', () => {
       </AppShell>
     )
 
-    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('sync in progress')
+    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('header.sync.in_progress')
 
     rerender(
       <AppShell
@@ -219,7 +219,7 @@ describe('GlobalPromptBanner', () => {
       </AppShell>
     )
 
-    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('sync error: connection failed')
+    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('header.sync.error: connection failed')
   })
 
   it('AppShell maps action without tileId to dismissed clear prompt only', async () => {

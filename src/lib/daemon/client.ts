@@ -201,9 +201,11 @@ function asBoolean(value: unknown, field: string): boolean {
   throw new Error(`Invalid ${field}: expected boolean`)
 }
 
-function asNumber(value: unknown, field: string): number {
-  if (typeof value === 'number' && Number.isFinite(value)) return value
-  throw new Error(`Invalid ${field}: expected number`)
+function toFiniteCounter(value: unknown): number {
+  const parsed = Number(value ?? 0)
+  if (!Number.isFinite(parsed)) return 0
+  if (parsed <= 0) return 0
+  return Math.trunc(parsed)
 }
 
 function asNullableObject(value: unknown, field: string): Record<string, unknown> | null {
@@ -230,11 +232,11 @@ function parseSyncStatus(raw: unknown): ExecutionSyncStatus {
     lastError: asNullableString(lastErrorRaw, 'last_error'),
     lastResult: lastResultRaw
       ? {
-          uploaded: asNumber(read(lastResultRaw, 'uploaded'), 'last_result.uploaded'),
-          downloaded: asNumber(read(lastResultRaw, 'downloaded'), 'last_result.downloaded'),
-          applied: asNumber(read(lastResultRaw, 'applied'), 'last_result.applied'),
-          failed: asNumber(read(lastResultRaw, 'failed'), 'last_result.failed'),
-          conflicts: asNumber(read(lastResultRaw, 'conflicts'), 'last_result.conflicts'),
+          uploaded: toFiniteCounter(read(lastResultRaw, 'uploaded')),
+          downloaded: toFiniteCounter(read(lastResultRaw, 'downloaded')),
+          applied: toFiniteCounter(read(lastResultRaw, 'applied')),
+          failed: toFiniteCounter(read(lastResultRaw, 'failed')),
+          conflicts: toFiniteCounter(read(lastResultRaw, 'conflicts')),
         }
       : null,
   }

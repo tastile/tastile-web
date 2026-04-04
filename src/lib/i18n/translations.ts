@@ -14,6 +14,12 @@ export const translations = {
       active: '実行中',
       menu: 'メニュー',
       notifications: '通知',
+      sync: {
+        in_progress: '同期中',
+        error: '同期エラー',
+        delta: '同期',
+        idle: '同期待機',
+      },
     },
 
     // Sidebar
@@ -180,6 +186,12 @@ export const translations = {
       active: 'Active',
       menu: 'Menu',
       notifications: 'Notifications',
+      sync: {
+        in_progress: 'sync in progress',
+        error: 'sync error',
+        delta: 'sync',
+        idle: 'sync idle',
+      },
     },
 
     // Sidebar

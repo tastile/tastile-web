@@ -186,7 +186,7 @@ export function useDaemonExecution() {
               }
               await refreshSnapshot()
             } catch (err) {
-            console.error('Failed to refresh daemon snapshot from periodic poll:', err)
+              console.error('Failed to refresh daemon snapshot from periodic poll:', err)
             }
           })()
         }, daemonRefreshMs)
@@ -237,8 +237,27 @@ export function useDaemonExecution() {
             await eventStore.replaceAllTiles(tiles)
           }
         } catch (err) {
+          try {
+            syncStatusRef.current = await wasm!.readSyncStatus()
+            if (mountedRef.current) {
+              setState(current => ({
+                ...current,
+                execution: {
+                  ...current.execution,
+                  syncStatus: syncStatusRef.current,
+                },
+              }))
+            }
+          } catch (statusErr) {
+            console.warn('Failed to refresh wasm sync status after trigger error', statusErr)
+          }
           const latest = await eventStore.loadAllTiles()
           await wasm!.replaceTiles(latest)
+          try {
+            await refreshSnapshot()
+          } catch (refreshErr) {
+            console.warn('Failed to refresh snapshot after wasm trigger error', refreshErr)
+          }
           throw err
         }
       } else {

@@ -316,4 +316,51 @@ describe('core-engine wasm bridge', () => {
       conflicts: 0,
     })
   })
+
+  it('normalizes sync command ack counters to optional non-negative integers', async () => {
+    restoreSyncJsonMock.mockReturnValue(
+      JSON.stringify({
+        accepted: true,
+        metadata: {
+          uploaded: 3.8,
+          downloaded: -1,
+          applied: null,
+          failed: 'x',
+          conflicts: 2,
+          error: 'noop',
+        },
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const ack = await engine.restoreSync()
+    expect(ack).toEqual({
+      accepted: true,
+      metadata: {
+        uploaded: 3,
+        downloaded: 0,
+        applied: undefined,
+        failed: 0,
+        conflicts: 2,
+        error: 'noop',
+      },
+    })
+  })
+
+  it('normalizes invalid sync status timestamps to null', async () => {
+    readSyncStatusJsonMock.mockReturnValue(
+      JSON.stringify({
+        in_progress: false,
+        last_attempt_at: 'not-a-date',
+        last_success_at: 'still-not-a-date',
+        last_error: null,
+        last_result: null,
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const status = await engine.readSyncStatus()
+    expect(status.lastAttemptAt).toBeNull()
+    expect(status.lastSuccessAt).toBeNull()
+  })
 })

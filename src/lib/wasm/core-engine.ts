@@ -250,14 +250,15 @@ function normalizeEventDates(event: Record<string, unknown>) {
 
 function parseSyncCommandAck(raw: { accepted?: unknown; metadata?: unknown }): WasmSyncCommandAck {
   const metadata = raw.metadata && typeof raw.metadata === 'object' ? (raw.metadata as Record<string, unknown>) : {}
+  const toOptionalCounter = (value: unknown): number | undefined => (value == null ? undefined : toFiniteCounter(value))
   return {
     accepted: raw.accepted === true,
     metadata: {
-      uploaded: typeof metadata.uploaded === 'number' ? metadata.uploaded : undefined,
-      downloaded: typeof metadata.downloaded === 'number' ? metadata.downloaded : undefined,
-      applied: typeof metadata.applied === 'number' ? metadata.applied : undefined,
-      failed: typeof metadata.failed === 'number' ? metadata.failed : undefined,
-      conflicts: typeof metadata.conflicts === 'number' ? metadata.conflicts : undefined,
+      uploaded: toOptionalCounter(metadata.uploaded),
+      downloaded: toOptionalCounter(metadata.downloaded),
+      applied: toOptionalCounter(metadata.applied),
+      failed: toOptionalCounter(metadata.failed),
+      conflicts: toOptionalCounter(metadata.conflicts),
       error: typeof metadata.error === 'string' ? metadata.error : undefined,
     },
   }
@@ -265,14 +266,18 @@ function parseSyncCommandAck(raw: { accepted?: unknown; metadata?: unknown }): W
 
 function parseSyncStatus(raw: unknown): WasmSyncStatus {
   const value = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
+  const parseIsoOrNull = (input: unknown): string | null => {
+    if (typeof input !== 'string') return null
+    return Number.isNaN(Date.parse(input)) ? null : input
+  }
   const lastResultRaw =
     value.last_result && typeof value.last_result === 'object'
       ? (value.last_result as Record<string, unknown>)
       : null
   return {
     inProgress: value.in_progress === true,
-    lastAttemptAt: typeof value.last_attempt_at === 'string' ? value.last_attempt_at : null,
-    lastSuccessAt: typeof value.last_success_at === 'string' ? value.last_success_at : null,
+    lastAttemptAt: parseIsoOrNull(value.last_attempt_at),
+    lastSuccessAt: parseIsoOrNull(value.last_success_at),
     lastError: typeof value.last_error === 'string' ? value.last_error : null,
     lastResult: lastResultRaw
       ? {

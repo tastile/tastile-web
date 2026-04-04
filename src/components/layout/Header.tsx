@@ -88,12 +88,12 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
           {executionState?.syncStatus ? (
             <span className="ml-3 text-xs text-foreground-muted" data-testid="sync-status-indicator">
               {executionState.syncStatus.inProgress
-                ? 'sync in progress'
+                ? t('header.sync.in_progress')
                 : executionState.syncStatus.lastError
-                  ? `sync error: ${executionState.syncStatus.lastError}`
+                  ? `${t('header.sync.error')}: ${executionState.syncStatus.lastError}`
                   : executionState.syncStatus.lastResult
-                    ? `sync d:${executionState.syncStatus.lastResult.downloaded} u:${executionState.syncStatus.lastResult.uploaded}`
-                    : 'sync idle'}
+                    ? `${t('header.sync.delta')} d:${executionState.syncStatus.lastResult.downloaded} u:${executionState.syncStatus.lastResult.uploaded}`
+                    : t('header.sync.idle')}
             </span>
           ) : null}
         </div>
