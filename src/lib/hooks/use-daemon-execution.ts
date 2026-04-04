@@ -18,6 +18,8 @@ const DEFAULT_DAEMON_BASE_URL = 'http://127.0.0.1:3140'
 const DEFAULT_EXECUTION_BACKEND = 'wasm'
 const DEFAULT_DAEMON_REFRESH_MS = 5_000
 const WASM_TILES_STORAGE_KEY = 'tastile:wasm-tiles:v1'
+const WASM_DEVICE_ID_STORAGE_KEY = 'tastile:wasm-device-id:v1'
+let runtimeWasmDeviceId: string | null = null
 
 export function useDaemonExecution() {
   const [state, setState] = useState<AppState>(AppState.initial())
@@ -75,22 +77,27 @@ export function useDaemonExecution() {
             const eventStore = new EventStore(supabase, session.user.id)
             eventStoreRef.current = eventStore
             const tiles = await eventStore.loadAllTiles()
+            const deviceId = getOrCreateWasmDeviceId()
+            let shouldMirrorSupabaseTiles = false
             await wasm.configureSync({
-              deviceId: 'web-device',
+              deviceId,
               connected: true,
               authenticated: true,
               remoteTiles: tiles,
             })
             const restoreAck = await wasm.restoreSync()
             if (!restoreAck.accepted) {
-              throw new Error(restoreAck.metadata.error ?? 'WASM restore sync was rejected')
+              console.warn('WASM restore sync was rejected, falling back to local tiles', restoreAck.metadata.error)
+              await wasm.replaceTiles(tiles)
+              shouldMirrorSupabaseTiles = true
             }
-            await wasm.replaceTiles(tiles)
             refreshTimer = setInterval(() => {
               void (async () => {
                 try {
-                  const latest = await eventStore.loadAllTiles()
-                  await wasm.replaceTiles(latest)
+                  if (shouldMirrorSupabaseTiles) {
+                    const latest = await eventStore.loadAllTiles()
+                    await wasm.replaceTiles(latest)
+                  }
                   await refreshSnapshot()
                 } catch (err) {
                   console.error('Failed to refresh wasm tiles from Supabase:', err)
@@ -244,6 +251,31 @@ function getLocalStorage(): Storage | null {
   } catch {
     return null
   }
+}
+
+function getOrCreateWasmDeviceId(): string {
+  const storage = getLocalStorage()
+  if (!storage) {
+    if (!runtimeWasmDeviceId) runtimeWasmDeviceId = createWebDeviceId()
+    return runtimeWasmDeviceId
+  }
+  try {
+    const existing = storage.getItem(WASM_DEVICE_ID_STORAGE_KEY)
+    if (existing && existing.trim().length > 0) return existing
+    const created = createWebDeviceId()
+    storage.setItem(WASM_DEVICE_ID_STORAGE_KEY, created)
+    return created
+  } catch {
+    if (!runtimeWasmDeviceId) runtimeWasmDeviceId = createWebDeviceId()
+    return runtimeWasmDeviceId
+  }
+}
+
+function createWebDeviceId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `web-${crypto.randomUUID()}`
+  }
+  return `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 function projectSnapshotToAppState(snapshot: ExecutionSnapshot): AppState {

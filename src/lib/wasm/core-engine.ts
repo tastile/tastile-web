@@ -276,14 +276,21 @@ function parseSyncStatus(raw: unknown): WasmSyncStatus {
     lastError: typeof value.last_error === 'string' ? value.last_error : null,
     lastResult: lastResultRaw
       ? {
-          uploaded: Number(lastResultRaw.uploaded ?? 0),
-          downloaded: Number(lastResultRaw.downloaded ?? 0),
-          applied: Number(lastResultRaw.applied ?? 0),
-          failed: Number(lastResultRaw.failed ?? 0),
-          conflicts: Number(lastResultRaw.conflicts ?? 0),
+          uploaded: toFiniteCounter(lastResultRaw.uploaded),
+          downloaded: toFiniteCounter(lastResultRaw.downloaded),
+          applied: toFiniteCounter(lastResultRaw.applied),
+          failed: toFiniteCounter(lastResultRaw.failed),
+          conflicts: toFiniteCounter(lastResultRaw.conflicts),
         }
       : null,
   }
+}
+
+function toFiniteCounter(value: unknown): number {
+  const parsed = Number(value ?? 0)
+  if (!Number.isFinite(parsed)) return 0
+  if (parsed <= 0) return 0
+  return Math.trunc(parsed)
 }
 
 function toSnakeCaseDeep(value: unknown): unknown {
