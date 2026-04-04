@@ -7,7 +7,7 @@ import type { EventEnvelope } from '../core/event'
 import { DaemonClient } from '../daemon/client'
 import { openExecutionStream } from '../daemon/stream'
 import { Actor } from '../domain/actor'
-import { ExecutionSnapshot, PromptQueueItemSnapshot } from '../domain/execution'
+import { ExecutionSnapshot, ExecutionSyncStatus, PromptQueueItemSnapshot } from '../domain/execution'
 import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
 import { createClient, getBrowserAccessToken } from '@/lib/supabase/client'
@@ -18,6 +18,17 @@ const DEFAULT_DAEMON_BASE_URL = 'http://127.0.0.1:3140'
 const DEFAULT_EXECUTION_BACKEND = 'wasm'
 const DEFAULT_DAEMON_REFRESH_MS = 5_000
 const WASM_TILES_STORAGE_KEY = 'tastile:wasm-tiles:v1'
+const WASM_DEVICE_ID_STORAGE_KEY = 'tastile:wasm-device-id:v1'
+let runtimeWasmDeviceId: string | null = null
+
+async function readDaemonSyncStatusSafely(client: DaemonClient): Promise<ExecutionSyncStatus | null> {
+  try {
+    return await client.readSyncStatus()
+  } catch (err) {
+    console.warn('Failed to read daemon sync status', err)
+    return null
+  }
+}
 
 export function useDaemonExecution() {
   const [state, setState] = useState<AppState>(AppState.initial())
@@ -26,6 +37,7 @@ export function useDaemonExecution() {
   const clientRef = useRef<DaemonClient | null>(null)
   const wasmRef = useRef<WasmExecutionEngine | null>(null)
   const eventStoreRef = useRef<EventStore | null>(null)
+  const syncStatusRef = useRef<ExecutionSyncStatus | null>(null)
   const mountedRef = useRef(true)
   const refreshRequestRef = useRef(0)
   const appliedRefreshRef = useRef(0)
@@ -54,7 +66,7 @@ export function useDaemonExecution() {
     if (!mountedRef.current) return
     if (requestId < appliedRefreshRef.current) return
     appliedRefreshRef.current = requestId
-    setState(projectSnapshotToAppState(snapshot))
+    setState(projectSnapshotToAppState(snapshot, syncStatusRef.current))
   }, [])
 
   useEffect(() => {
@@ -75,12 +87,31 @@ export function useDaemonExecution() {
             const eventStore = new EventStore(supabase, session.user.id)
             eventStoreRef.current = eventStore
             const tiles = await eventStore.loadAllTiles()
-            await wasm.replaceTiles(tiles)
+            const deviceId = getOrCreateWasmDeviceId()
+            let shouldMirrorSupabaseTiles = false
+            await wasm.configureSync({
+              deviceId,
+              connected: true,
+              authenticated: true,
+              remoteTiles: tiles,
+            })
+            const restoreAck = await wasm.restoreSync()
+            const syncStatus = await wasm.readSyncStatus()
+            syncStatusRef.current = syncStatus
+            if (!restoreAck.accepted) {
+              console.warn('WASM restore sync was rejected, falling back to local tiles', restoreAck.metadata.error)
+              await wasm.replaceTiles(tiles)
+              shouldMirrorSupabaseTiles = true
+            }
             refreshTimer = setInterval(() => {
               void (async () => {
                 try {
-                  const latest = await eventStore.loadAllTiles()
-                  await wasm.replaceTiles(latest)
+                  if (shouldMirrorSupabaseTiles) {
+                    const latest = await eventStore.loadAllTiles()
+                    await wasm.replaceTiles(latest)
+                  }
+                  const latestSyncStatus = await wasm.readSyncStatus()
+                  syncStatusRef.current = latestSyncStatus
                   await refreshSnapshot()
                 } catch (err) {
                   console.error('Failed to refresh wasm tiles from Supabase:', err)
@@ -114,6 +145,10 @@ export function useDaemonExecution() {
           refreshToken: session.refresh_token,
           expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
         })
+        const daemonSyncStatus = await readDaemonSyncStatusSafely(clientRef.current)
+        if (daemonSyncStatus) {
+          syncStatusRef.current = daemonSyncStatus
+        }
 
         await refreshSnapshot()
         if (!active) return
@@ -122,16 +157,38 @@ export function useDaemonExecution() {
           baseUrl,
           getAccessToken,
           onEvent: () => {
-            void refreshSnapshot().catch(err => {
-              console.error('Failed to refresh daemon snapshot from stream event:', err)
-            })
+            void (async () => {
+              try {
+                const daemonClient = clientRef.current
+                if (daemonClient) {
+                  const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient)
+                  if (daemonSyncStatus) {
+                    syncStatusRef.current = daemonSyncStatus
+                  }
+                }
+                await refreshSnapshot()
+              } catch (err) {
+                console.error('Failed to refresh daemon snapshot from stream event:', err)
+              }
+            })()
           },
         })
         closeStream = stream.close
         refreshTimer = setInterval(() => {
-          void refreshSnapshot().catch(err => {
-            console.error('Failed to refresh daemon snapshot from periodic poll:', err)
-          })
+          void (async () => {
+            try {
+              const daemonClient = clientRef.current
+              if (daemonClient) {
+                const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient)
+                if (daemonSyncStatus) {
+                  syncStatusRef.current = daemonSyncStatus
+                }
+              }
+              await refreshSnapshot()
+            } catch (err) {
+              console.error('Failed to refresh daemon snapshot from periodic poll:', err)
+            }
+          })()
         }, daemonRefreshMs)
       } catch (err) {
         console.error(`Failed to initialize daemon execution (baseUrl=${baseUrl}):`, err)
@@ -158,6 +215,10 @@ export function useDaemonExecution() {
     }
     if (client) {
       await client.sendCommand(toDaemonCommand(command))
+      const daemonSyncStatus = await readDaemonSyncStatusSafely(client)
+      if (daemonSyncStatus) {
+        syncStatusRef.current = daemonSyncStatus
+      }
     } else {
       const eventStore = eventStoreRef.current
       if (eventStore) {
@@ -167,12 +228,36 @@ export function useDaemonExecution() {
         }
         try {
           if (ack.emittedEvents.length > 0) {
+            const syncAck = await wasm!.triggerSync()
+            if (!syncAck.accepted) {
+              throw new Error(syncAck.metadata.error ?? 'WASM trigger sync was rejected')
+            }
+            syncStatusRef.current = await wasm!.readSyncStatus()
             const tiles = await wasm!.exportTiles()
             await eventStore.replaceAllTiles(tiles)
           }
         } catch (err) {
+          try {
+            syncStatusRef.current = await wasm!.readSyncStatus()
+            if (mountedRef.current) {
+              setState(current => ({
+                ...current,
+                execution: {
+                  ...current.execution,
+                  syncStatus: syncStatusRef.current,
+                },
+              }))
+            }
+          } catch (statusErr) {
+            console.warn('Failed to refresh wasm sync status after trigger error', statusErr)
+          }
           const latest = await eventStore.loadAllTiles()
           await wasm!.replaceTiles(latest)
+          try {
+            await refreshSnapshot()
+          } catch (refreshErr) {
+            console.warn('Failed to refresh snapshot after wasm trigger error', refreshErr)
+          }
           throw err
         }
       } else {
@@ -232,7 +317,32 @@ function getLocalStorage(): Storage | null {
   }
 }
 
-function projectSnapshotToAppState(snapshot: ExecutionSnapshot): AppState {
+function getOrCreateWasmDeviceId(): string {
+  const storage = getLocalStorage()
+  if (!storage) {
+    if (!runtimeWasmDeviceId) runtimeWasmDeviceId = createWebDeviceId()
+    return runtimeWasmDeviceId
+  }
+  try {
+    const existing = storage.getItem(WASM_DEVICE_ID_STORAGE_KEY)
+    if (existing && existing.trim().length > 0) return existing
+    const created = createWebDeviceId()
+    storage.setItem(WASM_DEVICE_ID_STORAGE_KEY, created)
+    return created
+  } catch {
+    if (!runtimeWasmDeviceId) runtimeWasmDeviceId = createWebDeviceId()
+    return runtimeWasmDeviceId
+  }
+}
+
+function createWebDeviceId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `web-${crypto.randomUUID()}`
+  }
+  return `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function projectSnapshotToAppState(snapshot: ExecutionSnapshot, syncStatus: ExecutionSyncStatus | null = null): AppState {
   const tiles = new Map<TileId, Tile>()
   const ensureTile = (tileId: TileId, title: string): Tile => {
     const existing = tiles.get(tileId)
@@ -280,6 +390,7 @@ function projectSnapshotToAppState(snapshot: ExecutionSnapshot): AppState {
       phaseStartedAt: activeStartAt,
       phaseEndsAt: activeEndsAt,
       pendingPrompt,
+      syncStatus,
     },
     timeline: snapshot.timeline,
     events,

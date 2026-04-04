@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build:core-wasm": "node scripts/build-core-wasm.mjs",
+    "check:core-wasm": "node scripts/check-core-wasm-freshness.mjs",
     "build:app": "next build",
     "build": "npm run build:core-wasm && npm run build:app",
     "start": "next start",
@@ -16,7 +17,7 @@
     "test": "vitest",
     "test:unit": "vitest --run",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm run test:unit",
+    "check": "npm run check:core-wasm && npm run lint && npm run typecheck && npm run test:unit",
     "check:release": "npm run check && npm run build"
   },
   "dependencies": {

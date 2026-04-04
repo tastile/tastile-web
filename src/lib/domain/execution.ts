@@ -28,6 +28,23 @@ export interface Execution {
   phaseStartedAt: Date | null
   phaseEndsAt: Date | null
   pendingPrompt: PendingPrompt | null
+  syncStatus?: ExecutionSyncStatus | null
+}
+
+export interface ExecutionSyncResult {
+  uploaded: number
+  downloaded: number
+  applied: number
+  failed: number
+  conflicts: number
+}
+
+export interface ExecutionSyncStatus {
+  inProgress: boolean
+  lastAttemptAt: string | null
+  lastSuccessAt: string | null
+  lastError: string | null
+  lastResult: ExecutionSyncResult | null
 }
 
 export type PromptQueueStatus = 'pending' | 'acknowledged' | 'completed' | 'dismissed'
@@ -69,5 +86,6 @@ export const Execution = {
     phaseStartedAt: null,
     phaseEndsAt: null,
     pendingPrompt: null,
+    syncStatus: null,
   }),
 }

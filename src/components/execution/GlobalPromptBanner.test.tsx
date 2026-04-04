@@ -128,6 +128,13 @@ describe('GlobalPromptBanner', () => {
           phaseKind: 'work',
           phaseStartedAt: new Date('2026-03-26T09:00:00.000Z'),
           phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          syncStatus: {
+            inProgress: false,
+            lastAttemptAt: null,
+            lastSuccessAt: null,
+            lastError: null,
+            lastResult: { uploaded: 1, downloaded: 2, applied: 2, failed: 0, conflicts: 0 },
+          },
           pendingPrompt: {
             promptId: 'p-start',
             tileId: TileId.fromString('tile-1'),
@@ -146,6 +153,7 @@ describe('GlobalPromptBanner', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'tiles.actions.start' }))
+    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('d:2')
 
     await waitFor(() => expect(executeMock).toHaveBeenCalledTimes(2))
 
@@ -159,6 +167,59 @@ describe('GlobalPromptBanner', () => {
       { type: 'clear_prompt', prompt_id: 'p-start', reason: 'actioned' },
       expect.objectContaining({ type: 'human' })
     )
+  })
+
+  it('AppShell renders sync indicator for in-progress and error statuses', () => {
+    Object.defineProperty(window, 'localStorage', {
+      value: { getItem: vi.fn(() => null), setItem: vi.fn() },
+      configurable: true,
+    })
+
+    const { rerender } = render(
+      <AppShell
+        executionState={{
+          activeTileTitle: 'Deep Work',
+          phaseKind: 'work',
+          phaseStartedAt: new Date('2026-03-26T09:00:00.000Z'),
+          phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          syncStatus: {
+            inProgress: true,
+            lastAttemptAt: null,
+            lastSuccessAt: null,
+            lastError: null,
+            lastResult: null,
+          },
+          pendingPrompt: null,
+        }}
+      >
+        <div>Child</div>
+      </AppShell>
+    )
+
+    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('header.sync.in_progress')
+
+    rerender(
+      <AppShell
+        executionState={{
+          activeTileTitle: 'Deep Work',
+          phaseKind: 'work',
+          phaseStartedAt: new Date('2026-03-26T09:00:00.000Z'),
+          phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          syncStatus: {
+            inProgress: false,
+            lastAttemptAt: null,
+            lastSuccessAt: null,
+            lastError: 'connection failed',
+            lastResult: null,
+          },
+          pendingPrompt: null,
+        }}
+      >
+        <div>Child</div>
+      </AppShell>
+    )
+
+    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('header.sync.error: connection failed')
   })
 
   it('AppShell maps action without tileId to dismissed clear prompt only', async () => {

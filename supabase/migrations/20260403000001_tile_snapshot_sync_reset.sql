@@ -81,53 +81,6 @@ CREATE TRIGGER update_user_links_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
-CREATE OR REPLACE FUNCTION current_active_tile_count(uid UUID)
-RETURNS BIGINT
-LANGUAGE sql
-STABLE
-AS $$
-  SELECT COUNT(*)
-    FROM public.tiles
-   WHERE user_id = uid
-     AND closed_at IS NULL
-$$;
-
-CREATE OR REPLACE FUNCTION check_tile_limit()
-RETURNS TRIGGER AS $$
-DECLARE
-  tile_count BIGINT;
-  user_plan TEXT;
-  max_tiles INTEGER;
-BEGIN
-  PERFORM pg_advisory_xact_lock(hashtext(NEW.user_id::text));
-
-  SELECT COALESCE(plan, 'free')
-    INTO user_plan
-    FROM public.profiles
-   WHERE id = NEW.user_id;
-
-  IF user_plan = 'pro' THEN
-    max_tiles := 10000;
-  ELSE
-    max_tiles := 100;
-  END IF;
-
-  IF NEW.closed_at IS NULL THEN
-    SELECT current_active_tile_count(NEW.user_id) INTO tile_count;
-    IF tile_count >= max_tiles THEN
-      RAISE EXCEPTION 'Tile limit reached (% of %)', tile_count, max_tiles;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER enforce_tile_limit
-  BEFORE INSERT ON public.tiles
-  FOR EACH ROW
-  EXECUTE FUNCTION check_tile_limit();
-
 CREATE OR REPLACE FUNCTION public.get_tile_quota(uid UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -135,8 +88,6 @@ SECURITY DEFINER
 AS $$
 DECLARE
   caller_uid UUID;
-  user_plan TEXT;
-  max_tiles INTEGER;
   tile_count BIGINT;
 BEGIN
   PERFORM set_config('search_path', 'public, pg_temp', true);
@@ -149,25 +100,17 @@ BEGIN
     RAISE EXCEPTION 'Cannot access another user''s quota';
   END IF;
 
-  SELECT COALESCE(plan, 'free')
-    INTO user_plan
-    FROM public.profiles
-   WHERE id = uid;
-
-  IF user_plan = 'pro' THEN
-    max_tiles := 10000;
-  ELSE
-    max_tiles := 100;
-  END IF;
-
-  SELECT current_active_tile_count(uid) INTO tile_count;
+  SELECT COUNT(*)
+    INTO tile_count
+    FROM public.tiles
+   WHERE user_id = uid;
 
   RETURN jsonb_build_object(
-    'plan', user_plan,
+    'plan', 'snapshot',
     'tile_count', tile_count,
-    'max_tiles', max_tiles,
-    'remaining_tiles', GREATEST(max_tiles - tile_count, 0),
-    'limit_reached', tile_count >= max_tiles
+    'max_tiles', 0,
+    'remaining_tiles', 0,
+    'limit_reached', false
   );
 END;
 $$;

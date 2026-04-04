@@ -4,6 +4,7 @@ import { renderHook, waitFor, act } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { TileId } from '../domain/ids'
 import { Actor } from '../domain/actor'
+import { Tile } from '../domain/tile'
 import type { Command } from '../core/command'
 import type { ExecutionSnapshot } from '../domain/execution'
 import { useDaemonExecution } from './use-daemon-execution'
@@ -23,9 +24,17 @@ const {
   wasmReplaceEventLogMock,
   wasmReplaceTilesMock,
   wasmExportTilesMock,
+  wasmConfigureSyncMock,
+  wasmRestoreSyncMock,
+  wasmTriggerSyncMock,
+  wasmReadSyncStatusMock,
+  daemonReadSyncStatusMock,
   createWasmExecutionEngineMock,
   loadAllTilesMock,
   replaceAllTilesMock,
+  localStorageGetItemMock,
+  localStorageSetItemMock,
+  localStorageRemoveItemMock,
 } = vi.hoisted(() => ({
   readSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
   sendCommandMock: vi.fn(),
@@ -41,9 +50,17 @@ const {
   wasmReplaceEventLogMock: vi.fn(),
   wasmReplaceTilesMock: vi.fn(),
   wasmExportTilesMock: vi.fn(),
+  wasmConfigureSyncMock: vi.fn(),
+  wasmRestoreSyncMock: vi.fn(),
+  wasmTriggerSyncMock: vi.fn(),
+  wasmReadSyncStatusMock: vi.fn(),
+  daemonReadSyncStatusMock: vi.fn(),
   createWasmExecutionEngineMock: vi.fn(),
   loadAllTilesMock: vi.fn(),
   replaceAllTilesMock: vi.fn(),
+  localStorageGetItemMock: vi.fn(),
+  localStorageSetItemMock: vi.fn(),
+  localStorageRemoveItemMock: vi.fn(),
 }))
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -61,6 +78,7 @@ vi.mock('../daemon/client', () => ({
     readSnapshot = readSnapshotMock
     sendCommand = sendCommandMock
     restoreSession = restoreSessionMock
+    readSyncStatus = daemonReadSyncStatusMock
   },
 }))
 
@@ -97,9 +115,19 @@ describe('useDaemonExecution', () => {
     wasmExecuteMock.mockReset()
     wasmExecuteWithAckMock.mockReset()
     wasmReplaceEventLogMock.mockReset()
+    wasmReplaceTilesMock.mockReset()
+    wasmExportTilesMock.mockReset()
+    wasmConfigureSyncMock.mockReset()
+    wasmRestoreSyncMock.mockReset()
+    wasmTriggerSyncMock.mockReset()
+    wasmReadSyncStatusMock.mockReset()
+    daemonReadSyncStatusMock.mockReset()
     createWasmExecutionEngineMock.mockReset()
     loadAllTilesMock.mockReset()
     replaceAllTilesMock.mockReset()
+    localStorageGetItemMock.mockReset()
+    localStorageSetItemMock.mockReset()
+    localStorageRemoveItemMock.mockReset()
     process.env.NEXT_PUBLIC_DAEMON_BASE_URL = 'https://daemon.example'
     delete process.env.NEXT_PUBLIC_EXECUTION_BACKEND
     process.env.NEXT_PUBLIC_DAEMON_REFRESH_MS = '60000'
@@ -122,6 +150,13 @@ describe('useDaemonExecution', () => {
     })
     getBrowserAccessTokenMock.mockResolvedValue('token-1')
     restoreSessionMock.mockResolvedValue(undefined)
+    daemonReadSyncStatusMock.mockResolvedValue({
+      inProgress: false,
+      lastAttemptAt: null,
+      lastSuccessAt: null,
+      lastError: null,
+      lastResult: null,
+    })
     openExecutionStreamMock.mockReturnValue({ close: streamCloseMock })
     sendCommandMock.mockResolvedValue({
       accepted: true,
@@ -134,6 +169,10 @@ describe('useDaemonExecution', () => {
     wasmReplaceEventLogMock.mockResolvedValue(undefined)
     wasmReplaceTilesMock.mockResolvedValue(undefined)
     wasmExportTilesMock.mockResolvedValue([])
+    wasmConfigureSyncMock.mockResolvedValue({ accepted: true, metadata: { configured: true } })
+    wasmRestoreSyncMock.mockResolvedValue({ accepted: true, metadata: { downloaded: 0, applied: 0 } })
+    wasmTriggerSyncMock.mockResolvedValue({ accepted: true, metadata: { uploaded: 0, downloaded: 0, applied: 0 } })
+    wasmReadSyncStatusMock.mockResolvedValue({ inProgress: false, lastError: null, lastAttemptAt: null, lastSuccessAt: null, lastResult: null })
     loadAllTilesMock.mockResolvedValue([])
     replaceAllTilesMock.mockResolvedValue(undefined)
     createWasmExecutionEngineMock.mockResolvedValue({
@@ -143,6 +182,16 @@ describe('useDaemonExecution', () => {
       replaceEventLog: wasmReplaceEventLogMock,
       replaceTiles: wasmReplaceTilesMock,
       exportTiles: wasmExportTilesMock,
+      configureSync: wasmConfigureSyncMock,
+      restoreSync: wasmRestoreSyncMock,
+      triggerSync: wasmTriggerSyncMock,
+      readSyncStatus: wasmReadSyncStatusMock,
+    })
+    localStorageGetItemMock.mockReturnValue('persisted-web-device')
+    vi.stubGlobal('localStorage', {
+      getItem: localStorageGetItemMock,
+      setItem: localStorageSetItemMock,
+      removeItem: localStorageRemoveItemMock,
     })
   })
 
@@ -176,7 +225,7 @@ describe('useDaemonExecution', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(createWasmExecutionEngineMock).toHaveBeenCalledTimes(1)
     expect(loadAllTilesMock).toHaveBeenCalledTimes(1)
-    expect(wasmReplaceTilesMock).toHaveBeenCalledWith([])
+    expect(wasmReplaceTilesMock).not.toHaveBeenCalled()
     expect(readSnapshotMock).not.toHaveBeenCalled()
     expect(openExecutionStreamMock).not.toHaveBeenCalled()
     expect(result.current.state.execution.activeTileId).toEqual(TileId.fromString('tile-wasm'))
@@ -234,8 +283,14 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
 
-    expect(wasmReplaceTilesMock).toHaveBeenCalled()
-    expect(wasmReplaceTilesMock).toHaveBeenNthCalledWith(1, [])
+    expect(wasmReplaceTilesMock).not.toHaveBeenCalled()
+    expect(wasmConfigureSyncMock).toHaveBeenCalledWith({
+      deviceId: 'persisted-web-device',
+      connected: true,
+      authenticated: true,
+      remoteTiles: [],
+    })
+    expect(wasmRestoreSyncMock).toHaveBeenCalledTimes(1)
 
     await act(async () => {
       await result.current.execute(
@@ -250,7 +305,177 @@ describe('useDaemonExecution', () => {
     })
 
     expect(wasmExecuteWithAckMock).toHaveBeenCalledTimes(1)
+    expect(wasmTriggerSyncMock).toHaveBeenCalledTimes(1)
     expect(replaceAllTilesMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('continues with local tiles when wasm restore sync is rejected', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    const existing = [
+      Tile.create(TileId.fromString('41612f8d-afb8-484e-9c67-99bc3c007de1'), 'Local fallback tile'),
+    ]
+    loadAllTilesMock.mockResolvedValueOnce(existing)
+    wasmRestoreSyncMock.mockResolvedValueOnce({
+      accepted: false,
+      metadata: { error: 'sync unavailable' },
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(wasmReplaceTilesMock).toHaveBeenCalledWith(existing)
+    expect(wasmReadSnapshotMock).toHaveBeenCalled()
+  })
+
+  it('does not mirror Supabase tiles after successful wasm restore', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    loadAllTilesMock.mockResolvedValueOnce([])
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(wasmRestoreSyncMock).toHaveBeenCalledTimes(1)
+    expect(wasmReplaceTilesMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces wasm sync status counters with remote downloaded value', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    loadAllTilesMock.mockResolvedValueOnce([])
+    wasmReadSyncStatusMock.mockResolvedValueOnce({
+      inProgress: false,
+      lastError: null,
+      lastAttemptAt: '2026-04-04T00:00:00.000Z',
+      lastSuccessAt: '2026-04-04T00:00:01.000Z',
+      lastResult: { uploaded: 1, downloaded: 2, applied: 2, failed: 0, conflicts: 0 },
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(wasmReadSyncStatusMock).toHaveBeenCalledTimes(1)
+    expect((result.current.state.execution as { syncStatus?: { lastResult?: { downloaded?: number } | null } }).syncStatus?.lastResult?.downloaded).toBe(2)
+  })
+
+  it('updates sync status immediately after wasm trigger sync', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    loadAllTilesMock.mockResolvedValueOnce([])
+    wasmExecuteWithAckMock.mockResolvedValueOnce({
+      accepted: true,
+      emittedEvents: [
+        {
+          event_id: 'local-event-1',
+          aggregate_id: 'tile:tile-local',
+          occurred_at: new Date('2026-03-29T02:00:00.000Z'),
+          actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
+          caused_by_command_id: null,
+          request_id: null,
+          event: {
+            type: 'tile_started',
+            tile_id: TileId.fromString('tile-local'),
+            started_at: new Date('2026-03-29T02:00:00.000Z'),
+          },
+        },
+      ],
+    })
+    wasmReadSyncStatusMock
+      .mockResolvedValueOnce({
+        inProgress: false,
+        lastError: null,
+        lastAttemptAt: null,
+        lastSuccessAt: null,
+        lastResult: { uploaded: 0, downloaded: 0, applied: 0, failed: 0, conflicts: 0 },
+      })
+      .mockResolvedValueOnce({
+        inProgress: false,
+        lastError: null,
+        lastAttemptAt: '2026-04-04T00:00:00.000Z',
+        lastSuccessAt: '2026-04-04T00:00:01.000Z',
+        lastResult: { uploaded: 1, downloaded: 3, applied: 3, failed: 0, conflicts: 0 },
+      })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.execute(
+        {
+          type: 'start_tile',
+          tile_id: TileId.fromString('tile-local'),
+          started_at: new Date('2026-03-29T02:00:00.000Z'),
+          source: 'manual',
+        },
+        Actor.human('self')
+      )
+    })
+
+    expect(wasmReadSyncStatusMock).toHaveBeenCalledTimes(2)
+    expect((result.current.state.execution as { syncStatus?: { lastResult?: { downloaded?: number } | null } }).syncStatus?.lastResult?.downloaded).toBe(3)
+  })
+
+  it('refreshes sync status even when wasm trigger sync is rejected', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    loadAllTilesMock.mockResolvedValueOnce([])
+    wasmExecuteWithAckMock.mockResolvedValueOnce({
+      accepted: true,
+      emittedEvents: [
+        {
+          event_id: 'local-event-1',
+          aggregate_id: 'tile:tile-local',
+          occurred_at: new Date('2026-03-29T02:00:00.000Z'),
+          actor: { type: 'system', id: '00000000-0000-0000-0000-000000000001' },
+          caused_by_command_id: null,
+          request_id: null,
+          event: {
+            type: 'tile_started',
+            tile_id: TileId.fromString('tile-local'),
+            started_at: new Date('2026-03-29T02:00:00.000Z'),
+          },
+        },
+      ],
+    })
+    wasmTriggerSyncMock.mockResolvedValueOnce({
+      accepted: false,
+      metadata: { error: 'trigger rejected' },
+    })
+    wasmReadSyncStatusMock
+      .mockResolvedValueOnce({
+        inProgress: false,
+        lastError: null,
+        lastAttemptAt: null,
+        lastSuccessAt: null,
+        lastResult: null,
+      })
+      .mockResolvedValueOnce({
+        inProgress: false,
+        lastError: 'trigger rejected',
+        lastAttemptAt: '2026-04-04T00:00:02.000Z',
+        lastSuccessAt: null,
+        lastResult: { uploaded: 1, downloaded: 0, applied: 0, failed: 1, conflicts: 0 },
+      })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await expect(
+      act(async () => {
+        await result.current.execute(
+          {
+            type: 'start_tile',
+            tile_id: TileId.fromString('tile-local'),
+            started_at: new Date('2026-03-29T02:00:00.000Z'),
+            source: 'manual',
+          },
+          Actor.human('self')
+        )
+      })
+    ).rejects.toThrow('trigger rejected')
+
+    expect(wasmReadSyncStatusMock).toHaveBeenCalledTimes(2)
+    expect(wasmReplaceTilesMock).toHaveBeenCalledTimes(1)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
   })
 
   it('hydrates from daemon snapshot and updates via stream events', async () => {
@@ -320,6 +545,7 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
 
     await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(daemonReadSyncStatusMock).toHaveBeenCalledTimes(1)
     expect(restoreSessionMock).toHaveBeenCalledWith({
       userId: 'user-1',
       email: 'user@example.com',
@@ -338,8 +564,51 @@ describe('useDaemonExecution', () => {
     })
 
     await waitFor(() => expect(readSnapshotMock).toHaveBeenCalledTimes(2))
+    expect(daemonReadSyncStatusMock).toHaveBeenCalledTimes(2)
     expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-2'))
     expect(result.current.state.execution.pendingPrompt).toBeNull()
+  })
+
+  it('keeps daemon flow working when sync status read fails', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    daemonReadSyncStatusMock.mockRejectedValueOnce(new Error('sync status unavailable'))
+    readSnapshotMock.mockResolvedValueOnce(
+      snapshot({
+        tiles: [],
+        promptQueue: [],
+        timeline: [],
+      })
+    )
+    sendCommandMock.mockResolvedValueOnce({
+      accepted: true,
+      commandId: 'cmd-1',
+      requestId: 'req-1',
+    })
+    readSnapshotMock.mockResolvedValueOnce(
+      snapshot({
+        tiles: [],
+        promptQueue: [],
+        timeline: [],
+      })
+    )
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(readSnapshotMock).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await result.current.execute(
+        {
+          type: 'clear_prompt',
+          prompt_id: 'prompt-1',
+          reason: 'dismissed',
+        },
+        Actor.human('self')
+      )
+    })
+
+    expect(sendCommandMock).toHaveBeenCalledTimes(1)
+    expect(readSnapshotMock).toHaveBeenCalledTimes(2)
   })
 
   it('refreshes daemon snapshot periodically even without stream events', async () => {

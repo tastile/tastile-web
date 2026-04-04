@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createWasmExecutionEngine } from './core-engine'
 import { EventId, TileId } from '../domain/ids'
+import { Tile } from '../domain/tile'
 
 const executeMock = vi.fn()
 const executeWithAckMock = vi.fn()
 const readSnapshotJsonMock = vi.fn()
 const replaceEventLogJsonMock = vi.fn()
+const configureSyncJsonMock = vi.fn()
+const restoreSyncJsonMock = vi.fn()
+const triggerSyncJsonMock = vi.fn()
+const readSyncStatusJsonMock = vi.fn()
 
 vi.mock('@/wasm/tastile-core-wasm/pkg/tastile_core_wasm.js', () => ({
   default: vi.fn(async () => undefined),
@@ -22,6 +27,18 @@ vi.mock('@/wasm/tastile-core-wasm/pkg/tastile_core_wasm.js', () => ({
     replace_event_log_json(eventsJson: string) {
       return replaceEventLogJsonMock(eventsJson)
     }
+    configure_sync_json(configJson: string) {
+      return configureSyncJsonMock(configJson)
+    }
+    restore_sync_json() {
+      return restoreSyncJsonMock()
+    }
+    trigger_sync_json() {
+      return triggerSyncJsonMock()
+    }
+    read_sync_status_json() {
+      return readSyncStatusJsonMock()
+    }
   },
 }))
 
@@ -31,6 +48,10 @@ describe('core-engine wasm bridge', () => {
     executeWithAckMock.mockReset()
     readSnapshotJsonMock.mockReset()
     replaceEventLogJsonMock.mockReset()
+    configureSyncJsonMock.mockReset()
+    restoreSyncJsonMock.mockReset()
+    triggerSyncJsonMock.mockReset()
+    readSyncStatusJsonMock.mockReset()
   })
 
   it('parses wasm snapshot JSON into Date fields', async () => {
@@ -186,5 +207,160 @@ describe('core-engine wasm bridge', () => {
         },
       },
     ])
+  })
+
+  it('maps Supabase tile data into wasm sync config shape', async () => {
+    configureSyncJsonMock.mockReturnValue(JSON.stringify({ accepted: true, metadata: { configured: true } }))
+    const tile = Tile.create(TileId.fromString('41612f8d-afb8-484e-9c67-99bc3c007de1'), 'Remote tile')
+    tile.core.nextAction = 'Do first action'
+
+    const engine = await createWasmExecutionEngine()
+    await engine.configureSync({
+      deviceId: 'web-device',
+      connected: true,
+      authenticated: true,
+      remoteTiles: [tile],
+    })
+
+    expect(configureSyncJsonMock).toHaveBeenCalledTimes(1)
+    expect(JSON.parse(configureSyncJsonMock.mock.calls[0][0])).toMatchObject({
+      device_id: 'web-device',
+      connected: true,
+      authenticated: true,
+      remote_tiles: [
+        {
+          core: {
+            id: '41612f8d-afb8-484e-9c67-99bc3c007de1',
+            next_action: 'Do first action',
+          },
+          annotation: {
+            semantic_role: 'work',
+          },
+        },
+      ],
+    })
+  })
+
+  it('bridges wasm sync restore, trigger, and status JSON APIs', async () => {
+    restoreSyncJsonMock.mockReturnValue(
+      JSON.stringify({ accepted: true, metadata: { uploaded: 0, downloaded: 1, applied: 1, failed: 0, conflicts: 0 } })
+    )
+    triggerSyncJsonMock.mockReturnValue(
+      JSON.stringify({ accepted: true, metadata: { uploaded: 1, downloaded: 1, applied: 1, failed: 0, conflicts: 0 } })
+    )
+    readSyncStatusJsonMock.mockReturnValue(
+      JSON.stringify({
+        in_progress: false,
+        last_attempt_at: '2026-04-03T12:00:00.000Z',
+        last_success_at: '2026-04-03T12:00:01.000Z',
+        last_error: null,
+        last_result: { uploaded: 1, downloaded: 1, applied: 1, failed: 0, conflicts: 0 },
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const restore = await engine.restoreSync()
+    const trigger = await engine.triggerSync()
+    const status = await engine.readSyncStatus()
+
+    expect(restore).toMatchObject({ accepted: true, metadata: { downloaded: 1, applied: 1 } })
+    expect(trigger).toMatchObject({ accepted: true, metadata: { uploaded: 1, downloaded: 1 } })
+    expect(status).toMatchObject({
+      inProgress: false,
+      lastAttemptAt: '2026-04-03T12:00:00.000Z',
+      lastSuccessAt: '2026-04-03T12:00:01.000Z',
+      lastResult: { uploaded: 1, downloaded: 1, applied: 1, failed: 0, conflicts: 0 },
+    })
+  })
+
+  it('normalizes invalid sync status counters to zero', async () => {
+    readSyncStatusJsonMock.mockReturnValue(
+      JSON.stringify({
+        in_progress: false,
+        last_attempt_at: null,
+        last_success_at: null,
+        last_error: null,
+        last_result: { uploaded: 'x', downloaded: null, applied: {}, failed: [], conflicts: 'y' },
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const status = await engine.readSyncStatus()
+    expect(status.lastResult).toEqual({
+      uploaded: 0,
+      downloaded: 0,
+      applied: 0,
+      failed: 0,
+      conflicts: 0,
+    })
+  })
+
+  it('normalizes sync status counters to non-negative integers', async () => {
+    readSyncStatusJsonMock.mockReturnValue(
+      JSON.stringify({
+        in_progress: false,
+        last_attempt_at: null,
+        last_success_at: null,
+        last_error: null,
+        last_result: { uploaded: 3.9, downloaded: -2, applied: 1.2, failed: 0, conflicts: -1.8 },
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const status = await engine.readSyncStatus()
+    expect(status.lastResult).toEqual({
+      uploaded: 3,
+      downloaded: 0,
+      applied: 1,
+      failed: 0,
+      conflicts: 0,
+    })
+  })
+
+  it('normalizes sync command ack counters to optional non-negative integers', async () => {
+    restoreSyncJsonMock.mockReturnValue(
+      JSON.stringify({
+        accepted: true,
+        metadata: {
+          uploaded: 3.8,
+          downloaded: -1,
+          applied: null,
+          failed: 'x',
+          conflicts: 2,
+          error: 'noop',
+        },
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const ack = await engine.restoreSync()
+    expect(ack).toEqual({
+      accepted: true,
+      metadata: {
+        uploaded: 3,
+        downloaded: 0,
+        applied: undefined,
+        failed: 0,
+        conflicts: 2,
+        error: 'noop',
+      },
+    })
+  })
+
+  it('normalizes invalid sync status timestamps to null', async () => {
+    readSyncStatusJsonMock.mockReturnValue(
+      JSON.stringify({
+        in_progress: false,
+        last_attempt_at: 'not-a-date',
+        last_success_at: 'still-not-a-date',
+        last_error: null,
+        last_result: null,
+      })
+    )
+
+    const engine = await createWasmExecutionEngine()
+    const status = await engine.readSyncStatus()
+    expect(status.lastAttemptAt).toBeNull()
+    expect(status.lastSuccessAt).toBeNull()
   })
 })
