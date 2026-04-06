@@ -97,7 +97,8 @@ export const translations = {
       scheduleTitle: '実行タイミング',
       scheduleGuide: '開始時刻と終了時刻を必要に応じて設定',
       startAt: '開始',
-      endAt: '終了',
+
+      duration: '所要',
       dateLabel: '日付',
       timeLabel: '時刻',
       derivedDurationPrefix: '自動算出',
@@ -172,7 +173,8 @@ export const translations = {
       },
       doneDefinition: '完了条件',
       startAt: '開始',
-      endAt: '終了',
+
+      duration: '所要',
     },
   },
 
@@ -274,7 +276,8 @@ export const translations = {
       scheduleTitle: 'Execution timing',
       scheduleGuide: 'Set start and end time as needed',
       startAt: 'Start',
-      endAt: 'End',
+
+      duration: 'Duration',
       dateLabel: 'Date',
       timeLabel: 'Time',
       derivedDurationPrefix: 'Derived',
@@ -349,7 +352,8 @@ export const translations = {
       },
       doneDefinition: 'Done when',
       startAt: 'Start',
-      endAt: 'End',
+
+      duration: 'Duration',
     },
   },
 } as const

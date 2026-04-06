@@ -8,6 +8,7 @@ import {
   groupTilesForWorkspace,
   buildTileListSections,
   nextTileSectionLimit,
+  parseCustomRangeBoundary,
 } from './dashboard-workspace'
 
 describe('dashboard-workspace core', () => {
@@ -155,5 +156,25 @@ describe('dashboard-workspace core', () => {
     expect(nextTileSectionLimit(16, 40)).toBe(32)
     expect(nextTileSectionLimit(32, 40)).toBe(8)
     expect(nextTileSectionLimit(8, 6)).toBe(8)
+  })
+
+  it('parses custom range date-only boundaries for start and end edges', () => {
+    const start = parseCustomRangeBoundary('2026-04-06', 'start')
+    const end = parseCustomRangeBoundary('2026-04-06', 'end')
+
+    expect(start).toBeTruthy()
+    expect(end).toBeTruthy()
+    expect(start?.getFullYear()).toBe(2026)
+    expect(start?.getMonth()).toBe(3)
+    expect(start?.getDate()).toBe(6)
+    expect(start?.getHours()).toBe(0)
+    expect(start?.getMinutes()).toBe(0)
+    expect(start?.getSeconds()).toBe(0)
+    expect(end?.getFullYear()).toBe(2026)
+    expect(end?.getMonth()).toBe(3)
+    expect(end?.getDate()).toBe(6)
+    expect(end?.getHours()).toBe(23)
+    expect(end?.getMinutes()).toBe(59)
+    expect(end?.getSeconds()).toBe(59)
   })
 })

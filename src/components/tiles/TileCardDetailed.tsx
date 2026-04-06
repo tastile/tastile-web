@@ -42,7 +42,7 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
     tile.work.segments.find(segment => segment.startAt)?.startAt ??
     null
   const durationText = resolveDurationText(tile, locale)
-  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
+  const durationLabel = t('tiles.duration')
 
   const handleStatusClick = () => {
     if (lifecycle === 'ready' && actions.onStart) {

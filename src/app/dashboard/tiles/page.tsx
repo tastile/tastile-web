@@ -18,6 +18,7 @@ import {
   buildTimelineView,
   buildTileListSections,
   nextTileSectionLimit,
+  parseCustomRangeBoundary,
 } from '@/lib/core/dashboard-workspace'
 import { TimelineAxis } from '@/components/execution/TimelineAxis'
 import { useDashboardWorkspaceStore } from '@/lib/stores/dashboard-workspace-store'
@@ -25,7 +26,6 @@ import { useSearchParams } from 'next/navigation'
 import { formatDateTime, formatDuration } from '@/lib/utils/tile-formatters'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { Locale } from '@/lib/stores/locale-store'
-import { SquarePen } from 'lucide-react'
 
 const MAX_VISIBLE_TILES = 60
 const MAX_VISIBLE_CHANGES = 120
@@ -150,7 +150,6 @@ export default function TilesPage() {
                   tile={projection.next.main}
                   locale={locale}
                   onPrompt={handlePromptSuggested}
-                  onOpenEdit={() => setListViewMode('detailed')}
                 />
               ) : (
                 <p className="text-sm text-foreground-muted">No active main task</p>
@@ -165,7 +164,6 @@ export default function TilesPage() {
                     tile={tile}
                     locale={locale}
                     onPrompt={handlePromptSuggested}
-                    onOpenEdit={() => setListViewMode('detailed')}
                   />
                 ))}
                 {projection.next.quick.length === 0 ? <p className="text-sm text-foreground-muted">No sub tasks</p> : null}
@@ -257,7 +255,6 @@ export default function TilesPage() {
                         <TileCardCompact
                           tile={tile}
                           onStart={handlePromptSuggested}
-                          onEdit={() => setListViewMode('detailed')}
                         />
                       ) : null}
                       {listViewMode === 'comfortable' ? (
@@ -265,14 +262,12 @@ export default function TilesPage() {
                           tile={tile}
                           locale={locale}
                           onPrompt={handlePromptSuggested}
-                          onOpenEdit={() => setListViewMode('detailed')}
                         />
                       ) : null}
                       {listViewMode === 'detailed' ? (
                         <TileCardExpandable
                           tile={tile}
                           onStart={handlePromptSuggested}
-                          onEdit={() => setListViewMode('detailed')}
                           onDelete={handleDelete}
                         />
                       ) : null}
@@ -363,13 +358,12 @@ function DesktopStyleTileRow({
   tile,
   locale,
   onPrompt,
-  onOpenEdit,
 }: {
   tile: Tile
   locale: Locale
   onPrompt: (tileId: string) => Promise<void>
-  onOpenEdit: () => void
 }) {
+  const { t } = useTranslation()
   const lifecycle = getTileLifecycle(tile)
   const startAt =
     tile.core.startedAt ??
@@ -384,10 +378,10 @@ function DesktopStyleTileRow({
     : tile.temporal.fixedStart
       ? formatDateTime(tile.temporal.fixedStart, locale)
       : formatDateTime(null, locale)
-  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
+  const durationLabel = t('tiles.duration')
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-md border border-border bg-surface-1 px-3 py-2">
+    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md border border-border bg-surface-1 px-3 py-2">
       <TileStatusIcon lifecycle={lifecycle} size={18} onClick={() => void onPrompt(tile.core.id)} />
       <div className="min-w-0">
         <p className={`truncate text-sm ${lifecycle === 'done' ? 'text-foreground-muted line-through' : 'text-foreground'}`}>
@@ -397,18 +391,7 @@ function DesktopStyleTileRow({
       </div>
       <div className="text-right text-xs text-foreground-muted">
         <p className="font-mono">{durationLabel} {durationText}</p>
-        <p>{locale === 'ja' ? '開始' : 'Start'} {startText}</p>
-      </div>
-      <div className="flex items-center">
-        <button
-          type="button"
-          onClick={onOpenEdit}
-          className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
-          aria-label="Edit tile"
-          title="Edit tile"
-        >
-          <SquarePen className="h-4 w-4" />
-        </button>
+        <p>{t('tiles.startAt')} {startText}</p>
       </div>
     </div>
   )
@@ -427,14 +410,3 @@ function resolveDurationText(tile: Tile, locale: Locale): string {
   return formatDuration(null, locale)
 }
 
-function parseCustomRangeBoundary(value: string | null, edge: 'start' | 'end'): Date | null {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
-  const normalized = dateOnly
-    ? `${trimmed}T${edge === 'start' ? '00:00:00' : '23:59:59'}`
-    : trimmed
-  const parsed = new Date(normalized)
-  return Number.isNaN(parsed.getTime()) ? null : parsed
-}

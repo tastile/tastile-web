@@ -301,6 +301,18 @@ export function nextTileSectionLimit(currentLimit: number | undefined, itemCount
   return next > itemCount ? TILE_SECTION_INITIAL_LIMIT : next
 }
 
+export function parseCustomRangeBoundary(value: string | null, edge: 'start' | 'end'): Date | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+  const normalized = dateOnly
+    ? `${trimmed}T${edge === 'start' ? '00:00:00' : '23:59:59'}`
+    : trimmed
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 function resolveTimelineWindow(now: Date, input: TimelineWindowInput): { windowStart: Date; windowEnd: Date } {
   if (input.scale === 'custom' && input.customStart && input.customEnd && input.customEnd > input.customStart) {
     return {

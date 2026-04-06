@@ -15,7 +15,7 @@ import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TimelineAxis } from '@/components/execution/TimelineAxis'
 import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
-import { buildTimelineView } from '@/lib/core/dashboard-workspace'
+import { buildTimelineView, parseCustomRangeBoundary } from '@/lib/core/dashboard-workspace'
 import { useDashboardWorkspaceStore } from '@/lib/stores/dashboard-workspace-store'
 
 const MAX_VISIBLE_READY_TILES = 40
@@ -243,17 +243,6 @@ export default function ExecutePage() {
   )
 }
 
-function parseCustomRangeBoundary(value: string | null, edge: 'start' | 'end'): Date | null {
-  if (!value) return null
-  const trimmed = value.trim()
-  if (!trimmed) return null
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
-  const normalized = dateOnly
-    ? `${trimmed}T${edge === 'start' ? '00:00:00' : '23:59:59'}`
-    : trimmed
-  const parsed = new Date(normalized)
-  return Number.isNaN(parsed.getTime()) ? null : parsed
+function toTileId(tileId: string) {
+  return TileId.fromString(tileId)
 }
-  function toTileId(tileId: string) {
-    return TileId.fromString(tileId)
-  }

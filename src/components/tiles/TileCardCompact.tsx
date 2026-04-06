@@ -41,7 +41,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
   const startText = startAt
     ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     : formatDateTime(null, locale)
-  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
+  const durationLabel = t('tiles.duration')
 
   const handleStatusClick = () => {
     if (onStart) {
