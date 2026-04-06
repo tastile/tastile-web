@@ -4,7 +4,7 @@ import { getTileLifecycle, type Tile } from '@/lib/domain/tile'
 import type { TileId } from '@/lib/domain/ids'
 import { TileStatusIcon } from './shared/TileStatusIcon'
 import { LoadingCard } from './shared/LoadingCard'
-import { formatDuration } from '@/lib/utils/tile-formatters'
+import { formatDateTime, formatDuration } from '@/lib/utils/tile-formatters'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
 import { cn } from '@/lib/utils/cn'
@@ -19,7 +19,7 @@ interface TileCardCompactProps {
 }
 
 export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: TileCardCompactProps) {
-  const { locale } = useTranslation()
+  const { t, locale } = useTranslation()
 
   if (loading) {
     return <LoadingCard variant="compact" />
@@ -38,6 +38,10 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
     tile.work.segments.find(segment => segment.startAt)?.startAt ??
     null
   const durationText = resolveDurationText(tile, locale)
+  const startText = startAt
+    ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : formatDateTime(null, locale)
+  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
 
   const handleStatusClick = () => {
     if (onStart) {
@@ -78,22 +82,24 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
       </div>
 
       <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
-        <p className="font-mono">所要 {durationText}</p>
-        <p>開始 {startAt ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'unscheduled'}</p>
+        <p className="font-mono">{durationLabel} {durationText}</p>
+        <p>{t('tiles.startAt')} {startText}</p>
       </div>
 
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation()
-          if (onEdit) onEdit(tile.core.id)
-        }}
-        className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
-        aria-label="Edit tile"
-        title="Edit tile"
-      >
-        <SquarePen className="h-4 w-4" />
-      </button>
+      {onEdit ? (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            onEdit(tile.core.id)
+          }}
+          className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+          aria-label="Edit tile"
+          title="Edit tile"
+        >
+          <SquarePen className="h-4 w-4" />
+        </button>
+      ) : null}
     </div>
   )
 }
@@ -108,5 +114,5 @@ function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
     return sum + diff
   }, 0)
   if (totalWorked > 0) return formatDuration(totalWorked, locale)
-  return 'unspecified'
+  return formatDuration(null, locale)
 }

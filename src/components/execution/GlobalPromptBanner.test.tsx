@@ -7,7 +7,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { TileId } from '@/lib/domain/ids'
 
 vi.mock('@/lib/i18n/use-translation', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  useTranslation: () => ({ t: (key: string) => key, locale: 'ja' as const }),
 }))
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({

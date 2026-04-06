@@ -42,6 +42,7 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
     tile.work.segments.find(segment => segment.startAt)?.startAt ??
     null
   const durationText = resolveDurationText(tile, locale)
+  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
 
   const handleStatusClick = () => {
     if (lifecycle === 'ready' && actions.onStart) {
@@ -79,7 +80,7 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
         </div>
 
         <div className="text-sm text-foreground-muted whitespace-nowrap">
-          所要 {durationText}
+          {durationLabel} {durationText}
         </div>
       </div>
 
@@ -119,7 +120,7 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
       <div className="space-y-1 text-xs text-foreground-muted">
         <div>
           <span className="opacity-60">{t('tiles.startAt')}:</span>{' '}
-          {startAt ? formatDateTime(startAt, locale) : 'unscheduled'}
+          {startAt ? formatDateTime(startAt, locale) : formatDateTime(null, locale)}
         </div>
         {tile.temporal.fixedEnd ? (
           <div>
@@ -151,5 +152,5 @@ function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
     return sum + diff
   }, 0)
   if (totalWorked > 0) return formatDuration(totalWorked, locale)
-  return 'unspecified'
+  return formatDuration(null, locale)
 }

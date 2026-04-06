@@ -143,6 +143,7 @@ export const translations = {
 
     prompt: {
       actions: {
+        startBreak: '休憩開始',
         extend: '延長',
         endBreak: '休憩終了',
         confirmContinue: 'そのまま継続',
@@ -319,6 +320,7 @@ export const translations = {
 
     prompt: {
       actions: {
+        startBreak: 'Start break',
         extend: 'Extend',
         endBreak: 'End break',
         confirmContinue: 'Continue',

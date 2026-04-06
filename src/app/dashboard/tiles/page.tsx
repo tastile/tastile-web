@@ -22,7 +22,7 @@ import {
 import { TimelineAxis } from '@/components/execution/TimelineAxis'
 import { useDashboardWorkspaceStore } from '@/lib/stores/dashboard-workspace-store'
 import { useSearchParams } from 'next/navigation'
-import { formatDuration } from '@/lib/utils/tile-formatters'
+import { formatDateTime, formatDuration } from '@/lib/utils/tile-formatters'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { Locale } from '@/lib/stores/locale-store'
 import { SquarePen } from 'lucide-react'
@@ -57,8 +57,8 @@ export default function TilesPage() {
     () =>
       buildTimelineView(state.timeline, new Date(), {
         scale: timelineScale,
-        customStart: customStartIso ? new Date(customStartIso) : null,
-        customEnd: customEndIso ? new Date(customEndIso) : null,
+        customStart: parseCustomRangeBoundary(customStartIso, 'start'),
+        customEnd: parseCustomRangeBoundary(customEndIso, 'end'),
       }),
     [state.timeline, timelineScale, customStartIso, customEndIso]
   )
@@ -257,7 +257,7 @@ export default function TilesPage() {
                         <TileCardCompact
                           tile={tile}
                           onStart={handlePromptSuggested}
-                          onEdit={(id) => console.log('Open edit panel', id)}
+                          onEdit={() => setListViewMode('detailed')}
                         />
                       ) : null}
                       {listViewMode === 'comfortable' ? (
@@ -272,7 +272,7 @@ export default function TilesPage() {
                         <TileCardExpandable
                           tile={tile}
                           onStart={handlePromptSuggested}
-                          onEdit={(id) => console.log('Open edit panel', id)}
+                          onEdit={() => setListViewMode('detailed')}
                           onDelete={handleDelete}
                         />
                       ) : null}
@@ -306,20 +306,18 @@ export default function TilesPage() {
                   value={customStartIso ? customStartIso.slice(0, 10) : ''}
                   onChange={(event) => {
                     const value = event.target.value.trim()
-                    const startIso = value ? new Date(`${value}T00:00:00`).toISOString() : null
-                    setCustomRange(startIso, customEndIso)
+                    setCustomRange(value || null, customEndIso)
                   }}
-                  className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
                 <input
                   type="date"
                   value={customEndIso ? customEndIso.slice(0, 10) : ''}
                   onChange={(event) => {
                     const value = event.target.value.trim()
-                    const endIso = value ? new Date(`${value}T23:59:59`).toISOString() : null
-                    setCustomRange(customStartIso, endIso)
+                    setCustomRange(customStartIso, value || null)
                   }}
-                  className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
               </>
             ) : null}
@@ -382,10 +380,11 @@ function DesktopStyleTileRow({
     null
   const durationText = resolveDurationText(tile, locale)
   const startText = startAt
-    ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    ? formatDateTime(startAt, locale)
     : tile.temporal.fixedStart
-      ? tile.temporal.fixedStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      : 'unscheduled'
+      ? formatDateTime(tile.temporal.fixedStart, locale)
+      : formatDateTime(null, locale)
+  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
 
   return (
     <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 rounded-md border border-border bg-surface-1 px-3 py-2">
@@ -397,8 +396,8 @@ function DesktopStyleTileRow({
         {tile.core.nextAction ? <p className="truncate text-xs text-foreground-muted">{tile.core.nextAction}</p> : null}
       </div>
       <div className="text-right text-xs text-foreground-muted">
-        <p className="font-mono">所要 {durationText}</p>
-        <p>開始 {startText}</p>
+        <p className="font-mono">{durationLabel} {durationText}</p>
+        <p>{locale === 'ja' ? '開始' : 'Start'} {startText}</p>
       </div>
       <div className="flex items-center">
         <button
@@ -425,5 +424,17 @@ function resolveDurationText(tile: Tile, locale: Locale): string {
     return sum + diff
   }, 0)
   if (totalWorked > 0) return formatDuration(totalWorked, locale)
-  return 'unspecified'
+  return formatDuration(null, locale)
+}
+
+function parseCustomRangeBoundary(value: string | null, edge: 'start' | 'end'): Date | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+  const normalized = dateOnly
+    ? `${trimmed}T${edge === 'start' ? '00:00:00' : '23:59:59'}`
+    : trimmed
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }

@@ -88,7 +88,7 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
               type="datetime-local"
               value={startupRecoveryStopAt}
               onChange={(event) => setStartupRecoveryStopAt(event.target.value)}
-              className="rounded-lg border border-border bg-surface-0 px-3 py-2 text-sm text-foreground"
+              className="themed-datetime-input rounded-lg border border-border bg-surface-0 px-3 py-2 text-sm text-foreground"
             />
           </label>
         </div>

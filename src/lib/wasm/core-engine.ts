@@ -40,8 +40,11 @@ export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> 
     return parseExecutionSnapshot(parsed)
   }
   const exportTiles = async (): Promise<Tile[]> => JSON.parse(engine.export_tiles_json()) as Tile[]
-  const readTiles = async (params?: { viewMode?: string; lifecycle?: string; limit?: number; search?: string }): Promise<DaemonTilesResponse> => {
-    const [snapshot, tiles] = await Promise.all([readSnapshot(), exportTiles()])
+  const buildTilesResponse = (
+    snapshot: ExecutionSnapshot,
+    tiles: Tile[],
+    params?: { viewMode?: string; lifecycle?: string; limit?: number; search?: string }
+  ): DaemonTilesResponse => {
     const lifecycleById = new Map<string, string>()
     for (const timeline of snapshot.timeline) {
       if (!timeline.tileId) continue
@@ -66,8 +69,13 @@ export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> 
       nextActionableStartAt: rows.find((tile: DaemonTileView) => tile.projectedNextStartAt)?.projectedNextStartAt ?? null,
     }
   }
+  const readTiles = async (params?: { viewMode?: string; lifecycle?: string; limit?: number; search?: string }): Promise<DaemonTilesResponse> => {
+    const [snapshot, tiles] = await Promise.all([readSnapshot(), exportTiles()])
+    return buildTilesResponse(snapshot, tiles, params)
+  }
   const readExecutionView = async (): Promise<DaemonExecutionViewResponse> => {
-    const [snapshot, tileResponse] = await Promise.all([readSnapshot(), readTiles()])
+    const [snapshot, tiles] = await Promise.all([readSnapshot(), exportTiles()])
+    const tileResponse = buildTilesResponse(snapshot, tiles)
     const tileById = new Map(tileResponse.tiles.map((tile: DaemonTileView) => [tile.id, tile] as const))
     const tilesInProgress = snapshot.inProgressTiles.map(progress => {
       const base = tileById.get(progress.tileId)

@@ -36,8 +36,8 @@ export default function ExecutePage() {
     () =>
       buildTimelineView(state.timeline, new Date(nowMs), {
         scale: timelineScale,
-        customStart: customStartIso ? new Date(customStartIso) : null,
-        customEnd: customEndIso ? new Date(customEndIso) : null,
+        customStart: parseCustomRangeBoundary(customStartIso, 'start'),
+        customEnd: parseCustomRangeBoundary(customEndIso, 'end'),
       }),
     [state.timeline, nowMs, timelineScale, customStartIso, customEndIso]
   )
@@ -175,20 +175,18 @@ export default function ExecutePage() {
                   value={customStartIso ? customStartIso.slice(0, 10) : ''}
                   onChange={(event) => {
                     const value = event.target.value.trim()
-                    const startIso = value ? new Date(`${value}T00:00:00`).toISOString() : null
-                    setCustomRange(startIso, customEndIso)
+                    setCustomRange(value || null, customEndIso)
                   }}
-                  className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
                 <input
                   type="date"
                   value={customEndIso ? customEndIso.slice(0, 10) : ''}
                   onChange={(event) => {
                     const value = event.target.value.trim()
-                    const endIso = value ? new Date(`${value}T23:59:59`).toISOString() : null
-                    setCustomRange(customStartIso, endIso)
+                    setCustomRange(customStartIso, value || null)
                   }}
-                  className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
               </>
             ) : null}
@@ -243,6 +241,18 @@ export default function ExecutePage() {
       <DeleteTileDialog onConfirm={handleDeleteConfirm} />
     </div>
   )
+}
+
+function parseCustomRangeBoundary(value: string | null, edge: 'start' | 'end'): Date | null {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+  const normalized = dateOnly
+    ? `${trimmed}T${edge === 'start' ? '00:00:00' : '23:59:59'}`
+    : trimmed
+  const parsed = new Date(normalized)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
   function toTileId(tileId: string) {
     return TileId.fromString(tileId)

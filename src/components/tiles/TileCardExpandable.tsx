@@ -8,7 +8,7 @@ import type { TileId } from '@/lib/domain/ids'
 import { TileStatusIcon } from './shared/TileStatusIcon'
 import { TileActionButtons } from './shared/TileActionButtons'
 import { LoadingCard } from './shared/LoadingCard'
-import { formatDuration } from '@/lib/utils/tile-formatters'
+import { formatDateTime, formatDuration } from '@/lib/utils/tile-formatters'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
 import { cn } from '@/lib/utils/cn'
@@ -27,7 +27,7 @@ interface TileCardExpandableProps {
 
 export function TileCardExpandable(props: TileCardExpandableProps) {
   const { tile, loading, defaultExpanded = false, ...actions } = props
-  const { locale } = useTranslation()
+  const { t, locale } = useTranslation()
   const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
   if (loading) {
@@ -47,6 +47,10 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
     tile.work.segments.find(segment => segment.startAt)?.startAt ??
     null
   const durationText = resolveDurationText(tile, locale)
+  const startText = startAt
+    ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    : formatDateTime(null, locale)
+  const durationLabel = locale === 'ja' ? '所要' : 'Duration'
 
   const handleStatusClick = () => {
     if (actions.onStart) {
@@ -86,22 +90,24 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
         </div>
 
         <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
-          <p className="font-mono">所要 {durationText}</p>
-          <p>開始 {startAt ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'unscheduled'}</p>
+          <p className="font-mono">{durationLabel} {durationText}</p>
+          <p>{t('tiles.startAt')} {startText}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation()
-            if (actions.onEdit) actions.onEdit(tile.core.id)
-          }}
-          className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
-          aria-label="Edit tile"
-          title="Edit tile"
-        >
-          <SquarePen className="h-4 w-4" />
-        </button>
+        {actions.onEdit ? (
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              actions.onEdit?.(tile.core.id)
+            }}
+            className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+            aria-label="Edit tile"
+            title="Edit tile"
+          >
+            <SquarePen className="h-4 w-4" />
+          </button>
+        ) : null}
 
         <ChevronRight
           className={cn(
@@ -168,5 +174,5 @@ function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
     return sum + diff
   }, 0)
   if (totalWorked > 0) return formatDuration(totalWorked, locale)
-  return 'unspecified'
+  return formatDuration(null, locale)
 }

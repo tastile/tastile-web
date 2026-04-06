@@ -408,8 +408,8 @@ function parseExecutionView(raw: unknown): DaemonExecutionViewResponse {
     mainTileStartedAt: asNullableString(readOptional(row, 'main_tile_started_at') ?? readOptional(row, 'mainTileStartedAt') ?? null, 'main_tile_started_at'),
     mainTileEndsAt: asNullableString(readOptional(row, 'main_tile_ends_at') ?? readOptional(row, 'mainTileEndsAt') ?? null, 'main_tile_ends_at'),
     pendingPromptId: asNullableString(readOptional(row, 'pending_prompt_id') ?? readOptional(row, 'pendingPromptId') ?? null, 'pending_prompt_id'),
-    tileCount: Number(readOptional(row, 'tile_count') ?? readOptional(row, 'tileCount') ?? 0),
-    eventCount: Number(readOptional(row, 'event_count') ?? readOptional(row, 'eventCount') ?? 0),
+    tileCount: toFiniteCounter(readOptional(row, 'tile_count') ?? readOptional(row, 'tileCount') ?? 0),
+    eventCount: toFiniteCounter(readOptional(row, 'event_count') ?? readOptional(row, 'eventCount') ?? 0),
   }
 }
 
@@ -449,7 +449,7 @@ function parseTimelineToday(raw: unknown): DaemonTimelineTodayResponse {
         title: asString(read(timeline, 'title'), 'title'),
         startedAt: asString(read(timeline, 'started_at', 'startedAt'), 'started_at'),
         endedAt: asNullableString(readOptional(timeline, 'ended_at') ?? readOptional(timeline, 'endedAt') ?? null, 'ended_at'),
-        durationMin: Number(readOptional(timeline, 'duration_min') ?? readOptional(timeline, 'durationMin') ?? 0),
+        durationMin: toFiniteCounter(readOptional(timeline, 'duration_min') ?? readOptional(timeline, 'durationMin') ?? 0),
         isActive: asBoolean(readOptional(timeline, 'is_active') ?? readOptional(timeline, 'isActive') ?? false, 'is_active'),
       }
     }),
@@ -473,8 +473,8 @@ function parseTileView(raw: unknown, field: string): DaemonTileView {
     lifecycle: asString(readOptional(row, 'lifecycle') ?? 'ready', `${field}.lifecycle`),
     nextAction: asNullableString(readOptional(row, 'next_action') ?? readOptional(row, 'nextAction') ?? null, `${field}.next_action`),
     doneDefinition: asNullableString(readOptional(row, 'done_definition') ?? readOptional(row, 'doneDefinition') ?? null, `${field}.done_definition`),
-    workedMinutes: Number(readOptional(row, 'worked_minutes') ?? readOptional(row, 'workedMinutes') ?? 0),
-    breakMinutes: Number(readOptional(row, 'break_minutes') ?? readOptional(row, 'breakMinutes') ?? 0),
+    workedMinutes: toFiniteCounter(readOptional(row, 'worked_minutes') ?? readOptional(row, 'workedMinutes') ?? 0),
+    breakMinutes: toFiniteCounter(readOptional(row, 'break_minutes') ?? readOptional(row, 'breakMinutes') ?? 0),
     semanticRole: asString(readOptional(row, 'semantic_role') ?? readOptional(row, 'semanticRole') ?? 'work', `${field}.semantic_role`),
     labels: asArray(readOptional(row, 'labels') ?? [], `${field}.labels`).map((item, i) => asString(item, `${field}.labels[${i}]`)),
     objectiveMode: asNullableString(readOptional(row, 'objective_mode') ?? readOptional(row, 'objectiveMode') ?? null, `${field}.objective_mode`),

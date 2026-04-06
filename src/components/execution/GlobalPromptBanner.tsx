@@ -23,9 +23,25 @@ const SEVERITY_STYLE: Record<NonNullable<PendingPrompt['severity']>, string> = {
 }
 
 export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPromptBannerProps) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   const [deferMenuPromptId, setDeferMenuPromptId] = useState<string | null>(null)
   if (!prompt) return null
+  const deferOptions =
+    locale === 'ja'
+      ? [
+          { label: '30分', minutes: 30 },
+          { label: '1時間', minutes: 60 },
+          { label: '2時間', minutes: 120 },
+          { label: '明日', minutes: 1440 },
+          { label: '来週', minutes: 10080 },
+        ]
+      : [
+          { label: '30 min', minutes: 30 },
+          { label: '1 hour', minutes: 60 },
+          { label: '2 hours', minutes: 120 },
+          { label: 'Tomorrow', minutes: 1440 },
+          { label: 'Next week', minutes: 10080 },
+        ]
 
   const showDeferOptions = deferMenuPromptId === prompt.promptId
   const visibleActions = prompt.actions.filter(action => action !== 'dismiss')
@@ -49,16 +65,10 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
           </button>
         ) : null}
       </div>
-      {showDeferOptions ? (
+        {showDeferOptions ? (
         <div className="mt-3">
           <div className="grid grid-cols-2 gap-2">
-            {[
-              { label: '30分', minutes: 30 },
-              { label: '1時間', minutes: 60 },
-              { label: '2時間', minutes: 120 },
-              { label: '明日', minutes: 1440 },
-              { label: '来週', minutes: 10080 },
-            ].map(option => (
+            {deferOptions.map(option => (
               <button
                 key={option.label}
                 type="button"
@@ -74,7 +84,7 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
             onClick={() => setDeferMenuPromptId(null)}
             className="mt-2 min-h-9 rounded-lg bg-surface-2 px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
           >
-            戻る
+            {locale === 'ja' ? '戻る' : 'Back'}
           </button>
         </div>
       ) : (
@@ -111,9 +121,9 @@ function labelForAction(action: PromptAction, t: (key: string) => string): strin
     case 'complete_phase':
       return t('tiles.actions.complete')
     case 'start_break_parallel':
-      return t('prompt.actions.endBreak')
+      return t('prompt.actions.startBreak')
     case 'start_break_split':
-      return t('prompt.actions.endBreak')
+      return t('prompt.actions.startBreak')
     case 'start_break_split_and_extend':
       return t('prompt.actions.extend')
     case 'extend_phase':
