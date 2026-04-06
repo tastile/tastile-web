@@ -52,7 +52,7 @@ export function openExecutionStream({
     if (closed) return
     try {
       const token = getAccessToken ? await getAccessToken() : null
-      const nextConnection = await connectImpl(`${normalizedBaseUrl}/execution/stream`, token)
+      const nextConnection = await connectImpl(`${normalizedBaseUrl}/read/events/state`, token)
       if (closed) {
         nextConnection.close()
         return
@@ -101,19 +101,24 @@ function trimTrailingSlash(value: string): string {
   return value.endsWith('/') ? value.slice(0, -1) : value
 }
 
+let fallbackEventCounter = 0
+
 function parseExecutionEvent(raw: string): DaemonExecutionEvent | null {
   try {
     const value = JSON.parse(raw) as unknown
     if (!value || typeof value !== 'object' || Array.isArray(value)) return null
     const row = value as Record<string, unknown>
     const eventIdRaw = row.event_id ?? row.eventId
-    if (typeof eventIdRaw !== 'string') return null
+    const eventId = typeof eventIdRaw === 'string' ? eventIdRaw : `state-${++fallbackEventCounter}`
     return {
-      eventId: eventIdRaw,
+      eventId,
       payload: row.payload ?? row.event ?? null,
     }
   } catch {
-    return null
+    return {
+      eventId: `state-${++fallbackEventCounter}`,
+      payload: raw,
+    }
   }
 }
 

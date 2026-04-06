@@ -1,5 +1,5 @@
 export function formatDuration(minutes: number | null, locale: 'ja' | 'en' = 'ja'): string {
-  if (minutes === null || minutes === undefined) return '--'
+  if (minutes === null || minutes === undefined) return locale === 'ja' ? '未設定' : 'unspecified'
 
   const hours = Math.floor(minutes / 60)
   const mins = minutes % 60
@@ -16,7 +16,7 @@ export function formatDuration(minutes: number | null, locale: 'ja' | 'en' = 'ja
 }
 
 export function formatDateTime(date: Date | null, locale: 'ja' | 'en' = 'ja'): string {
-  if (!date) return '--'
+  if (!date) return locale === 'ja' ? '未設定' : 'unscheduled'
 
   return new Intl.DateTimeFormat(locale === 'ja' ? 'ja-JP' : 'en-US', {
     month: 'numeric',

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { applyThemeMode } from '@/lib/theme-mode'
 
 export type Theme = 'light' | 'gray' | 'dark'
 
@@ -29,11 +30,6 @@ export const useThemeStore = create<ThemeStore>()(
 )
 
 function applyTheme(theme: Theme) {
-  const root = document.documentElement
-
-  // Remove all theme classes
-  root.classList.remove('theme-light', 'theme-gray', 'theme-dark')
-
-  // Apply new theme class
-  root.classList.add(`theme-${theme}`)
+  const mode = theme === 'light' ? 'light' : theme === 'gray' ? 'dark-gray' : 'dark-black'
+  applyThemeMode(mode)
 }

@@ -1,21 +1,39 @@
 import Link from 'next/link'
 import { TastileLogo } from '@/components/TastileLogo'
+import { ThemeToggle } from '@/components/NavControls'
 
-export function SiteHeader({ hideAuth }: { hideAuth?: boolean } = {}) {
+export function SiteHeader({ hideAuth, showFeatureLink = false }: { hideAuth?: boolean; showFeatureLink?: boolean } = {}) {
   return (
-    <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-sm">
-      <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
-          <TastileLogo size={22} className="text-zinc-900 dark:text-zinc-100" />
-          <span className="font-bold text-lg tracking-tight text-zinc-900 dark:text-zinc-100">tastile</span>
+    <header className="sticky top-0 z-40 border-b border-border bg-surface-0/90 backdrop-blur-sm">
+      <div className="layout-shell flex h-16 items-center justify-between">
+        <Link href="/" className="flex items-center gap-3">
+          <TastileLogo size={36} className="text-foreground" />
+          <span className="text-xl font-semibold tracking-tight text-foreground">tastile</span>
         </Link>
-        {!hideAuth && (
-          <div className="flex items-center gap-3">
-            <Link href="/login" className="text-sm text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors">
-              ログイン
+        <nav className="flex items-center gap-1">
+          {showFeatureLink ? (
+            <Link href="/#features" className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block">
+              Features
             </Link>
-          </div>
-        )}
+          ) : null}
+          <Link href="/pricing" className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block">
+            Pricing
+          </Link>
+          <Link href="/download" className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block">
+            Download
+          </Link>
+          <ThemeToggle />
+          {!hideAuth && (
+            <>
+              <Link href="/login" className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block">
+                ログイン
+              </Link>
+              <Link href="/login" className="ml-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-fg hover:bg-primary-hover">
+                無料で始める
+              </Link>
+            </>
+          )}
+        </nav>
       </div>
     </header>
   )

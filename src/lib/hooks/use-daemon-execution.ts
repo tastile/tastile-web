@@ -7,12 +7,18 @@ import type { EventEnvelope } from '../core/event'
 import { DaemonClient } from '../daemon/client'
 import { openExecutionStream } from '../daemon/stream'
 import { Actor } from '../domain/actor'
-import { ExecutionSnapshot, ExecutionSyncStatus, PromptQueueItemSnapshot } from '../domain/execution'
+import { ExecutionSnapshot, ExecutionSyncStatus, PromptAction, PromptQueueItemSnapshot, TimelineItemSnapshot } from '../domain/execution'
 import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
 import { createClient, getBrowserAccessToken } from '@/lib/supabase/client'
 import { createWasmExecutionEngine, WasmExecutionEngine } from '../wasm/core-engine'
 import { EventStore } from '../storage/event-store'
+import type {
+  DaemonExecutionViewResponse,
+  DaemonPendingPromptResponse,
+  DaemonTimelineTodayResponse,
+  DaemonTilesResponse,
+} from '../daemon/client'
 
 const DEFAULT_DAEMON_BASE_URL = 'http://127.0.0.1:3140'
 const DEFAULT_EXECUTION_BACKEND = 'wasm'
@@ -57,17 +63,63 @@ export function useDaemonExecution() {
     return parsed
   }, [])
 
+  const restoreDaemonSession = useCallback(async (): Promise<boolean> => {
+    const client = clientRef.current
+    if (!client) return false
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session?.user) return false
+    await client.restoreSession({
+      userId: session.user.id,
+      email: session.user.email ?? '',
+      accessToken: session.access_token,
+      refreshToken: session.refresh_token,
+      expiresAt: toDaemonSessionExpiry(session.expires_at),
+    })
+    return true
+  }, [supabase])
+
   const refreshSnapshot = useCallback(async () => {
     const client = clientRef.current
     const wasm = wasmRef.current
     if (!client && !wasm) return
     const requestId = ++refreshRequestRef.current
-    const snapshot = client ? await client.readSnapshot() : await wasm!.readSnapshot()
+    const daemonClient = client!
+    const readClientSnapshot = () => Promise.all([
+      daemonClient.readSnapshot(),
+      Promise.resolve(null as Tile[] | null),
+      safeRead(() => daemonClient.readTiles(), null as DaemonTilesResponse | null),
+      safeRead(() => daemonClient.readExecutionView(), null as DaemonExecutionViewResponse | null),
+      safeRead(() => daemonClient.readPendingPrompt(), null as DaemonPendingPromptResponse | null),
+      safeRead(() => daemonClient.readTodayTimeline(), null as DaemonTimelineTodayResponse | null),
+    ])
+    const readWasmSnapshot = () => Promise.all([
+      wasm!.readSnapshot(),
+      wasm!.exportTiles().catch(() => null as Tile[] | null),
+      safeRead(() => wasm!.readTiles(), null as DaemonTilesResponse | null),
+      safeRead(() => wasm!.readExecutionView(), null as DaemonExecutionViewResponse | null),
+      safeRead(() => wasm!.readPendingPrompt(), null as DaemonPendingPromptResponse | null),
+      safeRead(() => wasm!.readTodayTimeline(), null as DaemonTimelineTodayResponse | null),
+    ])
+    const [snapshot, exportedTiles, tilesView, executionView, pendingPromptView, todayTimeline] = client
+      ? await runWithDaemonReauthRetry(readClientSnapshot, restoreDaemonSession)
+      : await readWasmSnapshot()
     if (!mountedRef.current) return
     if (requestId < appliedRefreshRef.current) return
     appliedRefreshRef.current = requestId
-    setState(projectSnapshotToAppState(snapshot, syncStatusRef.current))
-  }, [])
+    setState(
+      projectSnapshotToAppState(
+        snapshot,
+        syncStatusRef.current,
+        exportedTiles,
+        tilesView,
+        executionView,
+        pendingPromptView,
+        todayTimeline
+      )
+    )
+  }, [restoreDaemonSession])
 
   useEffect(() => {
     let active = true
@@ -143,7 +195,7 @@ export function useDaemonExecution() {
           email: session.user.email ?? '',
           accessToken: session.access_token,
           refreshToken: session.refresh_token,
-          expiresAt: session.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+          expiresAt: toDaemonSessionExpiry(session.expires_at),
         })
         const daemonSyncStatus = await readDaemonSyncStatusSafely(clientRef.current)
         if (daemonSyncStatus) {
@@ -214,7 +266,10 @@ export function useDaemonExecution() {
       throw new Error('Daemon client not initialized. Are you authenticated?')
     }
     if (client) {
-      await client.sendCommand(toDaemonCommand(command))
+      await runWithDaemonReauthRetry(
+        () => client.sendCommand(toDaemonCommand(command)),
+        restoreDaemonSession
+      )
       const daemonSyncStatus = await readDaemonSyncStatusSafely(client)
       if (daemonSyncStatus) {
         syncStatusRef.current = daemonSyncStatus
@@ -266,7 +321,7 @@ export function useDaemonExecution() {
       }
     }
     await refreshSnapshot()
-  }, [refreshSnapshot])
+  }, [refreshSnapshot, restoreDaemonSession])
 
   return { state, loading, execute }
 }
@@ -342,8 +397,58 @@ function createWebDeviceId(): string {
   return `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-function projectSnapshotToAppState(snapshot: ExecutionSnapshot, syncStatus: ExecutionSyncStatus | null = null): AppState {
+function toDaemonSessionExpiry(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null
+
+  const asDateFromEpoch = (epoch: number): Date | null => {
+    if (!Number.isFinite(epoch)) return null
+    const millis = epoch > 1_000_000_000_000 ? epoch : epoch * 1000
+    const parsed = new Date(millis)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  if (typeof raw === 'number') {
+    const parsed = asDateFromEpoch(raw)
+    return parsed ? parsed.toISOString() : null
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+    const numeric = Number(trimmed)
+    if (Number.isFinite(numeric)) {
+      const parsedEpoch = asDateFromEpoch(numeric)
+      return parsedEpoch ? parsedEpoch.toISOString() : null
+    }
+    const parsedIso = new Date(trimmed)
+    return Number.isNaN(parsedIso.getTime()) ? null : parsedIso.toISOString()
+  }
+
+  return null
+}
+
+function projectSnapshotToAppState(
+  snapshot: ExecutionSnapshot,
+  syncStatus: ExecutionSyncStatus | null = null,
+  exportedTiles: Tile[] | null = null,
+  tilesView: DaemonTilesResponse | null = null,
+  executionView: DaemonExecutionViewResponse | null = null,
+  pendingPromptView: DaemonPendingPromptResponse | null = null,
+  todayTimeline: DaemonTimelineTodayResponse | null = null
+): AppState {
   const tiles = new Map<TileId, Tile>()
+  if (Array.isArray(exportedTiles)) {
+    for (const tile of exportedTiles) {
+      tiles.set(tile.core.id, tile)
+    }
+  }
+  if (tilesView?.tiles?.length) {
+    for (const view of tilesView.tiles) {
+      const tile = toDomainTileFromView(view)
+      tiles.set(tile.core.id, mergeTiles(tiles.get(tile.core.id), tile))
+    }
+  }
+  const timeline = toTimelineSnapshots(snapshot.timeline, todayTimeline, tiles)
   const ensureTile = (tileId: TileId, title: string): Tile => {
     const existing = tiles.get(tileId)
     if (existing) return existing
@@ -357,7 +462,7 @@ function projectSnapshotToAppState(snapshot: ExecutionSnapshot, syncStatus: Exec
     tile.core.startedAt = row.startedAt
   }
 
-  for (const row of snapshot.timeline) {
+  for (const row of timeline) {
     if (!row.tileId || row.tileId.startsWith('synthetic:')) continue
     const tile = ensureTile(row.tileId, row.title)
     if (!tile.core.startedAt && (row.status === 'active' || row.status === 'done')) {
@@ -369,18 +474,29 @@ function projectSnapshotToAppState(snapshot: ExecutionSnapshot, syncStatus: Exec
   }
 
   const primary = snapshot.inProgressTiles[0] ?? null
-  const activeTimeline = snapshot.timeline.find(row => row.status === 'active')
+  const activeTimeline = timeline.find(row => row.status === 'active')
   const activeTimelineTileId = activeTimeline?.tileId && tiles.has(activeTimeline.tileId) ? activeTimeline.tileId : null
-  const activeTileId = primary?.tileId ?? activeTimelineTileId ?? null
-  const activeStartAt = primary?.startedAt ?? activeTimeline?.startAt ?? null
-  const activePhaseKind = primary?.phaseKind ?? (activeTimeline?.type === 'break' ? 'break' : activeTimeline ? 'work' : 'idle')
-  const activeEndsAt = primary?.phaseEndsAt ?? activeTimeline?.endAt ?? null
+  const executionMainTileId = executionView?.mainTile?.id ? TileId.fromString(executionView.mainTile.id) : null
+  const activeTileId = executionMainTileId ?? activeTimelineTileId ?? primary?.tileId ?? null
+  const activeStartAt = toDateOrNull(executionView?.mainTileStartedAt) ?? activeTimeline?.startAt ?? primary?.startedAt ?? (activeTileId ? tiles.get(activeTileId)?.core.startedAt ?? null : null)
+  const activePhaseKind = executionView?.isOnBreak
+    ? 'break'
+    : executionView?.isWorking
+      ? 'work'
+      : activeTimeline
+        ? (activeTimeline.type === 'break' ? 'break' : 'work')
+        : (primary?.phaseKind ?? 'idle')
+  const activeEndsAt =
+    toDateOrNull(executionView?.mainTileEndsAt) ??
+    activeTimeline?.endAt ??
+    primary?.phaseEndsAt ??
+    derivePhaseEndsAtFromTile(activeTileId ? tiles.get(activeTileId) ?? null : null, activePhaseKind, activeStartAt)
   if (activeTileId && !tiles.has(activeTileId) && activeTimeline?.tileId) {
     ensureTile(activeTimeline.tileId, activeTimeline.title)
   }
 
-  const pendingPrompt = toPendingPrompt(snapshot.promptQueue)
-  const events = toCompatEvents(snapshot)
+  const pendingPrompt = toPendingPrompt(snapshot.promptQueue, pendingPromptView)
+  const events = toCompatEvents(snapshot, todayTimeline)
 
   return {
     tiles,
@@ -389,15 +505,145 @@ function projectSnapshotToAppState(snapshot: ExecutionSnapshot, syncStatus: Exec
       phaseKind: activePhaseKind,
       phaseStartedAt: activeStartAt,
       phaseEndsAt: activeEndsAt,
+      nextActionableStartAt: toDateOrNull(tilesView?.nextActionableStartAt) ?? null,
       pendingPrompt,
       syncStatus,
     },
-    timeline: snapshot.timeline,
+    timeline,
     events,
   }
 }
 
-function toPendingPrompt(promptQueue: PromptQueueItemSnapshot[]) {
+function toTimelineSnapshots(
+  snapshotTimeline: TimelineItemSnapshot[],
+  todayTimeline: DaemonTimelineTodayResponse | null,
+  tilesById: Map<TileId, Tile>
+): TimelineItemSnapshot[] {
+  const inferDurationForTile = (
+    tileId: TileId | null,
+    type: TimelineItemSnapshot['type']
+  ): number | null => {
+    if (!tileId) return null
+    const tile = tilesById.get(tileId)
+    if (!tile) return null
+    if (type === 'break') {
+      const value = tile.objective.targetRestMin
+      return typeof value === 'number' && value > 0 ? value : null
+    }
+    const value = tile.objective.targetWorkMin
+    return typeof value === 'number' && value > 0 ? value : null
+  }
+
+  if (!todayTimeline?.items?.length) {
+    return snapshotTimeline.map(item => {
+      const fallback = inferDurationForTile(item.tileId, item.type)
+      return {
+        ...item,
+        durationMin: item.durationMin && item.durationMin > 0 ? item.durationMin : fallback,
+      }
+    })
+  }
+
+  const now = Date.now()
+  const items: TimelineItemSnapshot[] = []
+  for (const [index, row] of todayTimeline.items.entries()) {
+    const startAt = toDateOrNull(row.startedAt)
+    if (!startAt) continue
+    const tileId = toTileIdOrNull(row.tileId)
+    const parsedEnd = toDateOrNull(row.endedAt)
+    const inferredDuration =
+      row.durationMin > 0
+        ? row.durationMin
+        : inferDurationForTile(tileId, row.kind === 'break' ? 'break' : row.kind === 'work' ? 'work' : 'fixed')
+    const inferredEnd =
+      parsedEnd ??
+      (inferredDuration && inferredDuration > 0
+        ? new Date(startAt.getTime() + inferredDuration * 60 * 1000)
+        : null)
+    const status: TimelineItemSnapshot['status'] = row.isActive
+      ? 'active'
+      : inferredEnd && inferredEnd.getTime() <= now
+        ? 'done'
+        : 'scheduled'
+    const type: TimelineItemSnapshot['type'] =
+      row.kind === 'work' || row.kind === 'break' || row.kind === 'fixed' ? row.kind : 'fixed'
+
+    items.push({
+      id: `${row.tileId ?? 'timeline'}-${index}-${startAt.getTime()}`,
+      tileId,
+      title: row.title,
+      type,
+      status,
+      startAt,
+      endAt: inferredEnd,
+      durationMin: inferredDuration ?? null,
+    })
+  }
+
+  if (items.length === 0) {
+    return snapshotTimeline.map(item => {
+      const fallback = inferDurationForTile(item.tileId, item.type)
+      return {
+        ...item,
+        durationMin: item.durationMin && item.durationMin > 0 ? item.durationMin : fallback,
+      }
+    })
+  }
+  items.sort((a, b) => a.startAt.getTime() - b.startAt.getTime())
+  return items
+}
+
+function toTileIdOrNull(value: string | null): TileId | null {
+  if (!value) return null
+  try {
+    return TileId.fromString(value)
+  } catch {
+    return null
+  }
+}
+
+function derivePhaseEndsAtFromTile(tile: Tile | null, phaseKind: 'work' | 'break' | 'idle', activeStartAt: Date | null): Date | null {
+  if (!tile || !activeStartAt || phaseKind === 'idle') return null
+  const segmentMode = phaseKind === 'break' ? 'break' : 'work'
+  const openSegment = [...(tile.work.segments ?? [])].reverse().find(segment => !segment.endAt && segment.mode === segmentMode)
+  if (openSegment?.expectedEndAt) return openSegment.expectedEndAt
+  const startAt = openSegment?.startAt ?? activeStartAt
+  if (segmentMode === 'break') {
+    const restMin = tile.objective.targetRestMin ?? 5
+    return new Date(startAt.getTime() + restMin * 60 * 1000)
+  }
+  const targetMin = tile.objective.targetWorkMin ?? 25
+  let workedMin = 0
+  for (const segment of tile.work.segments ?? []) {
+    if (segment.mode !== 'work' || !segment.endAt) continue
+    workedMin += Math.max(0, Math.floor((segment.endAt.getTime() - segment.startAt.getTime()) / 60000))
+  }
+  const remainingMin = tile.interruption.breakSplitsWork ? Math.max(0, targetMin - workedMin) : targetMin
+  return new Date(startAt.getTime() + remainingMin * 60 * 1000)
+}
+
+function toPendingPrompt(promptQueue: PromptQueueItemSnapshot[], pendingPromptView: DaemonPendingPromptResponse | null = null) {
+  if (pendingPromptView?.prompt) {
+    const actions: PromptAction[] = pendingPromptView.prompt.actions
+      .map(action => normalizePromptActionId(action.id))
+      .filter((action): action is PromptAction => action !== null)
+    return {
+      promptId: pendingPromptView.prompt.promptId,
+      tileId: pendingPromptView.prompt.tileId ? TileId.fromString(pendingPromptView.prompt.tileId) : null,
+      kind: pendingPromptView.prompt.kind as PromptQueueItemSnapshot['kind'],
+      severity: pendingPromptView.prompt.severity as PromptQueueItemSnapshot['severity'],
+      title: pendingPromptView.prompt.title,
+      body: pendingPromptView.prompt.body,
+      why: pendingPromptView.prompt.why,
+      suggestedMinutes: pendingPromptView.prompt.suggestedMinutes,
+      reasons: pendingPromptView.prompt.reasons,
+      actions: actions.length > 0 ? actions : (['dismiss'] as PromptAction[]),
+      scheduledAt: toDateOrNull(pendingPromptView.prompt.createdAt) ?? new Date(),
+      reason: pendingPromptView.prompt.reasons[0] ?? 'user_requested',
+      expiresAt: toDateOrNull(pendingPromptView.prompt.expiresAt),
+      stale: pendingPromptView.prompt.stale,
+    }
+  }
   const nextPrompt = promptQueue.find(item => item.status === 'pending') ?? null
   if (!nextPrompt) return null
   const { status, ...pendingPrompt } = nextPrompt
@@ -405,9 +651,45 @@ function toPendingPrompt(promptQueue: PromptQueueItemSnapshot[]) {
   return pendingPrompt
 }
 
-function toCompatEvents(snapshot: ExecutionSnapshot): EventEnvelope[] {
+function toCompatEvents(snapshot: ExecutionSnapshot, todayTimeline: DaemonTimelineTodayResponse | null = null): EventEnvelope[] {
   const system = Actor.system()
   const events: EventEnvelope[] = []
+  if (todayTimeline?.items?.length) {
+    for (const [index, row] of todayTimeline.items.entries()) {
+      if (!row.tileId) continue
+      const startAt = toDateOrNull(row.startedAt)
+      if (!startAt) continue
+      events.push({
+        event_id: EventId.fromString(`timeline-${index}-started`),
+        aggregate_id: `tile:${row.tileId}`,
+        occurred_at: startAt,
+        actor: system,
+        caused_by_command_id: null,
+        request_id: null,
+        event: {
+          type: 'tile_started',
+          tile_id: TileId.fromString(row.tileId),
+          started_at: startAt,
+        },
+      })
+      const endAt = toDateOrNull(row.endedAt)
+      if (endAt) {
+        events.push({
+          event_id: EventId.fromString(`timeline-${index}-completed`),
+          aggregate_id: `tile:${row.tileId}`,
+          occurred_at: endAt,
+          actor: system,
+          caused_by_command_id: null,
+          request_id: null,
+          event: {
+            type: 'tile_completed',
+            tile_id: TileId.fromString(row.tileId),
+            completed_at: endAt,
+          },
+        })
+      }
+    }
+  }
   for (const row of snapshot.timeline) {
     if (!row.tileId || row.tileId.startsWith('synthetic:')) continue
     events.push({
@@ -441,6 +723,128 @@ function toCompatEvents(snapshot: ExecutionSnapshot): EventEnvelope[] {
   }
   events.sort((a, b) => a.occurred_at.getTime() - b.occurred_at.getTime())
   return events
+}
+
+function normalizePromptActionId(rawActionId: string): PromptAction | null {
+  const normalized = rawActionId.trim().toLowerCase()
+  switch (normalized) {
+    case 'start':
+    case 'start_tile':
+      return 'start_tile'
+    case 'complete':
+    case 'complete_tile':
+    case 'complete_and_start_next':
+      return 'complete_tile'
+    case 'complete_phase':
+      return 'complete_phase'
+    case 'extend':
+    case 'extend_phase':
+      return 'extend_phase'
+    case 'defer':
+    case 'defer_tile':
+      return 'defer_tile'
+    case 'break':
+    case 'start_break':
+    case 'start_break_parallel':
+      return 'start_break_parallel'
+    case 'start_break_split':
+      return 'start_break_split'
+    case 'start_break_split_extend':
+    case 'start_break_split_and_extend':
+      return 'start_break_split_and_extend'
+    case 'end_break':
+      return 'end_break'
+    case 'confirm_continue':
+      return 'confirm_continue'
+    case 'confirm_stop_at':
+      return 'confirm_stop_at'
+    case 'confirm_executed':
+      return 'confirm_executed'
+    case 'confirm_skipped':
+      return 'confirm_skipped'
+    case 'continue':
+    case 'dismiss':
+      return 'dismiss'
+    default:
+      return null
+  }
+}
+
+function isUnauthorizedDaemonError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false
+  return /(^|\D)401(\D|$)/.test(error.message)
+}
+
+async function runWithDaemonReauthRetry<T>(
+  operation: () => Promise<T>,
+  restoreSession: () => Promise<boolean>
+): Promise<T> {
+  try {
+    return await operation()
+  } catch (error) {
+    if (!isUnauthorizedDaemonError(error)) throw error
+    const restored = await restoreSession()
+    if (!restored) throw error
+    return await operation()
+  }
+}
+
+function toDomainTileFromView(view: DaemonTilesResponse['tiles'][number]): Tile {
+  const tile = Tile.create(TileId.fromString(view.id), view.title)
+  tile.core.nextAction = view.nextAction
+  tile.core.doneDefinition = view.doneDefinition
+  tile.objective.targetWorkMin = view.targetWorkMin
+  tile.objective.targetRestMin = view.targetRestMin
+  tile.objective.doneRule = (view.doneRule as Tile['objective']['doneRule']) ?? null
+  tile.annotation.semanticRole = (view.semanticRole as Tile['annotation']['semanticRole']) ?? 'work'
+  tile.annotation.labels = view.labels
+  tile.temporal.releaseAt = toDateOrNull(view.temporal?.releaseAt)
+  tile.temporal.dueAt = toDateOrNull(view.temporal?.dueAt)
+  tile.temporal.fixedStart = toDateOrNull(view.temporal?.fixedStart) ?? toDateOrNull(view.projectedNextStartAt)
+  tile.temporal.fixedEnd = toDateOrNull(view.temporal?.fixedEnd)
+  tile.temporal.activeStart = toDateOrNull(view.temporal?.activeStart)
+  tile.temporal.activeEnd = toDateOrNull(view.temporal?.activeEnd)
+  if (view.lifecycle.toLowerCase() === 'started') {
+    tile.core.startedAt = toDateOrNull(view.temporal?.activeStart) ?? toDateOrNull(view.temporal?.fixedStart) ?? new Date()
+  }
+  if (view.lifecycle.toLowerCase() === 'done') {
+    tile.core.completedAt = toDateOrNull(view.temporal?.activeEnd) ?? toDateOrNull(view.temporal?.fixedEnd) ?? new Date()
+  }
+  return tile
+}
+
+function mergeTiles(base: Tile | undefined, next: Tile): Tile {
+  if (!base) return next
+  return {
+    ...base,
+    core: {
+      ...base.core,
+      title: next.core.title || base.core.title,
+      nextAction: next.core.nextAction ?? base.core.nextAction,
+      doneDefinition: next.core.doneDefinition ?? base.core.doneDefinition,
+      startedAt: base.core.startedAt ?? next.core.startedAt,
+      completedAt: base.core.completedAt ?? next.core.completedAt,
+    },
+    temporal: {
+      ...base.temporal,
+      ...next.temporal,
+    },
+    objective: {
+      ...base.objective,
+      ...next.objective,
+    },
+    annotation: {
+      ...base.annotation,
+      semanticRole: next.annotation.semanticRole ?? base.annotation.semanticRole,
+      labels: next.annotation.labels.length > 0 ? next.annotation.labels : base.annotation.labels,
+    },
+  }
+}
+
+function toDateOrNull(value: string | null | undefined): Date | null {
+  if (!value) return null
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
 }
 
 function toDaemonCommand(command: Command): DaemonCommandRequest {
@@ -494,6 +898,22 @@ function toDaemonCommand(command: Command): DaemonCommandRequest {
         requestedAt: command.requested_at,
         reason: command.reason,
       }
+    case 'respond_startup_recovery':
+      return {
+        type: 'respond_startup_recovery',
+        promptId: command.prompt_id,
+        tileId: command.tile_id,
+        actionId: command.action,
+        stopAt: command.stop_at,
+      }
+  }
+}
+
+async function safeRead<T>(run: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await run()
+  } catch {
+    return fallback
   }
 }
 

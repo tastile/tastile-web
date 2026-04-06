@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ChevronRight } from 'lucide-react'
+import { SquarePen } from 'lucide-react'
 import { getTileLifecycle, type Tile } from '@/lib/domain/tile'
 import type { TileId } from '@/lib/domain/ids'
 import { TileStatusIcon } from './shared/TileStatusIcon'
@@ -38,9 +39,17 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
   }
 
   const lifecycle = getTileLifecycle(tile)
+  const startAt =
+    tile.core.startedAt ??
+    tile.temporal.fixedStart ??
+    tile.temporal.activeStart ??
+    tile.temporal.releaseAt ??
+    tile.work.segments.find(segment => segment.startAt)?.startAt ??
+    null
+  const durationText = resolveDurationText(tile, locale)
 
   const handleStatusClick = () => {
-    if (lifecycle === 'ready' && actions.onStart) {
+    if (actions.onStart) {
       actions.onStart(tile.core.id)
     }
   }
@@ -63,7 +72,7 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
       >
         <TileStatusIcon
           lifecycle={lifecycle}
-          onClick={lifecycle === 'ready' ? handleStatusClick : undefined}
+          onClick={actions.onStart ? handleStatusClick : undefined}
           size={20}
         />
 
@@ -76,9 +85,23 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
           </h4>
         </div>
 
-        <div className="text-xs text-foreground-muted whitespace-nowrap">
-          {formatDuration(tile.objective.targetWorkMin, locale)}
+        <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
+          <p className="font-mono">所要 {durationText}</p>
+          <p>開始 {startAt ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'unscheduled'}</p>
         </div>
+
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation()
+            if (actions.onEdit) actions.onEdit(tile.core.id)
+          }}
+          className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+          aria-label="Edit tile"
+          title="Edit tile"
+        >
+          <SquarePen className="h-4 w-4" />
+        </button>
 
         <ChevronRight
           className={cn(
@@ -133,4 +156,17 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
       )}
     </div>
   )
+}
+
+function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
+  if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
+    return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  const totalWorked = tile.work.segments.reduce((sum, segment) => {
+    if (!segment.endAt) return sum
+    const diff = Math.max(0, Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000))
+    return sum + diff
+  }, 0)
+  if (totalWorked > 0) return formatDuration(totalWorked, locale)
+  return 'unspecified'
 }

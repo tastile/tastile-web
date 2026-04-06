@@ -1,6 +1,7 @@
 import { AppState } from '@/lib/core/state'
 import { Tile, getTileLifecycle } from '@/lib/domain/tile'
 import { TileId } from '@/lib/domain/ids'
+import { buildTileChanges, buildTimelineView } from '@/lib/core/dashboard-workspace'
 
 export interface DashboardProjection {
   next: {
@@ -50,9 +51,6 @@ export interface DashboardProjection {
   }
 }
 
-const PIXELS_PER_HOUR = 120
-const MIN_BLOCK_HEIGHT = 24
-
 export interface PhaseMetrics {
   remainingSeconds: number
   totalSeconds: number
@@ -82,65 +80,8 @@ export function buildDashboardProjection(state: AppState, now: Date): DashboardP
     titleById.set(tile.core.id, tile.core.title)
   }
 
-  const windowStart = startOfDay(now)
-  const windowEnd = new Date(windowStart.getTime() + 24 * 60 * 60 * 1000)
-  const pxPerMinute = PIXELS_PER_HOUR / 60
-  const canvasHeightPx = 24 * PIXELS_PER_HOUR
-
-  const blocks = state.timeline
-    .map(item => {
-      const segmentEnd = item.endAt ?? now
-      const clippedStart = new Date(Math.max(item.startAt.getTime(), windowStart.getTime()))
-      const clippedEnd = new Date(Math.min(segmentEnd.getTime(), windowEnd.getTime()))
-      if (clippedEnd.getTime() <= clippedStart.getTime()) return null
-
-      const topPx = minutesBetween(windowStart, clippedStart) * pxPerMinute
-      const heightPx = Math.max(MIN_BLOCK_HEIGHT, minutesBetween(clippedStart, clippedEnd) * pxPerMinute)
-
-      return {
-        id: item.id,
-        title: item.title,
-        type: item.type,
-        status: item.status,
-        topPx,
-        heightPx,
-        lane: 0,
-        totalLanes: 1,
-        startLabel: formatTime(clippedStart),
-        endLabel: formatTime(clippedEnd),
-        durationLabel: formatDuration(clippedStart, clippedEnd),
-        dateLabel: formatDate(clippedStart),
-        timeLabel: formatTime(clippedStart),
-        startAt: clippedStart,
-        endAt: clippedEnd,
-      }
-    })
-    .filter((item): item is NonNullable<typeof item> => item !== null)
-    .sort((a, b) => a.topPx - b.topPx)
-
-  assignLanes(blocks)
-  const markers = buildHourMarkers(windowStart, windowEnd, pxPerMinute)
-
-  const nowTopPx = now >= windowStart && now <= windowEnd ? minutesBetween(windowStart, now) * pxPerMinute : null
-  const historyEvents = state.timeline
-    .flatMap(item => {
-      const title = item.tileId ? (titleById.get(item.tileId) ?? item.title) : item.title
-      const starts = {
-        id: `${item.id}-start`,
-        eventType: `${item.type}_started`,
-        tileTitle: title,
-        createdAt: item.startAt,
-      }
-      if (!item.endAt) return [starts]
-      const ends = {
-        id: `${item.id}-end`,
-        eventType: `${item.type}_ended`,
-        tileTitle: title,
-        createdAt: item.endAt,
-      }
-      return [starts, ends]
-    })
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+  const timeline = buildTimelineView(state.timeline, now, { scale: 'day', customStart: null, customEnd: null })
+  const historyEvents = buildTileChanges(state.timeline, titleById)
 
   return {
     next: { main, quick },
@@ -151,38 +92,14 @@ export function buildDashboardProjection(state: AppState, now: Date): DashboardP
       done,
     },
     history: {
-      events: historyEvents,
+      events: historyEvents.map(event => ({
+        id: event.id,
+        eventType: event.eventType,
+        tileTitle: event.tileTitle,
+        createdAt: event.createdAt,
+      })),
     },
-    timeline: {
-      windowStart,
-      windowEnd,
-      markers,
-      canvasHeightPx,
-      nowTopPx,
-      blocks,
-    },
-  }
-}
-
-function assignLanes(blocks: Array<{ topPx: number; heightPx: number; lane: number; totalLanes: number }>) {
-  const active: Array<{ bottom: number; lane: number; block: { topPx: number; heightPx: number; lane: number; totalLanes: number } }> = []
-  for (const block of blocks) {
-    const top = block.topPx
-    const bottom = block.topPx + block.heightPx
-    for (let i = active.length - 1; i >= 0; i -= 1) {
-      if (active[i].bottom <= top) {
-        active.splice(i, 1)
-      }
-    }
-    const used = new Set(active.map(item => item.lane))
-    let lane = 0
-    while (used.has(lane)) lane += 1
-    block.lane = lane
-    active.push({ bottom, lane, block })
-    const total = Math.max(1, ...active.map(item => item.lane + 1))
-    for (const item of active) {
-      item.block.totalLanes = Math.max(item.block.totalLanes, total)
-    }
+    timeline,
   }
 }
 
@@ -200,31 +117,6 @@ export function computePhaseMetrics(phaseStartedAt: Date | null, phaseEndsAt: Da
   }
 }
 
-function startOfDay(now: Date): Date {
-  const out = new Date(now)
-  out.setHours(0, 0, 0, 0)
-  return out
-}
-
-function minutesBetween(start: Date, end: Date): number {
-  return Math.max(0, (end.getTime() - start.getTime()) / 60000)
-}
-
-function formatTime(d: Date): string {
-  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-}
-
-function formatDate(d: Date): string {
-  return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' })
-}
-
-function formatDuration(start: Date, end: Date): string {
-  const totalMin = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000))
-  const h = Math.floor(totalMin / 60)
-  const m = totalMin % 60
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
-}
-
 function formatCountdown(seconds: number): string {
   if (seconds <= 0) return '00:00'
   const hh = Math.floor(seconds / 3600)
@@ -234,17 +126,4 @@ function formatCountdown(seconds: number): string {
     return `${hh.toString().padStart(2, '0')}:${mm.toString().padStart(2, '0')}:${ss.toString().padStart(2, '0')}`
   }
   return `${mm.toString().padStart(2, '0')}:${ss.toString().padStart(2, '0')}`
-}
-
-function buildHourMarkers(windowStart: Date, windowEnd: Date, pxPerMinute: number): Array<{ label: string; topPx: number }> {
-  const markers: Array<{ label: string; topPx: number }> = []
-  const cursor = new Date(windowStart)
-  while (cursor <= windowEnd) {
-    markers.push({
-      label: formatTime(cursor),
-      topPx: minutesBetween(windowStart, cursor) * pxPerMinute,
-    })
-    cursor.setHours(cursor.getHours() + 1, 0, 0, 0)
-  }
-  return markers
 }

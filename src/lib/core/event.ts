@@ -102,7 +102,22 @@ export type Event =
       severity: 'soft' | 'elevated' | 'critical'
       suggested_minutes: number | null
       reasons: string[]
-      actions: Array<'start_tile' | 'complete_tile' | 'extend_phase' | 'defer_tile' | 'end_break' | 'dismiss'>
+      actions: Array<
+        | 'start_tile'
+        | 'start_break_parallel'
+        | 'start_break_split'
+        | 'start_break_split_and_extend'
+        | 'complete_phase'
+        | 'complete_tile'
+        | 'extend_phase'
+        | 'defer_tile'
+        | 'end_break'
+        | 'confirm_continue'
+        | 'confirm_stop_at'
+        | 'confirm_executed'
+        | 'confirm_skipped'
+        | 'dismiss'
+      >
     }
   | {
       type: 'prompt_cleared'

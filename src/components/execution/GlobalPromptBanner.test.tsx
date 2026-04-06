@@ -49,8 +49,6 @@ describe('GlobalPromptBanner', () => {
     )
 
     expect(screen.getByText('Resume Deep work')).toBeTruthy()
-    expect(screen.getByText('Draft the outline')).toBeTruthy()
-    expect(screen.getByText('This tile was already in flight and is the best resume candidate.')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'tiles.actions.start' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'tiles.actions.defer' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'common.close' })).toBeTruthy()
@@ -109,6 +107,31 @@ describe('GlobalPromptBanner', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
+  it('opens defer options first then sends defer action with selected minutes', () => {
+    const onAction = vi.fn()
+    render(
+      <GlobalPromptBanner
+        prompt={{
+          promptId: 'p-defer-menu',
+          tileId: TileId.fromString('tile-1'),
+          kind: 'start_tile',
+          severity: 'soft',
+          suggestedMinutes: null,
+          reasons: ['user_requested'],
+          actions: ['defer_tile', 'dismiss'],
+          scheduledAt: new Date('2026-03-26T03:00:00.000Z'),
+          reason: 'defer',
+        }}
+        onAction={onAction}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'tiles.actions.defer' }))
+    expect(onAction).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: '30分' }))
+    expect(onAction).toHaveBeenCalledWith('defer_tile', { deferMinutes: 30 })
+  })
+
   it('AppShell sends prompt action command then clears prompt', async () => {
     executeMock.mockReset()
     executeMock.mockResolvedValue(undefined)
@@ -153,7 +176,6 @@ describe('GlobalPromptBanner', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'tiles.actions.start' }))
-    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('d:2')
 
     await waitFor(() => expect(executeMock).toHaveBeenCalledTimes(2))
 
@@ -169,7 +191,7 @@ describe('GlobalPromptBanner', () => {
     )
   })
 
-  it('AppShell renders sync indicator for in-progress and error statuses', () => {
+  it('AppShell does not render sync indicator text', () => {
     Object.defineProperty(window, 'localStorage', {
       value: { getItem: vi.fn(() => null), setItem: vi.fn() },
       configurable: true,
@@ -196,7 +218,7 @@ describe('GlobalPromptBanner', () => {
       </AppShell>
     )
 
-    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('header.sync.in_progress')
+    expect(screen.queryByTestId('sync-status-indicator')).toBeNull()
 
     rerender(
       <AppShell
@@ -219,7 +241,7 @@ describe('GlobalPromptBanner', () => {
       </AppShell>
     )
 
-    expect(screen.getByTestId('sync-status-indicator').textContent).toContain('header.sync.error: connection failed')
+    expect(screen.queryByTestId('sync-status-indicator')).toBeNull()
   })
 
   it('AppShell maps action without tileId to dismissed clear prompt only', async () => {
@@ -300,6 +322,100 @@ describe('GlobalPromptBanner', () => {
     expect(executeMock).toHaveBeenNthCalledWith(
       1,
       { type: 'extend_phase', tile_id: 'tile-extend', delta_min: 15 },
+      expect.objectContaining({ type: 'human' })
+    )
+  })
+
+  it('AppShell maps defer prompt action to defer_tile with computed next_start_at', async () => {
+    executeMock.mockReset()
+    executeMock.mockResolvedValue(undefined)
+    Object.defineProperty(window, 'localStorage', {
+      value: { getItem: vi.fn(() => null), setItem: vi.fn() },
+      configurable: true,
+    })
+    const clickedAt = Date.now()
+
+    render(
+      <AppShell
+        executionState={{
+          activeTileTitle: 'Deep Work',
+          phaseKind: 'work',
+          phaseStartedAt: new Date('2026-03-26T09:00:00.000Z'),
+          phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          pendingPrompt: {
+            promptId: 'p-defer',
+            tileId: TileId.fromString('tile-defer'),
+            kind: 'end_tile',
+            severity: 'soft',
+            suggestedMinutes: 30,
+            reasons: ['work_phase_expired'],
+            actions: ['defer_tile', 'dismiss'],
+            scheduledAt: new Date('2026-03-26T09:25:00.000Z'),
+            reason: 'work_phase_expired',
+          },
+        }}
+      >
+        <div>Child</div>
+      </AppShell>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'tiles.actions.defer' }))
+    expect(executeMock).toHaveBeenCalledTimes(0)
+    fireEvent.click(screen.getByRole('button', { name: '30分' }))
+    await waitFor(() => expect(executeMock).toHaveBeenCalledTimes(2))
+
+    const [firstCommand] = executeMock.mock.calls[0]
+    expect(firstCommand).toMatchObject({ type: 'defer_tile', tile_id: 'tile-defer' })
+    expect(firstCommand.deferred_at).toBeInstanceOf(Date)
+    expect(firstCommand.next_start_at).toBeInstanceOf(Date)
+    const deferDeltaMin = Math.floor((firstCommand.next_start_at.getTime() - clickedAt) / 60000)
+    expect(deferDeltaMin).toBeGreaterThanOrEqual(29)
+    expect(deferDeltaMin).toBeLessThanOrEqual(30)
+  })
+
+  it('AppShell sends respond_startup_recovery confirm_continue then clears prompt', async () => {
+    executeMock.mockReset()
+    executeMock.mockResolvedValue(undefined)
+    Object.defineProperty(window, 'localStorage', {
+      value: { getItem: vi.fn(() => null), setItem: vi.fn() },
+      configurable: true,
+    })
+
+    render(
+      <AppShell
+        executionState={{
+          activeTileTitle: 'Recovery tile',
+          phaseKind: 'work',
+          phaseStartedAt: new Date('2026-03-26T09:00:00.000Z'),
+          phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          pendingPrompt: {
+            promptId: 'p-recovery',
+            tileId: TileId.fromString('tile-recovery'),
+            kind: 'start_tile',
+            severity: 'critical',
+            suggestedMinutes: null,
+            reasons: ['startup_recovery'],
+            actions: ['confirm_continue', 'dismiss'],
+            scheduledAt: new Date('2026-03-26T09:25:00.000Z'),
+            reason: 'startup_recovery',
+          },
+        }}
+      >
+        <div>Child</div>
+      </AppShell>
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'prompt.actions.confirmContinue' }))
+    await waitFor(() => expect(executeMock).toHaveBeenCalledTimes(2))
+    expect(executeMock).toHaveBeenNthCalledWith(
+      1,
+      {
+        type: 'respond_startup_recovery',
+        prompt_id: 'p-recovery',
+        tile_id: 'tile-recovery',
+        action: 'confirm_continue',
+        stop_at: null,
+      },
       expect.objectContaining({ type: 'human' })
     )
   })

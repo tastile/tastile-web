@@ -34,6 +34,14 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
   }
 
   const lifecycle = getTileLifecycle(tile)
+  const startAt =
+    tile.core.startedAt ??
+    tile.temporal.fixedStart ??
+    tile.temporal.activeStart ??
+    tile.temporal.releaseAt ??
+    tile.work.segments.find(segment => segment.startAt)?.startAt ??
+    null
+  const durationText = resolveDurationText(tile, locale)
 
   const handleStatusClick = () => {
     if (lifecycle === 'ready' && actions.onStart) {
@@ -71,7 +79,7 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
         </div>
 
         <div className="text-sm text-foreground-muted whitespace-nowrap">
-          {formatDuration(tile.objective.targetWorkMin, locale)}
+          所要 {durationText}
         </div>
       </div>
 
@@ -108,22 +116,18 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
       )}
 
       {/* Time Information */}
-      {(tile.temporal.fixedStart || tile.temporal.fixedEnd) && (
-        <div className="space-y-1 text-xs text-foreground-muted">
-          {tile.temporal.fixedStart && (
-            <div>
-              <span className="opacity-60">{t('tiles.startAt')}:</span>{' '}
-              {formatDateTime(tile.temporal.fixedStart, locale)}
-            </div>
-          )}
-          {tile.temporal.fixedEnd && (
-            <div>
-              <span className="opacity-60">{t('tiles.endAt')}:</span>{' '}
-              {formatDateTime(tile.temporal.fixedEnd, locale)}
-            </div>
-          )}
+      <div className="space-y-1 text-xs text-foreground-muted">
+        <div>
+          <span className="opacity-60">{t('tiles.startAt')}:</span>{' '}
+          {startAt ? formatDateTime(startAt, locale) : 'unscheduled'}
         </div>
-      )}
+        {tile.temporal.fixedEnd ? (
+          <div>
+            <span className="opacity-60">{t('tiles.endAt')}:</span>{' '}
+            {formatDateTime(tile.temporal.fixedEnd, locale)}
+          </div>
+        ) : null}
+      </div>
 
       {/* Action Buttons */}
       <div className="pt-2 border-t border-surface-2">
@@ -135,4 +139,17 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
       </div>
     </div>
   )
+}
+
+function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
+  if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
+    return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  const totalWorked = tile.work.segments.reduce((sum, segment) => {
+    if (!segment.endAt) return sum
+    const diff = Math.max(0, Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000))
+    return sum + diff
+  }, 0)
+  if (totalWorked > 0) return formatDuration(totalWorked, locale)
+  return 'unspecified'
 }

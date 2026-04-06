@@ -105,6 +105,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         phaseKind: state.execution.phaseKind,
         phaseStartedAt: state.execution.phaseStartedAt,
         phaseEndsAt: state.execution.phaseEndsAt,
+        nextActionableStartAt: state.execution.nextActionableStartAt ?? null,
         pendingPrompt: state.execution.pendingPrompt,
         syncStatus: state.execution.syncStatus ?? null,
       }}

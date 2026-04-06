@@ -29,6 +29,11 @@ export const metadata: Metadata = {
   description: "Stop managing tasks. Start controlling execution.",
   metadataBase: new URL("https://tastile.app"),
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon?v=6",
+    shortcut: "/icon?v=6",
+    apple: "/apple-icon.png",
+  },
   openGraph: {
     title: "Tastile — Execution Control",
     description: "Stop managing tasks. Start controlling execution.",

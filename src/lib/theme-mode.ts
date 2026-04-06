@@ -22,7 +22,7 @@ export function applyThemeMode(mode: ThemeMode) {
   }
 
   const root = document.documentElement
-  root.classList.remove('dark', 'theme-dark-gray', 'theme-dark-black')
+  root.classList.remove('dark', 'theme-dark-gray', 'theme-dark-black', 'theme-light', 'theme-gray', 'theme-dark')
 
   if (mode === 'dark-gray') {
     root.classList.add('dark', 'theme-dark-gray')

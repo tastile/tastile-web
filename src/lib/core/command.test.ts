@@ -140,4 +140,24 @@ describe('fromDaemonCommandRequest', () => {
       reason: 'status_icon',
     })
   })
+
+  it('maps respond_startup_recovery request', () => {
+    const tileId = TileId.fromString('tile-1')
+    const stopAt = new Date('2026-03-26T10:45:00.000Z')
+    expect(
+      fromDaemonCommandRequest({
+        type: 'respond_startup_recovery',
+        promptId: 'p1',
+        tileId,
+        actionId: 'confirm_stop_at',
+        stopAt,
+      })
+    ).toEqual({
+      type: 'respond_startup_recovery',
+      prompt_id: 'p1',
+      tile_id: tileId,
+      action: 'confirm_stop_at',
+      stop_at: stopAt,
+    })
+  })
 })

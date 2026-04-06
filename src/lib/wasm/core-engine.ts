@@ -5,9 +5,20 @@ import { EventId, CommandId, RequestId } from '../domain/ids'
 import type { ExecutionSnapshot } from '../domain/execution'
 import { parseExecutionSnapshot } from '../daemon/contracts'
 import type { Tile } from '../domain/tile'
+import type {
+  DaemonExecutionViewResponse,
+  DaemonPendingPromptResponse,
+  DaemonTimelineTodayResponse,
+  DaemonTileView,
+  DaemonTilesResponse,
+} from '../daemon/client'
 
 export interface WasmExecutionEngine {
   readSnapshot(): Promise<ExecutionSnapshot>
+  readTiles(params?: { viewMode?: string; lifecycle?: string; limit?: number; search?: string }): Promise<DaemonTilesResponse>
+  readExecutionView(): Promise<DaemonExecutionViewResponse>
+  readPendingPrompt(): Promise<DaemonPendingPromptResponse>
+  readTodayTimeline(): Promise<DaemonTimelineTodayResponse>
   execute(command: Command, actor: Actor): Promise<void>
   executePayload(payload: string): Promise<void>
   executeWithAck(command: Command, actor: Actor): Promise<WasmCommandAck>
@@ -23,13 +34,130 @@ export interface WasmExecutionEngine {
 export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> {
   const wasmModule = await loadWasmModule()
   const engine = new wasmModule.WasmCoreEngine()
+  const readSnapshot = async (): Promise<ExecutionSnapshot> => {
+    const raw = engine.read_snapshot_json(new Date().toISOString())
+    const parsed = JSON.parse(raw)
+    return parseExecutionSnapshot(parsed)
+  }
+  const exportTiles = async (): Promise<Tile[]> => JSON.parse(engine.export_tiles_json()) as Tile[]
+  const readTiles = async (params?: { viewMode?: string; lifecycle?: string; limit?: number; search?: string }): Promise<DaemonTilesResponse> => {
+    const [snapshot, tiles] = await Promise.all([readSnapshot(), exportTiles()])
+    const lifecycleById = new Map<string, string>()
+    for (const timeline of snapshot.timeline) {
+      if (!timeline.tileId) continue
+      if (timeline.status === 'active') lifecycleById.set(timeline.tileId, 'started')
+      if (timeline.status === 'done' && !lifecycleById.has(timeline.tileId)) lifecycleById.set(timeline.tileId, 'done')
+    }
+    let rows: DaemonTileView[] = tiles.map((tile: Tile) => toDaemonTileView(tile, lifecycleById.get(tile.core.id) ?? inferLifecycle(tile)))
+    if (params?.lifecycle) {
+      const normalized = params.lifecycle.toLowerCase()
+      rows = rows.filter((tile: DaemonTileView) => tile.lifecycle.toLowerCase() === normalized)
+    }
+    if (params?.search) {
+      const keyword = params.search.toLowerCase()
+      rows = rows.filter((tile: DaemonTileView) => tile.title.toLowerCase().includes(keyword) || (tile.nextAction ?? '').toLowerCase().includes(keyword))
+    }
+    if (typeof params?.limit === 'number' && Number.isFinite(params.limit)) {
+      rows = rows.slice(0, Math.max(0, Math.trunc(params.limit)))
+    }
+    return {
+      tiles: rows,
+      nextActionableTileId: rows.find((tile: DaemonTileView) => tile.lifecycle !== 'done')?.id ?? null,
+      nextActionableStartAt: rows.find((tile: DaemonTileView) => tile.projectedNextStartAt)?.projectedNextStartAt ?? null,
+    }
+  }
+  const readExecutionView = async (): Promise<DaemonExecutionViewResponse> => {
+    const [snapshot, tileResponse] = await Promise.all([readSnapshot(), readTiles()])
+    const tileById = new Map(tileResponse.tiles.map((tile: DaemonTileView) => [tile.id, tile] as const))
+    const tilesInProgress = snapshot.inProgressTiles.map(progress => {
+      const base = tileById.get(progress.tileId)
+      return base ?? {
+        ...toDaemonTileView({
+          core: {
+            id: progress.tileId,
+            title: progress.title,
+            nextAction: null,
+            doneDefinition: null,
+            startedAt: progress.startedAt,
+            completedAt: null,
+          },
+          work: { segments: [] },
+          temporal: { releaseAt: null, dueAt: null, fixedStart: null, fixedEnd: null, activeStart: null, activeEnd: null },
+          objective: { objectiveMode: 'finish_once', targetWorkMin: null, targetRestMin: null, doneRule: null, recurrence: null },
+          interruption: { interruptPenalty: 3, resumePenalty: 3, breakSplitsWork: true, externalInterruptOnly: false },
+          automation: { promptOnStart: false, promptOnEnd: false, autoStartAllowed: false, autoEndAllowed: false },
+          annotation: { semanticRole: 'work', labels: [], timedLabels: [] },
+        } as Tile, 'started'),
+        title: progress.title,
+        lifecycle: 'started',
+      }
+    })
+    const main = tilesInProgress[0] ?? null
+    const active = snapshot.inProgressTiles[0] ?? null
+    return {
+      tilesInProgress,
+      mainTile: main,
+      isWorking: active?.phaseKind === 'work',
+      isOnBreak: active?.phaseKind === 'break',
+      isIdle: !active,
+      mainTileStartedAt: active?.startedAt.toISOString() ?? null,
+      mainTileEndsAt: active?.phaseEndsAt?.toISOString() ?? null,
+      pendingPromptId: snapshot.promptQueue[0]?.promptId ?? null,
+      tileCount: tileResponse.tiles.length,
+      eventCount: snapshot.timeline.length,
+    }
+  }
+  const readPendingPrompt = async (): Promise<DaemonPendingPromptResponse> => {
+    const snapshot = await readSnapshot()
+    const prompt = snapshot.promptQueue.find(item => item.status === 'pending') ?? null
+    if (!prompt) return { prompt: null }
+    return {
+      prompt: {
+        promptId: prompt.promptId,
+        kind: prompt.kind,
+        severity: prompt.severity,
+        tileId: prompt.tileId,
+        title: prompt.title ?? '',
+        body: prompt.body ?? '',
+        why: prompt.why ?? '',
+        suggestedMinutes: prompt.suggestedMinutes,
+        reasons: prompt.reasons,
+        actions: prompt.actions.map(action => ({ id: action, label: action })),
+        createdAt: prompt.scheduledAt.toISOString(),
+        expiresAt: prompt.expiresAt?.toISOString() ?? null,
+        stale: Boolean(prompt.stale),
+      },
+    }
+  }
+  const readTodayTimeline = async (): Promise<DaemonTimelineTodayResponse> => {
+    const snapshot = await readSnapshot()
+    return {
+      items: snapshot.timeline.map(item => ({
+        kind: item.type,
+        tileId: item.tileId,
+        semanticRole: item.type === 'fixed' ? 'label' : item.type,
+        title: item.title,
+        startedAt: item.startAt.toISOString(),
+        endedAt: item.endAt?.toISOString() ?? null,
+        durationMin:
+          item.durationMin && item.durationMin > 0
+            ? item.durationMin
+            : item.endAt
+              ? Math.max(0, Math.round((item.endAt.getTime() - item.startAt.getTime()) / 60000))
+              : item.status === 'active'
+                ? Math.max(0, Math.round((Date.now() - item.startAt.getTime()) / 60000))
+                : 25,
+        isActive: item.status === 'active',
+      })),
+    }
+  }
 
   return {
-    async readSnapshot() {
-      const raw = engine.read_snapshot_json(new Date().toISOString())
-      const parsed = JSON.parse(raw)
-      return parseExecutionSnapshot(parsed)
-    },
+    readSnapshot,
+    readTiles,
+    readExecutionView,
+    readPendingPrompt,
+    readTodayTimeline,
     async execute(command: Command, actor: Actor) {
       const payload = JSON.stringify({ command, actor })
       engine.execute(payload)
@@ -72,8 +200,46 @@ export async function createWasmExecutionEngine(): Promise<WasmExecutionEngine> 
         throw new Error(ack.error?.message ?? 'Failed to replace wasm tiles')
       }
     },
-    async exportTiles() {
-      return JSON.parse(engine.export_tiles_json()) as Tile[]
+    exportTiles,
+  }
+}
+
+function inferLifecycle(tile: Tile): string {
+  if (tile.core.completedAt) return 'done'
+  if (tile.core.startedAt) return 'started'
+  return 'ready'
+}
+
+function toDaemonTileView(tile: Tile, lifecycle: string): DaemonTileView {
+  const workedMinutes = tile.work.segments
+    .filter(segment => segment.mode === 'work' && segment.endAt)
+    .reduce((sum, segment) => sum + Math.max(0, Math.round((segment.endAt!.getTime() - segment.startAt.getTime()) / 60000)), 0)
+  const breakMinutes = tile.work.segments
+    .filter(segment => segment.mode === 'break' && segment.endAt)
+    .reduce((sum, segment) => sum + Math.max(0, Math.round((segment.endAt!.getTime() - segment.startAt.getTime()) / 60000)), 0)
+  return {
+    id: tile.core.id,
+    title: tile.core.title,
+    lifecycle,
+    nextAction: tile.core.nextAction,
+    doneDefinition: tile.core.doneDefinition,
+    workedMinutes,
+    breakMinutes,
+    semanticRole: tile.annotation.semanticRole,
+    labels: tile.annotation.labels,
+    objectiveMode: tile.objective.objectiveMode,
+    targetWorkMin: tile.objective.targetWorkMin,
+    targetRestMin: tile.objective.targetRestMin,
+    doneRule: tile.objective.doneRule,
+    resumeNote: null,
+    projectedNextStartAt: tile.temporal.fixedStart?.toISOString() ?? null,
+    temporal: {
+      releaseAt: tile.temporal.releaseAt?.toISOString() ?? null,
+      dueAt: tile.temporal.dueAt?.toISOString() ?? null,
+      fixedStart: tile.temporal.fixedStart?.toISOString() ?? null,
+      fixedEnd: tile.temporal.fixedEnd?.toISOString() ?? null,
+      activeStart: tile.temporal.activeStart?.toISOString() ?? null,
+      activeEnd: tile.temporal.activeEnd?.toISOString() ?? null,
     },
   }
 }
@@ -300,7 +466,7 @@ function toFiniteCounter(value: unknown): number {
 
 function toSnakeCaseDeep(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(item => toSnakeCaseDeep(item))
-  if (value instanceof Date) return value.toISOString()
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value.toISOString()
   if (!value || typeof value !== 'object') return value
   const mapped: Record<string, unknown> = {}
   for (const [key, child] of Object.entries(value as Record<string, unknown>)) {

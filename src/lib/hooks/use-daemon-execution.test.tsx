@@ -2,7 +2,7 @@
 
 import { renderHook, waitFor, act } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TileId } from '../domain/ids'
+import { SegmentId, TileId } from '../domain/ids'
 import { Actor } from '../domain/actor'
 import { Tile } from '../domain/tile'
 import type { Command } from '../core/command'
@@ -11,6 +11,10 @@ import { useDaemonExecution } from './use-daemon-execution'
 
 const {
   readSnapshotMock,
+  daemonReadTilesMock,
+  daemonReadExecutionViewMock,
+  daemonReadPendingPromptMock,
+  daemonReadTodayTimelineMock,
   sendCommandMock,
   restoreSessionMock,
   getUserMock,
@@ -19,6 +23,10 @@ const {
   openExecutionStreamMock,
   streamCloseMock,
   wasmReadSnapshotMock,
+  wasmReadTilesMock,
+  wasmReadExecutionViewMock,
+  wasmReadPendingPromptMock,
+  wasmReadTodayTimelineMock,
   wasmExecuteMock,
   wasmExecuteWithAckMock,
   wasmReplaceEventLogMock,
@@ -37,6 +45,10 @@ const {
   localStorageRemoveItemMock,
 } = vi.hoisted(() => ({
   readSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
+  daemonReadTilesMock: vi.fn(),
+  daemonReadExecutionViewMock: vi.fn(),
+  daemonReadPendingPromptMock: vi.fn(),
+  daemonReadTodayTimelineMock: vi.fn(),
   sendCommandMock: vi.fn(),
   restoreSessionMock: vi.fn(),
   getUserMock: vi.fn(),
@@ -45,6 +57,10 @@ const {
   openExecutionStreamMock: vi.fn(),
   streamCloseMock: vi.fn(),
   wasmReadSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
+  wasmReadTilesMock: vi.fn(),
+  wasmReadExecutionViewMock: vi.fn(),
+  wasmReadPendingPromptMock: vi.fn(),
+  wasmReadTodayTimelineMock: vi.fn(),
   wasmExecuteMock: vi.fn(),
   wasmExecuteWithAckMock: vi.fn(),
   wasmReplaceEventLogMock: vi.fn(),
@@ -76,6 +92,10 @@ vi.mock('@/lib/supabase/client', () => ({
 vi.mock('../daemon/client', () => ({
   DaemonClient: class {
     readSnapshot = readSnapshotMock
+    readTiles = daemonReadTilesMock
+    readExecutionView = daemonReadExecutionViewMock
+    readPendingPrompt = daemonReadPendingPromptMock
+    readTodayTimeline = daemonReadTodayTimelineMock
     sendCommand = sendCommandMock
     restoreSession = restoreSessionMock
     readSyncStatus = daemonReadSyncStatusMock
@@ -104,6 +124,10 @@ describe('useDaemonExecution', () => {
 
   beforeEach(() => {
     readSnapshotMock.mockReset()
+    daemonReadTilesMock.mockReset()
+    daemonReadExecutionViewMock.mockReset()
+    daemonReadPendingPromptMock.mockReset()
+    daemonReadTodayTimelineMock.mockReset()
     sendCommandMock.mockReset()
     restoreSessionMock.mockReset()
     getUserMock.mockReset()
@@ -112,6 +136,10 @@ describe('useDaemonExecution', () => {
     openExecutionStreamMock.mockReset()
     streamCloseMock.mockReset()
     wasmReadSnapshotMock.mockReset()
+    wasmReadTilesMock.mockReset()
+    wasmReadExecutionViewMock.mockReset()
+    wasmReadPendingPromptMock.mockReset()
+    wasmReadTodayTimelineMock.mockReset()
     wasmExecuteMock.mockReset()
     wasmExecuteWithAckMock.mockReset()
     wasmReplaceEventLogMock.mockReset()
@@ -158,12 +186,42 @@ describe('useDaemonExecution', () => {
       lastResult: null,
     })
     openExecutionStreamMock.mockReturnValue({ close: streamCloseMock })
+    daemonReadTilesMock.mockResolvedValue({ tiles: [], nextActionableTileId: null, nextActionableStartAt: null })
+    daemonReadExecutionViewMock.mockResolvedValue({
+      tilesInProgress: [],
+      mainTile: null,
+      isWorking: false,
+      isOnBreak: false,
+      isIdle: true,
+      mainTileStartedAt: null,
+      mainTileEndsAt: null,
+      pendingPromptId: null,
+      tileCount: 0,
+      eventCount: 0,
+    })
+    daemonReadPendingPromptMock.mockResolvedValue({ prompt: null })
+    daemonReadTodayTimelineMock.mockResolvedValue({ items: [] })
     sendCommandMock.mockResolvedValue({
       accepted: true,
       commandId: 'cmd-1',
       requestId: 'req-1',
     })
     wasmReadSnapshotMock.mockResolvedValue(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
+    wasmReadTilesMock.mockResolvedValue({ tiles: [], nextActionableTileId: null, nextActionableStartAt: null })
+    wasmReadExecutionViewMock.mockResolvedValue({
+      tilesInProgress: [],
+      mainTile: null,
+      isWorking: false,
+      isOnBreak: false,
+      isIdle: true,
+      mainTileStartedAt: null,
+      mainTileEndsAt: null,
+      pendingPromptId: null,
+      tileCount: 0,
+      eventCount: 0,
+    })
+    wasmReadPendingPromptMock.mockResolvedValue({ prompt: null })
+    wasmReadTodayTimelineMock.mockResolvedValue({ items: [] })
     wasmExecuteMock.mockResolvedValue(undefined)
     wasmExecuteWithAckMock.mockResolvedValue({ accepted: true, emittedEvents: [] })
     wasmReplaceEventLogMock.mockResolvedValue(undefined)
@@ -177,6 +235,10 @@ describe('useDaemonExecution', () => {
     replaceAllTilesMock.mockResolvedValue(undefined)
     createWasmExecutionEngineMock.mockResolvedValue({
       readSnapshot: wasmReadSnapshotMock,
+      readTiles: wasmReadTilesMock,
+      readExecutionView: wasmReadExecutionViewMock,
+      readPendingPrompt: wasmReadPendingPromptMock,
+      readTodayTimeline: wasmReadTodayTimelineMock,
       execute: wasmExecuteMock,
       executeWithAck: wasmExecuteWithAckMock,
       replaceEventLog: wasmReplaceEventLogMock,
@@ -242,6 +304,54 @@ describe('useDaemonExecution', () => {
     })
     expect(wasmExecuteWithAckMock).toHaveBeenCalledTimes(1)
     expect(wasmReadSnapshotMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('hydrates active tile from wasm export and derives phase end when snapshot end is null', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'wasm'
+    const tileId = TileId.fromString('41612f8d-afb8-484e-9c67-99bc3c007de1')
+    const hydratedTile = Tile.create(tileId, 'Hydrated Tile')
+    hydratedTile.objective.targetWorkMin = 45
+    hydratedTile.core.startedAt = new Date('2026-03-26T08:00:00.000Z')
+    hydratedTile.work.segments.push({
+      id: SegmentId.fromString('seg-1'),
+      startAt: new Date('2026-03-26T08:00:00.000Z'),
+      endAt: null,
+      expectedEndAt: new Date('2026-03-26T08:45:00.000Z'),
+      mode: 'work',
+      sourceTileId: tileId,
+    })
+    wasmReadSnapshotMock.mockResolvedValueOnce(
+      snapshot({
+        tiles: [
+          {
+            tileId,
+            title: 'Hydrated Tile',
+            phaseKind: 'work',
+            startedAt: new Date('2026-03-26T08:00:00.000Z'),
+            phaseEndsAt: null,
+          },
+        ],
+        promptQueue: [],
+        timeline: [
+          {
+            id: 'line-active',
+            tileId,
+            title: 'Hydrated Tile',
+            type: 'work',
+            status: 'active',
+            startAt: new Date('2026-03-26T08:00:00.000Z'),
+            endAt: null,
+          },
+        ],
+      })
+    )
+    wasmExportTilesMock.mockResolvedValueOnce([hydratedTile])
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.state.tiles.get(tileId)?.objective.targetWorkMin).toBe(45)
+    expect(result.current.state.execution.phaseEndsAt?.toISOString()).toBe('2026-03-26T08:45:00.000Z')
   })
 
   it('replays Supabase events into wasm on startup and persists emitted events after commands', async () => {
@@ -569,6 +679,181 @@ describe('useDaemonExecution', () => {
     expect(result.current.state.execution.pendingPrompt).toBeNull()
   })
 
+  it('normalizes daemon pending prompt action ids to web prompt actions', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
+    daemonReadPendingPromptMock.mockResolvedValueOnce({
+      prompt: {
+        promptId: 'prompt-legacy',
+        kind: 'start_tile',
+        severity: 'soft',
+        tileId: 'tile-legacy',
+        title: 'Legacy prompt',
+        body: 'Legacy body',
+        why: 'Legacy why',
+        suggestedMinutes: 20,
+        reasons: ['legacy'],
+        actions: [{ id: 'DEFER', label: 'Defer' }, { id: 'CONTINUE', label: 'Continue' }],
+        createdAt: '2026-03-26T09:00:00.000Z',
+        expiresAt: null,
+        stale: false,
+      },
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.state.execution.pendingPrompt?.actions).toEqual(['defer_tile', 'dismiss'])
+  })
+
+  it('builds timeline items from today timeline duration minutes when end is missing', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
+    daemonReadTodayTimelineMock.mockResolvedValueOnce({
+      items: [
+        {
+          kind: 'work',
+          tileId: 'tile-a',
+          semanticRole: 'work',
+          title: 'Short task',
+          startedAt: '2026-03-26T08:00:00.000Z',
+          endedAt: null,
+          durationMin: 30,
+          isActive: false,
+        },
+        {
+          kind: 'work',
+          tileId: 'tile-b',
+          semanticRole: 'work',
+          title: 'Long task',
+          startedAt: '2026-03-26T09:00:00.000Z',
+          endedAt: null,
+          durationMin: 120,
+          isActive: false,
+        },
+      ],
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const short = result.current.state.timeline.find(item => item.title === 'Short task')
+    const long = result.current.state.timeline.find(item => item.title === 'Long task')
+    expect(short?.endAt).toBeTruthy()
+    expect(long?.endAt).toBeTruthy()
+    const shortMin = Math.round(((short!.endAt!.getTime()) - short!.startAt.getTime()) / 60000)
+    const longMin = Math.round(((long!.endAt!.getTime()) - long!.startAt.getTime()) / 60000)
+    expect(shortMin).toBe(30)
+    expect(longMin).toBe(120)
+  })
+
+  it('keeps active timeline duration from duration minutes and ignores invalid tile ids safely', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
+    daemonReadTodayTimelineMock.mockResolvedValueOnce({
+      items: [
+        {
+          kind: 'work',
+          tileId: 'not-a-valid-id',
+          semanticRole: 'work',
+          title: 'Active duration source',
+          startedAt: '2026-03-26T09:00:00.000Z',
+          endedAt: null,
+          durationMin: 90,
+          isActive: true,
+        },
+      ],
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const item = result.current.state.timeline.find(row => row.title === 'Active duration source')
+    expect(item?.status).toBe('active')
+    expect(item?.endAt).toBeTruthy()
+    const durationMin = Math.round((item!.endAt!.getTime() - item!.startAt.getTime()) / 60000)
+    expect(durationMin).toBe(90)
+  })
+
+  it('fills missing timeline duration from tile objective when daemon timeline omits duration', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
+    daemonReadTilesMock.mockResolvedValueOnce({
+      tiles: [
+        {
+          id: '41612f8d-afb8-484e-9c67-99bc3c007de1',
+          title: 'Short objective tile',
+          lifecycle: 'ready',
+          nextAction: null,
+          doneDefinition: null,
+          workedMinutes: 0,
+          breakMinutes: 0,
+          semanticRole: 'work',
+          labels: [],
+          objectiveMode: null,
+          targetWorkMin: 30,
+          targetRestMin: 5,
+          doneRule: null,
+          resumeNote: null,
+          projectedNextStartAt: null,
+          temporal: null,
+        },
+        {
+          id: '7f6f0a59-4d26-4f13-883b-a4f76f12bc21',
+          title: 'Long objective tile',
+          lifecycle: 'ready',
+          nextAction: null,
+          doneDefinition: null,
+          workedMinutes: 0,
+          breakMinutes: 0,
+          semanticRole: 'work',
+          labels: [],
+          objectiveMode: null,
+          targetWorkMin: 120,
+          targetRestMin: 5,
+          doneRule: null,
+          resumeNote: null,
+          projectedNextStartAt: null,
+          temporal: null,
+        },
+      ],
+      nextActionableTileId: null,
+      nextActionableStartAt: null,
+    })
+    daemonReadTodayTimelineMock.mockResolvedValueOnce({
+      items: [
+        {
+          kind: 'work',
+          tileId: '41612f8d-afb8-484e-9c67-99bc3c007de1',
+          semanticRole: 'work',
+          title: 'Short objective tile',
+          startedAt: '2026-03-26T08:00:00.000Z',
+          endedAt: null,
+          durationMin: 0,
+          isActive: false,
+        },
+        {
+          kind: 'work',
+          tileId: '7f6f0a59-4d26-4f13-883b-a4f76f12bc21',
+          semanticRole: 'work',
+          title: 'Long objective tile',
+          startedAt: '2026-03-26T09:00:00.000Z',
+          endedAt: null,
+          durationMin: 0,
+          isActive: false,
+        },
+      ],
+    })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    const short = result.current.state.timeline.find(item => item.title === 'Short objective tile')
+    const long = result.current.state.timeline.find(item => item.title === 'Long objective tile')
+    expect(short?.durationMin).toBe(30)
+    expect(long?.durationMin).toBe(120)
+  })
+
   it('keeps daemon flow working when sync status read fails', async () => {
     process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
     daemonReadSyncStatusMock.mockRejectedValueOnce(new Error('sync status unavailable'))
@@ -609,6 +894,78 @@ describe('useDaemonExecution', () => {
 
     expect(sendCommandMock).toHaveBeenCalledTimes(1)
     expect(readSnapshotMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('restores daemon session and retries command after unauthorized response', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockResolvedValue(
+      snapshot({
+        tiles: [],
+        promptQueue: [],
+        timeline: [],
+      })
+    )
+    sendCommandMock
+      .mockRejectedValueOnce(new Error('Failed to send daemon command: 401 unauthorized'))
+      .mockResolvedValueOnce({
+        accepted: true,
+        commandId: 'cmd-2',
+        requestId: 'req-2',
+      })
+
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(restoreSessionMock).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      await result.current.execute(
+        {
+          type: 'clear_prompt',
+          prompt_id: 'prompt-reauth',
+          reason: 'dismissed',
+        },
+        Actor.human('self')
+      )
+    })
+
+    expect(sendCommandMock).toHaveBeenCalledTimes(2)
+    expect(restoreSessionMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('keeps daemon init working when session expires_at is an invalid string', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    getSessionMock.mockResolvedValueOnce({
+      data: {
+        session: {
+          access_token: 'token-1',
+          refresh_token: 'refresh-token-1',
+          expires_at: 'invalid-date-value',
+          user: {
+            id: 'user-1',
+            email: 'user@example.com',
+          },
+        },
+      },
+    })
+    readSnapshotMock.mockResolvedValueOnce(
+      snapshot({
+        tiles: [],
+        promptQueue: [],
+        timeline: [],
+      })
+    )
+
+    const { result } = renderHook(() => useDaemonExecution())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(restoreSessionMock).toHaveBeenCalledWith({
+      userId: 'user-1',
+      email: 'user@example.com',
+      accessToken: 'token-1',
+      refreshToken: 'refresh-token-1',
+      expiresAt: null,
+    })
+    expect(readSnapshotMock).toHaveBeenCalledTimes(1)
   })
 
   it('refreshes daemon snapshot periodically even without stream events', async () => {
@@ -876,6 +1233,45 @@ describe('useDaemonExecution', () => {
     const { result } = renderHook(() => useDaemonExecution())
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(result.current.state.execution.activeTileId).toBeNull()
+  })
+
+  it('prefers active timeline tile when it disagrees with inProgressTiles order', async () => {
+    process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
+    readSnapshotMock.mockResolvedValueOnce(
+      snapshot({
+        tiles: [
+          {
+            tileId: TileId.fromString('tile-stale'),
+            title: 'Stale in progress',
+            phaseKind: 'work',
+            startedAt: new Date('2026-03-26T09:00:00.000Z'),
+            phaseEndsAt: new Date('2026-03-26T09:25:00.000Z'),
+          },
+          {
+            tileId: TileId.fromString('tile-active'),
+            title: 'Actually active',
+            phaseKind: 'work',
+            startedAt: new Date('2026-03-26T09:30:00.000Z'),
+            phaseEndsAt: new Date('2026-03-26T09:55:00.000Z'),
+          },
+        ],
+        promptQueue: [],
+        timeline: [
+          {
+            id: 'line-active',
+            tileId: TileId.fromString('tile-active'),
+            title: 'Actually active',
+            type: 'work',
+            status: 'active',
+            startAt: new Date('2026-03-26T09:30:00.000Z'),
+            endAt: new Date('2026-03-26T09:55:00.000Z'),
+          },
+        ],
+      })
+    )
+    const { result } = renderHook(() => useDaemonExecution())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.state.execution.activeTileId).toBe(TileId.fromString('tile-active'))
   })
 })
 

@@ -130,4 +130,23 @@ describe('daemon contracts', () => {
     })
     expect(snapshot.timeline[0].tileId).toBe('41612f8d-afb8-484e-9c67-99bc3c007de1')
   })
+
+  it('parses startup recovery prompt actions from daemon snapshot', () => {
+    const snapshot = parseExecutionSnapshot({
+      ...mockPayload,
+      prompt_queue: [
+        {
+          ...mockPayload.prompt_queue[0],
+          actions: ['confirm_continue', 'confirm_stop_at', 'confirm_executed', 'confirm_skipped', 'dismiss'],
+        },
+      ],
+    })
+    expect(snapshot.promptQueue[0].actions).toEqual([
+      'confirm_continue',
+      'confirm_stop_at',
+      'confirm_executed',
+      'confirm_skipped',
+      'dismiss',
+    ])
+  })
 })

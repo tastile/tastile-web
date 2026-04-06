@@ -23,7 +23,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="p-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+      className="rounded-md border border-border bg-surface-1 p-2 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       aria-label="Toggle theme"
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -64,7 +64,7 @@ export function LanguageToggle() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 px-2 py-2 rounded-md text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors text-sm"
+        className="flex items-center gap-1 rounded-md border border-border bg-surface-1 px-2 py-2 text-sm text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
         aria-label="Switch language"
       >
         <Globe size={16} />
@@ -73,19 +73,19 @@ export function LanguageToggle() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-32 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 shadow-lg z-50 py-1">
+        <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-lg border border-border bg-surface-elevated py-1 shadow-[rgba(0,0,0,0.4)_0px_2px_4px]">
           <button
             onClick={() => switchLang('ja')}
-            className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${
-              lang === 'ja' ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-500 dark:text-zinc-400'
+            className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-2 ${
+              lang === 'ja' ? 'font-medium text-foreground' : 'text-foreground-muted'
             }`}
           >
             日本語
           </button>
           <button
             onClick={() => switchLang('en')}
-            className={`w-full text-left px-3 py-2 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors ${
-              lang === 'en' ? 'text-zinc-900 dark:text-zinc-100 font-medium' : 'text-zinc-500 dark:text-zinc-400'
+            className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-2 ${
+              lang === 'en' ? 'font-medium text-foreground' : 'text-foreground-muted'
             }`}
           >
             English

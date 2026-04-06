@@ -3,7 +3,21 @@ import { TileId } from './ids'
 export type PhaseKind = 'work' | 'break' | 'idle'
 export type PromptKind = 'start_tile' | 'end_tile' | 'end_break'
 export type PromptSeverity = 'soft' | 'elevated' | 'critical'
-export type PromptAction = 'start_tile' | 'complete_tile' | 'extend_phase' | 'defer_tile' | 'end_break' | 'dismiss'
+export type PromptAction =
+  | 'start_tile'
+  | 'start_break_parallel'
+  | 'start_break_split'
+  | 'start_break_split_and_extend'
+  | 'complete_phase'
+  | 'complete_tile'
+  | 'extend_phase'
+  | 'defer_tile'
+  | 'end_break'
+  | 'confirm_continue'
+  | 'confirm_stop_at'
+  | 'confirm_executed'
+  | 'confirm_skipped'
+  | 'dismiss'
 
 export interface PendingPrompt {
   promptId: string
@@ -27,6 +41,7 @@ export interface Execution {
   phaseKind: PhaseKind
   phaseStartedAt: Date | null
   phaseEndsAt: Date | null
+  nextActionableStartAt: Date | null
   pendingPrompt: PendingPrompt | null
   syncStatus?: ExecutionSyncStatus | null
 }
@@ -71,6 +86,7 @@ export interface TimelineItemSnapshot {
   status: TimelineItemStatus
   startAt: Date
   endAt: Date | null
+  durationMin?: number | null
 }
 
 export interface ExecutionSnapshot {
@@ -85,6 +101,7 @@ export const Execution = {
     phaseKind: 'idle',
     phaseStartedAt: null,
     phaseEndsAt: null,
+    nextActionableStartAt: null,
     pendingPrompt: null,
     syncStatus: null,
   }),

@@ -13,7 +13,7 @@ export function MobileBottomTabs() {
   const { open } = useQuickCreateStore()
 
   return (
-    <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-2xl bg-surface-elevated shadow-lg lg:hidden">
+    <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl border border-border bg-surface-elevated shadow-[rgba(0,0,0,0.35)_0px_2px_4px] lg:hidden">
       <MobileTabButton
         icon={<Zap className="h-6 w-6" />}
         label={t('nav.execute')}
@@ -59,8 +59,8 @@ function MobileTabButton({ icon, label, href, active }: MobileTabButtonProps) {
     <Link
       href={href}
       className={cn(
-        'flex flex-col items-center justify-center gap-1 px-4 py-2',
-        active ? 'text-foreground' : 'text-foreground-muted'
+         'flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2',
+         active ? 'text-foreground' : 'text-foreground-muted'
       )}
     >
       {icon}
@@ -80,7 +80,7 @@ function MobileActionButton({ icon, label, onClick }: MobileActionButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1 px-4 py-2 text-foreground-muted transition-colors hover:text-foreground"
+      className="flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
     >
       {icon}
       <span className="text-xs">{label}</span>

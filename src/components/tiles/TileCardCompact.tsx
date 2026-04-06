@@ -8,15 +8,17 @@ import { formatDuration } from '@/lib/utils/tile-formatters'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
 import { cn } from '@/lib/utils/cn'
+import { SquarePen } from 'lucide-react'
 
 interface TileCardCompactProps {
   tile: Tile | null
   loading?: boolean
   onStart?: (tileId: TileId) => void
   onClick?: (tile: Tile) => void
+  onEdit?: (tileId: TileId) => void
 }
 
-export function TileCardCompact({ tile, loading, onStart, onClick }: TileCardCompactProps) {
+export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: TileCardCompactProps) {
   const { locale } = useTranslation()
 
   if (loading) {
@@ -28,9 +30,17 @@ export function TileCardCompact({ tile, loading, onStart, onClick }: TileCardCom
   }
 
   const lifecycle = getTileLifecycle(tile)
+  const startAt =
+    tile.core.startedAt ??
+    tile.temporal.fixedStart ??
+    tile.temporal.activeStart ??
+    tile.temporal.releaseAt ??
+    tile.work.segments.find(segment => segment.startAt)?.startAt ??
+    null
+  const durationText = resolveDurationText(tile, locale)
 
   const handleStatusClick = () => {
-    if (lifecycle === 'ready' && onStart) {
+    if (onStart) {
       onStart(tile.core.id)
     }
   }
@@ -54,7 +64,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick }: TileCardCom
     >
       <TileStatusIcon
         lifecycle={lifecycle}
-        onClick={lifecycle === 'ready' ? handleStatusClick : undefined}
+        onClick={onStart ? handleStatusClick : undefined}
         size={20}
       />
 
@@ -67,9 +77,36 @@ export function TileCardCompact({ tile, loading, onStart, onClick }: TileCardCom
         </h4>
       </div>
 
-      <div className="text-xs text-foreground-muted whitespace-nowrap">
-        {formatDuration(tile.objective.targetWorkMin, locale)}
+      <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
+        <p className="font-mono">所要 {durationText}</p>
+        <p>開始 {startAt ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'unscheduled'}</p>
       </div>
+
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
+          if (onEdit) onEdit(tile.core.id)
+        }}
+        className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+        aria-label="Edit tile"
+        title="Edit tile"
+      >
+        <SquarePen className="h-4 w-4" />
+      </button>
     </div>
   )
+}
+
+function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
+  if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
+    return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  const totalWorked = tile.work.segments.reduce((sum, segment) => {
+    if (!segment.endAt) return sum
+    const diff = Math.max(0, Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000))
+    return sum + diff
+  }, 0)
+  if (totalWorked > 0) return formatDuration(totalWorked, locale)
+  return 'unspecified'
 }

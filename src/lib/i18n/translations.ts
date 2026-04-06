@@ -145,6 +145,10 @@ export const translations = {
       actions: {
         extend: '延長',
         endBreak: '休憩終了',
+        confirmContinue: 'そのまま継続',
+        confirmStopAt: '停止時刻を記録',
+        confirmExecuted: '実行済みにする',
+        confirmSkipped: 'スキップ済みにする',
       },
     },
 
@@ -317,6 +321,10 @@ export const translations = {
       actions: {
         extend: 'Extend',
         endBreak: 'End break',
+        confirmContinue: 'Continue',
+        confirmStopAt: 'Record stop time',
+        confirmExecuted: 'Mark executed',
+        confirmSkipped: 'Mark skipped',
       },
     },
 

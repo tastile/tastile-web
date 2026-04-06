@@ -19,7 +19,7 @@ export default function AccountPage() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-foreground mb-6">Account Settings</h1>
+      <h1 className="mb-6 text-2xl font-[590] text-foreground">Account Settings</h1>
 
       {/* Tab Navigation */}
       <div className="border-b border-border mb-6">
@@ -30,7 +30,7 @@ export default function AccountPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`pb-3 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === tab.id
-                  ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                   ? 'border-primary text-primary'
                   : 'border-transparent text-foreground-secondary hover:text-foreground hover:border-border'
               }`}
               aria-current={activeTab === tab.id ? 'page' : undefined}
@@ -49,7 +49,7 @@ export default function AccountPage() {
             <p className="text-foreground-secondary">
               Manage your profile details and preferences.
             </p>
-            <div className="p-4 bg-surface-secondary rounded-lg border border-border">
+             <div className="rounded-lg border border-border bg-surface-secondary p-4">
               <p className="text-sm text-foreground-tertiary">Profile settings coming soon...</p>
             </div>
           </div>
