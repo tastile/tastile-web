@@ -45,4 +45,61 @@ describe('EventStore tile snapshot sync', () => {
     expect(rows[0].core.title).toBe('Remote tile')
     expect(rows[0].core.startedAt).toBeInstanceOf(Date)
   })
+
+  it('sanitizes malformed date fields from remote tile snapshots', async () => {
+    const tile = Tile.create(TileId.new(), 'Broken date tile')
+    const raw = JSON.parse(JSON.stringify(tile))
+    raw.core.startedAt = 'not-a-date'
+    raw.work.segments = [
+      {
+        id: 'segment-invalid',
+        mode: 'work',
+        sourceTileId: tile.core.id,
+        startAt: 'not-a-date',
+        endAt: 'still-not-a-date',
+        expectedEndAt: null,
+      },
+      {
+        id: 'segment-valid',
+        mode: 'work',
+        sourceTileId: tile.core.id,
+        startAt: '2026-04-03T10:00:00.000Z',
+        endAt: 'still-not-a-date',
+        expectedEndAt: null,
+      },
+    ]
+
+    const { client } = createMockSupabase([
+      {
+        tile_id: tile.core.id,
+        title: tile.core.title,
+        semantic_role: tile.annotation.semanticRole,
+        tile_json: raw,
+        closed_at: null,
+      },
+    ])
+    const store = new EventStore(client, 'user-1')
+
+    const rows = await store.loadAllTiles()
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0].core.startedAt).toBeNull()
+    expect(rows[0].work.segments).toHaveLength(1)
+    expect(rows[0].work.segments[0].startAt).toBeInstanceOf(Date)
+    expect(rows[0].work.segments[0].endAt).toBeNull()
+  })
+
+  it('maps snake_case semantic role from wasm export before upsert', async () => {
+    const { client, upsert } = createMockSupabase()
+    const store = new EventStore(client, 'user-1')
+    const tile = Tile.create(TileId.new(), 'Wasm tile')
+    const annotation = tile.annotation as unknown as Record<string, unknown>
+    delete annotation.semanticRole
+    annotation.semantic_role = 'break'
+
+    await store.replaceAllTiles([tile])
+
+    const rows = upsert.mock.calls[0][0] as Array<Record<string, unknown>>
+    expect(rows[0].semantic_role).toBe('break')
+  })
 })

@@ -1,3 +1,6 @@
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
+
 export const metadata = {
   title: "Privacy Policy — Tastile",
   description: "Tastile privacy policy and data handling practices.",
@@ -5,61 +8,65 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 py-16">
-      <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-100 mb-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader showFeatureLink />
+      <main className="flex-1">
+      <div className="layout-shell max-w-3xl py-12">
+        <h1 className="mb-8 text-3xl font-[510] tracking-[-0.02em] text-foreground">
           Privacy Policy
         </h1>
         
         <div className="prose dark:prose-invert max-w-none">
-          <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+          <p className="mb-6 text-foreground-muted">
             Last updated: March 14, 2026
           </p>
 
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
+          <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">
             What Data We Collect
           </h2>
-          <ul className="list-disc pl-6 space-y-2 text-zinc-600 dark:text-zinc-400">
+          <ul className="list-disc space-y-2 pl-6 text-foreground-muted">
             <li><strong>Account Information:</strong> Email address and authentication data from Google OAuth.</li>
             <li><strong>Tile Data:</strong> Titles, descriptions, and execution status of your tiles.</li>
             <li><strong>Event Data:</strong> Execution history including start times, completions, and breaks.</li>
             <li><strong>Usage Data:</strong> Basic analytics on feature usage to improve the service.</li>
           </ul>
 
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
+          <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">
             How We Store Data
           </h2>
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-foreground-muted">
             Your data is stored securely with Supabase, our database provider. 
             Local tiles are stored on your device only. Cloud tiles and events 
             are encrypted in transit and at rest.
           </p>
 
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
+          <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">
             Third-Party Services
           </h2>
-          <ul className="list-disc pl-6 space-y-2 text-zinc-600 dark:text-zinc-400">
+          <ul className="list-disc space-y-2 pl-6 text-foreground-muted">
             <li><strong>Supabase:</strong> Authentication and data storage.</li>
             <li><strong>Stripe:</strong> Payment processing for Pro subscriptions.</li>
             <li><strong>Google OAuth:</strong> Optional authentication method.</li>
           </ul>
 
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
+          <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">
             Your Rights
           </h2>
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-foreground-muted">
             You can request deletion of your account and all associated data at any time 
             by contacting us. Local data can be deleted by uninstalling the application.
           </p>
 
-          <h2 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100 mt-8 mb-4">
+          <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">
             Contact
           </h2>
-          <p className="text-zinc-600 dark:text-zinc-400">
+          <p className="text-foreground-muted">
             For privacy-related inquiries, please contact privacy@tastile.app
           </p>
         </div>
       </div>
+      </main>
+      <SiteFooter />
     </div>
   );
 }

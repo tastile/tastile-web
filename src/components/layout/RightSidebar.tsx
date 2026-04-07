@@ -49,15 +49,15 @@ export function RightSidebar({
   void _nextReason
 
   return (
-    <aside className="relative flex w-72 min-w-0 flex-col gap-3 bg-surface-0">
+    <aside className="relative flex w-72 min-w-0 flex-col gap-3 bg-transparent">
       {/* Next Up Card */}
-      <div className="rounded-2xl bg-surface-elevated p-4">
+      <div className="rounded-xl border border-border bg-surface-elevated p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {t('sidebar.nextUp')}
         </h3>
         {nextTile ? (
           <div className="space-y-2">
-            <div className="rounded-lg bg-surface-1 p-3">
+            <div className="rounded-md border border-border bg-surface-1 p-3">
               <div className="flex min-w-0 items-center gap-2">
                 <TileStatusIcon
                   lifecycle={getTileLifecycle(nextTile)}
@@ -72,7 +72,7 @@ export function RightSidebar({
                 {nextQuickTiles.map(tile => (
                   <div
                     key={tile.core.id}
-                    className="min-w-[128px] max-w-[168px] rounded-md bg-surface-1 px-2 py-1 text-left"
+                    className="min-w-[128px] max-w-[168px] rounded-md border border-border bg-surface-1 px-2 py-1 text-left"
                   >
                     <div className="flex min-w-0 items-center gap-1">
                       <TileStatusIcon lifecycle={getTileLifecycle(tile)} onClick={() => onPromptSuggested?.(tile.core.id)} size={12} />
@@ -89,7 +89,7 @@ export function RightSidebar({
       </div>
 
       {/* Timeline Card */}
-      <div className="flex-1 overflow-hidden rounded-2xl bg-surface-elevated p-4">
+      <div className="flex-1 overflow-hidden rounded-xl border border-border bg-surface-elevated p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {t('sidebar.timeline')}
         </h3>

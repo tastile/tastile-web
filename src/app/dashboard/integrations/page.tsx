@@ -95,11 +95,11 @@ export default function IntegrationsPage() {
   return (
     <div className="space-y-6 p-8">
       <div>
-        <h1 className="text-2xl font-bold">Integrations</h1>
-        <p className="mt-2 text-zinc-600">Google Calendar の接続状態と同期を管理します</p>
+        <h1 className="text-2xl font-[590] text-foreground">Integrations</h1>
+        <p className="mt-2 text-foreground-muted">Google Calendar の接続状態と同期を管理します</p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface-1 p-5">
+      <div className="rounded-xl border border-border bg-surface-elevated p-5">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold">Google Calendar</h2>

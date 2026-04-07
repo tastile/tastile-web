@@ -66,6 +66,8 @@ function parsePromptQueueItem(raw: unknown): PromptQueueItemSnapshot {
 
 function parseTimelineItem(raw: unknown): TimelineItemSnapshot {
   const row = asRecord(raw, 'timeline[]')
+  const durationRaw = readOptional(row, 'duration_min')
+  const durationMin = durationRaw === undefined ? null : asNullableNumber(durationRaw, 'duration_min')
   return {
     id: asString(read(row, 'id'), 'id'),
     tileId: asNullableTileId(read(row, 'tile_id'), 'tile_id'),
@@ -74,6 +76,7 @@ function parseTimelineItem(raw: unknown): TimelineItemSnapshot {
     status: asTimelineItemStatus(read(row, 'status')),
     startAt: asDate(read(row, 'start_at'), 'start_at'),
     endAt: asNullableDate(read(row, 'end_at'), 'end_at'),
+    durationMin,
   }
 }
 
@@ -164,10 +167,18 @@ function asPromptAction(value: unknown, field: string): PromptAction {
   const action = asString(value, field)
   if (
     action === 'start_tile' ||
+    action === 'start_break_parallel' ||
+    action === 'start_break_split' ||
+    action === 'start_break_split_and_extend' ||
+    action === 'complete_phase' ||
     action === 'complete_tile' ||
     action === 'extend_phase' ||
     action === 'defer_tile' ||
     action === 'end_break' ||
+    action === 'confirm_continue' ||
+    action === 'confirm_stop_at' ||
+    action === 'confirm_executed' ||
+    action === 'confirm_skipped' ||
     action === 'dismiss'
   ) {
     return action

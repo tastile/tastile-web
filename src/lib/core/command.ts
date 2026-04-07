@@ -2,6 +2,8 @@ import { Actor } from '../domain/actor'
 import { CommandId, RequestId, TileId } from '../domain/ids'
 import { StartSource, Tile } from '../domain/tile'
 
+export type StartupRecoveryAction = 'confirm_continue' | 'confirm_stop_at' | 'confirm_executed' | 'confirm_skipped' | 'dismiss'
+
 export type DaemonCommandRequest =
   | {
       type: 'create_tile'
@@ -65,6 +67,13 @@ export type DaemonCommandRequest =
       tileId: TileId | null
       requestedAt: Date
       reason: string
+    }
+  | {
+      type: 'respond_startup_recovery'
+      promptId: string
+      tileId: TileId
+      actionId: StartupRecoveryAction
+      stopAt: Date | null
     }
 
 export type Command =
@@ -130,6 +139,13 @@ export type Command =
       tile_id: TileId | null
       requested_at: Date
       reason: string
+    }
+  | {
+      type: 'respond_startup_recovery'
+      prompt_id: string
+      tile_id: TileId
+      action: StartupRecoveryAction
+      stop_at: Date | null
     }
 
 export interface CommandEnvelope {
@@ -202,6 +218,14 @@ export function fromDaemonCommandRequest(request: DaemonCommandRequest): Command
         tile_id: request.tileId,
         requested_at: request.requestedAt,
         reason: request.reason,
+      }
+    case 'respond_startup_recovery':
+      return {
+        type: 'respond_startup_recovery',
+        prompt_id: request.promptId,
+        tile_id: request.tileId,
+        action: request.actionId,
+        stop_at: request.stopAt,
       }
   }
 

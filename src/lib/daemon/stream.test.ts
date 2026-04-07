@@ -31,7 +31,7 @@ describe('openExecutionStream', () => {
     FakeEventSource.instances = []
   })
 
-  it('ignores malformed json event payloads', async () => {
+  it('accepts malformed json event payloads as fallback state events', async () => {
     vi.useFakeTimers()
     try {
       const seenIds: string[] = []
@@ -49,7 +49,8 @@ describe('openExecutionStream', () => {
       first.onmessage?.({ data: '{' })
       first.emitMessage({ event_id: 'evt-valid', payload: { ok: true } })
 
-      expect(seenIds).toEqual(['evt-valid'])
+      expect(seenIds.length).toBe(2)
+      expect(seenIds[1]).toBe('evt-valid')
     } finally {
       vi.useRealTimers()
     }
@@ -74,7 +75,7 @@ describe('openExecutionStream', () => {
         onEvent: () => {},
       })
       await Promise.resolve()
-      expect(createdUrls[0]).toContain('/execution/stream?access_token=token-abc')
+      expect(createdUrls[0]).toContain('/read/events/state?access_token=token-abc')
       stream.close()
     } finally {
       globalThis.EventSource = OriginalEventSource

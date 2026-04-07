@@ -241,6 +241,23 @@ describe('core-engine wasm bridge', () => {
     })
   })
 
+  it('normalizes invalid Date values in sync payload instead of throwing', async () => {
+    configureSyncJsonMock.mockReturnValue(JSON.stringify({ accepted: true, metadata: { configured: true } }))
+    const tile = Tile.create(TileId.fromString('41612f8d-afb8-484e-9c67-99bc3c007de1'), 'Remote tile')
+    tile.core.startedAt = new Date('invalid')
+
+    const engine = await createWasmExecutionEngine()
+    await engine.configureSync({
+      deviceId: 'web-device',
+      connected: true,
+      authenticated: true,
+      remoteTiles: [tile],
+    })
+
+    const payload = JSON.parse(configureSyncJsonMock.mock.calls[0][0])
+    expect(payload.remote_tiles[0].core.started_at).toBeNull()
+  })
+
   it('bridges wasm sync restore, trigger, and status JSON APIs', async () => {
     restoreSyncJsonMock.mockReturnValue(
       JSON.stringify({ accepted: true, metadata: { uploaded: 0, downloaded: 1, applied: 1, failed: 0, conflicts: 0 } })

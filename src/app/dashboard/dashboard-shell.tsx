@@ -129,7 +129,7 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                 }
               }}
               className={[
-                'mb-2 flex h-10 self-start items-center rounded-md px-3 text-sm text-muted hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-300',
+                'mb-2 flex h-10 self-start items-center rounded-md border border-border bg-surface-1 px-3 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground',
               ].join(' ')}
               aria-label="Toggle navigation rail"
             >
@@ -148,8 +148,8 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                   className={[
                     'mb-1 flex h-10 items-center rounded-md px-3 text-sm',
                     active
-                      ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
-                      : 'text-muted hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-300',
+                      ? 'border border-border bg-surface-2 text-foreground'
+                      : 'text-foreground-muted hover:bg-surface-2 hover:text-foreground',
                   ].join(' ')}
                   title={item.label}
                   onClick={() => setMobileOpen(false)}
@@ -191,8 +191,8 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                         className={[
                           'flex h-9 items-center gap-2 rounded-md px-3 text-sm',
                           pathname === '/dashboard/settings'
-                            ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-100'
-                            : 'text-muted hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-300',
+                            ? 'border border-border bg-surface-2 text-foreground'
+                            : 'text-foreground-muted hover:bg-surface-2 hover:text-foreground',
                         ].join(' ')}
                       >
                         <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center">
@@ -204,7 +204,7 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                       <Link
                         href={plan === 'pro' ? '/dashboard/billing' : '/pricing'}
                         onClick={() => setAccountOpen(false)}
-                        className="flex h-9 items-center gap-2 rounded-md px-3 text-sm text-muted hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-300"
+                        className="flex h-9 items-center gap-2 rounded-md px-3 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground"
                       >
                         <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center">
                           <CreditCard size={16} />
@@ -234,7 +234,7 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                     aria-expanded={desktopExpanded && accountOpen}
                     title={email}
                     onClick={handleAccountToggle}
-                    className="mb-1 flex h-10 w-full items-center rounded-md px-3 text-sm text-muted hover:bg-zinc-100 dark:hover:bg-zinc-800/70"
+                    className="mb-1 flex h-10 w-full items-center rounded-md px-3 text-sm text-foreground-muted hover:bg-surface-2"
                   >
                     {avatarUrl ? (
                       <Image
@@ -247,7 +247,7 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                         unoptimized
                       />
                     ) : (
-                      <div className="h-7 w-7 shrink-0 aspect-square rounded-full bg-zinc-300 dark:bg-zinc-700 flex items-center justify-center text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                       <div className="flex h-7 w-7 shrink-0 aspect-square items-center justify-center rounded-full border border-border bg-surface-2 text-xs font-medium text-foreground-muted">
                         {initials}
                       </div>
                     )}
@@ -259,7 +259,7 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
                       ].join(' ')}
                     >
                       <p className="truncate text-[12px] font-medium text-foreground">{displayName}</p>
-                      <p className="text-[11px] uppercase tracking-[0.12em] text-muted">{plan}</p>
+                      <p className="text-[11px] uppercase tracking-[0.12em] text-foreground-subtle">{plan}</p>
                     </div>
 
                     <span
@@ -292,14 +292,14 @@ export function DashboardShell({ children, plan, displayName, avatarUrl, email }
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="inline-flex h-8 w-8 items-center justify-center text-muted hover:bg-surface-2 hover:text-foreground lg:hidden"
+                className="inline-flex h-8 w-8 items-center justify-center text-foreground-muted hover:bg-surface-2 hover:text-foreground lg:hidden"
                 aria-label="Open navigation rail"
               >
                 <Menu size={18} />
               </button>
-              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Execution Dashboard</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground-subtle">Execution Dashboard</span>
             </div>
-            <Link href="/" className="text-xs font-medium text-muted hover:text-foreground">
+            <Link href="/" className="text-xs font-medium text-foreground-muted hover:text-foreground">
               Back to Home
             </Link>
           </header>

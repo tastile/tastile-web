@@ -15,14 +15,32 @@ import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { TimelineAxis } from '@/components/execution/TimelineAxis'
 import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
+import { buildTimelineView, parseCustomRangeBoundary } from '@/lib/core/dashboard-workspace'
+import { useDashboardWorkspaceStore } from '@/lib/stores/dashboard-workspace-store'
 
 const MAX_VISIBLE_READY_TILES = 40
 
 export default function ExecutePage() {
   const { state, loading, execute } = useExecutionEngineContext()
   const { openDeferDialog, openDeleteDialog } = useDialogStore()
+  const {
+    timelineScale,
+    customStartIso,
+    customEndIso,
+    setTimelineScale,
+    setCustomRange,
+  } = useDashboardWorkspaceStore()
   const [nowMs, setNowMs] = useState(() => Date.now())
   const projection = useMemo(() => buildDashboardProjection(state, new Date(nowMs)), [state, nowMs])
+  const timelineView = useMemo(
+    () =>
+      buildTimelineView(state.timeline, new Date(nowMs), {
+        scale: timelineScale,
+        customStart: parseCustomRangeBoundary(customStartIso, 'start'),
+        customEnd: parseCustomRangeBoundary(customEndIso, 'end'),
+      }),
+    [state.timeline, nowMs, timelineScale, customStartIso, customEndIso]
+  )
   const readyTiles = useMemo(
     () => Array.from(state.tiles.values()).filter(tile => getTileLifecycle(tile) !== 'done'),
     [state.tiles]
@@ -120,6 +138,7 @@ export default function ExecutePage() {
           phaseKind={state.execution.phaseKind}
           phaseStartedAt={state.execution.phaseStartedAt}
           phaseEndsAt={state.execution.phaseEndsAt}
+          nextActionableStartAt={state.execution.nextActionableStartAt}
         />
       </div>
 
@@ -128,7 +147,7 @@ export default function ExecutePage() {
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Next Tile</h2>
           <TileCardCompact tile={projection.next.main} onStart={startTile} loading={loading} />
           {projection.next.quick.length > 0 ? (
-            <div className="mt-2 flex gap-2 overflow-x-auto">
+            <div className="mt-2 space-y-2">
               {projection.next.quick.map(tile => (
                 <TileCardCompact key={tile.core.id} tile={tile} onStart={startTile} />
               ))}
@@ -137,12 +156,46 @@ export default function ExecutePage() {
         </div>
 
         <div className="rounded-xl bg-surface-1 p-4">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Timeline</h2>
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground-muted">Timeline</h2>
+            <select
+              value={timelineScale}
+              onChange={event => setTimelineScale(event.target.value as typeof timelineScale)}
+              className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+            >
+              <option value="day">Day</option>
+              <option value="week">Week</option>
+              <option value="month">Month</option>
+              <option value="custom">Custom</option>
+            </select>
+            {timelineScale === 'custom' ? (
+              <>
+                <input
+                  type="date"
+                  value={customStartIso ? customStartIso.slice(0, 10) : ''}
+                  onChange={(event) => {
+                    const value = event.target.value.trim()
+                    setCustomRange(value || null, customEndIso)
+                  }}
+                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                />
+                <input
+                  type="date"
+                  value={customEndIso ? customEndIso.slice(0, 10) : ''}
+                  onChange={(event) => {
+                    const value = event.target.value.trim()
+                    setCustomRange(customStartIso, value || null)
+                  }}
+                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                />
+              </>
+            ) : null}
+          </div>
           <TimelineAxis
-            blocks={projection.timeline.blocks}
-            markers={projection.timeline.markers}
-            canvasHeightPx={projection.timeline.canvasHeightPx}
-            nowTopPx={projection.timeline.nowTopPx}
+            blocks={timelineView.blocks}
+            markers={timelineView.markers}
+            canvasHeightPx={timelineView.canvasHeightPx}
+            nowTopPx={timelineView.nowTopPx}
             maxVisibleBlocks={48}
             maxCanvasHeightPx={960}
           />
@@ -189,6 +242,7 @@ export default function ExecutePage() {
     </div>
   )
 }
-  function toTileId(tileId: string) {
-    return TileId.fromString(tileId)
-  }
+
+function toTileId(tileId: string) {
+  return TileId.fromString(tileId)
+}

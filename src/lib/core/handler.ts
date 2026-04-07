@@ -304,8 +304,10 @@ export class CommandHandler {
           })
         )
         return events
-      }
     }
+  }
+
+    return events
   }
 
   private wrap(envelope: CommandEnvelope, aggregateId: string, event: Event): EventEnvelope {

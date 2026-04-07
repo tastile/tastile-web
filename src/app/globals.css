@@ -3,103 +3,76 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================
-   Light Theme (Default)
+   Linear Inspired Theme Tokens
    ============================================ */
 :root {
-  /* Surfaces - Increased contrast for clarity */
-  --background: #f5f5f5;
-  --surface-0: #fafafa;
-  --surface-1: #efefef;
-  --surface-2: #ffffff;
+  --background: #f7f8f8;
+  --surface-0: #f3f4f5;
+  --surface-1: #ffffff;
+  --surface-2: #eef1f4;
   --surface-elevated: #ffffff;
 
-  /* Text */
-  --foreground: #0a0a0a;
-  --foreground-muted: #525252;
-  --foreground-subtle: #a3a3a3;
+  --foreground: #111217;
+  --foreground-muted: #4f5562;
+  --foreground-subtle: #6e7581;
+  --muted: #6e7581;
 
-  /* Borders (minimal use) */
-  --border: #d4d4d4;
-  --border-strong: #a3a3a3;
+  --border: #d0d6e0;
+  --border-strong: #b8c0cc;
 
-  /* Interactive (monochrome) */
-  --interactive-base: #0a0a0a;
-  --interactive-hover: #262626;
-  --interactive-active: #404040;
+  --interactive-base: #2f3542;
+  --interactive-hover: #1f232c;
+  --interactive-active: #13161c;
 
-  /* Primary (monochrome) */
-  --primary: #0a0a0a;
+  --primary: #5e6ad2;
   --primary-foreground: #ffffff;
-  --primary-hover: #262626;
+  --primary-hover: #7170ff;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
 
   color-scheme: light;
 }
 
-/* ============================================
-   Gray Theme (Dark Gray)
-   ============================================ */
-.theme-gray {
-  /* Surfaces - Increased contrast for clarity */
-  --background: #171717;
-  --surface-0: #1f1f1f;
-  --surface-1: #141414;
-  --surface-2: #262626;
-  --surface-elevated: #262626;
-
-  /* Text */
-  --foreground: #fafafa;
-  --foreground-muted: #d4d4d4;
-  --foreground-subtle: #737373;
-
-  /* Borders (minimal use) */
-  --border: #525252;
-  --border-strong: #737373;
-
-  /* Interactive (monochrome) */
-  --interactive-base: #fafafa;
-  --interactive-hover: #e5e5e5;
-  --interactive-active: #d4d4d4;
-
-  /* Primary (monochrome) */
-  --primary: #fafafa;
-  --primary-foreground: #0a0a0a;
-  --primary-hover: #e5e5e5;
-}
-
-/* ============================================
-   Dark Theme (True Black)
-   ============================================ */
-.theme-dark {
-  /* Surfaces - Increased contrast for clarity */
-  --background: #000000;
-  --surface-0: #0a0a0a;
-  --surface-1: #050505;
-  --surface-2: #171717;
-  --surface-elevated: #171717;
-
-  /* Text */
-  --foreground: #ffffff;
-  --foreground-muted: #d4d4d4;
-  --foreground-subtle: #737373;
-
-  /* Borders (minimal use) */
-  --border: #404040;
-  --border-strong: #525252;
-
-  /* Interactive (monochrome) */
-  --interactive-base: #ffffff;
-  --interactive-hover: #f5f5f5;
-  --interactive-active: #e5e5e5;
-
-  /* Primary (monochrome) */
-  --primary: #ffffff;
-  --primary-foreground: #000000;
-  --primary-hover: #f5f5f5;
-}
-
+.dark,
 .theme-gray,
-.theme-dark {
+.theme-dark,
+.theme-dark-gray,
+.theme-dark-black {
+  --background: #08090a;
+  --surface-0: #0f1011;
+  --surface-1: rgba(255, 255, 255, 0.02);
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --surface-elevated: #191a1b;
+
+  --foreground: #f7f8f8;
+  --foreground-muted: #d0d6e0;
+  --foreground-subtle: #8a8f98;
+  --muted: #62666d;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  --interactive-base: #d0d6e0;
+  --interactive-hover: #f7f8f8;
+  --interactive-active: #ffffff;
+
+  --primary: #5e6ad2;
+  --primary-foreground: #ffffff;
+  --primary-hover: #7170ff;
+
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
   color-scheme: dark;
+}
+
+.theme-dark-black {
+  --background: #010102;
+  --surface-0: #08090a;
+  --surface-elevated: #141516;
 }
 
 /* ============================================
@@ -116,6 +89,9 @@
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
   --color-foreground-subtle: var(--foreground-subtle);
+  --color-foreground-secondary: var(--foreground-muted);
+  --color-foreground-tertiary: var(--foreground-subtle);
+  --color-muted: var(--muted);
 
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
@@ -127,6 +103,10 @@
   --color-primary: var(--primary);
   --color-primary-fg: var(--primary-foreground);
   --color-primary-hover: var(--primary-hover);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-surface-secondary: var(--surface-2);
 
   /* Fonts */
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
@@ -140,18 +120,139 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  font-feature-settings: "cv01", "ss03";
   -webkit-font-smoothing: antialiased;
+}
+
+a,
+button {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.prose {
+  color: var(--foreground-muted);
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose strong {
+  color: var(--foreground);
+}
+
+.prose a {
+  color: var(--primary);
+}
+
+.layout-shell {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+
+.layout-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.layout-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .layout-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .layout-shell {
+    padding-inline: 16px;
+  }
+
+  .layout-grid-2,
+  .layout-grid-3 {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
 }
 
 .themed-datetime-input {
   color-scheme: light;
 }
 
+.dark .themed-datetime-input,
 .theme-gray .themed-datetime-input,
-.theme-dark .themed-datetime-input {
+.theme-dark .themed-datetime-input,
+.theme-dark-gray .themed-datetime-input,
+.theme-dark-black .themed-datetime-input {
   color-scheme: dark;
 }
 
 .themed-datetime-input::-webkit-calendar-picker-indicator {
   opacity: 0.72;
+}
+
+/* Compatibility layer for legacy zinc utility classes */
+.bg-white,
+.dark .bg-zinc-900,
+.dark .bg-zinc-800 {
+  background-color: var(--surface-elevated) !important;
+}
+
+.bg-zinc-50,
+.dark .bg-zinc-950,
+.bg-zinc-100,
+.dark .bg-zinc-700 {
+  background-color: var(--background) !important;
+}
+
+.bg-zinc-900,
+.dark .bg-zinc-100 {
+  background-color: var(--primary) !important;
+}
+
+.text-zinc-900,
+.dark .text-zinc-100,
+.text-white {
+  color: var(--foreground) !important;
+}
+
+.text-zinc-700,
+.text-zinc-600,
+.dark .text-zinc-400,
+.dark .text-zinc-300,
+.text-zinc-500 {
+  color: var(--foreground-muted) !important;
+}
+
+.text-zinc-400,
+.dark .text-zinc-500,
+.text-zinc-300 {
+  color: var(--foreground-subtle) !important;
+}
+
+.border-zinc-200,
+.dark .border-zinc-800,
+.border-zinc-300,
+.dark .border-zinc-700 {
+  border-color: var(--border) !important;
+}
+
+.hover\:bg-zinc-50:hover,
+.hover\:bg-zinc-100:hover,
+.dark .dark\:hover\:bg-zinc-800:hover,
+.dark .dark\:hover\:bg-zinc-300:hover,
+.hover\:bg-zinc-700:hover {
+  background-color: var(--surface-2) !important;
+}
+
+.hover\:text-zinc-900:hover,
+.dark .dark\:hover\:text-zinc-100:hover,
+.hover\:text-zinc-600:hover {
+  color: var(--foreground) !important;
 }

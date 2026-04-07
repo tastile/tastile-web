@@ -97,7 +97,8 @@ export const translations = {
       scheduleTitle: '実行タイミング',
       scheduleGuide: '開始時刻と終了時刻を必要に応じて設定',
       startAt: '開始',
-      endAt: '終了',
+
+      duration: '所要',
       dateLabel: '日付',
       timeLabel: '時刻',
       derivedDurationPrefix: '自動算出',
@@ -143,8 +144,13 @@ export const translations = {
 
     prompt: {
       actions: {
+        startBreak: '休憩開始',
         extend: '延長',
         endBreak: '休憩終了',
+        confirmContinue: 'そのまま継続',
+        confirmStopAt: '停止時刻を記録',
+        confirmExecuted: '実行済みにする',
+        confirmSkipped: 'スキップ済みにする',
       },
     },
 
@@ -167,7 +173,8 @@ export const translations = {
       },
       doneDefinition: '完了条件',
       startAt: '開始',
-      endAt: '終了',
+
+      duration: '所要',
     },
   },
 
@@ -269,7 +276,8 @@ export const translations = {
       scheduleTitle: 'Execution timing',
       scheduleGuide: 'Set start and end time as needed',
       startAt: 'Start',
-      endAt: 'End',
+
+      duration: 'Duration',
       dateLabel: 'Date',
       timeLabel: 'Time',
       derivedDurationPrefix: 'Derived',
@@ -315,8 +323,13 @@ export const translations = {
 
     prompt: {
       actions: {
+        startBreak: 'Start break',
         extend: 'Extend',
         endBreak: 'End break',
+        confirmContinue: 'Continue',
+        confirmStopAt: 'Record stop time',
+        confirmExecuted: 'Mark executed',
+        confirmSkipped: 'Mark skipped',
       },
     },
 
@@ -339,7 +352,8 @@ export const translations = {
       },
       doneDefinition: 'Done when',
       startAt: 'Start',
-      endAt: 'End',
+
+      duration: 'Duration',
     },
   },
 } as const

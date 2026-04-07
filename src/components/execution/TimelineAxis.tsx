@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState, type WheelEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 interface TimelineItem {
   id: string
@@ -52,14 +52,25 @@ export function TimelineAxis({
   const legacyItems = items ?? []
   const [zoom, setZoom] = useState(1)
   const [scope, setScope] = useState<'day' | 'around-now'>('day')
-  const handleTimelineWheel = (event: WheelEvent<HTMLDivElement>) => {
-    if (!event.ctrlKey) return
-    event.preventDefault()
-    setZoom(prev => {
-      const delta = event.deltaY > 0 ? -0.1 : 0.1
-      return Math.max(0.5, Math.min(3, prev + delta))
-    })
-  }
+  const surfaceRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    const surface = surfaceRef.current
+    if (!surface) return
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return
+      event.preventDefault()
+      event.stopPropagation()
+      setZoom(prev => {
+        const delta = event.deltaY > 0 ? -0.1 : 0.1
+        return Math.max(0.5, Math.min(3, prev + delta))
+      })
+    }
+    surface.addEventListener('wheel', handleWheel, { passive: false })
+    return () => {
+      surface.removeEventListener('wheel', handleWheel)
+    }
+  }, [])
 
   const effective = useMemo(() => {
     const source = blocks.length > 0 ? blocks : []
@@ -100,9 +111,10 @@ export function TimelineAxis({
 
     return (
       <div
+        ref={surfaceRef}
+        data-testid="timeline-surface"
         className="relative w-full min-w-0 overflow-x-hidden overflow-y-auto rounded-lg bg-surface-1 p-2"
         style={{ maxHeight: viewportHeight }}
-        onWheel={handleTimelineWheel}
       >
         {!compact ? (
           <div className="mb-2 flex items-center gap-2">
@@ -156,7 +168,7 @@ export function TimelineAxis({
                 className="absolute rounded-md bg-primary/10 px-2 py-1"
                 style={{
                   top: (block.topPx - minTop + 24) * zoom,
-                  height: Math.max(16, block.heightPx),
+                  height: Math.max(16, block.heightPx * zoom),
                   left: `calc(${leftPct}% + 2px)`,
                   width: `calc(${widthPct}% - 4px)`,
                 }}
@@ -185,7 +197,7 @@ export function TimelineAxis({
                   ? 'block h-2.5 w-2.5 rounded-full bg-primary'
                   : item.status === 'done'
                   ? 'block h-2.5 w-2.5 rounded-full bg-emerald-500'
-                  : 'block h-2.5 w-2.5 rounded-full bg-zinc-400'
+                  : 'block h-2.5 w-2.5 rounded-full bg-foreground-subtle'
               }
             />
             <span className="absolute left-[5px] top-3 h-7 w-px bg-border" />
