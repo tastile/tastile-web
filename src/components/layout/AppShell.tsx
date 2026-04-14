@@ -181,20 +181,6 @@ function toPromptActionCommand(
       reason: action,
     }
   }
-  if (action === 'complete_phase' && tileId) {
-    return { type: 'complete_tile', tile_id: tileId, completed_at: new Date(), next_tile_id: null }
-  }
-  if (action === 'start_break_parallel' || action === 'start_break_split') {
-    return { type: 'start_break', linked_tile_id: tileId, break_min: DEFAULT_PROMPT_EXTENSION_MINUTES, reason: action }
-  }
-  if (action === 'start_break_split_and_extend') {
-    return {
-      type: 'start_break',
-      linked_tile_id: tileId,
-      break_min: prompt.suggestedMinutes ?? DEFAULT_PROMPT_EXTENSION_MINUTES,
-      reason: action,
-    }
-  }
   if (action === 'defer_tile' && tileId) {
     return {
       type: 'defer_tile',
