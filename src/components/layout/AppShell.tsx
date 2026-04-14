@@ -153,10 +153,22 @@ function toPromptActionCommand(
     return { type: 'start_tile', tile_id: tileId, started_at: new Date(), source: 'prompt' }
   }
   if (action === 'complete_tile' && tileId) {
-    return { type: 'complete_tile', tile_id: tileId, completed_at: new Date(), next_tile_id: null }
+    return {
+      type: 'complete_tile',
+      tile_id: tileId,
+      completed_at: new Date(),
+      next_tile_id: null,
+      scope: 'tile',
+    }
   }
   if (action === 'complete_phase' && tileId) {
-    return { type: 'complete_tile', tile_id: tileId, completed_at: new Date(), next_tile_id: null }
+    return {
+      type: 'complete_tile',
+      tile_id: tileId,
+      completed_at: new Date(),
+      next_tile_id: null,
+      scope: 'phase',
+    }
   }
   if (action === 'start_break_parallel' || action === 'start_break_split') {
     return { type: 'start_break', linked_tile_id: tileId, break_min: DEFAULT_PROMPT_EXTENSION_MINUTES, reason: action }

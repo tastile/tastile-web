@@ -45,6 +45,20 @@ describe('fromDaemonCommandRequest', () => {
     })
   })
 
+  it('preserves complete_tile scope when provided', () => {
+    const tileId = TileId.fromString('tile-1')
+    const completedAt = new Date('2026-03-26T10:00:00.000Z')
+    expect(
+      fromDaemonCommandRequest({ type: 'complete_tile', tileId, completedAt, nextTileId: null, scope: 'phase' })
+    ).toEqual({
+      type: 'complete_tile',
+      tile_id: tileId,
+      completed_at: completedAt,
+      next_tile_id: null,
+      scope: 'phase',
+    })
+  })
+
   it('maps defer_tile request with null nextStartAt', () => {
     const tileId = TileId.fromString('tile-1')
     const deferredAt = new Date('2026-03-26T10:10:00.000Z')

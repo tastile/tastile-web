@@ -859,6 +859,7 @@ function toDaemonCommand(command: Command): DaemonCommandRequest {
         tileId: command.tile_id,
         completedAt: command.completed_at,
         nextTileId: command.next_tile_id,
+        scope: command.scope,
       }
     case 'defer_tile':
       return {

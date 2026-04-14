@@ -70,6 +70,7 @@ export default function ExecutePage() {
         tile_id: state.execution.activeTileId,
         completed_at: new Date(),
         next_tile_id: null,
+        scope: 'tile',
       },
       Actor.human('self')
     )

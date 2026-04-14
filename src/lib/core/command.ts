@@ -21,6 +21,7 @@ export type DaemonCommandRequest =
       tileId: TileId
       completedAt: Date
       nextTileId: TileId | null
+      scope?: 'tile' | 'phase'
     }
   | {
       type: 'defer_tile'
@@ -93,6 +94,7 @@ export type Command =
       tile_id: TileId
       completed_at: Date
       next_tile_id: TileId | null
+      scope?: 'tile' | 'phase'
     }
   | {
       type: 'defer_tile'
@@ -180,6 +182,7 @@ export function fromDaemonCommandRequest(request: DaemonCommandRequest): Command
         tile_id: request.tileId,
         completed_at: request.completedAt,
         next_tile_id: request.nextTileId,
+        scope: request.scope,
       }
     case 'defer_tile':
       return {
