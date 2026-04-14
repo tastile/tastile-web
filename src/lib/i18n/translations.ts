@@ -97,7 +97,7 @@ export const translations = {
       scheduleTitle: '実行タイミング',
       scheduleGuide: '開始時刻と終了時刻を必要に応じて設定',
       startAt: '開始',
-
+      endAt: '終了',
       duration: '所要',
       dateLabel: '日付',
       timeLabel: '時刻',
@@ -276,7 +276,7 @@ export const translations = {
       scheduleTitle: 'Execution timing',
       scheduleGuide: 'Set start and end time as needed',
       startAt: 'Start',
-
+      endAt: 'End',
       duration: 'Duration',
       dateLabel: 'Date',
       timeLabel: 'Time',
