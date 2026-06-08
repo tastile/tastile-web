@@ -11,6 +11,7 @@ import { ExecutionSnapshot, ExecutionSyncStatus, PromptAction, PromptQueueItemSn
 import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
 import { createClient } from '@/lib/supabase/client'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   clearSessionCache,
   getIdTokenClient,
@@ -44,7 +45,18 @@ async function readDaemonSyncStatusSafely(client: DaemonClient): Promise<Executi
 export function useDaemonExecution() {
   const [state, setState] = useState<AppState>(AppState.initial())
   const [loading, setLoading] = useState(true)
-  const [supabase] = useState(() => createClient())
+  const [supabase] = useState<SupabaseClient | null>(() => {
+    // Supabase is only used by the optional WASM offline backend. The
+    // dashboard's primary path is the daemon (Cognito bearer), which does
+    // not require Supabase. If Supabase env is not configured, the WASM
+    // branch is disabled and the daemon path is used.
+    try {
+      return createClient()
+    } catch (err) {
+      console.warn('Supabase client not available; WASM offline mode disabled.', err)
+      return null
+    }
+  })
   const clientRef = useRef<DaemonClient | null>(null)
   const wasmRef = useRef<WasmExecutionEngine | null>(null)
   const eventStoreRef = useRef<EventStore | null>(null)
@@ -138,7 +150,10 @@ export function useDaemonExecution() {
 
     async function init() {
       try {
-        if (backend === 'wasm') {
+        if (backend === 'wasm' && !supabase) {
+          console.warn('NEXT_PUBLIC_EXECUTION_BACKEND=wasm requested but Supabase env is not configured; falling back to daemon backend.')
+        }
+        if (backend === 'wasm' && supabase) {
           const wasm = await createWasmExecutionEngine()
           wasmRef.current = wasm
           const {

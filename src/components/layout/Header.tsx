@@ -5,7 +5,7 @@ import { ActiveExecutionBar } from '@/components/execution/ActiveExecutionBar'
 import { ActiveExecutionBadge } from '@/components/execution/ActiveExecutionBadge'
 import { TastileLogo } from '@/components/TastileLogo'
 import { Menu, Bell } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { getIdTokenClaims } from '@/lib/daemon/id-token-client'
 import { useEffect, useState } from 'react'
 import { AccountMenu } from '@/app/app/account-menu'
 import { ExecutionSyncStatus } from '@/lib/domain/execution'
@@ -33,26 +33,24 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
   } | null>(null)
 
   useEffect(() => {
-    const supabase = createClient()
-    void supabase.auth.getUser().then(({ data, error }) => {
-      if (error || !data.user) {
+    void (async () => {
+      const claims = await getIdTokenClaims()
+      if (!claims) {
         setAvatarUrl(null)
         setUserData(null)
         return
       }
 
-      const metadata = data.user.user_metadata
-      const googleAvatar =
-        (typeof metadata?.avatar_url === 'string' ? metadata.avatar_url : null) ??
-        (typeof metadata?.picture === 'string' ? metadata.picture : null)
+      const fallbackName =
+        claims.email?.split('@')[0] ?? claims.sub.slice(0, 8)
 
-      setAvatarUrl(googleAvatar)
+      setAvatarUrl(claims.picture ?? null)
       setUserData({
-        displayName: metadata?.full_name ?? metadata?.name ?? data.user.email?.split('@')[0] ?? 'User',
-        email: data.user.email ?? '',
-        plan: 'free', // TODO: Get from Supabase profiles table
+        displayName: claims.name ?? fallbackName,
+        email: claims.email ?? '',
+        plan: 'free', // TODO: plan lookup lives on the daemon; not wired in β.
       })
-    })
+    })()
   }, [])
 
   return (

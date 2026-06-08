@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   clearSessionCache,
   getIdTokenClient,
+  getIdTokenClaims,
   getSessionClient,
 } from './id-token-client'
 
@@ -145,5 +146,80 @@ describe('id-token-client', () => {
     const next = await getSessionClient()
     expect(next?.idToken).toBe('id-token-2')
     expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  describe('getIdTokenClaims', () => {
+    function makeJwt(payload: Record<string, unknown>): string {
+      const header = btoa(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))
+      const body = btoa(JSON.stringify(payload))
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+      return `${header}.${body}.sig`
+    }
+
+    it('returns null when no session is available', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse({ error: 'not authenticated' }, 401)
+      )
+      const claims = await getIdTokenClaims()
+      expect(claims).toBeNull()
+    })
+
+    it('parses standard claims from the id_token body', async () => {
+      const idToken = makeJwt({
+        sub: 'cognito-sub-1',
+        email: 'user@example.com',
+        name: 'Taro Yamada',
+        picture: 'https://example.com/a.png',
+      })
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(makeSession(3600, idToken))
+      )
+      const claims = await getIdTokenClaims()
+      expect(claims).toEqual({
+        sub: 'cognito-sub-1',
+        email: 'user@example.com',
+        name: 'Taro Yamada',
+        picture: 'https://example.com/a.png',
+      })
+    })
+
+    it('falls back to cognito:username when name is missing', async () => {
+      const idToken = makeJwt({
+        sub: 'cognito-sub-1',
+        'cognito:username': 'taro.tanaka',
+      })
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(makeSession(3600, idToken))
+      )
+      const claims = await getIdTokenClaims()
+      expect(claims?.name).toBe('taro.tanaka')
+    })
+
+    it('returns null when the id_token body is not a 3-part JWT', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(makeSession(3600, 'not-a-jwt'))
+      )
+      const claims = await getIdTokenClaims()
+      expect(claims).toBeNull()
+    })
+
+    it('returns null when the id_token body cannot be parsed', async () => {
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(makeSession(3600, 'a.b.c'))
+      )
+      const claims = await getIdTokenClaims()
+      expect(claims).toBeNull()
+    })
+
+    it('returns null when sub is missing from the id_token', async () => {
+      const idToken = makeJwt({ email: 'user@example.com' })
+      fetchMock.mockResolvedValueOnce(
+        jsonResponse(makeSession(3600, idToken))
+      )
+      const claims = await getIdTokenClaims()
+      expect(claims).toBeNull()
+    })
   })
 })

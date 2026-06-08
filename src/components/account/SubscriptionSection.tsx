@@ -1,45 +1,25 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { getSessionClient } from '@/lib/daemon/id-token-client'
 import { BUTTON_STYLES } from '@/lib/styles/button-styles'
 
 type Plan = 'free' | 'pro'
 
-interface Profile {
-  plan: Plan
-}
-
 export function SubscriptionSection() {
   const [plan, setPlan] = useState<Plan>('free')
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
-    async function fetchProfile() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setLoading(false)
-        return
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('plan')
-        .eq('id', user.id)
-        .single()
-
-      if (error) {
-        console.error('Failed to fetch profile:', error)
-      } else if (data) {
-        setPlan((data as Profile).plan)
-      }
-
+    // Plan lookup lives on the daemon (billing service) and is not wired in β.
+    // Until then, default to "free" once we have a session; show the loader
+    // briefly so the UI doesn't flash an unauthenticated state.
+    void (async () => {
+      const session = await getSessionClient()
+      setPlan(session ? 'free' : 'free')
       setLoading(false)
-    }
-
-    fetchProfile()
-  }, [supabase])
+    })()
+  }, [])
 
   if (loading) {
     return (

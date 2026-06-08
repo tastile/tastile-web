@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { ChevronUp } from 'lucide-react'
 
@@ -30,9 +29,9 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
   }, [])
 
   async function handleSignOut() {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push('/login')
+    // Use the Cognito Hosted UI logout endpoint — clears server cookies
+    // and ends the Cognito session in the browser.
+    router.push('/auth/cognito/logout')
   }
 
   const initials = displayName

@@ -9,14 +9,13 @@ import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
 import { Tile, ObjectiveMode, SemanticRole } from '@/lib/domain/tile'
 import { TileId } from '@/lib/domain/ids'
 import { Actor } from '@/lib/domain/actor'
-import { createClient } from '@/lib/supabase/client'
+import { getSessionClient } from '@/lib/daemon/id-token-client'
 
 export function QuickTileCreate() {
   const { isOpen, close } = useQuickCreateStore()
   const isDesktop = useIsDesktop()
   const { t, locale } = useTranslation()
   const { state, execute } = useExecutionEngineContext()
-  const supabase = createClient()
 
   const [title, setTitle] = useState('')
   const [titleEdited, setTitleEdited] = useState(false)
@@ -255,10 +254,10 @@ export function QuickTileCreate() {
     setSubmitting(true)
     try {
       const e2eBypassAuth = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1'
-      const user = e2eBypassAuth
-        ? { id: 'e2e-user' }
-        : (await supabase.auth.getUser()).data.user
-      if (!user) throw new Error(t('quickCreate.authRequired'))
+      const userId = e2eBypassAuth
+        ? 'e2e-user'
+        : (await getSessionClient())?.sub
+      if (!userId) throw new Error(t('quickCreate.authRequired'))
 
       await execute(
         {
@@ -266,7 +265,7 @@ export function QuickTileCreate() {
           tile_id: tileId,
           tile,
         },
-        Actor.human(user.id)
+        Actor.human(userId)
       )
 
       setTitle('')

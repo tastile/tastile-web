@@ -71,6 +71,54 @@ export async function getIdTokenClient(): Promise<string | null> {
   return session?.idToken ?? null
 }
 
+export interface IdTokenClaims {
+  sub: string
+  email?: string
+  name?: string
+  picture?: string
+}
+
+/**
+ * Parse the body of the cached id_token (JWT) and return the standard claim
+ * fields the dashboard cares about. Returns null if there is no session or
+ * the body cannot be decoded. The body is unverified JSON — caller must not
+ * trust it for authorization decisions.
+ */
+export async function getIdTokenClaims(): Promise<IdTokenClaims | null> {
+  const session = await getSessionClient()
+  if (!session) return null
+  const decoded = decodeJwtBody(session.idToken)
+  if (!decoded) return null
+  if (typeof decoded.sub !== 'string') return null
+  return {
+    sub: decoded.sub,
+    email: typeof decoded.email === 'string' ? decoded.email : undefined,
+    name:
+      typeof decoded.name === 'string'
+        ? decoded.name
+        : typeof decoded['cognito:username'] === 'string'
+        ? (decoded['cognito:username'] as string)
+        : undefined,
+    picture: typeof decoded.picture === 'string' ? decoded.picture : undefined,
+  }
+}
+
+function decodeJwtBody(jwt: string): Record<string, unknown> | null {
+  const parts = jwt.split('.')
+  if (parts.length !== 3) return null
+  const body = parts[1]
+  if (!body) return null
+  try {
+    const padded = body.replace(/-/g, '+').replace(/_/g, '/')
+    const json = atob(padded + '==='.slice((padded.length + 3) % 4))
+    const parsed: unknown = JSON.parse(json)
+    if (typeof parsed !== 'object' || parsed === null) return null
+    return parsed as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
 /** Clear the cache. The logout flow naturally empties this on the next page
  * load (the Hosted UI redirects away and back), so callers don't need to
  * invoke this on sign-out — but it's exposed for in-app state resets. */
