@@ -43,14 +43,14 @@ describe('marketing page layout consistency', () => {
     expect(termsContainer.querySelector('main')?.className).toContain('flex-1')
   })
 
-  it('uses centered single login panel with title and button together', () => {
-    const { container } = render(<LoginPage />)
+  it('uses centered single login panel with title and sign-in link together', async () => {
+    const { container } = render(await LoginPage({ searchParams: Promise.resolve({}) }))
 
     expect(container.querySelector('main.layout-shell.flex-1')).toBeTruthy()
     expect(container.querySelector('main.layout-grid-2')).toBeFalsy()
     expect(container.querySelector('[data-testid="login-panel"]')).toBeTruthy()
     expect(screen.getByText('Tastileにログイン')).toBeTruthy()
     expect(screen.getByText('タスク実行を、自動で最適化')).toBeTruthy()
-    expect(screen.getByRole('button', { name: /Googleでログイン/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Sign in/i })).toBeTruthy()
   })
 })
