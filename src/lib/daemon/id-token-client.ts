@@ -41,13 +41,28 @@ export async function getSessionClient(force = false): Promise<CognitoSession | 
       cache = null
       return null
     }
-    const session = (await res.json()) as CognitoSession
-    cache = { session, fetchedAt: now }
-    return session
+    const raw: unknown = await res.json()
+    if (!isValidSession(raw)) {
+      cache = null
+      return null
+    }
+    cache = { session: raw, fetchedAt: now }
+    return raw
   } catch {
     cache = null
     return null
   }
+}
+
+function isValidSession(raw: unknown): raw is CognitoSession {
+  if (typeof raw !== 'object' || raw === null) return false
+  const s = raw as Partial<CognitoSession>
+  return (
+    typeof s.idToken === 'string' &&
+    typeof s.refreshToken === 'string' &&
+    typeof s.sub === 'string' &&
+    typeof s.exp === 'number'
+  )
 }
 
 /** Get just the id_token. Convenience wrapper. */
@@ -56,7 +71,9 @@ export async function getIdTokenClient(): Promise<string | null> {
   return session?.idToken ?? null
 }
 
-/** Clear the cache (used after a 401 forces a refresh). */
+/** Clear the cache. The logout flow naturally empties this on the next page
+ * load (the Hosted UI redirects away and back), so callers don't need to
+ * invoke this on sign-out — but it's exposed for in-app state resets. */
 export function clearSessionCache(): void {
   cache = null
 }

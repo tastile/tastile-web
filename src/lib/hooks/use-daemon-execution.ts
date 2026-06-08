@@ -195,6 +195,8 @@ export function useDaemonExecution() {
         const getAccessToken = e2eBypassAuth
           ? undefined
           : async () => {
+              // Cache eviction on null: the next call will re-fetch from
+              // /api/auth/session instead of replaying a stale id_token.
               const token = await getIdTokenClient()
               if (!token) clearSessionCache()
               return token

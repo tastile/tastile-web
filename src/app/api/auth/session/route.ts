@@ -6,6 +6,12 @@ import {
   COOKIE_USER_SUB,
 } from '@/lib/cognito/cookies'
 
+// Intentionally unauthenticated: this route echoes the same httpOnly cookies
+// back to the browser. proxy.ts already gates protected paths, and same-origin
+// policy is the only intended consumer.
+//
+// node-runtime: relies on Buffer for the base64 JWT-payload decode.
+
 export async function GET() {
   const jar = await cookies()
   const idToken = jar.get(COOKIE_ID_TOKEN)?.value

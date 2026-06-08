@@ -86,20 +86,11 @@ describe('id-token-client', () => {
   })
 
   it('returns null and clears the cache when the server returns 401', async () => {
-    fetchMock
-      .mockResolvedValueOnce(jsonResponse(makeSession(3600)))
-      .mockResolvedValueOnce(jsonResponse({ error: 'not authenticated' }, 401))
-
-    const first = await getSessionClient()
-    expect(first?.idToken).toBe('id-token-abc')
-
-    // The buffer check will trigger a refetch, which 401s
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ error: 'not authenticated' }, 401)
     )
-    clearSessionCache()
-    const second = await getSessionClient()
-    expect(second).toBeNull()
+    const result = await getSessionClient()
+    expect(result).toBeNull()
   })
 
   it('returns null when the server returns a non-2xx response', async () => {
