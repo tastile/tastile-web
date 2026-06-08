@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from '@/lib/cognito/cookies'
+import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN, COOKIE_USER_SUB } from '@/lib/cognito/cookies'
 import { tryGetCognitoEnv } from '@/lib/cognito/env'
 import { parseIdTokenClaims, refreshTokens } from '@/lib/cognito/server'
 
@@ -46,7 +46,7 @@ export async function proxy(request: NextRequest) {
           maxAge: 60 * 60 * 24 * 30,
         })
       }
-      res.cookies.set('tastile_user_sub', claims.sub, {
+      res.cookies.set(COOKIE_USER_SUB, claims.sub, {
         httpOnly: true,
         secure: true,
         sameSite: 'lax',

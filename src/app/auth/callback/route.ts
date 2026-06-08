@@ -1,6 +1,10 @@
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
-import { setAuthCookies } from '@/lib/cognito/cookies'
+import {
+  COOKIE_OAUTH_STATE,
+  COOKIE_PKCE_VERIFIER,
+  setAuthCookies,
+} from '@/lib/cognito/cookies'
 import { tryGetCognitoEnv } from '@/lib/cognito/env'
 import { exchangeCodeForTokens, parseIdTokenClaims } from '@/lib/cognito/server'
 
@@ -20,8 +24,8 @@ export async function GET(request: NextRequest) {
   }
 
   const jar = await cookies()
-  const expectedState = jar.get('tastile_oauth_state')?.value
-  const codeVerifier = jar.get('tastile_pkce_verifier')?.value
+  const expectedState = jar.get(COOKIE_OAUTH_STATE)?.value
+  const codeVerifier = jar.get(COOKIE_PKCE_VERIFIER)?.value
 
   if (!expectedState || expectedState !== returnedState || !codeVerifier) {
     return NextResponse.redirect(`${origin}/login?error=state_mismatch`)
@@ -37,14 +41,14 @@ export async function GET(request: NextRequest) {
       expiresIn: tokens.expires_in,
     })
     // Clear PKCE cookies.
-    jar.set('tastile_oauth_state', '', {
+    jar.set(COOKIE_OAUTH_STATE, '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
       maxAge: 0,
     })
-    jar.set('tastile_pkce_verifier', '', {
+    jar.set(COOKIE_PKCE_VERIFIER, '', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -53,8 +57,7 @@ export async function GET(request: NextRequest) {
     })
     return NextResponse.redirect(`${origin}${next}`)
   } catch (e) {
-    return NextResponse.redirect(
-      `${origin}/login?error=auth_failed&detail=${encodeURIComponent(String(e))}`
-    )
+    console.error('Cognito callback failed', e)
+    return NextResponse.redirect(`${origin}/login?error=auth_failed`)
   }
 }

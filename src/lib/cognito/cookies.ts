@@ -3,6 +3,8 @@ import { cookies } from 'next/headers'
 export const COOKIE_ID_TOKEN = 'tastile_id_token'
 export const COOKIE_REFRESH_TOKEN = 'tastile_refresh_token'
 export const COOKIE_USER_SUB = 'tastile_user_sub'
+export const COOKIE_PKCE_VERIFIER = 'tastile_pkce_verifier'
+export const COOKIE_OAUTH_STATE = 'tastile_oauth_state'
 
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30 // 30 days
 

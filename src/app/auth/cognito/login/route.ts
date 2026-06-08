@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { COOKIE_OAUTH_STATE, COOKIE_PKCE_VERIFIER } from '@/lib/cognito/cookies'
 import { tryGetCognitoEnv } from '@/lib/cognito/env'
 import { generatePkcePair, generateState } from '@/lib/cognito/pkce'
 
@@ -20,14 +21,14 @@ export async function GET(request: NextRequest) {
   url.searchParams.set('state', state)
 
   const res = NextResponse.redirect(url)
-  res.cookies.set('tastile_pkce_verifier', codeVerifier, {
+  res.cookies.set(COOKIE_PKCE_VERIFIER, codeVerifier, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
     maxAge: 600,
   })
-  res.cookies.set('tastile_oauth_state', state, {
+  res.cookies.set(COOKIE_OAUTH_STATE, state, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
