@@ -20,6 +20,9 @@ const {
   getUserMock,
   getSessionMock,
   getBrowserAccessTokenMock,
+  getSessionClientMock,
+  getIdTokenClientMock,
+  clearSessionCacheMock,
   openExecutionStreamMock,
   streamCloseMock,
   wasmReadSnapshotMock,
@@ -54,6 +57,9 @@ const {
   getUserMock: vi.fn(),
   getSessionMock: vi.fn(),
   getBrowserAccessTokenMock: vi.fn(),
+  getSessionClientMock: vi.fn(),
+  getIdTokenClientMock: vi.fn(),
+  clearSessionCacheMock: vi.fn(),
   openExecutionStreamMock: vi.fn(),
   streamCloseMock: vi.fn(),
   wasmReadSnapshotMock: vi.fn<() => Promise<ExecutionSnapshot>>(),
@@ -87,6 +93,12 @@ vi.mock('@/lib/supabase/client', () => ({
     },
   }),
   getBrowserAccessToken: getBrowserAccessTokenMock,
+}))
+
+vi.mock('@/lib/daemon/id-token-client', () => ({
+  getSessionClient: getSessionClientMock,
+  getIdTokenClient: getIdTokenClientMock,
+  clearSessionCache: clearSessionCacheMock,
 }))
 
 vi.mock('../daemon/client', () => ({
@@ -133,6 +145,9 @@ describe('useDaemonExecution', () => {
     getUserMock.mockReset()
     getSessionMock.mockReset()
     getBrowserAccessTokenMock.mockReset()
+    getSessionClientMock.mockReset()
+    getIdTokenClientMock.mockReset()
+    clearSessionCacheMock.mockReset()
     openExecutionStreamMock.mockReset()
     streamCloseMock.mockReset()
     wasmReadSnapshotMock.mockReset()
@@ -177,6 +192,14 @@ describe('useDaemonExecution', () => {
       },
     })
     getBrowserAccessTokenMock.mockResolvedValue('token-1')
+    getSessionClientMock.mockResolvedValue({
+      idToken: 'id-token-1',
+      refreshToken: 'refresh-token-1',
+      sub: 'cognito-sub-1',
+      exp: 1774706400,
+    })
+    getIdTokenClientMock.mockResolvedValue('id-token-1')
+    clearSessionCacheMock.mockReset()
     restoreSessionMock.mockResolvedValue(undefined)
     daemonReadSyncStatusMock.mockResolvedValue({
       inProgress: false,
@@ -657,9 +680,9 @@ describe('useDaemonExecution', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(daemonReadSyncStatusMock).toHaveBeenCalledTimes(1)
     expect(restoreSessionMock).toHaveBeenCalledWith({
-      userId: 'user-1',
-      email: 'user@example.com',
-      accessToken: 'token-1',
+      userId: 'cognito-sub-1',
+      email: '',
+      accessToken: 'id-token-1',
       refreshToken: 'refresh-token-1',
       expiresAt: '2026-03-28T14:00:00.000Z',
     })
@@ -932,21 +955,24 @@ describe('useDaemonExecution', () => {
     expect(restoreSessionMock).toHaveBeenCalledTimes(2)
   })
 
-  it('keeps daemon init working when session expires_at is an invalid string', async () => {
+  it('keeps daemon init working when session has a near-future exp', async () => {
     process.env.NEXT_PUBLIC_EXECUTION_BACKEND = 'daemon'
-    getSessionMock.mockResolvedValueOnce({
-      data: {
-        session: {
-          access_token: 'token-1',
-          refresh_token: 'refresh-token-1',
-          expires_at: 'invalid-date-value',
-          user: {
-            id: 'user-1',
-            email: 'user@example.com',
-          },
-        },
-      },
-    })
+    // exp 30 seconds from now — within the refresh buffer, but still valid
+    const nearExp = Math.floor(Date.now() / 1000) + 30
+    getSessionClientMock.mockReset()
+    getSessionClientMock
+      .mockResolvedValueOnce({
+        idToken: 'id-token-1',
+        refreshToken: 'refresh-token-1',
+        sub: 'cognito-sub-1',
+        exp: nearExp,
+      })
+      .mockResolvedValueOnce({
+        idToken: 'id-token-2',
+        refreshToken: 'refresh-token-1',
+        sub: 'cognito-sub-1',
+        exp: 1774706400,
+      })
     readSnapshotMock.mockResolvedValueOnce(
       snapshot({
         tiles: [],
@@ -959,11 +985,11 @@ describe('useDaemonExecution', () => {
 
     await waitFor(() => expect(result.current.loading).toBe(false))
     expect(restoreSessionMock).toHaveBeenCalledWith({
-      userId: 'user-1',
-      email: 'user@example.com',
-      accessToken: 'token-1',
+      userId: 'cognito-sub-1',
+      email: '',
+      accessToken: 'id-token-1',
       refreshToken: 'refresh-token-1',
-      expiresAt: null,
+      expiresAt: new Date(nearExp * 1000).toISOString(),
     })
     expect(readSnapshotMock).toHaveBeenCalledTimes(1)
   })
@@ -1029,6 +1055,8 @@ describe('useDaemonExecution', () => {
     getUserMock.mockResolvedValueOnce({
       data: { user: null },
     })
+    getSessionClientMock.mockReset()
+    getSessionClientMock.mockResolvedValueOnce(null)
     readSnapshotMock.mockResolvedValueOnce(snapshot({ tiles: [], promptQueue: [], timeline: [] }))
 
     const { result } = renderHook(() => useDaemonExecution())

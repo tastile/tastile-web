@@ -10,7 +10,12 @@ import { Actor } from '../domain/actor'
 import { ExecutionSnapshot, ExecutionSyncStatus, PromptAction, PromptQueueItemSnapshot, TimelineItemSnapshot } from '../domain/execution'
 import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
-import { createClient, getBrowserAccessToken } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
+import {
+  clearSessionCache,
+  getIdTokenClient,
+  getSessionClient,
+} from '@/lib/daemon/id-token-client'
 import { createWasmExecutionEngine, WasmExecutionEngine } from '../wasm/core-engine'
 import { EventStore } from '../storage/event-store'
 import type {
@@ -62,23 +67,27 @@ export function useDaemonExecution() {
     if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_DAEMON_REFRESH_MS
     return parsed
   }, [])
+  const e2eBypassAuth = useMemo(
+    () => process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === '1',
+    []
+  )
 
   const restoreDaemonSession = useCallback(async (): Promise<boolean> => {
     const client = clientRef.current
     if (!client) return false
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session?.user) return false
+    // Force-refresh so we never replay a stale id_token that the daemon will
+    // reject on the next call.
+    const session = await getSessionClient(true)
+    if (!session) return false
     await client.restoreSession({
-      userId: session.user.id,
-      email: session.user.email ?? '',
-      accessToken: session.access_token,
-      refreshToken: session.refresh_token,
-      expiresAt: toDaemonSessionExpiry(session.expires_at),
+      userId: session.sub,
+      email: '',
+      accessToken: session.idToken,
+      refreshToken: session.refreshToken,
+      expiresAt: new Date(session.exp * 1000).toISOString(),
     })
     return true
-  }, [supabase])
+  }, [])
 
   const refreshSnapshot = useCallback(async () => {
     const client = clientRef.current
@@ -177,26 +186,32 @@ export function useDaemonExecution() {
           return
         }
 
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
-        if (!active || !session?.user) {
+        const session = await getSessionClient()
+        if (!active || (!session && !e2eBypassAuth)) {
           if (active) setLoading(false)
           return
         }
 
-        const getAccessToken = async () => getBrowserAccessToken(supabase)
+        const getAccessToken = e2eBypassAuth
+          ? undefined
+          : async () => {
+              const token = await getIdTokenClient()
+              if (!token) clearSessionCache()
+              return token
+            }
         clientRef.current = new DaemonClient({
           baseUrl,
           getAccessToken,
         })
-        await clientRef.current.restoreSession({
-          userId: session.user.id,
-          email: session.user.email ?? '',
-          accessToken: session.access_token,
-          refreshToken: session.refresh_token,
-          expiresAt: toDaemonSessionExpiry(session.expires_at),
-        })
+        if (session) {
+          await clientRef.current.restoreSession({
+            userId: session.sub,
+            email: '',
+            accessToken: session.idToken,
+            refreshToken: session.refreshToken,
+            expiresAt: new Date(session.exp * 1000).toISOString(),
+          })
+        }
         const daemonSyncStatus = await readDaemonSyncStatusSafely(clientRef.current)
         if (daemonSyncStatus) {
           syncStatusRef.current = daemonSyncStatus
@@ -257,7 +272,7 @@ export function useDaemonExecution() {
       closeStream?.()
       if (refreshTimer) clearInterval(refreshTimer)
     }
-  }, [backend, baseUrl, daemonRefreshMs, refreshSnapshot, supabase])
+  }, [backend, baseUrl, daemonRefreshMs, e2eBypassAuth, refreshSnapshot, supabase])
 
   const execute = useCallback(async (command: Command, actor: Actor) => {
     const client = clientRef.current
@@ -395,36 +410,6 @@ function createWebDeviceId(): string {
     return `web-${crypto.randomUUID()}`
   }
   return `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
-}
-
-function toDaemonSessionExpiry(raw: unknown): string | null {
-  if (raw === null || raw === undefined) return null
-
-  const asDateFromEpoch = (epoch: number): Date | null => {
-    if (!Number.isFinite(epoch)) return null
-    const millis = epoch > 1_000_000_000_000 ? epoch : epoch * 1000
-    const parsed = new Date(millis)
-    return Number.isNaN(parsed.getTime()) ? null : parsed
-  }
-
-  if (typeof raw === 'number') {
-    const parsed = asDateFromEpoch(raw)
-    return parsed ? parsed.toISOString() : null
-  }
-
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim()
-    if (!trimmed) return null
-    const numeric = Number(trimmed)
-    if (Number.isFinite(numeric)) {
-      const parsedEpoch = asDateFromEpoch(numeric)
-      return parsedEpoch ? parsedEpoch.toISOString() : null
-    }
-    const parsedIso = new Date(trimmed)
-    return Number.isNaN(parsedIso.getTime()) ? null : parsedIso.toISOString()
-  }
-
-  return null
 }
 
 function projectSnapshotToAppState(
