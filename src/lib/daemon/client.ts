@@ -1,5 +1,6 @@
-import { DaemonCommandRequest, fromDaemonCommandRequest } from '../core/command'
+import { DaemonCommandRequest } from '../core/command'
 import { ExecutionSnapshot, ExecutionSyncStatus } from '../domain/execution'
+import type { Tile } from '../domain/tile'
 import { parseExecutionSnapshot } from './contracts'
 
 export type FetchLike = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>
@@ -134,6 +135,9 @@ export class DaemonClient {
       method: 'GET',
       headers: await this.buildHeaders(),
     })
+    if (response.status === 404) {
+      return { inProgressTiles: [], promptQueue: [], timeline: [] }
+    }
     await assertOk(response, 'Failed to read execution snapshot')
     const payload = (await response.json()) as unknown
     return parseExecutionSnapshot(payload)
@@ -186,14 +190,15 @@ export class DaemonClient {
   }
 
   async sendCommand(command: DaemonCommandRequest): Promise<CommandAcceptedEnvelope> {
-    const response = await this.fetchImpl(`${this.baseUrl}/commands`, {
+    const { path, body } = toCurrentDaemonCommand(command)
+    const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: await this.buildHeaders({ 'content-type': 'application/json' }),
-      body: JSON.stringify(fromDaemonCommandRequest(command), jsonReplacer),
+      body: JSON.stringify(body, jsonReplacer),
     })
     await assertOk(response, 'Failed to send daemon command')
     const payload = (await response.json()) as unknown
-    return parseAcceptedEnvelope(payload)
+    return parseCommandResponseEnvelope(payload)
   }
 
   async restoreSession(session: DaemonSessionRestoreRequest): Promise<void> {
@@ -247,6 +252,15 @@ export class DaemonClient {
       method: 'GET',
       headers: await this.buildHeaders(),
     })
+    if (response.status === 404) {
+      return {
+        inProgress: false,
+        lastAttemptAt: null,
+        lastSuccessAt: null,
+        lastError: null,
+        lastResult: null,
+      }
+    }
     await assertOk(response, 'Failed to read sync status')
     const payload = (await response.json()) as unknown
     return parseSyncStatus(payload)
@@ -271,6 +285,147 @@ function jsonReplacer(_key: string, value: unknown): unknown {
   return value
 }
 
+function toCurrentDaemonCommand(command: DaemonCommandRequest): { path: string; body: Record<string, unknown> } {
+  switch (command.type) {
+    case 'create_tile':
+      return {
+        path: '/commands/tile/create',
+        body: toCreateTileRequest(command.tile),
+      }
+    case 'start_tile':
+      return {
+        path: '/commands/tile/start',
+        body: { tile_id: command.tileId },
+      }
+    case 'complete_tile':
+      return {
+        path: '/commands/tile/complete',
+        body: {
+          tile_id: command.tileId,
+          next_tile_id: command.nextTileId,
+          scope: command.scope ?? 'tile',
+        },
+      }
+    case 'defer_tile':
+      return {
+        path: '/commands/tile/defer',
+        body: {
+          tile_id: command.tileId,
+          minutes: command.nextStartAt
+            ? Math.max(1, Math.ceil((command.nextStartAt.getTime() - Date.now()) / 60000))
+            : undefined,
+        },
+      }
+    case 'delete_tile':
+      return {
+        path: '/commands/tile/delete',
+        body: { tile_id: command.tileId },
+      }
+    case 'start_break':
+      return {
+        path: '/commands/break/start',
+        body: {
+          break_min: command.breakMin,
+          reason: command.reason,
+        },
+      }
+    case 'end_break':
+      return {
+        path: '/commands/break/end',
+        body: { tile_id: command.tileId },
+      }
+    case 'extend_phase':
+      return {
+        path: '/commands/tile/extend',
+        body: { delta_min: command.deltaMin },
+      }
+    case 'request_prompt':
+      return {
+        path: '/commands/prompt/request',
+        body: {
+          tile_id: command.tileId,
+          reason: command.reason,
+        },
+      }
+    case 'respond_startup_recovery':
+      return {
+        path: '/commands/prompt/respond-startup-recovery',
+        body: {
+          prompt_id: command.promptId,
+          tile_id: command.tileId,
+          action_id: command.actionId.toUpperCase(),
+          stop_at: command.stopAt,
+        },
+      }
+    case 'switch_active_tile':
+      return {
+        path: '/commands/tile/start',
+        body: { tile_id: command.toTileId },
+      }
+    case 'clear_prompt':
+      throw new Error('Current daemon API does not expose clear_prompt as a direct command')
+  }
+}
+
+function toCreateTileRequest(tile: Tile): Record<string, unknown> {
+  return {
+    title: tile.core.title,
+    next_action: tile.core.nextAction,
+    done_definition: tile.core.doneDefinition,
+    temporal: {
+      release_at: tile.temporal.releaseAt,
+      due_at: tile.temporal.dueAt,
+      fixed_start: tile.temporal.fixedStart,
+      fixed_end: tile.temporal.fixedEnd,
+      active_start: tile.temporal.activeStart,
+      active_end: tile.temporal.activeEnd,
+    },
+    objective: {
+      objective_mode: tile.objective.objectiveMode,
+      target_work_min: tile.objective.targetWorkMin,
+      target_rest_min: tile.objective.targetRestMin,
+      done_rule: tile.objective.doneRule,
+      recurrence: tile.objective.recurrence
+        ? {
+            generator: {
+              step_min: tile.objective.recurrence.generator.stepMin,
+              anchor_epoch_min: tile.objective.recurrence.generator.anchorEpochMin,
+            },
+            window: {
+              start_offset_min: tile.objective.recurrence.window.startOffsetMin,
+              end_offset_min: tile.objective.recurrence.window.endOffsetMin,
+            },
+            selector: {
+              expression: tile.objective.recurrence.selector.expression,
+            },
+          }
+        : null,
+    },
+    interruption: {
+      interrupt_penalty: tile.interruption.interruptPenalty,
+      resume_penalty: tile.interruption.resumePenalty,
+      break_splits_work: tile.interruption.breakSplitsWork,
+      external_interrupt_only: tile.interruption.externalInterruptOnly,
+    },
+    automation: {
+      prompt_on_start: tile.automation.promptOnStart,
+      prompt_on_end: tile.automation.promptOnEnd,
+      auto_start_allowed: tile.automation.autoStartAllowed,
+      auto_end_allowed: tile.automation.autoEndAllowed,
+    },
+    annotation: {
+      semantic_role: tile.annotation.semanticRole,
+      labels: tile.annotation.labels,
+      timed_labels: tile.annotation.timedLabels.map(label => ({
+        label: label.label,
+        start_at: label.startAt,
+        end_at: label.endAt,
+      })),
+    },
+    conflict_resolution: 'keep_overlap',
+  }
+}
+
 async function assertOk(response: Response, message: string): Promise<void> {
   if (!response.ok) {
     const body = await response.text().catch(() => '')
@@ -291,6 +446,31 @@ function parseAcceptedEnvelope(raw: unknown): CommandAcceptedEnvelope {
     commandId: asString(read(row, 'command_id', 'commandId'), 'command_id'),
     requestId: asNullableString(read(row, 'request_id', 'requestId'), 'request_id'),
   }
+}
+
+function parseCommandResponseEnvelope(raw: unknown): CommandAcceptedEnvelope {
+  const row = asRecord(raw, 'command response')
+  if (readOptional(row, 'accepted') === true) {
+    return parseAcceptedEnvelope(raw)
+  }
+  const ok = readOptional(row, 'ok')
+  if (ok !== true) {
+    const error = readOptional(row, 'error')
+    throw new Error(typeof error === 'string' ? error : 'Daemon command was rejected')
+  }
+  const events = asArray(readOptional(row, 'events') ?? [], 'events')
+  return {
+    accepted: true,
+    commandId: events.length > 0 ? asString(events[0], 'events[0]') : cryptoSafeId(),
+    requestId: null,
+  }
+}
+
+function cryptoSafeId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `command-${Date.now().toString(36)}`
 }
 
 function asRecord(value: unknown, field: string): Record<string, unknown> {

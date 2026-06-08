@@ -245,9 +245,10 @@ describe('DaemonClient', () => {
 
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     expect(fetchImpl).toHaveBeenCalledWith(
-      'https://daemon.example/commands',
+      'https://daemon.example/commands/tile/start',
       expect.objectContaining({
         method: 'POST',
+        body: JSON.stringify({ tile_id: 'tile-1' }),
         headers: expect.objectContaining({
           authorization: 'Bearer access-token-1',
           'content-type': 'application/json',
