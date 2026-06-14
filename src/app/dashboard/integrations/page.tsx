@@ -28,7 +28,7 @@ export default async function IntegrationsPage() {
         <p className="mt-2 text-foreground-muted">Google Calendar の接続状態と同期を管理します</p>
       </div>
 
-      <div className="rounded-xl border border-border bg-surface-elevated p-5">
+      <div className="rounded-xl bg-surface-elevated p-5">
         <IntegrationsControls initialSettings={settings} initialError={error} />
       </div>
     </div>

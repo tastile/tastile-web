@@ -61,6 +61,7 @@ export function openExecutionStream({
       nextConnection.onmessage = event => {
         const parsed = parseExecutionEvent(event.data)
         if (!parsed) return
+        if (parsed.eventId === 'state-connected') return
         if (seenEventIds.has(parsed.eventId)) return
         addSeenEventId(parsed.eventId)
         onEvent(parsed)

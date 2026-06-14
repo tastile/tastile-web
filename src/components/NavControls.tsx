@@ -23,7 +23,7 @@ export function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      className="rounded-md border border-border bg-surface-1 p-2 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+      className="rounded-md bg-surface-1 p-2 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       aria-label="Toggle theme"
     >
       {isDark ? <Sun size={16} /> : <Moon size={16} />}
@@ -64,7 +64,7 @@ export function LanguageToggle() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 rounded-md border border-border bg-surface-1 px-2 py-2 text-sm text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+        className="flex items-center gap-1 rounded-md bg-surface-1 px-2 py-2 text-sm text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
         aria-label="Switch language"
       >
         <Globe size={16} />
@@ -73,7 +73,7 @@ export function LanguageToggle() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-lg border border-border bg-surface-elevated py-1 shadow-[rgba(0,0,0,0.4)_0px_2px_4px]">
+        <div className="absolute right-0 top-full z-50 mt-1 w-32 rounded-lg bg-surface-elevated py-1">
           <button
             onClick={() => switchLang('ja')}
             className={`w-full px-3 py-2 text-left text-sm hover:bg-surface-2 ${

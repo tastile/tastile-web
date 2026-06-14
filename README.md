@@ -16,7 +16,9 @@ This repository is not the primary Tastile product. The source of truth for the 
 - Next.js 16 App Router
 - React 19
 - TypeScript
-- Supabase
+- AWS Cognito authentication
+- AWS-hosted daemon/API integration
+- AWS-hosted standalone Node runtime for web/auth/download surfaces
 - Vitest
 - Playwright
 - Tailwind CSS v4
@@ -29,13 +31,12 @@ src/
   components/   Reusable UI
   lib/
     core/       Commands, events, reducers, validation
+    cognito/    Cognito Hosted UI and token helpers
+    daemon/     AWS API/daemon clients
     domain/     Domain types
     hooks/      Execution engine integration
-    storage/    Supabase persistence
-    supabase/   Browser/server Supabase clients
+    storage/    Local/structural storage adapters used by tests and legacy bridges
   wasm/         Generated WASM bridge artifacts
-supabase/
-  migrations/   Database schema and policy changes
 scripts/        Repository automation
 docs/plans/     Implementation and hardening plans
 e2e/            Playwright coverage
@@ -54,15 +55,28 @@ Copy `.env.local.example` to `.env.local` and fill in the required values.
 Core variables:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_APP_URL=
+NEXT_PUBLIC_DAEMON_BASE_URL=
+NEXT_PUBLIC_COGNITO_DOMAIN=
+NEXT_PUBLIC_COGNITO_CLIENT_ID=
+NEXT_PUBLIC_COGNITO_CALLBACK_URL=
+NEXT_PUBLIC_COGNITO_LOGOUT_URL=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
-Additional pricing and analytics variables are documented in `.env.local.example`.
+Additional pricing, Cognito, daemon, desktop download, and analytics variables are documented in `.env.local.example`.
+
+For production-shaped AWS web hosting, the public website lives at `https://tastile.app`.
+Authenticated app, account, and Cognito callback routes stay on `https://app.tastile.app`:
+
+```bash
+NEXT_PUBLIC_APP_URL=https://app.tastile.app
+NEXT_PUBLIC_DAEMON_BASE_URL=https://api.tastile.app
+NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
+NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
+```
 
 Desktop download and versioning are resolved from the public installer manifest by default
 
@@ -84,6 +98,13 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Run the production standalone server locally after a build:
+
+```bash
+npm run build
+npm run start:standalone
+```
 
 ## Quality Gates
 
@@ -144,7 +165,9 @@ TASTILE_FORCE_WASM_BUILD=1 npm run build
 
 ## Deployment
 
-This project is intended to deploy on Vercel or an equivalent Next.js hosting environment.
+This project is intended to deploy as a standalone Next.js Node server on the Tastile AWS web/distribution server. Vercel is not part of the production path.
+
+Cloudflare routes both `tastile.app` and `app.tastile.app` to the same AWS web server. The Next.js proxy keeps public website routes canonical on `tastile.app` and app/auth routes canonical on `app.tastile.app`.
 
 Minimum pre-deploy checklist:
 
@@ -152,3 +175,7 @@ Minimum pre-deploy checklist:
 npm run check:release
 npm run test:e2e
 ```
+
+AWS direct-hosting runbook lives in the core repository:
+
+- `C:/Users/rebui/Desktop/tastile/tastile-core/deploy/aws/web/README.md`

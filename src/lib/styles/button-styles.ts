@@ -27,36 +27,40 @@
 
 /**
  * Button styling configuration for different button variants
+ *
+ * Corner radius follows hierarchy:
+ * - `pill`: Standalone/floating buttons with no parent container
+ * - `primary`/`secondary`/`ghost`: Buttons inside containers (follows container hierarchy)
  */
 export const BUTTON_STYLES = {
   /**
-   * Primary button - High emphasis actions
+   * Primary button - High emphasis, standalone contexts (CTA, overlays)
    */
   primary:
-    "rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-fg transition-all hover:bg-primary-hover hover:shadow-md active:scale-95 disabled:opacity-50",
+    "rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-all hover:bg-primary-hover active:scale-95 disabled:opacity-50",
 
   /**
-   * Secondary button - Medium emphasis actions
+   * Secondary button - Medium emphasis, standalone contexts
    */
   secondary:
-    "rounded-lg border border-border bg-surface-1 px-3 py-2 text-sm font-semibold text-foreground transition-all hover:bg-surface-2 hover:border-border-strong hover:shadow-sm active:scale-95 disabled:opacity-50",
+    "rounded-full bg-surface-1 px-4 py-2.5 text-sm font-semibold text-foreground transition-all hover:bg-surface-2 active:scale-95 disabled:opacity-50",
 
   /**
-   * Ghost button - Low emphasis actions
+   * Ghost button - Low emphasis, inside containers
    */
   ghost:
-    "rounded-lg px-3 py-2 text-sm font-semibold text-foreground-muted transition-all hover:bg-surface-1 hover:text-foreground active:scale-95 disabled:opacity-50",
+    "rounded-md px-3 py-2 text-sm font-semibold text-foreground-muted transition-all hover:bg-surface-1 hover:text-foreground active:scale-95 disabled:opacity-50",
 
   /**
-   * Icon button - Icon-only actions
+   * Icon button - Icon-only, inside containers
    */
-  icon: "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-all hover:bg-surface-2 hover:shadow-sm active:scale-95 disabled:opacity-50",
+  icon: "flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-all hover:bg-surface-2 active:scale-95 disabled:opacity-50",
 
   /**
-   * Icon button (large) - Larger icon actions
+   * Icon button (large) - Larger icon actions, inside containers
    */
   iconLarge:
-    "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition-all hover:bg-surface-2 hover:shadow-sm active:scale-95 disabled:opacity-50",
+    "flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-all hover:bg-surface-2 active:scale-95 disabled:opacity-50",
 } as const
 
 /**
@@ -67,7 +71,7 @@ export const INTERACTIVE_STYLES = {
    * Card hover - For clickable card elements
    */
   cardHover:
-    "transition-all hover:bg-surface-2 hover:shadow-md hover:scale-[1.01] active:scale-100 cursor-pointer",
+    "transition-all hover:bg-surface-2 hover:scale-[1.01] active:scale-100 cursor-pointer",
 
   /**
    * List item hover - For clickable list items
@@ -78,5 +82,5 @@ export const INTERACTIVE_STYLES = {
    * Status icon hover - For clickable status indicators
    */
   statusIconHover:
-    "transition-all cursor-pointer hover:ring-2 hover:ring-border-strong hover:ring-offset-2 hover:ring-offset-background rounded-full",
+    "transition-all cursor-pointer hover:ring-2 hover:ring-foreground/20 hover:ring-offset-2 hover:ring-offset-background rounded-full",
 } as const

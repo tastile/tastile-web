@@ -52,7 +52,7 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="shrink-0 flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-border"
+        className="shrink-0 flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-foreground/20"
       >
         {avatarUrl ? (
           <Image
@@ -77,11 +77,11 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
       </button>
 
       <div
-        className={`absolute ${menuPositionClass} z-50 w-64 rounded-xl border border-border bg-surface-elevated shadow-lg transition-all duration-200 ${
+        className={`absolute ${menuPositionClass} z-50 w-64 rounded-xl bg-surface-elevated transition-all duration-200 ${
           open ? 'pointer-events-auto opacity-100 translate-y-0 scale-100' : 'pointer-events-none opacity-0 translate-y-1 scale-95'
         }`}
       >
-          <div className="border-b border-border p-4">
+          <div className="p-4">
             <div className="flex items-center gap-3">
               {avatarUrl ? (
                 <Image
@@ -106,7 +106,7 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
             <div className="mt-2">
               <span className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
                 plan === 'pro'
-                  ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300'
+                  ? 'bg-primary/10 text-primary'
                   : 'bg-surface-2 text-foreground-muted'
               }`}>
                 {plan === 'pro' ? 'Pro' : 'Free'}
@@ -129,7 +129,7 @@ export function AccountMenu({ displayName, avatarUrl, plan, email, menuPlacement
             </a>
             <button
               onClick={handleSignOut}
-              className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-surface-2"
+              className="w-full px-4 py-2 text-left text-sm text-danger hover:bg-surface-2"
             >
               Sign out
             </button>

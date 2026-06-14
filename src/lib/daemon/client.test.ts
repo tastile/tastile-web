@@ -262,7 +262,7 @@ describe('DaemonClient', () => {
     })
   })
 
-  it('restores daemon session from supabase session payload', async () => {
+  it('restores daemon session from legacy session payload', async () => {
     const fetchImpl = vi.fn(async () => {
       return new Response(
         JSON.stringify({

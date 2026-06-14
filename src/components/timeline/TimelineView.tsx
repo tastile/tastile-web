@@ -51,7 +51,7 @@ function TimelineSegment({ segment, mode }: TimelineSegmentProps) {
   // Status styles
   const statusStyles = {
     done: 'opacity-50',
-    active: 'shadow-sm',
+    active: 'ring-2 ring-primary/30',
     scheduled: 'opacity-40',
   }
 

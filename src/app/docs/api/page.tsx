@@ -1,19 +1,23 @@
-import type { Metadata } from 'next'
+'use client'
 
-export const metadata: Metadata = {
-  title: 'API Reference | Tastile',
-  description: 'Tastile API reference documentation.',
-}
+import { useEffect, useRef } from 'react'
 
 export default function ApiDocsPage() {
-  return (
-    <div className="min-h-screen">
-      <script
-        id="api-reference"
-        type="application/json"
-        data-url="/openapi.yaml"
-      />
-      <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference" />
-    </div>
-  )
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!ref.current) return
+
+    const script = document.createElement('script')
+    script.id = 'api-reference'
+    script.type = 'application/json'
+    script.dataset.url = '/api/openapi'
+    ref.current.appendChild(script)
+
+    const scalar = document.createElement('script')
+    scalar.src = 'https://cdn.jsdelivr.net/npm/@scalar/api-reference'
+    ref.current.appendChild(scalar)
+  }, [])
+
+  return <div ref={ref} className="min-h-screen" />
 }

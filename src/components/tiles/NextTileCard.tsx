@@ -17,7 +17,7 @@ export function NextTileCard({ tile, reason, onStart, loading = false }: NextTil
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-surface-1 p-4 text-sm text-foreground-muted shadow-sm">
+      <div className="rounded-xl bg-surface-1 p-4 text-sm text-foreground-muted">
         {t('common.loading')}
       </div>
     )
@@ -37,7 +37,7 @@ export function NextTileCard({ tile, reason, onStart, loading = false }: NextTil
   }
 
   return (
-    <div className="rounded-xl bg-surface-1 p-3 shadow-md transition-shadow hover:shadow-lg">
+    <div className="rounded-xl bg-surface-1 p-3 transition-colors">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <h4 className="font-semibold text-sm text-foreground">{tile.core.title}</h4>

@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getIdTokenFromCookies } from '@/lib/cognito/cookies'
 import { AppLayoutClient } from './layout-client'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -9,10 +9,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (bypassAuth) {
     return <AppLayoutClient>{children}</AppLayoutClient>
   }
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
+  const idToken = await getIdTokenFromCookies()
+  if (!idToken) {
     redirect('/login')
   }
 

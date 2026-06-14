@@ -71,7 +71,7 @@ export function IntegrationsControls({ initialSettings, initialError }: Integrat
     return (
       <>
         <p className="text-sm text-foreground-muted">{error ?? 'Loading...'}</p>
-        {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+        {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
       </>
     )
   }
@@ -123,7 +123,7 @@ export function IntegrationsControls({ initialSettings, initialError }: Integrat
         <div>Last synced {settings.lastSyncedAt ?? 'never'}</div>
       </div>
 
-      {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
     </>
   )
 }

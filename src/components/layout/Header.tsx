@@ -55,16 +55,16 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
 
   return (
     <>
-      <header className="flex h-14 items-center justify-between rounded-lg border border-border bg-surface-elevated px-4 lg:hidden">
+      <header className="flex h-14 items-center justify-between rounded-lg bg-surface-elevated px-4 lg:hidden">
         <ActiveExecutionBadge />
       </header>
 
-      <header className="hidden h-16 items-center gap-3 rounded-xl border border-border bg-surface-elevated px-3 lg:flex">
+      <header className="hidden h-16 items-center gap-3 rounded-xl bg-surface-elevated px-3 lg:flex">
         <div className="flex h-full w-14 shrink-0 items-center justify-center">
           <button
             type="button"
             onClick={onToggleRail}
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-1 transition-colors hover:bg-surface-2"
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
             aria-label={railPinned ? 'Collapse navigation rail' : 'Expand navigation rail'}
             title={railPinned ? 'Collapse navigation rail' : 'Expand navigation rail'}
           >
@@ -72,7 +72,7 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
           </button>
         </div>
 
-        <div className="min-w-0 w-56 shrink-0 rounded-lg border border-border bg-surface-1 px-3 py-1">
+        <div className="min-w-0 w-56 shrink-0 rounded-lg bg-surface-1 px-3 py-1">
           <ActiveExecutionBar
             mode="header-left"
             activeTileTitle={executionState?.activeTileTitle ?? null}
@@ -90,7 +90,7 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
 
         <div className="flex min-w-0 flex-1 items-center justify-end">
           {executionState?.activeTileTitle ? (
-            <div className="min-w-0 max-w-md rounded-lg border border-border bg-surface-1 px-3 py-2">
+            <div className="min-w-0 max-w-md rounded-lg bg-surface-1 px-3 py-2">
               <p className="truncate text-sm font-semibold text-foreground">{executionState.activeTileTitle}</p>
             </div>
           ) : null}
@@ -98,7 +98,7 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
 
         <div className="flex shrink-0 items-center gap-2">
           <button
-            className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-1 transition-colors hover:bg-surface-2"
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
             title={t('header.notifications')}
           >
             <Bell className="h-5 w-5" />
@@ -112,7 +112,7 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
               menuPlacement="down"
             />
           ) : (
-            <div className="h-9 w-9 rounded-full border border-border bg-surface-2" aria-label="User avatar placeholder" />
+            <div className="h-9 w-9 rounded-full bg-surface-2" aria-label="User avatar placeholder" />
           )}
         </div>
       </header>

@@ -1,14 +1,14 @@
 export default function BillingPage() {
-  // The plan previously lived in the Supabase `profiles` table. After the
-  // Supabase → Cognito migration, no plan source is wired yet; default to
-  // `free` so the page still renders. The Stripe portal is reachable from
-  // `/pricing` for pro users who navigate to it directly.
+  // The plan previously lived in the legacy profile table. After the Cognito
+  // migration, no plan source is wired yet; default to `free` so the page still
+  // renders. The Stripe portal is reachable from `/pricing` for pro users who
+  // navigate to it directly.
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-[590] text-foreground">Billing</h1>
 
       {/* Current Plan */}
-      <div className="rounded-xl border border-border bg-surface-elevated p-6">
+      <div className="rounded-xl bg-surface-elevated p-6">
         <h2 className="mb-4 text-lg font-[590] text-foreground">Current Plan</h2>
         <div className="flex items-center justify-between">
           <div>
@@ -22,7 +22,7 @@ export default function BillingPage() {
       </div>
 
       {/* Usage */}
-      <div className="rounded-xl border border-border bg-surface-elevated p-6">
+      <div className="rounded-xl bg-surface-elevated p-6">
         <h2 className="mb-4 text-lg font-[590] text-foreground">Usage</h2>
         <div className="space-y-4">
           <div>
@@ -44,7 +44,7 @@ export default function BillingPage() {
       </div>
 
       {/* Upgrade (free) */}
-      <div className="rounded-xl border border-border bg-surface-elevated p-6">
+      <div className="rounded-xl bg-surface-elevated p-6">
         <h2 className="mb-4 text-lg font-[590] text-foreground">Upgrade</h2>
         <p className="mb-4 text-foreground-muted">
           Upgrade to Pro for more tiles, longer history, and desktop sync.

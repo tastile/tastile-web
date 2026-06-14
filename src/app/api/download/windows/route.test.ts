@@ -4,8 +4,7 @@ describe('GET /api/download/windows', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.restoreAllMocks()
-    delete process.env.TASTILE_DESKTOP_MANIFEST_URL
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+    process.env.TASTILE_DESKTOP_MANIFEST_URL = 'https://download.tastile.app/updates/desktop/manifest.json'
   })
 
   it('redirects to latest desktop installer from manifest', async () => {
@@ -28,7 +27,7 @@ describe('GET /api/download/windows', () => {
     expect(response.headers.get('location')).toBe('https://cdn.example.com/tastile-desktop-0.2.0.exe')
   })
 
-  it('fetches the public updates manifest by default', async () => {
+  it('fetches the configured AWS updates manifest', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false })
     vi.stubGlobal('fetch', fetchMock)
 
@@ -36,7 +35,7 @@ describe('GET /api/download/windows', () => {
     await GET()
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://example.supabase.co/storage/v1/object/public/releases/updates/desktop/manifest.json',
+      'https://download.tastile.app/updates/desktop/manifest.json',
       { cache: 'no-store' }
     )
   })

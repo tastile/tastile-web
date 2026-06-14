@@ -131,7 +131,7 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
       </div>
 
       {/* Action Buttons */}
-      <div className="pt-2 border-t border-surface-2">
+      <div className="pt-2">
         <TileActionButtons
           tile={tile}
           variant="full"
@@ -145,6 +145,9 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
 function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
   if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
     return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  if (typeof tile.objective.targetRestMin === 'number' && tile.objective.targetRestMin > 0) {
+    return formatDuration(tile.objective.targetRestMin, locale)
   }
   const totalWorked = tile.work.segments.reduce((sum, segment) => {
     if (!segment.endAt) return sum

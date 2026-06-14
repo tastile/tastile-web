@@ -13,7 +13,7 @@ export function MobileBottomTabs() {
   const { open } = useQuickCreateStore()
 
   return (
-    <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl border border-border bg-surface-elevated shadow-[rgba(0,0,0,0.35)_0px_2px_4px] lg:hidden">
+    <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl bg-surface-elevated lg:hidden">
       <MobileTabButton
         icon={<Zap className="h-6 w-6" />}
         label={t('nav.execute')}

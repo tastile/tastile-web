@@ -50,7 +50,7 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
   return (
     <div className="flex h-screen flex-col bg-background">
       {executionState?.pendingPrompt ? (
-        <div className="fixed inset-0 z-[68] bg-black/25 backdrop-blur-[1px]" aria-hidden="true" />
+        <div className="fixed inset-0 z-[68] bg-foreground/25 backdrop-blur-[1px]" aria-hidden="true" />
       ) : null}
       <GlobalPromptBanner
         prompt={executionState?.pendingPrompt ?? null}
@@ -81,21 +81,21 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
         }}
       />
       {executionState?.pendingPrompt?.actions.includes('confirm_stop_at') ? (
-        <div className="fixed top-28 left-1/2 z-[69] w-[min(96vw,820px)] -translate-x-1/2 rounded-xl border border-border bg-surface-elevated p-3 shadow-[rgba(0,0,0,0.4)_0px_2px_4px] backdrop-blur">
+        <div className="fixed top-28 left-1/2 z-[69] w-[min(96vw,820px)] -translate-x-1/2 rounded-xl bg-surface-elevated p-3 backdrop-blur">
           <label className="flex flex-col gap-1 text-xs font-semibold text-foreground-muted">
             Stop at
             <input
               type="datetime-local"
               value={startupRecoveryStopAt}
               onChange={(event) => setStartupRecoveryStopAt(event.target.value)}
-              className="themed-datetime-input rounded-lg border border-border bg-surface-0 px-3 py-2 text-sm text-foreground"
+              className="themed-datetime-input rounded-lg bg-surface-0 px-3 py-2 text-sm text-foreground"
             />
           </label>
         </div>
       ) : null}
 
       {/* Header */}
-      <div className="border-b border-border px-3 py-2">
+      <div className="px-3 py-2">
         <Header
           railPinned={railPinned}
           onToggleRail={() => setRailPinned(prev => !prev)}
@@ -110,7 +110,7 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
         </div>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-auto rounded-xl border border-border bg-surface-elevated p-6">
+        <main className="flex-1 overflow-auto rounded-xl bg-surface-elevated p-6">
           <div className="mx-auto w-full max-w-6xl">
             {children}
           </div>
@@ -130,7 +130,7 @@ export function AppShell({ children, rightSidebar, quickCreatePanel, executionSt
       {/* Sidebar Toggle - Fixed Bottom Right */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
-        className="fixed bottom-6 right-0 z-50 hidden h-12 w-10 items-center justify-center rounded-l-xl border border-border bg-surface-elevated text-foreground-muted transition-all hover:bg-surface-2 hover:text-foreground lg:flex"
+        className="fixed bottom-6 right-0 z-50 hidden h-12 w-10 items-center justify-center rounded-l-xl bg-surface-elevated text-foreground-muted transition-all hover:bg-surface-2 hover:text-foreground lg:flex"
         style={{
           transform: showSidebar ? 'translateX(0)' : 'translateX(4px)',
         }}

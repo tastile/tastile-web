@@ -7,7 +7,7 @@ import {
 } from '@/lib/cognito/cookies'
 
 // Intentionally unauthenticated: this route echoes the same httpOnly cookies
-// back to the browser. proxy.ts already gates protected paths, and same-origin
+// back to the browser. middleware.ts already gates protected paths, and same-origin
 // policy is the only intended consumer.
 //
 // node-runtime: relies on Buffer for the base64 JWT-payload decode.

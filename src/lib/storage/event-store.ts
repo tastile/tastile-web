@@ -1,6 +1,18 @@
-import { SupabaseClient } from '@supabase/supabase-js'
 import type { Tile } from '../domain/tile'
 import type { SemanticRole } from '../domain/tile'
+
+type QueryResult<T> = Promise<{ data: T[] | null; error: { message: string } | null }>
+type QueryBuilder<T> = {
+  select(columns: string): QueryBuilder<T>
+  eq(column: string, value: string): QueryBuilder<T>
+  order(column: string, options: { ascending: boolean }): QueryResult<T>
+}
+type StorageClient = {
+  from(table: string): {
+    upsert(rows: unknown[], options: { onConflict: string }): Promise<{ error: { message: string } | null }>
+    select(columns: string): QueryBuilder<TileRow>
+  }
+}
 
 interface TileRow {
   tile_id: string
@@ -12,7 +24,7 @@ interface TileRow {
 
 export class EventStore {
   constructor(
-    private supabase: SupabaseClient,
+    private client: StorageClient,
     private userId: string
   ) {}
 
@@ -30,7 +42,7 @@ export class EventStore {
       }
     })
 
-    const { error } = await this.supabase
+    const { error } = await this.client
       .from('tiles')
       .upsert(rows, { onConflict: 'tile_id' })
 
@@ -40,7 +52,7 @@ export class EventStore {
   }
 
   async loadAllTiles(): Promise<Tile[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.client
       .from('tiles')
       .select('tile_id,title,semantic_role,tile_json,closed_at')
       .eq('user_id', this.userId)

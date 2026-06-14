@@ -11,7 +11,7 @@ import { useDialogStore } from '@/lib/stores/dialog-store'
 import { DeleteTileDialog } from '@/components/tiles/dialogs/DeleteTileDialog'
 import { LoadingCard } from '@/components/tiles/shared/LoadingCard'
 import { Skeleton } from '@/components/ui/Skeleton'
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
 import {
   buildTileChanges,
@@ -31,6 +31,14 @@ const MAX_VISIBLE_TILES = 60
 const MAX_VISIBLE_CHANGES = 120
 
 export default function TilesPage() {
+  return (
+    <Suspense fallback={<TilesPageLoading />}>
+      <TilesPageInner />
+    </Suspense>
+  )
+}
+
+function TilesPageInner() {
   const { state, loading, execute } = useExecutionEngineContext()
   const { openDeleteDialog } = useDialogStore()
   const { locale } = useTranslation()
@@ -70,7 +78,7 @@ export default function TilesPage() {
   const sectionSummary = useMemo(() => {
     const openCount = groupedTiles.reduce((sum, group) => sum + (group.id === 'log' ? 0 : group.tiles.length), 0)
     const estimatedMinutes = groupedTiles.reduce(
-      (sum, group) => sum + group.tiles.reduce((sub, tile) => sub + (tile.objective.targetWorkMin ?? 0), 0),
+      (sum, group) => sum + group.tiles.reduce((sub, tile) => sub + ((tile.objective.targetWorkMin ?? tile.objective.targetRestMin) ?? 0), 0),
       0
     )
     return { openCount, estimatedMinutes }
@@ -108,23 +116,14 @@ export default function TilesPage() {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-8 w-32" />
-        <div className="space-y-2">
-          {[...Array(5)].map((_, i) => (
-            <LoadingCard key={i} variant="comfortable" />
-          ))}
-        </div>
-      </div>
-    )
+    return <TilesPageLoading />
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-foreground">Tiles Workspace</h1>
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-1 p-1">
+        <div className="flex items-center gap-2 rounded-lg bg-surface-1 p-1">
           {(['list', 'timeline', 'changes'] as const).map(tab => (
             <button
               key={tab}
@@ -143,7 +142,7 @@ export default function TilesPage() {
       {activeTilesTab === 'list' ? (
         <div className="space-y-4">
           <section className="grid gap-3 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-surface-1 p-4">
+            <div className="rounded-xl bg-surface-1 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-muted">Main</p>
               {projection.next.main ? (
                 <DesktopStyleTileRow
@@ -155,7 +154,7 @@ export default function TilesPage() {
                 <p className="text-sm text-foreground-muted">No active main task</p>
               )}
             </div>
-            <div className="rounded-xl border border-border bg-surface-1 p-4">
+            <div className="rounded-xl bg-surface-1 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-muted">Sub</p>
               <div className="space-y-2">
                 {projection.next.quick.slice(0, 3).map(tile => (
@@ -171,7 +170,7 @@ export default function TilesPage() {
             </div>
           </section>
 
-          <section className="space-y-3 rounded-xl border border-border bg-surface-1 px-4 py-3">
+          <section className="space-y-3 rounded-xl bg-surface-1 px-4 py-3">
             <div className="flex flex-wrap items-center gap-4 text-xs uppercase tracking-wider text-foreground-muted">
               <span>Open Tiles {sectionSummary.openCount}</span>
               <span>Estimated {sectionSummary.estimatedMinutes}m</span>
@@ -183,10 +182,10 @@ export default function TilesPage() {
                   defaultValue=""
                   readOnly
                   placeholder="検索 (UIのみ)"
-                  className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted"
+                  className="w-full rounded-md bg-surface-0 px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted"
                 />
               </div>
-              <div className="flex items-center gap-1 rounded-md border border-border bg-surface-0 p-1">
+              <div className="flex items-center gap-1 rounded-md bg-surface-0 p-1">
                 {([
                   ['state', 'By State'],
                   ['project', 'By Project'],
@@ -204,7 +203,7 @@ export default function TilesPage() {
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1 rounded-md border border-border bg-surface-0 p-1">
+              <div className="flex items-center gap-1 rounded-md bg-surface-0 p-1">
                 {([
                   ['compact', 'Compact'],
                   ['comfortable', 'Comfortable'],
@@ -229,7 +228,7 @@ export default function TilesPage() {
             const visibleTiles = group.tiles.slice(0, sectionLimit)
             const omittedTiles = Math.max(0, group.tiles.length - visibleTiles.length)
             return (
-              <section key={group.id} className="rounded-xl border border-border bg-surface-1 p-4">
+              <section key={group.id} className="rounded-xl bg-surface-1 p-4">
                 <div className="mb-2 flex items-center justify-between">
                   <button
                     type="button"
@@ -244,13 +243,13 @@ export default function TilesPage() {
                     {group.label} ({group.tiles.length})
                   </button>
                   <span className="text-xs font-mono text-foreground-muted">
-                    {group.tiles.reduce((sum, tile) => sum + (tile.objective.targetWorkMin ?? 0), 0)}m
+                    {group.tiles.reduce((sum, tile) => sum + ((tile.objective.targetWorkMin ?? tile.objective.targetRestMin) ?? 0), 0)}m
                   </span>
                 </div>
                 <div className="space-y-2">
                   {omittedTiles > 0 ? <p className="text-xs uppercase tracking-wider text-foreground-muted">他{omittedTiles}件 ▼</p> : null}
                   {visibleTiles.map(tile => (
-                    <div key={tile.core.id} className="rounded-lg border border-border/60 bg-surface-0 p-2">
+                    <div key={tile.core.id} className="rounded-lg bg-surface-0 p-2">
                       {listViewMode === 'compact' ? (
                         <TileCardCompact
                           tile={tile}
@@ -281,13 +280,13 @@ export default function TilesPage() {
       ) : null}
 
       {activeTilesTab === 'timeline' ? (
-        <section className="rounded-xl border border-border bg-surface-1 p-4">
+        <section className="rounded-xl bg-surface-1 p-4">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground-muted">Timeline</h2>
             <select
               value={timelineScale}
               onChange={event => setTimelineScale(event.target.value as typeof timelineScale)}
-              className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+              className="rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
             >
               <option value="day">Day</option>
               <option value="week">Week</option>
@@ -303,7 +302,7 @@ export default function TilesPage() {
                     const value = event.target.value.trim()
                     setCustomRange(value || null, customEndIso)
                   }}
-                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
                 <input
                   type="date"
@@ -312,7 +311,7 @@ export default function TilesPage() {
                     const value = event.target.value.trim()
                     setCustomRange(customStartIso, value || null)
                   }}
-                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
               </>
             ) : null}
@@ -329,12 +328,12 @@ export default function TilesPage() {
       ) : null}
 
       {activeTilesTab === 'changes' ? (
-        <section className="rounded-xl border border-border bg-surface-1 p-4">
+        <section className="rounded-xl bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Recent Changes</h2>
           <div className="space-y-2">
             {changes.map(event => (
-              <div key={event.id} className="flex items-center gap-3 rounded-lg border border-border/70 bg-surface-0 px-3 py-2">
-                <span className={`h-2 w-2 rounded-full ${event.eventType.endsWith('_ended') ? 'bg-emerald-500' : 'bg-primary'}`} />
+              <div key={event.id} className="flex items-center gap-3 rounded-lg bg-surface-0 px-3 py-2">
+                <span className={`h-2 w-2 rounded-full ${event.eventType.endsWith('_ended') ? 'bg-success' : 'bg-primary'}`} />
                 <span className="text-sm text-foreground">{event.tileTitle}</span>
                 <span className="text-xs uppercase tracking-wider text-foreground-muted">{event.eventType}</span>
                 <span className="ml-auto text-xs text-foreground-muted">
@@ -350,6 +349,19 @@ export default function TilesPage() {
       {projection.tiles.ordered.length === 0 ? <p className="text-sm text-foreground-muted">No tiles yet. Click the + button to create one.</p> : null}
 
       <DeleteTileDialog onConfirm={handleDeleteConfirm} />
+    </div>
+  )
+}
+
+function TilesPageLoading() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-8 w-32" />
+      <div className="space-y-2">
+        {[...Array(5)].map((_, i) => (
+          <LoadingCard key={i} variant="comfortable" />
+        ))}
+      </div>
     </div>
   )
 }
@@ -381,7 +393,7 @@ function DesktopStyleTileRow({
   const durationLabel = t('tiles.duration')
 
   return (
-    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md border border-border bg-surface-1 px-3 py-2">
+    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md bg-surface-1 px-3 py-2">
       <TileStatusIcon lifecycle={lifecycle} size={18} onClick={() => void onPrompt(tile.core.id)} />
       <div className="min-w-0">
         <p className={`truncate text-sm ${lifecycle === 'done' ? 'text-foreground-muted line-through' : 'text-foreground'}`}>
@@ -400,6 +412,9 @@ function DesktopStyleTileRow({
 function resolveDurationText(tile: Tile, locale: Locale): string {
   if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
     return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  if (typeof tile.objective.targetRestMin === 'number' && tile.objective.targetRestMin > 0) {
+    return formatDuration(tile.objective.targetRestMin, locale)
   }
   const totalWorked = tile.work.segments.reduce((sum, segment) => {
     if (!segment.endAt) return sum

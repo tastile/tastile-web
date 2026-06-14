@@ -5,8 +5,7 @@ describe('GET /api/version', () => {
     vi.resetModules()
     vi.restoreAllMocks()
     delete process.env.TASTILE_DESKTOP_VERSION
-    delete process.env.TASTILE_DESKTOP_MANIFEST_URL
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://example.supabase.co'
+    process.env.TASTILE_DESKTOP_MANIFEST_URL = 'https://download.tastile.app/updates/desktop/manifest.json'
   })
 
   it('returns the current desktop version from the public manifest', async () => {

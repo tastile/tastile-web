@@ -19,7 +19,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
   return (
     <aside
       className={cn(
-        'group flex flex-col gap-2 rounded-xl border border-border bg-surface-elevated p-2 transition-all duration-200',
+        'group flex flex-col gap-2 rounded-xl bg-surface-elevated p-2 transition-all duration-200',
         pinnedOpen ? 'w-44' : 'w-14 hover:w-44'
       )}
     >
@@ -90,10 +90,10 @@ function TabButton({ icon, label, href, active, expanded }: TabButtonProps) {
     <Link
       href={href}
       className={cn(
-        'relative flex h-11 items-center overflow-hidden rounded-md border border-transparent transition-all',
+        'relative flex h-11 items-center overflow-hidden rounded-md transition-all',
         active
-          ? 'border-border bg-surface-2 text-foreground'
-          : 'text-foreground-muted hover:border-border hover:bg-surface-1 hover:text-foreground'
+          ? 'bg-surface-2 text-foreground'
+          : 'text-foreground-muted hover:bg-surface-1 hover:text-foreground'
       )}
     >
       <div className="flex w-10 shrink-0 items-center justify-center">

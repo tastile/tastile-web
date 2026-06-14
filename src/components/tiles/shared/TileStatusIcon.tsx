@@ -34,7 +34,7 @@ export function TileStatusIcon({ lifecycle, onClick, disabled = false, size = 20
       disabled={disabled || !onClick}
       className={cn(
         "flex shrink-0 items-center justify-center rounded-full transition-all relative",
-        !disabled && onClick && "hover:ring-2 hover:ring-border-strong hover:ring-offset-2 hover:ring-offset-background cursor-pointer",
+        !disabled && onClick && "hover:ring-2 hover:ring-foreground/20 hover:ring-offset-2 hover:ring-offset-background cursor-pointer",
         disabled && "opacity-50 cursor-not-allowed",
         TILE_STATUS_COLORS[lifecycle],
         className

@@ -11,11 +11,7 @@ export type DesktopReleaseInfo = {
 }
 
 export function getDesktopManifestUrl() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  return (
-    process.env.TASTILE_DESKTOP_MANIFEST_URL ??
-    (supabaseUrl ? `${supabaseUrl}/storage/v1/object/public/releases/updates/desktop/manifest.json` : '')
-  )
+  return process.env.TASTILE_DESKTOP_MANIFEST_URL?.trim() ?? ''
 }
 
 export async function fetchDesktopReleaseInfo(): Promise<DesktopReleaseInfo | null> {

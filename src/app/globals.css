@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================
-   Linear Inspired Theme Tokens
+   Design System v2.0 Tokens
    ============================================ */
 :root {
   --background: #f7f8f8;
@@ -16,9 +16,6 @@
   --foreground-muted: #4f5562;
   --foreground-subtle: #6e7581;
   --muted: #6e7581;
-
-  --border: #d0d6e0;
-  --border-strong: #b8c0cc;
 
   --interactive-base: #2f3542;
   --interactive-hover: #1f232c;
@@ -50,9 +47,6 @@
   --foreground-muted: #d0d6e0;
   --foreground-subtle: #8a8f98;
   --muted: #62666d;
-
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.12);
 
   --interactive-base: #d0d6e0;
   --interactive-hover: #f7f8f8;
@@ -89,12 +83,7 @@
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
   --color-foreground-subtle: var(--foreground-subtle);
-  --color-foreground-secondary: var(--foreground-muted);
-  --color-foreground-tertiary: var(--foreground-subtle);
   --color-muted: var(--muted);
-
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
 
   --color-interactive: var(--interactive-base);
   --color-interactive-hover: var(--interactive-hover);
@@ -106,11 +95,61 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
-  --color-surface-secondary: var(--surface-2);
+
+  /* Radius */
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-xxl);
+  --radius-3xl: var(--radius-xxxl);
 
   /* Fonts */
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-jp: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --font-jp-heading: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
+
+  /* Radius — design system scale (4px increments) */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-xxl: 32px;
+  --radius-xxxl: 40px;
+  --radius-full: 9999px;
+}
+
+/* ============================================
+   Scroll Reveal Animation
+   ============================================ */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.scroll-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.scroll-reveal.revealed > * {
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ============================================
@@ -126,7 +165,7 @@ body {
 
 a,
 button {
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .prose {
@@ -195,64 +234,4 @@ button {
 
 .themed-datetime-input::-webkit-calendar-picker-indicator {
   opacity: 0.72;
-}
-
-/* Compatibility layer for legacy zinc utility classes */
-.bg-white,
-.dark .bg-zinc-900,
-.dark .bg-zinc-800 {
-  background-color: var(--surface-elevated) !important;
-}
-
-.bg-zinc-50,
-.dark .bg-zinc-950,
-.bg-zinc-100,
-.dark .bg-zinc-700 {
-  background-color: var(--background) !important;
-}
-
-.bg-zinc-900,
-.dark .bg-zinc-100 {
-  background-color: var(--primary) !important;
-}
-
-.text-zinc-900,
-.dark .text-zinc-100,
-.text-white {
-  color: var(--foreground) !important;
-}
-
-.text-zinc-700,
-.text-zinc-600,
-.dark .text-zinc-400,
-.dark .text-zinc-300,
-.text-zinc-500 {
-  color: var(--foreground-muted) !important;
-}
-
-.text-zinc-400,
-.dark .text-zinc-500,
-.text-zinc-300 {
-  color: var(--foreground-subtle) !important;
-}
-
-.border-zinc-200,
-.dark .border-zinc-800,
-.border-zinc-300,
-.dark .border-zinc-700 {
-  border-color: var(--border) !important;
-}
-
-.hover\:bg-zinc-50:hover,
-.hover\:bg-zinc-100:hover,
-.dark .dark\:hover\:bg-zinc-800:hover,
-.dark .dark\:hover\:bg-zinc-300:hover,
-.hover\:bg-zinc-700:hover {
-  background-color: var(--surface-2) !important;
-}
-
-.hover\:text-zinc-900:hover,
-.dark .dark\:hover\:text-zinc-100:hover,
-.hover\:text-zinc-600:hover {
-  color: var(--foreground) !important;
 }

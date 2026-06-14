@@ -3,11 +3,31 @@
 import { useThemeStore } from '@/lib/stores/theme-store'
 import { useLocaleStore } from '@/lib/stores/locale-store'
 import { useTranslation } from '@/lib/i18n/use-translation'
+import { useState } from 'react'
+import {
+  getSecurityLockEnabled,
+  getSecurityLockTimeoutMinutes,
+  setSecurityLockEnabled,
+  setSecurityLockTimeoutMinutes,
+} from '@/lib/security/security-lock-policy'
 
 export default function SettingsPage() {
   const { theme, setTheme } = useThemeStore()
   const { locale, setLocale } = useLocaleStore()
   const { t } = useTranslation()
+  const [securityLock, setSecurityLock] = useState(() => typeof window !== 'undefined' ? getSecurityLockEnabled(localStorage) : true)
+  const [securityLockMinutes, setSecurityLockMinutes] = useState(() => typeof window !== 'undefined' ? getSecurityLockTimeoutMinutes(localStorage) : 10)
+
+  function updateSecurityLock(enabled: boolean) {
+    setSecurityLock(enabled)
+    setSecurityLockEnabled(localStorage, enabled)
+  }
+
+  function updateSecurityLockMinutes(minutes: number) {
+    const normalized = Math.min(Math.max(minutes, 1), 240)
+    setSecurityLockMinutes(normalized)
+    setSecurityLockTimeoutMinutes(localStorage, normalized)
+  }
 
   return (
     <div className="p-8">
@@ -54,6 +74,33 @@ export default function SettingsPage() {
           />
         </div>
       </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Security Lock</h2>
+        <div className="rounded-xl bg-surface-2 p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Require device unlock</p>
+              <p className="mt-1 text-xs text-foreground-muted">Default is on. Uses this browser&apos;s platform authenticator.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => updateSecurityLock(!securityLock)}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${securityLock ? 'bg-primary text-primary-fg' : 'bg-surface-3 text-foreground'}`}
+            >
+              {securityLock ? 'On' : 'Off'}
+            </button>
+          </div>
+          <div className="mt-5 flex items-center justify-between gap-4">
+            <p className="text-sm text-foreground-muted">Lock after leaving for</p>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => updateSecurityLockMinutes(securityLockMinutes - 5)} className="rounded-lg bg-surface-3 px-3 py-2 text-sm text-foreground">-5</button>
+              <span className="min-w-16 text-center text-sm font-semibold text-foreground">{securityLockMinutes} min</span>
+              <button type="button" onClick={() => updateSecurityLockMinutes(securityLockMinutes + 5)} className="rounded-lg bg-surface-3 px-3 py-2 text-sm text-foreground">+5</button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
@@ -70,10 +117,10 @@ function ThemeButton({ active, onClick, label, description }: ThemeButtonProps) 
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-5 py-4 text-left transition-shadow ${
+      className={`rounded-xl px-5 py-4 text-left ${
         active
-          ? 'bg-primary text-primary-fg shadow-lg'
-          : 'bg-surface-2 text-foreground shadow-md hover:shadow-lg'
+          ? 'bg-primary text-primary-fg'
+          : 'bg-surface-2 text-foreground hover:bg-surface-3'
       }`}
     >
       <p className="text-sm font-semibold">{label}</p>
@@ -93,10 +140,10 @@ function LanguageButton({ active, onClick, label }: LanguageButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-5 py-4 text-left transition-shadow ${
+      className={`rounded-xl px-5 py-4 text-left ${
         active
-          ? 'bg-primary text-primary-fg shadow-lg'
-          : 'bg-surface-2 text-foreground shadow-md hover:shadow-lg'
+          ? 'bg-primary text-primary-fg'
+          : 'bg-surface-2 text-foreground hover:bg-surface-3'
       }`}
     >
       <p className="text-sm font-semibold">{label}</p>

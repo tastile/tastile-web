@@ -162,7 +162,7 @@ export default function ExecutePage() {
             <select
               value={timelineScale}
               onChange={event => setTimelineScale(event.target.value as typeof timelineScale)}
-              className="rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+              className="rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
             >
               <option value="day">Day</option>
               <option value="week">Week</option>
@@ -178,7 +178,7 @@ export default function ExecutePage() {
                     const value = event.target.value.trim()
                     setCustomRange(value || null, customEndIso)
                   }}
-                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
                 <input
                   type="date"
@@ -187,7 +187,7 @@ export default function ExecutePage() {
                     const value = event.target.value.trim()
                     setCustomRange(customStartIso, value || null)
                   }}
-                  className="themed-datetime-input rounded-md border border-border bg-surface-elevated px-2 py-1 text-xs text-foreground"
+                  className="themed-datetime-input rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
                 />
               </>
             ) : null}

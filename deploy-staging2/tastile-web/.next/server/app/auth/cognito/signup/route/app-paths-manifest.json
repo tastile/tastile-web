@@ -1,0 +1,3 @@
+{
+  "/auth/cognito/signup/route": "app/auth/cognito/signup/route.js"
+}

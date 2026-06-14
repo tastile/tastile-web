@@ -101,7 +101,7 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
               event.stopPropagation()
               actions.onEdit?.(tile.core.id)
             }}
-            className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+            className="inline-flex h-8 w-8 items-center justify-center rounded bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
             aria-label="Edit tile"
             title="Edit tile"
           >
@@ -120,7 +120,7 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
       {/* Expanded details */}
       {isExpanded && (
         <div className={cn(
-          "border-t border-surface-2 space-y-3",
+          "space-y-3",
           TILE_CARD_STYLES.padding.comfortable
         )}>
           {/* Next Action */}
@@ -167,6 +167,9 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
 function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
   if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
     return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  if (typeof tile.objective.targetRestMin === 'number' && tile.objective.targetRestMin > 0) {
+    return formatDuration(tile.objective.targetRestMin, locale)
   }
   const totalWorked = tile.work.segments.reduce((sum, segment) => {
     if (!segment.endAt) return sum

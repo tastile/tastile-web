@@ -12,6 +12,7 @@ vi.mock('next/headers', () => ({
 }))
 
 import {
+  COOKIE_ACCESS_TOKEN,
   COOKIE_ID_TOKEN,
   COOKIE_REFRESH_TOKEN,
   COOKIE_USER_SUB,
@@ -27,13 +28,14 @@ describe('cognito cookies', () => {
     for (const k of Object.keys(cookieStore)) delete cookieStore[k]
   })
 
-  it('sets all three cookies with httpOnly + sameSite=lax', async () => {
-    await setAuthCookies({ idToken: 'id', refreshToken: 'ref', sub: 'sub-1', expiresIn: 3600 })
+  it('sets auth cookies with httpOnly + sameSite=lax', async () => {
+    await setAuthCookies({ idToken: 'id', accessToken: 'access', refreshToken: 'ref', sub: 'sub-1', expiresIn: 3600 })
     expect(cookieStore[COOKIE_ID_TOKEN].value).toBe('id')
     expect(cookieStore[COOKIE_ID_TOKEN].options.httpOnly).toBe(true)
     expect(cookieStore[COOKIE_ID_TOKEN].options.sameSite).toBe('lax')
     expect(cookieStore[COOKIE_ID_TOKEN].options.path).toBe('/')
     expect(cookieStore[COOKIE_ID_TOKEN].options.maxAge).toBe(3600)
+    expect(cookieStore[COOKIE_ACCESS_TOKEN].value).toBe('access')
     expect(cookieStore[COOKIE_REFRESH_TOKEN].value).toBe('ref')
     expect(cookieStore[COOKIE_USER_SUB].value).toBe('sub-1')
   })
@@ -45,10 +47,11 @@ describe('cognito cookies', () => {
     expect(cookieStore[COOKIE_USER_SUB]).toBeDefined()
   })
 
-  it('clears all three cookies', async () => {
-    await setAuthCookies({ idToken: 'i', refreshToken: 'r', sub: 's', expiresIn: 60 })
+  it('clears all auth cookies', async () => {
+    await setAuthCookies({ idToken: 'i', accessToken: 'a', refreshToken: 'r', sub: 's', expiresIn: 60 })
     await clearAuthCookies()
     expect(cookieStore[COOKIE_ID_TOKEN].options.maxAge).toBe(0)
+    expect(cookieStore[COOKIE_ACCESS_TOKEN].options.maxAge).toBe(0)
     expect(cookieStore[COOKIE_REFRESH_TOKEN].options.maxAge).toBe(0)
     expect(cookieStore[COOKIE_USER_SUB].options.maxAge).toBe(0)
   })

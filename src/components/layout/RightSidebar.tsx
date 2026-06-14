@@ -31,6 +31,8 @@ interface RightSidebarProps {
   timelineMarkers?: Array<{ label: string; topPx: number }>
   timelineMaxVisibleBlocks?: number
   timelineMaxCanvasHeightPx?: number
+  timelineWindowStart?: Date | null
+  timelineWindowEnd?: Date | null
 }
 
 export function RightSidebar({
@@ -44,20 +46,23 @@ export function RightSidebar({
   timelineMarkers = [],
   timelineMaxVisibleBlocks = 18,
   timelineMaxCanvasHeightPx = 640,
+  timelineWindowStart = null,
+  timelineWindowEnd = null,
 }: RightSidebarProps) {
-  const { t } = useTranslation()
+  const { t, locale } = useTranslation()
   void _nextReason
+  const timelineRangeLabel = formatTimelineRangeLabel(timelineWindowStart, timelineWindowEnd, locale)
 
   return (
     <aside className="relative flex w-72 min-w-0 flex-col gap-3 bg-transparent">
       {/* Next Up Card */}
-      <div className="rounded-xl border border-border bg-surface-elevated p-4">
+      <div className="rounded-xl bg-surface-elevated p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {t('sidebar.nextUp')}
         </h3>
         {nextTile ? (
           <div className="space-y-2">
-            <div className="rounded-md border border-border bg-surface-1 p-3">
+            <div className="rounded-md bg-surface-1 p-3">
               <div className="flex min-w-0 items-center gap-2">
                 <TileStatusIcon
                   lifecycle={getTileLifecycle(nextTile)}
@@ -72,7 +77,7 @@ export function RightSidebar({
                 {nextQuickTiles.map(tile => (
                   <div
                     key={tile.core.id}
-                    className="min-w-[128px] max-w-[168px] rounded-md border border-border bg-surface-1 px-2 py-1 text-left"
+                    className="min-w-[128px] max-w-[168px] rounded-md bg-surface-1 px-2 py-1 text-left"
                   >
                     <div className="flex min-w-0 items-center gap-1">
                       <TileStatusIcon lifecycle={getTileLifecycle(tile)} onClick={() => onPromptSuggested?.(tile.core.id)} size={12} />
@@ -89,10 +94,17 @@ export function RightSidebar({
       </div>
 
       {/* Timeline Card */}
-      <div className="flex-1 overflow-hidden rounded-xl border border-border bg-surface-elevated p-4">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-          {t('sidebar.timeline')}
-        </h3>
+      <div className="flex-1 overflow-hidden rounded-xl bg-surface-elevated p-4">
+        <div className="mb-3 flex items-baseline justify-between gap-2">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
+            {t('sidebar.timeline')}
+          </h3>
+          {timelineRangeLabel ? (
+            <span className="text-[10px] font-medium text-foreground-muted" title={timelineRangeLabel}>
+              {timelineRangeLabel}
+            </span>
+          ) : null}
+        </div>
         <TimelineAxis
           compact
           blocks={timelineItems.map(item => ({
@@ -121,4 +133,25 @@ export function RightSidebar({
       </div>
     </aside>
   )
+}
+
+function formatTimelineRangeLabel(start: Date | null, end: Date | null, locale: 'ja' | 'en'): string | null {
+  if (!start || !end) return null
+  // Day-scale windows are [00:00, 24:00) — treat as a single day for display.
+  const isNextDayMidnight =
+    end.getHours() === 0 &&
+    end.getMinutes() === 0 &&
+    end.getSeconds() === 0 &&
+    end.getDate() === start.getDate() + 1 &&
+    end.getMonth() === start.getMonth() ||
+    end.getDate() === 1 && start.getDate() === new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate()
+  const displayEnd = isNextDayMidnight ? new Date(end.getTime() - 1) : end
+  const fmt = new Intl.DateTimeFormat(locale === 'ja' ? 'ja-JP' : 'en-US', {
+    month: 'numeric',
+    day: 'numeric',
+  })
+  const startLabel = fmt.format(start)
+  const endLabel = fmt.format(displayEnd)
+  if (startLabel === endLabel) return startLabel
+  return `${startLabel} – ${endLabel}`
 }

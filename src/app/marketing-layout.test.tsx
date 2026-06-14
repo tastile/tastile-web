@@ -17,7 +17,7 @@ vi.mock('@/components/NavControls', () => ({
 
 describe('marketing page layout consistency', () => {
   it('keeps footer pinned to viewport bottom with shared flex column shell', async () => {
-    const downloadUi = await DownloadPage()
+    const downloadUi = await DownloadPage({ searchParams: Promise.resolve({}) })
     const { container: downloadContainer, unmount: unmountDownload } = render(downloadUi)
     expect(downloadContainer.firstElementChild?.className).toContain('flex')
     expect(downloadContainer.firstElementChild?.className).toContain('flex-col')
@@ -49,8 +49,8 @@ describe('marketing page layout consistency', () => {
     expect(container.querySelector('main.layout-shell.flex-1')).toBeTruthy()
     expect(container.querySelector('main.layout-grid-2')).toBeFalsy()
     expect(container.querySelector('[data-testid="login-panel"]')).toBeTruthy()
-    expect(screen.getByText('Tastileにログイン')).toBeTruthy()
-    expect(screen.getByText('タスク実行を、自動で最適化')).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Sign in/i })).toBeTruthy()
+    expect(screen.getByText('Tastile Account')).toBeTruthy()
+    expect(screen.getByText('実行制御を、すぐ始める')).toBeTruthy()
+    expect(screen.getByText('Passkey / メールで続行')).toBeTruthy()
   })
 })

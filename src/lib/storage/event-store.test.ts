@@ -1,21 +1,20 @@
 import { describe, it, expect, vi } from 'vitest'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import { EventStore } from './event-store'
 import { Tile } from '../domain/tile'
 import { TileId } from '../domain/ids'
 
-function createMockSupabase(selectData: unknown[] = []) {
+function createMockStorageClient(selectData: unknown[] = []) {
   const upsert = vi.fn().mockResolvedValue({ error: null })
   const order = vi.fn().mockResolvedValue({ data: selectData, error: null })
   const eq = vi.fn().mockReturnValue({ order })
   const select = vi.fn().mockReturnValue({ eq })
   const from = vi.fn().mockReturnValue({ upsert, select })
-  return { client: { from } as unknown as SupabaseClient, upsert, from }
+  return { client: { from }, upsert, from }
 }
 
 describe('EventStore tile snapshot sync', () => {
   it('upserts tiles into remote snapshot table', async () => {
-    const { client, upsert, from } = createMockSupabase()
+    const { client, upsert, from } = createMockStorageClient()
     const store = new EventStore(client, 'user-1')
     const tile = Tile.create(TileId.new(), 'Test tile')
 
@@ -28,7 +27,7 @@ describe('EventStore tile snapshot sync', () => {
   it('loads and deserializes remote tiles', async () => {
     const tile = Tile.create(TileId.new(), 'Remote tile')
     tile.core.startedAt = new Date('2026-04-03T10:00:00.000Z')
-    const { client } = createMockSupabase([
+    const { client } = createMockStorageClient([
       {
         tile_id: tile.core.id,
         title: tile.core.title,
@@ -69,7 +68,7 @@ describe('EventStore tile snapshot sync', () => {
       },
     ]
 
-    const { client } = createMockSupabase([
+    const { client } = createMockStorageClient([
       {
         tile_id: tile.core.id,
         title: tile.core.title,
@@ -90,7 +89,7 @@ describe('EventStore tile snapshot sync', () => {
   })
 
   it('maps snake_case semantic role from wasm export before upsert', async () => {
-    const { client, upsert } = createMockSupabase()
+    const { client, upsert } = createMockStorageClient()
     const store = new EventStore(client, 'user-1')
     const tile = Tile.create(TileId.new(), 'Wasm tile')
     const annotation = tile.annotation as unknown as Record<string, unknown>

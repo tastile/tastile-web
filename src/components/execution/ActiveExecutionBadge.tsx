@@ -34,7 +34,7 @@ export function ActiveExecutionBadge() {
   const seconds = remaining % 60
 
   return (
-    <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-surface-1 border border-primary/30">
+    <div className="flex items-center gap-3 px-3 py-1.5 rounded-lg bg-surface-1">
         <TileStatusIcon
           lifecycle="started"
           size={16}

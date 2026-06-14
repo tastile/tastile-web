@@ -26,9 +26,9 @@ export function DeleteTileDialog({ onConfirm }: DeleteTileDialogProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={handleCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50" onClick={handleCancel}>
       <div
-        className="w-full max-w-md rounded-xl bg-surface-elevated p-6 shadow-xl"
+        className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -37,7 +37,7 @@ export function DeleteTileDialog({ onConfirm }: DeleteTileDialogProps) {
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-lg p-1 text-foreground-muted hover:bg-surface-2"
+            className="rounded-full p-1 text-foreground-muted hover:bg-surface-2"
           >
             <X className="h-5 w-5" />
           </button>
@@ -54,14 +54,14 @@ export function DeleteTileDialog({ onConfirm }: DeleteTileDialogProps) {
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-lg bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
+            className="rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
           >
             {t('common.cancel')}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+            className="rounded-full bg-danger px-4 py-2 text-sm font-semibold text-background hover:bg-danger"
           >
             {t('common.delete')}
           </button>

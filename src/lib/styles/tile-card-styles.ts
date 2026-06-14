@@ -8,7 +8,7 @@
  * @module lib/styles/tile-card-styles
  *
  * Design principles:
- * - Minimal visual difference between surface levels (Supabase-inspired)
+ * - Minimal visual difference between surface levels
  * - Monochrome color palette with semantic token usage
  * - Three density variants: compact (list view), comfortable (default), detailed (focus view)
  * - Tailwind CSS v4 syntax with theme-aware color tokens
@@ -40,8 +40,8 @@ export type TileStatus = "ready" | "started" | "done";
  * Base styling configuration for tile card components
  */
 export const TILE_CARD_STYLES = {
-  base: "rounded-xl bg-surface-1 border border-surface-2 transition-all",
-  hover: "hover:bg-surface-2 hover:shadow-md hover:border-border-strong cursor-pointer",
+  base: "rounded-xl bg-surface-1 transition-all",
+  hover: "hover:bg-surface-2 cursor-pointer",
   padding: {
     compact: "p-2.5",
     comfortable: "p-3",
@@ -64,18 +64,16 @@ export const TILE_CARD_STYLES = {
 /**
  * Status-based color mapping for tile states
  *
- * Note: `started` uses `text-green-500` because the current theme system
- * (globals.css) does not define a semantic color for "active" or "in-progress"
- * states. The monochrome palette includes:
+ * Note: `started` uses `text-success` as a semantic token for active/in-progress
+ * states.
  * - text-foreground-muted (ready state)
+ * - text-success (started/active state)
  * - text-primary (done state)
  *
- * TODO: Consider adding `--color-active` or `--color-success` to theme system
- * for semantic "started" state representation. Until then, green-500 provides
- * clear visual distinction for active tiles.
+ * for semantic "started" state representation.
  */
 export const TILE_STATUS_COLORS = {
   ready: "text-foreground-muted",
-  started: "text-green-500", // No semantic token available in current theme
+  started: "text-success",
   done: "text-primary",
 } as const

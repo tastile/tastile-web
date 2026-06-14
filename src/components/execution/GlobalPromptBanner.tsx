@@ -17,9 +17,9 @@ const PROMPT_TITLE: Record<PendingPrompt['kind'], string> = {
 }
 
 const SEVERITY_STYLE: Record<NonNullable<PendingPrompt['severity']>, string> = {
-  soft: 'border-primary/30 bg-surface-elevated',
-  elevated: 'border-amber-500/40 bg-amber-500/10',
-  critical: 'border-rose-500/45 bg-rose-500/10',
+  soft: 'bg-surface-elevated',
+  elevated: 'bg-warning/10',
+  critical: 'bg-danger/10',
 }
 
 export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPromptBannerProps) {
@@ -50,7 +50,7 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
 
   return (
     <div className="fixed top-4 right-4 z-[70] w-[min(92vw,420px)]">
-      <div className={`rounded-2xl border p-4 shadow-xl backdrop-blur ${SEVERITY_STYLE[prompt.severity]}`}>
+      <div className={`rounded-2xl p-4 backdrop-blur ${SEVERITY_STYLE[prompt.severity]}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-foreground">{title}</div>
@@ -73,7 +73,7 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
                 key={option.label}
                 type="button"
                 onClick={() => onAction?.('defer_tile', { deferMinutes: option.minutes })}
-                className="min-h-10 rounded-lg bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
+                className="min-h-10 rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
               >
                 {option.label}
               </button>
@@ -82,7 +82,7 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
           <button
             type="button"
             onClick={() => setDeferMenuPromptId(null)}
-            className="mt-2 min-h-9 rounded-lg bg-surface-2 px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
+            className="mt-2 min-h-9 rounded-full bg-surface-2 px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
           >
             {locale === 'ja' ? '戻る' : 'Back'}
           </button>
@@ -100,7 +100,7 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
                 }
                 onAction?.(action)
               }}
-              className="min-h-10 rounded-lg bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
+              className="min-h-10 rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
             >
               {labelForAction(action, t)}
             </button>

@@ -9,6 +9,7 @@ import { useExecutionEngineContext, ExecutionEngineProvider } from '@/lib/hooks/
 import { Actor } from '@/lib/domain/actor'
 import { TileId } from '@/lib/domain/ids'
 import { buildDashboardProjection } from '@/lib/projection/dashboard-projection'
+import { SecurityLockGate } from '@/components/security/SecurityLockGate'
 
 const TIMELINE_MAX_VISIBLE_BLOCKS = 18
 const TIMELINE_MAX_CANVAS_HEIGHT_PX = 640
@@ -70,7 +71,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AppShell
+    <SecurityLockGate>
+      <AppShell
       quickCreatePanel={<QuickTileCreate />}
       rightSidebar={
         <RightSidebar
@@ -96,6 +98,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
           timelineMarkers={projection?.timeline.markers ?? []}
           timelineMaxVisibleBlocks={TIMELINE_MAX_VISIBLE_BLOCKS}
           timelineMaxCanvasHeightPx={TIMELINE_MAX_CANVAS_HEIGHT_PX}
+          timelineWindowStart={projection?.timeline.windowStart ?? null}
+          timelineWindowEnd={projection?.timeline.windowEnd ?? null}
         />
       }
       executionState={{
@@ -109,8 +113,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         pendingPrompt: state.execution.pendingPrompt,
         syncStatus: state.execution.syncStatus ?? null,
       }}
-    >
-      {children}
-    </AppShell>
+      >
+        {children}
+      </AppShell>
+    </SecurityLockGate>
   )
 }

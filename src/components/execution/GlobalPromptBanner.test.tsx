@@ -9,13 +9,6 @@ import { TileId } from '@/lib/domain/ids'
 vi.mock('@/lib/i18n/use-translation', () => ({
   useTranslation: () => ({ t: (key: string) => key, locale: 'ja' as const }),
 }))
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    auth: {
-      getUser: async () => ({ data: { user: null }, error: null }),
-    },
-  }),
-}))
 
 const executeMock = vi.fn()
 vi.mock('@/lib/hooks/execution-engine-context', () => ({

@@ -8,12 +8,12 @@ export function TileStatistics() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 bg-surface-secondary animate-pulse rounded" />
+        <div className="h-8 w-48 bg-surface-2 animate-pulse rounded" />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="p-6 bg-surface-secondary rounded-lg border border-border">
-              <div className="h-4 w-24 bg-surface-tertiary animate-pulse rounded mb-2" />
-              <div className="h-8 w-16 bg-surface-tertiary animate-pulse rounded" />
+            <div key={i} className="p-6 bg-surface-2 rounded-lg">
+              <div className="h-4 w-24 bg-surface-1 animate-pulse rounded mb-2" />
+              <div className="h-8 w-16 bg-surface-1 animate-pulse rounded" />
             </div>
           ))}
         </div>
@@ -33,19 +33,19 @@ export function TileStatistics() {
       <div>
         <h3 className="text-lg font-semibold text-foreground mb-4">Overview</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-6 bg-surface-secondary rounded-lg border border-border">
-            <div className="text-sm font-medium text-foreground-secondary mb-1">Total Tiles</div>
+          <div className="p-6 bg-surface-2 rounded-lg">
+            <div className="text-sm font-medium text-foreground-muted mb-1">Total Tiles</div>
             <div className="text-3xl font-bold text-foreground">{total}</div>
           </div>
 
-          <div className="p-6 bg-surface-secondary rounded-lg border border-border">
-            <div className="text-sm font-medium text-foreground-secondary mb-1">Completed</div>
-            <div className="text-3xl font-bold text-green-600 dark:text-green-400">{completed}</div>
+          <div className="p-6 bg-surface-2 rounded-lg">
+            <div className="text-sm font-medium text-foreground-muted mb-1">Completed</div>
+            <div className="text-3xl font-bold text-success">{completed}</div>
           </div>
 
-          <div className="p-6 bg-surface-secondary rounded-lg border border-border">
-            <div className="text-sm font-medium text-foreground-secondary mb-1">Completion Rate</div>
-            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{completionRate}%</div>
+          <div className="p-6 bg-surface-2 rounded-lg">
+            <div className="text-sm font-medium text-foreground-muted mb-1">Completion Rate</div>
+            <div className="text-3xl font-bold text-primary">{completionRate}%</div>
           </div>
         </div>
       </div>
@@ -53,38 +53,38 @@ export function TileStatistics() {
       <div>
         <h3 className="text-lg font-semibold text-foreground mb-4">Breakdown by Status</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-surface-secondary rounded-lg border border-border">
+          <div className="p-4 bg-surface-2 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-foreground-secondary">Ready</div>
+                <div className="text-sm font-medium text-foreground-muted">Ready</div>
                 <div className="text-2xl font-bold text-foreground mt-1">{ready}</div>
               </div>
-              <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <span className="text-blue-600 dark:text-blue-400 text-xl">●</span>
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-primary text-xl">●</span>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-surface-secondary rounded-lg border border-border">
+          <div className="p-4 bg-surface-2 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-foreground-secondary">In Progress</div>
+                <div className="text-sm font-medium text-foreground-muted">In Progress</div>
                 <div className="text-2xl font-bold text-foreground mt-1">{started}</div>
               </div>
-              <div className="w-12 h-12 rounded-full bg-yellow-100 dark:bg-yellow-900/30 flex items-center justify-center">
-                <span className="text-yellow-600 dark:text-yellow-400 text-xl">●</span>
+              <div className="w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center">
+                <span className="text-warning text-xl">●</span>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-surface-secondary rounded-lg border border-border">
+          <div className="p-4 bg-surface-2 rounded-lg">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm font-medium text-foreground-secondary">Done</div>
+                <div className="text-sm font-medium text-foreground-muted">Done</div>
                 <div className="text-2xl font-bold text-foreground mt-1">{completed}</div>
               </div>
-              <div className="w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                <span className="text-green-600 dark:text-green-400 text-xl">●</span>
+              <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center">
+                <span className="text-success text-xl">●</span>
               </div>
             </div>
           </div>
@@ -92,8 +92,8 @@ export function TileStatistics() {
       </div>
 
       {total === 0 && (
-        <div className="p-6 bg-surface-secondary rounded-lg border border-border">
-          <p className="text-sm text-foreground-tertiary text-center">
+        <div className="p-6 bg-surface-2 rounded-lg">
+          <p className="text-sm text-foreground-muted text-center">
             No tiles yet. Create your first tile to start tracking statistics.
           </p>
         </div>

@@ -25,7 +25,7 @@ export default function PrivacyPage() {
             What Data We Collect
           </h2>
           <ul className="list-disc space-y-2 pl-6 text-foreground-muted">
-            <li><strong>Account Information:</strong> Email address and authentication data from Google OAuth.</li>
+            <li><strong>Account Information:</strong> Email address and authentication data from Amazon Cognito and any configured federated identity provider.</li>
             <li><strong>Tile Data:</strong> Titles, descriptions, and execution status of your tiles.</li>
             <li><strong>Event Data:</strong> Execution history including start times, completions, and breaks.</li>
             <li><strong>Usage Data:</strong> Basic analytics on feature usage to improve the service.</li>
@@ -35,8 +35,8 @@ export default function PrivacyPage() {
             How We Store Data
           </h2>
           <p className="text-foreground-muted">
-            Your data is stored securely with Supabase, our database provider. 
-            Local tiles are stored on your device only. Cloud tiles and events 
+            Your cloud data is stored securely on Tastile-managed AWS infrastructure.
+            Local tiles are stored on your device only. Cloud tiles and events
             are encrypted in transit and at rest.
           </p>
 
@@ -44,9 +44,10 @@ export default function PrivacyPage() {
             Third-Party Services
           </h2>
           <ul className="list-disc space-y-2 pl-6 text-foreground-muted">
-            <li><strong>Supabase:</strong> Authentication and data storage.</li>
+            <li><strong>Amazon Cognito:</strong> Account registration and authentication.</li>
+            <li><strong>AWS:</strong> Application hosting, storage, and database infrastructure.</li>
             <li><strong>Stripe:</strong> Payment processing for Pro subscriptions.</li>
-            <li><strong>Google OAuth:</strong> Optional authentication method.</li>
+            <li><strong>Federated identity providers:</strong> Optional authentication methods when enabled.</li>
           </ul>
 
           <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">

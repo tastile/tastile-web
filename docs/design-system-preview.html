@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tastile Design System v2.0 — Live Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ===== RESET ===== */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ===== TOKENS ===== */
+    :root {
+      /* Grayscale */
+      --gray-50: #fafafa;
+      --gray-100: #f5f5f5;
+      --gray-200: #e5e5e5;
+      --gray-300: #d4d4d4;
+      --gray-400: #a3a3a3;
+      --gray-500: #737373;
+      --gray-600: #525252;
+      --gray-700: #404040;
+      --gray-800: #262626;
+      --gray-900: #171717;
+      --gray-950: #0a0a0a;
+
+      /* Accent */
+      --indigo-50: #eef2ff;
+      --indigo-100: #e0e7ff;
+      --indigo-500: #6366f1;
+      --indigo-600: #4f46e5;
+      --indigo-700: #4338ca;
+
+      /* Status */
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+
+      /* Semantic */
+      --background: var(--gray-50);
+      --surface-0: var(--gray-100);
+      --surface-1: var(--gray-200);
+      --surface-2: var(--gray-300);
+      --foreground: var(--gray-950);
+      --foreground-muted: var(--gray-600);
+      --foreground-subtle: var(--gray-500);
+      --primary: var(--indigo-500);
+
+      /* Typography */
+      --font-sans: "Helvetica Neue", Helvetica, Arial, "Inter", system-ui, sans-serif;
+      --font-jp: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+      --font-jp-heading: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
+
+      /* Spacing */
+      --sp-xxs: 4px;
+      --sp-xs: 8px;
+      --sp-sm: 12px;
+      --sp-md: 16px;
+      --sp-lg: 20px;
+      --sp-xl: 24px;
+      --sp-xxl: 32px;
+      --sp-xxxl: 40px;
+
+      /* Radius */
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-xxl: 32px;
+      --radius-xxxl: 40px;
+      --radius-full: 9999px;
+    }
+
+    .dark {
+      --background: var(--gray-950);
+      --surface-0: var(--gray-900);
+      --surface-1: var(--gray-800);
+      --surface-2: var(--gray-700);
+      --foreground: var(--gray-50);
+      --foreground-muted: var(--gray-400);
+      --foreground-subtle: var(--gray-500);
+    }
+
+    /* ===== BASE ===== */
+    body {
+      font-family: var(--font-sans);
+      background: var(--background);
+      color: var(--foreground);
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .jp-body { font-family: var(--font-jp); }
+    .jp-heading { font-family: var(--font-jp-heading); }
+
+    /* ===== LAYOUT ===== */
+    .page { max-width: 960px; margin: 0 auto; padding: var(--sp-xxl) var(--sp-xl); }
+
+    .section {
+      margin-bottom: 64px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--foreground-subtle);
+      margin-bottom: var(--sp-lg);
+    }
+
+    .stack > * + * {
+      margin-top: var(--sp-md);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--sp-md);
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--sp-md);
+    }
+
+    @media (max-width: 640px) {
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    }
+
+    /* ===== CONTROLS ===== */
+    .theme-toggle {
+      position: fixed;
+      top: var(--sp-lg);
+      right: var(--sp-lg);
+      background: var(--surface-1);
+      color: var(--foreground);
+      border: none;
+      padding: var(--sp-xs) var(--sp-md);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 150ms ease;
+      z-index: 100;
+    }
+    .theme-toggle:hover { background: var(--surface-2); }
+
+    /* ===== COLOR SWATCHES ===== */
+    .swatch-row {
+      display: flex;
+      gap: var(--sp-xs);
+      flex-wrap: wrap;
+    }
+    .swatch {
+      width: 56px;
+      height: 56px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: flex-end;
+      padding: var(--sp-xxs);
+    }
+    .swatch span {
+      font-size: 10px;
+      font-weight: 500;
+      color: #fff;
+    }
+    .swatch.light span { color: var(--gray-950); }
+
+    /* ===== TYPOGRAPHY ===== */
+    .type-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--sp-xl);
+      padding: var(--sp-sm) 0;
+    }
+    .type-label {
+      flex-shrink: 0;
+      width: 120px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--foreground-subtle);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .type-sample { flex: 1; }
+    .type-meta {
+      font-size: 12px;
+      color: var(--foreground-subtle);
+      margin-top: var(--sp-xxs);
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--sp-xs);
+      width: 100%;
+      padding: 10px var(--sp-md);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background 150ms ease;
+      text-align: center;
+    }
+    .btn-primary {
+      background: var(--foreground);
+      color: var(--background);
+    }
+    .btn-primary:hover { background: var(--gray-800); }
+    .dark .btn-primary:hover { background: var(--gray-200); }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--foreground);
+    }
+    .btn-secondary:hover { background: var(--surface-0); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--foreground);
+      padding: var(--sp-xs) var(--sp-sm);
+      border-radius: var(--radius-sm);
+    }
+    .btn-ghost:hover { background: var(--surface-0); }
+
+    .btn:disabled {
+      background: var(--surface-1);
+      color: var(--foreground-subtle);
+      cursor: not-allowed;
+    }
+
+    .btn-icon { font-size: 16px; }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--background);
+      border-radius: var(--radius-xl);
+      padding: var(--sp-xl);
+      transition: background 150ms ease;
+    }
+    .card:hover { background: var(--surface-0); }
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: var(--sp-xs);
+    }
+    .card-desc {
+      font-size: 14px;
+      color: var(--foreground-muted);
+    }
+
+    /* ===== INPUTS ===== */
+    .input {
+      width: 100%;
+      height: 44px;
+      padding: 0 var(--sp-md);
+      background: var(--background);
+      color: var(--foreground);
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 16px;
+      font-family: var(--font-sans);
+      transition: background 150ms ease;
+    }
+    .input:focus {
+      outline: none;
+      background: var(--surface-0);
+    }
+    .input::placeholder { color: var(--foreground-subtle); }
+
+    /* ===== TABS ===== */
+    .tab-row {
+      display: flex;
+      gap: var(--sp-xs);
+      flex-wrap: wrap;
+    }
+
+    .pill-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-xs);
+      padding: var(--sp-xs) var(--sp-md);
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      font-weight: 500;
+      background: transparent;
+      color: var(--foreground-muted);
+      border: none;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .pill-tab:hover { background: var(--surface-0); }
+    .pill-tab.active {
+      background: var(--foreground);
+      color: var(--background);
+    }
+
+    .underline-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--sp-xs);
+      padding: 12px var(--sp-md);
+      font-size: 14px;
+      font-weight: 500;
+      background: transparent;
+      color: var(--foreground-muted);
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .underline-tab:hover { color: var(--foreground); }
+    .underline-tab.active {
+      color: var(--foreground);
+      border-bottom-color: var(--foreground);
+    }
+
+    .tab-icon { font-size: 14px; }
+
+    /* Vertical Tabs */
+    .vertical-tabs {
+      display: flex;
+      flex-direction: column;
+      gap: var(--sp-xxs);
+    }
+    .v-tab {
+      display: flex;
+      align-items: center;
+      gap: var(--sp-sm);
+      padding: var(--sp-sm) var(--sp-md);
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      background: transparent;
+      color: var(--foreground-muted);
+      border: none;
+      cursor: pointer;
+      text-align: left;
+      transition: all 150ms ease;
+    }
+    .v-tab:hover { background: var(--surface-0); }
+    .v-tab.active {
+      background: var(--surface-1);
+      color: var(--foreground);
+    }
+    .v-tab .tab-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    /* ===== BADGES ===== */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: var(--sp-xxs) 10px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .badge-success { background: var(--success); color: #fff; }
+    .badge-warning { background: var(--warning); color: #000; }
+    .badge-danger { background: var(--danger); color: #fff; }
+    .badge-outline {
+      background: var(--surface-0);
+      color: var(--foreground-muted);
+    }
+    .badge-soft {
+      background: var(--surface-0);
+      color: var(--foreground-muted);
+    }
+    .badge-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: var(--radius-full);
+      background: rgba(255,255,255,0.3);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+    }
+    .badge-outline .badge-icon { background: var(--surface-1); }
+    .badge-soft .badge-icon { background: var(--surface-1); }
+
+    /* ===== NOTIFICATIONS ===== */
+    .notif-list {
+      display: flex;
+      flex-direction: column;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: var(--background);
+    }
+    .notif {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--sp-sm);
+      padding: var(--sp-md);
+      position: relative;
+      transition: background 150ms ease;
+    }
+    .notif:hover { background: var(--surface-0); }
+    .notif::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+    }
+    .notif-success::before { background: var(--success); }
+    .notif-warning::before { background: var(--warning); }
+    .notif-danger::before { background: var(--danger); }
+    .notif-icon {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+    }
+    .notif-body { flex: 1; }
+    .notif-title {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+    .notif-msg {
+      font-size: 13px;
+      color: var(--foreground-muted);
+    }
+
+    /* ===== HOVER DEMO ===== */
+    .hover-row {
+      display: flex;
+      gap: var(--sp-md);
+    }
+    .hover-card {
+      flex: 1;
+      padding: var(--sp-md);
+      background: var(--background);
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      transition: background 150ms ease;
+    }
+    .hover-card:hover { background: var(--surface-0); }
+    .hover-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--foreground-muted);
+      transition: color 150ms ease;
+    }
+    .hover-card:hover .hover-label { color: var(--foreground); }
+    .hover-sub {
+      font-size: 12px;
+      color: var(--foreground-subtle);
+      margin-top: var(--sp-xxs);
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 200ms ease, opacity 200ms ease;
+      opacity: 0;
+    }
+    .hover-card:hover .hover-sub {
+      max-height: 40px;
+      opacity: 1;
+    }
+
+    /* ===== NESTED HIERARCHY DEMO ===== */
+    .hierarchy-demo {
+      display: flex;
+      gap: var(--sp-lg);
+      flex-wrap: wrap;
+    }
+    /*
+     * 円中心揃え: padding = 親radius - 子radius
+     * outer(32) → mid(16): padding = 16px
+     * mid(16) → inner(8): padding = 8px
+     * inner(8) → core(4): padding = 4px
+     */
+    .hierarchy-outer {
+      flex: 1;
+      min-width: 280px;
+      background: var(--surface-0);
+      border-radius: var(--radius-xxl);
+      padding: 16px;
+    }
+    .hierarchy-mid {
+      background: var(--background);
+      border-radius: var(--radius-lg);
+      padding: 8px;
+    }
+    .hierarchy-inner {
+      background: var(--surface-1);
+      border-radius: var(--radius-sm);
+      padding: 4px;
+    }
+    .hierarchy-core {
+      background: var(--surface-2);
+      border-radius: var(--radius-xs);
+      padding: var(--sp-sm);
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    /* ===== SPACING SCALE DEMO ===== */
+    .spacing-row {
+      display: flex;
+      align-items: flex-end;
+      gap: var(--sp-md);
+      flex-wrap: wrap;
+    }
+    .spacing-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--sp-xxs);
+    }
+    .spacing-bar {
+      background: var(--foreground);
+      border-radius: var(--radius-sm);
+      opacity: 0.2;
+    }
+    .spacing-label {
+      font-size: 11px;
+      color: var(--foreground-subtle);
+      font-weight: 500;
+    }
+
+    /* ===== RADIUS DEMO ===== */
+    .radius-row {
+      display: flex;
+      gap: var(--sp-md);
+      flex-wrap: wrap;
+    }
+    .radius-box {
+      width: 64px;
+      height: 64px;
+      background: var(--surface-1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--foreground-muted);
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .anim-fade { animation: fadeIn 300ms ease both; }
+    .anim-slide { animation: slideUp 300ms ease both; }
+    .anim-delay-1 { animation-delay: 100ms; }
+    .anim-delay-2 { animation-delay: 200ms; }
+    .anim-delay-3 { animation-delay: 300ms; }
+
+    /* ===== DIVIDER (for section separation) ===== */
+    .divider {
+      height: 1px;
+      background: var(--surface-1);
+      margin: 48px 0;
+    }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="document.documentElement.classList.toggle('dark')">Theme</button>
+
+  <div class="page">
+
+    <!-- ===== COLORS ===== -->
+    <section class="section anim-fade">
+      <div class="section-title">Colors — Grayscale</div>
+      <div class="swatch-row">
+        <div class="swatch light" style="background:var(--gray-50)"><span>50</span></div>
+        <div class="swatch light" style="background:var(--gray-100)"><span>100</span></div>
+        <div class="swatch light" style="background:var(--gray-200)"><span>200</span></div>
+        <div class="swatch light" style="background:var(--gray-300)"><span>300</span></div>
+        <div class="swatch light" style="background:var(--gray-400)"><span>400</span></div>
+        <div class="swatch" style="background:var(--gray-500)"><span>500</span></div>
+        <div class="swatch" style="background:var(--gray-600)"><span>600</span></div>
+        <div class="swatch" style="background:var(--gray-700)"><span>700</span></div>
+        <div class="swatch" style="background:var(--gray-800)"><span>800</span></div>
+        <div class="swatch" style="background:var(--gray-900)"><span>900</span></div>
+        <div class="swatch" style="background:var(--gray-950)"><span>950</span></div>
+      </div>
+    </section>
+
+    <section class="section anim-fade anim-delay-1">
+      <div class="section-title">Colors — Accent & Status</div>
+      <div class="swatch-row">
+        <div class="swatch light" style="background:var(--indigo-50)"><span>50</span></div>
+        <div class="swatch light" style="background:var(--indigo-100)"><span>100</span></div>
+        <div class="swatch" style="background:var(--indigo-500)"><span>500</span></div>
+        <div class="swatch" style="background:var(--indigo-600)"><span>600</span></div>
+        <div class="swatch" style="background:var(--indigo-700)"><span>700</span></div>
+      </div>
+      <div style="height:12px"></div>
+      <div class="swatch-row">
+        <div class="swatch" style="background:var(--success)"><span>success</span></div>
+        <div class="swatch" style="background:var(--warning)"><span>warning</span></div>
+        <div class="swatch" style="background:var(--danger)"><span>danger</span></div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== TYPOGRAPHY ===== -->
+    <section class="section anim-slide">
+      <div class="section-title">Typography — Latin (Helvetica)</div>
+      <div class="stack">
+        <div class="type-row">
+          <div class="type-label">Display</div>
+          <div class="type-sample" style="font-size:48px;font-weight:600;line-height:1.1;letter-spacing:-1px">The quick brown fox</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">H2</div>
+          <div class="type-sample" style="font-size:36px;font-weight:600;line-height:1.2;letter-spacing:-0.5px">The quick brown fox</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">H3</div>
+          <div class="type-sample" style="font-size:28px;font-weight:600;line-height:1.25">The quick brown fox</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">H4</div>
+          <div class="type-sample" style="font-size:22px;font-weight:600;line-height:1.3">The quick brown fox</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Body</div>
+          <div class="type-sample" style="font-size:16px;font-weight:400;line-height:1.55">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Small</div>
+          <div class="type-sample" style="font-size:14px;font-weight:400;line-height:1.5">The quick brown fox jumps over the lazy dog.</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">Caption</div>
+          <div class="type-sample" style="font-size:13px;font-weight:400;line-height:1.4;color:var(--foreground-muted)">The quick brown fox jumps over the lazy dog.</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section anim-slide anim-delay-1">
+      <div class="section-title">Typography — Japanese</div>
+      <div class="stack">
+        <div class="type-row">
+          <div class="type-label">JP Heading</div>
+          <div class="type-sample jp-heading" style="font-size:36px;font-weight:700;line-height:1.3">快速な茶色の狐が怠惰な犬を飛び越える</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">JP Body</div>
+          <div class="type-sample jp-body" style="font-size:16px;font-weight:400;line-height:1.65">快速な茶色の狐が怠惰な犬を飛び越える。五ダースの酒壺で箱を満たしてください。</div>
+        </div>
+        <div class="type-row">
+          <div class="type-label">JP Small</div>
+          <div class="type-sample jp-body" style="font-size:14px;font-weight:400;line-height:1.6">快速な茶色の狐が怠惰な犬を飛び越える。</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== BUTTONS ===== -->
+    <section class="section">
+      <div class="section-title">Buttons — Full Width, Gray Scale Only</div>
+      <div class="grid-2">
+        <div class="stack">
+          <button class="btn btn-primary">Primary Button</button>
+          <button class="btn btn-primary" disabled>Disabled</button>
+          <button class="btn btn-primary"><span class="btn-icon">→</span> With Icon</button>
+        </div>
+        <div class="stack">
+          <button class="btn btn-secondary">Secondary Button</button>
+          <button class="btn btn-secondary" disabled>Disabled</button>
+          <button class="btn btn-ghost">Ghost Button</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== CARDS ===== -->
+    <section class="section">
+      <div class="section-title">Cards</div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-title">Card Title</div>
+          <div class="card-desc">Description text goes here. Keep it concise.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Another Card</div>
+          <div class="card-desc">Hover me to see background change.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Third Card</div>
+          <div class="card-desc">No borders, no shadows. Pure flat.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== INPUTS ===== -->
+    <section class="section">
+      <div class="section-title">Inputs</div>
+      <div class="stack" style="max-width:400px">
+        <input class="input" type="text" placeholder="Text input">
+        <input class="input" type="text" placeholder="Search..." value="Query text">
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== TABS ===== -->
+    <section class="section">
+      <div class="section-title">Tabs — Pill (with Icons)</div>
+      <div class="tab-row">
+        <button class="pill-tab active"><span class="tab-icon">◉</span> Active</button>
+        <button class="pill-tab"><span class="tab-icon">○</span> Tab Two</button>
+        <button class="pill-tab"><span class="tab-icon">◎</span> Tab Three</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Tabs — Underline (with Icons)</div>
+      <div class="tab-row">
+        <button class="underline-tab active"><span class="tab-icon">◉</span> Active</button>
+        <button class="underline-tab"><span class="tab-icon">○</span> Tab Two</button>
+        <button class="underline-tab"><span class="tab-icon">◎</span> Tab Three</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-title">Tabs — Vertical (with Icons)</div>
+      <div style="max-width:240px">
+        <div class="vertical-tabs">
+          <button class="v-tab active"><span class="tab-icon">◉</span> Active Tab</button>
+          <button class="v-tab"><span class="tab-icon">○</span> Tab Two</button>
+          <button class="v-tab"><span class="tab-icon">◎</span> Tab Three</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== BADGES ===== -->
+    <section class="section">
+      <div class="section-title">Badges — With Text & Icon</div>
+      <div class="tab-row">
+        <span class="badge badge-success"><span class="badge-icon">✓</span> Complete</span>
+        <span class="badge badge-warning"><span class="badge-icon">!</span> In Progress</span>
+        <span class="badge badge-danger"><span class="badge-icon">✕</span> Error</span>
+        <span class="badge badge-outline"><span class="badge-icon">●</span> Draft</span>
+        <span class="badge badge-soft"><span class="badge-icon">●</span> Default</span>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== NOTIFICATIONS ===== -->
+    <section class="section">
+      <div class="section-title">Notifications — Left Accent List</div>
+      <div class="notif-list" style="max-width:560px">
+        <div class="notif notif-success">
+          <div class="notif-icon">✓</div>
+          <div class="notif-body">
+            <div class="notif-title">Task completed</div>
+            <div class="notif-msg">Design system review finished successfully.</div>
+          </div>
+        </div>
+        <div class="notif notif-warning">
+          <div class="notif-icon">!</div>
+          <div class="notif-body">
+            <div class="notif-title">Approaching time limit</div>
+            <div class="notif-msg">5 minutes remaining in current session.</div>
+          </div>
+        </div>
+        <div class="notif notif-danger">
+          <div class="notif-icon">✕</div>
+          <div class="notif-body">
+            <div class="notif-title">Sync failed</div>
+            <div class="notif-msg">Could not reach server. Retrying...</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== HOVER STATES ===== -->
+    <section class="section">
+      <div class="section-title">Hover — Meaning Exposure, Not Movement</div>
+      <div class="hover-row">
+        <div class="hover-card">
+          <div class="hover-label">Hover this card</div>
+          <div class="hover-sub">Additional context appears here without moving anything.</div>
+        </div>
+        <div class="hover-card">
+          <div class="hover-label">Second card</div>
+          <div class="hover-sub">Same pattern. Background color shifts, text reveals.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== NESTED HIERARCHY ===== -->
+    <section class="section">
+      <div class="section-title">Nested Hierarchy — Radius & Spacing</div>
+      <div class="hierarchy-demo">
+        <div class="hierarchy-outer">
+          <div style="font-size:11px;font-weight:600;color:var(--foreground-subtle);margin-bottom:var(--sp-xs)">radius-xxl (32px) + padding 16px</div>
+          <div class="hierarchy-mid">
+            <div style="font-size:11px;font-weight:600;color:var(--foreground-subtle);margin-bottom:var(--sp-xxs)">radius-lg (16px) + padding 8px</div>
+            <div class="hierarchy-inner">
+              <div style="font-size:11px;font-weight:600;color:var(--foreground-subtle);margin-bottom:2px">radius-sm (8px) + padding 4px</div>
+              <div class="hierarchy-core">radius-xs (4px)</div>
+            </div>
+          </div>
+        </div>
+        <div class="hierarchy-outer" style="background:var(--background)">
+          <div style="font-size:11px;font-weight:600;color:var(--foreground-subtle);margin-bottom:var(--sp-xs)">Inverted: outer on bg</div>
+          <div class="hierarchy-mid" style="background:var(--surface-0)">
+            <div style="font-size:11px;font-weight:600;color:var(--foreground-subtle);margin-bottom:var(--sp-xxs)">surface-0 mid</div>
+            <div class="hierarchy-inner" style="background:var(--surface-1)">
+              <div style="font-size:11px;font-weight:600;color:var(--foreground-subtle);margin-bottom:2px">surface-1 inner</div>
+              <div class="hierarchy-core">surface-2 core</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== SPACING SCALE ===== -->
+    <section class="section">
+      <div class="section-title">Spacing Scale (4px base)</div>
+      <div class="spacing-row">
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:4px"></div><div class="spacing-label">4</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:8px"></div><div class="spacing-label">8</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:12px"></div><div class="spacing-label">12</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:16px"></div><div class="spacing-label">16</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:20px"></div><div class="spacing-label">20</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:24px"></div><div class="spacing-label">24</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:32px"></div><div class="spacing-label">32</div></div>
+        <div class="spacing-block"><div class="spacing-bar" style="width:20px;height:40px"></div><div class="spacing-label">40</div></div>
+      </div>
+    </section>
+
+    <!-- ===== RADIUS SCALE ===== -->
+    <section class="section">
+      <div class="section-title">Border Radius Scale (4px base)</div>
+      <div class="radius-row">
+        <div class="radius-box" style="border-radius:0">0</div>
+        <div class="radius-box" style="border-radius:4px">4</div>
+        <div class="radius-box" style="border-radius:8px">8</div>
+        <div class="radius-box" style="border-radius:12px">12</div>
+        <div class="radius-box" style="border-radius:16px">16</div>
+        <div class="radius-box" style="border-radius:24px">24</div>
+        <div class="radius-box" style="border-radius:32px">32</div>
+        <div class="radius-box" style="border-radius:40px">40</div>
+        <div class="radius-box" style="border-radius:9999px">full</div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ===== ANIMATIONS ===== -->
+    <section class="section">
+      <div class="section-title">Animation</div>
+      <div class="grid-2">
+        <div class="card anim-fade">
+          <div class="card-title">fadeIn (300ms)</div>
+          <div class="card-desc">Opaciy 0 → 1</div>
+        </div>
+        <div class="card anim-slide">
+          <div class="card-title">slideUp (300ms)</div>
+          <div class="card-desc"> translateY 8px → 0</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

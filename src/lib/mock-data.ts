@@ -1,5 +1,5 @@
 // Mock data for UI development
-// This will be replaced with real data from Supabase later
+// This will be replaced with real API data later.
 
 export interface MockTile {
   id: string

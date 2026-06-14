@@ -1,12 +1,29 @@
-import { SupabaseClient } from '@supabase/supabase-js'
 import { Tile, TileCore } from '../domain/tile'
 import { createTileId } from '../domain/ids'
 
+type TileRow = {
+  local_tile_id: string
+  title: string
+  next_action: string | null
+  done_definition: string | null
+}
+
+type QueryResult<T> = Promise<{ data: T[] | null; error: { message: string } | null }>
+type QueryBuilder<T> = {
+  select(columns: string): QueryBuilder<T>
+  eq(column: string, value: string): QueryBuilder<T>
+  is(column: string, value: null): QueryBuilder<T>
+  order(column: string, options: { ascending: boolean }): QueryResult<T>
+}
+type TileStorageClient = {
+  from(table: string): QueryBuilder<TileRow>
+}
+
 export class TileRepository {
-  constructor(private supabase: SupabaseClient) {}
+  constructor(private client: TileStorageClient) {}
 
   async listTiles(userId: string): Promise<Tile[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await this.client
       .from('tiles')
       .select('id, local_tile_id, title, next_action, done_definition')
       .eq('user_id', userId)
@@ -20,12 +37,7 @@ export class TileRepository {
     return (data || []).map(row => this.deserialize(row))
   }
 
-  private deserialize(row: {
-    local_tile_id: string
-    title: string
-    next_action: string | null
-    done_definition: string | null
-  }): Tile {
+  private deserialize(row: TileRow): Tile {
     const core: TileCore = {
       id: createTileId(row.local_tile_id),
       title: row.title,

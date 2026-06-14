@@ -9,18 +9,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 })
   }
 
-  // Lazy load Supabase client to avoid build-time errors
-  const { createClient } = await import('@supabase/supabase-js')
-  
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
-  if (!supabaseUrl || !serviceRoleKey) {
-    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
-  }
-  
-  const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
-  
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')
   
@@ -40,38 +28,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
   }
 
-  switch (event.type) {
-    case 'customer.subscription.created':
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object
-      const customerId = subscription.customer as string
-      const status = subscription.status
-      const plan = status === 'active' ? 'pro' : 'free'
-
-      await supabaseAdmin
-        .from('profiles')
-        .update({
-          plan,
-          stripe_subscription_id: subscription.id,
-          plan_updated_at: new Date().toISOString(),
-        })
-        .eq('stripe_customer_id', customerId)
-      break
-    }
-    case 'customer.subscription.deleted': {
-      const subscription = event.data.object
-      const customerId = subscription.customer as string
-      await supabaseAdmin
-        .from('profiles')
-        .update({
-          plan: 'free',
-          stripe_subscription_id: null,
-          plan_updated_at: new Date().toISOString(),
-        })
-        .eq('stripe_customer_id', customerId)
-      break
-    }
-  }
+  // Billing profile persistence is moving to the AWS application API.
+  // Until that API exists, keep webhook signature verification active and
+  // acknowledge events until the AWS profile writer is enabled.
+  void event
 
   return NextResponse.json({ received: true })
 }

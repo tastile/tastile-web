@@ -138,7 +138,7 @@ export function QuickTileCreate() {
 
   const temporalOrderValid = isRecurring ? recurrenceWindowValid : (!startDate || !endDate || endDate.getTime() > startDate.getTime())
   const durationReady =
-    tileKind !== 'work'
+    tileKind === 'label'
       ? true
       : isRecurring
       ? (workTargetMin ?? 0) > 0
@@ -184,7 +184,7 @@ export function QuickTileCreate() {
       return
     }
 
-    if (tileKind === 'work' && !isRecurring && hasAnyTemporalConstraint && (workTargetMin ?? 0) <= 0) {
+    if ((tileKind === 'work' || tileKind === 'break') && !isRecurring && hasAnyTemporalConstraint && (workTargetMin ?? 0) <= 0) {
       setError(t('quickCreate.durationRequired'))
       return
     }
@@ -200,6 +200,7 @@ export function QuickTileCreate() {
     tile.annotation.semanticRole = tileKind
     tile.objective.objectiveMode = objectiveMode
     tile.objective.targetWorkMin = tileKind === 'work' ? effectiveDurationMin : null
+    tile.objective.targetRestMin = tileKind === 'break' ? effectiveDurationMin : null
     const recurrenceSelectorExpression = buildRecurrenceSelectorExpression({
       frequency: recurrenceFrequency,
       interval: recurrenceInterval,
@@ -319,7 +320,7 @@ export function QuickTileCreate() {
         <h2 className="text-base font-semibold text-foreground">{t('quickCreate.title')}</h2>
         <button
           onClick={close}
-          className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-surface-2"
+          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-2"
           aria-label={locale === 'ja' ? 'パネルを閉じる' : 'Close panel'}
         >
           <X className="h-4 w-4" />
@@ -343,6 +344,9 @@ export function QuickTileCreate() {
         <SectionBlock>
           <ChoiceButton active={tileKind === 'work'} onClick={() => setTileKind('work')}>
             {t('quickCreate.kindTask')}
+          </ChoiceButton>
+          <ChoiceButton active={tileKind === 'break'} onClick={() => setTileKind('break')}>
+            {t('quickCreate.kindBreak')}
           </ChoiceButton>
           <ChoiceButton active={tileKind === 'label'} onClick={() => setTileKind('label')}>
             {t('quickCreate.kindLabel')}
@@ -597,7 +601,7 @@ export function QuickTileCreate() {
           </div>
         ) : null}
 
-        {tileKind === 'work' ? (
+        {tileKind === 'work' || tileKind === 'break' ? (
           <SectionBlock title={t('quickCreate.workTargetTitle')} helpText={t('quickCreate.workTargetGuide')} choiceGrid={false}>
             <DurationInput
               hours={workHoursInput}
@@ -694,7 +698,7 @@ export function QuickTileCreate() {
               className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
             />
             {isProjectInputFocused ? (
-              <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg border border-surface-2 bg-surface-elevated p-1 shadow-lg">
+              <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1">
                 {projectSuggestions.length > 0 ? (
                   projectSuggestions.map((project) => (
                     <button
@@ -741,7 +745,7 @@ export function QuickTileCreate() {
               className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
             />
             {isTagInputFocused ? (
-              <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg border border-surface-2 bg-surface-elevated p-1 shadow-lg">
+              <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1">
                 {tagSuggestions.length > 0 ? (
                   tagSuggestions.map((tag) => (
                     <button
@@ -796,12 +800,12 @@ export function QuickTileCreate() {
           type="button"
           onClick={handleCreate}
           disabled={!canSubmit || submitting}
-          className="w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-fg disabled:opacity-50"
+          className="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-fg disabled:opacity-50"
         >
           {submitting ? t('quickCreate.saving') : t('quickCreate.commit')}
         </button>
 
-        {error ? <p className="text-xs text-red-500">{error}</p> : null}
+        {error ? <p className="text-xs text-danger">{error}</p> : null}
       </div>
     </section>
   )
@@ -843,7 +847,7 @@ function HelpBadge({ text }: { text: string }) {
       >
         ?
       </span>
-      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 hidden w-48 -translate-x-1/2 rounded-md bg-surface-2 px-2 py-1 text-[10px] font-normal leading-snug text-foreground shadow-md group-hover/tooltip:block group-focus-within/tooltip:block">
+      <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-1 hidden w-48 -translate-x-1/2 rounded-md bg-surface-2 px-2 py-1 text-[10px] font-normal leading-snug text-foreground group-hover/tooltip:block group-focus-within/tooltip:block">
         {text}
       </span>
     </span>
@@ -1025,7 +1029,7 @@ function DurationInput({
       </div>
 
       {isPickerOpen ? (
-        <div className="absolute right-0 top-12 z-30 w-64 rounded-xl border border-surface-2 bg-surface-elevated p-3 shadow-xl">
+        <div className="absolute right-0 top-12 z-30 w-64 rounded-xl bg-surface-elevated p-3">
           <div className="mb-3 text-center text-lg font-semibold tabular-nums text-foreground">
             {formatHHMM(parsedHours, parsedMinutes)}
           </div>

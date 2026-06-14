@@ -146,14 +146,14 @@ export function TimelineAxis({
           {nowTopPx !== null ? (
             <div
               data-testid="timeline-now"
-              className="absolute left-0 right-0 z-20 border-t border-red-400/70"
+              className="absolute left-0 right-0 z-20"
               style={{ top: (nowTopPx - minTop + 24) * zoom }}
             />
           ) : null}
           {visibleMarkers.map(marker => (
             <div
               key={`marker-${marker.label}-${marker.topPx}`}
-              className="absolute left-0 right-0 z-0 border-t border-surface-2/60"
+              className="absolute left-0 right-0 z-0"
               style={{ top: (marker.topPx - minTop + 24) * zoom }}
             >
               <span className="absolute -top-2 left-1 text-[10px] font-mono text-foreground-muted/80">{marker.label}</span>
@@ -196,11 +196,11 @@ export function TimelineAxis({
                 item.status === 'active'
                   ? 'block h-2.5 w-2.5 rounded-full bg-primary'
                   : item.status === 'done'
-                  ? 'block h-2.5 w-2.5 rounded-full bg-emerald-500'
+                  ? 'block h-2.5 w-2.5 rounded-full bg-success'
                   : 'block h-2.5 w-2.5 rounded-full bg-foreground-subtle'
               }
             />
-            <span className="absolute left-[5px] top-3 h-7 w-px bg-border" />
+            <span className="absolute left-[5px] top-3 h-7 w-px bg-foreground/15" />
           </div>
           <div className="min-w-0">
             <p className="text-sm text-foreground truncate">{item.title}</p>

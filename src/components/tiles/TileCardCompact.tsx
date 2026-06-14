@@ -93,7 +93,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
             event.stopPropagation()
             onEdit(tile.core.id)
           }}
-          className="inline-flex h-8 w-8 items-center justify-center rounded border border-border bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+          className="inline-flex h-8 w-8 items-center justify-center rounded bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
           aria-label="Edit tile"
           title="Edit tile"
         >
@@ -107,6 +107,9 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
 function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
   if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
     return formatDuration(tile.objective.targetWorkMin, locale)
+  }
+  if (typeof tile.objective.targetRestMin === 'number' && tile.objective.targetRestMin > 0) {
+    return formatDuration(tile.objective.targetRestMin, locale)
   }
   const totalWorked = tile.work.segments.reduce((sum, segment) => {
     if (!segment.endAt) return sum

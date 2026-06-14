@@ -10,15 +10,15 @@ import { Actor } from '../domain/actor'
 import { ExecutionSnapshot, ExecutionSyncStatus, PromptAction, PromptQueueItemSnapshot, TimelineItemSnapshot } from '../domain/execution'
 import { EventId, TileId } from '../domain/ids'
 import { Tile } from '../domain/tile'
-import { createClient } from '@/lib/supabase/client'
-import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   clearSessionCache,
   getIdTokenClient,
   getSessionClient,
 } from '@/lib/daemon/id-token-client'
-import { createWasmExecutionEngine, WasmExecutionEngine } from '../wasm/core-engine'
-import { EventStore } from '../storage/event-store'
+import {
+  requestNotificationPermissionOnce,
+  showNotification,
+} from '../notifications/browser'
 import type {
   DaemonExecutionViewResponse,
   DaemonPendingPromptResponse,
@@ -27,11 +27,7 @@ import type {
 } from '../daemon/client'
 
 const DEFAULT_DAEMON_BASE_URL = 'http://127.0.0.1:3140'
-const DEFAULT_EXECUTION_BACKEND = 'wasm'
 const DEFAULT_DAEMON_REFRESH_MS = 5_000
-const WASM_TILES_STORAGE_KEY = 'tastile:wasm-tiles:v1'
-const WASM_DEVICE_ID_STORAGE_KEY = 'tastile:wasm-device-id:v1'
-let runtimeWasmDeviceId: string | null = null
 
 async function readDaemonSyncStatusSafely(client: DaemonClient): Promise<ExecutionSyncStatus | null> {
   try {
@@ -45,31 +41,14 @@ async function readDaemonSyncStatusSafely(client: DaemonClient): Promise<Executi
 export function useDaemonExecution() {
   const [state, setState] = useState<AppState>(AppState.initial())
   const [loading, setLoading] = useState(true)
-  const [supabase] = useState<SupabaseClient | null>(() => {
-    // Supabase is only used by the optional WASM offline backend. The
-    // dashboard's primary path is the daemon (Cognito bearer), which does
-    // not require Supabase. If Supabase env is not configured, the WASM
-    // branch is disabled and the daemon path is used.
-    try {
-      return createClient()
-    } catch (err) {
-      console.warn('Supabase client not available; WASM offline mode disabled.', err)
-      return null
-    }
-  })
   const clientRef = useRef<DaemonClient | null>(null)
-  const wasmRef = useRef<WasmExecutionEngine | null>(null)
-  const eventStoreRef = useRef<EventStore | null>(null)
   const syncStatusRef = useRef<ExecutionSyncStatus | null>(null)
   const mountedRef = useRef(true)
   const refreshRequestRef = useRef(0)
   const appliedRefreshRef = useRef(0)
+  const stateRef = useRef<AppState>(AppState.initial())
   const baseUrl = useMemo(
     () => process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? DEFAULT_DAEMON_BASE_URL,
-    []
-  )
-  const backend = useMemo(
-    () => process.env.NEXT_PUBLIC_EXECUTION_BACKEND ?? DEFAULT_EXECUTION_BACKEND,
     []
   )
   const daemonRefreshMs = useMemo(() => {
@@ -103,43 +82,33 @@ export function useDaemonExecution() {
 
   const refreshSnapshot = useCallback(async () => {
     const client = clientRef.current
-    const wasm = wasmRef.current
-    if (!client && !wasm) return
+    if (!client) return
     const requestId = ++refreshRequestRef.current
-    const daemonClient = client!
     const readClientSnapshot = () => Promise.all([
-      daemonClient.readSnapshot(),
+      client.readSnapshot(),
       Promise.resolve(null as Tile[] | null),
-      safeRead(() => daemonClient.readTiles(), null as DaemonTilesResponse | null),
-      safeRead(() => daemonClient.readExecutionView(), null as DaemonExecutionViewResponse | null),
-      safeRead(() => daemonClient.readPendingPrompt(), null as DaemonPendingPromptResponse | null),
-      safeRead(() => daemonClient.readTodayTimeline(), null as DaemonTimelineTodayResponse | null),
+      safeRead(() => client.readTiles(), null as DaemonTilesResponse | null),
+      safeRead(() => client.readExecutionView(), null as DaemonExecutionViewResponse | null),
+      safeRead(() => client.readPendingPrompt(), null as DaemonPendingPromptResponse | null),
+      safeRead(() => client.readTodayTimeline(), null as DaemonTimelineTodayResponse | null),
     ])
-    const readWasmSnapshot = () => Promise.all([
-      wasm!.readSnapshot(),
-      wasm!.exportTiles().catch(() => null as Tile[] | null),
-      safeRead(() => wasm!.readTiles(), null as DaemonTilesResponse | null),
-      safeRead(() => wasm!.readExecutionView(), null as DaemonExecutionViewResponse | null),
-      safeRead(() => wasm!.readPendingPrompt(), null as DaemonPendingPromptResponse | null),
-      safeRead(() => wasm!.readTodayTimeline(), null as DaemonTimelineTodayResponse | null),
-    ])
-    const [snapshot, exportedTiles, tilesView, executionView, pendingPromptView, todayTimeline] = client
-      ? await runWithDaemonReauthRetry(readClientSnapshot, restoreDaemonSession)
-      : await readWasmSnapshot()
+    const [snapshot, exportedTiles, tilesView, executionView, pendingPromptView, todayTimeline] =
+      await runWithDaemonReauthRetry(readClientSnapshot, restoreDaemonSession)
     if (!mountedRef.current) return
     if (requestId < appliedRefreshRef.current) return
     appliedRefreshRef.current = requestId
-    setState(
-      projectSnapshotToAppState(
-        snapshot,
-        syncStatusRef.current,
-        exportedTiles,
-        tilesView,
-        executionView,
-        pendingPromptView,
-        todayTimeline
-      )
+    const projected = projectSnapshotToAppState(
+      snapshot,
+      syncStatusRef.current,
+      exportedTiles,
+      tilesView,
+      executionView,
+      pendingPromptView,
+      todayTimeline
     )
+    emitNotificationsForStateChange(stateRef.current, projected)
+    stateRef.current = projected
+    setState(projected)
   }, [restoreDaemonSession])
 
   useEffect(() => {
@@ -150,56 +119,11 @@ export function useDaemonExecution() {
 
     async function init() {
       try {
-        if (backend === 'wasm' && !supabase) {
-          console.warn('NEXT_PUBLIC_EXECUTION_BACKEND=wasm requested but Supabase env is not configured; falling back to daemon backend.')
-        }
-        if (backend === 'wasm' && supabase) {
-          const wasm = await createWasmExecutionEngine()
-          wasmRef.current = wasm
-          const {
-            data: { session },
-          } = await supabase.auth.getSession()
-          if (session?.user) {
-            const eventStore = new EventStore(supabase, session.user.id)
-            eventStoreRef.current = eventStore
-            const tiles = await eventStore.loadAllTiles()
-            const deviceId = getOrCreateWasmDeviceId()
-            let shouldMirrorSupabaseTiles = false
-            await wasm.configureSync({
-              deviceId,
-              connected: true,
-              authenticated: true,
-              remoteTiles: tiles,
-            })
-            const restoreAck = await wasm.restoreSync()
-            const syncStatus = await wasm.readSyncStatus()
-            syncStatusRef.current = syncStatus
-            if (!restoreAck.accepted) {
-              console.warn('WASM restore sync was rejected, falling back to local tiles', restoreAck.metadata.error)
-              await wasm.replaceTiles(tiles)
-              shouldMirrorSupabaseTiles = true
-            }
-            refreshTimer = setInterval(() => {
-              void (async () => {
-                try {
-                  if (shouldMirrorSupabaseTiles) {
-                    const latest = await eventStore.loadAllTiles()
-                    await wasm.replaceTiles(latest)
-                  }
-                  const latestSyncStatus = await wasm.readSyncStatus()
-                  syncStatusRef.current = latestSyncStatus
-                  await refreshSnapshot()
-                } catch (err) {
-                  console.error('Failed to refresh wasm tiles from Supabase:', err)
-                }
-              })()
-            }, daemonRefreshMs)
-          } else {
-            await replayPersistedWasmTiles(wasm)
-          }
-          await refreshSnapshot()
-          return
-        }
+        // Ask for browser-notification permission once on the first daemon
+        // hook mount. The browser suppresses the prompt if the user has
+        // already answered, and the helper itself is a no-op outside
+        // secure contexts.
+        void requestNotificationPermissionOnce()
 
         const session = await getSessionClient()
         if (!active || (!session && !e2eBypassAuth)) {
@@ -289,144 +213,26 @@ export function useDaemonExecution() {
       closeStream?.()
       if (refreshTimer) clearInterval(refreshTimer)
     }
-  }, [backend, baseUrl, daemonRefreshMs, e2eBypassAuth, refreshSnapshot, supabase])
+  }, [baseUrl, daemonRefreshMs, e2eBypassAuth, refreshSnapshot])
 
-  const execute = useCallback(async (command: Command, actor: Actor) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- actor is part of the public API contract
+  const execute = useCallback(async (command: Command, _actor: Actor) => {
     const client = clientRef.current
-    const wasm = wasmRef.current
-    if (!client && !wasm) {
+    if (!client) {
       throw new Error('Daemon client not initialized. Are you authenticated?')
     }
-    if (client) {
-      await runWithDaemonReauthRetry(
-        () => client.sendCommand(toDaemonCommand(command)),
-        restoreDaemonSession
-      )
-      const daemonSyncStatus = await readDaemonSyncStatusSafely(client)
-      if (daemonSyncStatus) {
-        syncStatusRef.current = daemonSyncStatus
-      }
-    } else {
-      const eventStore = eventStoreRef.current
-      if (eventStore) {
-        const ack = await wasm!.executeWithAck(command, actor)
-        if (!ack.accepted) {
-          throw new Error(ack.error?.message ?? 'WASM command was rejected')
-        }
-        try {
-          if (ack.emittedEvents.length > 0) {
-            const syncAck = await wasm!.triggerSync()
-            if (!syncAck.accepted) {
-              throw new Error(syncAck.metadata.error ?? 'WASM trigger sync was rejected')
-            }
-            syncStatusRef.current = await wasm!.readSyncStatus()
-            const tiles = await wasm!.exportTiles()
-            await eventStore.replaceAllTiles(tiles)
-          }
-        } catch (err) {
-          try {
-            syncStatusRef.current = await wasm!.readSyncStatus()
-            if (mountedRef.current) {
-              setState(current => ({
-                ...current,
-                execution: {
-                  ...current.execution,
-                  syncStatus: syncStatusRef.current,
-                },
-              }))
-            }
-          } catch (statusErr) {
-            console.warn('Failed to refresh wasm sync status after trigger error', statusErr)
-          }
-          const latest = await eventStore.loadAllTiles()
-          await wasm!.replaceTiles(latest)
-          try {
-            await refreshSnapshot()
-          } catch (refreshErr) {
-            console.warn('Failed to refresh snapshot after wasm trigger error', refreshErr)
-          }
-          throw err
-        }
-      } else {
-        await wasm!.execute(command, actor)
-        await persistWasmTiles(wasm!)
-      }
+    await runWithDaemonReauthRetry(
+      () => client.sendCommand(toDaemonCommand(command)),
+      restoreDaemonSession
+    )
+    const daemonSyncStatus = await readDaemonSyncStatusSafely(client)
+    if (daemonSyncStatus) {
+      syncStatusRef.current = daemonSyncStatus
     }
     await refreshSnapshot()
   }, [refreshSnapshot, restoreDaemonSession])
 
   return { state, loading, execute }
-}
-
-function replayPersistedWasmTiles(engine: WasmExecutionEngine): Promise<void> {
-  const storage = getLocalStorage()
-  if (!storage) return Promise.resolve()
-  let raw: string | null = null
-  try {
-    raw = storage.getItem(WASM_TILES_STORAGE_KEY)
-  } catch {
-    return Promise.resolve()
-  }
-  if (!raw) return Promise.resolve()
-  let tiles: Tile[] = []
-  try {
-    tiles = JSON.parse(raw) as Tile[]
-  } catch {
-    storage.removeItem(WASM_TILES_STORAGE_KEY)
-    return Promise.resolve()
-  }
-  return engine.replaceTiles(tiles).catch(err => {
-    console.warn('Skipping persisted wasm tile replay due to execution error', err)
-  })
-}
-
-async function persistWasmTiles(engine: WasmExecutionEngine) {
-  const storage = getLocalStorage()
-  if (!storage) return
-  try {
-    const tiles = await engine.exportTiles()
-    storage.setItem(WASM_TILES_STORAGE_KEY, JSON.stringify(tiles))
-  } catch {
-    return
-  }
-}
-
-function getLocalStorage(): Storage | null {
-  if (typeof window === 'undefined') return null
-  try {
-    const storage = window.localStorage
-    if (!storage || typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
-      return null
-    }
-    return storage
-  } catch {
-    return null
-  }
-}
-
-function getOrCreateWasmDeviceId(): string {
-  const storage = getLocalStorage()
-  if (!storage) {
-    if (!runtimeWasmDeviceId) runtimeWasmDeviceId = createWebDeviceId()
-    return runtimeWasmDeviceId
-  }
-  try {
-    const existing = storage.getItem(WASM_DEVICE_ID_STORAGE_KEY)
-    if (existing && existing.trim().length > 0) return existing
-    const created = createWebDeviceId()
-    storage.setItem(WASM_DEVICE_ID_STORAGE_KEY, created)
-    return created
-  } catch {
-    if (!runtimeWasmDeviceId) runtimeWasmDeviceId = createWebDeviceId()
-    return runtimeWasmDeviceId
-  }
-}
-
-function createWebDeviceId(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `web-${crypto.randomUUID()}`
-  }
-  return `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`
 }
 
 function projectSnapshotToAppState(
@@ -917,6 +723,61 @@ async function safeRead<T>(run: () => Promise<T>, fallback: T): Promise<T> {
     return await run()
   } catch {
     return fallback
+  }
+}
+
+// Compare the previous projected AppState to the new one and surface
+// browser notifications for transitions the user actually cares about. The
+// in-app prompt card already covers the "you need to act" case; this is for
+// when the dashboard is in a background tab.
+function emitNotificationsForStateChange(prev: AppState, next: AppState): void {
+  if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+    // Skip notifications when the user is looking at the dashboard — the
+    // internal prompt / active-tile card is already drawing their attention.
+    return
+  }
+
+  const prevActive = prev.execution.activeTileId
+  const nextActive = next.execution.activeTileId
+  const prevPhase = prev.execution.phaseKind
+  const nextPhase = next.execution.phaseKind
+
+  if (nextActive && nextActive !== prevActive && nextPhase === 'work') {
+    const tile = next.tiles.get(nextActive)
+    showNotification({
+      kind: 'tile_started',
+      title: tile?.core.title ?? 'タイル開始',
+      body: '作業フェーズを開始しました',
+      tag: `tile-started:${nextActive}`,
+    })
+  } else if (nextActive && nextActive !== prevActive && nextPhase === 'break') {
+    showNotification({
+      kind: 'tile_started',
+      title: '休憩',
+      body: '休憩フェーズに入りました',
+      tag: `break-started:${nextActive}`,
+    })
+  }
+
+  if (prevActive && !nextActive && prevPhase === 'work') {
+    const tile = prev.tiles.get(prevActive)
+    showNotification({
+      kind: 'tile_completed',
+      title: tile?.core.title ?? 'タイル完了',
+      body: '完了しました',
+      tag: `tile-completed:${prevActive}`,
+    })
+  }
+
+  const prevPrompt = prev.execution.pendingPrompt
+  const nextPrompt = next.execution.pendingPrompt
+  if (nextPrompt && nextPrompt.promptId !== prevPrompt?.promptId) {
+    showNotification({
+      kind: 'prompt_pending',
+      title: nextPrompt.title ?? '確認が必要',
+      body: nextPrompt.body ?? 'ダッシュボードを確認してください',
+      tag: `prompt:${nextPrompt.promptId}`,
+    })
   }
 }
 
