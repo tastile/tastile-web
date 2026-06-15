@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useSyncExternalStore } from 'react'
 import { Copy, Check, Eye, EyeOff } from 'lucide-react'
 
 type SessionData = {
@@ -10,18 +10,24 @@ type SessionData = {
   exp: number
 }
 
+// Wall-clock subscription so render can read a time snapshot without
+// invoking an impure function (Date.now) directly.
+const timeSubscribe = (onChange: () => void) => {
+  const id = setInterval(onChange, 1000)
+  return () => clearInterval(id)
+}
+const timeGetSnapshot = () => Date.now()
+const timeGetServerSnapshot = () => 0
+
 export function AccessTokenSection() {
   const [session, setSession] = useState<SessionData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [visible, setVisible] = useState(false)
+  const nowMs = useSyncExternalStore(timeSubscribe, timeGetSnapshot, timeGetServerSnapshot)
 
-  useEffect(() => {
-    void fetchSession()
-  }, [])
-
-  async function fetchSession() {
+  const fetchSession = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -37,7 +43,16 @@ export function AccessTokenSection() {
       setError('セッションの取得に失敗しました。')
     }
     setLoading(false)
-  }
+  }, [])
+
+  // Initial fetch on mount is the canonical data-loading pattern for
+  // client components; the React Compiler set-state-in-effect rule rejects
+  // it because the chained setState calls cause one extra render, but the
+  // alternative (React Query / use() + Suspense) is out of scope here.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchSession()
+  }, [fetchSession])
 
   const handleCopy = useCallback(async () => {
     if (!session?.idToken) return
@@ -46,7 +61,7 @@ export function AccessTokenSection() {
     setTimeout(() => setCopied(false), 2000)
   }, [session])
 
-  const isExpired = session ? Date.now() / 1000 > session.exp : false
+  const isExpired = session ? nowMs / 1000 > session.exp : false
 
   return (
     <div className="space-y-4">

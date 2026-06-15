@@ -15,6 +15,11 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "src/wasm/**",
+    // Deployment verification copies (standalone build output, not source).
+    "deploy-check/**",
+    "deploy-staging/**",
+    "deploy-staging2/**",
+    "deploy-*/**",
   ]),
 ]);
 
