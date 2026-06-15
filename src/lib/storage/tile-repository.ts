@@ -6,6 +6,7 @@ type TileRow = {
   title: string
   next_action: string | null
   done_definition: string | null
+  tz?: string | null
 }
 
 type QueryResult<T> = Promise<{ data: T[] | null; error: { message: string } | null }>
@@ -25,7 +26,7 @@ export class TileRepository {
   async listTiles(userId: string): Promise<Tile[]> {
     const { data, error } = await this.client
       .from('tiles')
-      .select('id, local_tile_id, title, next_action, done_definition')
+      .select('id, local_tile_id, title, next_action, done_definition, tz')
       .eq('user_id', userId)
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
@@ -51,6 +52,7 @@ export class TileRepository {
       core,
       work: { segments: [] },
       temporal: {
+        tz: row.tz ?? null,
         releaseAt: null,
         dueAt: null,
         fixedStart: null,

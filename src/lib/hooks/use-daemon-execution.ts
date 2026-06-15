@@ -345,9 +345,11 @@ function toTimelineSnapshots(
   if (!todayTimeline?.items?.length) {
     return snapshotTimeline.map(item => {
       const fallback = inferDurationForTile(item.tileId, item.type)
+      const tz = item.tz ?? (item.tileId ? tilesById.get(item.tileId)?.temporal.tz ?? null : null)
       return {
         ...item,
         durationMin: item.durationMin && item.durationMin > 0 ? item.durationMin : fallback,
+        tz,
       }
     })
   }
@@ -375,6 +377,7 @@ function toTimelineSnapshots(
         : 'scheduled'
     const type: TimelineItemSnapshot['type'] =
       row.kind === 'work' || row.kind === 'break' || row.kind === 'fixed' ? row.kind : 'fixed'
+    const tz = tileId ? tilesById.get(tileId)?.temporal.tz ?? null : null
 
     items.push({
       id: `${row.tileId ?? 'timeline'}-${index}-${startAt.getTime()}`,
@@ -385,15 +388,18 @@ function toTimelineSnapshots(
       startAt,
       endAt: inferredEnd,
       durationMin: inferredDuration ?? null,
+      tz,
     })
   }
 
   if (items.length === 0) {
     return snapshotTimeline.map(item => {
       const fallback = inferDurationForTile(item.tileId, item.type)
+      const tz = item.tz ?? (item.tileId ? tilesById.get(item.tileId)?.temporal.tz ?? null : null)
       return {
         ...item,
         durationMin: item.durationMin && item.durationMin > 0 ? item.durationMin : fallback,
+        tz,
       }
     })
   }

@@ -4,7 +4,7 @@ import { getTileLifecycle, type Tile } from '@/lib/domain/tile'
 import type { TileId } from '@/lib/domain/ids'
 import { TileStatusIcon } from './shared/TileStatusIcon'
 import { LoadingCard } from './shared/LoadingCard'
-import { formatDateTime, formatDuration } from '@/lib/utils/tile-formatters'
+import { formatDateTime, formatDuration, formatTimeOnly } from '@/lib/utils/tile-formatters'
 import { useTranslation } from '@/lib/i18n/use-translation'
 import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
 import { cn } from '@/lib/utils/cn'
@@ -39,8 +39,8 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
     null
   const durationText = resolveDurationText(tile, locale)
   const startText = startAt
-    ? startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    : formatDateTime(null, locale)
+    ? formatTimeOnly(startAt, locale, tile.temporal.tz)
+    : formatDateTime(null, locale, tile.temporal.tz)
   const durationLabel = t('tiles.duration')
 
   const handleStatusClick = () => {

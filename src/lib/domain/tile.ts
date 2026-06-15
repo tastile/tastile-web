@@ -44,6 +44,9 @@ export interface Tile {
     segments: Segment[]
   }
   temporal: {
+    /** IANA timezone name (e.g. "Asia/Tokyo") for displaying this
+     *  tile's instants. `null` means UTC. */
+    tz: string | null
     releaseAt: Date | null
     dueAt: Date | null
     fixedStart: Date | null
@@ -95,6 +98,7 @@ export const Tile = {
       segments: [],
     },
     temporal: {
+      tz: null,
       releaseAt: null,
       dueAt: null,
       fixedStart: null,

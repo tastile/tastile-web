@@ -120,12 +120,12 @@ export function TileCardDetailed(props: TileCardDetailedProps) {
       <div className="space-y-1 text-xs text-foreground-muted">
         <div>
           <span className="opacity-60">{t('tiles.startAt')}:</span>{' '}
-          {startAt ? formatDateTime(startAt, locale) : formatDateTime(null, locale)}
+          {startAt ? formatDateTime(startAt, locale, tile.temporal.tz) : formatDateTime(null, locale, tile.temporal.tz)}
         </div>
         {tile.temporal.fixedEnd ? (
           <div>
             <span className="opacity-60">{t('tiles.endAt')}:</span>{' '}
-            {formatDateTime(tile.temporal.fixedEnd, locale)}
+            {formatDateTime(tile.temporal.fixedEnd, locale, tile.temporal.tz)}
           </div>
         ) : null}
       </div>

@@ -1,6 +1,7 @@
 import { Segment } from '../../domain/tile'
 import { AppState } from '../state'
 import { Event } from '../event'
+import { formatDateOnly, formatTimeOnly } from '../../utils/tile-formatters'
 
 export function reduce(state: AppState, event: Event): void {
   switch (event.type) {
@@ -173,12 +174,15 @@ export function buildTimelineView(state: AppState): Array<{
   title: string
   status: 'done' | 'active' | 'scheduled'
 }> {
-  return state.timeline.map(item => ({
-    id: item.id,
-    date: item.startAt.toLocaleDateString([], { month: '2-digit', day: '2-digit' }),
-    time: item.startAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    type: item.type,
-    title: item.title,
-    status: item.status,
-  }))
+  return state.timeline.map(item => {
+    const tz = item.tz ?? null
+    return {
+      id: item.id,
+      date: formatDateOnly(item.startAt, 'en', tz),
+      time: formatTimeOnly(item.startAt, 'en', tz),
+      type: item.type,
+      title: item.title,
+      status: item.status,
+    }
+  })
 }

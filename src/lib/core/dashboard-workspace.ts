@@ -35,6 +35,9 @@ export interface TimelineView {
     timeLabel: string
     startAt: Date
     endAt: Date
+    /** IANA timezone name from the source tile. UI MUST NOT consult the
+     *  browser's local timezone. */
+    tz: string | null
   }>
 }
 
@@ -44,6 +47,9 @@ export interface TileChangeEvent {
   tileTitle: string
   createdAt: Date
   tileId: TileId | null
+  /** IANA timezone name from the source tile. UI MUST NOT consult the
+   *  browser's local timezone when rendering. */
+  tz?: string | null
 }
 
 export interface TileWorkspaceGroup {
@@ -94,13 +100,14 @@ export function buildTimelineView(
         heightPx,
         lane: 0,
         totalLanes: 1,
-        startLabel: formatTime(clippedStart),
-        endLabel: formatTime(clippedEnd),
+        startLabel: formatTime(clippedStart, item.tz),
+        endLabel: formatTime(clippedEnd, item.tz),
         durationLabel: formatDuration(clippedStart, clippedEnd),
-        dateLabel: formatDate(clippedStart),
-        timeLabel: formatTime(clippedStart),
+        dateLabel: formatDate(clippedStart, item.tz),
+        timeLabel: formatTime(clippedStart, item.tz),
         startAt: clippedStart,
         endAt: clippedEnd,
+        tz: item.tz ?? null,
       }
     })
     .filter((item): item is NonNullable<typeof item> => item !== null)
@@ -170,6 +177,7 @@ export function buildTileChanges(
         tileTitle: title,
         createdAt: item.startAt,
         tileId: item.tileId,
+        tz: item.tz ?? null,
       }
       if (!item.endAt) return [starts]
       const ends = {
@@ -178,6 +186,7 @@ export function buildTileChanges(
         tileTitle: title,
         createdAt: item.endAt,
         tileId: item.tileId,
+        tz: item.tz ?? null,
       }
       return [starts, ends]
     })
@@ -419,11 +428,25 @@ function minutesBetween(start: Date, end: Date): number {
   return Math.max(0, (end.getTime() - start.getTime()) / 60000)
 }
 
-function formatTime(d: Date): string {
+function formatTime(d: Date, tz?: string | null): string {
+  if (tz) {
+    return new Intl.DateTimeFormat('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: tz,
+    }).format(d)
+  }
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-function formatDate(d: Date): string {
+function formatDate(d: Date, tz?: string | null): string {
+  if (tz) {
+    return new Intl.DateTimeFormat('en-GB', {
+      month: '2-digit',
+      day: '2-digit',
+      timeZone: tz,
+    }).format(d)
+  }
   return d.toLocaleDateString([], { month: '2-digit', day: '2-digit' })
 }
 

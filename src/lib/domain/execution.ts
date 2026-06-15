@@ -72,10 +72,17 @@ export interface InProgressTileSnapshot {
   phaseKind: PhaseKind
   startedAt: Date
   phaseEndsAt: Date | null
+  /** IANA timezone name (e.g. "Asia/Tokyo") for displaying this snapshot's
+   *  instants. `null`/missing means the source tile has no tz; the UI
+   *  MUST NOT fall back to the browser's local timezone. */
+  tz?: string | null
 }
 
 export interface PromptQueueItemSnapshot extends PendingPrompt {
   status: PromptQueueStatus
+  /** IANA timezone name from the source tile. UI MUST NOT consult the
+   *  browser's local timezone. */
+  tz?: string | null
 }
 
 export interface TimelineItemSnapshot {
@@ -87,6 +94,9 @@ export interface TimelineItemSnapshot {
   startAt: Date
   endAt: Date | null
   durationMin?: number | null
+  /** IANA timezone name (e.g. "Asia/Tokyo") from the source tile. UI
+   *  MUST NOT consult the browser's local timezone when rendering. */
+  tz?: string | null
 }
 
 export interface ExecutionSnapshot {

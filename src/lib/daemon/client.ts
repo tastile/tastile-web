@@ -45,6 +45,7 @@ export interface DaemonTileView {
   resumeNote: string | null
   projectedNextStartAt: string | null
   temporal: {
+    tz: string | null
     releaseAt: string | null
     dueAt: string | null
     fixedStart: string | null
@@ -665,6 +666,7 @@ function parseTileView(raw: unknown, field: string): DaemonTileView {
     projectedNextStartAt: asNullableString(readOptional(row, 'projected_next_start_at') ?? readOptional(row, 'projectedNextStartAt') ?? null, `${field}.projected_next_start_at`),
     temporal: temporalRow
       ? {
+          tz: asNullableString(readOptional(temporalRow, 'tz') ?? null, 'temporal.tz'),
           releaseAt: asNullableString(readOptional(temporalRow, 'release_at') ?? readOptional(temporalRow, 'releaseAt') ?? null, 'temporal.release_at'),
           dueAt: asNullableString(readOptional(temporalRow, 'due_at') ?? readOptional(temporalRow, 'dueAt') ?? null, 'temporal.due_at'),
           fixedStart: asNullableString(readOptional(temporalRow, 'fixed_start') ?? readOptional(temporalRow, 'fixedStart') ?? null, 'temporal.fixed_start'),

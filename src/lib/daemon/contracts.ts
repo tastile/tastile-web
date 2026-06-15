@@ -38,6 +38,9 @@ function parseInProgressTile(raw: unknown): InProgressTileSnapshot {
     phaseEndsAt: readOptional(row, 'phase_ends_at') === undefined
       ? null
       : asNullableDate(readOptional(row, 'phase_ends_at'), 'phase_ends_at'),
+    tz: readOptional(row, 'tz') === undefined
+      ? null
+      : asNullableString(readOptional(row, 'tz'), 'in_progress_tiles[].tz'),
   }
 }
 
@@ -61,6 +64,9 @@ function parsePromptQueueItem(raw: unknown): PromptQueueItemSnapshot {
       ? null
       : asNullableDate(readOptional(row, 'expires_at'), 'expires_at'),
     stale: asOptionalBoolean(readOptional(row, 'stale')) ?? false,
+    tz: readOptional(row, 'tz') === undefined
+      ? null
+      : asNullableString(readOptional(row, 'tz'), 'prompt_queue[].tz'),
   }
 }
 
@@ -77,6 +83,9 @@ function parseTimelineItem(raw: unknown): TimelineItemSnapshot {
     startAt: asDate(read(row, 'start_at'), 'start_at'),
     endAt: asNullableDate(read(row, 'end_at'), 'end_at'),
     durationMin,
+    tz: readOptional(row, 'tz') === undefined
+      ? null
+      : asNullableString(readOptional(row, 'tz'), 'timeline[].tz'),
   }
 }
 

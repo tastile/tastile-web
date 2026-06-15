@@ -331,16 +331,19 @@ function TilesPageInner() {
         <section className="rounded-xl bg-surface-1 p-4">
           <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-foreground-muted">Recent Changes</h2>
           <div className="space-y-2">
-            {changes.map(event => (
+            {changes.map(event => {
+              const changeTz = event.tz ?? null
+              return (
               <div key={event.id} className="flex items-center gap-3 rounded-lg bg-surface-0 px-3 py-2">
                 <span className={`h-2 w-2 rounded-full ${event.eventType.endsWith('_ended') ? 'bg-success' : 'bg-primary'}`} />
                 <span className="text-sm text-foreground">{event.tileTitle}</span>
                 <span className="text-xs uppercase tracking-wider text-foreground-muted">{event.eventType}</span>
                 <span className="ml-auto text-xs text-foreground-muted">
-                  {event.createdAt.toLocaleDateString()} {event.createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  {formatDateTime(event.createdAt, locale, changeTz)}
                 </span>
               </div>
-            ))}
+              )
+            })}
             {changes.length === 0 ? <p className="text-sm text-foreground-muted">No tile changes yet</p> : null}
           </div>
         </section>
@@ -386,10 +389,10 @@ function DesktopStyleTileRow({
     null
   const durationText = resolveDurationText(tile, locale)
   const startText = startAt
-    ? formatDateTime(startAt, locale)
+    ? formatDateTime(startAt, locale, tile.temporal.tz)
     : tile.temporal.fixedStart
-      ? formatDateTime(tile.temporal.fixedStart, locale)
-      : formatDateTime(null, locale)
+      ? formatDateTime(tile.temporal.fixedStart, locale, tile.temporal.tz)
+      : formatDateTime(null, locale, tile.temporal.tz)
   const durationLabel = t('tiles.duration')
 
   return (
