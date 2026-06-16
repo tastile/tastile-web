@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { COOKIE_ACCESS_TOKEN, COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN, COOKIE_USER_SUB } from '@/lib/cognito/cookies'
 import { tryGetCognitoEnv } from '@/lib/cognito/env'
+import { safeNextPath } from '@/lib/cognito/login-url'
 import { parseIdTokenClaims, refreshTokens } from '@/lib/cognito/server'
 import { resolveCanonicalHostRedirect } from '@/lib/host-routing'
 
@@ -52,19 +53,25 @@ export default async function middleware(request: NextRequest) {
   const isAuthPage = AUTH_PAGE_PATHS.has(path)
   if (!isProtected && !isAuthPage) return NextResponse.next({ request })
 
+  // When bouncing an authenticated user off an auth page, honor a local
+  // ?next= path so a deep link like /login?next=/app/foo lands the user
+  // on /app/foo instead of the default /dashboard. safeNextPath rejects
+  // non-local and open-redirect inputs.
+  const safeNext = safeNextPath(request.nextUrl.searchParams.get('next'))
+
   const idToken = request.cookies.get(COOKIE_ID_TOKEN)?.value
   const refresh = request.cookies.get(COOKIE_REFRESH_TOKEN)?.value
   const env = tryGetCognitoEnv()
 
   // 1) Existing id_token still valid → either pass through (protected) or
-  //    bounce to /dashboard (auth page).
+  //    bounce to the post-auth destination (auth page).
   if (idToken) {
     try {
       const claims = parseIdTokenClaims(idToken)
       if (claims.exp * 1000 > Date.now()) {
         return isProtected
           ? NextResponse.next({ request })
-          : NextResponse.redirect(new URL('/dashboard', request.url))
+          : NextResponse.redirect(new URL(safeNext, request.url))
       }
     } catch {
       // fall through to refresh
@@ -80,7 +87,7 @@ export default async function middleware(request: NextRequest) {
       const claims = parseIdTokenClaims(next.id_token)
       const res = isProtected
         ? NextResponse.next({ request })
-        : NextResponse.redirect(new URL('/dashboard', request.url))
+        : NextResponse.redirect(new URL(safeNext, request.url))
       res.cookies.set(COOKIE_ID_TOKEN, next.id_token, {
         ...SECURE_COOKIE_BASE,
         maxAge: next.expires_in,
