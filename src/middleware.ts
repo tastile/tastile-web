@@ -4,6 +4,26 @@ import { tryGetCognitoEnv } from '@/lib/cognito/env'
 import { parseIdTokenClaims, refreshTokens } from '@/lib/cognito/server'
 import { resolveCanonicalHostRedirect } from '@/lib/host-routing'
 
+const PROTECTED_PREFIXES = ['/dashboard', '/app']
+// Pages that should bounce an already-authenticated user to /dashboard. The
+// matching set is exact: we don't want the middleware to intercept the auth
+// processing routes (callback, complete, start, ...) because they either set
+// cookies or initiate Cognito redirects.
+const AUTH_PAGE_PATHS = new Set<string>([
+  '/login',
+  '/auth/email',
+  '/auth/email/verify',
+  '/auth/confirm',
+  '/auth/signup',
+])
+const REFRESH_MAX_AGE = 60 * 60 * 24 * 30
+const SECURE_COOKIE_BASE = {
+  httpOnly: true,
+  secure: true,
+  sameSite: 'lax' as const,
+  path: '/',
+}
+
 export default async function middleware(request: NextRequest) {
   const redirectHost = resolveCanonicalHostRedirect(
     request.headers.get('host') ?? '',
@@ -17,16 +37,6 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.redirect(url, 308)
   }
 
-  const protectedPaths = ['/dashboard', '/app']
-  const isProtected = protectedPaths.some(
-    (p) => request.nextUrl.pathname === p || request.nextUrl.pathname.startsWith(`${p}/`)
-  )
-  if (!isProtected) return NextResponse.next({ request })
-
-  const idToken = request.cookies.get(COOKIE_ID_TOKEN)?.value
-  const refresh = request.cookies.get(COOKIE_REFRESH_TOKEN)?.value
-  const env = tryGetCognitoEnv()
-
   // Local dev: when E2E bypass is enabled we skip the Cognito cookie check
   // entirely so the dashboard can talk to a local daemon (which has its own
   // TASTILE_BYPASS_AUTH) without needing a live session. Server-only flag
@@ -35,61 +45,74 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next({ request })
   }
 
+  const path = request.nextUrl.pathname
+  const isProtected = PROTECTED_PREFIXES.some(
+    (p) => path === p || path.startsWith(`${p}/`)
+  )
+  const isAuthPage = AUTH_PAGE_PATHS.has(path)
+  if (!isProtected && !isAuthPage) return NextResponse.next({ request })
+
+  const idToken = request.cookies.get(COOKIE_ID_TOKEN)?.value
+  const refresh = request.cookies.get(COOKIE_REFRESH_TOKEN)?.value
+  const env = tryGetCognitoEnv()
+
+  // 1) Existing id_token still valid → either pass through (protected) or
+  //    bounce to /dashboard (auth page).
   if (idToken) {
     try {
       const claims = parseIdTokenClaims(idToken)
       if (claims.exp * 1000 > Date.now()) {
-        return NextResponse.next({ request })
+        return isProtected
+          ? NextResponse.next({ request })
+          : NextResponse.redirect(new URL('/dashboard', request.url))
       }
     } catch {
       // fall through to refresh
     }
   }
 
+  // 2) id_token expired (or malformed) but refresh_token is present. Try to
+  //    mint a new pair; on success attach the new cookies to whichever
+  //    response we end up returning.
   if (refresh && env) {
     try {
       const next = await refreshTokens({ env, refreshToken: refresh })
       const claims = parseIdTokenClaims(next.id_token)
-      const res = NextResponse.next({ request })
+      const res = isProtected
+        ? NextResponse.next({ request })
+        : NextResponse.redirect(new URL('/dashboard', request.url))
       res.cookies.set(COOKIE_ID_TOKEN, next.id_token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
+        ...SECURE_COOKIE_BASE,
         maxAge: next.expires_in,
       })
       res.cookies.set(COOKIE_ACCESS_TOKEN, next.access_token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
+        ...SECURE_COOKIE_BASE,
         maxAge: next.expires_in,
       })
       if (next.refresh_token) {
         res.cookies.set(COOKIE_REFRESH_TOKEN, next.refresh_token, {
-          httpOnly: true,
-          secure: true,
-          sameSite: 'lax',
-          path: '/',
-          maxAge: 60 * 60 * 24 * 30,
+          ...SECURE_COOKIE_BASE,
+          maxAge: REFRESH_MAX_AGE,
         })
       }
       res.cookies.set(COOKIE_USER_SUB, claims.sub, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 60 * 60 * 24 * 30,
+        ...SECURE_COOKIE_BASE,
+        maxAge: REFRESH_MAX_AGE,
       })
       return res
     } catch {
-      // fall through to redirect
+      // fall through to the no-session branch
     }
   }
 
-  const url = new URL('/login', request.url)
-  url.searchParams.set('error', idToken ? 'session_expired' : 'no_session')
-  return NextResponse.redirect(url)
+  // 3) No valid session.
+  if (isProtected) {
+    const url = new URL('/login', request.url)
+    url.searchParams.set('error', idToken ? 'session_expired' : 'no_session')
+    return NextResponse.redirect(url)
+  }
+  // isAuthPage: show the login form, let the page render.
+  return NextResponse.next({ request })
 }
 
 export const config = {
