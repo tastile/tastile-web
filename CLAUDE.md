@@ -23,7 +23,7 @@ Tastile v1's **primary platform is Windows PC** (not web):
 - **tastile-core** (Rust): The source of truth. Command/Event/Reducer engine, SQLite storage, local HTTP API
 - **tastile-desktop** (C#/WinUI): Primary Windows client with OS-level intervention (focus capture, fullscreen prompts, system tray)
 - **tastile-android** (Kotlin): Android companion
-- **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser using Supabase
+- **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser via the AWS-hosted `tastile-core` API (Cognito Hosted UI for auth)
 
 ### tastile-web's Role
 
@@ -58,18 +58,17 @@ tastile-web is NOT the primary Tastile experience. It exists to:
    - AI agents, automation, and humans use the **same Command surface**
    - UI is a thin presentation layer over Core
 
-### Backend: Supabase (Web-Only)
+### Backend: AWS
 
-- **Auth**: Google OAuth
-- **Database**: PostgreSQL with Row Level Security (RLS)
-  - `profiles`: User profile data
-  - `tiles`: Tile definitions (cloud authority for web; Rust Core uses SQLite)
-  - `events`: **Event sourcing log** (append-only, ordered by `occurred_at`)
-  - `user_settings`: User preferences
-- **Realtime**: Multi-device sync via postgres_changes subscriptions
-- **Edge Functions**: Stripe webhooks, integrations
+- **Auth**: AWS Cognito Hosted UI (Google OAuth federated identity). Same sign-in flow as `tastile-desktop` — see `../tastile-desktop/CLAUDE.md` for connection model details.
+- **API**: `tastile-core` (Rust daemon on EC2) over HTTPS. Web client is a thin presentation layer that issues Command API calls and consumes the resulting Events.
+- **Database**: Postgres via tastile-core (no direct DB access from the web client).
+- **Event sourcing**: Stored in tastile-core, not in a side-channel DB.
+- **Sync**: Client ↔ tastile-core API (poll + SSE) for multi-device state propagation.
+- **Billing**: Stripe webhooks via Next.js API routes.
+- **File storage**: AWS S3 (e.g., desktop installer manifest).
 
-**Important:** Windows version uses **local SQLite** as authority. Web version uses **Supabase** as authority.
+Tokens issued by Cognito: `id_token` (JWT, sent as `Authorization: Bearer …`) plus `refresh_token` for silent renewal. See `../tastile-desktop/CLAUDE.md` for the canonical token-handling pattern.
 
 ### Frontend Stack
 - Next.js 15 (App Router) + TypeScript
@@ -88,13 +87,13 @@ Validation (can we accept this?)
   ↓
 Event(s) generated (what actually happened)
   ↓
-Event Store append (Supabase persistence)
+Event Store append (tastile-core API persistence)
   ↓
 Reducer (derive new AppState from events)
   ↓
 React re-render
   ↓
-Realtime subscription → sync to other devices
+Sync via tastile-core API (poll + SSE) → other devices
 ```
 
 **Absolute Rules:**
@@ -116,7 +115,7 @@ src/lib/
 │   ├── handler.ts   # Command → Events generator
 │   └── reducer/     # Event → AppState reducer
 ├── storage/
-│   └── event-store.ts  # Supabase event persistence
+│   └── event-store.ts  # tastile-core API event persistence
 └── hooks/
     └── use-execution-engine.ts  # React integration
 ```
@@ -140,13 +139,6 @@ bun test         # Run all tests with Vitest
 bun test <file>  # Run specific test file
 ```
 
-### Supabase Migrations
-```bash
-npx supabase db push              # Apply local migrations to remote
-npx supabase db reset             # Reset local DB and apply migrations
-npx supabase migration new <name> # Create new migration
-```
-
 ### Testing
 ```bash
 bun test src/lib/storage/event-store.test.ts  # Test specific file
@@ -164,15 +156,15 @@ bun test --ui                                  # Interactive UI
 5. **DO NOT create UI-specific Commands** - Commands must be domain-level (not "ClickedButton")
 6. **DO NOT give AI special backdoor APIs** - AI uses same Command surface as humans
 
-### Supabase Schema
-- All tables have RLS policies scoped to `auth.uid() = user_id`
-- `events` table is append-only (no UPDATE/DELETE in application code)
-- Use `event_payload` column (not `payload_json`) for new code
-- Indexes: `(user_id, occurred_at)`, `(user_id, sequence_number)`
+### tastile-core API
+- All requests authenticated with `Authorization: Bearer <id_token>` (Cognito JWT)
+- The `events` log is append-only; clients never issue UPDATE/DELETE on events
+- Multi-device sync is delegated to tastile-core (poll + SSE); clients do not implement their own sync layer
+- Database schema lives in `tastile-core` — see `../tastile-core/CLAUDE.md`
 
 ### Mock Data vs Real Data
 Current UI components use `src/lib/mock-data.ts`. When implementing features:
-1. Replace mock imports with real Supabase queries
+1. Replace mock imports with real `tastile-core` API client calls
 2. Use `useExecutionEngine()` hook for state management
 3. Connect to actual `EventStore` and `AppState`
 
@@ -185,12 +177,12 @@ Current UI components use `src/lib/mock-data.ts`. When implementing features:
 - **Tiles**: Cloud-authoritative, local cache
 - **Events**: Append-only, ordered by `occurred_at`
 - **Settings**: Last-write-wins
-- **Execution state** (active_tile, phase): NOT stored in Supabase (browser-local only)
+- **Execution state** (active_tile, phase): NOT persisted by tastile-core across restarts (browser-local only)
 
 ## Current Implementation Status
 
-As of 2026-03-16:
-- ✅ Supabase schema + migrations (`events`, `tiles`, `profiles`)
+As of 2026-06-18:
+- ✅ `tastile-core` API client skeleton (`src/lib/core/`)
 - ✅ `EventStore` stub for persistence (`src/lib/storage/event-store.ts`)
 - ⚠️ `use-execution-engine` hook exists BUT references non-existent imports
 - ✅ Dashboard shell UI (`/dashboard`) - **uses mock data**
@@ -235,12 +227,16 @@ These documents are THE source of truth. Read them before implementing:
 
 Required in `.env.local`:
 ```
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+STRIPE_PRO_MONTHLY_PRICE_ID=
+STRIPE_PRO_YEARLY_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_APP_URL=https://tastile.app
+TASTILE_DESKTOP_MANIFEST_URL=
+NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=
+TASTILE_DESKTOP_VERSION=
+NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
 
-See `.env.local.example` for reference.
+See `.env.local.example` for reference. Auth-related AWS Cognito / `tastile-core` API keys are added as the AWS integration lands; they are intentionally not listed here until the corresponding source changes are merged.

@@ -16,7 +16,7 @@ This repository is not the primary Tastile product. The source of truth for the 
 - Next.js 16 App Router
 - React 19
 - TypeScript
-- Supabase
+- AWS (Cognito Hosted UI + tastile-core API)
 - Vitest
 - Playwright
 - Tailwind CSS v4
@@ -31,11 +31,8 @@ src/
     core/       Commands, events, reducers, validation
     domain/     Domain types
     hooks/      Execution engine integration
-    storage/    Supabase persistence
-    supabase/   Browser/server Supabase clients
+    storage/    tastile-core API persistence
   wasm/         Generated WASM bridge artifacts
-supabase/
-  migrations/   Database schema and policy changes
 scripts/        Repository automation
 docs/plans/     Implementation and hardening plans
 e2e/            Playwright coverage
@@ -54,15 +51,19 @@ Copy `.env.local.example` to `.env.local` and fill in the required values.
 Core variables:
 
 ```bash
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
+STRIPE_PRO_MONTHLY_PRICE_ID=
+STRIPE_PRO_YEARLY_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_APP_URL=https://tastile.app
+TASTILE_DESKTOP_MANIFEST_URL=
+NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=
+TASTILE_DESKTOP_VERSION=
+NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
 
-Additional pricing and analytics variables are documented in `.env.local.example`.
+Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.local.example`.
 
 Desktop download and versioning are resolved from the public installer manifest by default
 
