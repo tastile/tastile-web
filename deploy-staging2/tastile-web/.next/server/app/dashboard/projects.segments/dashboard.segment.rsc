@@ -1,5 +1,0 @@
-1:"$Sreact.fragment"
-2:I[94352,["/_next/static/chunks/c3f103333c7e70b4.js","/_next/static/chunks/7bf8c59e7cbc1753.js","/_next/static/chunks/ac584a36f7a76a3e.js","/_next/static/chunks/86852bbe29af2246.js","/_next/static/chunks/946ef40d845a02ea.js"],"DashboardLayoutClient"]
-3:I[39756,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/d2be314c3ece3fbe.js"],"default"]
-4:I[37457,["/_next/static/chunks/ff1a16fafef87110.js","/_next/static/chunks/d2be314c3ece3fbe.js"],"default"]
-0:{"buildId":"0tdSaLDRX3b9R0vS0cGX2","rsc":["$","$1","c",{"children":[[["$","script","script-0",{"src":"/_next/static/chunks/7bf8c59e7cbc1753.js","async":true}],["$","script","script-1",{"src":"/_next/static/chunks/ac584a36f7a76a3e.js","async":true}],["$","script","script-2",{"src":"/_next/static/chunks/86852bbe29af2246.js","async":true}],["$","script","script-3",{"src":"/_next/static/chunks/946ef40d845a02ea.js","async":true}]],["$","$L2",null,{"children":["$","$L3",null,{"parallelRouterKey":"children","template":["$","$L4",null,{}]}]}]]}],"loading":null,"isPartial":false}
