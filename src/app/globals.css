@@ -163,6 +163,7 @@ body {
   font-family: var(--font-sans);
   font-feature-settings: "cv01", "ss03";
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 a,

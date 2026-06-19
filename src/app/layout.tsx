@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Outfit, Zen_Kaku_Gothic_New } from "next/font/google";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { themeScript } from "@/lib/theme-script";
 import "./globals.css";
@@ -22,6 +22,16 @@ const outfit = Outfit({
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+const zenKaku = Zen_Kaku_Gothic_New({
+  variable: "--font-zen-kaku",
+  // next/font's bundled TS types for Zen_Kaku_Gothic_New are stale —
+  // they only declare "cyrillic" | "latin" | "latin-ext", but Google
+  // Fonts exposes "japanese" and "vietnamese" as well. Cast to the
+  // declared union so the loader passes through the extra subset.
+  subsets: ["latin", "japanese"] as ("cyrillic" | "latin" | "latin-ext")[],
+  weight: ["400", "500", "700", "900"],
 });
 
 export const metadata: Metadata = {
@@ -55,7 +65,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${inter.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${inter.variable} ${zenKaku.variable} antialiased`}
       >
         <GoogleAnalytics measurementId={gaMeasurementId} />
         {children}
