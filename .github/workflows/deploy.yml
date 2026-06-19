@@ -1,0 +1,109 @@
+name: Deploy
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.2.0)"
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint, typecheck, test, build
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+        run: npm run check:release
+
+      - name: Package standalone build
+        run: |
+          mkdir -p dist
+          cp -r .next/standalone/. dist/
+          cp -r .next/static        dist/.next/static
+          cp -r public               dist/public
+          (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-build
+          path: tastile-web-*.zip
+
+      - name: Assume AWS role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Upload to transfer bucket
+        id: upload
+        env:
+          TRANSFER_BUCKET: ${{ secrets.TRANSFER_BUCKET }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          aws s3 cp "tastile-web-${VERSION}.zip" "s3://${TRANSFER_BUCKET}/web-builds/${VERSION}.zip"
+          PRESIGNED=$(aws s3 presign "s3://${TRANSFER_BUCKET}/web-builds/${VERSION}.zip" --expires-in 900)
+          echo "presigned=${PRESIGNED}" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy via SSM
+        env:
+          WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
+          VERSION: ${{ steps.version.outputs.version }}
+          PRESIGNED: ${{ steps.upload.outputs.presigned }}
+        run: |
+          aws ssm send-command \
+            --instance-ids "$WEB_INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "$(cat <<JSON
+          {
+            "commands": [
+              "set -euo pipefail",
+              "VERSION='${VERSION}'",
+              "PRESIGNED='${PRESIGNED}'",
+              "RELEASES=/opt/tastile/web/releases",
+              "CURRENT_LINK=/opt/tastile/web/current",
+              "sudo mkdir -p \"$RELEASES\"",
+              "curl -fsSL \"$PRESIGNED\" -o \"/tmp/tastile-web-$VERSION.zip\"",
+              "sudo rm -rf \"$RELEASES/tastile-web-$VERSION\"",
+              "sudo mkdir -p \"$RELEASES/tastile-web-$VERSION\"",
+              "sudo unzip -q \"/tmp/tastile-web-$VERSION.zip\" -d \"$RELEASES/tastile-web-$VERSION\"",
+              "sudo ln -sfn \"$RELEASES/tastile-web-$VERSION\" \"$CURRENT_LINK\"",
+              "sudo systemctl restart tastile-web.service",
+              "sudo systemctl is-active tastile-web.service",
+              "curl -fsS http://127.0.0.1:3000/ >/dev/null"
+            ]
+          }
+          JSON
+          )" \
+            --output text --query "Command.CommandId"
