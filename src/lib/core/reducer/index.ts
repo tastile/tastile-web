@@ -1,5 +1,4 @@
 import type { Segment } from "../../domain/tile";
-import { formatDateOnly, formatTimeOnly } from "../../utils/tile-formatters";
 import type { Event } from "../event";
 import type { AppState } from "../state";
 
@@ -169,25 +168,4 @@ function derivePhaseEndsAt(tile: StateTile, segment: Segment): Date | null {
     ? Math.max(0, targetMin - workMin)
     : targetMin;
   return new Date(segment.startAt.getTime() + remainingMin * 60 * 1000);
-}
-
-export function buildTimelineView(state: AppState): Array<{
-  id: string;
-  time: string;
-  date: string;
-  type: "work" | "break" | "fixed";
-  title: string;
-  status: "done" | "active" | "scheduled";
-}> {
-  return state.timeline.map((item) => {
-    const tz = item.tz ?? null;
-    return {
-      id: item.id,
-      date: formatDateOnly(item.startAt, "en", tz),
-      time: formatTimeOnly(item.startAt, "en", tz),
-      type: item.type,
-      title: item.title,
-      status: item.status,
-    };
-  });
 }

@@ -26,11 +26,6 @@ export function notificationsSupported(): boolean {
   return window.isSecureContext;
 }
 
-export function notificationsPermission(): NotificationPermission | "unsupported" {
-  if (!notificationsSupported()) return "unsupported";
-  return Notification.permission;
-}
-
 export async function requestNotificationPermissionOnce(): Promise<
   NotificationPermission | "unsupported"
 > {

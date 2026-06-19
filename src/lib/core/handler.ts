@@ -393,33 +393,3 @@ function inferPromptFromState(
 function generatePromptId(prefix: string, tileId: TileId | null): string {
   return `${prefix}:${tileId ?? "none"}:${EventId.new()}`;
 }
-
-export function cloneState(state: AppState): AppState {
-  return {
-    tiles: new Map(
-      Array.from(state.tiles.entries()).map(([id, tile]) => [
-        id as TileId,
-        {
-          core: { ...tile.core },
-          work: {
-            segments: tile.work.segments.map((seg) => ({ ...seg })),
-          },
-          temporal: { ...tile.temporal },
-          objective: { ...tile.objective },
-          interruption: { ...tile.interruption },
-          automation: { ...tile.automation },
-          annotation: {
-            ...tile.annotation,
-            labels: [...tile.annotation.labels],
-            timedLabels: tile.annotation.timedLabels.map((label) => ({
-              ...label,
-            })),
-          },
-        },
-      ]),
-    ),
-    execution: { ...state.execution },
-    timeline: [...state.timeline],
-    events: [...state.events],
-  };
-}

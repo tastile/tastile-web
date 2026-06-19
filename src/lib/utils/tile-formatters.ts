@@ -44,19 +44,6 @@ export function formatTimeOnly(
   }).format(date);
 }
 
-export function formatDateOnly(
-  date: Date | null,
-  locale: "ja" | "en" = "ja",
-  timeZone?: string | null,
-): string {
-  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
-  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: timeZone ?? undefined,
-  }).format(date);
-}
-
 export function getCurrentLocalDate(): string {
   const now = new Date();
   const year = now.getFullYear();

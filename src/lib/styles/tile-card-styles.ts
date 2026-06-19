@@ -24,19 +24,6 @@
  */
 
 /**
- * Tile card density variant types
- */
-export type TileCardVariant = "compact" | "comfortable" | "detailed";
-
-/**
- * Tile lifecycle status
- * - ready: Not yet started
- * - started: Currently in progress
- * - done: Completed
- */
-export type TileStatus = "ready" | "started" | "done";
-
-/**
  * Base styling configuration for tile card components
  */
 export const TILE_CARD_STYLES = {

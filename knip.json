@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": [
+    "next.config.*",
+    "src/app/**/{page,layout,route,loading,error,not-found,template,default,icon,opengraph-image,twitter-image}.{ts,tsx}",
+    "scripts/configure-cognito-social-idps.ps1"
+  ],
+  "project": [
+    "src/**/*.{ts,tsx,js,jsx,mjs}"
+  ],
+  "ignore": [
+    "**/*.test.{ts,tsx}",
+    "**/*.test-d.{ts,tsx}",
+    "**/__tests__/**",
+    "**/__mocks__/**",
+    ".next/**",
+    "src/wasm/**",
+    "src/lib/cognito/session.ts"
+  ],
+  "ignoreDependencies": [
+    "tailwindcss",
+    "@tailwindcss/postcss"
+  ],
+  "ignoreExportsUsedInFile": true
+}

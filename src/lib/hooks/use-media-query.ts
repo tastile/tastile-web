@@ -24,14 +24,6 @@ export function useMediaQuery(query: string): boolean {
 }
 
 // Convenience hooks for common breakpoints
-export function useIsMobile() {
-  return useMediaQuery("(max-width: 768px)");
-}
-
-export function useIsTablet() {
-  return useMediaQuery("(min-width: 768px) and (max-width: 1024px)");
-}
-
 export function useIsDesktop() {
   return useMediaQuery("(min-width: 1024px)");
 }

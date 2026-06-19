@@ -1,7 +1,6 @@
 import { validate as isUuid, v4 as uuidv4 } from "uuid";
 
 export type TileId = string & { readonly __brand: "TileId" };
-export type UserId = string & { readonly __brand: "UserId" };
 export type EventId = string & { readonly __brand: "EventId" };
 export type CommandId = string & { readonly __brand: "CommandId" };
 export type RequestId = string & { readonly __brand: "RequestId" };
@@ -36,14 +35,6 @@ export const SegmentId = {
   fromString: (value: string) => value as SegmentId,
 };
 
-export function createTileId(id: string): TileId {
-  return TileId.fromString(id);
-}
-
-export function createUserId(id: string): UserId {
-  return id as UserId;
-}
-
 export function normalizeTileId(value: string | null | undefined): TileId | null {
   if (typeof value !== "string") return null;
   const raw = value.trim();
@@ -52,8 +43,4 @@ export function normalizeTileId(value: string | null | undefined): TileId | null
     : raw;
   if (!isUuid(unprefixed)) return null;
   return TileId.fromString(unprefixed.toLowerCase());
-}
-
-export function isValidTileId(value: string | null | undefined): value is TileId {
-  return normalizeTileId(value) !== null;
 }

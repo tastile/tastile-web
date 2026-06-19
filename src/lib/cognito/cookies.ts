@@ -87,11 +87,6 @@ export async function getRefreshTokenFromCookies(): Promise<string | null> {
   return jar.get(COOKIE_REFRESH_TOKEN)?.value ?? null;
 }
 
-export async function getAccessTokenFromCookies(): Promise<string | null> {
-  const jar = await cookies();
-  return jar.get(COOKIE_ACCESS_TOKEN)?.value ?? null;
-}
-
 export async function getUserSubFromCookies(): Promise<string | null> {
   const jar = await cookies();
   return jar.get(COOKIE_USER_SUB)?.value ?? null;
