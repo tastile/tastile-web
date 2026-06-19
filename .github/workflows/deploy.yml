@@ -41,6 +41,36 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Create .env.local from secrets
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_PRO_MONTHLY_PRICE_ID: ${{ secrets.STRIPE_PRO_MONTHLY_PRICE_ID }}
+          STRIPE_PRO_YEARLY_PRICE_ID: ${{ secrets.STRIPE_PRO_YEARLY_PRICE_ID }}
+          TASTILE_DESKTOP_MANIFEST_URL: ${{ secrets.TASTILE_DESKTOP_MANIFEST_URL }}
+          NEXT_PUBLIC_TASTILE_DESKTOP_VERSION: ${{ secrets.NEXT_PUBLIC_TASTILE_DESKTOP_VERSION }}
+          TASTILE_DESKTOP_VERSION: ${{ secrets.TASTILE_DESKTOP_VERSION }}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+        run: |
+          cat > .env.local <<ENVEOF
+          NEXT_PUBLIC_APP_URL=https://app.tastile.app
+          TASTILE_DESKTOP_MANIFEST_URL=${TASTILE_DESKTOP_MANIFEST_URL}
+          NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=${NEXT_PUBLIC_TASTILE_DESKTOP_VERSION}
+          TASTILE_DESKTOP_VERSION=${TASTILE_DESKTOP_VERSION}
+          NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID}
+          NEXT_PUBLIC_DAEMON_BASE_URL=https://api.tastile.app
+          NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN=tastile-beta
+          NEXT_PUBLIC_COGNITO_CLIENT_ID=2b9fkkb4u5di8veelnmjkmnldj
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID=ap-northeast-1_pwYcPWOyR
+          NEXT_PUBLIC_COGNITO_REGION=ap-northeast-1
+          NEXT_PUBLIC_COGNITO_ISSUER=https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pwYcPWOyR
+          NEXT_PUBLIC_COGNITO_JWKS_URL=https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pwYcPWOyR/.well-known/jwks.json
+          NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
+          NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
+          NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google
+          ENVEOF
+
       - name: Lint, typecheck, test, build
         env:
           NEXT_TELEMETRY_DISABLED: 1
@@ -52,6 +82,7 @@ jobs:
           cp -r .next/standalone/. dist/
           cp -r .next/static        dist/.next/static
           cp -r public               dist/public
+          cp .env.local              dist/.env.local
           (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
 
       - name: Upload artifact
@@ -82,28 +113,16 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           PRESIGNED: ${{ steps.upload.outputs.presigned }}
         run: |
-          aws ssm send-command \
+          CMD_ID=$(aws ssm send-command \
             --instance-ids "$WEB_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters "$(cat <<JSON
-          {
-            "commands": [
-              "set -euo pipefail",
-              "VERSION='${VERSION}'",
-              "PRESIGNED='${PRESIGNED}'",
-              "RELEASES=/opt/tastile/web/releases",
-              "CURRENT_LINK=/opt/tastile/web/current",
-              "sudo mkdir -p \"$RELEASES\"",
-              "curl -fsSL \"$PRESIGNED\" -o \"/tmp/tastile-web-$VERSION.zip\"",
-              "sudo rm -rf \"$RELEASES/tastile-web-$VERSION\"",
-              "sudo mkdir -p \"$RELEASES/tastile-web-$VERSION\"",
-              "sudo unzip -q \"/tmp/tastile-web-$VERSION.zip\" -d \"$RELEASES/tastile-web-$VERSION\"",
-              "sudo ln -sfn \"$RELEASES/tastile-web-$VERSION\" \"$CURRENT_LINK\"",
-              "sudo systemctl restart tastile-web.service",
-              "sudo systemctl is-active tastile-web.service",
-              "curl -fsS http://127.0.0.1:3000/ >/dev/null"
-            ]
-          }
-          JSON
-          )" \
-            --output text --query "Command.CommandId"
+            --parameters "EnvironmentVariables=[\"PRESIGNED=$PRESIGNED\"],commands=[\"set -euo pipefail\",\"RELEASES=/opt/tastile/web/releases\",\"CURRENT_LINK=/opt/tastile/web/current\",\"sudo mkdir -p \\\\\"$RELEASES\\\\\"\",\"curl -fsSL \\\\\"$PRESIGNED\\\\\" -o \\\\\"/tmp/tastile-web-$VERSION.zip\\\\\"\",\"sudo rm -rf \\\\\"$RELEASES/tastile-web-$VERSION\\\\\"\",\"sudo mkdir -p \\\\\"$RELEASES/tastile-web-$VERSION\\\\\"\",\"sudo unzip -q \\\\\"/tmp/tastile-web-$VERSION.zip\\\\\" -d \\\\\"$RELEASES/tastile-web-$VERSION\\\\\"\",\"sudo ln -sfn \\\\\"$RELEASES/tastile-web-$VERSION\\\\\" \\\\\"$CURRENT_LINK\\\\\"\",\"sudo systemctl restart tastile-web.service\",\"sudo systemctl is-active tastile-web.service\",\"curl -fsS http://127.0.0.1:3000/ >/dev/null\"]" \
+            --output text --query "Command.CommandId")
+          echo "SSM Command: $CMD_ID"
+          sleep 10
+          STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$WEB_INSTANCE_ID" --query "Status" --output text)
+          echo "Status: $STATUS"
+          if [ "$STATUS" != "Success" ]; then
+            aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$WEB_INSTANCE_ID" --query "StandardErrorContent" --output text
+            exit 1
+          fi
