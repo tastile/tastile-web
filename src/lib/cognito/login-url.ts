@@ -6,6 +6,7 @@ export type CognitoIdentityProvider = (typeof COGNITO_IDENTITY_PROVIDERS)[number
 
 export function getConfiguredCognitoIdentityProviders(): Set<CognitoIdentityProvider> {
   const raw =
+    process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS ??
     process.env.COGNITO_SUPPORTED_IDENTITY_PROVIDERS ??
     process.env.NEXT_PUBLIC_COGNITO_SUPPORTED_IDENTITY_PROVIDERS ??
     ''
