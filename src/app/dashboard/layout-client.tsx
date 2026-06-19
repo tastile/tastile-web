@@ -11,7 +11,7 @@ import {
   ExecutionEngineProvider,
   useExecutionEngineContext,
 } from "@/lib/hooks/execution-engine-context";
-import { buildDashboardProjection } from "@/lib/projection/dashboard-projection";
+// TODO(new-shell): wire to new component
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 
 const TIMELINE_MAX_VISIBLE_BLOCKS = 18;
@@ -31,7 +31,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [nowMs, setNowMs] = useState<number | null>(null);
 
   const projection = useMemo(
-    () => (nowMs === null ? null : buildDashboardProjection(state, new Date(nowMs))),
+    () => (nowMs === null ? null : buildDashboardProjectionPlaceholder(state, new Date(nowMs))),
     [state, nowMs],
   );
   const timelineBlocks = useMemo(() => projection?.timeline.blocks ?? [], [projection]);
@@ -122,4 +122,71 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </AppShell>
     </SecurityLockGate>
   );
+}
+
+// TODO(new-shell): wire to new component
+type DashboardProjectionPlaceholder = {
+  next: { main: import("@/lib/domain/tile").Tile | null; quick: import("@/lib/domain/tile").Tile[] };
+  tiles: {
+    ordered: import("@/lib/domain/tile").Tile[];
+    ready: import("@/lib/domain/tile").Tile[];
+    started: import("@/lib/domain/tile").Tile[];
+    done: import("@/lib/domain/tile").Tile[];
+  };
+  history: {
+    events: Array<{
+      id: string;
+      eventType: string;
+      tileTitle: string;
+      createdAt: Date;
+    }>;
+  };
+  timeline: {
+    windowStart: Date;
+    windowEnd: Date;
+    markers: Array<{ label: string; topPx: number }>;
+    canvasHeightPx: number;
+    nowTopPx: number | null;
+    blocks: Array<{
+      id: string;
+      title: string;
+      type: "work" | "break" | "fixed";
+      status: "done" | "active" | "scheduled";
+      topPx: number;
+      heightPx: number;
+      lane: number;
+      totalLanes: number;
+      startLabel: string;
+      endLabel: string;
+      durationLabel: string;
+      dateLabel: string;
+      timeLabel: string;
+      startAt: Date;
+      endAt: Date;
+    }>;
+  };
+};
+
+function buildDashboardProjectionPlaceholder(
+  state: import("@/lib/core/state").AppState,
+  now: Date,
+): DashboardProjectionPlaceholder {
+  return {
+    next: { main: null, quick: [] },
+    tiles: {
+      ordered: Array.from(state.tiles.values()),
+      ready: [],
+      started: [],
+      done: [],
+    },
+    history: { events: [] },
+    timeline: {
+      windowStart: now,
+      windowEnd: now,
+      markers: [],
+      canvasHeightPx: 0,
+      nowTopPx: null,
+      blocks: [],
+    },
+  };
 }

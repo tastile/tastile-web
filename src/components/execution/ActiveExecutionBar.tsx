@@ -5,7 +5,7 @@ import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { Actor } from "@/lib/domain/actor";
 import type { PhaseKind } from "@/lib/domain/execution";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
-import { computePhaseMetrics } from "@/lib/projection/dashboard-projection";
+// TODO(new-shell): wire to new component
 
 interface ActiveExecutionBarProps {
   activeTileTitle: string | null;
@@ -88,7 +88,7 @@ export function ActiveExecutionBar({
     );
   }
 
-  const metrics = computePhaseMetrics(phaseStartedAt, phaseEndsAt, new Date(nowMs));
+  const metrics = computePhaseMetricsPlaceholder(phaseStartedAt, phaseEndsAt, new Date(nowMs));
   if (!metrics) {
     const fallbackLabel = resolveCountdownLabel(
       phaseEndsAt,
@@ -185,4 +185,19 @@ function resolveCountdownLabel(
   const target = phaseEndsAt ?? nextActionableStartAt;
   if (!target) return "00:00";
   return formatElapsed(Math.max(0, Math.floor((target.getTime() - now.getTime()) / 1000)));
+}
+
+// TODO(new-shell): wire to new component
+function computePhaseMetricsPlaceholder(
+  phaseStartedAt: Date,
+  phaseEndsAt: Date,
+  now: Date,
+): { countdownLabel: string; progressPercent: number } | null {
+  const remaining = Math.max(0, Math.floor((phaseEndsAt.getTime() - now.getTime()) / 1000));
+  const total = Math.max(1, Math.floor((phaseEndsAt.getTime() - phaseStartedAt.getTime()) / 1000));
+  const elapsed = Math.max(0, total - remaining);
+  return {
+    countdownLabel: formatElapsed(remaining),
+    progressPercent: Math.min(100, (elapsed / total) * 100),
+  };
 }

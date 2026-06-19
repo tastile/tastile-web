@@ -14,8 +14,7 @@ import { Actor } from "@/lib/domain/actor";
 import { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle } from "@/lib/domain/tile";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
-import { buildDashboardProjection } from "@/lib/projection/dashboard-projection";
-import { useDashboardWorkspaceStore } from "@/lib/stores/dashboard-workspace-store";
+// TODO(new-shell): wire to new component
 import { useDialogStore } from "@/lib/stores/dialog-store";
 
 const MAX_VISIBLE_READY_TILES = 40;
@@ -23,11 +22,16 @@ const MAX_VISIBLE_READY_TILES = 40;
 export default function ExecutePage() {
   const { state, loading, execute } = useExecutionEngineContext();
   const { openDeferDialog, openDeleteDialog } = useDialogStore();
-  const { timelineScale, customStartIso, customEndIso, setTimelineScale, setCustomRange } =
-    useDashboardWorkspaceStore();
+  const {
+    timelineScale,
+    customStartIso,
+    customEndIso,
+    setTimelineScale,
+    setCustomRange,
+  } = useDashboardWorkspaceStorePlaceholder();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const projection = useMemo(
-    () => buildDashboardProjection(state, new Date(nowMs)),
+    () => buildDashboardProjectionPlaceholder(state, new Date(nowMs)),
     [state, nowMs],
   );
   const timelineView = useMemo(
@@ -273,4 +277,37 @@ export default function ExecutePage() {
 
 function toTileId(tileId: string) {
   return TileId.fromString(tileId);
+}
+
+// TODO(new-shell): wire to new component
+function buildDashboardProjectionPlaceholder(
+  state: import("@/lib/core/state").AppState,
+  now: Date,
+) {
+  return {
+    next: { main: null as import("@/lib/domain/tile").Tile | null, quick: [] as import("@/lib/domain/tile").Tile[] },
+    tiles: {
+      ordered: Array.from(state.tiles.values()) as import("@/lib/domain/tile").Tile[],
+      ready: [] as import("@/lib/domain/tile").Tile[],
+      started: [] as import("@/lib/domain/tile").Tile[],
+      done: [] as import("@/lib/domain/tile").Tile[],
+    },
+  };
+}
+
+function useDashboardWorkspaceStorePlaceholder() {
+  const [timelineScale, setTimelineScale] = useState<"day" | "week" | "month" | "custom">("day");
+  const [customStartIso, setCustomStartIso] = useState<string | null>(null);
+  const [customEndIso, setCustomEndIso] = useState<string | null>(null);
+  function setCustomRange(start: string | null, end: string | null) {
+    setCustomStartIso(start);
+    setCustomEndIso(end);
+  }
+  return {
+    timelineScale,
+    customStartIso,
+    customEndIso,
+    setTimelineScale,
+    setCustomRange,
+  };
 }

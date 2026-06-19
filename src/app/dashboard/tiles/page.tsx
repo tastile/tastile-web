@@ -21,8 +21,7 @@ import { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { buildDashboardProjection } from "@/lib/projection/dashboard-projection";
-import { useDashboardWorkspaceStore } from "@/lib/stores/dashboard-workspace-store";
+// TODO(new-shell): wire to new component
 import { useDialogStore } from "@/lib/stores/dialog-store";
 import type { Locale } from "@/lib/stores/locale-store";
 import { formatDateTime, formatDuration } from "@/lib/utils/tile-formatters";
@@ -43,7 +42,10 @@ function TilesPageInner() {
   const { openDeleteDialog } = useDialogStore();
   const { locale } = useTranslation();
   const [sectionLimitById, setSectionLimitById] = useState<Record<string, number>>({});
-  const projection = useMemo(() => buildDashboardProjection(state, new Date()), [state]);
+  const projection = useMemo(
+    () => buildDashboardProjectionPlaceholder(state, new Date()),
+    [state],
+  );
   const searchParams = useSearchParams();
   const {
     timelineScale,
@@ -57,7 +59,7 @@ function TilesPageInner() {
     setListGroupingMode,
     listViewMode,
     setListViewMode,
-  } = useDashboardWorkspaceStore();
+  } = useDashboardWorkspaceStorePlaceholder();
   const groupedTiles = useMemo(() => {
     return buildTileListSections(
       projection.tiles.ordered,
@@ -501,4 +503,49 @@ function resolveDurationText(tile: Tile, locale: Locale): string {
   }, 0);
   if (totalWorked > 0) return formatDuration(totalWorked, locale);
   return formatDuration(null, locale);
+}
+
+// TODO(new-shell): wire to new component
+function buildDashboardProjectionPlaceholder(
+  state: import("@/lib/core/state").AppState,
+  _now: Date,
+) {
+  return {
+    next: { main: null as import("@/lib/domain/tile").Tile | null, quick: [] as import("@/lib/domain/tile").Tile[] },
+    tiles: {
+      ordered: Array.from(state.tiles.values()) as import("@/lib/domain/tile").Tile[],
+      ready: [] as import("@/lib/domain/tile").Tile[],
+      started: [] as import("@/lib/domain/tile").Tile[],
+      done: [] as import("@/lib/domain/tile").Tile[],
+    },
+  };
+}
+
+function useDashboardWorkspaceStorePlaceholder() {
+  const [timelineScale, setTimelineScale] = useState<"day" | "week" | "month" | "custom">("day");
+  const [customStartIso, setCustomStartIso] = useState<string | null>(null);
+  const [customEndIso, setCustomEndIso] = useState<string | null>(null);
+  const [activeTilesTab, setActiveTilesTab] = useState<"list" | "timeline" | "changes">("list");
+  const [listGroupingMode, setListGroupingMode] =
+    useState<"state" | "project" | "tag">("state");
+  const [listViewMode, setListViewMode] = useState<"compact" | "comfortable" | "detailed">(
+    "comfortable",
+  );
+  function setCustomRange(start: string | null, end: string | null) {
+    setCustomStartIso(start);
+    setCustomEndIso(end);
+  }
+  return {
+    timelineScale,
+    customStartIso,
+    customEndIso,
+    setTimelineScale,
+    setCustomRange,
+    activeTilesTab,
+    setActiveTilesTab,
+    listGroupingMode,
+    setListGroupingMode,
+    listViewMode,
+    setListViewMode,
+  };
 }
