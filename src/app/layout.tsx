@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Outfit, Inter } from "next/font/google";
+import { Geist, Geist_Mono, Inter, Outfit } from "next/font/google";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
-import { themeScript } from '@/lib/theme-script';
+import { themeScript } from "@/lib/theme-script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -51,6 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init runs synchronously before paint */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body

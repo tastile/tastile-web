@@ -1,39 +1,37 @@
-'use client'
+"use client";
 
 export function UsageDashboard() {
   const placeholderCharts = [
     {
-      title: 'Tiles Over Time',
-      description: 'Track tile creation and completion trends'
+      title: "Tiles Over Time",
+      description: "Track tile creation and completion trends",
     },
     {
-      title: 'Completion Rate',
-      description: 'Monitor your productivity over time'
+      title: "Completion Rate",
+      description: "Monitor your productivity over time",
     },
     {
-      title: 'Focus Time',
-      description: 'Total time spent on work segments'
+      title: "Focus Time",
+      description: "Total time spent on work segments",
     },
     {
-      title: 'Activity Heatmap',
-      description: 'Visual breakdown of your most productive times'
-    }
-  ]
+      title: "Activity Heatmap",
+      description: "Visual breakdown of your most productive times",
+    },
+  ];
 
   return (
     <div className="space-y-6">
       <div className="p-4 bg-primary/10 rounded-lg">
         <p className="text-sm text-primary">
-          <strong>Coming Soon:</strong> Analytics dashboard with charts and insights about your tile usage and productivity patterns.
+          <strong>Coming Soon:</strong> Analytics dashboard with charts and insights about your tile
+          usage and productivity patterns.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {placeholderCharts.map((chart, index) => (
-          <div
-            key={index}
-            className="p-6 bg-surface-2 rounded-lg min-h-[200px] flex flex-col"
-          >
+          <div key={index} className="p-6 bg-surface-2 rounded-lg min-h-[200px] flex flex-col">
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-foreground mb-2">{chart.title}</h3>
               <p className="text-sm text-foreground-muted mb-4">{chart.description}</p>
@@ -55,7 +53,9 @@ export function UsageDashboard() {
         <ul className="space-y-2 text-sm text-foreground-muted">
           <li className="flex items-start gap-2">
             <span className="text-foreground-muted mt-1">•</span>
-            <span>Interactive time-series graphs for tile completion over days, weeks, and months</span>
+            <span>
+              Interactive time-series graphs for tile completion over days, weeks, and months
+            </span>
           </li>
           <li className="flex items-start gap-2">
             <span className="text-foreground-muted mt-1">•</span>
@@ -76,5 +76,5 @@ export function UsageDashboard() {
         </ul>
       </div>
     </div>
-  )
+  );
 }

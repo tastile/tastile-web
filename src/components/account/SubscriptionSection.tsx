@@ -1,25 +1,25 @@
-'use client'
+"use client";
 
-import { useEffect, useState } from 'react'
-import { getSessionClient } from '@/lib/daemon/id-token-client'
-import { BUTTON_STYLES } from '@/lib/styles/button-styles'
+import { useEffect, useState } from "react";
+import { getSessionClient } from "@/lib/daemon/id-token-client";
+import { BUTTON_STYLES } from "@/lib/styles/button-styles";
 
-type Plan = 'free' | 'pro'
+type Plan = "free" | "pro";
 
 export function SubscriptionSection() {
-  const [plan, setPlan] = useState<Plan>('free')
-  const [loading, setLoading] = useState(true)
+  const [plan, setPlan] = useState<Plan>("free");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Plan lookup lives on the daemon (billing service) and is not wired in β.
     // Until then, default to "free" once we have a session; show the loader
     // briefly so the UI doesn't flash an unauthenticated state.
     void (async () => {
-      const session = await getSessionClient()
-      setPlan(session ? 'free' : 'free')
-      setLoading(false)
-    })()
-  }, [])
+      const session = await getSessionClient();
+      setPlan(session ? "free" : "free");
+      setLoading(false);
+    })();
+  }, []);
 
   if (loading) {
     return (
@@ -30,27 +30,27 @@ export function SubscriptionSection() {
           <div className="h-4 w-64 bg-surface-1 animate-pulse rounded" />
         </div>
       </div>
-    )
+    );
   }
 
-  const isPro = plan === 'pro'
+  const isPro = plan === "pro";
 
   const features = {
     free: [
-      'Up to 10 active tiles',
-      'Basic execution control',
-      'Web dashboard access',
-      'Manual tile management'
+      "Up to 10 active tiles",
+      "Basic execution control",
+      "Web dashboard access",
+      "Manual tile management",
     ],
     pro: [
-      'Unlimited tiles',
-      'Advanced automation',
-      'Windows desktop client',
-      'AI-powered suggestions',
-      'Priority support',
-      'Custom integrations'
-    ]
-  }
+      "Unlimited tiles",
+      "Advanced automation",
+      "Windows desktop client",
+      "AI-powered suggestions",
+      "Priority support",
+      "Custom integrations",
+    ],
+  };
 
   return (
     <div className="space-y-6">
@@ -59,31 +59,27 @@ export function SubscriptionSection() {
           <div>
             <h3 className="text-lg font-semibold text-foreground">Current Plan</h3>
             <p className="text-sm text-foreground-muted mt-1">
-              {isPro ? 'You have access to all Pro features' : 'Upgrade to unlock advanced features'}
+              {isPro
+                ? "You have access to all Pro features"
+                : "Upgrade to unlock advanced features"}
             </p>
           </div>
-          <span className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full ${
-            isPro
-              ? 'bg-primary/10 text-primary'
-              : 'bg-surface-1 text-foreground-muted'
-          }`}>
-            {isPro ? 'Pro' : 'Free'}
+          <span
+            className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full ${
+              isPro ? "bg-primary/10 text-primary" : "bg-surface-1 text-foreground-muted"
+            }`}
+          >
+            {isPro ? "Pro" : "Free"}
           </span>
         </div>
 
         <div className="flex gap-3">
           {isPro ? (
-            <a
-              href="/api/stripe/portal"
-              className={BUTTON_STYLES.secondary}
-            >
+            <a href="/api/stripe/portal" className={BUTTON_STYLES.secondary}>
               Manage Billing
             </a>
           ) : (
-            <a
-              href="/api/stripe/checkout"
-              className={BUTTON_STYLES.primary}
-            >
+            <a href="/api/stripe/checkout" className={BUTTON_STYLES.primary}>
               Upgrade to Pro
             </a>
           )}
@@ -101,7 +97,10 @@ export function SubscriptionSection() {
               </span>
             )}
           </div>
-          <p className="text-2xl font-bold text-foreground mb-4">$0<span className="text-sm font-normal text-foreground-muted">/month</span></p>
+          <p className="text-2xl font-bold text-foreground mb-4">
+            $0
+            <span className="text-sm font-normal text-foreground-muted">/month</span>
+          </p>
           <ul className="space-y-2">
             {features.free.map((feature, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
@@ -122,7 +121,10 @@ export function SubscriptionSection() {
               </span>
             )}
           </div>
-          <p className="text-2xl font-bold text-foreground mb-4">$9<span className="text-sm font-normal text-foreground-muted">/month</span></p>
+          <p className="text-2xl font-bold text-foreground mb-4">
+            $9
+            <span className="text-sm font-normal text-foreground-muted">/month</span>
+          </p>
           <ul className="space-y-2">
             {features.pro.map((feature, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
@@ -144,5 +146,5 @@ export function SubscriptionSection() {
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -57,9 +57,9 @@ export const TILE_CARD_STYLES = {
       compact: "w-5 h-5",
       comfortable: "w-5 h-5",
       detailed: "w-6 h-6",
-    }
-  }
-} as const
+    },
+  },
+} as const;
 
 /**
  * Status-based color mapping for tile states
@@ -76,4 +76,4 @@ export const TILE_STATUS_COLORS = {
   ready: "text-foreground-muted",
   started: "text-success",
   done: "text-primary",
-} as const
+} as const;

@@ -1,15 +1,15 @@
-import Link from 'next/link'
-import { MailPlus } from 'lucide-react'
-import { AuthShell } from '../auth-shell'
-import { authErrorMessage } from '@/lib/cognito/form'
+import { MailPlus } from "lucide-react";
+import Link from "next/link";
+import { authErrorMessage } from "@/lib/cognito/form";
+import { AuthShell } from "../auth-shell";
 
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const params = await searchParams
-  const message = authErrorMessage(params.error ?? null)
+  const params = await searchParams;
+  const message = authErrorMessage(params.error ?? null);
 
   return (
     <AuthShell
@@ -19,7 +19,9 @@ export default async function SignupPage({
     >
       <form action="/auth/email/signup" method="post" className="space-y-5">
         <div>
-          <label htmlFor="email" className="text-sm font-medium text-foreground">メールアドレス</label>
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            メールアドレス
+          </label>
           <input
             id="email"
             name="email"
@@ -30,14 +32,21 @@ export default async function SignupPage({
             placeholder="you@example.com"
           />
         </div>
-        <button className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover">
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+        >
           <MailPlus className="h-4 w-4" aria-hidden="true" />
           確認コードを送信
         </button>
       </form>
       <p className="mt-5 text-sm text-foreground-muted">
-        すでにコードを持っている場合は <Link className="underline hover:text-foreground" href="/auth/confirm">確認画面</Link> を開いてください。
+        すでにコードを持っている場合は{" "}
+        <Link className="underline hover:text-foreground" href="/auth/confirm">
+          確認画面
+        </Link>{" "}
+        を開いてください。
       </p>
     </AuthShell>
-  )
+  );
 }

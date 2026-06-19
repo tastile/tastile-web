@@ -1,39 +1,45 @@
-'use client'
+"use client";
 
-import { usePathname } from 'next/navigation'
-import Link from 'next/link'
-import { useQuickCreateStore } from '@/lib/stores/quick-create-store'
-import { useTranslation } from '@/lib/i18n/use-translation'
-import { cn } from '@/lib/utils/cn'
-import { Plus, Zap, List, Plug, Settings } from 'lucide-react'
+import { List, Plug, Plus, Settings, Zap } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { cn } from "@/lib/utils/cn";
 
 interface LeftTabsProps {
-  pinnedOpen: boolean
+  pinnedOpen: boolean;
 }
 
 export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
-  const pathname = usePathname()
-  const { open: openQuickCreate } = useQuickCreateStore()
-  const { t } = useTranslation()
+  const pathname = usePathname();
+  const { open: openQuickCreate } = useQuickCreateStore();
+  const { t } = useTranslation();
 
   return (
     <aside
       className={cn(
-        'group flex flex-col gap-2 rounded-xl bg-surface-elevated p-2 transition-all duration-200',
-        pinnedOpen ? 'w-44' : 'w-14 hover:w-44'
+        "group flex flex-col gap-2 rounded-xl bg-surface-elevated p-2 transition-all duration-200",
+        pinnedOpen ? "w-44" : "w-14 hover:w-44",
       )}
     >
       {/* New Tile Button - Top */}
       <button
+        type="button"
         onClick={openQuickCreate}
         className="relative flex h-11 w-full items-center overflow-hidden rounded-md bg-primary text-primary-fg transition-all hover:bg-primary-hover"
-        title={t('nav.new')}
+        title={t("nav.new")}
       >
         <div className="flex w-10 shrink-0 items-center justify-center">
           <Plus className="h-5 w-5" />
         </div>
-        <span className={cn('whitespace-nowrap text-sm font-medium transition-opacity', pinnedOpen ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}>
-          {t('nav.new')}
+        <span
+          className={cn(
+            "whitespace-nowrap text-sm font-medium transition-opacity",
+            pinnedOpen ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+          )}
+        >
+          {t("nav.new")}
         </span>
       </button>
 
@@ -41,23 +47,23 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
       <nav className="flex flex-1 flex-col gap-2">
         <TabButton
           icon={<Zap className="h-5 w-5" />}
-          label={t('nav.execute')}
+          label={t("nav.execute")}
           href="/dashboard/execute"
-          active={pathname === '/dashboard/execute'}
+          active={pathname === "/dashboard/execute"}
           expanded={pinnedOpen}
         />
         <TabButton
           icon={<List className="h-5 w-5" />}
-          label={t('nav.tiles')}
+          label={t("nav.tiles")}
           href="/dashboard/tiles"
-          active={pathname === '/dashboard/tiles'}
+          active={pathname === "/dashboard/tiles"}
           expanded={pinnedOpen}
         />
         <TabButton
           icon={<Plug className="h-5 w-5" />}
-          label={t('nav.integrations')}
+          label={t("nav.integrations")}
           href="/dashboard/integrations"
-          active={pathname === '/dashboard/integrations'}
+          active={pathname === "/dashboard/integrations"}
           expanded={pinnedOpen}
         />
 
@@ -67,22 +73,22 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
         {/* Settings - Bottom */}
         <TabButton
           icon={<Settings className="h-5 w-5" />}
-          label={t('nav.settings')}
+          label={t("nav.settings")}
           href="/dashboard/settings"
-          active={pathname === '/dashboard/settings'}
+          active={pathname === "/dashboard/settings"}
           expanded={pinnedOpen}
         />
       </nav>
     </aside>
-  )
+  );
 }
 
 interface TabButtonProps {
-  icon: React.ReactNode
-  label: string
-  href: string
-  active: boolean
-  expanded: boolean
+  icon: React.ReactNode;
+  label: string;
+  href: string;
+  active: boolean;
+  expanded: boolean;
 }
 
 function TabButton({ icon, label, href, active, expanded }: TabButtonProps) {
@@ -90,18 +96,21 @@ function TabButton({ icon, label, href, active, expanded }: TabButtonProps) {
     <Link
       href={href}
       className={cn(
-        'relative flex h-11 items-center overflow-hidden rounded-md transition-all',
+        "relative flex h-11 items-center overflow-hidden rounded-md transition-all",
         active
-          ? 'bg-surface-2 text-foreground'
-          : 'text-foreground-muted hover:bg-surface-1 hover:text-foreground'
+          ? "bg-surface-2 text-foreground"
+          : "text-foreground-muted hover:bg-surface-1 hover:text-foreground",
       )}
     >
-      <div className="flex w-10 shrink-0 items-center justify-center">
-        {icon}
-      </div>
-      <span className={cn('whitespace-nowrap text-sm font-medium transition-opacity', expanded ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')}>
+      <div className="flex w-10 shrink-0 items-center justify-center">{icon}</div>
+      <span
+        className={cn(
+          "whitespace-nowrap text-sm font-medium transition-opacity",
+          expanded ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+        )}
+      >
         {label}
       </span>
     </Link>
-  )
+  );
 }

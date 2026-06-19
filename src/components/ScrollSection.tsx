@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 
 interface ScrollSectionProps {

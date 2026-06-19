@@ -61,7 +61,7 @@ export const BUTTON_STYLES = {
    */
   iconLarge:
     "flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-all hover:bg-surface-2 active:scale-95 disabled:opacity-50",
-} as const
+} as const;
 
 /**
  * Interactive element hover states for non-button elements
@@ -70,8 +70,7 @@ export const INTERACTIVE_STYLES = {
   /**
    * Card hover - For clickable card elements
    */
-  cardHover:
-    "transition-all hover:bg-surface-2 hover:scale-[1.01] active:scale-100 cursor-pointer",
+  cardHover: "transition-all hover:bg-surface-2 hover:scale-[1.01] active:scale-100 cursor-pointer",
 
   /**
    * List item hover - For clickable list items
@@ -83,4 +82,4 @@ export const INTERACTIVE_STYLES = {
    */
   statusIconHover:
     "transition-all cursor-pointer hover:ring-2 hover:ring-foreground/20 hover:ring-offset-2 hover:ring-offset-background rounded-full",
-} as const
+} as const;

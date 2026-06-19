@@ -1,21 +1,27 @@
-import { MailCheck } from 'lucide-react'
-import { AuthShell } from '../auth-shell'
-import { authErrorMessage } from '@/lib/cognito/form'
-import { safeOAuthRedirectUri, safePkceValue } from '@/lib/cognito/login-url'
-import { tryGetCognitoEnv } from '@/lib/cognito/env'
+import { MailCheck } from "lucide-react";
+import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { authErrorMessage } from "@/lib/cognito/form";
+import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
+import { AuthShell } from "../auth-shell";
 
 export default async function EmailLoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; error?: string; notice?: string; redirect_uri?: string; state?: string }>
+  searchParams: Promise<{
+    email?: string;
+    error?: string;
+    notice?: string;
+    redirect_uri?: string;
+    state?: string;
+  }>;
 }) {
-  const params = await searchParams
-  const env = tryGetCognitoEnv()
-  const message = authErrorMessage(params.error ?? params.notice ?? null)
-  const email = typeof params.email === 'string' ? params.email : ''
-  const redirectUri = safeOAuthRedirectUri(params.redirect_uri ?? null, env?.callbackUrl ?? '')
-  const state = safePkceValue(params.state ?? null)
-  const isDesktop = redirectUri === 'tastile://auth/callback' && !!state
+  const params = await searchParams;
+  const env = tryGetCognitoEnv();
+  const message = authErrorMessage(params.error ?? params.notice ?? null);
+  const email = typeof params.email === "string" ? params.email : "";
+  const redirectUri = safeOAuthRedirectUri(params.redirect_uri ?? null, env?.callbackUrl ?? "");
+  const state = safePkceValue(params.state ?? null);
+  const isDesktop = redirectUri === "tastile://auth/callback" && !!state;
 
   return (
     <AuthShell
@@ -31,7 +37,9 @@ export default async function EmailLoginPage({
           </>
         ) : null}
         <div>
-          <label htmlFor="email" className="text-sm font-medium text-foreground">メールアドレス</label>
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            メールアドレス
+          </label>
           <input
             id="email"
             name="email"
@@ -43,11 +51,14 @@ export default async function EmailLoginPage({
             placeholder="you@example.com"
           />
         </div>
-        <button className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover">
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+        >
           <MailCheck className="h-4 w-4" aria-hidden="true" />
           ログインコードを送信
         </button>
       </form>
     </AuthShell>
-  )
+  );
 }

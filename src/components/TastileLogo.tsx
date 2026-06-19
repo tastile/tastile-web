@@ -1,6 +1,12 @@
 export function TastileLogo({ size = 24, className }: { size?: number; className?: string }) {
   return (
-    <svg viewBox="0 0 1024 1024" width={size} height={size} className={className} aria-hidden="true">
+    <svg
+      viewBox="0 0 1024 1024"
+      width={size}
+      height={size}
+      className={className}
+      aria-hidden="true"
+    >
       <g transform="translate(512 512) scale(1.43) translate(-512 -512)">
         <g transform="translate(512.75 512.5) rotate(-45) scale(0.86) translate(-272 -272)">
           <path
@@ -14,5 +20,5 @@ export function TastileLogo({ size = 24, className }: { size?: number; className
         </g>
       </g>
     </svg>
-  )
+  );
 }

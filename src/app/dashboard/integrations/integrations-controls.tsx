@@ -1,79 +1,81 @@
-'use client'
+"use client";
 
-import { useState, useTransition } from 'react'
-import type { GoogleCalendarIntegrationSettings } from '@/lib/daemon/client'
-import { BUTTON_STYLES } from '@/lib/styles/button-styles'
+import { useState, useTransition } from "react";
+import type { GoogleCalendarIntegrationSettings } from "@/lib/daemon/client";
+import { BUTTON_STYLES } from "@/lib/styles/button-styles";
 import {
   connectGoogleCalendarAction,
   disconnectGoogleCalendarAction,
   syncNowAction,
   updateLastSyncedAtAction,
-} from './actions'
+} from "./actions";
 
 interface IntegrationsControlsProps {
-  initialSettings: GoogleCalendarIntegrationSettings | null
-  initialError: string | null
+  initialSettings: GoogleCalendarIntegrationSettings | null;
+  initialError: string | null;
 }
 
 export function IntegrationsControls({ initialSettings, initialError }: IntegrationsControlsProps) {
-  const [settings, setSettings] = useState<GoogleCalendarIntegrationSettings | null>(initialSettings)
-  const [error, setError] = useState<string | null>(initialError)
-  const [saving, setSaving] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [settings, setSettings] = useState<GoogleCalendarIntegrationSettings | null>(
+    initialSettings,
+  );
+  const [error, setError] = useState<string | null>(initialError);
+  const [saving, setSaving] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const busy = saving || isPending
+  const busy = saving || isPending;
 
   function handleConnect() {
-    setSaving(true)
-    setError(null)
+    setSaving(true);
+    setError(null);
     startTransition(async () => {
       try {
-        const next = await connectGoogleCalendarAction()
-        setSettings(next)
+        const next = await connectGoogleCalendarAction();
+        setSettings(next);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to connect google calendar')
+        setError(e instanceof Error ? e.message : "Failed to connect google calendar");
       } finally {
-        setSaving(false)
+        setSaving(false);
       }
-    })
+    });
   }
 
   function handleDisconnect() {
-    setSaving(true)
-    setError(null)
+    setSaving(true);
+    setError(null);
     startTransition(async () => {
       try {
-        const next = await disconnectGoogleCalendarAction()
-        setSettings(next)
+        const next = await disconnectGoogleCalendarAction();
+        setSettings(next);
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Failed to disconnect google calendar')
+        setError(e instanceof Error ? e.message : "Failed to disconnect google calendar");
       } finally {
-        setSaving(false)
+        setSaving(false);
       }
-    })
+    });
   }
 
   async function handleSync() {
-    setSaving(true)
-    setError(null)
+    setSaving(true);
+    setError(null);
     try {
-      await syncNowAction()
-      const next = await updateLastSyncedAtAction()
-      setSettings(next)
+      await syncNowAction();
+      const next = await updateLastSyncedAtAction();
+      setSettings(next);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to sync integration')
+      setError(e instanceof Error ? e.message : "Failed to sync integration");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   if (!settings) {
     return (
       <>
-        <p className="text-sm text-foreground-muted">{error ?? 'Loading...'}</p>
+        <p className="text-sm text-foreground-muted">{error ?? "Loading..."}</p>
         {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
       </>
-    )
+    );
   }
 
   return (
@@ -82,7 +84,7 @@ export function IntegrationsControls({ initialSettings, initialError }: Integrat
         <div>
           <h2 className="text-lg font-semibold">Google Calendar</h2>
           <p className="text-sm text-foreground-muted">
-            状態 {settings.connected ? '接続済み' : '未接続'}
+            状態 {settings.connected ? "接続済み" : "未接続"}
           </p>
         </div>
         <div className="flex gap-2">
@@ -117,13 +119,13 @@ export function IntegrationsControls({ initialSettings, initialError }: Integrat
       </div>
 
       <div className="mt-4 grid gap-2 text-sm text-foreground-muted">
-        <div>Read {settings.canRead ? 'enabled' : 'disabled'}</div>
-        <div>Write {settings.canWrite ? 'enabled' : 'disabled'}</div>
-        <div>Account {settings.accountEmail ?? 'not linked'}</div>
-        <div>Last synced {settings.lastSyncedAt ?? 'never'}</div>
+        <div>Read {settings.canRead ? "enabled" : "disabled"}</div>
+        <div>Write {settings.canWrite ? "enabled" : "disabled"}</div>
+        <div>Account {settings.accountEmail ?? "not linked"}</div>
+        <div>Last synced {settings.lastSyncedAt ?? "never"}</div>
       </div>
 
       {error ? <p className="mt-3 text-sm text-danger">{error}</p> : null}
     </>
-  )
+  );
 }

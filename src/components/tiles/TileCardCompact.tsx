@@ -1,69 +1,83 @@
-'use client'
+"use client";
 
-import { getTileLifecycle, type Tile } from '@/lib/domain/tile'
-import type { TileId } from '@/lib/domain/ids'
-import { TileStatusIcon } from './shared/TileStatusIcon'
-import { LoadingCard } from './shared/LoadingCard'
-import { formatDateTime, formatDuration, formatTimeOnly } from '@/lib/utils/tile-formatters'
-import { useTranslation } from '@/lib/i18n/use-translation'
-import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
-import { cn } from '@/lib/utils/cn'
-import { SquarePen } from 'lucide-react'
+import { SquarePen } from "lucide-react";
+import type { TileId } from "@/lib/domain/ids";
+import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { TILE_CARD_STYLES } from "@/lib/styles/tile-card-styles";
+import { cn } from "@/lib/utils/cn";
+import { formatDateTime, formatDuration, formatTimeOnly } from "@/lib/utils/tile-formatters";
+import { LoadingCard } from "./shared/LoadingCard";
+import { TileStatusIcon } from "./shared/TileStatusIcon";
 
 interface TileCardCompactProps {
-  tile: Tile | null
-  loading?: boolean
-  onStart?: (tileId: TileId) => void
-  onClick?: (tile: Tile) => void
-  onEdit?: (tileId: TileId) => void
+  tile: Tile | null;
+  loading?: boolean;
+  onStart?: (tileId: TileId) => void;
+  onClick?: (tile: Tile) => void;
+  onEdit?: (tileId: TileId) => void;
 }
 
 export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: TileCardCompactProps) {
-  const { t, locale } = useTranslation()
+  const { t, locale } = useTranslation();
 
   if (loading) {
-    return <LoadingCard variant="compact" />
+    return <LoadingCard variant="compact" />;
   }
 
   if (!tile) {
-    return null
+    return null;
   }
 
-  const lifecycle = getTileLifecycle(tile)
+  const lifecycle = getTileLifecycle(tile);
   const startAt =
     tile.core.startedAt ??
     tile.temporal.fixedStart ??
     tile.temporal.activeStart ??
     tile.temporal.releaseAt ??
-    tile.work.segments.find(segment => segment.startAt)?.startAt ??
-    null
-  const durationText = resolveDurationText(tile, locale)
+    tile.work.segments.find((segment) => segment.startAt)?.startAt ??
+    null;
+  const durationText = resolveDurationText(tile, locale);
   const startText = startAt
     ? formatTimeOnly(startAt, locale, tile.temporal.tz)
-    : formatDateTime(null, locale, tile.temporal.tz)
-  const durationLabel = t('tiles.duration')
+    : formatDateTime(null, locale, tile.temporal.tz);
+  const durationLabel = t("tiles.duration");
 
   const handleStatusClick = () => {
     if (onStart) {
-      onStart(tile.core.id)
+      onStart(tile.core.id);
     }
-  }
+  };
 
   const handleCardClick = () => {
     if (onClick) {
-      onClick(tile)
+      onClick(tile);
     }
-  }
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
+
+  const interactive = Boolean(onClick);
+  const interactiveProps = interactive ? ({ role: "button", tabIndex: 0 } as const) : ({} as const);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: card acts as button only when onClick is provided (role + tabIndex added)
     <div
+      {...interactiveProps}
       onClick={handleCardClick}
+      onKeyDown={interactive ? handleCardKeyDown : undefined}
       className={cn(
         "flex items-center gap-3",
         TILE_CARD_STYLES.base,
         TILE_CARD_STYLES.padding.compact,
         onClick && TILE_CARD_STYLES.hover,
-        onClick && "cursor-pointer"
+        onClick && "cursor-pointer",
       )}
     >
       <TileStatusIcon
@@ -73,25 +87,31 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
       />
 
       <div className="flex-1 min-w-0">
-        <h4 className={cn(
-          "text-sm font-medium text-foreground truncate",
-          lifecycle === 'done' && "line-through opacity-60"
-        )}>
+        <h4
+          className={cn(
+            "text-sm font-medium text-foreground truncate",
+            lifecycle === "done" && "line-through opacity-60",
+          )}
+        >
           {tile.core.title}
         </h4>
       </div>
 
       <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
-        <p className="font-mono">{durationLabel} {durationText}</p>
-        <p>{t('tiles.startAt')} {startText}</p>
+        <p className="font-mono">
+          {durationLabel} {durationText}
+        </p>
+        <p>
+          {t("tiles.startAt")} {startText}
+        </p>
       </div>
 
       {onEdit ? (
         <button
           type="button"
           onClick={(event) => {
-            event.stopPropagation()
-            onEdit(tile.core.id)
+            event.stopPropagation();
+            onEdit(tile.core.id);
           }}
           className="inline-flex h-8 w-8 items-center justify-center rounded bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
           aria-label="Edit tile"
@@ -101,21 +121,24 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
         </button>
       ) : null}
     </div>
-  )
+  );
 }
 
-function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
-  if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
-    return formatDuration(tile.objective.targetWorkMin, locale)
+function resolveDurationText(tile: Tile, locale: "ja" | "en"): string {
+  if (typeof tile.objective.targetWorkMin === "number" && tile.objective.targetWorkMin > 0) {
+    return formatDuration(tile.objective.targetWorkMin, locale);
   }
-  if (typeof tile.objective.targetRestMin === 'number' && tile.objective.targetRestMin > 0) {
-    return formatDuration(tile.objective.targetRestMin, locale)
+  if (typeof tile.objective.targetRestMin === "number" && tile.objective.targetRestMin > 0) {
+    return formatDuration(tile.objective.targetRestMin, locale);
   }
   const totalWorked = tile.work.segments.reduce((sum, segment) => {
-    if (!segment.endAt) return sum
-    const diff = Math.max(0, Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000))
-    return sum + diff
-  }, 0)
-  if (totalWorked > 0) return formatDuration(totalWorked, locale)
-  return formatDuration(null, locale)
+    if (!segment.endAt) return sum;
+    const diff = Math.max(
+      0,
+      Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000),
+    );
+    return sum + diff;
+  }, 0);
+  if (totalWorked > 0) return formatDuration(totalWorked, locale);
+  return formatDuration(null, locale);
 }

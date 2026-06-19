@@ -1,21 +1,21 @@
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-export type Locale = 'ja' | 'en'
+export type Locale = "ja" | "en";
 
 interface LocaleStore {
-  locale: Locale
-  setLocale: (locale: Locale) => void
+  locale: Locale;
+  setLocale: (locale: Locale) => void;
 }
 
 export const useLocaleStore = create<LocaleStore>()(
   persist(
     (set) => ({
-      locale: 'ja',
+      locale: "ja",
       setLocale: (locale) => set({ locale }),
     }),
     {
-      name: 'tastile-locale',
-    }
-  )
-)
+      name: "tastile-locale",
+    },
+  ),
+);

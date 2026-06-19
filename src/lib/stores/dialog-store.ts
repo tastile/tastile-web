@@ -1,27 +1,27 @@
-import { create } from 'zustand'
-import type { Tile } from '../domain/tile'
+import { create } from "zustand";
+import type { Tile } from "../domain/tile";
 
 interface DialogState {
   deferDialog: {
-    open: boolean
-    tile: Tile | null
-    mode: 'defer' | 'interrupt'
-  }
+    open: boolean;
+    tile: Tile | null;
+    mode: "defer" | "interrupt";
+  };
   deleteDialog: {
-    open: boolean
-    tile: Tile | null
-  }
-  openDeferDialog: (tile: Tile, mode: 'defer' | 'interrupt') => void
-  closeDeferDialog: () => void
-  openDeleteDialog: (tile: Tile) => void
-  closeDeleteDialog: () => void
+    open: boolean;
+    tile: Tile | null;
+  };
+  openDeferDialog: (tile: Tile, mode: "defer" | "interrupt") => void;
+  closeDeferDialog: () => void;
+  openDeleteDialog: (tile: Tile) => void;
+  closeDeleteDialog: () => void;
 }
 
 export const useDialogStore = create<DialogState>((set) => ({
   deferDialog: {
     open: false,
     tile: null,
-    mode: 'defer',
+    mode: "defer",
   },
   deleteDialog: {
     open: false,
@@ -40,7 +40,7 @@ export const useDialogStore = create<DialogState>((set) => ({
       deferDialog: {
         open: false,
         tile: null,
-        mode: 'defer',
+        mode: "defer",
       },
     }),
   openDeleteDialog: (tile) =>
@@ -57,4 +57,4 @@ export const useDialogStore = create<DialogState>((set) => ({
         tile: null,
       },
     }),
-}))
+}));

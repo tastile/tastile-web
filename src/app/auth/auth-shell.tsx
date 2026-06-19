@@ -1,5 +1,5 @@
-import Link from 'next/link'
-import { TastileLogo } from '@/components/TastileLogo'
+import Link from "next/link";
+import { TastileLogo } from "@/components/TastileLogo";
 
 export function AuthShell({
   title,
@@ -7,10 +7,10 @@ export function AuthShell({
   message,
   children,
 }: {
-  title: string
-  subtitle: string
-  message: string | null
-  children: React.ReactNode
+  title: string;
+  subtitle: string;
+  message: string | null;
+  children: React.ReactNode;
 }) {
   return (
     <main className="min-h-screen bg-background px-4 py-10">
@@ -39,6 +39,5 @@ export function AuthShell({
         </div>
       </div>
     </main>
-  )
+  );
 }
-

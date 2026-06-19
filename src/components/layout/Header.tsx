@@ -1,57 +1,56 @@
-'use client'
+"use client";
 
-import { useTranslation } from '@/lib/i18n/use-translation'
-import { ActiveExecutionBar } from '@/components/execution/ActiveExecutionBar'
-import { ActiveExecutionBadge } from '@/components/execution/ActiveExecutionBadge'
-import { TastileLogo } from '@/components/TastileLogo'
-import { Menu, Bell } from 'lucide-react'
-import { getIdTokenClaims } from '@/lib/daemon/id-token-client'
-import { useEffect, useState } from 'react'
-import { AccountMenu } from '@/app/app/account-menu'
-import { ExecutionSyncStatus } from '@/lib/domain/execution'
+import { Bell, Menu } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AccountMenu } from "@/app/app/account-menu";
+import { ActiveExecutionBadge } from "@/components/execution/ActiveExecutionBadge";
+import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
+import { TastileLogo } from "@/components/TastileLogo";
+import { getIdTokenClaims } from "@/lib/daemon/id-token-client";
+import type { ExecutionSyncStatus } from "@/lib/domain/execution";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface HeaderProps {
-  railPinned: boolean
-  onToggleRail: () => void
+  railPinned: boolean;
+  onToggleRail: () => void;
   executionState?: {
-    activeTileTitle: string | null
-    phaseKind: 'work' | 'break' | 'idle'
-    phaseStartedAt: Date | null
-    phaseEndsAt: Date | null
-    nextActionableStartAt?: Date | null
-    syncStatus?: ExecutionSyncStatus | null
-  }
+    activeTileTitle: string | null;
+    phaseKind: "work" | "break" | "idle";
+    phaseStartedAt: Date | null;
+    phaseEndsAt: Date | null;
+    nextActionableStartAt?: Date | null;
+    syncStatus?: ExecutionSyncStatus | null;
+  };
 }
 
 export function Header({ railPinned, onToggleRail, executionState }: HeaderProps) {
-  const { t } = useTranslation()
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const { t } = useTranslation();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userData, setUserData] = useState<{
-    displayName: string
-    email: string
-    plan: string
-  } | null>(null)
+    displayName: string;
+    email: string;
+    plan: string;
+  } | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const claims = await getIdTokenClaims()
+      const claims = await getIdTokenClaims();
       if (!claims) {
-        setAvatarUrl(null)
-        setUserData(null)
-        return
+        setAvatarUrl(null);
+        setUserData(null);
+        return;
       }
 
-      const fallbackName =
-        claims.email?.split('@')[0] ?? claims.sub.slice(0, 8)
+      const fallbackName = claims.email?.split("@")[0] ?? claims.sub.slice(0, 8);
 
-      setAvatarUrl(claims.picture ?? null)
+      setAvatarUrl(claims.picture ?? null);
       setUserData({
         displayName: claims.name ?? fallbackName,
-        email: claims.email ?? '',
-        plan: 'free', // TODO: plan lookup lives on the daemon; not wired in β.
-      })
-    })()
-  }, [])
+        email: claims.email ?? "",
+        plan: "free", // TODO: plan lookup lives on the daemon; not wired in β.
+      });
+    })();
+  }, []);
 
   return (
     <>
@@ -65,8 +64,8 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
             type="button"
             onClick={onToggleRail}
             className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
-            aria-label={railPinned ? 'Collapse navigation rail' : 'Expand navigation rail'}
-            title={railPinned ? 'Collapse navigation rail' : 'Expand navigation rail'}
+            aria-label={railPinned ? "Collapse navigation rail" : "Expand navigation rail"}
+            title={railPinned ? "Collapse navigation rail" : "Expand navigation rail"}
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -76,7 +75,7 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
           <ActiveExecutionBar
             mode="header-left"
             activeTileTitle={executionState?.activeTileTitle ?? null}
-            phaseKind={executionState?.phaseKind ?? 'idle'}
+            phaseKind={executionState?.phaseKind ?? "idle"}
             phaseStartedAt={executionState?.phaseStartedAt ?? null}
             phaseEndsAt={executionState?.phaseEndsAt ?? null}
             nextActionableStartAt={executionState?.nextActionableStartAt ?? null}
@@ -91,15 +90,18 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
         <div className="flex min-w-0 flex-1 items-center justify-end">
           {executionState?.activeTileTitle ? (
             <div className="min-w-0 max-w-md rounded-lg bg-surface-1 px-3 py-2">
-              <p className="truncate text-sm font-semibold text-foreground">{executionState.activeTileTitle}</p>
+              <p className="truncate text-sm font-semibold text-foreground">
+                {executionState.activeTileTitle}
+              </p>
             </div>
           ) : null}
         </div>
 
         <div className="flex shrink-0 items-center gap-2">
           <button
+            type="button"
             className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
-            title={t('header.notifications')}
+            title={t("header.notifications")}
           >
             <Bell className="h-5 w-5" />
           </button>
@@ -112,10 +114,14 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
               menuPlacement="down"
             />
           ) : (
-            <div className="h-9 w-9 rounded-full bg-surface-2" aria-label="User avatar placeholder" />
+            <div
+              role="img"
+              className="h-9 w-9 rounded-full bg-surface-2"
+              aria-label="User avatar placeholder"
+            />
           )}
         </div>
       </header>
     </>
-  )
+  );
 }

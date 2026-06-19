@@ -1,9 +1,9 @@
-'use client'
+"use client";
 
-import { useExecutionEngineContext } from '@/lib/hooks/execution-engine-context'
+import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 
 export function TileStatistics() {
-  const { state, loading } = useExecutionEngineContext()
+  const { state, loading } = useExecutionEngineContext();
 
   if (loading) {
     return (
@@ -18,15 +18,17 @@ export function TileStatistics() {
           ))}
         </div>
       </div>
-    )
+    );
   }
 
-  const tiles = Array.from(state.tiles.values())
-  const total = tiles.length
-  const completed = tiles.filter(tile => tile.core.completedAt != null).length
-  const started = tiles.filter(tile => tile.core.startedAt != null && tile.core.completedAt == null).length
-  const ready = tiles.filter(tile => tile.core.startedAt == null).length
-  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0
+  const tiles = Array.from(state.tiles.values());
+  const total = tiles.length;
+  const completed = tiles.filter((tile) => tile.core.completedAt != null).length;
+  const started = tiles.filter(
+    (tile) => tile.core.startedAt != null && tile.core.completedAt == null,
+  ).length;
+  const ready = tiles.filter((tile) => tile.core.startedAt == null).length;
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -99,5 +101,5 @@ export function TileStatistics() {
         </div>
       )}
     </div>
-  )
+  );
 }

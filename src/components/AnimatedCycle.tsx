@@ -1,12 +1,36 @@
 "use client";
 
+import { ArrowRight, Lightbulb, PenLine, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { PenLine, Lightbulb, Play, ArrowRight } from "lucide-react";
 
 const steps = [
-  { icon: <PenLine className="w-5 h-5" />, ja: { title: "やることを書く", body: "やりたいことや期限のあることを入力。" }, en: { title: "Add tasks", body: "Enter what you need to do." } },
-  { icon: <Lightbulb className="w-5 h-5" />, ja: { title: "自動で組まれる", body: "Tastileが時間帯まで自動で組む。" }, en: { title: "Auto-scheduled", body: "Tastile builds your timeline automatically." } },
-  { icon: <Play className="w-5 h-5" />, ja: { title: "実行する", body: "提示されたタイルを開始。完了にすれば次が届く。" }, en: { title: "Execute", body: "Start the tile. Next one arrives when done." } },
+  {
+    icon: <PenLine className="w-5 h-5" />,
+    ja: {
+      title: "やることを書く",
+      body: "やりたいことや期限のあることを入力。",
+    },
+    en: { title: "Add tasks", body: "Enter what you need to do." },
+  },
+  {
+    icon: <Lightbulb className="w-5 h-5" />,
+    ja: { title: "自動で組まれる", body: "Tastileが時間帯まで自動で組む。" },
+    en: {
+      title: "Auto-scheduled",
+      body: "Tastile builds your timeline automatically.",
+    },
+  },
+  {
+    icon: <Play className="w-5 h-5" />,
+    ja: {
+      title: "実行する",
+      body: "提示されたタイルを開始。完了にすれば次が届く。",
+    },
+    en: {
+      title: "Execute",
+      body: "Start the tile. Next one arrives when done.",
+    },
+  },
 ];
 
 export function AnimatedCycle({ lang }: { lang: "ja" | "en" }) {
@@ -22,17 +46,19 @@ export function AnimatedCycle({ lang }: { lang: "ja" | "en" }) {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             const index = Number(entry.target.getAttribute("data-index"));
-            if (!isNaN(index)) {
+            if (!Number.isNaN(index)) {
               setActiveIndex((prev) => Math.max(prev, index));
             }
           }
         });
       },
-      { threshold: 0.5, rootMargin: "0px 0px -20% 0px" }
+      { threshold: 0.5, rootMargin: "0px 0px -20% 0px" },
     );
 
     const items = container.querySelectorAll("[data-index]");
-    items.forEach((item) => observer.observe(item));
+    items.forEach((item) => {
+      observer.observe(item);
+    });
 
     return () => observer.disconnect();
   }, []);

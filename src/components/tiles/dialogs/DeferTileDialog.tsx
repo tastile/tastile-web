@@ -1,49 +1,63 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { X } from 'lucide-react'
-import { useTranslation } from '@/lib/i18n/use-translation'
-import { useDialogStore } from '@/lib/stores/dialog-store'
-import { getCurrentLocalDate, getCurrentLocalTime, parseDateTimeParts } from '@/lib/utils/tile-formatters'
+import { X } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useDialogStore } from "@/lib/stores/dialog-store";
+import {
+  getCurrentLocalDate,
+  getCurrentLocalTime,
+  parseDateTimeParts,
+} from "@/lib/utils/tile-formatters";
 
 interface DeferTileDialogProps {
-  onConfirm: (tileId: string, nextStartAt: Date) => void
+  onConfirm: (tileId: string, nextStartAt: Date) => void;
 }
 
 export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
-  const { t } = useTranslation()
-  const { deferDialog, closeDeferDialog } = useDialogStore()
-  const [datePart, setDatePart] = useState('')
-  const [timePart, setTimePart] = useState('')
+  const { t } = useTranslation();
+  const { deferDialog, closeDeferDialog } = useDialogStore();
+  const [datePart, setDatePart] = useState("");
+  const [timePart, setTimePart] = useState("");
 
-  if (!deferDialog.open || !deferDialog.tile) return null
+  if (!deferDialog.open || !deferDialog.tile) return null;
 
-  const resolvedDatePart = datePart || getCurrentLocalDate()
-  const resolvedTimePart = timePart || getCurrentLocalTime()
+  const resolvedDatePart = datePart || getCurrentLocalDate();
+  const resolvedTimePart = timePart || getCurrentLocalTime();
 
   const handleConfirm = () => {
-    if (!deferDialog.tile) return
+    if (!deferDialog.tile) return;
 
-    const nextStartAt = parseDateTimeParts(resolvedDatePart, resolvedTimePart)
+    const nextStartAt = parseDateTimeParts(resolvedDatePart, resolvedTimePart);
     if (!nextStartAt) {
-      alert('Invalid date/time')
-      return
+      alert("Invalid date/time");
+      return;
     }
 
-    onConfirm(deferDialog.tile.core.id, nextStartAt)
-    closeDeferDialog()
-  }
+    onConfirm(deferDialog.tile.core.id, nextStartAt);
+    closeDeferDialog();
+  };
 
   const handleCancel = () => {
-    setDatePart('')
-    setTimePart('')
-    closeDeferDialog()
-  }
+    setDatePart("");
+    setTimePart("");
+    closeDeferDialog();
+  };
 
-  const title = deferDialog.mode === 'defer' ? t('tiles.dialogs.deferTitle') : t('tiles.dialogs.interruptTitle')
+  const title =
+    deferDialog.mode === "defer"
+      ? t("tiles.dialogs.deferTitle")
+      : t("tiles.dialogs.interruptTitle");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50" onClick={handleCancel}>
+    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes dialog on click
+    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click closes via mouse only; ESC handled at dialog level
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
+      onClick={handleCancel}
+    >
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: dialog body intercepts backdrop clicks */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation is intentional to keep dialog open */}
       <div
         className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
         onClick={(e) => e.stopPropagation()}
@@ -71,15 +85,19 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
         {/* Date/Time inputs */}
         <div className="mb-6 space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-foreground-muted">{t('tiles.dialogs.nextStartAt')}</label>
+            <label className="mb-1 block text-xs text-foreground-muted" htmlFor="defer-date">
+              {t("tiles.dialogs.nextStartAt")}
+            </label>
             <div className="flex gap-2">
               <input
+                id="defer-date"
                 type="date"
                 value={resolvedDatePart}
                 onChange={(e) => setDatePart(e.target.value)}
                 className="flex-1 rounded-lg bg-surface-1 px-3 py-2 text-sm text-foreground"
               />
               <input
+                id="defer-time"
                 type="time"
                 value={resolvedTimePart}
                 onChange={(e) => setTimePart(e.target.value)}
@@ -96,17 +114,17 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
             onClick={handleCancel}
             className="rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
           >
-            {t('common.cancel')}
+            {t("common.cancel")}
           </button>
           <button
             type="button"
             onClick={handleConfirm}
             className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary/90"
           >
-            {t('common.confirm')}
+            {t("common.confirm")}
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }

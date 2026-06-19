@@ -1,49 +1,49 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useCallback, useSyncExternalStore } from 'react'
-import { Copy, Check, Eye, EyeOff } from 'lucide-react'
+import { Check, Copy, Eye, EyeOff } from "lucide-react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 type SessionData = {
-  idToken: string
-  refreshToken: string
-  sub: string
-  exp: number
-}
+  idToken: string;
+  refreshToken: string;
+  sub: string;
+  exp: number;
+};
 
 // Wall-clock subscription so render can read a time snapshot without
 // invoking an impure function (Date.now) directly.
 const timeSubscribe = (onChange: () => void) => {
-  const id = setInterval(onChange, 1000)
-  return () => clearInterval(id)
-}
-const timeGetSnapshot = () => Date.now()
-const timeGetServerSnapshot = () => 0
+  const id = setInterval(onChange, 1000);
+  return () => clearInterval(id);
+};
+const timeGetSnapshot = () => Date.now();
+const timeGetServerSnapshot = () => 0;
 
 export function AccessTokenSection() {
-  const [session, setSession] = useState<SessionData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [copied, setCopied] = useState(false)
-  const [visible, setVisible] = useState(false)
-  const nowMs = useSyncExternalStore(timeSubscribe, timeGetSnapshot, timeGetServerSnapshot)
+  const [session, setSession] = useState<SessionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const nowMs = useSyncExternalStore(timeSubscribe, timeGetSnapshot, timeGetServerSnapshot);
 
   const fetchSession = useCallback(async () => {
-    setLoading(true)
-    setError(null)
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch('/api/auth/session', { cache: 'no-store' })
+      const res = await fetch("/api/auth/session", { cache: "no-store" });
       if (!res.ok) {
-        setError('セッションを取得できませんでした。')
-        setLoading(false)
-        return
+        setError("セッションを取得できませんでした。");
+        setLoading(false);
+        return;
       }
-      const data = (await res.json()) as SessionData
-      setSession(data)
+      const data = (await res.json()) as SessionData;
+      setSession(data);
     } catch {
-      setError('セッションの取得に失敗しました。')
+      setError("セッションの取得に失敗しました。");
     }
-    setLoading(false)
-  }, [])
+    setLoading(false);
+  }, []);
 
   // Initial fetch on mount is the canonical data-loading pattern for
   // client components; the React Compiler set-state-in-effect rule rejects
@@ -51,17 +51,17 @@ export function AccessTokenSection() {
   // alternative (React Query / use() + Suspense) is out of scope here.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchSession()
-  }, [fetchSession])
+    void fetchSession();
+  }, [fetchSession]);
 
   const handleCopy = useCallback(async () => {
-    if (!session?.idToken) return
-    await navigator.clipboard.writeText(session.idToken)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [session])
+    if (!session?.idToken) return;
+    await navigator.clipboard.writeText(session.idToken);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [session]);
 
-  const isExpired = session ? nowMs / 1000 > session.exp : false
+  const isExpired = session ? nowMs / 1000 > session.exp : false;
 
   return (
     <div className="space-y-4">
@@ -72,14 +72,10 @@ export function AccessTokenSection() {
         </p>
       </div>
 
-      {loading && (
-        <p className="text-sm text-foreground-subtle">読み込み中...</p>
-      )}
+      {loading && <p className="text-sm text-foreground-subtle">読み込み中...</p>}
 
       {error && (
-        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">
-          {error}
-        </div>
+        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
       )}
 
       {session && !loading && (
@@ -93,7 +89,7 @@ export function AccessTokenSection() {
                 className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-foreground hover:bg-surface-0"
               >
                 {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {visible ? '非表示' : '表示'}
+                {visible ? "非表示" : "表示"}
               </button>
               <button
                 type="button"
@@ -102,7 +98,7 @@ export function AccessTokenSection() {
                 className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? 'コピー済み' : 'コピー'}
+                {copied ? "コピー済み" : "コピー"}
               </button>
             </div>
           </div>
@@ -110,9 +106,7 @@ export function AccessTokenSection() {
           <div className="rounded-md bg-surface-0 p-4">
             <p className="mb-2 text-xs text-foreground-subtle">Authorizationヘッダー:</p>
             <code className="block break-all font-mono text-xs text-foreground">
-              {visible
-                ? `Bearer ${session.idToken}`
-                : 'Bearer ••••••••••••••••••••••••••••••••'}
+              {visible ? `Bearer ${session.idToken}` : "Bearer ••••••••••••••••••••••••••••••••"}
             </code>
           </div>
 
@@ -123,9 +117,9 @@ export function AccessTokenSection() {
             </div>
             <div>
               <dt className="text-foreground-subtle">有効期限</dt>
-              <dd className={`mt-1 font-medium ${isExpired ? 'text-danger' : 'text-foreground'}`}>
-                {new Date(session.exp * 1000).toLocaleString('ja-JP')}
-                {isExpired && ' (期限切れ)'}
+              <dd className={`mt-1 font-medium ${isExpired ? "text-danger" : "text-foreground"}`}>
+                {new Date(session.exp * 1000).toLocaleString("ja-JP")}
+                {isExpired && " (期限切れ)"}
               </dd>
             </div>
           </dl>
@@ -137,7 +131,9 @@ export function AccessTokenSection() {
             <p>
               SSE接続時はクエリパラメータとして渡します:
               <br />
-              <code className="text-foreground">/read/events/state?access_token=&lt;your-token&gt;</code>
+              <code className="text-foreground">
+                /read/events/state?access_token=&lt;your-token&gt;
+              </code>
             </p>
           </div>
 
@@ -151,5 +147,5 @@ export function AccessTokenSection() {
         </section>
       )}
     </div>
-  )
+  );
 }

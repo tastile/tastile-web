@@ -119,12 +119,7 @@ export function buildTwoByTwoBlockPath(block: TwoByTwoBlock): string {
     { x: 0, y: size },
   ];
 
-  const radii = [
-    block.outerRadius,
-    block.outerRadius,
-    block.outerRadius,
-    block.outerRadius,
-  ];
+  const radii = [block.outerRadius, block.outerRadius, block.outerRadius, block.outerRadius];
 
   return buildRoundedOrthogonalPath(points, radii);
 }

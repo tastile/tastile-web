@@ -1,16 +1,16 @@
-import Link from 'next/link'
-import { BadgeCheck, RefreshCcw } from 'lucide-react'
-import { AuthShell } from '../auth-shell'
-import { authErrorMessage } from '@/lib/cognito/form'
+import { BadgeCheck, RefreshCcw } from "lucide-react";
+import Link from "next/link";
+import { authErrorMessage } from "@/lib/cognito/form";
+import { AuthShell } from "../auth-shell";
 
 export default async function ConfirmPage({
   searchParams,
 }: {
-  searchParams: Promise<{ email?: string; error?: string; notice?: string }>
+  searchParams: Promise<{ email?: string; error?: string; notice?: string }>;
 }) {
-  const params = await searchParams
-  const message = authErrorMessage(params.error ?? params.notice ?? null)
-  const email = typeof params.email === 'string' ? params.email : ''
+  const params = await searchParams;
+  const message = authErrorMessage(params.error ?? params.notice ?? null);
+  const email = typeof params.email === "string" ? params.email : "";
 
   return (
     <AuthShell
@@ -20,7 +20,9 @@ export default async function ConfirmPage({
     >
       <form action="/auth/email/confirm" method="post" className="space-y-5">
         <div>
-          <label htmlFor="email" className="text-sm font-medium text-foreground">メールアドレス</label>
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            メールアドレス
+          </label>
           <input
             id="email"
             name="email"
@@ -32,7 +34,9 @@ export default async function ConfirmPage({
           />
         </div>
         <div>
-          <label htmlFor="code" className="text-sm font-medium text-foreground">確認コード</label>
+          <label htmlFor="code" className="text-sm font-medium text-foreground">
+            確認コード
+          </label>
           <input
             id="code"
             name="code"
@@ -43,22 +47,31 @@ export default async function ConfirmPage({
             placeholder="123456"
           />
         </div>
-        <button className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover">
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+        >
           <BadgeCheck className="h-4 w-4" aria-hidden="true" />
           アカウントを確認
         </button>
       </form>
       <form action="/auth/email/resend" method="post" className="mt-3">
         <input type="hidden" name="email" value={email} />
-        <button className="flex w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2">
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
+        >
           <RefreshCcw className="h-4 w-4" aria-hidden="true" />
           確認コードを再送
         </button>
       </form>
       <p className="mt-5 text-sm text-foreground-muted">
-        確認済みの場合は <Link className="underline hover:text-foreground" href="/auth/email">メール OTP ログイン</Link> に進んでください。
+        確認済みの場合は{" "}
+        <Link className="underline hover:text-foreground" href="/auth/email">
+          メール OTP ログイン
+        </Link>{" "}
+        に進んでください。
       </p>
     </AuthShell>
-  )
+  );
 }
-

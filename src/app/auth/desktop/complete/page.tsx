@@ -1,6 +1,6 @@
-import Link from 'next/link'
-import { Laptop, ShieldCheck } from 'lucide-react'
-import { TastileLogo } from '@/components/TastileLogo'
+import { Laptop, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { TastileLogo } from "@/components/TastileLogo";
 
 export default function DesktopAuthCompletePage() {
   const script = `
@@ -23,7 +23,7 @@ export default function DesktopAuthCompletePage() {
     window.location.href = callback;
   }, 350);
 })();
-`
+`;
 
   return (
     <main className="min-h-screen bg-background px-6 py-10 text-foreground">
@@ -60,11 +60,16 @@ export default function DesktopAuthCompletePage() {
             Desktop アプリを開く
           </a>
           <p className="mt-4 text-center text-xs leading-5 text-foreground-subtle">
-            アプリに戻れない場合は <Link className="underline hover:text-foreground" href="/dashboard/account">Web アカウント設定</Link> を開けます。
+            アプリに戻れない場合は{" "}
+            <Link className="underline hover:text-foreground" href="/dashboard/account">
+              Web アカウント設定
+            </Link>{" "}
+            を開けます。
           </p>
         </div>
       </div>
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink redirect runs only on this auth-complete page */}
       <script dangerouslySetInnerHTML={{ __html: script }} />
     </main>
-  )
+  );
 }

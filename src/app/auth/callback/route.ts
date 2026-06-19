@@ -1,118 +1,121 @@
-import { cookies } from 'next/headers'
-import { NextResponse, type NextRequest } from 'next/server'
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 import {
-  COOKIE_OAUTH_STATE,
   COOKIE_OAUTH_NEXT,
+  COOKIE_OAUTH_STATE,
   COOKIE_PKCE_VERIFIER,
   setAuthCookies,
-} from '@/lib/cognito/cookies'
-import { tryGetCognitoEnv } from '@/lib/cognito/env'
-import { exchangeCodeForTokens, parseIdTokenClaims } from '@/lib/cognito/server'
+} from "@/lib/cognito/cookies";
+import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { exchangeCodeForTokens, parseIdTokenClaims } from "@/lib/cognito/server";
 
 export async function GET(request: NextRequest) {
-  const env = tryGetCognitoEnv()
-  const requestOrigin = new URL(request.url).origin
+  const env = tryGetCognitoEnv();
+  const requestOrigin = new URL(request.url).origin;
   if (!env) {
-    return NextResponse.redirect(`${requestOrigin}/login?error=cognito_not_configured`)
+    return NextResponse.redirect(`${requestOrigin}/login?error=cognito_not_configured`);
   }
 
-  const { searchParams } = new URL(request.url)
-  const origin = publicOriginFromCallbackUrl(env.callbackUrl)
-  const code = searchParams.get('code')
-  const returnedState = searchParams.get('state')
-  const next = jarSafeNextPath(searchParams.get('next'))
+  const { searchParams } = new URL(request.url);
+  const origin = publicOriginFromCallbackUrl(env.callbackUrl);
+  const code = searchParams.get("code");
+  const returnedState = searchParams.get("state");
+  const next = jarSafeNextPath(searchParams.get("next"));
 
   if (!code || !returnedState) {
     return callbackHtmlResponse({
-      title: '認証を開始してください',
-      message: '認証コードが見つかりませんでした。アカウント画面からもう一度続行してください。',
+      title: "認証を開始してください",
+      message: "認証コードが見つかりませんでした。アカウント画面からもう一度続行してください。",
       destination: `${origin}/login?error=missing_code`,
-      tone: 'error',
-    })
+      tone: "error",
+    });
   }
 
-  const jar = await cookies()
-  const expectedState = jar.get(COOKIE_OAUTH_STATE)?.value
-  const codeVerifier = jar.get(COOKIE_PKCE_VERIFIER)?.value
-  const cookieNext = jarSafeNextPath(jar.get(COOKIE_OAUTH_NEXT)?.value)
+  const jar = await cookies();
+  const expectedState = jar.get(COOKIE_OAUTH_STATE)?.value;
+  const codeVerifier = jar.get(COOKIE_PKCE_VERIFIER)?.value;
+  const cookieNext = jarSafeNextPath(jar.get(COOKIE_OAUTH_NEXT)?.value);
 
   if (!expectedState || expectedState !== returnedState || !codeVerifier) {
     return callbackHtmlResponse({
-      title: '認証セッションを確認できませんでした',
-      message: '認証の状態が一致しませんでした。アカウント画面からもう一度続行してください。',
+      title: "認証セッションを確認できませんでした",
+      message: "認証の状態が一致しませんでした。アカウント画面からもう一度続行してください。",
       destination: `${origin}/login?error=state_mismatch`,
-      tone: 'error',
-    })
+      tone: "error",
+    });
   }
 
   try {
-    const tokens = await exchangeCodeForTokens({ env, code, codeVerifier })
-    const claims = parseIdTokenClaims(tokens.id_token)
+    const tokens = await exchangeCodeForTokens({ env, code, codeVerifier });
+    const claims = parseIdTokenClaims(tokens.id_token);
     const response = callbackHtmlResponse({
-      title: 'Tastile に接続しました',
-      message: '認証が完了しました。実行ダッシュボードを開いています。',
-      destination: `${origin}${next === '/dashboard' ? cookieNext : next}`,
-      tone: 'success',
-    })
-    await setAuthCookies({
-      idToken: tokens.id_token,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      sub: claims.sub,
-      expiresIn: tokens.expires_in,
-    }, response)
+      title: "Tastile に接続しました",
+      message: "認証が完了しました。実行ダッシュボードを開いています。",
+      destination: `${origin}${next === "/dashboard" ? cookieNext : next}`,
+      tone: "success",
+    });
+    await setAuthCookies(
+      {
+        idToken: tokens.id_token,
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        sub: claims.sub,
+        expiresIn: tokens.expires_in,
+      },
+      response,
+    );
     // Clear PKCE cookies.
-    response.cookies.set(COOKIE_OAUTH_STATE, '', {
+    response.cookies.set(COOKIE_OAUTH_STATE, "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
       maxAge: 0,
-    })
-    response.cookies.set(COOKIE_PKCE_VERIFIER, '', {
+    });
+    response.cookies.set(COOKIE_PKCE_VERIFIER, "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
       maxAge: 0,
-    })
-    response.cookies.set(COOKIE_OAUTH_NEXT, '', {
+    });
+    response.cookies.set(COOKIE_OAUTH_NEXT, "", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
       maxAge: 0,
-    })
-    return response
+    });
+    return response;
   } catch (e) {
-    console.error('Cognito callback failed', e)
+    console.error("Cognito callback failed", e);
     return callbackHtmlResponse({
-      title: '認証を完了できませんでした',
-      message: 'セッションを確定できませんでした。もう一度アカウント画面から続行してください。',
+      title: "認証を完了できませんでした",
+      message: "セッションを確定できませんでした。もう一度アカウント画面から続行してください。",
       destination: `${origin}/login?error=auth_failed`,
-      tone: 'error',
-    })
+      tone: "error",
+    });
   }
 }
 
 function publicOriginFromCallbackUrl(callbackUrl: string): string {
-  return new URL(callbackUrl).origin
+  return new URL(callbackUrl).origin;
 }
 
 function jarSafeNextPath(value: string | null | undefined): string {
-  if (!value) return '/dashboard'
-  if (!value.startsWith('/') || value.startsWith('//')) return '/dashboard'
-  return value
+  if (!value) return "/dashboard";
+  if (!value.startsWith("/") || value.startsWith("//")) return "/dashboard";
+  return value;
 }
 
 function callbackHtmlResponse(args: {
-  title: string
-  message: string
-  destination: string
-  tone: 'success' | 'error'
+  title: string;
+  message: string;
+  destination: string;
+  tone: "success" | "error";
 }) {
-  const accent = args.tone === 'success' ? '#5e6ad2' : '#ef4444'
-  const escapedDestination = escapeHtml(args.destination)
+  const accent = args.tone === "success" ? "#5e6ad2" : "#ef4444";
+  const escapedDestination = escapeHtml(args.destination);
   const html = `<!doctype html>
 <html lang="ja">
 <head>
@@ -145,21 +148,21 @@ function callbackHtmlResponse(args: {
   </main>
   <script>setTimeout(function(){ window.location.replace(${JSON.stringify(args.destination)}); }, 900);</script>
 </body>
-</html>`
+</html>`;
 
   return new NextResponse(html, {
     headers: {
-      'content-type': 'text/html; charset=utf-8',
-      'cache-control': 'no-store',
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": "no-store",
     },
-  })
+  });
 }
 
 function escapeHtml(value: string): string {
   return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;')
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }

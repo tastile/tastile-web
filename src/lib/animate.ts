@@ -6,12 +6,12 @@ export function mapRange(progress: number, start: number, end: number): number {
 
 /** Ease-out cubic */
 export function easeOut(t: number): number {
-  return 1 - Math.pow(1 - t, 3);
+  return 1 - (1 - t) ** 3;
 }
 
 /** Ease-in-out cubic */
 export function easeInOut(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
 }
 
 /** Interpolate a number */
@@ -30,6 +30,11 @@ export function slideUp(progress: number, start: number, end: number, fromPx: nu
 }
 
 /** Style helper: translateX from progress range (px) */
-export function slideRight(progress: number, start: number, end: number, fromPx: number = 32): number {
+export function slideRight(
+  progress: number,
+  start: number,
+  end: number,
+  fromPx: number = 32,
+): number {
   return lerp(fromPx, 0, easeOut(mapRange(progress, start, end)));
 }

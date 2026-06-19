@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 
 interface ScrollTimelineProps {
@@ -22,9 +22,7 @@ export function ScrollTimeline({ scrollHeight = 2, className = "", render }: Scr
       className={`relative ${className}`}
       style={{ minHeight: `${scrollHeight * 100}vh` }}
     >
-      <div className="sticky top-0 h-screen overflow-hidden">
-        {render(progress)}
-      </div>
+      <div className="sticky top-0 h-screen overflow-hidden">{render(progress)}</div>
     </div>
   );
 }

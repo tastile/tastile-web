@@ -31,7 +31,7 @@ export default function BillingPage() {
               <span className="text-foreground">Up to 50 cloud</span>
             </div>
             <div className="h-2 rounded-full bg-surface-2">
-              <div className="h-2 rounded-full bg-primary" style={{ width: '0%' }} />
+              <div className="h-2 rounded-full bg-primary" style={{ width: "0%" }} />
             </div>
           </div>
           <div>
@@ -57,5 +57,5 @@ export default function BillingPage() {
         </a>
       </div>
     </div>
-  )
+  );
 }

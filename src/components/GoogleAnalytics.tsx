@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import Script from "next/script";
 import { usePathname } from "next/navigation";
+import Script from "next/script";
+import { useEffect } from "react";
 
 declare global {
   interface Window {

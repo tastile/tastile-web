@@ -6,5 +6,5 @@ export default function ExecutePage() {
         実行中心画面 - Active execution + Timeline + Prompt
       </p>
     </div>
-  )
+  );
 }

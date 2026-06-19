@@ -5,49 +5,51 @@
 // only way the user notices when they have the dashboard in a background
 // tab.
 
-export type NotificationKind = 'tile_started' | 'tile_completed' | 'prompt_pending'
+export type NotificationKind = "tile_started" | "tile_completed" | "prompt_pending";
 
 export interface NotificationBody {
-  kind: NotificationKind
-  title: string
-  body: string
+  kind: NotificationKind;
+  title: string;
+  body: string;
   // A stable id for the underlying state — pass the tile id or prompt id so
   // the notifications panel can de-duplicate rapid refreshes.
-  tag: string
+  tag: string;
 }
 
-let permissionRequested = false
+let permissionRequested = false;
 
 export function notificationsSupported(): boolean {
-  if (typeof window === 'undefined') return false
-  if (!('Notification' in window)) return false
+  if (typeof window === "undefined") return false;
+  if (!("Notification" in window)) return false;
   // Notification is only available in secure contexts (HTTPS or localhost).
   // window.isSecureContext is the spec-correct check.
-  return window.isSecureContext
+  return window.isSecureContext;
 }
 
-export function notificationsPermission(): NotificationPermission | 'unsupported' {
-  if (!notificationsSupported()) return 'unsupported'
-  return Notification.permission
+export function notificationsPermission(): NotificationPermission | "unsupported" {
+  if (!notificationsSupported()) return "unsupported";
+  return Notification.permission;
 }
 
-export async function requestNotificationPermissionOnce(): Promise<NotificationPermission | 'unsupported'> {
-  if (!notificationsSupported()) return 'unsupported'
-  if (permissionRequested) return Notification.permission
-  permissionRequested = true
-  if (Notification.permission === 'default') {
+export async function requestNotificationPermissionOnce(): Promise<
+  NotificationPermission | "unsupported"
+> {
+  if (!notificationsSupported()) return "unsupported";
+  if (permissionRequested) return Notification.permission;
+  permissionRequested = true;
+  if (Notification.permission === "default") {
     try {
-      return await Notification.requestPermission()
+      return await Notification.requestPermission();
     } catch {
-      return Notification.permission
+      return Notification.permission;
     }
   }
-  return Notification.permission
+  return Notification.permission;
 }
 
 export function showNotification(payload: NotificationBody): void {
-  if (!notificationsSupported()) return
-  if (Notification.permission !== 'granted') return
+  if (!notificationsSupported()) return;
+  if (Notification.permission !== "granted") return;
   // Use the tag so a rapid-fire state_changed stream collapses into one
   // notification per tile/prompt instead of spamming the tray.
   try {
@@ -57,17 +59,17 @@ export function showNotification(payload: NotificationBody): void {
       // Suppress the noisy default sound on every refresh; let the OS chime
       // for the first one of each tag.
       silent: true,
-    })
+    });
     // Auto-dismiss after 6s — the tray is for awareness, not long-form read.
-    setTimeout(() => notification.close(), 6_000)
+    setTimeout(() => notification.close(), 6_000);
     notification.onclick = () => {
-      window.focus()
-      notification.close()
-    }
+      window.focus();
+      notification.close();
+    };
   } catch (err) {
     // The browser can throw when called from a non-secure context or when
     // the user is in private-browsing mode. Swallow — the in-app card is
     // still surfaced and the user is not blocked.
-    console.warn('showNotification failed', err)
+    console.warn("showNotification failed", err);
   }
 }

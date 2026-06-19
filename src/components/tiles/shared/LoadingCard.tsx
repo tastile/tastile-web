@@ -1,16 +1,16 @@
-'use client'
+"use client";
 
-import { Skeleton } from '@/components/ui/Skeleton'
-import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
-import { cn } from '@/lib/utils/cn'
+import { Skeleton } from "@/components/ui/Skeleton";
+import { TILE_CARD_STYLES } from "@/lib/styles/tile-card-styles";
+import { cn } from "@/lib/utils/cn";
 
 interface LoadingCardProps {
-  variant?: 'compact' | 'comfortable' | 'detailed'
+  variant?: "compact" | "comfortable" | "detailed";
 }
 
-export function LoadingCard({ variant = 'comfortable' }: LoadingCardProps) {
-  const isCompact = variant === 'compact'
-  const isDetailed = variant === 'detailed'
+export function LoadingCard({ variant = "comfortable" }: LoadingCardProps) {
+  const isCompact = variant === "compact";
+  const isDetailed = variant === "detailed";
 
   return (
     <div
@@ -18,7 +18,7 @@ export function LoadingCard({ variant = 'comfortable' }: LoadingCardProps) {
         TILE_CARD_STYLES.base,
         isCompact && TILE_CARD_STYLES.padding.compact,
         !isCompact && !isDetailed && TILE_CARD_STYLES.padding.comfortable,
-        isDetailed && TILE_CARD_STYLES.padding.detailed
+        isDetailed && TILE_CARD_STYLES.padding.detailed,
       )}
     >
       <div className="flex items-center gap-3">
@@ -30,5 +30,5 @@ export function LoadingCard({ variant = 'comfortable' }: LoadingCardProps) {
         <Skeleton className="h-4 w-12" />
       </div>
     </div>
-  )
+  );
 }

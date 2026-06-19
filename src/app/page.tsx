@@ -1,11 +1,7 @@
-import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
+import { Lightbulb, PenLine, Play } from "lucide-react";
 import { ScrollPage } from "@/components/ScrollPage";
-import {
-  Play,
-  PenLine,
-  Lightbulb,
-} from "lucide-react";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 
 const dict = {
   ja: {
@@ -16,16 +12,38 @@ const dict = {
     heroCta2: "アプリをダウンロード",
 
     bridgeTitle: "Tastileが、そのすべてを。",
-    bridgeDesc: "やることを入れれば、期限・優先度・状態を読み取り、分単位のスケジュールに自動で落とす。",
+    bridgeDesc:
+      "やることを入れれば、期限・優先度・状態を読み取り、分単位のスケジュールに自動で落とす。",
 
     /* ─── how it works ─── */
     howTitle: "Tastileがやっていること",
     howPrinciples: [
-      { symbol: "①", text: { ja: "1つのことを、1つの時間に。選択肢はない。", en: "One thing, one time. No choices." } },
-      { symbol: "②", text: { ja: "常時監視。時間・状態・完了を観測し、自動で調整。", en: "Always watching. Time, state, completion — auto-adjusts." } },
-      { symbol: "③", text: { ja: "タスクは6つの軸で定義される。期限・場所・変形・完了条件・超過時の処理。", en: "Tasks defined by 6 axes. Deadline, place, deformation, completion, overflow." } },
+      {
+        symbol: "①",
+        text: {
+          ja: "1つのことを、1つの時間に。選択肢はない。",
+          en: "One thing, one time. No choices.",
+        },
+      },
+      {
+        symbol: "②",
+        text: {
+          ja: "常時監視。時間・状態・完了を観測し、自動で調整。",
+          en: "Always watching. Time, state, completion — auto-adjusts.",
+        },
+      },
+      {
+        symbol: "③",
+        text: {
+          ja: "タスクは6つの軸で定義される。期限・場所・変形・完了条件・超過時の処理。",
+          en: "Tasks defined by 6 axes. Deadline, place, deformation, completion, overflow.",
+        },
+      },
     ],
-    howPipeline: { ja: "入力 → 編成 → 配置 → 実行 → 観測 → 調整", en: "Input → Compile → Place → Execute → Observe → Adjust" },
+    howPipeline: {
+      ja: "入力 → 編成 → 配置 → 実行 → 観測 → 調整",
+      en: "Input → Compile → Place → Execute → Observe → Adjust",
+    },
 
     stepsTitle: "サイクル",
     steps: [
@@ -49,10 +67,22 @@ const dict = {
 
     qaTitle: "Q&A",
     qa: [
-      { q: "既存のアプリと何が違う？", a: "カレンダー・時計・タスクを一つに統合。別アプリを切り替える必要がない。" },
-      { q: "スケジュールが変わったら？", a: "自動で組み直される。手動修正は不要。" },
-      { q: "タスクが終わらなかったら？", a: "次の空き時間に自動スケジュール。積み残しは忘れない。" },
-      { q: "どんな人におすすめ？", a: "「何から始めよう」と悩む人。実行を変えたい人。" },
+      {
+        q: "既存のアプリと何が違う？",
+        a: "カレンダー・時計・タスクを一つに統合。別アプリを切り替える必要がない。",
+      },
+      {
+        q: "スケジュールが変わったら？",
+        a: "自動で組み直される。手動修正は不要。",
+      },
+      {
+        q: "タスクが終わらなかったら？",
+        a: "次の空き時間に自動スケジュール。積み残しは忘れない。",
+      },
+      {
+        q: "どんな人におすすめ？",
+        a: "「何から始めよう」と悩む人。実行を変えたい人。",
+      },
     ],
 
     ctaTitle: ["予定と、やることと、", "実行を、ひとつに。"],
@@ -74,14 +104,36 @@ const dict = {
     heroCta2: "Download App",
 
     bridgeTitle: "Tastile connects them all.",
-    bridgeDesc: "Add a task and it reads your deadlines, priority, and energy — then builds your minute-level schedule.",
+    bridgeDesc:
+      "Add a task and it reads your deadlines, priority, and energy — then builds your minute-level schedule.",
     howTitle: "What Tastile does",
     howPrinciples: [
-      { symbol: "①", text: { ja: "1つのことを、1つの時間に。選択肢はない。", en: "One thing, one time. No choices." } },
-      { symbol: "②", text: { ja: "常時監視。時間・状態・完了を観測し、自動で調整。", en: "Always watching. Time, state, completion — auto-adjusts." } },
-      { symbol: "③", text: { ja: "タスクは6つの軸で定義される。期限・場所・変形・完了条件・超過時の処理。", en: "Tasks defined by 6 axes. Deadline, place, deformation, completion, overflow." } },
+      {
+        symbol: "①",
+        text: {
+          ja: "1つのことを、1つの時間に。選択肢はない。",
+          en: "One thing, one time. No choices.",
+        },
+      },
+      {
+        symbol: "②",
+        text: {
+          ja: "常時監視。時間・状態・完了を観測し、自動で調整。",
+          en: "Always watching. Time, state, completion — auto-adjusts.",
+        },
+      },
+      {
+        symbol: "③",
+        text: {
+          ja: "タスクは6つの軸で定義される。期限・場所・変形・完了条件・超過時の処理。",
+          en: "Tasks defined by 6 axes. Deadline, place, deformation, completion, overflow.",
+        },
+      },
     ],
-    howPipeline: { ja: "入力 → 編成 → 配置 → 実行 → 観測 → 調整", en: "Input → Compile → Place → Execute → Observe → Adjust" },
+    howPipeline: {
+      ja: "入力 → 編成 → 配置 → 実行 → 観測 → 調整",
+      en: "Input → Compile → Place → Execute → Observe → Adjust",
+    },
 
     stepsTitle: "Cycle",
     steps: [
@@ -101,14 +153,24 @@ const dict = {
     ],
 
     pricingTitle: "Start free",
-    pricingBody: "All core features free. Pro: unlimited tiles, 2-year history, desktop sync. $5/mo.",
+    pricingBody:
+      "All core features free. Pro: unlimited tiles, 2-year history, desktop sync. $5/mo.",
 
     qaTitle: "Q&A",
     qa: [
-      { q: "How is it different?", a: "Calendar, clock, and tasks in one app. No switching." },
+      {
+        q: "How is it different?",
+        a: "Calendar, clock, and tasks in one app. No switching.",
+      },
       { q: "Schedule changes?", a: "Automatic rebuild. No manual edits." },
-      { q: "Unfinished tasks?", a: "Auto-rescheduled. Nothing gets forgotten." },
-      { q: "Who is this for?", a: "People who want to stop planning and start executing." },
+      {
+        q: "Unfinished tasks?",
+        a: "Auto-rescheduled. Nothing gets forgotten.",
+      },
+      {
+        q: "Who is this for?",
+        a: "People who want to stop planning and start executing.",
+      },
     ],
 
     ctaTitle: ["Schedules, tasks,", "and execution.", "Connected."],
@@ -130,11 +192,7 @@ const stepIcons = [
   <Play key="3" className="w-5 h-5" />,
 ];
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ lang?: string }>;
-}) {
+export default async function Home({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
   const params = await searchParams;
   const lang = params.lang === "en" ? "en" : "ja";
   const t = dict[lang];

@@ -1,77 +1,86 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { ChevronRight } from 'lucide-react'
-import { SquarePen } from 'lucide-react'
-import { getTileLifecycle, type Tile } from '@/lib/domain/tile'
-import type { TileId } from '@/lib/domain/ids'
-import { TileStatusIcon } from './shared/TileStatusIcon'
-import { TileActionButtons } from './shared/TileActionButtons'
-import { LoadingCard } from './shared/LoadingCard'
-import { formatDateTime, formatDuration, formatTimeOnly } from '@/lib/utils/tile-formatters'
-import { useTranslation } from '@/lib/i18n/use-translation'
-import { TILE_CARD_STYLES } from '@/lib/styles/tile-card-styles'
-import { cn } from '@/lib/utils/cn'
+import { ChevronRight, SquarePen } from "lucide-react";
+import { useState } from "react";
+import type { TileId } from "@/lib/domain/ids";
+import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { TILE_CARD_STYLES } from "@/lib/styles/tile-card-styles";
+import { cn } from "@/lib/utils/cn";
+import { formatDateTime, formatDuration, formatTimeOnly } from "@/lib/utils/tile-formatters";
+import { LoadingCard } from "./shared/LoadingCard";
+import { TileActionButtons } from "./shared/TileActionButtons";
+import { TileStatusIcon } from "./shared/TileStatusIcon";
 
 interface TileCardExpandableProps {
-  tile: Tile | null
-  loading?: boolean
-  defaultExpanded?: boolean
-  onStart?: (tileId: TileId) => void
-  onComplete?: (tileId: TileId) => void
-  onDefer?: (tileId: TileId) => void
-  onInterrupt?: (tileId: TileId) => void
-  onEdit?: (tileId: TileId) => void
-  onDelete?: (tileId: TileId) => void
+  tile: Tile | null;
+  loading?: boolean;
+  defaultExpanded?: boolean;
+  onStart?: (tileId: TileId) => void;
+  onComplete?: (tileId: TileId) => void;
+  onDefer?: (tileId: TileId) => void;
+  onInterrupt?: (tileId: TileId) => void;
+  onEdit?: (tileId: TileId) => void;
+  onDelete?: (tileId: TileId) => void;
 }
 
 export function TileCardExpandable(props: TileCardExpandableProps) {
-  const { tile, loading, defaultExpanded = false, ...actions } = props
-  const { t, locale } = useTranslation()
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded)
+  const { tile, loading, defaultExpanded = false, ...actions } = props;
+  const { t, locale } = useTranslation();
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   if (loading) {
-    return <LoadingCard variant="comfortable" />
+    return <LoadingCard variant="comfortable" />;
   }
 
   if (!tile) {
-    return null
+    return null;
   }
 
-  const lifecycle = getTileLifecycle(tile)
+  const lifecycle = getTileLifecycle(tile);
   const startAt =
     tile.core.startedAt ??
     tile.temporal.fixedStart ??
     tile.temporal.activeStart ??
     tile.temporal.releaseAt ??
-    tile.work.segments.find(segment => segment.startAt)?.startAt ??
-    null
-  const durationText = resolveDurationText(tile, locale)
+    tile.work.segments.find((segment) => segment.startAt)?.startAt ??
+    null;
+  const durationText = resolveDurationText(tile, locale);
   const startText = startAt
     ? formatTimeOnly(startAt, locale, tile.temporal.tz)
-    : formatDateTime(null, locale, tile.temporal.tz)
-  const durationLabel = t('tiles.duration')
+    : formatDateTime(null, locale, tile.temporal.tz);
+  const durationLabel = t("tiles.duration");
 
   const handleStatusClick = () => {
     if (actions.onStart) {
-      actions.onStart(tile.core.id)
+      actions.onStart(tile.core.id);
     }
-  }
+  };
 
   const handleCardClick = () => {
-    setIsExpanded(!isExpanded)
-  }
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
 
   return (
     <div className={cn(TILE_CARD_STYLES.base)}>
       {/* Header - always visible */}
-      <div
+      <button
+        type="button"
+        aria-expanded={isExpanded}
         onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
         className={cn(
-          "flex items-center gap-3",
+          "flex w-full items-center gap-3 text-left",
           TILE_CARD_STYLES.padding.comfortable,
           "cursor-pointer",
-          TILE_CARD_STYLES.hover
+          TILE_CARD_STYLES.hover,
         )}
       >
         <TileStatusIcon
@@ -81,25 +90,31 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
         />
 
         <div className="flex-1 min-w-0">
-          <h4 className={cn(
-            "text-sm font-semibold text-foreground",
-            lifecycle === 'done' && "line-through opacity-60"
-          )}>
+          <h4
+            className={cn(
+              "text-sm font-semibold text-foreground",
+              lifecycle === "done" && "line-through opacity-60",
+            )}
+          >
             {tile.core.title}
           </h4>
         </div>
 
         <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
-          <p className="font-mono">{durationLabel} {durationText}</p>
-          <p>{t('tiles.startAt')} {startText}</p>
+          <p className="font-mono">
+            {durationLabel} {durationText}
+          </p>
+          <p>
+            {t("tiles.startAt")} {startText}
+          </p>
         </div>
 
         {actions.onEdit ? (
           <button
             type="button"
             onClick={(event) => {
-              event.stopPropagation()
-              actions.onEdit?.(tile.core.id)
+              event.stopPropagation();
+              actions.onEdit?.(tile.core.id);
             }}
             className="inline-flex h-8 w-8 items-center justify-center rounded bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
             aria-label="Edit tile"
@@ -112,29 +127,24 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
         <ChevronRight
           className={cn(
             "h-4 w-4 transition-transform text-foreground-muted",
-            isExpanded && "rotate-90"
+            isExpanded && "rotate-90",
           )}
         />
-      </div>
+      </button>
 
       {/* Expanded details */}
       {isExpanded && (
-        <div className={cn(
-          "space-y-3",
-          TILE_CARD_STYLES.padding.comfortable
-        )}>
+        <div className={cn("space-y-3", TILE_CARD_STYLES.padding.comfortable)}>
           {/* Next Action */}
           {tile.core.nextAction && (
-            <p className="text-xs text-foreground-muted">
-              {tile.core.nextAction}
-            </p>
+            <p className="text-xs text-foreground-muted">{tile.core.nextAction}</p>
           )}
 
           {/* Labels */}
           {tile.annotation.labels.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {tile.annotation.labels.map(label => {
-                const isProject = label.startsWith('project:')
+              {tile.annotation.labels.map((label) => {
+                const isProject = label.startsWith("project:");
                 return (
                   <span
                     key={label}
@@ -142,40 +152,39 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
                       "px-2 py-0.5 text-xs rounded-full",
                       isProject
                         ? "bg-primary/10 text-primary font-medium"
-                        : "bg-surface-2 text-foreground-muted"
+                        : "bg-surface-2 text-foreground-muted",
                     )}
                   >
-                    {isProject ? label.replace('project:', '') : `#${label}`}
+                    {isProject ? label.replace("project:", "") : `#${label}`}
                   </span>
-                )
+                );
               })}
             </div>
           )}
 
           {/* Action Buttons */}
-          <TileActionButtons
-            tile={tile}
-            variant="full"
-            {...actions}
-          />
+          <TileActionButtons tile={tile} variant="full" {...actions} />
         </div>
       )}
     </div>
-  )
+  );
 }
 
-function resolveDurationText(tile: Tile, locale: 'ja' | 'en'): string {
-  if (typeof tile.objective.targetWorkMin === 'number' && tile.objective.targetWorkMin > 0) {
-    return formatDuration(tile.objective.targetWorkMin, locale)
+function resolveDurationText(tile: Tile, locale: "ja" | "en"): string {
+  if (typeof tile.objective.targetWorkMin === "number" && tile.objective.targetWorkMin > 0) {
+    return formatDuration(tile.objective.targetWorkMin, locale);
   }
-  if (typeof tile.objective.targetRestMin === 'number' && tile.objective.targetRestMin > 0) {
-    return formatDuration(tile.objective.targetRestMin, locale)
+  if (typeof tile.objective.targetRestMin === "number" && tile.objective.targetRestMin > 0) {
+    return formatDuration(tile.objective.targetRestMin, locale);
   }
   const totalWorked = tile.work.segments.reduce((sum, segment) => {
-    if (!segment.endAt) return sum
-    const diff = Math.max(0, Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000))
-    return sum + diff
-  }, 0)
-  if (totalWorked > 0) return formatDuration(totalWorked, locale)
-  return formatDuration(null, locale)
+    if (!segment.endAt) return sum;
+    const diff = Math.max(
+      0,
+      Math.round((segment.endAt.getTime() - segment.startAt.getTime()) / 60000),
+    );
+    return sum + diff;
+  }, 0);
+  if (totalWorked > 0) return formatDuration(totalWorked, locale);
+  return formatDuration(null, locale);
 }

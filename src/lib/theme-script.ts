@@ -1,26 +1,32 @@
-type InitialThemeMode = 'light' | 'dark-gray' | 'dark-black'
+type InitialThemeMode = "light" | "dark-gray" | "dark-black";
 
 export function resolveInitialThemeMode(
   storedThemeMode: string | null,
   legacyPersistedStore: string | null,
-  prefersDark: boolean
+  prefersDark: boolean,
 ): InitialThemeMode {
-  if (storedThemeMode === 'light' || storedThemeMode === 'dark-gray' || storedThemeMode === 'dark-black') {
-    return storedThemeMode
+  if (
+    storedThemeMode === "light" ||
+    storedThemeMode === "dark-gray" ||
+    storedThemeMode === "dark-black"
+  ) {
+    return storedThemeMode;
   }
 
   if (legacyPersistedStore) {
     try {
-      const parsed = JSON.parse(legacyPersistedStore) as { state?: { theme?: string } }
-      if (parsed.state?.theme === 'light') return 'light'
-      if (parsed.state?.theme === 'gray') return 'dark-gray'
-      if (parsed.state?.theme === 'dark') return 'dark-black'
+      const parsed = JSON.parse(legacyPersistedStore) as {
+        state?: { theme?: string };
+      };
+      if (parsed.state?.theme === "light") return "light";
+      if (parsed.state?.theme === "gray") return "dark-gray";
+      if (parsed.state?.theme === "dark") return "dark-black";
     } catch {
       // ignore invalid legacy payload
     }
   }
 
-  return prefersDark ? 'dark-gray' : 'light'
+  return prefersDark ? "dark-gray" : "light";
 }
 
 // This script runs BEFORE React hydrates to prevent theme flash
