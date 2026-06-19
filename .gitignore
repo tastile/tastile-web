@@ -47,4 +47,9 @@ next-env.d.ts
 
 # local editor and tooling
 .idea/
+
+# build artifacts and debug files
+tastile-web-*.zip
+ssh-err.txt
+ssh-out.txt
 .vscode/
