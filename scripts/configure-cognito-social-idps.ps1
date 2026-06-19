@@ -53,7 +53,25 @@ function Upsert-Provider {
     --attribute-mapping $mappingJson | Out-Null
 }
 
-$enabledProviders = @("COGNITO")
+$client = aws cognito-idp describe-user-pool-client `
+  --region $Region `
+  --user-pool-id $UserPoolId `
+  --client-id $ClientId `
+  --query "UserPoolClient" `
+  --output json | ConvertFrom-Json
+
+$enabledProviders = @($client.SupportedIdentityProviders)
+if ($enabledProviders.Count -eq 0) {
+  $enabledProviders = @("COGNITO")
+}
+
+function Add-EnabledProvider {
+  param([string]$ProviderName)
+
+  if ($enabledProviders -notcontains $ProviderName) {
+    $script:enabledProviders += $ProviderName
+  }
+}
 
 if ($GoogleClientId -and $GoogleClientSecret) {
   Upsert-Provider `
@@ -71,7 +89,7 @@ if ($GoogleClientId -and $GoogleClientSecret) {
       family_name = "family_name"
       picture = "picture"
     }
-  $enabledProviders += "Google"
+  Add-EnabledProvider -ProviderName "Google"
 }
 
 if ($AppleServicesId -and $AppleTeamId -and $AppleKeyId -and $ApplePrivateKey) {
@@ -89,19 +107,12 @@ if ($AppleServicesId -and $AppleTeamId -and $AppleKeyId -and $ApplePrivateKey) {
       email = "email"
       name = "name"
     }
-  $enabledProviders += "SignInWithApple"
+  Add-EnabledProvider -ProviderName "SignInWithApple"
 }
 
-if ($enabledProviders.Count -eq 1) {
+if (-not ($GoogleClientId -and $GoogleClientSecret) -and -not ($AppleServicesId -and $AppleTeamId -and $AppleKeyId -and $ApplePrivateKey)) {
   throw "No social provider credentials were supplied. Set GOOGLE_OAUTH_CLIENT_ID/SECRET or APPLE_* environment variables."
 }
-
-$client = aws cognito-idp describe-user-pool-client `
-  --region $Region `
-  --user-pool-id $UserPoolId `
-  --client-id $ClientId `
-  --query "UserPoolClient" `
-  --output json | ConvertFrom-Json
 
 $callbackUrls = @($client.CallbackURLs)
 if ($callbackUrls.Count -eq 0) {

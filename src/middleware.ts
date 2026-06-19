@@ -54,6 +54,7 @@ export default async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some((p) => path === p || path.startsWith(`${p}/`));
   const isAuthPage = AUTH_PAGE_PATHS.has(path);
+  const isNativeAuthReturn = isNativeAuthReturnRequest(request.nextUrl.searchParams);
   if (!isProtected && !isAuthPage) return NextResponse.next({ request });
 
   // When bouncing an authenticated user off an auth page, honor a local
@@ -72,6 +73,9 @@ export default async function middleware(request: NextRequest) {
     try {
       const claims = parseIdTokenClaims(idToken);
       if (claims.exp * 1000 > Date.now()) {
+        if (isAuthPage && isNativeAuthReturn) {
+          return NextResponse.next({ request });
+        }
         return isProtected
           ? NextResponse.next({ request })
           : NextResponse.redirect(new URL(safeNext, request.url));
@@ -88,6 +92,28 @@ export default async function middleware(request: NextRequest) {
     try {
       const next = await refreshTokens({ env, refreshToken: refresh });
       const claims = parseIdTokenClaims(next.id_token);
+      if (isAuthPage && isNativeAuthReturn) {
+        const res = NextResponse.next({ request });
+        res.cookies.set(COOKIE_ID_TOKEN, next.id_token, {
+          ...SECURE_COOKIE_BASE,
+          maxAge: next.expires_in,
+        });
+        res.cookies.set(COOKIE_ACCESS_TOKEN, next.access_token, {
+          ...SECURE_COOKIE_BASE,
+          maxAge: next.expires_in,
+        });
+        if (next.refresh_token) {
+          res.cookies.set(COOKIE_REFRESH_TOKEN, next.refresh_token, {
+            ...SECURE_COOKIE_BASE,
+            maxAge: REFRESH_MAX_AGE,
+          });
+        }
+        res.cookies.set(COOKIE_USER_SUB, claims.sub, {
+          ...SECURE_COOKIE_BASE,
+          maxAge: REFRESH_MAX_AGE,
+        });
+        return res;
+      }
       const res = isProtected
         ? NextResponse.next({ request })
         : NextResponse.redirect(new URL(safeNext, request.url));
@@ -123,6 +149,13 @@ export default async function middleware(request: NextRequest) {
   }
   // isAuthPage: show the login form, let the page render.
   return NextResponse.next({ request });
+}
+
+export function isNativeAuthReturnRequest(searchParams: URLSearchParams): boolean {
+  return (
+    searchParams.get("redirect_uri") === "tastile://auth/callback" &&
+    !!searchParams.get("state")
+  );
 }
 
 export const config = {

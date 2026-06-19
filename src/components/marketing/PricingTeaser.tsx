@@ -144,7 +144,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
 								</span>
 							</div>
 							<p className={`mt-3 flex items-baseline gap-2 text-5xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}>
-								$5
+								{interval === "monthly" ? "$5" : "$50"}
 								<span className="text-base font-normal text-foreground-muted">
 									/{interval === "monthly" ? "mo" : "yr"}
 								</span>

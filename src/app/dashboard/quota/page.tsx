@@ -1,0 +1,189 @@
+"use client";
+
+import {
+  AlertTriangle,
+  CreditCard,
+  Gauge,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Pill, StatusDot } from "@/components/ui/StatusDot";
+import { getCoreClient, type Result } from "@/lib/api/endpoints";
+import { cn } from "@/lib/utils/cn";
+
+interface QuotaData {
+  plan?: string;
+  tiles_used?: number;
+  tiles_limit?: number;
+  history_days?: number;
+  history_limit_days?: number;
+  features?: Record<string, boolean>;
+}
+
+export default function QuotaPage() {
+  const [data, setData] = useState<Result<QuotaData> | null>(null);
+  const [session, setSession] = useState<Result<unknown> | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    setLoading(true);
+    const client = getCoreClient();
+    const [q, s] = await Promise.all([
+      client.call<QuotaData>("getTileQuota"),
+      client.call("getSession"),
+    ]);
+    setData(q);
+    setSession(s);
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount
+    void load();
+  }, []);
+
+  const plan = (data?.ok && data.data.plan) || (session?.ok ? "free" : "—");
+  const tilesUsed = Number(data?.ok && data.data.tiles_used) || 0;
+  const tilesLimit = Number(data?.ok && data.data.tiles_limit) || 50;
+  const tilesPct = Math.min(100, Math.round((tilesUsed / Math.max(1, tilesLimit)) * 100));
+  const historyUsed = Number(data?.ok && data.data.history_days) || 0;
+  const historyLimit = Number(data?.ok && data.data.history_limit_days) || 30;
+
+  return (
+    <PageContainer>
+      <PageHeader
+        eyebrow={<span className="font-mono text-ink-3">auth · quota</span>}
+        title="Quota"
+        description="Plan limits and current usage. Read-only — upgrade from the pricing page when you need more."
+        meta={
+          <>
+            <Pill variant={data?.ok ? "active" : "default"}>
+              <StatusDot status={data?.ok ? "active" : "pending"} size="xs" pulse={data?.ok} />
+              {data?.ok ? "Live" : "Loading"}
+            </Pill>
+            <Pill variant="accent">
+              <KeyRound className="h-3 w-3" /> {String(plan)}
+            </Pill>
+          </>
+        }
+        actions={
+          <Button variant="secondary" size="md" onClick={load} loading={loading}>
+            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          </Button>
+        }
+      />
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            Tiles
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="font-mono text-4xl font-semibold tabular-nums text-ink-1">
+              {tilesUsed}
+            </span>
+            <span className="text-sm text-ink-3">/ {tilesLimit}</span>
+          </div>
+          <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-surface-2">
+            <div
+              className={cn(
+                "absolute inset-y-0 left-0 rounded-full transition-[width]",
+                tilesPct >= 90
+                  ? "bg-status-danger"
+                  : tilesPct >= 70
+                    ? "bg-status-warn"
+                    : "bg-accent",
+              )}
+              style={{ width: `${tilesPct}%` }}
+            />
+          </div>
+          <div className="mt-1.5 flex items-center justify-between text-[11px] text-ink-3">
+            <span>{tilesPct}% used</span>
+            <span>{Math.max(0, tilesLimit - tilesUsed)} remaining</span>
+          </div>
+          {tilesPct >= 80 ? (
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-status-warn/30 bg-status-warn-soft p-2.5 text-xs text-status-warn">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Approaching your tile limit. Upgrade for more capacity.
+            </div>
+          ) : null}
+        </Card>
+
+        <Card>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            History retention
+          </div>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="font-mono text-4xl font-semibold tabular-nums text-ink-1">
+              {historyUsed}
+            </span>
+            <span className="text-sm text-ink-3">/ {historyLimit} days</span>
+          </div>
+          <p className="mt-3 text-xs text-ink-3">
+            Events older than the retention window are pruned. Export before upgrading if you need them.
+          </p>
+          <div className="mt-3">
+            <Link
+              href="/dashboard/events"
+              className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
+            >
+              <Gauge className="h-3 w-3" /> Open events log
+            </Link>
+          </div>
+        </Card>
+      </section>
+
+      <Card>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+          Plan
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="grid h-12 w-12 place-items-center rounded-md bg-accent-soft text-accent">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-lg font-semibold capitalize text-ink-1">{String(plan)}</div>
+            <p className="text-xs text-ink-3">
+              {plan === "pro"
+                ? "Unlimited tiles, 1y history, desktop sync, priority support."
+                : "Up to 50 tiles, 30 days history."}
+            </p>
+          </div>
+          <Link
+            href="/pricing"
+            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-fg hover:bg-primary-hover"
+          >
+            <CreditCard className="h-3.5 w-3.5" />
+            {plan === "pro" ? "Manage subscription" : "Upgrade to Pro"}
+          </Link>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+          Session
+        </div>
+        {session?.ok ? (
+          <pre className="mt-3 max-h-72 overflow-auto rounded-md border border-border bg-surface-0 p-3 font-mono text-[11px] text-ink-1">
+            {JSON.stringify(session.data, null, 2)}
+          </pre>
+        ) : session ? (
+          <div className="mt-3 text-xs text-status-danger">
+            {session.error.kind} · {session.error.status} · {session.error.message}
+          </div>
+        ) : (
+          <div className="mt-3 flex items-center gap-2 text-xs text-ink-3">
+            <Loader2 className="h-3 w-3 animate-spin" /> Loading session…
+          </div>
+        )}
+      </Card>
+    </PageContainer>
+  );
+}

@@ -269,14 +269,12 @@
 	bottom: 0;
 	width: 2px;
 	background-color: var(--primary);
-	opacity: 0;
-	transform: scaleY(0.4);
-	transform-origin: center;
-	transition: opacity 360ms ease, transform 360ms ease;
+	transform: scaleY(0);
+	transform-origin: top;
+	transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .mkt-condition-row:hover::before {
-	opacity: 1;
 	transform: scaleY(1);
 }
 

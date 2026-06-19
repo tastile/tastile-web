@@ -1,6 +1,6 @@
 {
   "name": "tastile-web",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "engines": {
     "node": ">=20.11.0"
@@ -27,6 +27,7 @@
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.5.0",
     "uuid": "^13.0.2",
+    "yakuhanjp": "^4.1.1",
     "zustand": "^5.0.12"
   },
   "devDependencies": {

@@ -68,7 +68,7 @@ jobs:
           NEXT_PUBLIC_COGNITO_JWKS_URL=https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pwYcPWOyR/.well-known/jwks.json
           NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
-          NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google
+          NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google,SignInWithApple
           ENVEOF
 
       - name: Lint, typecheck, test, build

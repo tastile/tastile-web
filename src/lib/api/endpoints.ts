@@ -1,0 +1,278 @@
+/**
+ * Tastile Core API client — typed wrapper for all 40+ endpoints
+ * declared in `public/openapi.yaml`.
+ *
+ * The client is intentionally transport-agnostic: it returns a
+ * `Result<T, ApiError>` rather than throwing, so the UI can render
+ * structured failure states (conflict, not found, unauthenticated).
+ *
+ * Auth: the JWT id_token is fetched from the same in-memory store
+ * used elsewhere; pass it via the `tokenProvider` hook on creation.
+ */
+
+export type ApiErrorKind =
+  | "unauthorized"
+  | "not_found"
+  | "conflict"
+  | "validation"
+  | "server"
+  | "network";
+
+export interface ApiError {
+  kind: ApiErrorKind;
+  status: number;
+  message: string;
+  body: unknown;
+}
+
+export type Result<T> =
+  | { ok: true; data: T; status: number; latencyMs: number }
+  | { ok: false; error: ApiError };
+
+export type ApiTag =
+  | "Public"
+  | "Auth"
+  | "Commands"
+  | "Read"
+  | "Views"
+  | "Prompts"
+  | "Debug";
+
+export interface EndpointMeta {
+  method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+  path: string;
+  tag: ApiTag;
+  summary: string;
+  /** A short hint for keyboard / command palette search. */
+  keywords: string[];
+  /** Whether the endpoint requires authentication. */
+  auth: boolean;
+}
+
+export const ENDPOINTS = {
+  // Public
+  getHealth: { method: "GET", path: "/health", tag: "Public", summary: "Health check", auth: false, keywords: ["ping", "status"] } as EndpointMeta,
+  getReady: { method: "GET", path: "/ready", tag: "Public", summary: "Readiness check", auth: false, keywords: ["ready", "warmup"] } as EndpointMeta,
+  getVersion: { method: "GET", path: "/version", tag: "Public", summary: "Version info", auth: false, keywords: ["version", "build", "release"] } as EndpointMeta,
+  getRuntimePaths: { method: "GET", path: "/read/runtime-paths", tag: "Public", summary: "Runtime paths", auth: false, keywords: ["paths", "storage", "debug"] } as EndpointMeta,
+
+  // Auth
+  startOAuth: { method: "POST", path: "/auth/oauth/start", tag: "Auth", summary: "Start OAuth flow", auth: false, keywords: ["oauth", "signin", "login"] } as EndpointMeta,
+  getOAuthStatus: { method: "GET", path: "/auth/oauth/status", tag: "Auth", summary: "OAuth status", auth: false, keywords: ["oauth", "status"] } as EndpointMeta,
+  exchangeOAuthCode: { method: "POST", path: "/auth/oauth/exchange", tag: "Auth", summary: "Exchange OAuth code", auth: false, keywords: ["oauth", "exchange"] } as EndpointMeta,
+  oauthCallback: { method: "GET", path: "/auth/callback", tag: "Auth", summary: "OAuth callback", auth: false, keywords: ["callback"] } as EndpointMeta,
+  signIn: { method: "POST", path: "/auth/signin", tag: "Auth", summary: "Sign in", auth: false, keywords: ["signin", "login"] } as EndpointMeta,
+  signUp: { method: "POST", path: "/auth/signup", tag: "Auth", summary: "Sign up", auth: false, keywords: ["signup", "register"] } as EndpointMeta,
+  signOut: { method: "POST", path: "/auth/signout", tag: "Auth", summary: "Sign out", auth: false, keywords: ["signout", "logout"] } as EndpointMeta,
+  getSession: { method: "GET", path: "/auth/session", tag: "Auth", summary: "Current session", auth: true, keywords: ["session", "me"] } as EndpointMeta,
+  getTileQuota: { method: "GET", path: "/auth/tile-quota", tag: "Auth", summary: "Tile quota", auth: true, keywords: ["quota", "limit", "plan"] } as EndpointMeta,
+  restoreSession: { method: "POST", path: "/auth/session/restore", tag: "Auth", summary: "Restore session", auth: false, keywords: ["restore", "session"] } as EndpointMeta,
+
+  // Commands
+  createTile: { method: "POST", path: "/commands/tile/create", tag: "Commands", summary: "Create tile", auth: true, keywords: ["create", "tile", "new"] } as EndpointMeta,
+  startTile: { method: "POST", path: "/commands/tile/start", tag: "Commands", summary: "Start tile", auth: true, keywords: ["start", "run", "tile"] } as EndpointMeta,
+  completeTile: { method: "POST", path: "/commands/tile/complete", tag: "Commands", summary: "Complete tile", auth: true, keywords: ["complete", "done", "tile"] } as EndpointMeta,
+  deferTile: { method: "POST", path: "/commands/tile/defer", tag: "Commands", summary: "Defer tile", auth: true, keywords: ["defer", "snooze", "tile"] } as EndpointMeta,
+  deleteTile: { method: "POST", path: "/commands/tile/delete", tag: "Commands", summary: "Delete tile", auth: true, keywords: ["delete", "remove", "tile"] } as EndpointMeta,
+  updateTile: { method: "POST", path: "/commands/tile/update", tag: "Commands", summary: "Update tile", auth: true, keywords: ["update", "edit", "tile"] } as EndpointMeta,
+  extendTile: { method: "POST", path: "/commands/tile/extend", tag: "Commands", summary: "Extend tile", auth: true, keywords: ["extend", "more", "tile"] } as EndpointMeta,
+  attachMemo: { method: "POST", path: "/commands/memo/attach", tag: "Commands", summary: "Attach memo", auth: true, keywords: ["memo", "note", "attach"] } as EndpointMeta,
+  startBreak: { method: "POST", path: "/commands/break/start", tag: "Commands", summary: "Start break", auth: true, keywords: ["break", "rest", "pause"] } as EndpointMeta,
+  endBreak: { method: "POST", path: "/commands/break/end", tag: "Commands", summary: "End break", auth: true, keywords: ["break", "end", "resume"] } as EndpointMeta,
+  respondStartupRecovery: { method: "POST", path: "/commands/prompt/respond-startup-recovery", tag: "Commands", summary: "Respond startup recovery", auth: true, keywords: ["recovery", "startup", "prompt"] } as EndpointMeta,
+  requestPrompt: { method: "POST", path: "/commands/prompt/request", tag: "Commands", summary: "Request prompt", auth: true, keywords: ["prompt", "request"] } as EndpointMeta,
+  tick: { method: "POST", path: "/commands/tick", tag: "Commands", summary: "Tick (advance time)", auth: true, keywords: ["tick", "advance"] } as EndpointMeta,
+  tickAt: { method: "POST", path: "/commands/tick-at", tag: "Commands", summary: "Tick at timestamp", auth: true, keywords: ["tick", "at"] } as EndpointMeta,
+  tickRange: { method: "POST", path: "/commands/tick-range", tag: "Commands", summary: "Tick range", auth: true, keywords: ["tick", "range"] } as EndpointMeta,
+
+  // Read
+  getTiles: { method: "GET", path: "/read/tiles", tag: "Read", summary: "List tiles", auth: true, keywords: ["tiles", "list"] } as EndpointMeta,
+  getTile: { method: "GET", path: "/read/tile/{id}", tag: "Read", summary: "Get tile by id", auth: true, keywords: ["tile", "detail"] } as EndpointMeta,
+  getEditableTile: { method: "GET", path: "/read/tile/{id}/editable", tag: "Read", summary: "Get editable tile", auth: true, keywords: ["tile", "edit"] } as EndpointMeta,
+  getTilesInProgress: { method: "GET", path: "/read/tiles-in-progress", tag: "Read", summary: "Tiles in progress", auth: true, keywords: ["tiles", "active", "progress"] } as EndpointMeta,
+  getActiveTile: { method: "GET", path: "/read/active-tile", tag: "Read", summary: "Active tile", auth: true, keywords: ["active", "tile"] } as EndpointMeta,
+  getExecution: { method: "GET", path: "/read/execution", tag: "Read", summary: "Execution state", auth: true, keywords: ["execution", "state"] } as EndpointMeta,
+  getExecutionView: { method: "GET", path: "/read/execution-view", tag: "Read", summary: "Execution view", auth: true, keywords: ["execution", "view"] } as EndpointMeta,
+  getEventsState: { method: "GET", path: "/read/events/state", tag: "Read", summary: "Events state", auth: true, keywords: ["events", "state"] } as EndpointMeta,
+
+  // Views
+  getTileList: { method: "GET", path: "/views/tile-list", tag: "Views", summary: "Tile list view", auth: true, keywords: ["view", "tile", "list"] } as EndpointMeta,
+  getActiveTileView: { method: "GET", path: "/views/active-tile", tag: "Views", summary: "Active tile view", auth: true, keywords: ["view", "active"] } as EndpointMeta,
+  getPendingPrompt: { method: "GET", path: "/views/pending-prompt", tag: "Views", summary: "Pending prompt", auth: true, keywords: ["prompt", "pending"] } as EndpointMeta,
+  getTimelineToday: { method: "GET", path: "/views/timeline/today", tag: "Views", summary: "Timeline today", auth: true, keywords: ["timeline", "today"] } as EndpointMeta,
+  getCalendarDay: { method: "GET", path: "/views/calendar/day", tag: "Views", summary: "Calendar day", auth: true, keywords: ["calendar", "day"] } as EndpointMeta,
+  getCalendarWeek: { method: "GET", path: "/views/calendar/week", tag: "Views", summary: "Calendar week", auth: true, keywords: ["calendar", "week"] } as EndpointMeta,
+  getCalendarMonth: { method: "GET", path: "/views/calendar/month", tag: "Views", summary: "Calendar month", auth: true, keywords: ["calendar", "month"] } as EndpointMeta,
+  getCalendarYear: { method: "GET", path: "/views/calendar/year", tag: "Views", summary: "Calendar year", auth: true, keywords: ["calendar", "year"] } as EndpointMeta,
+
+  // Prompts
+  getCurrentPrompt: { method: "GET", path: "/prompts/current", tag: "Prompts", summary: "Current prompt", auth: true, keywords: ["prompt", "current"] } as EndpointMeta,
+
+  // Debug
+  getDebugEvents: { method: "GET", path: "/debug/events", tag: "Debug", summary: "Debug events", auth: true, keywords: ["debug", "events", "log"] } as EndpointMeta,
+} as const;
+
+export type EndpointKey = keyof typeof ENDPOINTS;
+
+export const ENDPOINTS_BY_TAG: Record<ApiTag, EndpointKey[]> = Object.entries(
+  ENDPOINTS,
+).reduce(
+  (acc, [key, meta]) => {
+    acc[meta.tag as ApiTag].push(key as EndpointKey);
+    return acc;
+  },
+  {
+    Public: [],
+    Auth: [],
+    Commands: [],
+    Read: [],
+    Views: [],
+    Prompts: [],
+    Debug: [],
+  } as Record<ApiTag, EndpointKey[]>,
+);
+
+export const TAG_ORDER: ApiTag[] = [
+  "Public",
+  "Auth",
+  "Commands",
+  "Read",
+  "Views",
+  "Prompts",
+  "Debug",
+];
+
+// ============================================================================
+// Client
+// ============================================================================
+
+export interface CoreClientConfig {
+  baseUrl: string;
+  tokenProvider: () => string | null | Promise<string | null>;
+  fetchImpl?: typeof fetch;
+}
+
+export class CoreClient {
+  private baseUrl: string;
+  private tokenProvider: () => string | null | Promise<string | null>;
+  private fetchImpl: typeof fetch;
+
+  constructor(config: CoreClientConfig) {
+    this.baseUrl = config.baseUrl.replace(/\/$/, "");
+    this.tokenProvider = config.tokenProvider;
+    this.fetchImpl = config.fetchImpl ?? fetch;
+  }
+
+  async call<T = unknown>(
+    key: EndpointKey,
+    options: {
+      pathParams?: Record<string, string>;
+      query?: Record<string, string | number | boolean | undefined>;
+      body?: unknown;
+    } = {},
+  ): Promise<Result<T>> {
+    const meta = ENDPOINTS[key];
+    const started = performance.now();
+    let path = meta.path;
+    if (options.pathParams) {
+      for (const [k, v] of Object.entries(options.pathParams)) {
+        path = path.replace(`{${k}}`, encodeURIComponent(v));
+      }
+    }
+    const url = new URL(this.baseUrl + path);
+    if (options.query) {
+      for (const [k, v] of Object.entries(options.query)) {
+        if (v === undefined) continue;
+        url.searchParams.set(k, String(v));
+      }
+    }
+    const headers: Record<string, string> = {
+      accept: "application/json",
+    };
+    if (meta.method !== "GET" && options.body !== undefined) {
+      headers["content-type"] = "application/json";
+    }
+    if (meta.auth) {
+      const token = await this.tokenProvider();
+      if (token) headers.authorization = `Bearer ${token}`;
+    }
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(url.toString(), {
+        method: meta.method,
+        headers,
+        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+        cache: "no-store",
+      });
+    } catch (err) {
+      return {
+        ok: false,
+        error: {
+          kind: "network",
+          status: 0,
+          message: err instanceof Error ? err.message : "Network error",
+          body: null,
+        },
+      };
+    }
+
+    const latencyMs = Math.round(performance.now() - started);
+    const text = await response.text();
+    let body: unknown = null;
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch {
+        body = text;
+      }
+    }
+    if (!response.ok) {
+      return {
+        ok: false,
+        error: {
+          kind: classifyStatus(response.status),
+          status: response.status,
+          message:
+            (body && typeof body === "object" && "error" in body
+              ? String((body as { error: unknown }).error)
+              : null) ?? response.statusText,
+          body,
+        },
+      };
+    }
+    return { ok: true, data: body as T, status: response.status, latencyMs };
+  }
+}
+
+function classifyStatus(status: number): ApiErrorKind {
+  if (status === 401) return "unauthorized";
+  if (status === 404) return "not_found";
+  if (status === 409) return "conflict";
+  if (status === 422 || status === 400) return "validation";
+  if (status >= 500) return "server";
+  return "server";
+}
+
+// ============================================================================
+// Singleton — lazily instantiated; null until first use.
+// ============================================================================
+
+let _client: CoreClient | null = null;
+
+export function getCoreClient(): CoreClient {
+  if (_client) return _client;
+  const baseUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "http://127.0.0.1:3140";
+  _client = new CoreClient({
+    baseUrl,
+    tokenProvider: () => {
+      if (typeof window === "undefined") return null;
+      // Reuse the same in-memory id_token used elsewhere.
+      // The exact provider is read off `window.__tastileIdToken` if present,
+      // else from localStorage (set by the auth flow).
+      const w = window as unknown as { __tastileIdToken?: string };
+      return w.__tastileIdToken ?? null;
+    },
+  });
+  return _client;
+}

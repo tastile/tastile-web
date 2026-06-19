@@ -1,5 +1,7 @@
-import { redirect } from "next/navigation";
+"use client";
+
+import { CalendarMain } from "@/components/calendar/CalendarMain";
 
 export default function DashboardPage() {
-  redirect("/dashboard/execute");
+  return <CalendarMain initialView="day" />;
 }

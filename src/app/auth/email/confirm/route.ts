@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { normalizeCode, normalizeEmail } from "@/lib/cognito/form";
+import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { CognitoPublicError, confirmSignUp } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 
@@ -12,17 +13,22 @@ export async function POST(request: NextRequest) {
   const form = await request.formData();
   const email = normalizeEmail(form.get("email"));
   const code = normalizeCode(form.get("code"));
-  if (!email) return NextResponse.redirect(`${origin}/auth/confirm?error=missing_email`, 303);
+  const nativeQuery = buildNativeQuery(
+    safeOAuthRedirectUri(form.get("redirect_uri")?.toString() ?? null, env.callbackUrl),
+    safePkceValue(form.get("state")?.toString() ?? null),
+  );
+  if (!email)
+    return NextResponse.redirect(`${origin}/auth/confirm?error=missing_email${nativeQuery}`, 303);
   if (!code)
     return NextResponse.redirect(
-      `${origin}/auth/confirm?email=${encodeURIComponent(email)}&error=missing_code`,
+      `${origin}/auth/confirm?email=${encodeURIComponent(email)}&error=missing_code${nativeQuery}`,
       303,
     );
 
   try {
     await confirmSignUp(env, email, code);
     return NextResponse.redirect(
-      `${origin}/auth/email?email=${encodeURIComponent(email)}&notice=confirmed`,
+      `${origin}/auth/email?email=${encodeURIComponent(email)}&notice=confirmed${nativeQuery}`,
       303,
     );
   } catch (error) {
@@ -34,14 +40,19 @@ export async function POST(request: NextRequest) {
             ? "expired_code"
             : "auth_failed";
       return NextResponse.redirect(
-        `${origin}/auth/confirm?email=${encodeURIComponent(email)}&error=${mapped}`,
+        `${origin}/auth/confirm?email=${encodeURIComponent(email)}&error=${mapped}${nativeQuery}`,
         303,
       );
     }
     console.error("Confirm signup failed", error);
     return NextResponse.redirect(
-      `${origin}/auth/confirm?email=${encodeURIComponent(email)}&error=auth_failed`,
+      `${origin}/auth/confirm?email=${encodeURIComponent(email)}&error=auth_failed${nativeQuery}`,
       303,
     );
   }
+}
+
+function buildNativeQuery(redirectUri: string, state: string | null): string {
+  if (redirectUri !== "tastile://auth/callback" || !state) return "";
+  return `&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter, Outfit, Zen_Kaku_Gothic_New } from "next/font/google";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { themeScript } from "@/lib/theme-script";
+import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
 
 const geistSans = Geist({

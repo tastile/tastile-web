@@ -108,8 +108,8 @@
   /* Fonts */
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-jp: "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-  --font-jp-heading: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
+  --font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --font-jp-heading: "YakuHanJP", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
 
   /* Radius — design system scale (4px increments) */
   --radius-xs: 4px;
@@ -152,6 +152,14 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ============================================
+   Selection Highlight
+   ============================================ */
+::selection {
+  background-color: color-mix(in oklch, var(--primary) 35%, transparent);
+  color: var(--foreground);
 }
 
 /* ============================================

@@ -62,6 +62,27 @@ describe("/auth/cognito/login", () => {
 		expect(authorizeUrl.searchParams.get("identity_provider")).toBe("Google");
 	});
 
+	it("preserves app callback and external PKCE for native clients", async () => {
+		setCognitoEnv("COGNITO,Google");
+
+		const response = await GET(
+			makeRequest(
+				"https://app.example.test/auth/cognito/login?provider=Google&redirect_uri=tastile%3A%2F%2Fauth%2Fcallback&state=native-state-123456&code_challenge=native-challenge-123456",
+			),
+		);
+		const location = response.headers.get("location");
+		expect(location).toBeTruthy();
+
+		const authorizeUrl = new URL(location!);
+		expect(authorizeUrl.searchParams.get("redirect_uri")).toBe(
+			"tastile://auth/callback",
+		);
+		expect(authorizeUrl.searchParams.get("state")).toBe("native-state-123456");
+		expect(authorizeUrl.searchParams.get("code_challenge")).toBe(
+			"native-challenge-123456",
+		);
+	});
+
 	it("passes Apple through to Cognito when the provider is enabled", async () => {
 		setCognitoEnv("COGNITO,SignInWithApple");
 

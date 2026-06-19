@@ -51,7 +51,7 @@ export default async function EmailVerifyPage({
           />
         </div>
         <button
-          type="button"
+          type="submit"
           className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
           <LogIn className="h-4 w-4" aria-hidden="true" />
