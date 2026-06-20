@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
+import { COOKIE_ID_TOKEN } from "@/lib/cognito/cookies";
 
-const CLOUD_API_BASE = "https://api.tastile.app";
+const CLOUD_API_BASE =
+  process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
+  process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
+  "https://api.tastile.app";
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
 
 export async function GET(request: NextRequest) {
@@ -22,7 +26,9 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const token = request.nextUrl.searchParams.get("access_token");
+  const token =
+    request.nextUrl.searchParams.get("access_token") ??
+    request.cookies.get(COOKIE_ID_TOKEN)?.value;
   const upstreamUrl = `${CLOUD_API_BASE}/read/events/state`;
 
   const headers: Record<string, string> = {};

@@ -25,7 +25,7 @@ const AUTH_PAGE_PATHS = new Set<string>([
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30;
 const SECURE_COOKIE_BASE = {
   httpOnly: true,
-  secure: true,
+  secure: process.env.NODE_ENV === "production",
   sameSite: "lax" as const,
   path: "/",
 };

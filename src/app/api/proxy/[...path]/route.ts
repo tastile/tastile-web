@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { COOKIE_ID_TOKEN } from "@/lib/cognito/cookies";
 
-const CLOUD_API_BASE = "https://api.tastile.app";
+const CLOUD_API_BASE =
+  process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
+  process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
+  "https://api.tastile.app";
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
 
 interface MockTile {
@@ -306,7 +310,13 @@ async function proxyRequest(
   url.search = request.nextUrl.search;
 
   const headers = new Headers();
-  const authHeader = request.headers.get("authorization");
+  let authHeader = request.headers.get("authorization");
+  if (!authHeader) {
+    const idToken = request.cookies.get(COOKIE_ID_TOKEN)?.value;
+    if (idToken) {
+      authHeader = `Bearer ${idToken}`;
+    }
+  }
   if (authHeader) {
     headers.set("authorization", authHeader);
   }
