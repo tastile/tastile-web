@@ -15,26 +15,26 @@ Before touching execution logic or storage, read:
 Install dependencies:
 
 ```bash
-npm ci
+bun install
 ```
 
 Run the standard validation set:
 
 ```bash
-npm run check
+bun run check
 ```
 
 Run release validation:
 
 ```bash
-npm run check:release
-npm run test:e2e
+bun run check:release
+bun run test:e2e
 ```
 
 ## Repo Conventions
 
 - Keep domain changes inside `src/lib/domain` and `src/lib/core`
-- Keep Supabase access isolated under `src/lib/storage` or `src/lib/supabase`
+- Keep daemon API access isolated under `src/lib/storage` or `src/lib/daemon`
 - Avoid hiding product logic in route handlers or React components
 - Do not add new state shortcuts that duplicate derived values
 - Prefer adding or tightening tests alongside behavior changes

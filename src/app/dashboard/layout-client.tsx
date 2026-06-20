@@ -8,6 +8,7 @@ import { SecurityLockGate } from "@/components/security/SecurityLockGate";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { TileEditPanel } from "@/components/tile/TileEditPanel";
+import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 
@@ -22,10 +23,9 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
 }
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
-  const { open } = useQuickCreateStore();
+  const openQuickCreate = useQuickCreateStore((s) => s.open);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [editPanelOpen, setEditPanelOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -35,12 +35,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault();
-        open();
+        openQuickCreate();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [openQuickCreate]);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -58,17 +58,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      {/* Global overlays — controlled by their respective stores */}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <NotificationsDropdown open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-      <TileEditPanel
-        open={editPanelOpen}
-        mode="create"
-        onClose={() => setEditPanelOpen(false)}
-        onSave={(data) => {
-          console.log("Save tile:", data);
-          setEditPanelOpen(false);
-        }}
-      />
+      <TileEditPanel />
+      <QuickTileCreate />
     </div>
   );
 }

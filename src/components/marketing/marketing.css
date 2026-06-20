@@ -254,7 +254,7 @@
 	border-top: 1px solid var(--surface-2);
 	padding: 2.5rem 0;
 	position: relative;
-	transition: background-color 360ms ease;
+	overflow: hidden;
 }
 
 .mkt-condition-row:last-of-type {
@@ -267,15 +267,34 @@
 	left: 0;
 	top: 0;
 	bottom: 0;
-	width: 2px;
-	background-color: var(--primary);
-	transform: scaleY(0);
-	transform-origin: top;
-	transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1);
+	width: 0;
+	background: linear-gradient(
+		90deg,
+		color-mix(in oklch, var(--primary) 8%, transparent),
+		color-mix(in oklch, var(--primary) 2%, transparent) 60%,
+		transparent
+	);
+	transition: width 480ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .mkt-condition-row:hover::before {
-	transform: scaleY(1);
+	width: 100%;
+}
+
+.mkt-condition-row:hover .mkt-row-numeral {
+	color: var(--primary);
+}
+
+.mkt-row-numeral {
+	transition: color 320ms ease;
+}
+
+.mkt-condition-row:hover h3 {
+	color: var(--foreground);
+}
+
+.mkt-condition-row h3 {
+	transition: color 320ms ease;
 }
 
 /* Pricing band (full-width, no parallel cards). */

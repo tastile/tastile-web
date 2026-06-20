@@ -265,13 +265,11 @@ export function getCoreClient(): CoreClient {
   const baseUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "http://127.0.0.1:3140";
   _client = new CoreClient({
     baseUrl,
-    tokenProvider: () => {
+    tokenProvider: async () => {
       if (typeof window === "undefined") return null;
-      // Reuse the same in-memory id_token used elsewhere.
-      // The exact provider is read off `window.__tastileIdToken` if present,
-      // else from localStorage (set by the auth flow).
-      const w = window as unknown as { __tastileIdToken?: string };
-      return w.__tastileIdToken ?? null;
+      // Lazily import the id-token client to avoid circular deps at module level.
+      const { getIdTokenClient } = await import("@/lib/daemon/id-token-client");
+      return getIdTokenClient();
     },
   });
   return _client;

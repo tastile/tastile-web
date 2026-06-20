@@ -5,11 +5,13 @@ import { useEffect, useState } from "react";
 import { applyThemeMode, resolveThemeMode, type ThemeMode } from "@/lib/theme-mode";
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>(() => resolveThemeMode());
+  const [mode, setMode] = useState<ThemeMode>("light");
 
   useEffect(() => {
-    applyThemeMode(mode);
-  }, [mode]);
+    const resolved = resolveThemeMode();
+    setMode(resolved);
+    applyThemeMode(resolved);
+  }, []);
 
   function toggle() {
     const next: ThemeMode = mode === "light" ? "dark-gray" : "light";

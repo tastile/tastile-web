@@ -5,10 +5,12 @@ export interface DaemonExecutionEvent {
 
 export interface StreamOptions {
   baseUrl: string;
+  ssePath?: string;
   getAccessToken?: () => Promise<string | null>;
   onEvent: (event: DaemonExecutionEvent) => void;
   connectImpl?: (url: string, token: string | null) => Promise<StreamConnection>;
   reconnectDelayMs?: number;
+  maxReconnectDelayMs?: number;
 }
 
 export interface StreamConnection {
@@ -21,14 +23,17 @@ const MAX_SEEN_EVENT_IDS = 10_000;
 
 export function openExecutionStream({
   baseUrl,
+  ssePath = "/read/events/state",
   getAccessToken,
   onEvent,
   connectImpl = defaultConnect,
   reconnectDelayMs = 1_000,
+  maxReconnectDelayMs = 30_000,
 }: StreamOptions): { close(): void } {
   let closed = false;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let connection: StreamConnection | null = null;
+  let consecutiveFailures = 0;
   const seenEventIds = new Set<string>();
   const normalizedBaseUrl = trimTrailingSlash(baseUrl);
 
@@ -48,16 +53,21 @@ export function openExecutionStream({
     },
   };
 
+  function getReconnectDelay(): number {
+    return Math.min(reconnectDelayMs * 2 ** consecutiveFailures, maxReconnectDelayMs);
+  }
+
   async function connect(): Promise<void> {
     if (closed) return;
     try {
       const token = getAccessToken ? await getAccessToken() : null;
-      const nextConnection = await connectImpl(`${normalizedBaseUrl}/read/events/state`, token);
+      const nextConnection = await connectImpl(`${normalizedBaseUrl}${ssePath}`, token);
       if (closed) {
         nextConnection.close();
         return;
       }
       connection = nextConnection;
+      consecutiveFailures = 0;
       nextConnection.onmessage = (event) => {
         const parsed = parseExecutionEvent(event.data);
         if (!parsed) return;
@@ -72,19 +82,21 @@ export function openExecutionStream({
           connection.close();
           connection = null;
         }
+        consecutiveFailures++;
         if (reconnectTimer) return;
         reconnectTimer = setTimeout(() => {
           reconnectTimer = null;
           void connect();
-        }, reconnectDelayMs);
+        }, getReconnectDelay());
       };
     } catch {
       if (closed) return;
+      consecutiveFailures++;
       if (reconnectTimer) return;
       reconnectTimer = setTimeout(() => {
         reconnectTimer = null;
         void connect();
-      }, reconnectDelayMs);
+      }, getReconnectDelay());
     }
   }
 

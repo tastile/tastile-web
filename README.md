@@ -32,7 +32,6 @@ src/
     domain/     Domain types
     hooks/      Execution engine integration
     storage/    tastile-core API persistence
-  wasm/         Generated WASM bridge artifacts
 scripts/        Repository automation
 docs/plans/     Implementation and hardening plans
 e2e/            Playwright coverage
@@ -41,8 +40,8 @@ e2e/            Playwright coverage
 ## Prerequisites
 
 - Node.js 20.11 or newer
-- npm 10 or newer
-- Optional: `wasm-pack` and a sibling checkout of `../tastile-core` if you want to rebuild the WASM bridge locally
+- Bun 1.3 or newer
+
 
 ## Environment
 
@@ -73,7 +72,7 @@ Desktop download and versioning are resolved from the public installer manifest 
 ## Installation
 
 ```bash
-npm ci
+bun install
 ```
 
 ## Development
@@ -81,7 +80,7 @@ npm ci
 Run the app locally:
 
 ```bash
-npm run dev
+bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
@@ -91,13 +90,13 @@ Open [http://localhost:3000](http://localhost:3000).
 Fast local validation:
 
 ```bash
-npm run check
+bun run check
 ```
 
 Release-level validation:
 
 ```bash
-npm run check:release
+bun run check:release
 ```
 
 This runs:
@@ -110,24 +109,7 @@ This runs:
 Run browser coverage separately:
 
 ```bash
-npm run test:e2e
-```
-
-## WASM Bridge
-
-`npm run build` always invokes `npm run build:core-wasm` first.
-
-There are two valid development modes:
-
-1. Sibling `../tastile-core` checkout exists and `wasm-pack` is installed  
-   The bridge is rebuilt from source.
-2. No sibling checkout exists, but prebuilt artifacts are already committed in `src/wasm/tastile-core-wasm/pkg`  
-   The build reuses those artifacts and continues.
-
-If you want to require a fresh local rebuild, run with:
-
-```bash
-TASTILE_FORCE_WASM_BUILD=1 npm run build
+bun run test:e2e
 ```
 
 ## Contribution Expectations
@@ -136,12 +118,12 @@ TASTILE_FORCE_WASM_BUILD=1 npm run build
 - Prefer focused commits
 - Do not introduce alternate state models that bypass the command/event/reducer flow
 - Keep `/dashboard` as the main authenticated web surface unless there is a clear product reason otherwise
-- Run `npm run check` before opening a PR
+- Run `bun run check` before opening a PR
 
 ## Current Constraints
 
 - Some architecture alignment work is still in progress; see `docs/plans/` for active hardening plans
-- The web app currently supports both daemon-backed and WASM-backed execution paths; treat backend switches carefully
+- The web app uses daemon-backed execution via the local HTTP API
 
 ## Deployment
 
@@ -150,6 +132,6 @@ This project is intended to deploy on Vercel or an equivalent Next.js hosting en
 Minimum pre-deploy checklist:
 
 ```bash
-npm run check:release
-npm run test:e2e
+bun run check:release
+bun run test:e2e
 ```

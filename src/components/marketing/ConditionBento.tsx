@@ -54,11 +54,11 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
 							className="mkt-condition-row grid gap-6 lg:grid-cols-[6rem_1fr_1.4fr] lg:gap-12"
 						>
 							<div className="flex items-start gap-3">
-								<span
-									className={`${mono} text-sm text-foreground-subtle tabular-nums`}
-								>
-									{row.numeral}
-								</span>
+							<span
+								className={`mkt-row-numeral ${mono} text-sm text-foreground-subtle tabular-nums`}
+							>
+								{row.numeral}
+							</span>
 								<span
 									className={`${mono} hidden h-px flex-1 translate-y-3 bg-surface-2 lg:block`}
 								/>

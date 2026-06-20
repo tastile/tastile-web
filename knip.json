@@ -14,7 +14,6 @@
     "**/__tests__/**",
     "**/__mocks__/**",
     ".next/**",
-    "src/wasm/**",
     "src/lib/cognito/session.ts"
   ],
   "ignoreDependencies": [

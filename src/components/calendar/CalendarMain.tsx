@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { DayView } from "./DayView";
@@ -36,7 +36,11 @@ function formatAnchor(view: CalendarView, anchor: string): string {
 export function CalendarMain({ initialView = "day" }: { initialView?: CalendarView }) {
   const [view, setView] = useState<CalendarView>(initialView);
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
-  const tzOffset = new Date().getTimezoneOffset() * -1;
+  const [tzOffset, setTzOffset] = useState(0);
+
+  useEffect(() => {
+    setTzOffset(new Date().getTimezoneOffset() * -1);
+  }, []);
 
   return (
     <div className="flex h-full flex-col">

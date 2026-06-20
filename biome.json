@@ -12,7 +12,6 @@
       "src/**/*.js",
       "src/**/*.jsx",
       "src/**/*.css",
-      "!src/wasm/**",
       "!**/*.test.{ts,tsx}",
       "!**/*.test-d.{ts,tsx}",
       "!**/__tests__/**",

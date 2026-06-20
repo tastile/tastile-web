@@ -22,14 +22,14 @@
 
 ## 2026-04-06 daemon session expiry hardening
 
-- Normalize Supabase `session.expires_at` before sending to daemon session restore API
+- Normalize session `expires_at` before sending to daemon session restore API
 - Accept unix seconds unix milliseconds numeric string and ISO string and fallback to `null` for invalid values
 - Add regression coverage for invalid `expires_at` string so daemon initialization does not crash on `toISOString`
 
 ## 2026-04-06 malformed tile date hardening
 
-- Guard wasm sync payload conversion so invalid `Date` values serialize as `null` instead of throwing in `toISOString`
-- Sanitize Supabase tile snapshot deserialization by converting invalid date strings to `null` and dropping segments with invalid `startAt`
+- Guard sync payload conversion so invalid `Date` values serialize as `null` instead of throwing in `toISOString`
+- Sanitize tile snapshot deserialization by converting invalid date strings to `null` and dropping segments with invalid `startAt`
 - Tighten closed-at derivation to only use valid `Date` instances before `toISOString`
 
 ## 2026-04-06 dashboard workspace ux consolidation
@@ -46,7 +46,7 @@
 
 ## 2026-04-06 semantic role storage normalization and list modes
 
-- Normalize `semanticRole` from both camelCase and snake_case tile annotations before Supabase upsert to satisfy non-null `semantic_role`
+- Normalize `semanticRole` from both camelCase and snake_case tile annotations before upsert to satisfy non-null `semantic_role`
 - Add tile-list grouping modes (`state` `project` `tag`) computed from tile data on each render instead of persisted grouping state
 - Add list card display modes (`compact` `comfortable` `detailed`) and keep desktop-like row density in `comfortable` mode
 
@@ -71,8 +71,8 @@
 ## 2026-04-06 desktop api parity bridge for web
 
 - Add desktop read-model APIs to web daemon client (`/read/tiles` `/read/execution-view` `/views/pending-prompt` `/views/timeline/today`) and keep `/read/events/state` as the SSE path
-- Expand prompt action contract to include desktop/wasm actions (`start_break_parallel` `start_break_split` `start_break_split_and_extend` `complete_phase`)
-- Introduce wasm-side parity adapters in `core-engine.ts` that expose desktop-like read models from snapshot + tile export without changing daemon contracts
+- Expand prompt action contract to include desktop actions (`start_break_parallel` `start_break_split` `start_break_split_and_extend` `complete_phase`)
+- Introduce parity adapters in `core-engine.ts` that expose desktop-like read models from snapshot + tile export without changing daemon contracts
 - Hydrate dashboard state from parity read models in `use-daemon-execution` so tile duration/start metadata and phase end data remain core-derived instead of snapshot-title-only
 
 ## 2026-04-06 countdown fallback parity without standby state
@@ -91,5 +91,5 @@
 
 - Align timeline end inference to desktop order (`endedAt` -> `durationMin` -> `active now` -> `+25m fallback`) so missing end values still render duration-aware heights
 - Raise web minimum block height to `44px` and add readable `px/min` amplification capped at `1.35x` base to preserve short-block legibility without over-zooming
-- Preserve daemon/wasm duration hints in timeline snapshots (`durationMin`) so Execute timeline rendering can reflect real planned duration even when `endAt` is absent
+- Preserve daemon duration hints in timeline snapshots (`durationMin`) so Execute timeline rendering can reflect real planned duration even when `endAt` is absent
 - When daemon timeline omits `duration_min`, derive `durationMin` from tile objective (`targetWorkMin` / `targetRestMin`) before rendering so all blocks do not collapse to uniform fallback height

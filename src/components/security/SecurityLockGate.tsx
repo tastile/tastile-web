@@ -85,21 +85,21 @@ async function requestPlatformUnlock() {
 }
 
 export function SecurityLockGate({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<LockState>(() => {
-    if (typeof window === "undefined") return "checking";
+  const [state, setState] = useState<LockState>("checking");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
     const enabled = getSecurityLockEnabled(localStorage);
     const timeoutMinutes = getSecurityLockTimeoutMinutes(localStorage);
     const lastLeftAt = Number.parseInt(localStorage.getItem(SECURITY_LOCK_LEFT_AT_KEY) ?? "0", 10);
-    return shouldRequireSecurityUnlock({
+    const needsLock = shouldRequireSecurityUnlock({
       enabled,
       timeoutMinutes,
       lastLeftAt,
       now: Date.now(),
-    })
-      ? "locked"
-      : "unlocked";
-  });
-  const [message, setMessage] = useState("");
+    });
+    setState(needsLock ? "locked" : "unlocked");
+  }, []);
 
   useEffect(() => {
     const markLeft = () => {

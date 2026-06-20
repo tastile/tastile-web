@@ -31,6 +31,8 @@ import { requestNotificationPermissionOnce, showNotification } from "../notifica
 
 const DEFAULT_DAEMON_BASE_URL = "http://127.0.0.1:3140";
 const DEFAULT_DAEMON_REFRESH_MS = 5_000;
+const MAX_DAEMON_REFRESH_MS = 60_000;
+const DAEMON_REFRESH_BACKOFF_FACTOR = 2;
 const EMPTY_EXECUTION_SNAPSHOT: ExecutionSnapshot = {
   inProgressTiles: [],
   promptQueue: [],
@@ -57,7 +59,8 @@ export function useDaemonExecution() {
   const refreshRequestRef = useRef(0);
   const appliedRefreshRef = useRef(0);
   const stateRef = useRef<AppState>(AppState.initial());
-  const baseUrl = useMemo(
+  const consecutiveErrorsRef = useRef(0);
+  const rawBaseUrl = useMemo(
     () =>
       process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
       process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -65,8 +68,12 @@ export function useDaemonExecution() {
     [],
   );
   const usesCloudCoreApi = useMemo(
-    () => !!process.env.NEXT_PUBLIC_TASTILE_CORE_URL && !isLocalDaemonUrl(baseUrl),
-    [baseUrl],
+    () => !isLocalDaemonUrl(rawBaseUrl),
+    [rawBaseUrl],
+  );
+  const baseUrl = useMemo(
+    () => (usesCloudCoreApi ? "/api/proxy" : rawBaseUrl),
+    [rawBaseUrl, usesCloudCoreApi],
   );
   const daemonRefreshMs = useMemo(() => {
     const raw = process.env.NEXT_PUBLIC_DAEMON_REFRESH_MS;
@@ -178,10 +185,40 @@ export function useDaemonExecution() {
         await refreshSnapshot();
         if (!active) return;
 
-        const stream = openExecutionStream({
-          baseUrl,
-          getAccessToken,
-          onEvent: () => {
+        if (!e2eBypassAuth) {
+          const streamBaseUrl = usesCloudCoreApi ? "/api/proxy/sse" : baseUrl;
+          const stream = openExecutionStream({
+            baseUrl: streamBaseUrl,
+            ssePath: usesCloudCoreApi ? "" : "/read/events/state",
+            getAccessToken: usesCloudCoreApi ? undefined : getAccessToken,
+            onEvent: () => {
+              void (async () => {
+                try {
+                  const daemonClient = clientRef.current;
+                  if (daemonClient && !usesCloudCoreApi) {
+                    const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient);
+                    if (daemonSyncStatus) {
+                      syncStatusRef.current = daemonSyncStatus;
+                    }
+                  }
+                  await refreshSnapshot();
+                } catch (err) {
+                  console.error("Failed to refresh daemon snapshot from stream event:", err);
+                }
+              })();
+            },
+          });
+          closeStream = stream.close;
+        }
+        const scheduleRefresh = () => {
+          if (!active) return;
+          const delay = Math.min(
+            daemonRefreshMs * DAEMON_REFRESH_BACKOFF_FACTOR ** consecutiveErrorsRef.current,
+            MAX_DAEMON_REFRESH_MS,
+          );
+          refreshTimer = setTimeout(() => {
+            if (!active) return;
+            refreshTimer = null;
             void (async () => {
               try {
                 const daemonClient = clientRef.current;
@@ -192,29 +229,16 @@ export function useDaemonExecution() {
                   }
                 }
                 await refreshSnapshot();
+                consecutiveErrorsRef.current = 0;
               } catch (err) {
-                console.error("Failed to refresh daemon snapshot from stream event:", err);
+                console.error("Failed to refresh daemon snapshot from periodic poll:", err);
+                consecutiveErrorsRef.current = Math.min(consecutiveErrorsRef.current + 1, 10);
               }
+              scheduleRefresh();
             })();
-          },
-        });
-        closeStream = stream.close;
-        refreshTimer = setInterval(() => {
-          void (async () => {
-            try {
-              const daemonClient = clientRef.current;
-              if (daemonClient && !usesCloudCoreApi) {
-                const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient);
-                if (daemonSyncStatus) {
-                  syncStatusRef.current = daemonSyncStatus;
-                }
-              }
-              await refreshSnapshot();
-            } catch (err) {
-              console.error("Failed to refresh daemon snapshot from periodic poll:", err);
-            }
-          })();
-        }, daemonRefreshMs);
+          }, delay);
+        };
+        scheduleRefresh();
       } catch (err) {
         console.error(`Failed to initialize daemon execution (baseUrl=${baseUrl}):`, err);
       } finally {
@@ -228,7 +252,7 @@ export function useDaemonExecution() {
       active = false;
       mountedRef.current = false;
       closeStream?.();
-      if (refreshTimer) clearInterval(refreshTimer);
+      if (refreshTimer) clearTimeout(refreshTimer);
     };
   }, [baseUrl, daemonRefreshMs, e2eBypassAuth, refreshSnapshot, usesCloudCoreApi]);
 

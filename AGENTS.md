@@ -23,7 +23,7 @@ Tastile v1's **primary platform is Windows PC** (not web):
 - **tastile-core** (Rust): The source of truth. Command/Event/Reducer engine, SQLite storage, local HTTP API
 - **tastile-desktop** (C#/WinUI): Primary Windows client with OS-level intervention (focus capture, fullscreen prompts, system tray)
 - **tastile-android** (Kotlin): Android companion
-- **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser using Supabase
+- **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser using AWS Cognito auth and daemon-backed API
 
 ### tastile-web's Role
 
@@ -58,18 +58,17 @@ tastile-web is NOT the primary Tastile experience. It exists to:
    - AI agents, automation, and humans use the **same Command surface**
    - UI is a thin presentation layer over Core
 
-### Backend: Supabase (Web-Only)
+### Backend: AWS (Web-Only)
 
-- **Auth**: Google OAuth
-- **Database**: PostgreSQL with Row Level Security (RLS)
-  - `profiles`: User profile data
-  - `tiles`: Tile definitions (cloud authority for web; Rust Core uses SQLite)
-  - `events`: **Event sourcing log** (append-only, ordered by `occurred_at`)
-  - `user_settings`: User preferences
-- **Realtime**: Multi-device sync via postgres_changes subscriptions
+- **Auth**: AWS Cognito Hosted UI (Google OAuth federated through Cognito)
+- **Database**: Daemon-backed API (local SQLite via Rust daemon)
+  - Tile definitions served through daemon `/read/tiles`
+  - Event sourcing via daemon command API
+  - User profile and settings through daemon
+- **Realtime**: Daemon SSE for live updates
 - **Edge Functions**: Stripe webhooks, integrations
 
-**Important:** Windows version uses **local SQLite** as authority. Web version uses **Supabase** as authority.
+**Important:** Windows version uses **local SQLite** as authority. Web version uses **daemon API** as authority.
 
 ### Frontend Stack
 - Next.js 15 (App Router) + TypeScript
@@ -88,7 +87,7 @@ Validation (can we accept this?)
   ↓
 Event(s) generated (what actually happened)
   ↓
-Event Store append (Supabase persistence)
+Event Store append (persistence)
   ↓
 Reducer (derive new AppState from events)
   ↓
@@ -116,7 +115,7 @@ src/lib/
 │   ├── handler.ts   # Command → Events generator
 │   └── reducer/     # Event → AppState reducer
 ├── storage/
-│   └── event-store.ts  # Supabase event persistence
+│   └── event-store.ts  # Event persistence
 └── hooks/
     └── use-execution-engine.ts  # React integration
 ```
@@ -140,12 +139,9 @@ bun test         # Run all tests with Vitest
 bun test <file>  # Run specific test file
 ```
 
-### Supabase Migrations
-```bash
-npx supabase db push              # Apply local migrations to remote
-npx supabase db reset             # Reset local DB and apply migrations
-npx supabase migration new <name> # Create new migration
-```
+### Daemon API
+- Web communicates with local daemon via HTTP API
+- Daemon serves tile data, handles commands, manages execution state
 
 ### Testing
 ```bash
@@ -164,15 +160,14 @@ bun test --ui                                  # Interactive UI
 5. **DO NOT create UI-specific Commands** - Commands must be domain-level (not "ClickedButton")
 6. **DO NOT give AI special backdoor APIs** - AI uses same Command surface as humans
 
-### Supabase Schema
-- All tables have RLS policies scoped to `auth.uid() = user_id`
-- `events` table is append-only (no UPDATE/DELETE in application code)
-- Use `event_payload` column (not `payload_json`) for new code
-- Indexes: `(user_id, occurred_at)`, `(user_id, sequence_number)`
+### Daemon API Schema
+- Tile data served through daemon `/read/tiles` endpoint
+- Commands executed through daemon `/commands/*` endpoints
+- Execution state derived from daemon snapshot
 
 ### Mock Data vs Real Data
 Current UI components use `src/lib/mock-data.ts`. When implementing features:
-1. Replace mock imports with real Supabase queries
+1. Replace mock imports with real daemon API queries
 2. Use `useExecutionEngine()` hook for state management
 3. Connect to actual `EventStore` and `AppState`
 
@@ -185,23 +180,23 @@ Current UI components use `src/lib/mock-data.ts`. When implementing features:
 - **Tiles**: Cloud-authoritative, local cache
 - **Events**: Append-only, ordered by `occurred_at`
 - **Settings**: Last-write-wins
-- **Execution state** (active_tile, phase): NOT stored in Supabase (browser-local only)
+- **Execution state** (active_tile, phase): NOT stored in cloud (browser-local only)
 
 ## Current Implementation Status
 
 As of 2026-03-28:
-- ✅ Supabase schema + migrations exist for `profiles`, `tiles`, and `events`
+- ✅ Daemon API integration for tile CRUD and execution state
 - ✅ `Tile` domain model, command/event types, validator, reducer, and `CommandHandler` are present under `src/lib/domain` and `src/lib/core`
-- ✅ `use-execution-engine.ts` delegates to the daemon/WASM-backed execution hook
+- ✅ `use-execution-engine.ts` delegates to the daemon-backed execution hook
 - ✅ `/dashboard` routes consume derived execution state through the execution engine context and dashboard projection
-- ⚠️ The implementation still has architecture drift from the spec in places, especially around independent `Execution` snapshots, daemon/WASM compatibility layers, and quota/auth hardening
+- ⚠️ The implementation still has architecture drift from the spec in places, especially around independent `Execution` snapshots, daemon compatibility layers, and quota/auth hardening
 - ⚠️ Some dashboard and storage behavior still depends on compatibility projections rather than a fully spec-aligned tile-truth model
 
 ### What Still Needs Work
 
 To move from "working branch" to "spec-aligned release candidate", focus on:
 1. Reducing drift between the current `Execution` snapshot model and the tile-truth model in doc 03
-2. Tightening Supabase quota/auth behavior so runtime guarantees match the repo docs
+2. Tightening daemon quota/auth behavior so runtime guarantees match the repo docs
 3. Removing remaining compatibility shortcuts in projection and storage code
 4. Expanding tests around dashboard execution flows, prompt behavior, and migrations
 
@@ -228,9 +223,7 @@ These documents are THE source of truth. Read them before implementing:
 
 Required in `.env.local`:
 ```dotenv
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
+NEXT_PUBLIC_TASTILE_CORE_URL=http://localhost:3140
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=

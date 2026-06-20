@@ -3,8 +3,8 @@
 import { useTileList, type TileListView } from "@/lib/hooks/use-tile-list";
 
 function formatNextStart(tile: TileListView): string {
-  if (!tile.projectedNextStartAt) return "—";
-  const d = new Date(tile.projectedNextStartAt);
+  if (!tile.projected_next_start_at) return "—";
+  const d = new Date(tile.projected_next_start_at);
   const now = new Date();
   const diffMs = d.getTime() - now.getTime();
   if (diffMs < 0) return "overdue";
@@ -15,8 +15,8 @@ function formatNextStart(tile: TileListView): string {
 }
 
 export function SchedulePanel() {
-  const { tiles, loading } = useTileList({ viewMode: "list", limit: 500 });
-  const recurring = tiles.filter((t) => t.objectiveMode === "recurring");
+  const { tiles, loading } = useTileList({ viewMode: "by_state", limit: 500 });
+  const recurring = tiles.filter((t) => t.objective_mode === "recurring");
 
   if (loading) {
     return <div className="p-4 text-xs text-foreground-subtle">Loading…</div>;
@@ -42,7 +42,7 @@ export function SchedulePanel() {
         >
           <span className="min-w-0 flex-1 truncate font-mono text-foreground">{tile.title}</span>
           <span className="shrink-0 font-mono text-[10px] text-foreground-subtle">
-            {tile.targetWorkMin ? `${tile.targetWorkMin}m` : "—"}
+            {tile.target_work_min ? `${tile.target_work_min}m` : "—"}
           </span>
           <span className="shrink-0 font-mono text-[10px] text-foreground-subtle">
             next: {formatNextStart(tile)}

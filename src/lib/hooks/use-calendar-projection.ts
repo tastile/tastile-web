@@ -61,7 +61,7 @@ export function useCalendarProjection(args: UseCalendarProjectionArgs) {
             : args.view === "month"
               ? "getCalendarMonth"
               : "getCalendarYear",
-        { query: { anchor: args.anchor, tz_offset: args.tzOffset } },
+        { query: { anchor: args.anchor, tz_offset: args.tzOffset * 60 } },
       );
       if (cancelled || !mountedRef.current) return;
       setState(

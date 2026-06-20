@@ -23,6 +23,7 @@ export function TileBlock({
   return (
     <button
       type="button"
+      data-tile-block="true"
       onClick={onClick}
       disabled={notEditable}
       style={{

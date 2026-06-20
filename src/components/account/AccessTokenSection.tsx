@@ -1,151 +1,264 @@
 "use client";
 
-import { Check, Copy, Eye, EyeOff } from "lucide-react";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { Check, Copy, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
-type SessionData = {
-  idToken: string;
-  refreshToken: string;
-  sub: string;
-  exp: number;
+type ApiToken = {
+  token_id: string;
+  name: string;
+  token_prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  last_used_path: string | null;
+  revoked_at: string | null;
 };
 
-// Wall-clock subscription so render can read a time snapshot without
-// invoking an impure function (Date.now) directly.
-const timeSubscribe = (onChange: () => void) => {
-  const id = setInterval(onChange, 1000);
-  return () => clearInterval(id);
+type CreatedToken = ApiToken & {
+  access_token: string;
 };
-const timeGetSnapshot = () => Date.now();
-const timeGetServerSnapshot = () => 0;
 
 export function AccessTokenSection() {
-  const [session, setSession] = useState<SessionData | null>(null);
+  const [tokens, setTokens] = useState<ApiToken[]>([]);
+  const [name, setName] = useState("Default API key");
+  const [createdToken, setCreatedToken] = useState<CreatedToken | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [visible, setVisible] = useState(false);
-  const nowMs = useSyncExternalStore(timeSubscribe, timeGetSnapshot, timeGetServerSnapshot);
 
-  const fetchSession = useCallback(async () => {
+  const loadTokens = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/session", { cache: "no-store" });
-      if (!res.ok) {
-        setError("セッションを取得できませんでした。");
-        setLoading(false);
-        return;
-      }
-      const data = (await res.json()) as SessionData;
-      setSession(data);
-    } catch {
-      setError("セッションの取得に失敗しました。");
+      const response = await fetch("/api/account/tokens", { cache: "no-store" });
+      if (!response.ok) throw new Error("トークン一覧を取得できませんでした。");
+      setTokens((await response.json()) as ApiToken[]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "トークン一覧の取得に失敗しました。");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
-  // Initial fetch on mount is the canonical data-loading pattern for
-  // client components; the React Compiler set-state-in-effect rule rejects
-  // it because the chained setState calls cause one extra render, but the
-  // alternative (React Query / use() + Suspense) is out of scope here.
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void fetchSession();
-  }, [fetchSession]);
+    void loadTokens();
+  }, [loadTokens]);
 
-  const handleCopy = useCallback(async () => {
-    if (!session?.idToken) return;
-    await navigator.clipboard.writeText(session.idToken);
+  async function createToken(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setCreatedToken(null);
+    try {
+      const response = await fetch("/api/account/tokens", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+      if (!response.ok) throw new Error("トークンを作成できませんでした。");
+      const created = (await response.json()) as CreatedToken;
+      setCreatedToken(created);
+      setName("Default API key");
+      await loadTokens();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "トークン作成に失敗しました。");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function saveName(tokenId: string) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/account/tokens/${tokenId}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: editingName }),
+      });
+      if (!response.ok) throw new Error("名前を更新できませんでした。");
+      setEditingId(null);
+      await loadTokens();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "名前の更新に失敗しました。");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function revokeToken(tokenId: string) {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/account/tokens/${tokenId}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("トークンを失効できませんでした。");
+      await loadTokens();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "トークン失効に失敗しました。");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function copyToken(value: string) {
+    await navigator.clipboard.writeText(value);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }, [session]);
-
-  const isExpired = session ? nowMs / 1000 > session.exp : false;
+    window.setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-foreground">Access Token</h2>
+        <h2 className="text-xl font-semibold text-foreground">API Tokens</h2>
         <p className="mt-1 text-foreground-muted">
-          APIリクエストに使用するアクセストークンです。BearerトークンとしてAuthorizationヘッダーに含めて使用します。
+          無期限のAPIトークンを複数発行し、APIキーと同じように名前と使用履歴を管理できます。
         </p>
       </div>
 
-      {loading && <p className="text-sm text-foreground-subtle">読み込み中...</p>}
+      {error ? <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
 
-      {error && (
-        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
-      )}
-
-      {session && !loading && (
-        <section className="rounded-lg bg-surface-2 p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-foreground">API Key</h3>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setVisible(!visible)}
-                className="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm text-foreground hover:bg-surface-0"
-              >
-                {visible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                {visible ? "非表示" : "表示"}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleCopy()}
-                disabled={isExpired}
-                className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
-              >
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                {copied ? "コピー済み" : "コピー"}
-              </button>
-            </div>
+      {createdToken ? (
+        <section className="rounded-lg bg-success/10 p-4">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <h3 className="font-semibold text-foreground">新しいトークン</h3>
+            <button
+              type="button"
+              onClick={() => void copyToken(createdToken.access_token)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+            >
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "コピー済み" : "コピー"}
+            </button>
           </div>
-
-          <div className="rounded-md bg-surface-0 p-4">
-            <p className="mb-2 text-xs text-foreground-subtle">Authorizationヘッダー:</p>
-            <code className="block break-all font-mono text-xs text-foreground">
-              {visible ? `Bearer ${session.idToken}` : "Bearer ••••••••••••••••••••••••••••••••"}
-            </code>
-          </div>
-
-          <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-foreground-subtle">User ID</dt>
-              <dd className="mt-1 break-all font-mono text-xs text-foreground">{session.sub}</dd>
-            </div>
-            <div>
-              <dt className="text-foreground-subtle">有効期限</dt>
-              <dd className={`mt-1 font-medium ${isExpired ? "text-danger" : "text-foreground"}`}>
-                {new Date(session.exp * 1000).toLocaleString("ja-JP")}
-                {isExpired && " (期限切れ)"}
-              </dd>
-            </div>
-          </dl>
-
-          <div className="rounded-md bg-surface-3 p-4 text-xs text-foreground-muted space-y-2">
-            <p className="font-semibold text-foreground">使用方法</p>
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all">{`curl -H "Authorization: Bearer <your-token>" \\
-  https://api.tastile.app/read/tiles`}</pre>
-            <p>
-              SSE接続時はクエリパラメータとして渡します:
-              <br />
-              <code className="text-foreground">
-                /read/events/state?access_token=&lt;your-token&gt;
-              </code>
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => void fetchSession()}
-            className="text-sm text-foreground-muted hover:text-foreground"
-          >
-            再読み込み
-          </button>
+          <code className="block break-all rounded-md bg-surface-0 p-3 font-mono text-xs text-foreground">
+            {createdToken.access_token}
+          </code>
         </section>
-      )}
+      ) : null}
+
+      <form onSubmit={createToken} className="rounded-lg bg-surface-2 p-5">
+        <label className="block text-sm">
+          <span className="mb-2 block font-medium text-foreground">トークン名</span>
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={80}
+            className="w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={submitting || !name.trim()}
+          className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
+        >
+          <Plus className="h-4 w-4" />
+          トークンを発行
+        </button>
+      </form>
+
+      <section className="rounded-lg bg-surface-2 p-5">
+        <div className="mb-4 flex items-center gap-3">
+          <KeyRound className="h-5 w-5 text-primary" />
+          <h3 className="font-semibold text-foreground">発行済みトークン</h3>
+        </div>
+
+        {loading ? <p className="text-sm text-foreground-subtle">読み込み中...</p> : null}
+
+        {!loading && tokens.length === 0 ? (
+          <p className="text-sm text-foreground-muted">まだAPIトークンはありません。</p>
+        ) : null}
+
+        <div className="space-y-3">
+          {tokens.map((token) => {
+            const revoked = Boolean(token.revoked_at);
+            const editing = editingId === token.token_id;
+            return (
+              <div key={token.token_id} className="rounded-md bg-surface-0 p-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    {editing ? (
+                      <div className="flex gap-2">
+                        <input
+                          value={editingName}
+                          onChange={(event) => setEditingName(event.target.value)}
+                          maxLength={80}
+                          className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-sm text-foreground outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => void saveName(token.token_id)}
+                          disabled={submitting || !editingName.trim()}
+                          className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
+                        >
+                          保存
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{token.name}</p>
+                        {revoked ? (
+                          <span className="rounded bg-danger/10 px-2 py-0.5 text-xs text-danger">
+                            失効済み
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
+                    <p className="mt-1 break-all font-mono text-xs text-foreground-subtle">
+                      {token.token_prefix}...
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(token.token_id);
+                        setEditingName(token.name);
+                      }}
+                      disabled={revoked}
+                      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-foreground hover:bg-surface-2 disabled:opacity-40"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      名前変更
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void revokeToken(token.token_id)}
+                      disabled={revoked || submitting}
+                      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-danger hover:bg-danger/10 disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      失効
+                    </button>
+                  </div>
+                </div>
+                <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
+                  <Meta label="作成日" value={formatDate(token.created_at)} />
+                  <Meta label="最終使用" value={formatDate(token.last_used_at)} />
+                  <Meta label="最終使用パス" value={token.last_used_path ?? "-"} mono />
+                </dl>
+              </div>
+            );
+          })}
+        </div>
+      </section>
     </div>
   );
+}
+
+function Meta({ label, value, mono = false }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div>
+      <dt className="text-foreground-subtle">{label}</dt>
+      <dd className={`mt-1 break-all text-foreground ${mono ? "font-mono text-xs" : ""}`}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function formatDate(value: string | null) {
+  if (!value) return "-";
+  return new Date(value).toLocaleString("ja-JP");
 }

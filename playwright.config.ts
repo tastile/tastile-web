@@ -10,11 +10,11 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run dev',
+    command: 'bun run dev',
     env: {
       E2E_BYPASS_AUTH: '1',
       NEXT_PUBLIC_E2E_BYPASS_AUTH: '1',
-      NEXT_PUBLIC_EXECUTION_BACKEND: 'wasm',
+      NEXT_PUBLIC_DAEMON_BASE_URL: 'https://api.tastile.app',
     },
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: false,

@@ -13,7 +13,7 @@ function formatHour(slot: Date): string {
 }
 
 export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number }) {
-  const { projection, loading } = useCalendarProjection({ view: "day", anchor, tzOffset });
+  const { projection, loading, error } = useCalendarProjection({ view: "day", anchor, tzOffset });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -21,6 +21,15 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
     const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  if (error) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-2 text-xs">
+        <span className="text-danger">Failed to load calendar</span>
+        <span className="text-foreground-subtle">{error.message}</span>
+      </div>
+    );
+  }
 
   if (loading || !projection) {
     return <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">Loading…</div>;
@@ -42,8 +51,7 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
         {slots.map((slot, i) => {
           const hourBlocks = dayBlocks.filter((b) => {
             const bStart = new Date(b.start_at);
-            const bHour = bStart.getUTCHours();
-            return bHour === slot.getUTCHours();
+            return bStart.getUTCHours() === slot.getUTCHours();
           });
           const isNow = i === nowSlotIndex;
           return (
@@ -72,7 +80,7 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
                 })}
                 {isNow && (
                   <div
-                    className="absolute left-0 right-0 h-px bg-primary"
+                    className="pointer-events-none absolute left-0 right-0 h-px bg-primary"
                     style={{ top: `${nowTopOffset * 1.5}px` }}
                   >
                     <span className="absolute -top-1.5 -left-1.5 h-2.5 w-2.5 rounded-full bg-primary" />

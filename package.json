@@ -2,6 +2,7 @@
   "name": "tastile-web",
   "version": "0.1.2",
   "private": true,
+  "packageManager": "bun@1.3.10",
   "engines": {
     "node": ">=20.11.0"
   },
@@ -15,8 +16,8 @@
     "test": "vitest",
     "test:unit": "node scripts/run-vitest.mjs",
     "test:e2e": "playwright test",
-    "check": "npm run lint && npm run typecheck && npm run test:unit",
-    "check:release": "npm run check && npm run build"
+    "check": "bun run lint && bun run typecheck && bun run test:unit",
+    "check:release": "bun run check && bun run build"
   },
   "dependencies": {
     "clsx": "^2.1.1",

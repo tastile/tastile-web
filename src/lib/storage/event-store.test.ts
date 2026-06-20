@@ -88,10 +88,10 @@ describe("EventStore tile snapshot sync", () => {
 		expect(rows[0].work.segments[0].endAt).toBeNull();
 	});
 
-	it("maps snake_case semantic role from wasm export before upsert", async () => {
+	it("maps snake_case semantic role from export before upsert", async () => {
 		const { client, upsert } = createMockStorageClient();
 		const store = new EventStore(client, "user-1");
-		const tile = Tile.create(TileId.new(), "Wasm tile");
+		const tile = Tile.create(TileId.new(), "Test tile");
 		const annotation = tile.annotation as unknown as Record<string, unknown>;
 		delete annotation.semanticRole;
 		annotation.semantic_role = "break";

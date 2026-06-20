@@ -14,7 +14,6 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "playwright-report/**",
     "test-results/**",
-    "src/wasm/**",
     // Deployment verification copies (standalone build output, not source).
     "deploy-check/**",
     "deploy-staging/**",

@@ -12,8 +12,9 @@ function lifecycleIcon(lifecycle: string) {
 
 function dueBucket(tile: TileListView): string {
   if (tile.lifecycle === "done" || tile.lifecycle === "closed") return "Closed";
-  if (!tile.dueAt) return "No date";
-  const due = new Date(tile.dueAt);
+  const dueStr = tile.temporal?.due_at;
+  if (!dueStr) return "No date";
+  const due = new Date(dueStr);
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfTomorrow = new Date(startOfToday.getTime() + 86400000);
@@ -29,7 +30,7 @@ const BUCKET_ORDER = ["Overdue", "Today", "This Week", "Later", "No date", "Clos
 
 export function TasksPanel() {
   const [search, setSearch] = useState("");
-  const { tiles, loading } = useTileList({ viewMode: "list", limit: 200, search: search || undefined });
+  const { tiles, loading } = useTileList({ viewMode: "by_state", limit: 200, search: search || undefined });
 
   const grouped = useMemo(() => {
     const map = new Map<string, TileListView[]>();
@@ -70,8 +71,8 @@ export function TasksPanel() {
             >
               <span className="text-foreground-subtle">{lifecycleIcon(tile.lifecycle)}</span>
               <span className="min-w-0 flex-1 truncate font-mono text-foreground">{tile.title}</span>
-              {tile.targetWorkMin ? (
-                <span className="shrink-0 font-mono text-[10px] text-foreground-subtle">{tile.targetWorkMin}m</span>
+              {tile.target_work_min ? (
+                <span className="shrink-0 font-mono text-[10px] text-foreground-subtle">{tile.target_work_min}m</span>
               ) : null}
             </button>
           ))}
