@@ -25,10 +25,9 @@ export async function POST(request: NextRequest) {
     env.callbackUrl,
   );
   const state = safePkceValue(form.get("state")?.toString() ?? null);
+  const codeChallenge = safePkceValue(form.get("code_challenge")?.toString() ?? null);
   const isDesktop = redirectUri === "tastile://auth/callback" && !!state;
-  const desktopQuery = isDesktop
-    ? `&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
-    : "";
+  const desktopQuery = isDesktop ? buildDesktopQuery(redirectUri, state, codeChallenge) : "";
   if (!email)
     return NextResponse.redirect(`${origin}/auth/email?error=missing_email${desktopQuery}`, 303);
   if (!code)
@@ -88,6 +87,18 @@ export async function POST(request: NextRequest) {
       303,
     );
   }
+}
+
+function buildDesktopQuery(
+  redirectUri: string,
+  state: string,
+  codeChallenge: string | null,
+): string {
+  const query = new URLSearchParams();
+  query.set("redirect_uri", redirectUri);
+  query.set("state", state);
+  if (codeChallenge) query.set("code_challenge", codeChallenge);
+  return `&${query.toString()}`;
 }
 
 function buildDesktopSuccessPage(

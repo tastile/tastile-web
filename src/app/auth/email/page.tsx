@@ -13,6 +13,7 @@ export default async function EmailLoginPage({
     notice?: string;
     redirect_uri?: string;
     state?: string;
+    code_challenge?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -21,6 +22,7 @@ export default async function EmailLoginPage({
   const email = typeof params.email === "string" ? params.email : "";
   const redirectUri = safeOAuthRedirectUri(params.redirect_uri ?? null, env?.callbackUrl ?? "");
   const state = safePkceValue(params.state ?? null);
+  const codeChallenge = safePkceValue(params.code_challenge ?? null);
   const isDesktop = redirectUri === "tastile://auth/callback" && !!state;
 
   return (
@@ -34,6 +36,9 @@ export default async function EmailLoginPage({
           <>
             <input type="hidden" name="redirect_uri" value={redirectUri} />
             <input type="hidden" name="state" value={state} />
+            {codeChallenge ? (
+              <input type="hidden" name="code_challenge" value={codeChallenge} />
+            ) : null}
           </>
         ) : null}
         <div>

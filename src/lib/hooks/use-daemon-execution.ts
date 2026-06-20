@@ -31,6 +31,11 @@ import { requestNotificationPermissionOnce, showNotification } from "../notifica
 
 const DEFAULT_DAEMON_BASE_URL = "http://127.0.0.1:3140";
 const DEFAULT_DAEMON_REFRESH_MS = 5_000;
+const EMPTY_EXECUTION_SNAPSHOT: ExecutionSnapshot = {
+  inProgressTiles: [],
+  promptQueue: [],
+  timeline: [],
+};
 
 async function readDaemonSyncStatusSafely(
   client: DaemonClient,
@@ -53,8 +58,15 @@ export function useDaemonExecution() {
   const appliedRefreshRef = useRef(0);
   const stateRef = useRef<AppState>(AppState.initial());
   const baseUrl = useMemo(
-    () => process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? DEFAULT_DAEMON_BASE_URL,
+    () =>
+      process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
+      process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
+      DEFAULT_DAEMON_BASE_URL,
     [],
+  );
+  const usesCloudCoreApi = useMemo(
+    () => !!process.env.NEXT_PUBLIC_TASTILE_CORE_URL && !isLocalDaemonUrl(baseUrl),
+    [baseUrl],
   );
   const daemonRefreshMs = useMemo(() => {
     const raw = process.env.NEXT_PUBLIC_DAEMON_REFRESH_MS;
@@ -88,7 +100,7 @@ export function useDaemonExecution() {
     const requestId = ++refreshRequestRef.current;
     const readClientSnapshot = () =>
       Promise.all([
-        client.readSnapshot(),
+        usesCloudCoreApi ? Promise.resolve(EMPTY_EXECUTION_SNAPSHOT) : client.readSnapshot(),
         Promise.resolve(null as Tile[] | null),
         safeRead(() => client.readTiles(), null as DaemonTilesResponse | null),
         safeRead(() => client.readExecutionView(), null as DaemonExecutionViewResponse | null),
@@ -112,7 +124,7 @@ export function useDaemonExecution() {
     emitNotificationsForStateChange(stateRef.current, projected);
     stateRef.current = projected;
     setState(projected);
-  }, [restoreDaemonSession]);
+  }, [restoreDaemonSession, usesCloudCoreApi]);
 
   useEffect(() => {
     let active = true;
@@ -156,9 +168,11 @@ export function useDaemonExecution() {
             expiresAt: new Date(session.exp * 1000).toISOString(),
           });
         }
-        const daemonSyncStatus = await readDaemonSyncStatusSafely(clientRef.current);
-        if (daemonSyncStatus) {
-          syncStatusRef.current = daemonSyncStatus;
+        if (!usesCloudCoreApi) {
+          const daemonSyncStatus = await readDaemonSyncStatusSafely(clientRef.current);
+          if (daemonSyncStatus) {
+            syncStatusRef.current = daemonSyncStatus;
+          }
         }
 
         await refreshSnapshot();
@@ -171,7 +185,7 @@ export function useDaemonExecution() {
             void (async () => {
               try {
                 const daemonClient = clientRef.current;
-                if (daemonClient) {
+                if (daemonClient && !usesCloudCoreApi) {
                   const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient);
                   if (daemonSyncStatus) {
                     syncStatusRef.current = daemonSyncStatus;
@@ -189,7 +203,7 @@ export function useDaemonExecution() {
           void (async () => {
             try {
               const daemonClient = clientRef.current;
-              if (daemonClient) {
+              if (daemonClient && !usesCloudCoreApi) {
                 const daemonSyncStatus = await readDaemonSyncStatusSafely(daemonClient);
                 if (daemonSyncStatus) {
                   syncStatusRef.current = daemonSyncStatus;
@@ -216,11 +230,11 @@ export function useDaemonExecution() {
       closeStream?.();
       if (refreshTimer) clearInterval(refreshTimer);
     };
-  }, [baseUrl, daemonRefreshMs, e2eBypassAuth, refreshSnapshot]);
+  }, [baseUrl, daemonRefreshMs, e2eBypassAuth, refreshSnapshot, usesCloudCoreApi]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- actor is part of the public API contract
   const execute = useCallback(
     async (command: Command, _actor: Actor) => {
+      void _actor;
       const client = clientRef.current;
       if (!client) {
         throw new Error("Daemon client not initialized. Are you authenticated?");
@@ -229,16 +243,27 @@ export function useDaemonExecution() {
         () => client.sendCommand(toDaemonCommand(command)),
         restoreDaemonSession,
       );
-      const daemonSyncStatus = await readDaemonSyncStatusSafely(client);
-      if (daemonSyncStatus) {
-        syncStatusRef.current = daemonSyncStatus;
+      if (!usesCloudCoreApi) {
+        const daemonSyncStatus = await readDaemonSyncStatusSafely(client);
+        if (daemonSyncStatus) {
+          syncStatusRef.current = daemonSyncStatus;
+        }
       }
       await refreshSnapshot();
     },
-    [refreshSnapshot, restoreDaemonSession],
+    [refreshSnapshot, restoreDaemonSession, usesCloudCoreApi],
   );
 
   return { state, loading, execute };
+}
+
+function isLocalDaemonUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "10.0.2.2";
+  } catch {
+    return false;
+  }
 }
 
 function projectSnapshotToAppState(

@@ -88,6 +88,7 @@ describe("useDaemonExecution", () => {
 		daemonReadSyncStatusMock.mockReset();
 
 		process.env.NEXT_PUBLIC_DAEMON_REFRESH_MS = "60000";
+		delete process.env.NEXT_PUBLIC_TASTILE_CORE_URL;
 
 		getSessionClientMock.mockResolvedValue({
 			idToken: "id-token-1",
@@ -255,5 +256,43 @@ describe("useDaemonExecution", () => {
 		const { result } = renderHook(() => useDaemonExecution());
 		await waitFor(() => expect(result.current.loading).toBe(false));
 		expect(result.current.state.tiles.size).toBe(0);
+	});
+
+	it("uses cloud read APIs without daemon-only snapshot and sync endpoints", async () => {
+		process.env.NEXT_PUBLIC_TASTILE_CORE_URL = "https://api.tastile.app";
+		daemonReadTilesMock.mockResolvedValue({
+			tiles: [
+				{
+					id: "tile-1",
+					title: "Cloud tile",
+					lifecycle: "Ready",
+					nextAction: null,
+					doneDefinition: null,
+					workedMinutes: 0,
+					breakMinutes: 0,
+					semanticRole: "work",
+					labels: [],
+					objectiveMode: null,
+					targetWorkMin: null,
+					targetRestMin: null,
+					doneRule: null,
+					resumeNote: null,
+					projectedNextStartAt: null,
+					temporal: null,
+				},
+			],
+			nextActionableTileId: "tile-1",
+			nextActionableStartAt: null,
+		});
+
+		const { result } = renderHook(() => useDaemonExecution());
+		await waitFor(() => expect(result.current.loading).toBe(false));
+
+		expect(readSnapshotMock).not.toHaveBeenCalled();
+		expect(daemonReadSyncStatusMock).not.toHaveBeenCalled();
+		expect(daemonReadTilesMock).toHaveBeenCalledTimes(1);
+		expect(result.current.state.tiles.get(TileId.fromString("tile-1"))?.core.title).toBe(
+			"Cloud tile",
+		);
 	});
 });

@@ -18,9 +18,10 @@ export async function POST(request: NextRequest) {
     env.callbackUrl,
   );
   const state = safePkceValue(form.get("state")?.toString() ?? null);
+  const codeChallenge = safePkceValue(form.get("code_challenge")?.toString() ?? null);
   const desktopQuery =
     redirectUri === "tastile://auth/callback" && state
-      ? `&redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}`
+      ? buildDesktopQuery(redirectUri, state, codeChallenge)
       : "";
   if (!email)
     return NextResponse.redirect(`${origin}/auth/email?error=missing_email${desktopQuery}`, 303);
@@ -48,10 +49,29 @@ export async function POST(request: NextRequest) {
         303,
       );
     }
+    if (error instanceof CognitoPublicError && error.code === "EMAIL_OTP_UNAVAILABLE") {
+      const loginQuery =
+        redirectUri === "tastile://auth/callback" && state && codeChallenge
+          ? `?redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(codeChallenge)}`
+          : "";
+      return NextResponse.redirect(`${origin}/auth/cognito/login${loginQuery}`, 303);
+    }
     console.error("Email OTP start failed", error);
     return NextResponse.redirect(
       `${origin}/auth/email?email=${encodeURIComponent(email)}&error=otp_unavailable${desktopQuery}`,
       303,
     );
   }
+}
+
+function buildDesktopQuery(
+  redirectUri: string,
+  state: string,
+  codeChallenge: string | null,
+): string {
+  const query = new URLSearchParams();
+  query.set("redirect_uri", redirectUri);
+  query.set("state", state);
+  if (codeChallenge) query.set("code_challenge", codeChallenge);
+  return `&${query.toString()}`;
 }
