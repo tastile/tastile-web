@@ -31,10 +31,10 @@ Write-Host "  Bucket:     s3://$TransferBucket/web-releases/$zipName"
 Write-Host ""
 Write-Host "== 1) lint + typecheck + build =="
 foreach ($step in @("lint", "typecheck", "build")) {
-    Write-Host "  -> npm run $step"
-    $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "npm run $step" -NoNewWindow -Wait -PassThru
+    Write-Host "  -> bun run $step"
+    $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "bun run $step" -NoNewWindow -Wait -PassThru
     if ($proc.ExitCode -ne 0) {
-        throw "npm run $step failed (exit=$($proc.ExitCode))"
+        throw "bun run $step failed (exit=$($proc.ExitCode))"
     }
 }
 

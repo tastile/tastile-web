@@ -4,7 +4,7 @@
 // output stays clean. Forwards the exit code from vitest.
 //
 // We invoke the vitest.mjs entry directly with NODE_OPTIONS=--no-warnings so
-// module resolution matches `npm run test:unit` (which resolves through
+// module resolution matches `bun run test:unit` (which resolves through
 // node_modules/.bin/vitest.cmd -> node vitest.mjs).
 import { spawn } from "node:child_process";
 import path from "node:path";

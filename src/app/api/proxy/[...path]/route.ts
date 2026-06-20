@@ -59,7 +59,7 @@ function mockTileFromCreate(body: Record<string, unknown>): MockTile {
   };
 }
 
-function handleMockRequest(path: string, method: string, body: unknown): NextResponse | null {
+function handleMockRequest(path: string, method: string, body: unknown, searchParams: URLSearchParams): NextResponse | null {
   if (path === "read/tiles" && method === "GET") {
     return NextResponse.json({
       tiles: mockTiles,
@@ -228,6 +228,61 @@ function handleMockRequest(path: string, method: string, body: unknown): NextRes
     });
   }
 
+  const calendarMatch = path.match(/^views\/calendar\/(day|week|month|year)$/);
+  if (calendarMatch && method === "GET") {
+    const view = calendarMatch[1] as "day" | "week" | "month" | "year";
+    const anchor = searchParams.get("anchor") ?? new Date().toISOString().slice(0, 10);
+    const anchorDate = new Date(`${anchor}T00:00:00`);
+    const dayStart = new Date(anchorDate);
+    const dayEnd = new Date(anchorDate);
+    dayEnd.setDate(dayEnd.getDate() + 1);
+
+    const blocks = mockTiles
+      .filter((tile) => {
+        const temporal = tile.temporal as Record<string, string | null> | null;
+        if (!temporal) return false;
+        const fixedStart = temporal.fixed_start ? new Date(temporal.fixed_start) : null;
+        const activeStart = temporal.active_start ? new Date(temporal.active_start) : null;
+        const start = fixedStart ?? activeStart;
+        if (!start) return false;
+        return start >= dayStart && start < dayEnd;
+      })
+      .map((tile) => {
+        const temporal = tile.temporal as Record<string, string | null>;
+        const startStr = temporal.fixed_start ?? temporal.active_start ?? dayStart.toISOString();
+        const endStr = temporal.fixed_end ?? temporal.active_end ?? new Date(new Date(startStr).getTime() + 60 * 60 * 1000).toISOString();
+        return {
+          tile_id: tile.id,
+          title: tile.title,
+          kind: "work" as const,
+          is_active: tile.lifecycle === "started",
+          start_at: startStr,
+          end_at: endStr,
+          semantic_role: tile.semantic_role as "work" | "break" | "label",
+          all_day: false,
+          ownership: "tastile_owned" as const,
+          editable: true,
+          source_label: "",
+        };
+      });
+
+    return NextResponse.json({
+      view,
+      range_start: dayStart.toISOString(),
+      range_end: dayEnd.toISOString(),
+      grid_start: dayStart.toISOString(),
+      grid_end: dayEnd.toISOString(),
+      blocks,
+      all_day_spans: [],
+      overflow_counters: {},
+      month_summaries: [],
+    });
+  }
+
+  if (path === "views/tile-list" && method === "GET") {
+    return NextResponse.json({ tiles: mockTiles });
+  }
+
   return null;
 }
 
@@ -242,7 +297,7 @@ async function proxyRequest(
       request.method !== "GET" && request.method !== "HEAD"
         ? await request.json().catch(() => ({}))
         : null;
-    const mockResponse = handleMockRequest(path, request.method, body);
+    const mockResponse = handleMockRequest(path, request.method, body, request.nextUrl.searchParams);
     if (mockResponse) return mockResponse;
   }
 

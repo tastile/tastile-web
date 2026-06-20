@@ -160,7 +160,7 @@ export class CoreClient {
   constructor(config: CoreClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.tokenProvider = config.tokenProvider;
-    this.fetchImpl = config.fetchImpl ?? fetch;
+    this.fetchImpl = config.fetchImpl ?? globalThis.fetch.bind(globalThis);
   }
 
   async call<T = unknown>(
@@ -179,7 +179,11 @@ export class CoreClient {
         path = path.replace(`{${k}}`, encodeURIComponent(v));
       }
     }
-    const url = new URL(this.baseUrl + path);
+    let rawUrl = this.baseUrl + path;
+    if (rawUrl.startsWith("/") && typeof window !== "undefined") {
+      rawUrl = window.location.origin + rawUrl;
+    }
+    const url = new URL(rawUrl);
     if (options.query) {
       for (const [k, v] of Object.entries(options.query)) {
         if (v === undefined) continue;
@@ -260,9 +264,19 @@ function classifyStatus(status: number): ApiErrorKind {
 
 let _client: CoreClient | null = null;
 
+function isLocalUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost" || parsed.hostname === "10.0.2.2";
+  } catch {
+    return false;
+  }
+}
+
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
-  const baseUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "http://127.0.0.1:3140";
+  const rawBaseUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "http://127.0.0.1:3140";
+  const baseUrl = isLocalUrl(rawBaseUrl) ? rawBaseUrl : "/api/proxy";
   _client = new CoreClient({
     baseUrl,
     tokenProvider: async () => {
