@@ -16,13 +16,14 @@ export function ScheduleMain() {
   const { openRecurringDialog } = useDialogStore();
 
   const { tiles, loading } = useTileList({
-    viewMode: "by_state",
-    limit: 500,
+    viewMode: view === "recurring" ? "recurring" : "by_state",
+    limit: view === "recurring" ? undefined : 500,
   });
 
   const filteredTiles = useMemo(() => {
     if (view === "recurring") {
-      return tiles.filter((t) => t.objective_mode === "recurring");
+      // Server already filters templates and sorts them naturally
+      return tiles;
     }
     if (view === "upcoming") {
       return tiles.filter((t) => t.temporal?.due_at).sort((a, b) => {
