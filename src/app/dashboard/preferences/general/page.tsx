@@ -10,8 +10,10 @@ import {
 } from "@/lib/security/security-lock-policy";
 import { useLocaleStore } from "@/lib/stores/locale-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
+import { useSidePanel } from "@/lib/context/side-panel-context";
+import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 
-export default function SettingsPage() {
+export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
   const { locale, setLocale } = useLocaleStore();
   const { t } = useTranslation();
@@ -21,6 +23,8 @@ export default function SettingsPage() {
   const [securityLockMinutes, setSecurityLockMinutes] = useState(() =>
     typeof window !== "undefined" ? getSecurityLockTimeoutMinutes(localStorage) : 10,
   );
+
+  useSidePanel(<PreferencesSidePanel />);
 
   function updateSecurityLock(enabled: boolean) {
     setSecurityLock(enabled);
@@ -34,8 +38,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-foreground">{t("settings.title")}</h1>
+    <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
+      <h1 className="text-2xl font-bold text-foreground">General Preferences</h1>
 
       {/* Theme Settings */}
       <section className="mt-8">

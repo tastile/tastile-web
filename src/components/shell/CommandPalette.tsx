@@ -30,8 +30,8 @@ const NAV: PaletteItem[] = [
   { id: "nav:events", group: "Navigation", title: "Events log", subtitle: "Append-only stream", href: "/dashboard/events" },
   { id: "nav:api", group: "Navigation", title: "API explorer", subtitle: "All 45 endpoints", href: "/dashboard/api" },
   { id: "nav:quota", group: "Navigation", title: "Quota", subtitle: "Plan limits", href: "/dashboard/quota" },
-  { id: "nav:settings", group: "Navigation", title: "Settings", subtitle: "Preferences", href: "/dashboard/settings" },
-  { id: "nav:account", group: "Navigation", title: "Account", subtitle: "Profile & security", href: "/dashboard/account" },
+  { id: "nav:settings", group: "Navigation", title: "Settings", subtitle: "Preferences", href: "/dashboard/preferences/general" },
+  { id: "nav:account", group: "Navigation", title: "Account", subtitle: "Profile & security", href: "/dashboard/preferences/account" },
 ];
 
 function buildEndpointItems(): PaletteItem[] {

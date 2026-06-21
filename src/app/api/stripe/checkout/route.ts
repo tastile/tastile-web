@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       metadata: { cognito_sub: userSub },
     },
     metadata: { cognito_sub: userSub },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/settings?billing=success`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/preferences/account?tab=subscription&billing=success`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?billing=cancelled`,
   });
 

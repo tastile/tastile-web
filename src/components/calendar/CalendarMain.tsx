@@ -8,6 +8,8 @@ import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context"
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { DayView } from "./DayView";
+import { WeekView } from "./WeekView";
+import { MonthView } from "./MonthView";
 
 export type CalendarView = "day" | "week" | "month" | "year";
 
@@ -29,9 +31,11 @@ function formatAnchor(view: CalendarView, anchor: string): string {
     return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
   }
   if (view === "week") {
-    const end = new Date(d);
+    const start = new Date(d);
+    start.setUTCDate(start.getUTCDate() - start.getUTCDay());
+    const end = new Date(start);
     end.setUTCDate(end.getUTCDate() + 6);
-    return `${d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
+    return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
   }
   if (view === "month") {
     return d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -91,7 +95,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center gap-3 px-4">
+      <div className="flex h-12 items-center gap-3 px-4 shrink-0">
         <button
           type="button"
           onClick={() => setAnchor((a) => shiftDate(a, view, -1))}
@@ -134,8 +138,8 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
         {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
-        {view === "week" ? <div className="py-8 text-center text-xs text-foreground-subtle">Week view — coming soon</div> : null}
-        {view === "month" ? <div className="py-8 text-center text-xs text-foreground-subtle">Month view — coming soon</div> : null}
+        {view === "week" ? <WeekView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
+        {view === "month" ? <MonthView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
         {view === "year" ? <div className="py-8 text-center text-xs text-foreground-subtle">Year view — coming soon</div> : null}
       </div>
     </div>

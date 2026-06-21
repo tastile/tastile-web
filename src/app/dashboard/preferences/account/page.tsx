@@ -3,12 +3,14 @@
 import { KeyRound, Mail, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { TileStatistics } from "@/components/account/TileStatistics";
 import { UsageDashboard } from "@/components/account/UsageDashboard";
 import { useSidePanel } from "@/lib/context/side-panel-context";
-import { AccountSidePanel } from "@/components/panels/AccountSidePanel";
+import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 
 export type TabId = "profile" | "subscription" | "statistics" | "usage" | "tokens";
 
@@ -23,7 +25,17 @@ type Profile = {
 type Notice = { tone: "success" | "error"; text: string } | null;
 
 export default function AccountPage() {
-  const [activeTab, setActiveTab] = useState<TabId>("profile");
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-foreground-subtle">Loading account settings...</div>}>
+      <AccountPageInner />
+    </Suspense>
+  );
+}
+
+function AccountPageInner() {
+  const searchParams = useSearchParams();
+  const activeTab = (searchParams.get("tab") as TabId) || "profile";
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState<Notice>(null);
@@ -31,12 +43,7 @@ export default function AccountPage() {
   const [verificationCode, setVerificationCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useSidePanel(
-    <AccountSidePanel
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-    />
-  );
+  useSidePanel(<PreferencesSidePanel />);
 
   async function loadProfile() {
     setLoading(true);
@@ -112,7 +119,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
+    <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
       <h1 className="mb-6 text-2xl font-[590] text-foreground">Account Settings</h1>
 
       <div className="max-w-4xl">

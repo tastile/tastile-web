@@ -5,6 +5,14 @@ import { Bell, Search } from "lucide-react";
 import Link from "next/link";
 import { useActiveTile } from "@/lib/hooks/use-active-tile";
 import { TastileLogo } from "@/components/TastileLogo";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/DropdownMenu";
 
 interface FloatingHeaderProps {
   userName: string;
@@ -92,13 +100,42 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
           <Bell className="h-4 w-4" />
         </button>
 
-        <Link
-          href="/dashboard/account"
-          aria-label="Account settings"
-          className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-fg hover:bg-primary-hover ml-1"
-        >
-          {userName.charAt(0)}
-        </Link>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="User menu"
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-fg hover:bg-primary-hover ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              {userName.charAt(0)}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 mt-1">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none text-foreground">{userName}</p>
+                <p className="text-xs leading-none text-foreground-muted">
+                  Status: {isWorking ? "Executing" : "Idle"}
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/preferences/account" className="w-full cursor-pointer">
+                Account Settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/preferences/general" className="w-full cursor-pointer">
+                Preferences
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer">
+              Log out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

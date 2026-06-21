@@ -1,8 +1,9 @@
 "use client";
 
-import { Clock3, X } from "lucide-react";
+import { Clock3, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { getSessionClient } from "@/lib/daemon/id-token-client";
+import { cn } from "@/lib/utils/cn";
 import { Actor } from "@/lib/domain/actor";
 import { TileId } from "@/lib/domain/ids";
 import { type ObjectiveMode, type SemanticRole, Tile } from "@/lib/domain/tile";
@@ -16,6 +17,8 @@ export function QuickTileCreate() {
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
   const { state, execute } = useExecutionEngineContext();
+
+  const [activePanel, setActivePanel] = useState<"base" | "schedule" | "recurrence" | "meta">("base");
 
   const [title, setTitle] = useState("");
   const [titleEdited, setTitleEdited] = useState(false);
@@ -366,591 +369,665 @@ export function QuickTileCreate() {
   const panelClass = isDesktop
     ? [
         "fixed inset-y-0 right-0 z-[56]",
-        "w-[22rem] overflow-y-auto",
+        "w-[28rem] flex flex-col overflow-hidden",
         "bg-surface-1 shadow-lg",
         "border-l border-border",
         "[animation:slideInFromRight_0.22s_ease-out]",
       ].join(" ")
     : [
         "fixed inset-x-0 bottom-0 z-[56]",
-        "max-h-[80vh] overflow-y-auto",
+        "h-[80vh] flex flex-col overflow-hidden",
         "rounded-t-2xl bg-surface-1 shadow-lg",
         "[animation:slideInFromBottom_0.22s_ease-out]",
       ].join(" ");
 
   return (
     <>
-      {/* オーバーレイ */}
       <div
         className="fixed inset-0 z-[55] bg-foreground/10 backdrop-blur-[1px]"
         onClick={close}
         aria-hidden
       />
       <section className={panelClass}>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
-        <button
-          type="button"
-          onClick={close}
-          className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-2"
-          aria-label={locale === "ja" ? "パネルを閉じる" : "Close panel"}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="space-y-4">
-        <SectionBlock
-          title={t("quickCreate.titleTitle")}
-          helpText={t("quickCreate.titleGuide")}
-          choiceGrid={false}
-        >
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => {
-              setTitle(e.target.value);
-              setTitleEdited(true);
-            }}
-            placeholder={suggestedTitle}
-            className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </SectionBlock>
-
-        <SectionBlock>
-          <ChoiceButton active={tileKind === "work"} onClick={() => setTileKind("work")}>
-            {t("quickCreate.kindTask")}
-          </ChoiceButton>
-          <ChoiceButton active={tileKind === "break"} onClick={() => setTileKind("break")}>
-            {t("quickCreate.kindBreak")}
-          </ChoiceButton>
-          <ChoiceButton active={tileKind === "label"} onClick={() => setTileKind("label")}>
-            {t("quickCreate.kindLabel")}
-          </ChoiceButton>
-        </SectionBlock>
-
-        <SectionBlock>
-          <ChoiceButton
-            active={objectiveMode === "finish_once"}
-            onClick={() => setObjectiveMode("finish_once")}
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+          {activePanel === "base" ? (
+            <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setActivePanel("base")}
+              className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              {t("quickCreate.back") || "Back"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={close}
+            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
+            aria-label={locale === "ja" ? "パネルを閉じる" : "Close panel"}
           >
-            {t("quickCreate.objectiveFinish")}
-          </ChoiceButton>
-          <ChoiceButton
-            active={objectiveMode === "recurring"}
-            onClick={() => setObjectiveMode("recurring")}
-          >
-            {t("quickCreate.objectiveRecurring")}
-          </ChoiceButton>
-        </SectionBlock>
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
-        {isRecurring ? (
-          <SectionBlock
-            title={t("quickCreate.recurrenceTitle")}
-            helpText={t("quickCreate.recurrenceGuide")}
-            choiceGrid={false}
+        <div className="relative flex-1 overflow-hidden">
+          {/* Base Panel */}
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col overflow-y-auto p-4 transition-transform duration-300",
+              activePanel !== "base" ? "-translate-x-10 opacity-0 pointer-events-none" : "translate-x-0 opacity-100"
+            )}
           >
-            <div className="grid grid-cols-3 gap-2">
-              <ChoiceButton
-                active={recurrenceFrequency === "daily"}
-                onClick={() => setRecurrenceFrequency("daily")}
-              >
-                {t("quickCreate.recurrenceFreqDaily")}
-              </ChoiceButton>
-              <ChoiceButton
-                active={recurrenceFrequency === "weekly"}
-                onClick={() => setRecurrenceFrequency("weekly")}
-              >
-                {t("quickCreate.recurrenceFreqWeekly")}
-              </ChoiceButton>
-              <ChoiceButton
-                active={recurrenceFrequency === "monthly"}
-                onClick={() => setRecurrenceFrequency("monthly")}
-              >
-                {t("quickCreate.recurrenceFreqMonthly")}
-              </ChoiceButton>
-            </div>
-            <label className="space-y-1">
-              <span className="text-xs text-foreground-muted">
-                {t("quickCreate.recurrenceInterval")}
-              </span>
-              <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
-                <span className="text-sm text-foreground-muted">
-                  {locale === "ja" ? "毎" : "Every"}
-                </span>
+            <div className="space-y-4">
+              <SectionBlock title={t("quickCreate.titleTitle")} choiceGrid={false}>
                 <input
                   type="text"
-                  inputMode="numeric"
-                  value={recurrenceIntervalInput}
-                  onChange={(e) => setRecurrenceIntervalInput(sanitizeNumericInput(e.target.value))}
-                  onBlur={() => {
-                    const n = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
-                    if (n <= 0) setRecurrenceIntervalInput("1");
+                  value={title}
+                  onChange={(e) => {
+                    setTitle(e.target.value);
+                    setTitleEdited(true);
                   }}
-                  className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  placeholder={suggestedTitle}
+                  className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                 />
-                <span className="text-sm text-foreground-muted">
-                  {getRecurrenceIntervalSuffix(locale, recurrenceFrequency, recurrenceInterval)}
-                </span>
+              </SectionBlock>
+
+              <SectionBlock>
+                <ChoiceButton active={tileKind === "work"} onClick={() => setTileKind("work")}>
+                  {t("quickCreate.kindTask")}
+                </ChoiceButton>
+                <ChoiceButton active={tileKind === "break"} onClick={() => setTileKind("break")}>
+                  {t("quickCreate.kindBreak")}
+                </ChoiceButton>
+                <ChoiceButton active={tileKind === "label"} onClick={() => setTileKind("label")}>
+                  {t("quickCreate.kindLabel")}
+                </ChoiceButton>
+              </SectionBlock>
+
+              {tileKind === "work" || tileKind === "break" ? (
+                <SectionBlock title={t("quickCreate.workTargetTitle")} choiceGrid={false}>
+                  <DurationInput
+                    hours={workHoursInput}
+                    minutes={workMinutesInput}
+                    onHoursChange={(value) => {
+                      setDurationManuallyEdited(true);
+                      setWorkHoursInput(value);
+                    }}
+                    onMinutesChange={(value) => {
+                      setDurationManuallyEdited(true);
+                      setWorkMinutesInput(value);
+                    }}
+                    hoursUnit={t("quickCreate.hoursUnit")}
+                    minutesUnit={t("quickCreate.minutesUnit")}
+                  />
+                </SectionBlock>
+              ) : null}
+
+              {/* Sub-panel navigation buttons */}
+              <div className="pt-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("schedule")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>Schedule & Splitting</span>
+                    <span className="text-xs text-foreground-muted font-normal">Set time bounds and interruption rules</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("recurrence")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>Recurrence & Objective</span>
+                    <span className="text-xs text-foreground-muted font-normal">Make this a repeating task</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("meta")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>Project & Metadata</span>
+                    <span className="text-xs text-foreground-muted font-normal">Tags, memos, and project context</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
               </div>
-            </label>
-            {recurrenceFrequency === "weekly" ? (
-              <div className="grid grid-cols-4 gap-2">
-                {getWeekdayOptions(locale).map((day) => (
+            </div>
+          </div>
+
+          {/* Schedule & Splitting Panel */}
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col overflow-y-auto bg-surface-1 p-4 transition-transform duration-300",
+              activePanel === "schedule" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="space-y-6">
+              <SectionBlock
+                title={t("quickCreate.scheduleTitle")}
+                helpText={t("quickCreate.scheduleGuide")}
+                choiceGrid={false}
+              >
+                {!isRecurring ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <ChoiceButton
+                      active={useStartAt}
+                      onClick={() => {
+                        const next = !useStartAt;
+                        setUseStartAt(next);
+                        if (!next) {
+                          setStartDateInput("");
+                          setStartTimeInput("");
+                        } else {
+                          setStartDateInput((prev) => prev || getCurrentLocalDate());
+                          setStartTimeInput((prev) => prev || getCurrentLocalTime());
+                        }
+                      }}
+                    >
+                      {t("quickCreate.startAt")}
+                    </ChoiceButton>
+                    <ChoiceButton
+                      active={useEndAt}
+                      onClick={() => {
+                        const next = !useEndAt;
+                        setUseEndAt(next);
+                        if (!next) {
+                          setEndDateInput("");
+                          setEndTimeInput("");
+                        } else {
+                          setEndDateInput((prev) => prev || startDateInput || getCurrentLocalDate());
+                          setEndTimeInput((prev) => prev || getLocalTimeAfterMinutes(60));
+                        }
+                      }}
+                    >
+                      {t("quickCreate.endAt")}
+                    </ChoiceButton>
+                  </div>
+                ) : null}
+
+                {!isRecurring && useStartAt ? (
+                  <label className="space-y-1">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={startDateInput}
+                        onChange={(e) => setStartDateInput(e.target.value)}
+                        className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                      <input
+                        type="time"
+                        step={60}
+                        value={startTimeInput}
+                        onChange={(e) => setStartTimeInput(e.target.value)}
+                        className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
+                  </label>
+                ) : null}
+
+                {!isRecurring && useEndAt ? (
+                  <label className="space-y-1">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        value={endDateInput}
+                        onChange={(e) => setEndDateInput(e.target.value)}
+                        className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                      <input
+                        type="time"
+                        step={60}
+                        value={endTimeInput}
+                        onChange={(e) => setEndTimeInput(e.target.value)}
+                        className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                    </div>
+                  </label>
+                ) : null}
+              </SectionBlock>
+
+              {tileKind === "work" ? (
+                <SectionBlock title={t("quickCreate.splitTitle")} helpText={t("quickCreate.splitGuide")}>
+                  <ChoiceButton active={breakSplitsWork} onClick={() => setBreakSplitsWork(true)}>
+                    {t("quickCreate.splitAllow")}
+                  </ChoiceButton>
+                  <ChoiceButton active={!breakSplitsWork} onClick={() => setBreakSplitsWork(false)}>
+                    {t("quickCreate.splitKeep")}
+                  </ChoiceButton>
+                </SectionBlock>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Recurrence & Objective Panel */}
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col overflow-y-auto bg-surface-1 p-4 transition-transform duration-300",
+              activePanel === "recurrence" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="space-y-6">
+              <SectionBlock>
+                <ChoiceButton
+                  active={objectiveMode === "finish_once"}
+                  onClick={() => setObjectiveMode("finish_once")}
+                >
+                  {t("quickCreate.objectiveFinish")}
+                </ChoiceButton>
+                <ChoiceButton
+                  active={objectiveMode === "recurring"}
+                  onClick={() => setObjectiveMode("recurring")}
+                >
+                  {t("quickCreate.objectiveRecurring")}
+                </ChoiceButton>
+                {showFocusUntilEnd ? (
                   <ChoiceButton
-                    key={day.value}
-                    active={recurrenceWeekdays.includes(day.value)}
+                    active={objectiveMode === "maximize_within_interval"}
                     onClick={() =>
-                      setRecurrenceWeekdays((prev) =>
-                        prev.includes(day.value)
-                          ? prev.filter((d) => d !== day.value)
-                          : [...prev, day.value].sort((a, b) => a - b),
+                      setObjectiveMode((prev) =>
+                        prev === "maximize_within_interval" ? "finish_once" : "maximize_within_interval"
                       )
                     }
                   >
-                    {day.label}
+                    {t("quickCreate.objectiveMaximize")}
                   </ChoiceButton>
-                ))}
-              </div>
-            ) : null}
-            {recurrenceFrequency === "monthly" ? (
-              <div className="grid grid-cols-2 gap-2">
-                <label className="space-y-1">
-                  <span className="text-xs text-foreground-muted">
-                    {t("quickCreate.recurrenceMonthlyWeek")}
-                  </span>
+                ) : null}
+              </SectionBlock>
+
+              {isRecurring ? (
+                <SectionBlock
+                  title={t("quickCreate.recurrenceTitle")}
+                  helpText={t("quickCreate.recurrenceGuide")}
+                  choiceGrid={false}
+                >
+                  <div className="grid grid-cols-3 gap-2">
+                    <ChoiceButton
+                      active={recurrenceFrequency === "daily"}
+                      onClick={() => setRecurrenceFrequency("daily")}
+                    >
+                      {t("quickCreate.recurrenceFreqDaily")}
+                    </ChoiceButton>
+                    <ChoiceButton
+                      active={recurrenceFrequency === "weekly"}
+                      onClick={() => setRecurrenceFrequency("weekly")}
+                    >
+                      {t("quickCreate.recurrenceFreqWeekly")}
+                    </ChoiceButton>
+                    <ChoiceButton
+                      active={recurrenceFrequency === "monthly"}
+                      onClick={() => setRecurrenceFrequency("monthly")}
+                    >
+                      {t("quickCreate.recurrenceFreqMonthly")}
+                    </ChoiceButton>
+                  </div>
+                  <label className="space-y-1">
+                    <span className="text-xs text-foreground-muted">
+                      {t("quickCreate.recurrenceInterval")}
+                    </span>
+                    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2">
+                      <span className="text-sm text-foreground-muted">
+                        {locale === "ja" ? "毎" : "Every"}
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={recurrenceIntervalInput}
+                        onChange={(e) => setRecurrenceIntervalInput(sanitizeNumericInput(e.target.value))}
+                        onBlur={() => {
+                          const n = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
+                          if (n <= 0) setRecurrenceIntervalInput("1");
+                        }}
+                        className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                      <span className="text-sm text-foreground-muted">
+                        {getRecurrenceIntervalSuffix(locale, recurrenceFrequency, parseNonNegativeInt(recurrenceIntervalInput) || 1)}
+                      </span>
+                    </div>
+                  </label>
+                  {recurrenceFrequency === "weekly" ? (
+                    <div className="grid grid-cols-4 gap-2">
+                      {getWeekdayOptions(locale).map((day) => (
+                        <ChoiceButton
+                          key={day.value}
+                          active={recurrenceWeekdays.includes(day.value)}
+                          onClick={() =>
+                            setRecurrenceWeekdays((prev) =>
+                              prev.includes(day.value)
+                                ? prev.filter((d) => d !== day.value)
+                                : [...prev, day.value].sort((a, b) => a - b),
+                            )
+                          }
+                        >
+                          {day.label}
+                        </ChoiceButton>
+                      ))}
+                    </div>
+                  ) : null}
+                  {recurrenceFrequency === "monthly" ? (
+                    <div className="grid grid-cols-2 gap-2">
+                      <label className="space-y-1">
+                        <span className="text-xs text-foreground-muted">
+                          {t("quickCreate.recurrenceMonthlyWeek")}
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={recurrenceMonthlyWeekInput}
+                          onChange={(e) =>
+                            setRecurrenceMonthlyWeekInput(sanitizeNumericInput(e.target.value))
+                          }
+                          className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </label>
+                      <label className="space-y-1">
+                        <span className="text-xs text-foreground-muted">
+                          {t("quickCreate.recurrenceMonthlyWeekday")}
+                        </span>
+                        <select
+                          value={recurrenceMonthlyWeekdayInput}
+                          onChange={(e) => setRecurrenceMonthlyWeekdayInput(e.target.value)}
+                          className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        >
+                          {getWeekdayOptions(locale).map((day) => (
+                            <option key={day.value} value={day.value}>
+                              {day.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  ) : null}
+                </SectionBlock>
+              ) : null}
+
+              {isRecurring ? (
+                <>
+                  <SectionBlock
+                    title={t("quickCreate.scheduleTitle")}
+                    helpText={t("quickCreate.scheduleGuide")}
+                    choiceGrid={false}
+                  >
+                    <div className="grid grid-cols-2 gap-2">
+                      <ChoiceButton
+                        active={recurrenceUseStartAt}
+                        onClick={() => {
+                          const next = !recurrenceUseStartAt;
+                          setRecurrenceUseStartAt(next);
+                          if (!next) {
+                            setRecurrenceStartTimeInput("");
+                          } else {
+                            setRecurrenceStartTimeInput((prev) => prev || getCurrentLocalTime());
+                          }
+                        }}
+                      >
+                        {t("quickCreate.windowStartAt")}
+                      </ChoiceButton>
+                      <ChoiceButton
+                        active={recurrenceUseEndAt}
+                        onClick={() => {
+                          const next = !recurrenceUseEndAt;
+                          setRecurrenceUseEndAt(next);
+                          if (!next) {
+                            setRecurrenceEndTimeInput("");
+                          } else {
+                            setRecurrenceEndTimeInput((prev) => prev || getLocalTimeAfterMinutes(60));
+                          }
+                        }}
+                      >
+                        {t("quickCreate.windowEndAt")}
+                      </ChoiceButton>
+                    </div>
+
+                    {recurrenceUseStartAt || recurrenceUseEndAt ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {recurrenceUseStartAt ? (
+                          <input
+                            type="time"
+                            step={60}
+                            value={recurrenceStartTimeInput}
+                            onChange={(e) => setRecurrenceStartTimeInput(e.target.value)}
+                            className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                        ) : (
+                          <div />
+                        )}
+                        {recurrenceUseEndAt ? (
+                          <input
+                            type="time"
+                            step={60}
+                            value={recurrenceEndTimeInput}
+                            onChange={(e) => setRecurrenceEndTimeInput(e.target.value)}
+                            className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                        ) : (
+                          <div />
+                        )}
+                      </div>
+                    ) : null}
+                  </SectionBlock>
+
+                  <SectionBlock title={t("quickCreate.recurrenceValidityTitle")} choiceGrid={false}>
+                    <div className="grid grid-cols-2 gap-2">
+                      <ChoiceButton
+                        active={recurrenceValidFromEnabled}
+                        onClick={() => setRecurrenceValidFromEnabled((prev) => !prev)}
+                      >
+                        {t("quickCreate.recurrenceValidFrom")}
+                      </ChoiceButton>
+                      <ChoiceButton
+                        active={recurrenceValidToEnabled}
+                        onClick={() => setRecurrenceValidToEnabled((prev) => !prev)}
+                      >
+                        {t("quickCreate.recurrenceValidTo")}
+                      </ChoiceButton>
+                    </div>
+                    {recurrenceValidFromEnabled || recurrenceValidToEnabled ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {recurrenceValidFromEnabled ? (
+                          <input
+                            type="date"
+                            value={recurrenceValidFromDateInput}
+                            onChange={(e) => setRecurrenceValidFromDateInput(e.target.value)}
+                            className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                        ) : (
+                          <div />
+                        )}
+                        {recurrenceValidToEnabled ? (
+                          <input
+                            type="date"
+                            value={recurrenceValidToDateInput}
+                            onChange={(e) => setRecurrenceValidToDateInput(e.target.value)}
+                            className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          />
+                        ) : (
+                          <div />
+                        )}
+                      </div>
+                    ) : null}
+                  </SectionBlock>
+                </>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Project & Metadata Panel */}
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col overflow-y-auto bg-surface-1 p-4 transition-transform duration-300",
+              activePanel === "meta" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
+            )}
+          >
+            <div className="space-y-6">
+              <SectionBlock
+                title={t("quickCreate.metaTitle")}
+                helpText={t("quickCreate.metaGuide")}
+                choiceGrid={false}
+              >
+                <div className="relative">
                   <input
                     type="text"
-                    inputMode="numeric"
-                    value={recurrenceMonthlyWeekInput}
-                    onChange={(e) =>
-                      setRecurrenceMonthlyWeekInput(sanitizeNumericInput(e.target.value))
-                    }
-                    className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                    value={projectDraft}
+                    onChange={(e) => {
+                      setProjectDraft(e.target.value);
+                      setSelectedProject(null);
+                    }}
+                    onFocus={() => setIsProjectInputFocused(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setIsProjectInputFocused(false), 100);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const normalized = normalizeTag(projectDraft);
+                      if (!normalized) return;
+                      const matched = existingProjects.find((project) =>
+                        equalsIgnoreCase(project, normalized),
+                      );
+                      const next = matched ?? normalized;
+                      setSelectedProject(next);
+                      setProjectDraft(next);
+                      setIsProjectInputFocused(false);
+                    }}
+                    placeholder={t("quickCreate.projectPlaceholder")}
+                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                   />
-                </label>
-                <label className="space-y-1">
-                  <span className="text-xs text-foreground-muted">
-                    {t("quickCreate.recurrenceMonthlyWeekday")}
-                  </span>
-                  <select
-                    value={recurrenceMonthlyWeekdayInput}
-                    onChange={(e) => setRecurrenceMonthlyWeekdayInput(e.target.value)}
-                    className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  >
-                    {getWeekdayOptions(locale).map((day) => (
-                      <option key={day.value} value={day.value}>
-                        {day.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-            ) : null}
-          </SectionBlock>
-        ) : null}
-
-        <SectionBlock
-          title={t("quickCreate.scheduleTitle")}
-          helpText={t("quickCreate.scheduleGuide")}
-          choiceGrid={false}
-        >
-          {!isRecurring ? (
-            <div className="grid grid-cols-2 gap-2">
-              <ChoiceButton
-                active={useStartAt}
-                onClick={() => {
-                  const next = !useStartAt;
-                  setUseStartAt(next);
-                  if (!next) {
-                    setStartDateInput("");
-                    setStartTimeInput("");
-                  } else {
-                    setStartDateInput((prev) => prev || getCurrentLocalDate());
-                    setStartTimeInput((prev) => prev || getCurrentLocalTime());
-                  }
-                }}
-              >
-                {t("quickCreate.startAt")}
-              </ChoiceButton>
-              <ChoiceButton
-                active={useEndAt}
-                onClick={() => {
-                  const next = !useEndAt;
-                  setUseEndAt(next);
-                  if (!next) {
-                    setEndDateInput("");
-                    setEndTimeInput("");
-                  } else {
-                    setEndDateInput((prev) => prev || startDateInput || getCurrentLocalDate());
-                    setEndTimeInput((prev) => prev || getLocalTimeAfterMinutes(60));
-                  }
-                }}
-              >
-                {t("quickCreate.endAt")}
-              </ChoiceButton>
-            </div>
-          ) : null}
-
-          {isRecurring ? (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <ChoiceButton
-                  active={recurrenceUseStartAt}
-                  onClick={() => {
-                    const next = !recurrenceUseStartAt;
-                    setRecurrenceUseStartAt(next);
-                    if (!next) {
-                      setRecurrenceStartTimeInput("");
-                    } else {
-                      setRecurrenceStartTimeInput((prev) => prev || getCurrentLocalTime());
-                    }
-                  }}
-                >
-                  {t("quickCreate.windowStartAt")}
-                </ChoiceButton>
-                <ChoiceButton
-                  active={recurrenceUseEndAt}
-                  onClick={() => {
-                    const next = !recurrenceUseEndAt;
-                    setRecurrenceUseEndAt(next);
-                    if (!next) {
-                      setRecurrenceEndTimeInput("");
-                    } else {
-                      setRecurrenceEndTimeInput((prev) => prev || getLocalTimeAfterMinutes(60));
-                    }
-                  }}
-                >
-                  {t("quickCreate.windowEndAt")}
-                </ChoiceButton>
-              </div>
-
-              {recurrenceUseStartAt || recurrenceUseEndAt ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {recurrenceUseStartAt ? (
-                    <input
-                      type="time"
-                      step={60}
-                      value={recurrenceStartTimeInput}
-                      onChange={(e) => setRecurrenceStartTimeInput(e.target.value)}
-                      className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                      aria-label={t("quickCreate.windowStartAt")}
-                    />
-                  ) : (
-                    <div />
-                  )}
-                  {recurrenceUseEndAt ? (
-                    <input
-                      type="time"
-                      step={60}
-                      value={recurrenceEndTimeInput}
-                      onChange={(e) => setRecurrenceEndTimeInput(e.target.value)}
-                      className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                      aria-label={t("quickCreate.windowEndAt")}
-                    />
-                  ) : (
-                    <div />
-                  )}
+                  {isProjectInputFocused ? (
+                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+                      {projectSuggestions.length > 0 ? (
+                        projectSuggestions.map((project) => (
+                          <button
+                            key={project}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedProject(project);
+                              setProjectDraft(project);
+                              setIsProjectInputFocused(false);
+                            }}
+                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                          >
+                            {project}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
+                          {t("quickCreate.createNew")}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </>
-          ) : null}
 
-          {!isRecurring && useStartAt ? (
-            <label className="space-y-1">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={startDateInput}
-                  onChange={(e) => setStartDateInput(e.target.value)}
-                  className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  aria-label={`${t("quickCreate.startAt")} ${t("quickCreate.dateLabel")}`}
-                />
-                <input
-                  type="time"
-                  step={60}
-                  value={startTimeInput}
-                  onChange={(e) => setStartTimeInput(e.target.value)}
-                  className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  aria-label={`${t("quickCreate.startAt")} ${t("quickCreate.timeLabel")}`}
-                />
-              </div>
-            </label>
-          ) : null}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onFocus={() => setIsTagInputFocused(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setIsTagInputFocused(false), 100);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const normalized = normalizeTag(tagDraft);
+                      if (!normalized) return;
+                      const matched = existingTags.find((tag) => equalsIgnoreCase(tag, normalized));
+                      const next = matched ?? normalized;
+                      setSelectedTags((prev) =>
+                        prev.some((tag) => equalsIgnoreCase(tag, next)) ? prev : [...prev, next],
+                      );
+                      setTagDraft("");
+                    }}
+                    placeholder={t("quickCreate.tagsPlaceholder")}
+                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  {isTagInputFocused ? (
+                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+                      {tagSuggestions.length > 0 ? (
+                        tagSuggestions.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedTags((prev) =>
+                                prev.some((item) => equalsIgnoreCase(item, tag)) ? prev : [...prev, tag],
+                              );
+                              setTagDraft("");
+                              setIsTagInputFocused(false);
+                            }}
+                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                          >
+                            {tag}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
+                          {t("quickCreate.createNew")}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
 
-          {!isRecurring && useEndAt ? (
-            <label className="space-y-1">
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="date"
-                  value={endDateInput}
-                  onChange={(e) => setEndDateInput(e.target.value)}
-                  className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  aria-label={`${t("quickCreate.endAt")} ${t("quickCreate.dateLabel")}`}
-                />
-                <input
-                  type="time"
-                  step={60}
-                  value={endTimeInput}
-                  onChange={(e) => setEndTimeInput(e.target.value)}
-                  className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  aria-label={`${t("quickCreate.endAt")} ${t("quickCreate.timeLabel")}`}
-                />
-              </div>
-            </label>
-          ) : null}
-        </SectionBlock>
+                {selectedTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setSelectedTags((prev) => prev.filter((item) => item !== tag))}
+                        className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                        aria-label={`${t("quickCreate.removeTag")} ${tag}`}
+                      >
+                        #{tag} &times;
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </SectionBlock>
 
-        {showFocusUntilEnd ? (
-          <div className="space-y-2">
-            <ChoiceButton
-              active={objectiveMode === "maximize_within_interval"}
-              onClick={() =>
-                setObjectiveMode((prev) =>
-                  prev === "maximize_within_interval" ? "finish_once" : "maximize_within_interval",
-                )
-              }
-            >
-              {t("quickCreate.objectiveMaximize")}
-            </ChoiceButton>
+              <SectionBlock
+                title={t("quickCreate.memoTitle")}
+                helpText={t("quickCreate.memoGuide")}
+                choiceGrid={false}
+              >
+                <textarea
+                  value={memoInput}
+                  onChange={(e) => setMemoInput(e.target.value)}
+                  placeholder={t("quickCreate.memoPlaceholder")}
+                  rows={4}
+                  className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </SectionBlock>
+            </div>
           </div>
-        ) : null}
+        </div>
 
-        {tileKind === "work" || tileKind === "break" ? (
-          <SectionBlock
-            title={t("quickCreate.workTargetTitle")}
-            helpText={t("quickCreate.workTargetGuide")}
-            choiceGrid={false}
+        {/* Footer Actions */}
+        <div className="border-t border-border bg-surface-0 p-4 shrink-0">
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={!canSubmit || submitting}
+            className="w-full rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
           >
-            <DurationInput
-              hours={workHoursInput}
-              minutes={workMinutesInput}
-              onHoursChange={(value) => {
-                setDurationManuallyEdited(true);
-                setWorkHoursInput(value);
-              }}
-              onMinutesChange={(value) => {
-                setDurationManuallyEdited(true);
-                setWorkMinutesInput(value);
-              }}
-              hoursUnit={t("quickCreate.hoursUnit")}
-              minutesUnit={t("quickCreate.minutesUnit")}
-            />
-          </SectionBlock>
-        ) : null}
-
-        {tileKind === "work" ? (
-          <SectionBlock title={t("quickCreate.splitTitle")} helpText={t("quickCreate.splitGuide")}>
-            <ChoiceButton active={breakSplitsWork} onClick={() => setBreakSplitsWork(true)}>
-              {t("quickCreate.splitAllow")}
-            </ChoiceButton>
-            <ChoiceButton active={!breakSplitsWork} onClick={() => setBreakSplitsWork(false)}>
-              {t("quickCreate.splitKeep")}
-            </ChoiceButton>
-          </SectionBlock>
-        ) : null}
-
-        {isRecurring ? (
-          <SectionBlock title={t("quickCreate.recurrenceValidityTitle")} choiceGrid={false}>
-            <div className="grid grid-cols-2 gap-2">
-              <ChoiceButton
-                active={recurrenceValidFromEnabled}
-                onClick={() => setRecurrenceValidFromEnabled((prev) => !prev)}
-              >
-                {t("quickCreate.recurrenceValidFrom")}
-              </ChoiceButton>
-              <ChoiceButton
-                active={recurrenceValidToEnabled}
-                onClick={() => setRecurrenceValidToEnabled((prev) => !prev)}
-              >
-                {t("quickCreate.recurrenceValidTo")}
-              </ChoiceButton>
-            </div>
-            {recurrenceValidFromEnabled || recurrenceValidToEnabled ? (
-              <div className="grid grid-cols-2 gap-2">
-                {recurrenceValidFromEnabled ? (
-                  <input
-                    type="date"
-                    value={recurrenceValidFromDateInput}
-                    onChange={(e) => setRecurrenceValidFromDateInput(e.target.value)}
-                    className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                    aria-label={t("quickCreate.recurrenceValidFrom")}
-                  />
-                ) : (
-                  <div />
-                )}
-                {recurrenceValidToEnabled ? (
-                  <input
-                    type="date"
-                    value={recurrenceValidToDateInput}
-                    onChange={(e) => setRecurrenceValidToDateInput(e.target.value)}
-                    className="themed-datetime-input w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                    aria-label={t("quickCreate.recurrenceValidTo")}
-                  />
-                ) : (
-                  <div />
-                )}
-              </div>
-            ) : null}
-          </SectionBlock>
-        ) : null}
-
-        <SectionBlock
-          title={t("quickCreate.metaTitle")}
-          helpText={t("quickCreate.metaGuide")}
-          choiceGrid={false}
-        >
-          <div className="relative">
-            <input
-              type="text"
-              value={projectDraft}
-              onChange={(e) => {
-                setProjectDraft(e.target.value);
-                setSelectedProject(null);
-              }}
-              onFocus={() => setIsProjectInputFocused(true)}
-              onBlur={() => {
-                window.setTimeout(() => setIsProjectInputFocused(false), 100);
-              }}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
-                e.preventDefault();
-                const normalized = normalizeTag(projectDraft);
-                if (!normalized) return;
-                const matched = existingProjects.find((project) =>
-                  equalsIgnoreCase(project, normalized),
-                );
-                const next = matched ?? normalized;
-                setSelectedProject(next);
-                setProjectDraft(next);
-                setIsProjectInputFocused(false);
-              }}
-              placeholder={t("quickCreate.projectPlaceholder")}
-              className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            {isProjectInputFocused ? (
-              <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1">
-                {projectSuggestions.length > 0 ? (
-                  projectSuggestions.map((project) => (
-                    <button
-                      key={project}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setSelectedProject(project);
-                        setProjectDraft(project);
-                        setIsProjectInputFocused(false);
-                      }}
-                      className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1"
-                    >
-                      {project}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-2 py-1.5 text-xs text-foreground-muted">
-                    {t("quickCreate.createNew")}
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onFocus={() => setIsTagInputFocused(true)}
-              onBlur={() => {
-                window.setTimeout(() => setIsTagInputFocused(false), 100);
-              }}
-              onKeyDown={(e) => {
-                if (e.key !== "Enter") return;
-                e.preventDefault();
-                const normalized = normalizeTag(tagDraft);
-                if (!normalized) return;
-                const matched = existingTags.find((tag) => equalsIgnoreCase(tag, normalized));
-                const next = matched ?? normalized;
-                setSelectedTags((prev) =>
-                  prev.some((tag) => equalsIgnoreCase(tag, next)) ? prev : [...prev, next],
-                );
-                setTagDraft("");
-              }}
-              placeholder={t("quickCreate.tagsPlaceholder")}
-              className="w-full rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            {isTagInputFocused ? (
-              <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1">
-                {tagSuggestions.length > 0 ? (
-                  tagSuggestions.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        setSelectedTags((prev) =>
-                          prev.some((item) => equalsIgnoreCase(item, tag)) ? prev : [...prev, tag],
-                        );
-                        setTagDraft("");
-                        setIsTagInputFocused(false);
-                      }}
-                      className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1"
-                    >
-                      {tag}
-                    </button>
-                  ))
-                ) : (
-                  <div className="px-2 py-1.5 text-xs text-foreground-muted">
-                    {t("quickCreate.createNew")}
-                  </div>
-                )}
-              </div>
-            ) : null}
-          </div>
-
-          {selectedTags.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {selectedTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setSelectedTags((prev) => prev.filter((item) => item !== tag))}
-                  className="rounded-full bg-surface-2 px-2.5 py-1 text-xs text-foreground hover:bg-surface-1"
-                  aria-label={`${t("quickCreate.removeTag")} ${tag}`}
-                >
-                  #{tag} ×
-                </button>
-              ))}
-            </div>
-          ) : null}
-        </SectionBlock>
-
-        <SectionBlock
-          title={t("quickCreate.memoTitle")}
-          helpText={t("quickCreate.memoGuide")}
-          choiceGrid={false}
-        >
-          <textarea
-            value={memoInput}
-            onChange={(e) => setMemoInput(e.target.value)}
-            placeholder={t("quickCreate.memoPlaceholder")}
-            rows={3}
-            className="w-full resize-none rounded-lg bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </SectionBlock>
-
-        <button
-          type="button"
-          onClick={handleCreate}
-          disabled={!canSubmit || submitting}
-          className="w-full rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-fg disabled:opacity-50"
-        >
-          {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
-        </button>
-
-        {error ? <p className="text-xs text-danger">{error}</p> : null}
-      </div>
-    </section>
+            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
+          </button>
+          {error ? <p className="mt-2 text-center text-xs text-danger">{error}</p> : null}
+        </div>
+      </section>
     </>
   );
 }
