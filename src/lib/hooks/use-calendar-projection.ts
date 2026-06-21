@@ -35,6 +35,7 @@ export interface UseCalendarProjectionArgs {
   view: CalendarView;
   anchor: string;
   tzOffset: number;
+  refreshKey?: number;
 }
 
 interface HookState {
@@ -46,13 +47,14 @@ interface HookState {
 export function useCalendarProjection(args: UseCalendarProjectionArgs) {
   const [state, setState] = useState<HookState>({ projection: null, loading: true, error: null });
   const mountedRef = useRef(true);
-  const argsKey = `${args.view}:${args.anchor}:${args.tzOffset}`;
+  const argsKey = `${args.view}:${args.anchor}:${args.tzOffset}:${args.refreshKey ?? 0}`;
 
   useEffect(() => {
     mountedRef.current = true;
     let cancelled = false;
 
     async function fetch_() {
+      const anchorRfc = args.anchor.includes("T") ? args.anchor : `${args.anchor}T00:00:00Z`;
       const res = await getCoreClient().call<CalendarProjectionView>(
         args.view === "day"
           ? "getCalendarDay"
@@ -61,7 +63,7 @@ export function useCalendarProjection(args: UseCalendarProjectionArgs) {
             : args.view === "month"
               ? "getCalendarMonth"
               : "getCalendarYear",
-        { query: { anchor: args.anchor, tz_offset: args.tzOffset * 60 } },
+        { query: { anchor: anchorRfc, tz_offset: args.tzOffset * 60 } },
       );
       if (cancelled || !mountedRef.current) return;
       setState(
