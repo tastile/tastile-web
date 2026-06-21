@@ -69,7 +69,6 @@ jobs:
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
           NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google,SignInWithApple
           ENVEOF
-          ENVEOF
 
       - name: Lint, typecheck, test, build
         env:
