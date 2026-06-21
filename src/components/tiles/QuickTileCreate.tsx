@@ -366,20 +366,31 @@ export function QuickTileCreate() {
     }
   }
 
-  const panelClass = isDesktop
-    ? [
+  const basePanelClass = isDesktop
+    ? cn(
         "fixed inset-y-0 right-0 z-[56]",
-        "w-[28rem] flex flex-col overflow-hidden",
-        "bg-surface-1 shadow-lg",
-        "border-l border-border",
-        "[animation:slideInFromRight_0.22s_ease-out]",
-      ].join(" ")
-    : [
+        "w-[32rem] flex flex-col bg-surface-1 shadow-lg border-l border-border transition-all duration-300 ease-out",
+        activePanel !== "base" ? "-translate-x-6 brightness-[0.7]" : "translate-x-0",
+        "[animation:slideInFromRight_0.22s_ease-out]"
+      )
+    : cn(
         "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[80vh] flex flex-col overflow-hidden",
-        "rounded-t-2xl bg-surface-1 shadow-lg",
-        "[animation:slideInFromBottom_0.22s_ease-out]",
-      ].join(" ");
+        "h-[80vh] flex flex-col rounded-t-2xl bg-surface-1 shadow-lg transition-all duration-300 ease-out",
+        activePanel !== "base" ? "translate-y-6 brightness-[0.7]" : "translate-y-0",
+        "[animation:slideInFromBottom_0.22s_ease-out]"
+      );
+
+  const subPanelClass = (panelName: string) => isDesktop
+    ? cn(
+        "fixed inset-y-0 right-0 z-[57]",
+        "w-[28rem] flex flex-col bg-surface-1 shadow-2xl border-l border-border transition-transform duration-300 ease-out",
+        activePanel === panelName ? "translate-x-0" : "translate-x-full pointer-events-none"
+      )
+    : cn(
+        "fixed inset-x-0 bottom-0 z-[57]",
+        "h-[75vh] flex flex-col rounded-t-2xl bg-surface-1 shadow-2xl transition-transform duration-300 ease-out",
+        activePanel === panelName ? "translate-y-0" : "translate-y-full pointer-events-none"
+      );
 
   return (
     <>
@@ -388,20 +399,9 @@ export function QuickTileCreate() {
         onClick={close}
         aria-hidden
       />
-      <section className={panelClass}>
+            <section className={basePanelClass}>
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-          {activePanel === "base" ? (
-            <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
-            >
-              <ChevronLeft className="h-4 w-4" />
-              {t("quickCreate.back") || "Back"}
-            </button>
-          )}
+          <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
           <button
             type="button"
             onClick={close}
@@ -411,16 +411,8 @@ export function QuickTileCreate() {
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        <div className="relative flex-1 overflow-hidden">
-          {/* Base Panel */}
-          <div
-            className={cn(
-              "absolute inset-0 flex flex-col overflow-y-auto p-4 transition-transform duration-300",
-              activePanel !== "base" ? "-translate-x-10 opacity-0 pointer-events-none" : "translate-x-0 opacity-100"
-            )}
-          >
-            <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-4">
               <SectionBlock title={t("quickCreate.titleTitle")} choiceGrid={false}>
                 <input
                   type="text"
@@ -502,16 +494,36 @@ export function QuickTileCreate() {
                 </button>
               </div>
             </div>
-          </div>
-
-          {/* Schedule & Splitting Panel */}
-          <div
-            className={cn(
-              "absolute inset-0 flex flex-col overflow-y-auto bg-surface-1 p-4 transition-transform duration-300",
-              activePanel === "schedule" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
-            )}
+        </div>
+{/* Footer Actions */}
+        <div className="border-t border-border bg-surface-0 p-4 shrink-0">
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={!canSubmit || submitting}
+            className="w-full rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
           >
-            <div className="space-y-6">
+            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
+          </button>
+          {error ? <p className="mt-2 text-center text-xs text-danger">{error}</p> : null}
+        </div>
+            </section>
+
+      {/* Sub Panel: Schedule */}
+      <section className={subPanelClass("schedule")}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t("quickCreate.back") || "Back"}
+          </button>
+          <h2 className="text-sm font-semibold text-foreground">Schedule & Splitting</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-6">
               <SectionBlock
                 title={t("quickCreate.scheduleTitle")}
                 helpText={t("quickCreate.scheduleGuide")}
@@ -606,16 +618,24 @@ export function QuickTileCreate() {
                 </SectionBlock>
               ) : null}
             </div>
-          </div>
+        </div>
+      </section>
 
-          {/* Recurrence & Objective Panel */}
-          <div
-            className={cn(
-              "absolute inset-0 flex flex-col overflow-y-auto bg-surface-1 p-4 transition-transform duration-300",
-              activePanel === "recurrence" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
-            )}
+      {/* Sub Panel: Recurrence */}
+      <section className={subPanelClass("recurrence")}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
           >
-            <div className="space-y-6">
+            <ChevronLeft className="h-4 w-4" />
+            {t("quickCreate.back") || "Back"}
+          </button>
+          <h2 className="text-sm font-semibold text-foreground">Recurrence & Objective</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-6">
               <SectionBlock>
                 <ChoiceButton
                   active={objectiveMode === "finish_once"}
@@ -858,16 +878,24 @@ export function QuickTileCreate() {
                 </>
               ) : null}
             </div>
-          </div>
+        </div>
+      </section>
 
-          {/* Project & Metadata Panel */}
-          <div
-            className={cn(
-              "absolute inset-0 flex flex-col overflow-y-auto bg-surface-1 p-4 transition-transform duration-300",
-              activePanel === "meta" ? "translate-x-0 opacity-100" : "translate-x-full opacity-0 pointer-events-none"
-            )}
+      {/* Sub Panel: Meta */}
+      <section className={subPanelClass("meta")}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
           >
-            <div className="space-y-6">
+            <ChevronLeft className="h-4 w-4" />
+            {t("quickCreate.back") || "Back"}
+          </button>
+          <h2 className="text-sm font-semibold text-foreground">Project & Metadata</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-6">
               <SectionBlock
                 title={t("quickCreate.metaTitle")}
                 helpText={t("quickCreate.metaGuide")}
@@ -1012,20 +1040,6 @@ export function QuickTileCreate() {
                 />
               </SectionBlock>
             </div>
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="border-t border-border bg-surface-0 p-4 shrink-0">
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={!canSubmit || submitting}
-            className="w-full rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
-          >
-            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
-          </button>
-          {error ? <p className="mt-2 text-center text-xs text-danger">{error}</p> : null}
         </div>
       </section>
     </>
