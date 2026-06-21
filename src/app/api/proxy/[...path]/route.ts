@@ -34,31 +34,34 @@ function generateId(): string {
 
 function mockTileFromCreate(body: Record<string, unknown>): MockTile {
   const id = generateId();
-  const temporal = (body.temporal ?? {}) as Record<string, unknown>;
+  const tile = (body.tile ?? body) as Record<string, unknown>;
+  const temporal = (tile.temporal ?? {}) as Record<string, unknown>;
+  const annotation = (tile.annotation ?? {}) as Record<string, unknown>;
+  const objective = (tile.objective ?? {}) as Record<string, unknown>;
   return {
     id,
-    title: String(body.title ?? "Untitled"),
+    title: String(tile.title ?? body.title ?? "Untitled"),
     lifecycle: "ready",
-    next_action: (body.next_action as string) ?? null,
-    done_definition: (body.done_definition as string) ?? null,
+    next_action: (tile.next_action as string) ?? null,
+    done_definition: (tile.core as Record<string, unknown>)?.done_definition as string ?? null,
     worked_minutes: 0,
     break_minutes: 0,
-    semantic_role: (body.annotation as Record<string, unknown>)?.semantic_role as string ?? "work",
-    labels: ((body.annotation as Record<string, unknown>)?.labels as string[]) ?? [],
-    objective_mode: (body.objective as Record<string, unknown>)?.objective_mode as string ?? null,
-    target_work_min: (body.objective as Record<string, unknown>)?.target_work_min as number ?? null,
-    target_rest_min: (body.objective as Record<string, unknown>)?.target_rest_min as number ?? null,
-    done_rule: (body.objective as Record<string, unknown>)?.done_rule as string ?? null,
+    semantic_role: annotation.semantic_role as string ?? "work",
+    labels: (annotation.labels as string[]) ?? [],
+    objective_mode: objective.objective_mode as string ?? null,
+    target_work_min: objective.target_work_min as number ?? null,
+    target_rest_min: objective.target_rest_min as number ?? null,
+    done_rule: objective.done_rule as string ?? null,
     resume_note: null,
     projected_next_start_at: null,
     temporal: {
       tz: null,
       release_at: temporal.release_at ?? null,
       due_at: temporal.due_at ?? null,
-      fixed_start: temporal.fixed_start ?? null,
-      fixed_end: temporal.fixed_end ?? null,
-      active_start: temporal.active_start ?? null,
-      active_end: temporal.active_end ?? null,
+      fixed_start: temporal.fixed_start ?? temporal.fixedStart ?? null,
+      fixed_end: temporal.fixed_end ?? temporal.fixedEnd ?? null,
+      active_start: temporal.active_start ?? temporal.activeStart ?? null,
+      active_end: temporal.active_end ?? temporal.activeEnd ?? null,
     },
   };
 }
@@ -244,17 +247,17 @@ function handleMockRequest(path: string, method: string, body: unknown, searchPa
     const blocks = mockTiles
       .filter((tile) => {
         const temporal = tile.temporal as Record<string, string | null> | null;
-        if (!temporal) return false;
+        if (!temporal) return true;
         const fixedStart = temporal.fixed_start ? new Date(temporal.fixed_start) : null;
         const activeStart = temporal.active_start ? new Date(temporal.active_start) : null;
         const start = fixedStart ?? activeStart;
-        if (!start) return false;
+        if (!start) return true;
         return start >= dayStart && start < dayEnd;
       })
       .map((tile) => {
         const temporal = tile.temporal as Record<string, string | null>;
-        const startStr = temporal.fixed_start ?? temporal.active_start ?? dayStart.toISOString();
-        const endStr = temporal.fixed_end ?? temporal.active_end ?? new Date(new Date(startStr).getTime() + 60 * 60 * 1000).toISOString();
+        const startStr = temporal?.fixed_start ?? temporal?.active_start ?? dayStart.toISOString();
+        const endStr = temporal?.fixed_end ?? temporal?.active_end ?? dayEnd.toISOString();
         return {
           tile_id: tile.id,
           title: tile.title,

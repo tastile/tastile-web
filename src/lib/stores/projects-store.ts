@@ -19,7 +19,7 @@ interface ProjectsState {
 
 export const useProjectsStore = create<ProjectsState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       projects: {},
       create: (name, labelFilter, color) => {
         const id = `project-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -33,7 +33,8 @@ export const useProjectsStore = create<ProjectsState>()(
         }),
       remove: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.projects;
+          const rest = { ...s.projects };
+          delete (rest as Record<string, Project>)[id];
           return { projects: rest };
         }),
     }),

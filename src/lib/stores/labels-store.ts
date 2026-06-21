@@ -44,7 +44,8 @@ export const useLabelsStore = create<LabelsState>()(
         set((s) => ({ labels: { ...s.labels, [name]: { name, color } } })),
       remove: (name) =>
         set((s) => {
-          const { [name]: _, ...rest } = s.labels;
+          const rest = { ...s.labels };
+          delete (rest as Record<string, LabelEntry>)[name];
           return { labels: rest };
         }),
     }),

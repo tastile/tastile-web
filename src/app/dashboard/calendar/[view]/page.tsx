@@ -3,8 +3,6 @@
 import {
   Calendar,
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   Coffee,
   Database,
   Loader2,

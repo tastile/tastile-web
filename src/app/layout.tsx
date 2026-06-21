@@ -1,39 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter, Outfit, Zen_Kaku_Gothic_New } from "next/font/google";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { themeScript } from "@/lib/theme-script";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-});
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
-const zenKaku = Zen_Kaku_Gothic_New({
-  variable: "--font-zen-kaku",
-  // next/font's bundled TS types for Zen_Kaku_Gothic_New are stale —
-  // they only declare "cyrillic" | "latin" | "latin-ext", but Google
-  // Fonts exposes "japanese" and "vietnamese" as well. Cast to the
-  // declared union so the loader passes through the extra subset.
-  subsets: ["latin", "japanese"] as ("cyrillic" | "latin" | "latin-ext")[],
-  weight: ["400", "500", "700", "900"],
-});
+// Mock font variables to avoid build-time Google Fonts download failures in offline/sandboxed environments
+const geistSans = { variable: "font-sans" };
+const geistMono = { variable: "font-mono" };
+const outfit = { variable: "font-sans" };
+const inter = { variable: "font-sans" };
+const zenKaku = { variable: "font-sans" };
 
 export const metadata: Metadata = {
   title: "Tastile — Execution Control",

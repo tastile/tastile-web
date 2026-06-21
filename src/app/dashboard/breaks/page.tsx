@@ -6,7 +6,6 @@ import {
   Pause,
   PauseCircle,
   Play,
-  Plus,
   RefreshCw,
   Timer,
 } from "lucide-react";
@@ -18,7 +17,6 @@ import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { Actor } from "@/lib/domain/actor";
 import type { Tile } from "@/lib/domain/tile";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
-import { cn } from "@/lib/utils/cn";
 
 const BREAK_PRESETS = [5, 10, 15, 25];
 

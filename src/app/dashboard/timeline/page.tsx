@@ -3,11 +3,9 @@
 import {
   Calendar,
   ChevronRight,
-  Clock,
   Coffee,
   ListChecks,
   Loader2,
-  PinIcon,
   Timer,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";

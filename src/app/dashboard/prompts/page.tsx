@@ -5,26 +5,23 @@ import {
   Check,
   Clock,
   Hourglass,
-  Loader2,
   MessageSquareWarning,
-  RefreshCw,
   ShieldAlert,
   Sparkles,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Empty";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { Actor } from "@/lib/domain/actor";
-import { TileId } from "@/lib/domain/ids";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { cn } from "@/lib/utils/cn";
 
 export default function PromptsPage() {
-  const { state, execute, loading } = useExecutionEngineContext();
+  const { state, execute } = useExecutionEngineContext();
   const [responding, setResponding] = useState(false);
 
   const pending = state.execution.pendingPrompt;

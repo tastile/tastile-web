@@ -25,6 +25,7 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { useDialogStore } from "@/lib/stores/dialog-store";
 import type { Locale } from "@/lib/stores/locale-store";
 import { formatDateTime, formatDuration } from "@/lib/utils/tile-formatters";
+import { useTileList, type TileListView } from "@/lib/hooks/use-tile-list";
 
 const MAX_VISIBLE_TILES = 60;
 const MAX_VISIBLE_CHANGES = 120;
@@ -35,6 +36,69 @@ export default function TilesPage() {
       <TilesPageInner />
     </Suspense>
   );
+}
+
+function mapListViewToTile(item: TileListView): Tile {
+  return {
+    core: {
+      id: TileId.fromString(item.id),
+      title: item.title,
+      nextAction: item.next_action,
+      doneDefinition: item.done_definition,
+      startedAt: item.temporal?.active_start ? new Date(item.temporal.active_start) : null,
+      completedAt: item.temporal?.active_end ? new Date(item.temporal.active_end) : null,
+    },
+    work: {
+      segments: [],
+    },
+    temporal: {
+      tz: null,
+      releaseAt: item.temporal?.release_at ? new Date(item.temporal.release_at) : null,
+      dueAt: item.temporal?.due_at ? new Date(item.temporal.due_at) : null,
+      fixedStart: item.temporal?.fixed_start ? new Date(item.temporal.fixed_start) : null,
+      fixedEnd: item.temporal?.fixed_end ? new Date(item.temporal.fixed_end) : null,
+      activeStart: item.temporal?.active_start ? new Date(item.temporal.active_start) : null,
+      activeEnd: item.temporal?.active_end ? new Date(item.temporal.active_end) : null,
+    },
+    objective: {
+      objectiveMode: item.objective_mode ?? "finish_once",
+      targetWorkMin: item.target_work_min,
+      targetRestMin: item.target_rest_min,
+      doneRule: item.done_rule,
+      recurrence: item.recurrence
+        ? {
+            generator: {
+              stepMin: item.recurrence.step_min,
+              anchorEpochMin: null,
+            },
+            window: {
+              startOffsetMin: item.recurrence.window_start_min,
+              endOffsetMin: item.recurrence.window_end_min,
+            },
+            selector: {
+              expression: item.recurrence.expression,
+            },
+          }
+        : null,
+    },
+    interruption: {
+      interruptPenalty: 0,
+      resumePenalty: 0,
+      breakSplitsWork: false,
+      externalInterruptOnly: false,
+    },
+    automation: {
+      promptOnStart: false,
+      promptOnEnd: false,
+      autoStartAllowed: false,
+      autoEndAllowed: false,
+    },
+    annotation: {
+      semanticRole: item.semantic_role ?? "work",
+      labels: item.labels ?? [],
+      timedLabels: [],
+    },
+  };
 }
 
 function TilesPageInner() {
@@ -67,94 +131,21 @@ function TilesPageInner() {
   const [filterGranularity, setFilterGranularity] = useState<"all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m">("min_5m"); // Default to min 5m to hide tiny breaks
   const [filterLimit, setFilterLimit] = useState<number>(50); // Default limit to 50 items
 
-  // Memoized filtered tiles
-  const filteredTiles = useMemo(() => {
-    let result = [...projection.tiles.ordered];
+  // Fetch tiles from API using useTileList with query scopes
+  const { tiles: apiTiles } = useTileList({
+    viewMode: listGroupingMode,
+    limit: filterLimit > 0 ? filterLimit : undefined,
+    search: searchTerm || undefined,
+    range: filterRange,
+    granularity: filterGranularity,
+  });
 
-    // 1. Text search filter
-    if (searchTerm) {
-      const lower = searchTerm.toLowerCase();
-      result = result.filter(
-        (tile) =>
-          tile.core.title.toLowerCase().includes(lower) ||
-          (tile.core.nextAction && tile.core.nextAction.toLowerCase().includes(lower)),
-      );
-    }
+  const mappedTiles = useMemo(() => {
+    return apiTiles.map(mapListViewToTile);
+  }, [apiTiles]);
 
-    // 2. Range filter
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfToday = new Date(startOfToday.getTime() + 86400000);
-
-    if (filterRange === "today") {
-      result = result.filter((tile) => {
-        const startAt =
-          tile.core.startedAt ??
-          tile.temporal.fixedStart ??
-          tile.temporal.activeStart ??
-          tile.temporal.releaseAt;
-        if (!startAt) return false;
-        const d = new Date(startAt);
-        return d >= startOfToday && d < endOfToday;
-      });
-    } else if (filterRange === "recent") {
-      const past24h = new Date(now.getTime() - 86400000);
-      result = result.filter((tile) => {
-        const updated =
-          tile.core.startedAt ??
-          tile.temporal.activeEnd ??
-          tile.temporal.activeStart ??
-          now;
-        return new Date(updated) >= past24h;
-      });
-    } else if (filterRange === "exclude_future") {
-      result = result.filter((tile) => {
-        const release = tile.temporal.releaseAt;
-        if (!release) return true;
-        return new Date(release) <= now;
-      });
-    }
-
-    // 3. Granularity & break filter
-    if (filterGranularity === "no_breaks") {
-      result = result.filter((tile) => tile.annotation.semanticRole !== "break");
-    } else if (filterGranularity === "min_5m") {
-      result = result.filter((tile) => {
-        // Exclude brief breaks
-        if (tile.annotation.semanticRole === "break") {
-          const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
-          return rest >= 5;
-        }
-        const work = tile.objective.targetWorkMin ?? 0;
-        return work >= 5;
-      });
-    } else if (filterGranularity === "min_15m") {
-      result = result.filter((tile) => {
-        if (tile.annotation.semanticRole === "break") {
-          const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
-          return rest >= 15;
-        }
-        const work = tile.objective.targetWorkMin ?? 0;
-        return work >= 15;
-      });
-    } else if (filterGranularity === "min_30m") {
-      result = result.filter((tile) => {
-        if (tile.annotation.semanticRole === "break") {
-          const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
-          return rest >= 30;
-        }
-        const work = tile.objective.targetWorkMin ?? 0;
-        return work >= 30;
-      });
-    }
-
-    // 4. Limit filter
-    if (filterLimit > 0) {
-      result = result.slice(0, filterLimit);
-    }
-
-    return result;
-  }, [projection.tiles.ordered, searchTerm, filterRange, filterGranularity, filterLimit]);
+  // Memoized filtered tiles (no longer filtered client-side, showing everything received from API)
+  const filteredTiles = mappedTiles;
 
   const groupedTiles = useMemo(() => {
     return buildTileListSections(

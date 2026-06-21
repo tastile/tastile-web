@@ -45,6 +45,8 @@ export interface UseTileListArgs {
   limit?: number;
   search?: string;
   excludeFuture?: boolean;
+  range?: string;
+  granularity?: string;
 }
 
 interface HookState {
@@ -64,7 +66,7 @@ export function useTileList(args: UseTileListArgs = {}) {
     error: null,
   });
   const mountedRef = useRef(true);
-  const argsKey = `${args.viewMode ?? ""}:${args.lifecycle ?? ""}:${args.limit ?? ""}:${args.search ?? ""}:${args.excludeFuture ?? ""}`;
+  const argsKey = `${args.viewMode ?? ""}:${args.lifecycle ?? ""}:${args.limit ?? ""}:${args.search ?? ""}:${args.excludeFuture ?? ""}:${args.range ?? ""}:${args.granularity ?? ""}`;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -82,6 +84,8 @@ export function useTileList(args: UseTileListArgs = {}) {
           limit: args.limit,
           search: args.search,
           exclude_future: args.excludeFuture,
+          range: args.range,
+          granularity: args.granularity,
         },
       });
       if (cancelled || !mountedRef.current) return;

@@ -18,9 +18,8 @@ import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Empty";
-import { Pill, StatusDot } from "@/components/ui/StatusDot";
+import { Pill } from "@/components/ui/StatusDot";
 import { getCoreClient, type Result } from "@/lib/api/endpoints";
-import { cn } from "@/lib/utils/cn";
 
 interface DebugEvent {
   id: string;
@@ -47,7 +46,7 @@ export default function EventsPage() {
   }
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount
+     
     void load();
   }, []);
 

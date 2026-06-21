@@ -30,11 +30,14 @@ const BUCKET_ORDER = ["Overdue", "Today", "This Week", "Later", "No date", "Clos
 
 export function TasksPanel() {
   const [search, setSearch] = useState("");
-  const { tiles, loading } = useTileList({ viewMode: "by_state", limit: 200, search: search || undefined });
+  const { tiles, loading } = useTileList({
+    viewMode: "by_state",
+    limit: 200,
+    search: search || undefined,
+    granularity: "no_breaks",
+  });
 
-  const filteredTiles = useMemo(() => {
-    return tiles.filter((tile) => tile.semantic_role !== "break");
-  }, [tiles]);
+  const filteredTiles = tiles;
 
   const grouped = useMemo(() => {
     const map = new Map<string, TileListView[]>();

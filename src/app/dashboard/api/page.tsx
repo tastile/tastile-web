@@ -1,13 +1,10 @@
 "use client";
 
 import {
-  ArrowRight,
-  Check,
   ChevronRight,
   Code2,
   Copy,
   Database,
-  Filter,
   Lock,
   PlayCircle,
   Search,
@@ -42,12 +39,8 @@ export default function ApiExplorerPage() {
   const [query, setQuery] = useState("");
   const [filterTag, setFilterTag] = useState<ApiTag | "All">("All");
   const [focus, setFocus] = useState<EndpointKey | null>(null);
-  const [hydrated, setHydrated] = useState(false);
-
   // Read ?focus=… and ?tag=… once on mount
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- read URL once on mount
-    setHydrated(true);
     if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
     const focusParam = url.searchParams.get("focus");

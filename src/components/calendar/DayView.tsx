@@ -12,8 +12,8 @@ function formatHour(slot: Date): string {
   return `${h.toString().padStart(2, "0")}:00`;
 }
 
-export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number }) {
-  const { projection, loading, error } = useCalendarProjection({ view: "day", anchor, tzOffset });
+export function DayView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOffset: number; refreshKey?: number }) {
+  const { projection, loading, error } = useCalendarProjection({ view: "day", anchor, tzOffset, refreshKey });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
   const [nowMs, setNowMs] = useState(() => Date.now());
 

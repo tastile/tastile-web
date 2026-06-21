@@ -165,6 +165,7 @@ export function useDaemonExecution() {
         clientRef.current = new DaemonClient({
           baseUrl,
           getAccessToken,
+          fetchImpl: globalThis.fetch.bind(globalThis),
         });
         if (session) {
           await clientRef.current.restoreSession({
@@ -238,7 +239,9 @@ export function useDaemonExecution() {
             })();
           }, delay);
         };
-        scheduleRefresh();
+        if (!e2eBypassAuth) {
+          scheduleRefresh();
+        }
       } catch (err) {
         console.error(`Failed to initialize daemon execution (baseUrl=${baseUrl}):`, err);
       } finally {

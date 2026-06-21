@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { DayView } from "./DayView";
 
 export type CalendarView = "day" | "week" | "month" | "year";
+
+const VALID_VIEWS: CalendarView[] = ["day", "week", "month", "year"];
 
 function shiftDate(dateStr: string, view: CalendarView, delta: -1 | 1): string {
   const d = new Date(dateStr + "T00:00:00Z");
@@ -33,14 +37,35 @@ function formatAnchor(view: CalendarView, anchor: string): string {
   return d.getUTCFullYear().toString();
 }
 
+function parseView(param: string | null, defaultView: CalendarView = "day"): CalendarView {
+  if (param && VALID_VIEWS.includes(param as CalendarView)) {
+    return param as CalendarView;
+  }
+  return defaultView;
+}
+
 export function CalendarMain({ initialView = "day" }: { initialView?: CalendarView }) {
-  const [view, setView] = useState<CalendarView>(initialView);
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const urlView = parseView(searchParams.get("view"), initialView);
+  const [view, setViewState] = useState<CalendarView>(urlView);
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
   const [tzOffset, setTzOffset] = useState(0);
+  const { state } = useExecutionEngineContext();
+  const tileRefreshKey = state.tiles.size;
 
   useEffect(() => {
     setTzOffset(new Date().getTimezoneOffset() * -1);
   }, []);
+
+  const setView = (v: CalendarView) => {
+    setViewState(v);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", v);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -86,7 +111,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} /> : null}
+        {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
         {view === "week" ? <div className="py-8 text-center text-xs text-foreground-subtle">Week view — coming soon</div> : null}
         {view === "month" ? <div className="py-8 text-center text-xs text-foreground-subtle">Month view — coming soon</div> : null}
         {view === "year" ? <div className="py-8 text-center text-xs text-foreground-subtle">Year view — coming soon</div> : null}
