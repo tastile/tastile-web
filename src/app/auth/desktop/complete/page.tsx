@@ -61,7 +61,7 @@ export default function DesktopAuthCompletePage() {
           </a>
           <p className="mt-4 text-center text-xs leading-5 text-foreground-subtle">
             アプリに戻れない場合は{" "}
-            <Link className="underline hover:text-foreground" href="/dashboard/account">
+            <Link className="underline hover:text-foreground" href="/dashboard/preferences/account">
               Web アカウント設定
             </Link>{" "}
             を開けます。

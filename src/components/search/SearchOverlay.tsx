@@ -12,7 +12,7 @@ const DASHBOARD_ROUTES = [
   { path: "/dashboard/calendar", label: "Calendar" },
   { path: "/dashboard/history", label: "History" },
   { path: "/dashboard/events", label: "Events" },
-  { path: "/dashboard/settings", label: "Settings" },
+  { path: "/dashboard/preferences", label: "Settings" },
   { path: "/dashboard/billing", label: "Billing" },
   { path: "/dashboard/integrations", label: "Integrations" },
   { path: "/dashboard/prompts", label: "Prompts" },

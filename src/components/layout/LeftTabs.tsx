@@ -74,8 +74,8 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
         <TabButton
           icon={<Settings className="h-5 w-5" />}
           label={t("nav.settings")}
-          href="/dashboard/settings"
-          active={pathname === "/dashboard/settings"}
+          href="/dashboard/preferences"
+          active={pathname?.startsWith("/dashboard/preferences")}
           expanded={pinnedOpen}
         />
       </nav>
