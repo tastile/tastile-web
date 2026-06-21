@@ -5,68 +5,93 @@ import { useSearchParams } from "next/navigation";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { useTileList, type TileListView } from "@/lib/hooks/use-tile-list";
+import { useTileList } from "@/lib/hooks/use-tile-list";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
-
-function dueBucket(tile: TileListView): string {
-  if (tile.lifecycle === "done" || tile.lifecycle === "closed") return "Closed";
-  const dueStr = tile.temporal?.due_at;
-  if (!dueStr) return "No date";
-  const due = new Date(dueStr);
-  const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTomorrow = new Date(startOfToday.getTime() + 86400000);
-  const startOfWeek = new Date(startOfToday.getTime() - startOfToday.getDay() * 86400000 + 86400000);
-  const endOfWeek = new Date(startOfWeek.getTime() + 7 * 86400000);
-  if (due < startOfToday) return "Overdue";
-  if (due < startOfTomorrow) return "Today";
-  if (due < endOfWeek) return "This Week";
-  return "Later";
-}
 
 export function TasksMain() {
   const searchParams = useSearchParams();
   const search = searchParams.get("q") ?? "";
-  const bucketFilter = searchParams.get("bucket") ?? "All";
+  const range = searchParams.get("range") ?? "7d"; // デフォルト7日
+  const granularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
 
   const { tiles, loading } = useTileList({
     viewMode: "by_state",
     limit: 200,
     search: search || undefined,
-    granularity: "no_breaks",
+    range,
+    granularity,
   });
 
-  const filteredTiles = useMemo(() => {
-    let filtered = tiles;
-    if (bucketFilter !== "All") {
-      filtered = filtered.filter((t) => dueBucket(t) === bucketFilter);
+  const filterDesc = useMemo(() => {
+    const parts = [];
+    
+    const num = parseInt(range);
+    const unit = range.slice(-1);
+    const unitStr = unit === "d" ? "days" : unit === "w" ? "weeks" : unit === "m" ? "months" : "";
+    if (!isNaN(num)) {
+      parts.push(`Range: ${num} ${unitStr}`);
     }
-    return filtered;
-  }, [tiles, bucketFilter]);
+
+    const gParts = granularity.split(",");
+    const minPart = gParts.find((p) => p.startsWith("min_"));
+    if (minPart) {
+      const mins = minPart.replace("min_", "").replace("m", "");
+      if (mins !== "0") {
+        parts.push(`Min duration: ${mins}m`);
+      }
+    }
+
+    if (gParts.includes("important_only")) {
+      parts.push("High Priority");
+    }
+    if (gParts.includes("no_low_priority")) {
+      parts.push("No Low Priority");
+    }
+
+    if (search) {
+      parts.push(`Search: "${search}"`);
+    }
+
+    return parts.length > 0 ? parts.join(" • ") : "All Tasks";
+  }, [range, granularity, search]);
 
   return (
     <PageContainer>
       <PageHeader
-        title={bucketFilter === "All" ? "All Tasks" : `${bucketFilter} Tasks`}
+        title="Tasks"
         description="Manage and view your actionable items"
       />
-      <div className="flex flex-col gap-2 pt-4">
+      
+      {/* スコープ情報バー */}
+      <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
+        <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
+          {filterDesc}
+        </span>
+        <span className="font-mono text-[10px] text-foreground-lighter">
+          {loading ? "Loading..." : `${tiles.length} items found`}
+        </span>
+      </div>
+
+      <div className="mt-4">
         {loading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-14 w-full rounded-xl" />
-            <Skeleton className="h-14 w-full rounded-xl" />
-            <Skeleton className="h-14 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         )}
-        {!loading && filteredTiles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle">
-            <p className="text-sm">No tasks found in this bucket.</p>
+        {!loading && tiles.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
+            <p className="text-sm">No tasks found matching the current filters.</p>
           </div>
         )}
-        {!loading &&
-          filteredTiles.map((t) => (
-            <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
-          ))}
+        {!loading && tiles.length > 0 && (
+          <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
+            {tiles.map((t) => (
+              <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
+            ))}
+          </div>
+        )}
       </div>
     </PageContainer>
   );

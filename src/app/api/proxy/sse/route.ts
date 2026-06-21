@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { COOKIE_ID_TOKEN } from "@/lib/cognito/cookies";
+import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const token =
-    request.nextUrl.searchParams.get("access_token") ??
-    request.cookies.get(COOKIE_ID_TOKEN)?.value;
   const upstreamUrl = `${CLOUD_API_BASE}/read/events/state`;
 
   const headers: Record<string, string> = {};
-  if (token) {
-    headers.authorization = `Bearer ${token}`;
+  const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
+  const userSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+  if (bridgeSecret && userSub) {
+    headers["x-tastile-web-bridge-secret"] = bridgeSecret;
+    headers["x-tastile-web-session-user"] = userSub;
   }
 
   try {

@@ -8,6 +8,8 @@ import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useRecurringTemplates } from "@/lib/hooks/use-recurring-templates";
 import { useDialogStore } from "@/lib/stores/dialog-store";
 import { RecurringTileConfigDialog } from "@/components/tiles/dialogs/RecurringTileConfigDialog";
+import { TileCardCompact } from "@/components/tiles/TileCardCompact";
+import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 import { cn } from "@/lib/utils/cn";
 
 export function ScheduleMain() {
@@ -19,6 +21,8 @@ export function ScheduleMain() {
   const { tiles, loading } = useTileList({
     viewMode: view === "recurring" ? "recurring" : "by_state",
     limit: view === "recurring" ? undefined : 500,
+    range: "7d",
+    granularity: "no_breaks,min_0m",
   });
 
   const filteredTiles = useMemo(() => {
@@ -36,7 +40,20 @@ export function ScheduleMain() {
   return (
     <PageContainer>
       <PageHeader title={title} description={subtitle} />
-      <div className="flex flex-col gap-2 pt-4">
+
+      {/* スコープ情報バー */}
+      <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
+        <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
+          {view === "recurring" ? "Schedule View: Recurring Templates" : "Schedule View: Upcoming Deadlines"}
+        </span>
+        <span className="font-mono text-[10px] text-foreground-lighter">
+          {view === "recurring"
+            ? (recurring.loading ? "Loading..." : `${recurring.templates.length} templates found`)
+            : (loading ? "Loading..." : `${filteredTiles.length} items found`)}
+        </span>
+      </div>
+
+      <div className="mt-4">
         {view === "recurring" && recurring.loading && (
           <div className="flex flex-col gap-2">
             <Skeleton className="h-20 w-full rounded-xl" />
@@ -45,8 +62,8 @@ export function ScheduleMain() {
         )}
         {view !== "recurring" && loading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-14 w-full rounded-xl" />
-            <Skeleton className="h-14 w-full rounded-xl" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         )}
         {view === "recurring" && recurring.error && (
@@ -55,60 +72,64 @@ export function ScheduleMain() {
           </div>
         )}
         {view === "recurring" && !recurring.loading && recurring.templates.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle">
+          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
             <p className="text-sm">No recurring templates found in the source database.</p>
           </div>
         )}
         {view !== "recurring" && !loading && filteredTiles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle">
+          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
             <p className="text-sm">No tiles found for this schedule view.</p>
           </div>
         )}
-        {view === "recurring" &&
-          !recurring.loading &&
-          recurring.templates.map((template) => (
-            <button
-              key={template.id}
-              type="button"
-              onClick={() => openRecurringDialog(template.id)}
-              className="rounded-xl border border-border bg-surface-1 p-4 text-left transition-colors hover:bg-surface-2"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium text-foreground">{template.title}</div>
-                  {template.note ? (
-                    <div className="mt-1 text-xs text-foreground-subtle">{template.note}</div>
-                  ) : null}
+        
+        {/* Recurring templates list as a table */}
+        {view === "recurring" && !recurring.loading && recurring.templates.length > 0 && (
+          <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
+            {recurring.templates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => openRecurringDialog(template.id)}
+                className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-foreground">{template.title}</div>
+                    {template.note ? (
+                      <div className="mt-0.5 text-xs text-foreground-subtle truncate">{template.note}</div>
+                    ) : null}
+                  </div>
+                  <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
+                    Template
+                  </span>
                 </div>
-                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-foreground-subtle">
-                  Template
-                </span>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-foreground-subtle">
-                <span className="rounded-md bg-surface-2 px-2 py-1">
-                  {describeGenerator(template)}
-                </span>
-                <span className="rounded-md bg-surface-2 px-2 py-1">
-                  {formatWindow(template.recurrence.window.start_offset_min, template.recurrence.window.end_offset_min)}
-                </span>
-                <span className={cn(
-                  "rounded-md px-2 py-1",
-                  template.recurrence.selector.expression ? "bg-surface-2" : "bg-surface-0 border border-border",
-                )}>
-                  {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
-                </span>
-              </div>
-            </button>
-          ))}
-        {view !== "recurring" &&
-          filteredTiles.map((t) => (
-            <div key={t.id} className="rounded-xl border border-border bg-surface-1 p-4">
-              <div className="text-sm font-medium text-foreground">{t.title}</div>
-              <div className="mt-1 text-xs text-foreground-subtle">
-                {t.temporal?.due_at ? new Date(t.temporal.due_at).toLocaleString() : "No due date"}
-              </div>
-            </div>
-          ))}
+                <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-foreground-subtle">
+                  <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
+                    {describeGenerator(template)}
+                  </span>
+                  <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
+                    {formatWindow(template.recurrence.window.start_offset_min, template.recurrence.window.end_offset_min)}
+                  </span>
+                  <span className={cn(
+                    "rounded px-1.5 py-0.5 border",
+                    template.recurrence.selector.expression ? "bg-primary/10 text-primary border-primary/20" : "bg-surface-3/50 border-border",
+                  )}>
+                    {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Upcoming deadlines list matching compact style */}
+        {view !== "recurring" && !loading && filteredTiles.length > 0 && (
+          <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
+            {filteredTiles.map((t) => (
+              <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
+            ))}
+          </div>
+        )}
       </div>
       <RecurringTileConfigDialog />
     </PageContainer>

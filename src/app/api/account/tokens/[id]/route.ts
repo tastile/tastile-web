@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getIdTokenFromCookies } from "@/lib/cognito/cookies";
+import { getUserSubFromCookies } from "@/lib/cognito/cookies";
 
 const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
 
@@ -18,13 +18,17 @@ export async function DELETE(_request: Request, context: Context) {
 }
 
 async function proxyToken(id: string, init: { method: string; body?: string }) {
-  const idToken = await getIdTokenFromCookies();
-  if (!idToken) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  const userSub = await getUserSubFromCookies();
+  const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
+  if (!userSub || !bridgeSecret) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
 
   const response = await fetch(`${coreUrl()}/auth/api-tokens/${encodeURIComponent(id)}`, {
     method: init.method,
     headers: {
-      authorization: `Bearer ${idToken}`,
+      "x-tastile-web-bridge-secret": bridgeSecret,
+      "x-tastile-web-session-user": userSub,
       ...(init.body ? { "content-type": "application/json" } : {}),
     },
     body: init.body,

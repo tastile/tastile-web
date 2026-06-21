@@ -4,9 +4,8 @@ import { SquarePen } from "lucide-react";
 import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { TILE_CARD_STYLES } from "@/lib/styles/tile-card-styles";
 import { cn } from "@/lib/utils/cn";
-import { formatDateTime, formatDuration, formatTimeOnly } from "@/lib/utils/tile-formatters";
+import { formatFriendlyDateTime, formatDuration } from "@/lib/utils/tile-formatters";
 import { LoadingCard } from "./shared/LoadingCard";
 import { TileStatusIcon } from "./shared/TileStatusIcon";
 
@@ -39,9 +38,8 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
     null;
   const durationText = resolveDurationText(tile, locale);
   const startText = startAt
-    ? formatTimeOnly(startAt, locale, tile.temporal.tz)
-    : formatDateTime(null, locale, tile.temporal.tz);
-  const durationLabel = t("tiles.duration");
+    ? formatFriendlyDateTime(startAt, locale, tile.temporal.tz)
+    : "";
 
   const handleStatusClick = () => {
     if (onStart) {
@@ -73,39 +71,72 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
       onClick={handleCardClick}
       onKeyDown={interactive ? handleCardKeyDown : undefined}
       className={cn(
-        "flex items-center gap-3",
-        TILE_CARD_STYLES.base,
-        TILE_CARD_STYLES.padding.compact,
-        onClick && TILE_CARD_STYLES.hover,
+        "flex items-center gap-4 py-2 px-3 border-b border-border/40 hover:bg-surface-2 transition-colors",
         onClick && "cursor-pointer",
       )}
     >
+      {/* ステータス */}
       <TileStatusIcon
         lifecycle={lifecycle}
         onClick={onStart ? handleStatusClick : undefined}
-        size={20}
+        size={18}
       />
 
-      <div className="flex-1 min-w-0">
+      {/* タイトルとバッジ */}
+      <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
         <h4
           className={cn(
-            "text-sm font-medium text-foreground truncate",
+            "text-sm font-medium text-foreground truncate max-w-[240px] md:max-w-[400px]",
             lifecycle === "done" && "line-through opacity-60",
           )}
         >
           {tile.core.title}
         </h4>
+        
+        {/* ラベル・プロジェクトバッジ */}
+        <div className="flex flex-wrap gap-1 shrink-0">
+          {tile.annotation.labels.map((label) => {
+            const isProject = label.startsWith("project:");
+            const labelText = isProject ? label.substring(8) : `#${label}`;
+            return (
+              <span
+                key={label}
+                className={cn(
+                  "px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap",
+                  isProject
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : "bg-surface-3/50 text-foreground-subtle border-border",
+                )}
+              >
+                {labelText}
+              </span>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
-        <p className="font-mono">
-          {durationLabel} {durationText}
-        </p>
-        <p>
-          {t("tiles.startAt")} {startText}
-        </p>
+      {/* 時間関連のメタデータ列 */}
+      <div className="flex items-center gap-4 shrink-0 text-xs text-foreground-subtle select-none">
+        {/* 所要時間 */}
+        {(tile.objective.targetWorkMin || tile.objective.targetRestMin) ? (
+          <div className="font-mono text-right min-w-[48px] bg-surface-3/50 border border-border px-1.5 py-0.5 rounded text-[10px] text-foreground-subtle">
+            {durationText}
+          </div>
+        ) : null}
+
+        {/* 開始/期限日時 */}
+        {startAt ? (
+          <div className="text-right min-w-[90px] whitespace-nowrap text-[11px] text-foreground-subtle">
+            {startText}
+          </div>
+        ) : (
+          <div className="text-right min-w-[90px] text-[11px] text-foreground-lighter italic">
+            {t("tiles.unscheduled")}
+          </div>
+        )}
       </div>
 
+      {/* アクション */}
       {onEdit ? (
         <button
           type="button"
@@ -113,11 +144,11 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
             event.stopPropagation();
             onEdit(tile.core.id);
           }}
-          className="inline-flex h-8 w-8 items-center justify-center rounded bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
+          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded bg-surface-2 text-foreground-muted hover:bg-surface-3 hover:text-foreground"
           aria-label="Edit tile"
           title="Edit tile"
         >
-          <SquarePen className="h-4 w-4" />
+          <SquarePen className="h-3.5 w-3.5" />
         </button>
       ) : null}
     </div>

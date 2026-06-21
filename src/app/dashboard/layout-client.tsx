@@ -11,7 +11,9 @@ import { TileEditPanel } from "@/components/tile/TileEditPanel";
 import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { SidePanelProvider } from "@/lib/context/side-panel-context";
+import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { PanelLeftDashed } from "lucide-react";
 
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   return (
@@ -27,6 +29,8 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
+  const sidePanelContent = useSidePanelContent();
+  const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
@@ -69,6 +73,29 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <TileEditPanel />
       {/* QuickTileCreate: デスクトップ=右スライド / モバイル=下スライドアップ */}
       <QuickTileCreate />
+
+      {/* モバイル用サイドパネルフローティングボタン (md未満かつコンテンツが存在する場合のみ) */}
+      {sidePanelContent && (
+        <button
+          type="button"
+          aria-label="Open side panel"
+          onClick={() => setMobileSidePanelOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-hover transition-transform active:scale-95 md:hidden animate-in fade-in zoom-in duration-200"
+        >
+          <PanelLeftDashed className="h-5 w-5" />
+        </button>
+      )}
+
+      {/* モバイル用サイドパネルドロワー */}
+      <BottomSheet
+        open={mobileSidePanelOpen}
+        onOpenChange={setMobileSidePanelOpen}
+        title="Details"
+      >
+        <div className="py-2">
+          {sidePanelContent}
+        </div>
+      </BottomSheet>
     </div>
   );
 }

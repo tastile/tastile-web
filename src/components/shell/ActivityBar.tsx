@@ -52,7 +52,7 @@ export function ActivityBar() {
   return (
     <div
       className={cn(
-        "relative shrink-0 transition-[width] duration-200 ease-in-out z-20",
+        "hidden md:block relative shrink-0 transition-[width] duration-200 ease-in-out z-20",
         sidebarBehavior === "open" ? "w-48" : "w-12"
       )}
     >

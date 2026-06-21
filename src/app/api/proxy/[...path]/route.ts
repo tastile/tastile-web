@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE_ID_TOKEN } from "@/lib/cognito/cookies";
+import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -313,15 +313,16 @@ async function proxyRequest(
   url.search = request.nextUrl.search;
 
   const headers = new Headers();
-  let authHeader = request.headers.get("authorization");
-  if (!authHeader) {
-    const idToken = request.cookies.get(COOKIE_ID_TOKEN)?.value;
-    if (idToken) {
-      authHeader = `Bearer ${idToken}`;
-    }
-  }
+  const authHeader = request.headers.get("authorization");
   if (authHeader) {
     headers.set("authorization", authHeader);
+  } else {
+    const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
+    const userSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+    if (bridgeSecret && userSub) {
+      headers.set("x-tastile-web-bridge-secret", bridgeSecret);
+      headers.set("x-tastile-web-session-user", userSub);
+    }
   }
   const contentType = request.headers.get("content-type");
   if (contentType) {

@@ -31,6 +31,55 @@ export function formatDateTime(
   }).format(date);
 }
 
+export function formatFriendlyDateTime(
+  date: Date | null,
+  locale: "ja" | "en" = "ja",
+  timeZone?: string | null,
+): string {
+  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
+
+  const now = new Date();
+  const targetDate = new Date(date);
+  
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startOfTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
+  
+  const diffTime = startOfTarget.getTime() - startOfToday.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  const timeStr = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: timeZone ?? undefined,
+  }).format(targetDate);
+
+  if (locale === "ja") {
+    if (diffDays === 0) return `今日 ${timeStr}`;
+    if (diffDays === 1) return `明日 ${timeStr}`;
+    if (diffDays === -1) return `昨日 ${timeStr}`;
+    
+    const dayOfWeek = new Intl.DateTimeFormat("ja-JP", { weekday: "short", timeZone: timeZone ?? undefined }).format(targetDate);
+    const dateStr = new Intl.DateTimeFormat("ja-JP", {
+      month: "numeric",
+      day: "numeric",
+      timeZone: timeZone ?? undefined,
+    }).format(targetDate);
+    return `${dateStr}(${dayOfWeek}) ${timeStr}`;
+  } else {
+    if (diffDays === 0) return `Today ${timeStr}`;
+    if (diffDays === 1) return `Tomorrow ${timeStr}`;
+    if (diffDays === -1) return `Yesterday ${timeStr}`;
+    
+    const dateStr = new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      timeZone: timeZone ?? undefined,
+    }).format(targetDate);
+    return `${dateStr} ${timeStr}`;
+  }
+}
+
 export function formatTimeOnly(
   date: Date | null,
   locale: "ja" | "en" = "ja",

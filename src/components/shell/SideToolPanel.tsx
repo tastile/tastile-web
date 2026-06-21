@@ -17,7 +17,7 @@ export function SideToolPanel() {
     <aside
       aria-label="Side tool panel"
       className={cn(
-        "flex w-64 shrink-0 flex-col",
+        "hidden md:flex w-64 shrink-0 flex-col",
         "border-r border-border bg-surface-0",
         "overflow-y-auto",
       )}
