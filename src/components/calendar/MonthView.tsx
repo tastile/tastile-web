@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
 import { blocksForDate, allDayBlocksFor } from "@/lib/projection/calendar-projection";
