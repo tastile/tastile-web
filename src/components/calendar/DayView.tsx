@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
+import { getCurrentTimeIndicatorPosition } from "@/lib/projection/current-time-indicator";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
 import { useTileEditStore } from "@/lib/stores/tile-edit-store";
 import { blocksForDate, allDayBlocksFor, hourSlotsForDay } from "@/lib/projection/calendar-projection";
@@ -13,8 +14,8 @@ function formatHour(slot: Date): string {
   return `${h.toString().padStart(2, "0")}:00`;
 }
 
-export function DayView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOffset: number; refreshKey?: number }) {
-  const { projection, loading, error } = useCalendarProjection({ view: "day", anchor, tzOffset, refreshKey });
+export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number }) {
+  const { projection, loading, error } = useCalendarProjection({ view: "day", anchor, tzOffset });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
   const openEdit = useTileEditStore((s) => s.openEdit);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -41,11 +42,9 @@ export function DayView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOf
   const dayBlocks = blocksForDate(projection, anchor);
   const allDay = allDayBlocksFor(projection, anchor);
 
-  const localMs = nowMs + tzOffset * 60_000;
-  const localDate = new Date(localMs);
-  const localMinutes = (localDate.getUTCHours() * 60 + localDate.getUTCMinutes());
-  const nowSlotIndex = Math.floor(localMinutes / 60);
-  const nowTopOffset = (localMinutes % 60) * 1.5;
+  const currentTime = getCurrentTimeIndicatorPosition(nowMs, tzOffset);
+  const nowSlotIndex = Math.floor(currentTime.minutesFromMidnight / 60);
+  const nowTopOffset = currentTime.minutesFromMidnight % 60;
 
   return (
     <div className="relative">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
+import { getCurrentTimeIndicatorPosition } from "@/lib/projection/current-time-indicator";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
 import { useTileEditStore } from "@/lib/stores/tile-edit-store";
 import { blocksForDate, allDayBlocksFor } from "@/lib/projection/calendar-projection";
@@ -25,8 +26,8 @@ function getWeekDates(anchor: string): string[] {
   return dates;
 }
 
-export function WeekView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOffset: number; refreshKey?: number }) {
-  const { projection, loading, error } = useCalendarProjection({ view: "week", anchor, tzOffset, refreshKey });
+export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: number }) {
+  const { projection, loading, error } = useCalendarProjection({ view: "week", anchor, tzOffset });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
   const openEdit = useTileEditStore((s) => s.openEdit);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -50,13 +51,8 @@ export function WeekView({ anchor, tzOffset, refreshKey }: { anchor: string; tzO
   }
 
   const weekDates = getWeekDates(anchor);
-  const localMs = nowMs + tzOffset * 60_000;
-  const localDate = new Date(localMs);
-  const localMinutes = (localDate.getUTCHours() * 60 + localDate.getUTCMinutes());
-  const nowSlotIndex = Math.floor(localMinutes / 60);
-  const nowTopOffset = (localMinutes % 60) * 1.5;
-
-  const todayIso = localDate.toISOString().slice(0, 10);
+  const currentTime = getCurrentTimeIndicatorPosition(nowMs, tzOffset);
+  const todayIso = currentTime.todayIso;
 
   return (
     <div className="flex flex-col relative bg-surface-0 pb-16">
@@ -169,7 +165,7 @@ export function WeekView({ anchor, tzOffset, refreshKey }: { anchor: string; tzO
                 {isToday && (
                   <div
                     className="pointer-events-none absolute left-0 right-0 h-px bg-primary z-20"
-                    style={{ top: `${(nowSlotIndex * 60 + nowTopOffset) * 1.5}px` }}
+                    style={{ top: `${currentTime.topPx}px` }}
                   >
                     <span className="absolute -top-1.5 -left-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
                   </div>

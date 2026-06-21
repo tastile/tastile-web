@@ -35,7 +35,6 @@ export interface UseCalendarProjectionArgs {
   view: CalendarView;
   anchor: string;
   tzOffset: number;
-  refreshKey?: number;
 }
 
 interface HookState {
@@ -47,7 +46,7 @@ interface HookState {
 export function useCalendarProjection(args: UseCalendarProjectionArgs) {
   const [state, setState] = useState<HookState>({ projection: null, loading: true, error: null });
   const mountedRef = useRef(true);
-  const argsKey = `${args.view}:${args.anchor}:${args.tzOffset}:${args.refreshKey ?? 0}`;
+  const argsKey = `${args.view}:${args.anchor}:${args.tzOffset}`;
 
   useEffect(() => {
     mountedRef.current = true;
