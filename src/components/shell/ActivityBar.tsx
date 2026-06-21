@@ -13,7 +13,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { useShellStore, type SidebarBehavior } from "@/lib/stores/shell-store";
 import { useTranslation } from "@/lib/i18n/use-translation";

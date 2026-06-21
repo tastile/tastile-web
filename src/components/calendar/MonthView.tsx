@@ -39,6 +39,11 @@ function getMonthWeeks(anchor: string): string[][] {
 export function MonthView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOffset: number; refreshKey?: number }) {
   const { projection, loading, error } = useCalendarProjection({ view: "month", anchor, tzOffset, refreshKey });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
+  const [todayStr, setTodayStr] = useState("");
+  
+  useEffect(() => {
+    setTodayStr(new Date(Date.now() + tzOffset * 60_000).toISOString().slice(0, 10));
+  }, [tzOffset]);
   
   if (error) {
     return (
@@ -58,7 +63,6 @@ export function MonthView({ anchor, tzOffset, refreshKey }: { anchor: string; tz
   
   const d = new Date(anchor + "T00:00:00Z");
   const currentMonth = d.getUTCMonth();
-  const todayStr = new Date(Date.now() + tzOffset * 60_000).toISOString().slice(0, 10);
 
   return (
     <div className="flex flex-col h-full border border-surface-2 rounded-md overflow-hidden bg-surface-0 min-h-[600px]">
