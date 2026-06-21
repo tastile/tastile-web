@@ -117,11 +117,11 @@ function TilesPageInner() {
 
     // 3. Granularity & break filter
     if (filterGranularity === "no_breaks") {
-      result = result.filter((tile) => tile.core.annotation?.semantic_role !== "break");
+      result = result.filter((tile) => tile.annotation.semanticRole !== "break");
     } else if (filterGranularity === "min_5m") {
       result = result.filter((tile) => {
         // Exclude brief breaks
-        if (tile.core.annotation?.semantic_role === "break") {
+        if (tile.annotation.semanticRole === "break") {
           const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
           return rest >= 5;
         }
@@ -130,7 +130,7 @@ function TilesPageInner() {
       });
     } else if (filterGranularity === "min_15m") {
       result = result.filter((tile) => {
-        if (tile.core.annotation?.semantic_role === "break") {
+        if (tile.annotation.semanticRole === "break") {
           const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
           return rest >= 15;
         }
@@ -139,7 +139,7 @@ function TilesPageInner() {
       });
     } else if (filterGranularity === "min_30m") {
       result = result.filter((tile) => {
-        if (tile.core.annotation?.semantic_role === "break") {
+        if (tile.annotation.semanticRole === "break") {
           const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
           return rest >= 30;
         }
