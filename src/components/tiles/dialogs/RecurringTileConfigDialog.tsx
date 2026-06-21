@@ -50,13 +50,13 @@ export function RecurringTileConfigDialog() {
       .then((res) => {
         if (!mounted) return;
         setLoading(false);
-        if (res.success && res.data) {
+        if (res.ok && res.data) {
           setData(res.data);
           setStepMin(res.data.recurrence.generator.step_min);
           setStartOffsetMin(res.data.recurrence.window.start_offset_min);
           setEndOffsetMin(res.data.recurrence.window.end_offset_min);
           setExpression(res.data.recurrence.selector.expression || "");
-        } else {
+        } else if (!res.ok) {
           console.error("Failed to load recurring config", res.error);
         }
       });
@@ -99,7 +99,7 @@ export function RecurringTileConfigDialog() {
     });
 
     setSaving(false);
-    if (res.success) {
+    if (res.ok) {
       closeRecurringDialog();
       // Optional: trigger re-fetch of tiles
       window.dispatchEvent(new Event("tastile:refresh-tiles"));
