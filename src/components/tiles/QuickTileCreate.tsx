@@ -369,13 +369,13 @@ export function QuickTileCreate() {
   const basePanelClass = isDesktop
     ? cn(
         "fixed inset-y-0 right-0 z-[56]",
-        "w-[32rem] flex flex-col bg-surface-1 shadow-lg border-l border-border transition-all duration-300 ease-out",
+        "w-[32rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
         activePanel !== "base" ? "-translate-x-6 brightness-[0.7]" : "translate-x-0",
         "[animation:slideInFromRight_0.22s_ease-out]"
       )
     : cn(
         "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[80vh] flex flex-col rounded-t-2xl bg-surface-1 shadow-lg transition-all duration-300 ease-out",
+        "h-[80vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
         activePanel !== "base" ? "translate-y-6 brightness-[0.7]" : "translate-y-0",
         "[animation:slideInFromBottom_0.22s_ease-out]"
       );
@@ -383,12 +383,12 @@ export function QuickTileCreate() {
   const subPanelClass = (panelName: string) => isDesktop
     ? cn(
         "fixed inset-y-0 right-0 z-[57]",
-        "w-[28rem] flex flex-col bg-surface-1 shadow-2xl border-l border-border transition-transform duration-300 ease-out",
+        "w-[28rem] flex flex-col bg-surface-0 shadow-2xl border-l border-border transition-transform duration-300 ease-out",
         activePanel === panelName ? "translate-x-0" : "translate-x-full pointer-events-none"
       )
     : cn(
         "fixed inset-x-0 bottom-0 z-[57]",
-        "h-[75vh] flex flex-col rounded-t-2xl bg-surface-1 shadow-2xl transition-transform duration-300 ease-out",
+        "h-[75vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-2xl transition-transform duration-300 ease-out",
         activePanel === panelName ? "translate-y-0" : "translate-y-full pointer-events-none"
       );
 
