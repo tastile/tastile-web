@@ -37,7 +37,7 @@ export function MobileBottomTabs() {
         icon={<Settings className="h-6 w-6" />}
         label={t("nav.settings")}
         href="/dashboard/preferences/general"
-        active={pathname.startsWith("/dashboard/preferences")}
+        active={pathname?.startsWith("/dashboard/preferences") ?? false}
       />
     </nav>
   );
