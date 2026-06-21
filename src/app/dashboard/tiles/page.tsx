@@ -43,7 +43,7 @@ function TilesPageInner() {
   const { locale } = useTranslation();
   const [sectionLimitById, setSectionLimitById] = useState<Record<string, number>>({});
   const projection = useMemo(
-    () => buildDashboardProjectionPlaceholder(state, new Date()),
+    () => buildDashboardProjectionPlaceholder(state),
     [state],
   );
   const searchParams = useSearchParams();
@@ -60,14 +60,111 @@ function TilesPageInner() {
     listViewMode,
     setListViewMode,
   } = useDashboardWorkspaceStorePlaceholder();
+
+  // Filters state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRange, setFilterRange] = useState<"all" | "today" | "recent" | "exclude_future">("all");
+  const [filterGranularity, setFilterGranularity] = useState<"all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m">("min_5m"); // Default to min 5m to hide tiny breaks
+  const [filterLimit, setFilterLimit] = useState<number>(50); // Default limit to 50 items
+
+  // Memoized filtered tiles
+  const filteredTiles = useMemo(() => {
+    let result = [...projection.tiles.ordered];
+
+    // 1. Text search filter
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      result = result.filter(
+        (tile) =>
+          tile.core.title.toLowerCase().includes(lower) ||
+          (tile.core.nextAction && tile.core.nextAction.toLowerCase().includes(lower)),
+      );
+    }
+
+    // 2. Range filter
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(startOfToday.getTime() + 86400000);
+
+    if (filterRange === "today") {
+      result = result.filter((tile) => {
+        const startAt =
+          tile.core.startedAt ??
+          tile.temporal.fixedStart ??
+          tile.temporal.activeStart ??
+          tile.temporal.releaseAt;
+        if (!startAt) return false;
+        const d = new Date(startAt);
+        return d >= startOfToday && d < endOfToday;
+      });
+    } else if (filterRange === "recent") {
+      const past24h = new Date(now.getTime() - 86400000);
+      result = result.filter((tile) => {
+        const updated =
+          tile.core.startedAt ??
+          tile.temporal.activeEnd ??
+          tile.temporal.activeStart ??
+          now;
+        return new Date(updated) >= past24h;
+      });
+    } else if (filterRange === "exclude_future") {
+      result = result.filter((tile) => {
+        const release = tile.temporal.releaseAt;
+        if (!release) return true;
+        return new Date(release) <= now;
+      });
+    }
+
+    // 3. Granularity & break filter
+    if (filterGranularity === "no_breaks") {
+      result = result.filter((tile) => tile.core.annotation?.semantic_role !== "break");
+    } else if (filterGranularity === "min_5m") {
+      result = result.filter((tile) => {
+        // Exclude brief breaks
+        if (tile.core.annotation?.semantic_role === "break") {
+          const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
+          return rest >= 5;
+        }
+        const work = tile.objective.targetWorkMin ?? 0;
+        return work >= 5;
+      });
+    } else if (filterGranularity === "min_15m") {
+      result = result.filter((tile) => {
+        if (tile.core.annotation?.semantic_role === "break") {
+          const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
+          return rest >= 15;
+        }
+        const work = tile.objective.targetWorkMin ?? 0;
+        return work >= 15;
+      });
+    } else if (filterGranularity === "min_30m") {
+      result = result.filter((tile) => {
+        if (tile.core.annotation?.semantic_role === "break") {
+          const rest = tile.objective.targetRestMin ?? tile.objective.targetWorkMin ?? 0;
+          return rest >= 30;
+        }
+        const work = tile.objective.targetWorkMin ?? 0;
+        return work >= 30;
+      });
+    }
+
+    // 4. Limit filter
+    if (filterLimit > 0) {
+      result = result.slice(0, filterLimit);
+    }
+
+    return result;
+  }, [projection.tiles.ordered, searchTerm, filterRange, filterGranularity, filterLimit]);
+
   const groupedTiles = useMemo(() => {
     return buildTileListSections(
-      projection.tiles.ordered,
+      filteredTiles,
       state.execution.activeTileId,
       new Date(),
       listGroupingMode,
     );
-  }, [projection.tiles.ordered, state.execution.activeTileId, listGroupingMode]);
+  }, [filteredTiles, state.execution.activeTileId, listGroupingMode]);
+
   const timelineView = useMemo(
     () =>
       buildTimelineView(state.timeline, new Date(), {
@@ -77,14 +174,17 @@ function TilesPageInner() {
       }),
     [state.timeline, timelineScale, customStartIso, customEndIso],
   );
+
   const titleById = useMemo(
     () => new Map(projection.tiles.ordered.map((tile) => [tile.core.id, tile.core.title] as const)),
     [projection.tiles.ordered],
   );
+
   const changes = useMemo(
     () => buildTileChanges(state.timeline, titleById).slice(0, MAX_VISIBLE_CHANGES),
     [state.timeline, titleById],
   );
+
   const sectionSummary = useMemo(() => {
     const openCount = groupedTiles.reduce(
       (sum, group) => sum + (group.id === "log" ? 0 : group.tiles.length),
@@ -212,13 +312,54 @@ function TilesPageInner() {
               <span>Sections {groupedTiles.length}</span>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="min-w-[220px] flex-1">
+              <div className="min-w-[200px] flex-1">
                 <input
-                  defaultValue=""
-                  readOnly
-                  placeholder="検索 (UIのみ)"
-                  className="w-full rounded-md bg-surface-0 px-3 py-2 text-sm text-foreground placeholder:text-foreground-muted"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="検索..."
+                  className="w-full rounded-md bg-surface-0 border border-border px-3 py-1.5 text-xs text-foreground placeholder:text-foreground-muted"
                 />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-semibold text-foreground-muted">範囲:</span>
+                <select
+                  value={filterRange}
+                  onChange={(e) => setFilterRange(e.target.value as "all" | "today" | "recent" | "exclude_future")}
+                  className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
+                >
+                  <option value="all">すべて</option>
+                  <option value="today">今日</option>
+                  <option value="recent">最近24h</option>
+                  <option value="exclude_future">未来を除く</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-semibold text-foreground-muted">粒度:</span>
+                <select
+                  value={filterGranularity}
+                  onChange={(e) => setFilterGranularity(e.target.value as "all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m")}
+                  className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
+                >
+                  <option value="all">すべて（休憩含む）</option>
+                  <option value="no_breaks">作業のみ</option>
+                  <option value="min_5m">作業 5m以上</option>
+                  <option value="min_15m">作業 15m以上</option>
+                  <option value="min_30m">作業 30m以上</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] uppercase font-semibold text-foreground-muted">最大数:</span>
+                <select
+                  value={filterLimit}
+                  onChange={(e) => setFilterLimit(Number(e.target.value))}
+                  className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
+                >
+                  <option value="20">20件</option>
+                  <option value="50">50件</option>
+                  <option value="100">100件</option>
+                  <option value="500">500件</option>
+                  <option value="0">制限なし</option>
+                </select>
               </div>
               <div className="flex items-center gap-1 rounded-md bg-surface-0 p-1">
                 {(
@@ -508,7 +649,6 @@ function resolveDurationText(tile: Tile, locale: Locale): string {
 // TODO(new-shell): wire to new component
 function buildDashboardProjectionPlaceholder(
   state: import("@/lib/core/state").AppState,
-  _now: Date,
 ) {
   return {
     next: { main: null as import("@/lib/domain/tile").Tile | null, quick: [] as import("@/lib/domain/tile").Tile[] },

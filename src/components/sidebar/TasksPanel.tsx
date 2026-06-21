@@ -32,9 +32,13 @@ export function TasksPanel() {
   const [search, setSearch] = useState("");
   const { tiles, loading } = useTileList({ viewMode: "by_state", limit: 200, search: search || undefined });
 
+  const filteredTiles = useMemo(() => {
+    return tiles.filter((tile) => tile.semantic_role !== "break");
+  }, [tiles]);
+
   const grouped = useMemo(() => {
     const map = new Map<string, TileListView[]>();
-    for (const tile of tiles) {
+    for (const tile of filteredTiles) {
       const bucket = dueBucket(tile);
       const arr = map.get(bucket) ?? [];
       arr.push(tile);
@@ -44,7 +48,7 @@ export function TasksPanel() {
       bucket: b,
       tiles: map.get(b)!,
     }));
-  }, [tiles]);
+  }, [filteredTiles]);
 
   return (
     <div className="flex flex-col">
