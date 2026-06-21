@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { DayView } from "./DayView";
@@ -59,8 +58,6 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   const [view, setViewState] = useState<CalendarView>(urlView);
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
   const [tzOffset, setTzOffset] = useState(0);
-  const { state } = useExecutionEngineContext();
-  const tileRefreshKey = state.tiles.size;
 
   useEffect(() => {
     setTzOffset(new Date().getTimezoneOffset() * -1);
@@ -137,9 +134,9 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
         </div>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
-        {view === "week" ? <WeekView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
-        {view === "month" ? <MonthView anchor={anchor} tzOffset={tzOffset} refreshKey={tileRefreshKey} /> : null}
+        {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} /> : null}
+        {view === "week" ? <WeekView anchor={anchor} tzOffset={tzOffset} /> : null}
+        {view === "month" ? <MonthView anchor={anchor} tzOffset={tzOffset} /> : null}
         {view === "year" ? <div className="py-8 text-center text-xs text-foreground-subtle">Year view — coming soon</div> : null}
       </div>
     </div>

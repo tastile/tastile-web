@@ -38,8 +38,8 @@ function getMonthWeeks(anchor: string): string[][] {
   return weeks;
 }
 
-export function MonthView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOffset: number; refreshKey?: number }) {
-  const { projection, loading, error } = useCalendarProjection({ view: "month", anchor, tzOffset, refreshKey });
+export function MonthView({ anchor, tzOffset }: { anchor: string; tzOffset: number }) {
+  const { projection, loading, error } = useCalendarProjection({ view: "month", anchor, tzOffset });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
   const [todayStr, setTodayStr] = useState("");
   
