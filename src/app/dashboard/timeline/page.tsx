@@ -9,12 +9,13 @@ import {
   Timer,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { TimelineSidePanel } from "@/components/panels/CalendarSidePanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { buildTimelineView, parseCustomRangeBoundary } from "@/lib/core/dashboard-workspace";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
-// TODO(new-shell): wire to new component
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 export default function TimelinePage() {
@@ -27,6 +28,25 @@ export default function TimelinePage() {
     setCustomRange,
   } = useDashboardWorkspaceStorePlaceholder();
   const [nowMs, setNowMs] = useState<number | null>(null);
+  // anchor: ミニカレンダーの選択日
+  const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
+
+  // 日付クリック時: custom range に切り替えてその日を表示
+  function handleSelectDate(date: string) {
+    setAnchor(date);
+    setTimelineScale("custom");
+    setCustomRange(date, null);
+  }
+
+  // サイドパネルを登録
+  useSidePanel(
+    <TimelineSidePanel
+      anchor={anchor}
+      scale={timelineScale}
+      onSelectDate={handleSelectDate}
+      onScaleChange={setTimelineScale}
+    />
+  );
 
   useEffect(() => {
     const seed = window.setTimeout(() => setNowMs(Date.now()), 0);

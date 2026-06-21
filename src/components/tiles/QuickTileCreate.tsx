@@ -364,11 +364,29 @@ export function QuickTileCreate() {
   }
 
   const panelClass = isDesktop
-    ? "h-full w-[22rem] shrink-0 rounded-2xl bg-surface-elevated p-4"
-    : "fixed inset-0 z-50 overflow-auto bg-surface-0 p-4";
+    ? [
+        "fixed inset-y-0 right-0 z-[56]",
+        "w-[22rem] overflow-y-auto",
+        "bg-surface-1 shadow-lg",
+        "border-l border-border",
+        "[animation:slideInFromRight_0.22s_ease-out]",
+      ].join(" ")
+    : [
+        "fixed inset-x-0 bottom-0 z-[56]",
+        "max-h-[80vh] overflow-y-auto",
+        "rounded-t-2xl bg-surface-1 shadow-lg",
+        "[animation:slideInFromBottom_0.22s_ease-out]",
+      ].join(" ");
 
   return (
-    <section className={panelClass}>
+    <>
+      {/* オーバーレイ */}
+      <div
+        className="fixed inset-0 z-[55] bg-foreground/10 backdrop-blur-[1px]"
+        onClick={close}
+        aria-hidden
+      />
+      <section className={panelClass}>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
         <button
@@ -933,6 +951,7 @@ export function QuickTileCreate() {
         {error ? <p className="text-xs text-danger">{error}</p> : null}
       </div>
     </section>
+    </>
   );
 }
 

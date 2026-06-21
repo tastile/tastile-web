@@ -96,7 +96,7 @@ export default function RuntimePage() {
           </>
         }
         actions={
-          <Button variant="secondary" size="md" onClick={load} loading={loading}>
+          <Button variant="secondary" size="medium" onClick={load} loading={loading}>
             <RefreshCw className="h-3.5 w-3.5" />
             Refresh
           </Button>
@@ -235,7 +235,7 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
             {result.ok ? `${result.status} ${result.latencyMs}ms` : `${result.error.status} ${result.error.kind}`}
           </Pill>
         ) : null}
-        <Button variant="secondary" size="sm" onClick={run} loading={loading}>
+        <Button variant="secondary" size="small" onClick={run} loading={loading}>
           {loading ? null : <Activity className="h-3 w-3" />}
           Probe
         </Button>

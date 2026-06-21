@@ -74,7 +74,7 @@ export default function QuotaPage() {
           </>
         }
         actions={
-          <Button variant="secondary" size="md" onClick={load} loading={loading}>
+          <Button variant="secondary" size="medium" onClick={load} loading={loading}>
             <RefreshCw className="h-3.5 w-3.5" /> Refresh
           </Button>
         }

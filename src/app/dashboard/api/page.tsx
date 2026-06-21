@@ -86,7 +86,7 @@ export default function ApiExplorerPage() {
         }
         actions={
           <>
-            <Button variant="secondary" size="md">
+            <Button variant="secondary" size="medium">
               <Code2 className="h-3.5 w-3.5" />
               Download OpenAPI
             </Button>
@@ -346,13 +346,13 @@ function EndpointDetail({
           )}
 
           <div className="mt-4 flex items-center gap-2">
-            <Button variant="primary" size="md" onClick={run} loading={running} disabled={running}>
+            <Button variant="primary" size="medium" onClick={run} loading={running} disabled={running}>
               <PlayCircle className="h-3.5 w-3.5" />
               Run request
             </Button>
             <Button
               variant="secondary"
-              size="md"
+              size="medium"
               onClick={() => copyToClipboard(curlCommand(meta.method, meta.path, bodyText))}
             >
               <Copy className="h-3.5 w-3.5" />

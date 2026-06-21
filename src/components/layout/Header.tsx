@@ -1,9 +1,8 @@
 "use client";
 
-import { Bell, Menu } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AccountMenu } from "@/app/app/account-menu";
-import { ActiveExecutionBadge } from "@/components/execution/ActiveExecutionBadge";
 import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
 import { getIdTokenClaims } from "@/lib/daemon/id-token-client";
@@ -11,8 +10,6 @@ import type { ExecutionSyncStatus } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface HeaderProps {
-  railPinned: boolean;
-  onToggleRail: () => void;
   executionState?: {
     activeTileTitle: string | null;
     phaseKind: "work" | "break" | "idle";
@@ -23,7 +20,7 @@ interface HeaderProps {
   };
 }
 
-export function Header({ railPinned, onToggleRail, executionState }: HeaderProps) {
+export function Header({ executionState }: HeaderProps) {
   const { t } = useTranslation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userData, setUserData] = useState<{
@@ -47,31 +44,24 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
       setUserData({
         displayName: claims.name ?? fallbackName,
         email: claims.email ?? "",
-        plan: "free", // TODO: plan lookup lives on the daemon; not wired in β.
+        plan: "free",
       });
     })();
   }, []);
 
   return (
-    <>
-      <header className="flex h-14 items-center justify-between rounded-lg bg-surface-elevated px-4 lg:hidden">
-        <ActiveExecutionBadge />
-      </header>
+    <header className="flex h-14 items-center justify-between rounded-xl bg-surface-elevated px-4 lg:h-16">
+      {/* Left: App Icon */}
+      <div className="flex items-center gap-2.5">
+        <TastileLogo size={28} className="text-foreground" />
+        <span className="text-base font-semibold tracking-tight text-foreground lg:hidden">
+          Tastile
+        </span>
+      </div>
 
-      <header className="hidden h-16 items-center gap-3 rounded-xl bg-surface-elevated px-3 lg:flex">
-        <div className="flex h-full w-14 shrink-0 items-center justify-center">
-          <button
-            type="button"
-            onClick={onToggleRail}
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
-            aria-label={railPinned ? "Collapse navigation rail" : "Expand navigation rail"}
-            title={railPinned ? "Collapse navigation rail" : "Expand navigation rail"}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-        </div>
-
-        <div className="min-w-0 w-56 shrink-0 rounded-lg bg-surface-1 px-3 py-1">
+      {/* Center: Execution Status */}
+      <div className="hidden min-w-0 max-w-md flex-1 justify-center lg:flex">
+        <div className="w-full max-w-xs rounded-lg bg-surface-1 px-3 py-1.5">
           <ActiveExecutionBar
             mode="header-left"
             activeTileTitle={executionState?.activeTileTitle ?? null}
@@ -81,47 +71,45 @@ export function Header({ railPinned, onToggleRail, executionState }: HeaderProps
             nextActionableStartAt={executionState?.nextActionableStartAt ?? null}
           />
         </div>
+      </div>
 
-        <div className="flex shrink-0 items-center gap-2">
-          <TastileLogo size={28} className="text-foreground" />
-          <span className="text-base font-semibold tracking-tight text-foreground">Tastile</span>
-        </div>
+      {/* Mobile: Execution Badge */}
+      <div className="lg:hidden">
+        <ActiveExecutionBar
+          mode="header-left"
+          activeTileTitle={executionState?.activeTileTitle ?? null}
+          phaseKind={executionState?.phaseKind ?? "idle"}
+          phaseStartedAt={executionState?.phaseStartedAt ?? null}
+          phaseEndsAt={executionState?.phaseEndsAt ?? null}
+          nextActionableStartAt={executionState?.nextActionableStartAt ?? null}
+        />
+      </div>
 
-        <div className="flex min-w-0 flex-1 items-center justify-end">
-          {executionState?.activeTileTitle ? (
-            <div className="min-w-0 max-w-md rounded-lg bg-surface-1 px-3 py-2">
-              <p className="truncate text-sm font-semibold text-foreground">
-                {executionState.activeTileTitle}
-              </p>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
-            title={t("header.notifications")}
-          >
-            <Bell className="h-5 w-5" />
-          </button>
-          {userData ? (
-            <AccountMenu
-              displayName={userData.displayName}
-              avatarUrl={avatarUrl}
-              plan={userData.plan}
-              email={userData.email}
-              menuPlacement="down"
-            />
-          ) : (
-            <div
-              role="img"
-              className="h-9 w-9 rounded-full bg-surface-2"
-              aria-label="User avatar placeholder"
-            />
-          )}
-        </div>
-      </header>
-    </>
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
+          title={t("header.notifications")}
+        >
+          <Bell className="h-5 w-5" />
+        </button>
+        {userData ? (
+          <AccountMenu
+            displayName={userData.displayName}
+            avatarUrl={avatarUrl}
+            plan={userData.plan}
+            email={userData.email}
+            menuPlacement="down"
+          />
+        ) : (
+          <div
+            role="img"
+            className="h-9 w-9 rounded-full bg-surface-2"
+            aria-label="User avatar placeholder"
+          />
+        )}
+      </div>
+    </header>
   );
 }

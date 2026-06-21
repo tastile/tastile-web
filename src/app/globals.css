@@ -3,18 +3,20 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================
-   Design System v2.0 Tokens
+   Design System v2.0 Tokens (Supabase-inspired)
    ============================================ */
 :root {
   --background: #f7f8f8;
   --surface-0: #f3f4f5;
   --surface-1: #ffffff;
   --surface-2: #eef1f4;
+  --surface-3: #e4e8ec;
   --surface-elevated: #ffffff;
 
   --foreground: #111217;
   --foreground-muted: #4f5562;
   --foreground-subtle: #6e7581;
+  --foreground-lighter: #8a8f98;
   --muted: #6e7581;
 
   --interactive-base: #2f3542;
@@ -29,6 +31,17 @@
   --warning: #f59e0b;
   --danger: #ef4444;
 
+  --border: #e4e8ec;
+  --border-strong: #d0d6e0;
+  --border-stronger: #b4bcc8;
+
+  --overlay: rgba(255, 255, 255, 0.95);
+  --overlay-hover: rgba(0, 0, 0, 0.04);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
   color-scheme: light;
 }
 
@@ -41,11 +54,13 @@
   --surface-0: #0f1011;
   --surface-1: rgba(255, 255, 255, 0.02);
   --surface-2: rgba(255, 255, 255, 0.05);
+  --surface-3: rgba(255, 255, 255, 0.08);
   --surface-elevated: #191a1b;
 
   --foreground: #f7f8f8;
   --foreground-muted: #d0d6e0;
   --foreground-subtle: #8a8f98;
+  --foreground-lighter: #62666d;
   --muted: #62666d;
 
   --interactive-base: #d0d6e0;
@@ -59,6 +74,17 @@
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --border-stronger: rgba(255, 255, 255, 0.16);
+
+  --overlay: rgba(15, 16, 17, 0.95);
+  --overlay-hover: rgba(255, 255, 255, 0.05);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
   color-scheme: dark;
 }
@@ -78,11 +104,13 @@
   --color-surface-0: var(--surface-0);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
   --color-surface-elevated: var(--surface-elevated);
 
   --color-foreground: var(--foreground);
   --color-foreground-muted: var(--foreground-muted);
   --color-foreground-subtle: var(--foreground-subtle);
+  --color-foreground-lighter: var(--foreground-lighter);
   --color-muted: var(--muted);
 
   --color-interactive: var(--interactive-base);
@@ -96,22 +124,18 @@
   --color-warning: var(--warning);
   --color-danger: var(--danger);
 
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-border-stronger: var(--border-stronger);
+
+  --color-overlay: var(--overlay);
+  --color-overlay-hover: var(--overlay-hover);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
   /* Radius */
-  --radius-xs: var(--radius-xs);
-  --radius-sm: var(--radius-sm);
-  --radius-md: var(--radius-md);
-  --radius-lg: var(--radius-lg);
-  --radius-xl: var(--radius-xl);
-  --radius-2xl: var(--radius-xxl);
-  --radius-3xl: var(--radius-xxxl);
-
-  /* Fonts */
-  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-  --font-jp-heading: "YakuHanJP", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
-
-  /* Radius — design system scale (4px increments) */
   --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -120,6 +144,12 @@
   --radius-xxl: 32px;
   --radius-xxxl: 40px;
   --radius-full: 9999px;
+
+  /* Fonts */
+  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono);
+  --font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --font-jp-heading: "YakuHanJP", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
 
 /* ============================================
@@ -247,4 +277,97 @@ button {
 
 .themed-datetime-input::-webkit-calendar-picker-indicator {
   opacity: 0.72;
+}
+
+/* ============================================
+   Scrollbar — thin, semi-transparent, hover-only
+   ============================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
+/* ============================================
+   Radix UI Animations
+   ============================================ */
+@keyframes overlayShow {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes contentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutToBottom {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
 }

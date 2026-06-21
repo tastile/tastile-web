@@ -34,7 +34,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
       <h1 className="text-2xl font-bold text-foreground">{t("settings.title")}</h1>
 
       {/* Theme Settings */}

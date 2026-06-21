@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTileList, type TileListView } from "@/lib/hooks/use-tile-list";
 
 function lifecycleIcon(lifecycle: string) {
@@ -29,7 +30,9 @@ function dueBucket(tile: TileListView): string {
 const BUCKET_ORDER = ["Overdue", "Today", "This Week", "Later", "No date", "Closed"];
 
 export function TasksPanel() {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const search = searchParams.get("q") ?? "";
+
   const { tiles, loading } = useTileList({
     viewMode: "by_state",
     limit: 200,
@@ -55,15 +58,7 @@ export function TasksPanel() {
 
   return (
     <div className="flex flex-col">
-      <div className="px-4 pt-4 pb-2">
-        <input
-          type="text"
-          placeholder="Search tiles…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-md bg-surface-2 px-3 py-1.5 text-xs text-foreground placeholder:text-foreground-subtle"
-        />
-      </div>
+
       {loading && <div className="px-4 py-2 text-xs text-foreground-subtle">Loading…</div>}
       {grouped.map(({ bucket, tiles: bucketTiles }) => (
         <div key={bucket}>

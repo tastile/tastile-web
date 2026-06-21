@@ -98,7 +98,7 @@ export default function BreaksPage() {
         }
         actions={
           isOnBreak ? (
-            <Button variant="primary" size="md" onClick={endBreak} loading={busy}>
+            <Button variant="primary" size="medium" onClick={endBreak} loading={busy}>
               <Play className="h-3.5 w-3.5" />
               End break
             </Button>
@@ -120,7 +120,7 @@ export default function BreaksPage() {
               <Button
                 key={m}
                 variant="secondary"
-                size="lg"
+                size="large"
                 onClick={() => void startBreak(m)}
                 loading={busy}
                 disabled={isOnBreak}
@@ -171,7 +171,7 @@ export default function BreaksPage() {
           <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
             <Timer className="h-3.5 w-3.5" /> Recent break activity
           </div>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="small">
             <RefreshCw className="h-3 w-3" />
             Refresh
           </Button>

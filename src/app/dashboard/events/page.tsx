@@ -107,11 +107,11 @@ export default function EventsPage() {
         }
         actions={
           <>
-            <Button variant="secondary" size="md" onClick={downloadJson} disabled={!list.length}>
+            <Button variant="secondary" size="medium" onClick={downloadJson} disabled={!list.length}>
               <Download className="h-3.5 w-3.5" />
               Download JSON
             </Button>
-            <Button variant="secondary" size="md" onClick={load} loading={loading}>
+            <Button variant="secondary" size="medium" onClick={load} loading={loading}>
               <RefreshCw className="h-3.5 w-3.5" />
               Refresh
             </Button>
@@ -289,7 +289,7 @@ function ErrorState({
         {error.kind} · {error.status}
       </div>
       <p className="text-xs text-ink-3">{error.message}</p>
-      <Button variant="secondary" size="sm" onClick={onRetry}>
+      <Button variant="secondary" size="small" onClick={onRetry}>
         <RefreshCw className="h-3 w-3" /> Retry
       </Button>
     </div>

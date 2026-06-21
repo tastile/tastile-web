@@ -12,10 +12,12 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { ENDPOINTS, getCoreClient, type EndpointKey, type Result } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 const VIEWS = ["day", "week", "month", "year"] as const;
@@ -40,6 +42,29 @@ export default function CalendarViewPage() {
   const params = useParams<{ view: string }>();
   const view = (VIEWS as readonly string[]).includes(params.view) ? (params.view as ViewKey) : "day";
   const endpoint = endpointByView[view];
+
+  // anchor: カレンダーの選択日 (YYYY-MM-DD)
+  const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
+  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set());
+
+  function toggleType(type: string) {
+    setVisibleTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }
+
+  // サイドパネルを登録
+  useSidePanel(
+    <CalendarSidePanel
+      anchor={anchor}
+      onSelectDate={setAnchor}
+      visibleTypes={visibleTypes}
+      onToggleType={toggleType}
+    />
+  );
 
   const [data, setData] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(false);

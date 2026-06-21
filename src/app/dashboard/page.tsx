@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarMain } from "@/components/calendar/CalendarMain";
 import { getLastVisitedPath, useTrackVisit } from "@/lib/hooks/use-track-visit";
 
 const REDIRECTABLE_PATHS = [
@@ -42,14 +41,10 @@ function DashboardPageInner() {
     if (last && last !== "/dashboard" && REDIRECTABLE_PATHS.includes(last)) {
       router.replace(last);
       setRedirected(true);
+    } else {
+      router.replace("/dashboard/calendar");
     }
   }, [router]);
 
-  useTrackVisit("/dashboard/calendar");
-
-  if (redirected) {
-    return null;
-  }
-
-  return <CalendarMain initialView="day" />;
+  return null;
 }

@@ -5,6 +5,8 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
+import { useSidePanel } from "@/lib/context/side-panel-context";
+import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { DayView } from "./DayView";
 
 export type CalendarView = "day" | "week" | "month" | "year";
@@ -59,6 +61,26 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   useEffect(() => {
     setTzOffset(new Date().getTimezoneOffset() * -1);
   }, []);
+
+  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set());
+
+  function toggleType(type: string) {
+    setVisibleTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  }
+
+  useSidePanel(
+    <CalendarSidePanel
+      anchor={anchor}
+      onSelectDate={setAnchor}
+      visibleTypes={visibleTypes}
+      onToggleType={toggleType}
+    />
+  );
 
   const setView = (v: CalendarView) => {
     setViewState(v);

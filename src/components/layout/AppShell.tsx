@@ -140,8 +140,6 @@ export function AppShell({
       {/* Header */}
       <div className="px-3 py-2">
         <Header
-          railPinned={railPinned}
-          onToggleRail={() => setRailPinned((prev) => !prev)}
           executionState={executionState}
         />
       </div>

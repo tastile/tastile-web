@@ -7,8 +7,10 @@ import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { TileStatistics } from "@/components/account/TileStatistics";
 import { UsageDashboard } from "@/components/account/UsageDashboard";
+import { useSidePanel } from "@/lib/context/side-panel-context";
+import { AccountSidePanel } from "@/components/panels/AccountSidePanel";
 
-type TabId = "profile" | "subscription" | "statistics" | "usage" | "tokens";
+export type TabId = "profile" | "subscription" | "statistics" | "usage" | "tokens";
 
 type Profile = {
   username: string;
@@ -29,13 +31,12 @@ export default function AccountPage() {
   const [verificationCode, setVerificationCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const tabs: Array<{ id: TabId; label: string }> = [
-    { id: "profile", label: "Profile" },
-    { id: "subscription", label: "Subscription" },
-    { id: "statistics", label: "Statistics" },
-    { id: "usage", label: "Usage" },
-    { id: "tokens", label: "Tokens" },
-  ];
+  useSidePanel(
+    <AccountSidePanel
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    />
+  );
 
   async function loadProfile() {
     setLoading(true);
@@ -111,28 +112,8 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
       <h1 className="mb-6 text-2xl font-[590] text-foreground">Account Settings</h1>
-
-      <div className="mb-6">
-        <nav className="flex gap-6" aria-label="Account settings tabs">
-          {tabs.map((tab) => (
-            <button
-              type="button"
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-1 pb-3 text-sm font-medium transition-colors ${
-                activeTab === tab.id
-                  ? "bg-foreground text-background rounded-md px-3 pb-1"
-                  : "text-foreground-muted hover:text-foreground"
-              }`}
-              aria-current={activeTab === tab.id ? "page" : undefined}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </nav>
-      </div>
 
       <div className="max-w-4xl">
         {activeTab === "profile" && (

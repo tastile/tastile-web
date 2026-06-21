@@ -1,76 +1,128 @@
 "use client";
 
 import { type InputHTMLAttributes, type TextareaHTMLAttributes, forwardRef } from "react";
+import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils/cn";
 
-interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
-  size?: "sm" | "md";
-  invalid?: boolean;
+const inputVariants = cva(
+  [
+    "flex w-full rounded-md border bg-surface-1",
+    "px-3 py-2 text-sm",
+    "file:border-0 file:bg-transparent file:text-sm file:font-medium",
+    "placeholder:text-foreground-muted",
+    "read-only:text-foreground-muted",
+    "read-only:cursor-not-allowed",
+    "focus:ring-background-control focus:border-control",
+    "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control",
+    "focus-visible:ring-offset-2 focus-visible:ring-offset-foreground-muted",
+    "disabled:cursor-not-allowed disabled:text-foreground-muted",
+    "transition-colors duration-200",
+  ].join(" "),
+  {
+    variants: {
+      size: {
+        tiny: "h-6 px-2 text-xs",
+        small: "h-8 px-2.5 text-xs",
+        medium: "h-9 px-3 text-sm",
+        large: "h-10 px-3 text-sm",
+      },
+      invalid: {
+        true: "border-danger focus-visible:ring-danger",
+      },
+    },
+    defaultVariants: {
+      size: "small",
+    },
+  }
+);
+
+export interface InputProps
+  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
+    VariantProps<typeof inputVariants> {
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
 }
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, size = "md", invalid, leading, trailing, ...rest },
-  ref,
-) {
-  return (
-    <div
-      className={cn(
-        "group flex w-full items-center gap-2 rounded-md border bg-surface-1",
-        "transition-colors duration-fast ease-[var(--ease-out-expo)]",
-        "focus-within:border-accent focus-within:ring-2 focus-within:ring-focus",
-        invalid ? "border-status-danger" : "border-border",
-        size === "sm" ? "h-7 px-2" : "h-8 px-2.5",
-        className,
-      )}
-    >
-      {leading ? (
-        <span className="shrink-0 text-ink-3 group-focus-within:text-ink-1" aria-hidden>
-          {leading}
-        </span>
-      ) : null}
-      <input
-        ref={ref}
+const Input = forwardRef<HTMLInputElement, InputProps>(
+  ({ className, size = "small", invalid, leading, trailing, ...props }, ref) => {
+    return (
+      <div
         className={cn(
-          "min-w-0 flex-1 bg-transparent text-ink-1 outline-none placeholder:text-ink-4",
-          size === "sm" ? "text-xs" : "text-sm",
+          "group flex w-full items-center gap-2 rounded-md border bg-surface-1",
+          "transition-colors duration-200",
+          "focus-within:border-control focus-within:ring-2 focus-within:ring-background-control",
+          "focus-within:ring-offset-2 focus-within:ring-offset-foreground-muted",
+          invalid ? "border-danger focus-within:ring-danger" : "border-border",
+          size === "tiny" && "h-6 px-2",
+          size === "small" && "h-8 px-2.5",
+          size === "medium" && "h-9 px-3",
+          size === "large" && "h-10 px-3",
+          className,
         )}
-        {...rest}
-      />
-      {trailing ? (
-        <span className="shrink-0 text-ink-3 group-focus-within:text-ink-1" aria-hidden>
-          {trailing}
-        </span>
-      ) : null}
-    </div>
-  );
-});
+      >
+        {leading ? (
+          <span className="shrink-0 text-foreground-muted group-focus-within:text-foreground" aria-hidden>
+            {leading}
+          </span>
+        ) : null}
+        <input
+          ref={ref}
+          className={cn(
+            "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground-muted",
+            size === "tiny" && "text-xs",
+            size === "small" && "text-xs",
+            size === "medium" && "text-sm",
+            size === "large" && "text-sm",
+          )}
+          readOnly={props.readOnly}
+          disabled={props.disabled}
+          aria-invalid={invalid || undefined}
+          {...props}
+        />
+        {trailing ? (
+          <span className="shrink-0 text-foreground-muted group-focus-within:text-foreground" aria-hidden>
+            {trailing}
+          </span>
+        ) : null}
+      </div>
+    );
+  },
+);
+
+Input.displayName = "Input";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   invalid?: boolean;
 }
 
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { className, invalid, ...rest },
-  ref,
-) {
-  return (
-    <textarea
-      ref={ref}
-      className={cn(
-        "block w-full rounded-md border bg-surface-1 px-2.5 py-2 text-sm text-ink-1 outline-none",
-        "placeholder:text-ink-4 transition-colors duration-fast ease-[var(--ease-out-expo)]",
-        "focus:border-accent focus:ring-2 focus:ring-focus",
-        invalid ? "border-status-danger" : "border-border",
-        className,
-      )}
-      {...rest}
-    />
-  );
-});
+const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+  ({ className, invalid, ...props }, ref) => {
+    return (
+      <textarea
+        ref={ref}
+        className={cn(
+          "block w-full rounded-md border bg-surface-1",
+          "px-3 py-2 text-sm text-foreground outline-none",
+          "placeholder:text-foreground-muted",
+          "transition-colors duration-200",
+          "focus:border-control focus:ring-2 focus:ring-background-control",
+          "focus:ring-offset-2 focus:ring-offset-foreground-muted",
+          invalid ? "border-danger focus:ring-danger" : "border-border",
+          "disabled:cursor-not-allowed disabled:text-foreground-muted",
+          className,
+        )}
+        disabled={props.disabled}
+        readOnly={props.readOnly}
+        aria-invalid={invalid || undefined}
+        {...props}
+      />
+    );
+  },
+);
 
-export function FieldLabel({
+Textarea.displayName = "Textarea";
+
+function FieldLabel({
   htmlFor,
   children,
   hint,
@@ -85,12 +137,14 @@ export function FieldLabel({
     <div className="flex items-baseline justify-between gap-2">
       <label
         htmlFor={htmlFor}
-        className="text-xs font-medium text-ink-2 tracking-wide"
+        className="text-sm font-medium text-foreground"
       >
         {children}
-        {required ? <span className="ml-0.5 text-status-danger">*</span> : null}
+        {required ? <span className="ml-0.5 text-danger">*</span> : null}
       </label>
-      {hint ? <span className="text-xs text-ink-4">{hint}</span> : null}
+      {hint ? <span className="text-xs text-foreground-muted">{hint}</span> : null}
     </div>
   );
 }
+
+export { Input, Textarea, FieldLabel, inputVariants };

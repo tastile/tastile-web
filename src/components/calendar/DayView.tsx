@@ -39,10 +39,11 @@ export function DayView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOf
   const dayBlocks = blocksForDate(projection, anchor);
   const allDay = allDayBlocksFor(projection, anchor);
 
-  const nowDate = new Date(nowMs);
-  const nowUtcMinutes = nowDate.getUTCHours() * 60 + nowDate.getUTCMinutes();
-  const nowSlotIndex = Math.floor(nowUtcMinutes / 60);
-  const nowTopOffset = (nowUtcMinutes % 60) * 1.5;
+  const localMs = nowMs + tzOffset * 60_000;
+  const localDate = new Date(localMs);
+  const localMinutes = (localDate.getUTCHours() * 60 + localDate.getUTCMinutes());
+  const nowSlotIndex = Math.floor(localMinutes / 60);
+  const nowTopOffset = (localMinutes % 60) * 1.5;
 
   return (
     <div className="relative">

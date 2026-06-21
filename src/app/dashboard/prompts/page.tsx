@@ -65,7 +65,7 @@ export default function PromptsPage() {
         actions={
           <Button
             variant="secondary"
-            size="md"
+            size="medium"
             onClick={() => window.dispatchEvent(new CustomEvent("tastile:open-command"))}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -140,7 +140,7 @@ export default function PromptsPage() {
                   <Button
                     key={a}
                     variant={primaryAction(a) ? "primary" : "secondary"}
-                    size="md"
+                    size="medium"
                     onClick={() => void respond(a)}
                     loading={responding}
                     disabled={responding}
