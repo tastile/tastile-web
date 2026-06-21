@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
-import { blocksForDate, allDayBlocksFor, hourSlotsForDay } from "@/lib/projection/calendar-projection";
+import { useTileEditStore } from "@/lib/stores/tile-edit-store";
+import { blocksForDate, allDayBlocksFor } from "@/lib/projection/calendar-projection";
 import { TileBlock } from "./TileBlock";
 import { AllDayLane } from "./AllDayLane";
 import { cn } from "@/lib/utils/cn";
@@ -27,6 +28,7 @@ function getWeekDates(anchor: string): string[] {
 export function WeekView({ anchor, tzOffset, refreshKey }: { anchor: string; tzOffset: number; refreshKey?: number }) {
   const { projection, loading, error } = useCalendarProjection({ view: "week", anchor, tzOffset, refreshKey });
   const enabled = useReferenceOverlayStore((s) => s.enabled);
+  const openEdit = useTileEditStore((s) => s.openEdit);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -48,55 +50,92 @@ export function WeekView({ anchor, tzOffset, refreshKey }: { anchor: string; tzO
   }
 
   const weekDates = getWeekDates(anchor);
-  const slots = hourSlotsForDay(anchor, tzOffset); // Using anchor just to get the 24 hours
   const localMs = nowMs + tzOffset * 60_000;
   const localDate = new Date(localMs);
   const localMinutes = (localDate.getUTCHours() * 60 + localDate.getUTCMinutes());
   const nowSlotIndex = Math.floor(localMinutes / 60);
   const nowTopOffset = (localMinutes % 60) * 1.5;
-  const todayStr = new Date(localMs).toISOString().slice(0, 10);
+
+  const todayIso = localDate.toISOString().slice(0, 10);
 
   return (
-    <div className="relative flex flex-col h-full min-h-[600px]">
-      {/* Header with day names */}
-      <div className="flex border-b border-surface-2 sticky top-0 bg-surface-0 z-10">
-        <div className="w-10 shrink-0" />
-        {weekDates.map((dateStr) => {
-          const isToday = dateStr === todayStr;
-          const d = new Date(dateStr + "T00:00:00Z");
+    <div className="flex flex-col relative bg-surface-0 pb-16">
+      {/* Header row */}
+      <div className="flex border-b border-border bg-surface-1">
+        <div className="w-16 shrink-0 border-r border-border" />
+        {weekDates.map((date) => {
+          const d = new Date(date + "T00:00:00Z");
           const dayName = d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
           const dayNum = d.getUTCDate();
+          const isToday = date === todayIso;
           return (
-            <div key={dateStr} className="flex-1 flex flex-col items-center justify-center py-2 border-l border-surface-2">
-              <span className={cn("text-xs font-medium", isToday ? "text-primary" : "text-foreground-subtle")}>{dayName}</span>
-              <span className={cn("text-lg", isToday ? "text-primary font-bold" : "text-foreground")}>{dayNum}</span>
+            <div
+              key={date}
+              className={cn(
+                "flex-1 border-r border-border py-2 text-center text-xs",
+                isToday ? "bg-surface-elevated font-semibold text-primary" : "text-foreground-subtle",
+              )}
+            >
+              <div className="uppercase tracking-widest">{dayName}</div>
+              <div className={cn("mt-1 text-sm", isToday && "text-primary")}>{dayNum}</div>
             </div>
           );
         })}
       </div>
 
-      <div className="relative flex flex-1">
-        {/* Time axis */}
-        <div className="w-10 shrink-0 border-r border-surface-2">
-          {slots.map((slot, i) => (
-            <div key={i} className="relative pr-2 text-right font-mono text-[10px] text-foreground-subtle" style={{ height: "90px" }}>
-              <span className="absolute -top-2 right-2">{formatHour(slot)}</span>
+      {/* All-Day Lane */}
+      <div className="flex border-b border-border">
+        <div className="flex w-16 shrink-0 items-center justify-center border-r border-border bg-surface-1 text-[10px] text-foreground-subtle uppercase">
+          All Day
+        </div>
+        <div className="flex-1 relative min-h-[40px] bg-surface-0">
+          {weekDates.map((date, i) => {
+            const allDay = allDayBlocksFor(projection, date);
+            return (
+              <div
+                key={date}
+                className="absolute top-0 bottom-0 border-r border-border"
+                style={{ left: `${(i / 7) * 100}%`, width: `${100 / 7}%` }}
+              >
+                <div className="relative h-full w-full">
+                  <AllDayLane spans={allDay} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Time Grid */}
+      <div className="flex relative">
+        <div className="w-16 shrink-0 border-r border-border bg-surface-1" />
+        <div className="flex-1 bg-[url('/grid.svg')] bg-[length:100%_90px]" />
+      </div>
+
+      <div className="absolute top-[80px] bottom-0 left-0 right-0 flex pointer-events-none">
+        {/* Hours column */}
+        <div className="flex w-16 shrink-0 flex-col border-r border-border bg-surface-0 pointer-events-auto">
+          {Array.from({ length: 24 }).map((_, i) => (
+            <div key={i} className="flex h-[90px] items-start justify-end pr-2 pt-1">
+              <span className="text-[10px] text-foreground-subtle">
+                {formatHour(new Date(`1970-01-01T${i.toString().padStart(2, "0")}:00:00Z`))}
+              </span>
             </div>
           ))}
         </div>
 
-        {/* 7 Columns */}
-        <div className="flex flex-1">
-          {weekDates.map((dateStr) => {
-            const dayBlocks = blocksForDate(projection, dateStr);
-            const isToday = dateStr === todayStr;
+        {/* 7 Days Columns */}
+        <div className="flex flex-1 pointer-events-auto">
+          {weekDates.map((date) => {
+            const dayBlocks = blocksForDate(projection, date);
+            const isToday = date === todayIso;
 
             return (
-              <div key={dateStr} className="relative flex-1 border-r border-surface-2 border-opacity-50">
-                {/* Horizontal grid lines */}
-                <div className="absolute inset-0 pointer-events-none">
-                  {slots.map((_, i) => (
-                    <div key={i} className="border-b border-surface-2" style={{ height: "90px" }} />
+              <div key={date} className="relative flex-1 border-r border-border last:border-r-0">
+                {/* Horizontal grid lines per hour for this day */}
+                <div className="absolute inset-0 pointer-events-none opacity-20">
+                  {Array.from({ length: 24 }).map((_, i) => (
+                    <div key={i} className="h-[90px] border-b border-border" />
                   ))}
                 </div>
 
@@ -115,7 +154,11 @@ export function WeekView({ anchor, tzOffset, refreshKey }: { anchor: string; tzO
                     >
                       <TileBlock
                         block={block}
-                        onClick={() => {/* TODO: open edit panel */}}
+                        onClick={() => {
+                          if (block.tile_id) {
+                            openEdit(block.tile_id, block.title, block.start_at, block.end_at || "", []);
+                          }
+                        }}
                         dimmed={isDimmed}
                       />
                     </div>

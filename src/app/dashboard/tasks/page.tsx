@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { TasksPanel } from "@/components/sidebar/TasksPanel";
+import { TasksMain } from "@/components/tasks/TasksMain";
 import { TasksSidePanel } from "@/components/panels/TasksSidePanel";
 import { useTrackVisit } from "@/lib/hooks/use-track-visit";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -20,7 +20,7 @@ function TasksPageInner() {
 
   return (
     <div className="h-full overflow-y-auto">
-      <TasksPanel />
+      <TasksMain />
     </div>
   );
 }

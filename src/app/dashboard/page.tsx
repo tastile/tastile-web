@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getLastVisitedPath, useTrackVisit } from "@/lib/hooks/use-track-visit";
+import { getLastVisitedPath } from "@/lib/hooks/use-track-visit";
 
 const REDIRECTABLE_PATHS = [
   "/dashboard/references",
@@ -34,13 +34,11 @@ export default function DashboardPage() {
 
 function DashboardPageInner() {
   const router = useRouter();
-  const [redirected, setRedirected] = useState(false);
 
   useEffect(() => {
     const last = getLastVisitedPath();
     if (last && last !== "/dashboard" && REDIRECTABLE_PATHS.includes(last)) {
       router.replace(last);
-      setRedirected(true);
     } else {
       router.replace("/dashboard/calendar");
     }

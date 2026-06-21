@@ -43,7 +43,7 @@ export function AppShell({
   const [startupRecoveryStopAt, setStartupRecoveryStopAt] = useState(() =>
     toLocalDateTimeValue(new Date()),
   );
-  const [railPinned, setRailPinned] = useState(() => {
+  const [railPinned] = useState(() => {
     if (typeof window === "undefined") {
       return false;
     }

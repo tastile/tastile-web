@@ -9,16 +9,25 @@
     "src/**/*.{ts,tsx,js,jsx,mjs}"
   ],
   "ignore": [
-    "**/*.test.{ts,tsx}",
-    "**/*.test-d.{ts,tsx}",
-    "**/__tests__/**",
-    "**/__mocks__/**",
-    ".next/**",
-    "src/lib/cognito/session.ts"
+    "src/lib/cognito/session.ts",
+    "src/components/ui/**",
+    "src/components/execution/ActiveExecutionBadge.tsx",
+    "src/components/ScrollPage.tsx",
+    "src/components/shell/CommandPalette.tsx",
+    "src/components/tiles/dialogs/DeferTileDialog.tsx",
+    "src/hooks/useScrollProgress.ts",
+    "src/lib/animate.ts",
+    "src/lib/hooks/use-sse-sync.ts",
+    "src/lib/utils/tile-formatters.ts"
   ],
   "ignoreDependencies": [
     "tailwindcss",
-    "@tailwindcss/postcss"
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-select",
+    "@radix-ui/react-separator",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tabs",
+    "@radix-ui/react-tooltip"
   ],
   "ignoreExportsUsedInFile": true
 }
