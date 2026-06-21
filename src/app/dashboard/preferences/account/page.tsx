@@ -119,8 +119,8 @@ function AccountPageInner() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
-      <h1 className="mb-6 text-2xl font-[590] text-foreground">Account Settings</h1>
+    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
+      <h1 className="mb-6 text-2xl font-normal text-foreground">Account Settings</h1>
 
       <div className="max-w-4xl">
         {activeTab === "profile" && (
@@ -144,7 +144,7 @@ function AccountPageInner() {
               </div>
             )}
 
-            <section className="rounded-lg bg-surface-2 p-5">
+            <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <UserRound className="h-5 w-5 text-primary" aria-hidden="true" />
@@ -184,7 +184,7 @@ function AccountPageInner() {
               )}
             </section>
 
-            <section className="rounded-lg bg-surface-2 p-5">
+            <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center gap-3">
                 <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
                 <h3 className="font-semibold text-foreground">登録メールアドレスの変更</h3>
@@ -239,7 +239,7 @@ function AccountPageInner() {
               </form>
             </section>
 
-            <section className="rounded-lg bg-surface-2 p-5">
+            <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center gap-3">
                 <KeyRound className="h-5 w-5 text-primary" aria-hidden="true" />
                 <h3 className="font-semibold text-foreground">ログイン方法</h3>

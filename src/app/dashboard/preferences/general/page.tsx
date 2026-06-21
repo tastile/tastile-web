@@ -38,8 +38,8 @@ export default function GeneralPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-6xl p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-foreground">General Preferences</h1>
+    <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
+      <h1 className="text-2xl font-normal text-foreground">General Preferences</h1>
 
       {/* Theme Settings */}
       <section className="mt-8">
@@ -85,7 +85,7 @@ export default function GeneralPage() {
 
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">Security Lock</h2>
-        <div className="rounded-xl bg-surface-2 p-5">
+        <div className="border border-border bg-surface-0 rounded-md p-6">
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-foreground">Require device unlock</p>
@@ -141,12 +141,12 @@ function ThemeButton({ active, onClick, label, description }: ThemeButtonProps) 
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-5 py-4 text-left ${
-        active ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground hover:bg-surface-3"
+      className={`rounded-md border p-4 text-left transition-colors ${
+        active ? "border-primary bg-surface-0 ring-1 ring-primary" : "border-border bg-surface-0 hover:border-foreground-muted"
       }`}
     >
-      <p className="text-sm font-semibold">{label}</p>
-      <p className="mt-1 text-xs opacity-80">{description}</p>
+      <p className="text-sm font-medium text-foreground">{label}</p>
+      <p className="mt-1 text-xs text-foreground-muted">{description}</p>
     </button>
   );
 }
@@ -162,11 +162,11 @@ function LanguageButton({ active, onClick, label }: LanguageButtonProps) {
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl px-5 py-4 text-left ${
-        active ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground hover:bg-surface-3"
+      className={`rounded-md border p-4 text-left transition-colors ${
+        active ? "border-primary bg-surface-0 ring-1 ring-primary" : "border-border bg-surface-0 hover:border-foreground-muted"
       }`}
     >
-      <p className="text-sm font-semibold">{label}</p>
+      <p className="text-sm font-medium text-foreground">{label}</p>
     </button>
   );
 }
