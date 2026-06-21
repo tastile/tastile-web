@@ -10,6 +10,7 @@ import {
   Plus,
   Repeat,
   Library,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -31,6 +32,8 @@ const NAV_ITEMS: NavItem[] = [
   { path: "/dashboard/schedule",   label: "Schedule",   Icon: Repeat       },
   { path: "/dashboard/references", label: "References", Icon: Library      },
 ];
+
+const PREF_ITEM: NavItem = { path: "/dashboard/preferences", label: "Preferences", Icon: Settings };
 
 export function ActivityBar() {
   const pathname = usePathname();
@@ -71,7 +74,7 @@ export function ActivityBar() {
           Icon={Plus}
           expanded={expanded}
           onClick={openQuickCreate}
-          className="bg-primary/10 text-primary hover:bg-primary/20"
+          className="text-foreground hover:bg-surface-2"
         />
       </div>
 
@@ -90,6 +93,14 @@ export function ActivityBar() {
             />
           );
         })}
+        <div className="mx-2 my-2 h-px bg-border shrink-0" />
+        <NavLink
+          href={PREF_ITEM.path}
+          label={PREF_ITEM.label}
+          Icon={PREF_ITEM.Icon}
+          active={pathname?.startsWith("/dashboard/preferences")}
+          expanded={expanded}
+        />
       </div>
 
       {/* 開閉コントロール — 下揃え */}
@@ -271,17 +282,11 @@ function NavLink({ href, label, Icon, active, expanded }: NavLinkProps) {
           active && "bg-surface-2 text-foreground",
         )}
       >
-        {/* アクティブインジケーター */}
-        {active && (
-          <span
-            aria-hidden
-            className="absolute inset-y-2 left-0 w-0.5 rounded-r-full bg-primary"
-          />
-        )}
+        {/* アクティブインジケーター削除 */}
         {/* アイコン */}
         <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
           <Icon
-            className={cn("h-4 w-4", active ? "text-primary" : "")}
+            className={cn("h-4 w-4", active ? "text-foreground" : "")}
             aria-hidden
           />
         </span>
