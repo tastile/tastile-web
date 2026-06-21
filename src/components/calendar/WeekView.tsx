@@ -103,14 +103,9 @@ export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: numbe
       </div>
 
       {/* Time Grid */}
-      <div className="flex relative">
-        <div className="w-16 shrink-0 border-r border-border bg-surface-1" />
-        <div className="flex-1 bg-[url('/grid.svg')] bg-[length:100%_90px]" />
-      </div>
-
-      <div className="absolute top-[80px] bottom-0 left-0 right-0 flex pointer-events-none">
+      <div className="flex relative pb-16">
         {/* Hours column */}
-        <div className="flex w-16 shrink-0 flex-col border-r border-border bg-surface-0 pointer-events-auto">
+        <div className="flex w-16 shrink-0 flex-col border-r border-border bg-surface-0">
           {Array.from({ length: 24 }).map((_, i) => (
             <div key={i} className="flex h-[90px] items-start justify-end pr-2 pt-1">
               <span className="text-[10px] text-foreground-subtle">
@@ -121,7 +116,7 @@ export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: numbe
         </div>
 
         {/* 7 Days Columns */}
-        <div className="flex flex-1 pointer-events-auto">
+        <div className="flex flex-1 bg-[url('/grid.svg')] bg-[length:100%_90px]">
           {weekDates.map((date) => {
             const dayBlocks = blocksForDate(projection, date);
             const isToday = date === todayIso;

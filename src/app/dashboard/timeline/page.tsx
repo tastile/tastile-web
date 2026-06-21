@@ -79,6 +79,8 @@ export default function TimelinePage() {
     };
   }, [view]);
 
+  const isInitialLoading = loading && !view;
+
   return (
     <PageContainer>
       <PageHeader
@@ -145,17 +147,24 @@ export default function TimelinePage() {
       ) : null}
 
       <Card padded={false}>
-        {loading || !view ? (
+        {isInitialLoading ? (
           <div className="flex items-center gap-2 p-6 text-sm text-ink-3">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading timeline…
           </div>
-        ) : view.blocks.length === 0 ? (
+        ) : !view || view.blocks.length === 0 ? (
           <div className="p-12 text-center text-sm text-ink-4">
             <Calendar className="mx-auto mb-2 h-6 w-6" />
             No blocks in this range. Create a tile to seed the timeline.
           </div>
         ) : (
-          <ol className="divide-y divide-border">
+          <div className="relative">
+            {loading ? (
+              <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center gap-2 border-b border-border bg-surface-0/85 px-4 py-2 text-xs text-ink-3 backdrop-blur-sm">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Refreshing timeline…
+              </div>
+            ) : null}
+            <ol className="divide-y divide-border">
             {view.blocks.map((b) => (
               <li
                 key={b.id}
@@ -192,7 +201,8 @@ export default function TimelinePage() {
                 </div>
               </li>
             ))}
-          </ol>
+            </ol>
+          </div>
         )}
       </Card>
     </PageContainer>

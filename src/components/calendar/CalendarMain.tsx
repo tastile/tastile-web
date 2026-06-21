@@ -14,6 +14,10 @@ export type CalendarView = "day" | "week" | "month" | "year";
 
 const VALID_VIEWS: CalendarView[] = ["day", "week", "month", "year"];
 
+function localIsoDate(now = new Date()): string {
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
 function shiftDate(dateStr: string, view: CalendarView, delta: -1 | 1): string {
   const d = new Date(dateStr + "T00:00:00Z");
   void d.getTime();
@@ -56,7 +60,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
 
   const urlView = parseView(searchParams.get("view"), initialView);
   const [view, setViewState] = useState<CalendarView>(urlView);
-  const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
+  const [anchor, setAnchor] = useState(() => localIsoDate());
   const [tzOffset, setTzOffset] = useState(0);
 
   useEffect(() => {
@@ -112,7 +116,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
         </button>
         <button
           type="button"
-          onClick={() => setAnchor(new Date().toISOString().slice(0, 10))}
+          onClick={() => setAnchor(localIsoDate())}
           className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
         >
           Today

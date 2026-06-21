@@ -49,12 +49,7 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
   return (
     <div className="relative">
       <AllDayLane spans={allDay} />
-      <div className="flex bg-surface-0 pb-16">
-        <div className="w-16 shrink-0 border-r border-border bg-surface-1" />
-        <div className="flex-1 bg-[url('/grid.svg')] bg-[length:100%_90px]" />
-      </div>
-
-      <div className="absolute top-[64px] bottom-0 left-0 right-0 flex">
+      <div className="flex pb-16">
         <div className="flex w-16 shrink-0 flex-col border-r border-border bg-surface-0">
           {slots.map((slot, i) => (
             <div key={i} className="flex h-[90px] items-start justify-end pr-2 pt-1">
@@ -62,11 +57,10 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
             </div>
           ))}
         </div>
-        <div className="relative flex-1">
+        <div className="relative flex-1 bg-[url('/grid.svg')] bg-[length:100%_90px]">
           {slots.map((slot, i) => {
             const h = slot.getUTCHours();
             const blocks = dayBlocks.filter((b) => new Date(b.start_at).getUTCHours() === h);
-            const isNow = nowSlotIndex === h;
             return (
               <div key={i} className="relative h-[90px] border-b border-border/50 bg-surface-0">
                 {blocks.map((block, bi) => {
@@ -91,17 +85,15 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
                     </div>
                   );
                 })}
-                {isNow && (
-                  <div
-                    className="pointer-events-none absolute left-0 right-0 h-px bg-primary"
-                    style={{ top: `${nowTopOffset * 1.5}px` }}
-                  >
-                    <span className="absolute -top-1.5 -left-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
-                  </div>
-                )}
               </div>
-          );
-        })}
+            );
+          })}
+          <div
+            className="pointer-events-none absolute left-0 right-0 h-px bg-primary z-20"
+            style={{ top: `${nowSlotIndex * 90 + nowTopOffset * 1.5}px` }}
+          >
+            <span className="absolute -top-1.5 -left-1.5 h-2.5 w-2.5 rounded-full bg-primary" />
+          </div>
         </div>
       </div>
     </div>
