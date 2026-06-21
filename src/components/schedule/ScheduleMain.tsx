@@ -7,10 +7,13 @@ import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
+import { useDialogStore } from "@/lib/stores/dialog-store";
+import { RecurringTileConfigDialog } from "@/components/tiles/dialogs/RecurringTileConfigDialog";
 
 export function ScheduleMain() {
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "recurring";
+  const { openRecurringDialog } = useDialogStore();
 
   const { tiles, loading } = useTileList({
     viewMode: "by_state",
@@ -49,9 +52,14 @@ export function ScheduleMain() {
         )}
         {!loading &&
           filteredTiles.map((t) => (
-            <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
+            <TileCardCompact
+              key={t.id}
+              tile={mapListViewToTile(t)}
+              onEdit={view === "recurring" ? () => openRecurringDialog(t.id) : undefined}
+            />
           ))}
       </div>
+      <RecurringTileConfigDialog />
     </PageContainer>
   );
 }

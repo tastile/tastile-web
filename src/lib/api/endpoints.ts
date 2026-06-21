@@ -79,6 +79,8 @@ export const ENDPOINTS = {
   attachMemo: { method: "POST", path: "/commands/memo/attach", tag: "Commands", summary: "Attach memo", auth: true, keywords: ["memo", "note", "attach"] } as EndpointMeta,
   startBreak: { method: "POST", path: "/commands/break/start", tag: "Commands", summary: "Start break", auth: true, keywords: ["break", "rest", "pause"] } as EndpointMeta,
   endBreak: { method: "POST", path: "/commands/break/end", tag: "Commands", summary: "End break", auth: true, keywords: ["break", "end", "resume"] } as EndpointMeta,
+  getRecurringTile: { method: "GET", path: "/commands/recurring-tile/{id}", tag: "Commands", summary: "Get recurring tile", auth: true, keywords: ["recurring", "get"] } as EndpointMeta,
+  putRecurringTile: { method: "PUT", path: "/commands/recurring-tile/{id}", tag: "Commands", summary: "Update recurring tile", auth: true, keywords: ["recurring", "update"] } as EndpointMeta,
   respondStartupRecovery: { method: "POST", path: "/commands/prompt/respond-startup-recovery", tag: "Commands", summary: "Respond startup recovery", auth: true, keywords: ["recovery", "startup", "prompt"] } as EndpointMeta,
   requestPrompt: { method: "POST", path: "/commands/prompt/request", tag: "Commands", summary: "Request prompt", auth: true, keywords: ["prompt", "request"] } as EndpointMeta,
   tick: { method: "POST", path: "/commands/tick", tag: "Commands", summary: "Tick (advance time)", auth: true, keywords: ["tick", "advance"] } as EndpointMeta,
