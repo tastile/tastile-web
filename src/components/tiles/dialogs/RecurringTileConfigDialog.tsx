@@ -8,40 +8,65 @@ import { useDialogStore } from "@/lib/stores/dialog-store";
 
 interface RecurringTileData {
   recurrence: {
-    generator: {
-      focus_block_based?: { phases: unknown[] };
-      step_min: number;
-    };
+    generator:
+      | { kind: "time_based"; step_min: number; anchor_epoch_min: number | null }
+      | { kind: "focus_block_based"; phases: Array<{ focus_min: number; break_min: number }> };
     window: {
       weekday_mask: number;
       start_offset_min: number;
       end_offset_min: number;
+      exclusions: Array<{ start_offset_min: number; end_offset_min: number }>;
     };
     selector: {
-      expression: string | null;
+      expression: unknown | null;
     };
   };
+}
+
+const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function bitmaskToWeekdays(mask: number): boolean[] {
+  // Server: bit 0=Mon..bit 6=Sun. UI: 0=Mon..6=Sun.
+  const result = [false, false, false, false, false, false, false];
+  for (let i = 0; i < 7; i++) {
+    result[i] = (mask & (1 << i)) !== 0;
+  }
+  return result;
+}
+
+function weekdaysToBitmask(days: boolean[]): number {
+  let mask = 0;
+  for (let i = 0; i < 7; i++) {
+    if (days[i]) mask |= 1 << i;
+  }
+  return mask;
+}
+
+function minutesToHHMM(min: number): { h: number; m: number } {
+  return { h: Math.floor(min / 60), m: min % 60 };
+}
+
+function hhmmToMinutes(h: number, m: number): number {
+  return Math.max(0, Math.min(1440, h * 60 + m));
 }
 
 export function RecurringTileConfigDialog() {
   const { t } = useTranslation();
   const { recurringDialog, closeRecurringDialog } = useDialogStore();
-  
+
   const [data, setData] = useState<RecurringTileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
+
   const tileId = recurringDialog.tileId;
 
-  // Form states
+  const [weekdays, setWeekdays] = useState<boolean[]>([true, true, true, true, true, false, false]);
+  const [startHHMM, setStartHHMM] = useState({ h: 9, m: 0 });
+  const [endHHMM, setEndHHMM] = useState({ h: 18, m: 0 });
   const [stepMin, setStepMin] = useState(1440);
-  const [startOffsetMin, setStartOffsetMin] = useState(0);
-  const [endOffsetMin, setEndOffsetMin] = useState(1440);
-  const [expression, setExpression] = useState("");
 
   useEffect(() => {
     if (!tileId) return;
-
     let mounted = true;
     setLoading(true);
 
@@ -52,10 +77,14 @@ export function RecurringTileConfigDialog() {
         setLoading(false);
         if (res.ok && res.data) {
           setData(res.data);
-          setStepMin(res.data.recurrence.generator.step_min);
-          setStartOffsetMin(res.data.recurrence.window.start_offset_min);
-          setEndOffsetMin(res.data.recurrence.window.end_offset_min);
-          setExpression(res.data.recurrence.selector.expression || "");
+          const win = res.data.recurrence.window;
+          setWeekdays(bitmaskToWeekdays(win.weekday_mask));
+          setStartHHMM(minutesToHHMM(win.start_offset_min));
+          setEndHHMM(minutesToHHMM(win.end_offset_min));
+          const gen = res.data.recurrence.generator;
+          if (gen.kind === "time_based") {
+            setStepMin(gen.step_min);
+          }
         } else if (!res.ok) {
           console.error("Failed to load recurring config", res.error);
         }
@@ -68,29 +97,25 @@ export function RecurringTileConfigDialog() {
 
   if (!recurringDialog.open || !tileId) return null;
 
-  const handleCancel = () => {
-    closeRecurringDialog();
-  };
+  const handleCancel = () => closeRecurringDialog();
 
   const handleSave = async () => {
     if (!data) return;
     setSaving(true);
-    
+
+    const gen = data.recurrence.generator;
     const payload = {
-      ...data.recurrence,
-      generator: {
-        ...data.recurrence.generator,
-        step_min: stepMin,
-      },
+      generator:
+        gen.kind === "time_based"
+          ? { kind: "time_based" as const, step_min: stepMin, anchor_epoch_min: gen.anchor_epoch_min }
+          : { kind: "focus_block_based" as const, phases: gen.phases },
       window: {
-        ...data.recurrence.window,
-        start_offset_min: startOffsetMin,
-        end_offset_min: endOffsetMin,
+        weekday_mask: weekdaysToBitmask(weekdays),
+        start_offset_min: hhmmToMinutes(startHHMM.h, startHHMM.m),
+        end_offset_min: hhmmToMinutes(endHHMM.h, endHHMM.m),
+        exclusions: data.recurrence.window.exclusions,
       },
-      selector: {
-        ...data.recurrence.selector,
-        expression: expression || null,
-      },
+      selector: data.recurrence.selector,
     };
 
     const res = await getCoreClient().call("putRecurringTile", {
@@ -101,11 +126,14 @@ export function RecurringTileConfigDialog() {
     setSaving(false);
     if (res.ok) {
       closeRecurringDialog();
-      // Optional: trigger re-fetch of tiles
       window.dispatchEvent(new Event("tastile:refresh-tiles"));
     } else {
       console.error("Failed to save recurring config", res.error);
     }
+  };
+
+  const toggleWeekday = (i: number) => {
+    setWeekdays((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
   };
 
   return (
@@ -133,53 +161,106 @@ export function RecurringTileConfigDialog() {
         ) : (
           <div className="flex flex-col gap-4 mb-6">
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Interval (minutes)
+              <label className="mb-2 block text-sm font-medium text-foreground">
+                Active days
               </label>
-              <input
-                type="number"
-                value={stepMin}
-                onChange={(e) => setStepMin(parseInt(e.target.value) || 0)}
-                className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-              />
+              <div className="grid grid-cols-7 gap-1">
+                {WEEKDAY_LABELS.map((label, i) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => toggleWeekday(i)}
+                    aria-pressed={weekdays[i]}
+                    className={
+                      "rounded-md border px-2 py-1.5 text-xs font-medium transition-colors " +
+                      (weekdays[i]
+                        ? "border-primary bg-primary text-primary-fg"
+                        : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-2")
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Window Start (offset)
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Window start
                 </label>
-                <input
-                  type="number"
-                  value={startOffsetMin}
-                  onChange={(e) => setStartOffsetMin(parseInt(e.target.value) || 0)}
-                  className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={startHHMM.h}
+                    onChange={(e) =>
+                      setStartHHMM((p) => ({ ...p, h: Math.max(0, Math.min(23, parseInt(e.target.value) || 0)) }))
+                    }
+                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                  />
+                  <span className="text-foreground-muted">:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={startHHMM.m}
+                    onChange={(e) =>
+                      setStartHHMM((p) => ({ ...p, m: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) }))
+                    }
+                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">
-                  Window End (offset)
+                <label className="mb-1 block text-sm font-medium text-foreground">
+                  Window end
                 </label>
-                <input
-                  type="number"
-                  value={endOffsetMin}
-                  onChange={(e) => setEndOffsetMin(parseInt(e.target.value) || 0)}
-                  className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    min={0}
+                    max={23}
+                    value={endHHMM.h}
+                    onChange={(e) =>
+                      setEndHHMM((p) => ({ ...p, h: Math.max(0, Math.min(23, parseInt(e.target.value) || 0)) }))
+                    }
+                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                  />
+                  <span className="text-foreground-muted">:</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={59}
+                    value={endHHMM.m}
+                    onChange={(e) =>
+                      setEndHHMM((p) => ({ ...p, m: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) }))
+                    }
+                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                Cron Expression (optional)
+              <label className="mb-1 block text-sm font-medium text-foreground">
+                Interval (minutes)
               </label>
               <input
-                type="text"
-                value={expression}
-                onChange={(e) => setExpression(e.target.value)}
-                placeholder="e.g. 0 8 * * 1-5"
-                className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                type="number"
+                min={1}
+                value={stepMin}
+                onChange={(e) => setStepMin(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
               />
+              <p className="mt-1 text-xs text-foreground-subtle">
+                {stepMin < 60
+                  ? `${stepMin} minutes`
+                  : stepMin < 1440
+                    ? `${Math.floor(stepMin / 60)}h ${stepMin % 60}m`
+                    : `${Math.floor(stepMin / 1440)}d ${Math.floor((stepMin % 1440) / 60)}h`}
+              </p>
             </div>
           </div>
         )}
