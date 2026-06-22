@@ -153,17 +153,20 @@ export interface CoreClientConfig {
   baseUrl: string;
   tokenProvider: () => string | null | Promise<string | null>;
   fetchImpl?: typeof fetch;
+  useProxyBridge?: boolean;
 }
 
 export class CoreClient {
   private baseUrl: string;
   private tokenProvider: () => string | null | Promise<string | null>;
   private fetchImpl: typeof fetch;
+  private useProxyBridge: boolean;
 
   constructor(config: CoreClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.tokenProvider = config.tokenProvider;
     this.fetchImpl = config.fetchImpl ?? globalThis.fetch.bind(globalThis);
+    this.useProxyBridge = config.useProxyBridge ?? false;
   }
 
   async call<T = unknown>(
@@ -199,7 +202,7 @@ export class CoreClient {
     if (meta.method !== "GET" && options.body !== undefined) {
       headers["content-type"] = "application/json";
     }
-    if (meta.auth) {
+    if (meta.auth && !this.useProxyBridge) {
       const token = await this.tokenProvider();
       if (token) headers.authorization = `Bearer ${token}`;
     }
@@ -279,9 +282,11 @@ function isLocalUrl(url: string): boolean {
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
   const rawBaseUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "http://127.0.0.1:3140";
-  const baseUrl = isLocalUrl(rawBaseUrl) ? rawBaseUrl : "/api/proxy";
+  const usesCloudProxy = !isLocalUrl(rawBaseUrl);
+  const baseUrl = usesCloudProxy ? "/api/proxy" : rawBaseUrl;
   _client = new CoreClient({
     baseUrl,
+    useProxyBridge: usesCloudProxy,
     tokenProvider: async () => {
       if (typeof window === "undefined") return null;
       // Lazily import the id-token client to avoid circular deps at module level.
