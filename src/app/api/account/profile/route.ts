@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCognitoUser } from "@/lib/cognito/account-client";
-import { getAccountAccessToken, getAccountUserSub } from "@/lib/cognito/account-session";
+import { getAccountAccessToken, getAccountIdTokenClaims } from "@/lib/cognito/account-session";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 
 export async function GET() {
@@ -13,7 +13,8 @@ export async function GET() {
 
   try {
     const profile = await getCognitoUser(env, accessToken);
-    const sub = await getAccountUserSub();
+    const claims = await getAccountIdTokenClaims();
+    const sub = claims?.sub ?? null;
     const json = NextResponse.json({ profile: { ...profile, sub } });
     for (const cookie of response.cookies.getAll()) {
       json.cookies.set(cookie);
@@ -21,6 +22,20 @@ export async function GET() {
     return json;
   } catch (error) {
     console.error("Cognito GetUser failed", error);
-    return NextResponse.json({ error: "profile_failed" }, { status: 502 });
+    const claims = await getAccountIdTokenClaims();
+    if (!claims) return NextResponse.json({ error: "profile_failed" }, { status: 502 });
+    const json = NextResponse.json({
+      profile: {
+        username: claims.preferredUsername ?? claims.email ?? claims.sub,
+        sub: claims.sub,
+        email: claims.email ?? null,
+        emailVerified: claims.emailVerified ?? false,
+        preferredUsername: claims.preferredUsername ?? null,
+      },
+    });
+    for (const cookie of response.cookies.getAll()) {
+      json.cookies.set(cookie);
+    }
+    return json;
   }
 }

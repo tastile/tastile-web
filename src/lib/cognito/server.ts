@@ -63,6 +63,8 @@ export async function refreshTokens(args: RefreshTokensArgs): Promise<CognitoTok
 export interface IdTokenClaims {
   sub: string;
   email?: string;
+  emailVerified?: boolean;
+  preferredUsername?: string;
   exp: number;
 }
 
@@ -79,6 +81,10 @@ export function parseIdTokenClaims(idToken: string): IdTokenClaims {
   return {
     sub: json.sub,
     email: typeof json.email === "string" ? json.email : undefined,
+    emailVerified:
+      typeof json.email_verified === "boolean" ? json.email_verified : undefined,
+    preferredUsername:
+      typeof json.preferred_username === "string" ? json.preferred_username : undefined,
     exp: Number(json.exp),
   };
 }

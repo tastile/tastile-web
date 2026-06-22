@@ -8,7 +8,7 @@ import {
   setAuthCookies,
 } from "./cookies";
 import { tryGetCognitoEnv } from "./env";
-import { parseIdTokenClaims, refreshTokens } from "./server";
+import { type IdTokenClaims, parseIdTokenClaims, refreshTokens } from "./server";
 
 export async function getAccountAccessToken(response?: NextResponse): Promise<string | null> {
   const env = tryGetCognitoEnv();
@@ -34,16 +34,21 @@ export async function getAccountAccessToken(response?: NextResponse): Promise<st
 }
 
 export async function getAccountUserSub(): Promise<string | null> {
+  const claims = await getAccountIdTokenClaims();
+  return claims?.sub ?? null;
+}
+
+export async function getAccountIdTokenClaims(): Promise<IdTokenClaims | null> {
   const jar = await cookies();
-  const cookieSub = jar.get(COOKIE_USER_SUB)?.value;
-  if (cookieSub) return cookieSub;
-
   const idToken = jar.get(COOKIE_ID_TOKEN)?.value;
-  if (!idToken) return null;
-
-  try {
-    return parseIdTokenClaims(idToken).sub;
-  } catch {
-    return null;
+  if (idToken) {
+    try {
+      return parseIdTokenClaims(idToken);
+    } catch {
+      // fall through to the legacy sub cookie below
+    }
   }
+
+  const cookieSub = jar.get(COOKIE_USER_SUB)?.value;
+  return cookieSub ? { sub: cookieSub, exp: 0 } : null;
 }
