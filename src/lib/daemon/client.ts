@@ -401,13 +401,12 @@ function toCreateTileRequest(tile: Tile): Record<string, unknown> {
       done_rule: tile.objective.doneRule,
       recurrence: tile.objective.recurrence
         ? {
-            generator: {
-              step_min: tile.objective.recurrence.generator.stepMin,
-              anchor_epoch_min: tile.objective.recurrence.generator.anchorEpochMin,
-            },
+            generator: tile.objective.recurrence.generator,
             window: {
-              start_offset_min: tile.objective.recurrence.window.startOffsetMin,
-              end_offset_min: tile.objective.recurrence.window.endOffsetMin,
+              weekday_mask: tile.objective.recurrence.window.weekday_mask,
+              start_offset_min: tile.objective.recurrence.window.start_offset_min,
+              end_offset_min: tile.objective.recurrence.window.end_offset_min,
+              exclusions: tile.objective.recurrence.window.exclusions,
             },
             selector: {
               expression: tile.objective.recurrence.selector.expression,

@@ -6,17 +6,26 @@ export type TileLifecycle = "ready" | "started" | "done";
 export type ObjectiveMode = "finish_once" | "recurring" | "maximize_within_interval" | "label_only";
 export type DoneRule = "manual" | "time_reached" | "interval_end";
 export type SemanticRole = "work" | "break" | "label";
+
+export type RecurrenceGenerator =
+  | { kind: "time_based"; step_min: number; anchor_epoch_min: number | null }
+  | { kind: "focus_block_based"; phases: Array<{ focus_min: number; break_min: number }> };
+
+export interface TimeRange {
+  start_offset_min: number;
+  end_offset_min: number;
+}
+
 export interface RecurrenceModel {
-  generator: {
-    stepMin: number;
-    anchorEpochMin: number | null;
-  };
+  generator: RecurrenceGenerator;
   window: {
-    startOffsetMin: number;
-    endOffsetMin: number;
+    weekday_mask: number;
+    start_offset_min: number;
+    end_offset_min: number;
+    exclusions: TimeRange[];
   };
   selector: {
-    expression: string | null;
+    expression: unknown | null;
   };
 }
 

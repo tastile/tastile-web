@@ -248,13 +248,6 @@ export function QuickTileCreate() {
     tile.objective.objectiveMode = objectiveMode;
     tile.objective.targetWorkMin = tileKind === "work" ? effectiveDurationMin : null;
     tile.objective.targetRestMin = tileKind === "break" ? effectiveDurationMin : null;
-    const recurrenceSelectorExpression = buildRecurrenceSelectorExpression({
-      frequency: recurrenceFrequency,
-      interval: recurrenceInterval,
-      weekdays: recurrenceWeekdays,
-      monthlyWeek: parseNonNegativeInt(recurrenceMonthlyWeekInput) ?? 1,
-      monthlyWeekday: parseNonNegativeInt(recurrenceMonthlyWeekdayInput) ?? 0,
-    });
     const recurrenceAnchorDate = recurrenceValidFromEnabled
       ? parseDateTimeParts(recurrenceValidFromDateInput, "00:00")
       : null;
@@ -262,21 +255,32 @@ export function QuickTileCreate() {
       objectiveMode === "recurring"
         ? {
             generator: {
-              stepMin: recurrenceFrequency === "weekly" ? 7 * 24 * 60 : 24 * 60,
-              anchorEpochMin: recurrenceAnchorDate
+              kind: "time_based",
+              step_min:
+                recurrenceInterval *
+                (recurrenceFrequency === "weekly"
+                  ? 7 * 24 * 60
+                  : recurrenceFrequency === "monthly"
+                    ? 30 * 24 * 60
+                    : 24 * 60),
+              anchor_epoch_min: recurrenceAnchorDate
                 ? Math.floor(recurrenceAnchorDate.getTime() / 60000)
                 : null,
             },
             window: {
-              startOffsetMin:
+              weekday_mask: weekdaysToBitmask(recurrenceWeekdays),
+              start_offset_min:
                 recurrenceUseStartAt && recurrenceStartOffsetMin !== null
                   ? recurrenceStartOffsetMin
                   : 0,
-              endOffsetMin:
-                recurrenceUseEndAt && recurrenceEndOffsetMin !== null ? recurrenceEndOffsetMin : 0,
+              end_offset_min:
+                recurrenceUseEndAt && recurrenceEndOffsetMin !== null
+                  ? recurrenceEndOffsetMin
+                  : 1440,
+              exclusions: [],
             },
             selector: {
-              expression: recurrenceSelectorExpression,
+              expression: null,
             },
           }
         : null;
@@ -1377,25 +1381,15 @@ function getWeekdayOptions(locale: "ja" | "en"): Array<{ value: number; label: s
       ];
 }
 
-function buildRecurrenceSelectorExpression({
-  frequency,
-  interval,
-  weekdays,
-  monthlyWeek,
-  monthlyWeekday,
-}: {
-  frequency: "daily" | "weekly" | "monthly";
-  interval: number;
-  weekdays: number[];
-  monthlyWeek: number;
-  monthlyWeekday: number;
-}): string {
-  if (frequency === "daily") return `freq=daily;interval=${Math.max(1, interval)}`;
-  if (frequency === "weekly") {
-    const dayList = (weekdays.length ? weekdays : [1]).join(",");
-    return `freq=weekly;interval=${Math.max(1, interval)};weekdays=${dayList}`;
+// JS Date#getDay returns 0=Sun..6=Sat. The v7 weekday_mask uses
+// bit 0=Mon..bit 6=Sun, so we remap: bit = (jsDay + 6) % 7.
+function weekdaysToBitmask(jsDays: number[]): number {
+  let mask = 0;
+  for (const d of jsDays) {
+    const bit = (d + 6) % 7;
+    mask |= 1 << bit;
   }
-  return `freq=monthly;interval=${Math.max(1, interval)};week=${Math.max(1, monthlyWeek)};weekday=${Math.max(0, Math.min(6, monthlyWeekday))}`;
+  return mask;
 }
 
 function getRecurrenceIntervalSuffix(
