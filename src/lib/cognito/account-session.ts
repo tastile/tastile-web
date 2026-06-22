@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import {
   COOKIE_ACCESS_TOKEN,
+  COOKIE_ID_TOKEN,
   COOKIE_REFRESH_TOKEN,
   COOKIE_USER_SUB,
   setAuthCookies,
@@ -34,5 +35,15 @@ export async function getAccountAccessToken(response?: NextResponse): Promise<st
 
 export async function getAccountUserSub(): Promise<string | null> {
   const jar = await cookies();
-  return jar.get(COOKIE_USER_SUB)?.value ?? null;
+  const cookieSub = jar.get(COOKIE_USER_SUB)?.value;
+  if (cookieSub) return cookieSub;
+
+  const idToken = jar.get(COOKIE_ID_TOKEN)?.value;
+  if (!idToken) return null;
+
+  try {
+    return parseIdTokenClaims(idToken).sub;
+  } catch {
+    return null;
+  }
 }

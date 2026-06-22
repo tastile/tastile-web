@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserSubFromCookies } from "@/lib/cognito/cookies";
+import { getAccountUserSub } from "@/lib/cognito/account-session";
 
 const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
 
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
 }
 
 async function proxyTokens(init?: { method?: string; body?: string }) {
-  const userSub = await getUserSubFromCookies();
+  const userSub = await getAccountUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!userSub || !bridgeSecret) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
