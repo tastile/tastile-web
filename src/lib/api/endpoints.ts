@@ -97,6 +97,8 @@ export const ENDPOINTS = {
   getExecution: { method: "GET", path: "/read/execution", tag: "Read", summary: "Execution state", auth: true, keywords: ["execution", "state"] } as EndpointMeta,
   getExecutionView: { method: "GET", path: "/read/execution-view", tag: "Read", summary: "Execution view", auth: true, keywords: ["execution", "view"] } as EndpointMeta,
   getEventsState: { method: "GET", path: "/read/events/state", tag: "Read", summary: "Events state", auth: true, keywords: ["events", "state"] } as EndpointMeta,
+  getPlacements: { method: "GET", path: "/read/placements", tag: "Read", summary: "Placement rows (work ↔ time-block allocations)", auth: true, keywords: ["placements", "schedule", "allocations"] } as EndpointMeta,
+  getCandidates: { method: "GET", path: "/read/candidates", tag: "Read", summary: "Unscheduled work candidates", auth: true, keywords: ["candidates", "unscheduled", "queue"] } as EndpointMeta,
 
   // Views
   getTileList: { method: "GET", path: "/views/tile-list", tag: "Views", summary: "Tile list view", auth: true, keywords: ["view", "tile", "list"] } as EndpointMeta,
