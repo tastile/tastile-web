@@ -51,6 +51,7 @@ jobs:
           NEXT_PUBLIC_TASTILE_DESKTOP_VERSION: ${{ secrets.NEXT_PUBLIC_TASTILE_DESKTOP_VERSION }}
           TASTILE_DESKTOP_VERSION: ${{ secrets.TASTILE_DESKTOP_VERSION }}
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
+          TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
         run: |
           cat > .env.local <<ENVEOF
           NEXT_PUBLIC_APP_URL=https://app.tastile.app
@@ -68,6 +69,7 @@ jobs:
           NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
           NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google,SignInWithApple
+          TASTILE_WEB_BRIDGE_SECRET=${TASTILE_WEB_BRIDGE_SECRET}
           ENVEOF
 
       - name: Lint, typecheck, test, build
@@ -111,9 +113,10 @@ jobs:
           WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
           VERSION: ${{ steps.version.outputs.version }}
           PRESIGNED: ${{ steps.upload.outputs.presigned }}
+          TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
         run: |
           aws ssm send-command \
             --instance-ids "$WEB_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters "commands=['set -euo pipefail','RELEASES=/opt/tastile/web/releases','CURRENT_LINK=/opt/tastile/web/current','sudo mkdir -p \"\$RELEASES\"','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','sudo rm -rf \"\$RELEASES/tastile-web-${VERSION}\"','sudo mkdir -p \"\$RELEASES/tastile-web-${VERSION}\"','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d \"\$RELEASES/tastile-web-${VERSION}\"','sudo ln -sfn \"\$RELEASES/tastile-web-${VERSION}\" \"\$CURRENT_LINK\"','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
+            --parameters "commands=['set -euo pipefail','RELEASES=/opt/tastile/web/releases','CURRENT_LINK=/opt/tastile/web/current','sudo mkdir -p \"\$RELEASES\"','sudo mkdir -p /etc/tastile','sudo touch /etc/tastile/tastile-web.env','sudo sed -i.bak \"/^TASTILE_WEB_BRIDGE_SECRET=/d\" /etc/tastile/tastile-web.env','printf \"%s\n\" \"TASTILE_WEB_BRIDGE_SECRET=${TASTILE_WEB_BRIDGE_SECRET}\" | sudo tee -a /etc/tastile/tastile-web.env >/dev/null','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','sudo rm -rf \"\$RELEASES/tastile-web-${VERSION}\"','sudo mkdir -p \"\$RELEASES/tastile-web-${VERSION}\"','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d \"\$RELEASES/tastile-web-${VERSION}\"','sudo ln -sfn \"\$RELEASES/tastile-web-${VERSION}\" \"\$CURRENT_LINK\"','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
             --output text --query "Command.CommandId"
