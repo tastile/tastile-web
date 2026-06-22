@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
 
   const headers: Record<string, string> = {};
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  const userSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+  const userSub = resolveBridgeUserSub(request);
   if (bridgeSecret && userSub) {
     headers["x-tastile-web-bridge-secret"] = bridgeSecret;
     headers["x-tastile-web-session-user"] = userSub;
@@ -76,5 +77,19 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("SSE proxy error:", error);
     return new Response("SSE proxy failed", { status: 502 });
+  }
+}
+
+function resolveBridgeUserSub(request: NextRequest): string | null {
+  const cookieSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+  if (cookieSub) return cookieSub;
+
+  const idToken = request.cookies.get("tastile_id_token")?.value;
+  if (!idToken) return null;
+
+  try {
+    return parseIdTokenClaims(idToken).sub;
+  } catch {
+    return null;
   }
 }

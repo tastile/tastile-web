@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -318,7 +319,7 @@ async function proxyRequest(
     headers.set("authorization", authHeader);
   } else {
     const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-    const userSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+    const userSub = resolveBridgeUserSub(request);
     if (bridgeSecret && userSub) {
       headers.set("x-tastile-web-bridge-secret", bridgeSecret);
       headers.set("x-tastile-web-session-user", userSub);
@@ -353,6 +354,20 @@ async function proxyRequest(
   } catch (error) {
     console.error(`Proxy error for ${path}:`, error);
     return NextResponse.json({ error: "Proxy request failed" }, { status: 502 });
+  }
+}
+
+function resolveBridgeUserSub(request: NextRequest): string | null {
+  const cookieSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+  if (cookieSub) return cookieSub;
+
+  const idToken = request.cookies.get("tastile_id_token")?.value;
+  if (!idToken) return null;
+
+  try {
+    return parseIdTokenClaims(idToken).sub;
+  } catch {
+    return null;
   }
 }
 

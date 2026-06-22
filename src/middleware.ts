@@ -73,12 +73,27 @@ export default async function middleware(request: NextRequest) {
     try {
       const claims = parseIdTokenClaims(idToken);
       if (claims.exp * 1000 > Date.now()) {
+        const needsUserSubCookie = request.cookies.get(COOKIE_USER_SUB)?.value !== claims.sub;
         if (isAuthPage && isNativeAuthReturn) {
-          return NextResponse.next({ request });
+          const res = NextResponse.next({ request });
+          if (needsUserSubCookie) {
+            res.cookies.set(COOKIE_USER_SUB, claims.sub, {
+              ...SECURE_COOKIE_BASE,
+              maxAge: REFRESH_MAX_AGE,
+            });
+          }
+          return res;
         }
-        return isProtected
+        const res = isProtected
           ? NextResponse.next({ request })
           : NextResponse.redirect(new URL(safeNext, request.url));
+        if (needsUserSubCookie) {
+          res.cookies.set(COOKIE_USER_SUB, claims.sub, {
+            ...SECURE_COOKIE_BASE,
+            maxAge: REFRESH_MAX_AGE,
+          });
+        }
+        return res;
       }
     } catch {
       // fall through to refresh
