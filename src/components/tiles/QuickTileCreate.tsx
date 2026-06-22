@@ -168,6 +168,19 @@ export function QuickTileCreate() {
     }
   }, [boundedDurationMin, recurringWindowDurationMin, durationManuallyEdited]);
 
+  // WYSIWYG: when the user picks a condition that lives in a sub-panel,
+  // open that panel so the controls are visible without a second click.
+  useEffect(() => {
+    if (objectiveMode === "recurring" && activePanel === "base") {
+      setActivePanel("recurrence");
+    }
+  }, [objectiveMode, activePanel]);
+  useEffect(() => {
+    if ((useStartAt || useEndAt) && activePanel === "base") {
+      setActivePanel("schedule");
+    }
+  }, [useStartAt, useEndAt, activePanel]);
+
   if (!isOpen) return null;
 
   const temporalOrderValid = isRecurring
