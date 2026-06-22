@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
-
-const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
+import { coreUrl, ensureDefaultApiToken } from "@/lib/account/api-token-session";
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -18,6 +17,8 @@ export async function DELETE(_request: Request, context: Context) {
 }
 
 async function proxyToken(id: string, init: { method: string; body?: string }) {
+  const shell = NextResponse.json({});
+  await ensureDefaultApiToken(shell);
   const userSub = await getAccountUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!userSub || !bridgeSecret) {
@@ -36,17 +37,12 @@ async function proxyToken(id: string, init: { method: string; body?: string }) {
   });
 
   const text = await response.text();
-  return new NextResponse(text, {
+  const forwarded = new NextResponse(text, {
     status: response.status,
     headers: { "content-type": response.headers.get("content-type") ?? "application/json" },
   });
-}
-
-function coreUrl() {
-  return (
-    process.env.TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-    DEFAULT_CORE_URL
-  ).replace(/\/$/, "");
+  for (const cookie of shell.cookies.getAll()) {
+    forwarded.cookies.set(cookie);
+  }
+  return forwarded;
 }

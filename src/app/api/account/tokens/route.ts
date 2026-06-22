@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
-
-const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
+import { coreUrl, ensureDefaultApiToken, setApiTokenCookie } from "@/lib/account/api-token-session";
 
 export async function GET() {
   return proxyTokens();
@@ -12,6 +11,8 @@ export async function POST(request: Request) {
 }
 
 async function proxyTokens(init?: { method?: string; body?: string }) {
+  const shell = NextResponse.json({});
+  await ensureDefaultApiToken(shell);
   const userSub = await getAccountUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!userSub || !bridgeSecret) {
@@ -29,7 +30,16 @@ async function proxyTokens(init?: { method?: string; body?: string }) {
     cache: "no-store",
   });
 
-  return forward(response);
+  const createdBody =
+    init?.method === "POST" && response.ok ? await response.clone().json().catch(() => null) : null;
+  const forwarded = await forward(response);
+  for (const cookie of shell.cookies.getAll()) {
+    forwarded.cookies.set(cookie);
+  }
+  if (createdBody && typeof (createdBody as { access_token?: unknown }).access_token === "string") {
+    setApiTokenCookie((createdBody as { access_token: string }).access_token, forwarded);
+  }
+  return forwarded;
 }
 
 async function forward(response: Response) {
@@ -38,13 +48,4 @@ async function forward(response: Response) {
     status: response.status,
     headers: { "content-type": response.headers.get("content-type") ?? "application/json" },
   });
-}
-
-function coreUrl() {
-  return (
-    process.env.TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-    DEFAULT_CORE_URL
-  ).replace(/\/$/, "");
 }

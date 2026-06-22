@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
+import {
+  ensureDefaultApiTokenForUser,
+  getApiTokenFromRequest,
+  setApiTokenCookie,
+} from "@/lib/account/api-token-session";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -314,16 +319,17 @@ async function proxyRequest(
   url.search = request.nextUrl.search;
 
   const headers = new Headers();
+  const apiToken = getApiTokenFromRequest(request);
   const authHeader = request.headers.get("authorization");
-  if (authHeader) {
+  let bootstrappedApiToken: string | null = null;
+  if (apiToken) {
+    headers.set("authorization", `Bearer ${apiToken}`);
+  } else if (authHeader) {
     headers.set("authorization", authHeader);
   } else {
-    const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
     const userSub = resolveBridgeUserSub(request);
-    if (bridgeSecret && userSub) {
-      headers.set("x-tastile-web-bridge-secret", bridgeSecret);
-      headers.set("x-tastile-web-session-user", userSub);
-    }
+    bootstrappedApiToken = await ensureDefaultApiTokenForUser(userSub);
+    if (bootstrappedApiToken) headers.set("authorization", `Bearer ${bootstrappedApiToken}`);
   }
   const contentType = request.headers.get("content-type");
   if (contentType) {
@@ -347,10 +353,12 @@ async function proxyRequest(
     const cc = upstreamResponse.headers.get("cache-control");
     if (cc) responseHeaders.set("cache-control", cc);
 
-    return new NextResponse(upstreamResponse.body, {
+    const response = new NextResponse(upstreamResponse.body, {
       status: upstreamResponse.status,
       headers: responseHeaders,
     });
+    if (bootstrappedApiToken) setApiTokenCookie(bootstrappedApiToken, response);
+    return response;
   } catch (error) {
     console.error(`Proxy error for ${path}:`, error);
     return NextResponse.json({ error: "Proxy request failed" }, { status: 502 });

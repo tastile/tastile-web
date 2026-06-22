@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
+import {
+  ensureDefaultApiTokenForUser,
+  getApiTokenFromRequest,
+} from "@/lib/account/api-token-session";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -30,11 +34,14 @@ export async function GET(request: NextRequest) {
   const upstreamUrl = `${CLOUD_API_BASE}/read/events/state`;
 
   const headers: Record<string, string> = {};
-  const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  const userSub = resolveBridgeUserSub(request);
-  if (bridgeSecret && userSub) {
-    headers["x-tastile-web-bridge-secret"] = bridgeSecret;
-    headers["x-tastile-web-session-user"] = userSub;
+  const apiToken = getApiTokenFromRequest(request);
+  let bootstrappedApiToken: string | null = null;
+  if (apiToken) {
+    headers.authorization = `Bearer ${apiToken}`;
+  } else {
+    const userSub = resolveBridgeUserSub(request);
+    bootstrappedApiToken = await ensureDefaultApiTokenForUser(userSub);
+    if (bootstrappedApiToken) headers.authorization = `Bearer ${bootstrappedApiToken}`;
   }
 
   try {

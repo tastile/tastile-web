@@ -11,6 +11,7 @@ import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { completeEmailOtpSignIn } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 
 export async function POST(request: NextRequest) {
   const env = tryGetCognitoEnv();
@@ -65,6 +66,9 @@ export async function POST(request: NextRequest) {
       },
       response,
     );
+    if (!isDesktop) {
+      await ensureDefaultApiTokenForUser(claims.sub, response);
+    }
     response.cookies.set(COOKIE_EMAIL_AUTH_SESSION, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

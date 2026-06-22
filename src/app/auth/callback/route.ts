@@ -8,6 +8,7 @@ import {
 } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { exchangeCodeForTokens, parseIdTokenClaims } from "@/lib/cognito/server";
+import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 
 export async function GET(request: NextRequest) {
   const env = tryGetCognitoEnv();
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
       },
       response,
     );
+    await ensureDefaultApiTokenForUser(claims.sub, response);
     // Clear PKCE cookies.
     response.cookies.set(COOKIE_OAUTH_STATE, "", {
       httpOnly: true,
