@@ -6,6 +6,7 @@ import { getAccountUserSub } from "@/lib/cognito/account-session";
 const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
 const DEFAULT_TOKEN_NAME = "Default API key";
 const TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+const bootstrapLocks = new Map<string, Promise<string | null>>();
 
 type ApiTokenView = {
   token_id: string;
@@ -38,8 +39,27 @@ export async function ensureDefaultApiTokenForUser(
   userSub: string | null,
   response?: NextResponse,
 ): Promise<string | null> {
+  if (!userSub) return null;
+  const existingLock = bootstrapLocks.get(userSub);
+  if (existingLock) {
+    const token = await existingLock;
+    if (token && response) setApiTokenCookie(token, response);
+    return token;
+  }
+
+  const lock = createDefaultApiTokenForUser(userSub, response).finally(() => {
+    bootstrapLocks.delete(userSub);
+  });
+  bootstrapLocks.set(userSub, lock);
+  return lock;
+}
+
+async function createDefaultApiTokenForUser(
+  userSub: string,
+  response?: NextResponse,
+): Promise<string | null> {
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  if (!userSub || !bridgeSecret) return null;
+  if (!bridgeSecret) return null;
 
   const headers = {
     "x-tastile-web-bridge-secret": bridgeSecret,
