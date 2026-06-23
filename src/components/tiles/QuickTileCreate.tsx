@@ -131,7 +131,7 @@ export function QuickTileCreate() {
       return `${t("quickCreate.scheduleSummaryStartEnd")}${startDateInput} ${startTimeInput} - ${endDateInput} ${endTimeInput}`;
     }
     if (hasStart) {
-      return `${startDateInput} ${startTimeInput} ${t("quickCreate.scheduleSummaryStartOnly")}`;
+      return `${t("quickCreate.scheduleSummaryStartOnly")}${startDateInput} ${startTimeInput}`;
     }
     if (hasEnd) {
       return `${t("quickCreate.scheduleSummaryEndOnly")}${endDateInput} ${endTimeInput}`;
@@ -405,6 +405,7 @@ export function QuickTileCreate() {
       setIsLabelOnly(false);
       setUseStartAt(false);
       setUseEndAt(false);
+      setScheduleOpen(false);
       setStartDateInput(getCurrentLocalDate());
       setStartTimeInput(getCurrentLocalTime());
       setEndDateInput(getCurrentLocalDate());
