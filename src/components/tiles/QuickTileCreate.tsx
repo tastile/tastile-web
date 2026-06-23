@@ -982,7 +982,7 @@ export function QuickTileCreate() {
                         const n = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
                         if (n <= 0) setRecurrenceIntervalInput("1");
                       }}
-                      className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                     />
                     <span className="text-sm text-foreground-muted">
                       {getRecurrenceIntervalSuffix(
@@ -1013,7 +1013,7 @@ export function QuickTileCreate() {
                   </div>
                 ) : null}
                 {recurrenceFrequency === "monthly" ? (
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-section">
                     <label className="space-y-1">
                       <span className="text-xs text-foreground-muted">
                         {t("quickCreate.recurrenceMonthlyWeek")}
@@ -1025,7 +1025,7 @@ export function QuickTileCreate() {
                         onChange={(e) =>
                           setRecurrenceMonthlyWeekInput(sanitizeNumericInput(e.target.value))
                         }
-                        className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                       />
                     </label>
                     <label className="space-y-1">
@@ -1035,7 +1035,7 @@ export function QuickTileCreate() {
                       <select
                         value={recurrenceMonthlyWeekdayInput}
                         onChange={(e) => setRecurrenceMonthlyWeekdayInput(e.target.value)}
-                        className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                       >
                         {getWeekdayOptions(locale).map((day) => (
                           <option key={day.value} value={day.value}>
@@ -1056,7 +1056,7 @@ export function QuickTileCreate() {
                   helpText={t("quickCreate.scheduleGuide")}
                   choiceGrid={false}
                 >
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-section">
                     <ChoiceButton
                       active={recurrenceUseStartAt}
                       onClick={() => {
@@ -1088,7 +1088,7 @@ export function QuickTileCreate() {
                   </div>
 
                   {recurrenceUseStartAt || recurrenceUseEndAt ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-section">
                       {recurrenceUseStartAt ? (
                         <input
                           type="time"
@@ -1118,7 +1118,7 @@ export function QuickTileCreate() {
                 </SectionBlock>
 
                 <SectionBlock title={t("quickCreate.recurrenceValidityTitle")} choiceGrid={false}>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-2 gap-section">
                     <ChoiceButton
                       active={recurrenceValidFromEnabled}
                       onClick={() => setRecurrenceValidFromEnabled((prev) => !prev)}
@@ -1133,7 +1133,7 @@ export function QuickTileCreate() {
                     </ChoiceButton>
                   </div>
                   {recurrenceValidFromEnabled || recurrenceValidToEnabled ? (
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-section">
                       {recurrenceValidFromEnabled ? (
                         <input
                           type="date"
@@ -1187,7 +1187,7 @@ export function QuickTileCreate() {
               helpText={t("quickCreate.interruptPenaltyGuide")}
               choiceGrid={false}
             >
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-section">
                 {[1, 2, 3, 4, 5].map((level) => (
                   <ChoiceButton
                     key={`interrupt-${level}`}
@@ -1205,7 +1205,7 @@ export function QuickTileCreate() {
               helpText={t("quickCreate.resumePenaltyGuide")}
               choiceGrid={false}
             >
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-5 gap-section">
                 {[1, 2, 3, 4, 5].map((level) => (
                   <ChoiceButton
                     key={`resume-${level}`}
@@ -1307,7 +1307,7 @@ export function QuickTileCreate() {
                 value={timezone}
                 onChange={(e) => setTimezone(e.target.value)}
                 aria-label={t("quickCreate.timezoneTitle")}
-                className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
               >
                 <option value="">{t("quickCreate.timezoneAuto")}</option>
                 {COMMON_TIMEZONES.map((tz) => (
@@ -1342,7 +1342,7 @@ export function QuickTileCreate() {
               choiceGrid={false}
             >
               {timedLabels.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-section">
                   {timedLabels.map((entry, index) => (
                     <div
                       key={`${entry.label}-${index}`}
@@ -1368,7 +1368,7 @@ export function QuickTileCreate() {
                   onChange={(e) => setTimedLabelDraft(e.target.value)}
                   placeholder={t("quickCreate.timedLabelsLabel")}
                   aria-label={t("quickCreate.timedLabelsLabel")}
-                  className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <button
                   type="button"
@@ -1381,7 +1381,7 @@ export function QuickTileCreate() {
                     ]);
                     setTimedLabelDraft("");
                   }}
-                  className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-fg hover:opacity-90 transition-opacity"
+                  className="rounded-lg bg-primary px-control py-control text-xs font-medium text-primary-fg hover:opacity-90 transition-opacity"
                 >
                   {t("quickCreate.timedLabelsAdd")}
                 </button>
