@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, X, ChevronLeft, ChevronRight, Type } from "lucide-react";
+import { Clock3, X, ChevronLeft, ChevronRight, Type, Timer } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { getSessionClient } from "@/lib/daemon/id-token-client";
 import { cn } from "@/lib/utils/cn";
@@ -495,7 +495,8 @@ export function QuickTileCreate() {
               />
 
               {!isLabelOnly ? (
-                <SectionBlock title={t("quickCreate.workTargetTitle")} choiceGrid={false}>
+                <div className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5">
+                  <Timer className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                   <DurationInput
                     hours={workHoursInput}
                     minutes={workMinutesInput}
@@ -510,7 +511,7 @@ export function QuickTileCreate() {
                     hoursUnit={t("quickCreate.hoursUnit")}
                     minutesUnit={t("quickCreate.minutesUnit")}
                   />
-                </SectionBlock>
+                </div>
               ) : null}
 
               {!isLabelOnly ? (

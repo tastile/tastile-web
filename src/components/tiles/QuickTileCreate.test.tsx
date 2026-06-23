@@ -95,6 +95,15 @@ describe("QuickTileCreate — accessibility", () => {
 		expect(titleInput.getAttribute("aria-required")).toBe("true");
 	});
 
+	it("duration is a pill with a leading icon (no 'Estimated duration' heading)", () => {
+		render(<QuickTileCreate />);
+
+		expect(screen.queryByRole("heading", { name: /quickCreate\.workTargetTitle/ })).toBeNull();
+		// DurationInput is reachable by its aria-label (which includes "hours" + "minutes" units).
+		const duration = screen.getByRole("textbox", { name: /hours/i });
+		expect(duration).toBeTruthy();
+	});
+
 	it("all visible date and time inputs have accessible names", () => {
 		render(<QuickTileCreate />);
 
