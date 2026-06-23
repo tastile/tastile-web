@@ -145,6 +145,19 @@
   --radius-xxxl: 40px;
   --radius-full: 9999px;
 
+  /* Semantic spacing — preferred for component layouts.
+     These generate Tailwind utilities (p-control, gap-section, space-y-page, etc.).
+     Tailwind's default px-2/gap-4/etc. continue to work for raw values.
+       control-compact (6px) — chips, badges, dense pills, segmented buttons
+       control        (8px) — buttons, inputs, choice rows, pills
+       section        (16px) — card padding, row gaps, sub-panel scroll padding
+       page           (32px) — page-level padding
+  */
+  --spacing-control-compact: 0.375rem;
+  --spacing-control: 0.5rem;
+  --spacing-section: 1rem;
+  --spacing-page: 2rem;
+
   /* Fonts */
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
