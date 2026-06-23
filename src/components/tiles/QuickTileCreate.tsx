@@ -8,6 +8,7 @@ import {
   Clock3,
   Clock4,
   StopCircle,
+  Tag,
   Timer,
   Type,
   X,
@@ -649,65 +650,68 @@ export function QuickTileCreate() {
             </SectionBlock>
 
             {/* Project / Tags (inlined — was in meta sub-panel) */}
-            <SectionBlock
-              title={t("quickCreate.metaTitle")}
-              helpText={t("quickCreate.metaGuide")}
-              choiceGrid={false}
-            >
-              <div className="relative">
-                <input
-                  type="text"
-                  value={projectDraft}
-                  onChange={(e) => {
-                    setProjectDraft(e.target.value);
-                    setSelectedProject(null);
-                  }}
-                  onFocus={() => setIsProjectInputFocused(true)}
-                  onBlur={() => {
-                    window.setTimeout(() => setIsProjectInputFocused(false), 100);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    e.preventDefault();
-                    const normalized = normalizeTag(projectDraft);
-                    if (!normalized) return;
-                    const matched = existingProjects.find((project) =>
-                      equalsIgnoreCase(project, normalized),
-                    );
-                    const next = matched ?? normalized;
-                    setSelectedProject(next);
-                    setProjectDraft(next);
-                    setIsProjectInputFocused(false);
-                  }}
-                  aria-label={t("quickCreate.projectPlaceholder")}
-                  placeholder={t("quickCreate.projectPlaceholder")}
-                  className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-                {isProjectInputFocused ? (
-                  <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-                    {projectSuggestions.length > 0 ? (
-                      projectSuggestions.map((project) => (
-                        <button
-                          key={project}
-                          type="button"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setSelectedProject(project);
-                            setProjectDraft(project);
-                            setIsProjectInputFocused(false);
-                          }}
-                          className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                        >
-                          {project}
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-2 py-1.5 text-xs text-foreground-muted">
-                        {t("quickCreate.createNew")}
-                      </div>
-                    )}
-                  </div>
+            <SectionBlock choiceGrid={false}>
+              <div className="space-y-2">
+                {resolvedProject ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                    <Tag className="h-3 w-3" aria-hidden="true" />
+                    {resolvedProject}
+                  </span>
                 ) : null}
+                <div className="relative">
+                  <Input
+                    leading={<Tag className="h-4 w-4" />}
+                    value={projectDraft}
+                    onChange={(e) => {
+                      setProjectDraft(e.target.value);
+                      setSelectedProject(null);
+                    }}
+                    onFocus={() => setIsProjectInputFocused(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setIsProjectInputFocused(false), 100);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const normalized = normalizeTag(projectDraft);
+                      if (!normalized) return;
+                      const matched = existingProjects.find((project) =>
+                        equalsIgnoreCase(project, normalized),
+                      );
+                      const next = matched ?? normalized;
+                      setSelectedProject(next);
+                      setProjectDraft(next);
+                      setIsProjectInputFocused(false);
+                    }}
+                    aria-label={t("quickCreate.projectPlaceholder")}
+                    placeholder={t("quickCreate.projectPlaceholder")}
+                  />
+                  {isProjectInputFocused ? (
+                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+                      {projectSuggestions.length > 0 ? (
+                        projectSuggestions.map((project) => (
+                          <button
+                            key={project}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedProject(project);
+                              setProjectDraft(project);
+                              setIsProjectInputFocused(false);
+                            }}
+                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                          >
+                            {project}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
+                          {t("quickCreate.createNew")}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
               </div>
 
               <div className="relative">

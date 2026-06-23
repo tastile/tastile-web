@@ -246,6 +246,15 @@ describe("QuickTileCreate — accessibility", () => {
 			screen.getByRole("textbox", { name: /quickCreate\.memoPlaceholder/ }),
 		).toBeTruthy();
 	});
+
+	it("project input has leading icon and no section heading", () => {
+		render(<QuickTileCreate />);
+		expect(screen.queryByRole("heading", { name: /quickCreate\.metaTitle/ })).toBeNull();
+		// Project input still has a recognizable aria-label
+		expect(
+			screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ }),
+		).toBeTruthy();
+	});
 });
 
 describe("QuickTileCreate — interruption & automation layers", () => {
