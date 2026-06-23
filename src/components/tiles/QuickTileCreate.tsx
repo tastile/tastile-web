@@ -1,16 +1,17 @@
 "use client";
 
-import { Clock3, X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Clock3, X, ChevronLeft, ChevronRight, Type } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
 import { getSessionClient } from "@/lib/daemon/id-token-client";
 import { cn } from "@/lib/utils/cn";
 import { Actor } from "@/lib/domain/actor";
 import { TileId } from "@/lib/domain/ids";
-import { type ObjectiveMode, type SemanticRole, Tile } from "@/lib/domain/tile";
+import { type DoneRule, type ObjectiveMode, Tile } from "@/lib/domain/tile";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { Input } from "@/components/ui/Input";
 
 export function QuickTileCreate() {
   const { isOpen, close } = useQuickCreateStore();
@@ -18,11 +19,13 @@ export function QuickTileCreate() {
   const { t, locale } = useTranslation();
   const { state, execute } = useExecutionEngineContext();
 
-  const [activePanel, setActivePanel] = useState<"base" | "schedule" | "recurrence" | "meta">("base");
+  const [activePanel, setActivePanel] = useState<
+    "base" | "recurrence" | "interrupt" | "automation" | "meta"
+  >("base");
 
   const [title, setTitle] = useState("");
   const [titleEdited, setTitleEdited] = useState(false);
-  const [tileKind, setTileKind] = useState<SemanticRole>("work");
+  const [isLabelOnly, setIsLabelOnly] = useState(false);
   const [useStartAt, setUseStartAt] = useState(false);
   const [useEndAt, setUseEndAt] = useState(false);
   const [startDateInput, setStartDateInput] = useState(() => getCurrentLocalDate());
@@ -58,7 +61,6 @@ export function QuickTileCreate() {
   const [workHoursInput, setWorkHoursInput] = useState("0");
   const [workMinutesInput, setWorkMinutesInput] = useState("25");
   const [durationManuallyEdited, setDurationManuallyEdited] = useState(false);
-  const [breakSplitsWork, setBreakSplitsWork] = useState(true);
   const [selectedProject, setSelectedProject] = useState<string | null>(null);
   const [projectDraft, setProjectDraft] = useState("");
   const [isProjectInputFocused, setIsProjectInputFocused] = useState(false);
@@ -66,6 +68,19 @@ export function QuickTileCreate() {
   const [tagDraft, setTagDraft] = useState("");
   const [isTagInputFocused, setIsTagInputFocused] = useState(false);
   const [memoInput, setMemoInput] = useState("");
+  const [doneRule, setDoneRule] = useState<DoneRule>("manual");
+  const [interruptPenalty, setInterruptPenalty] = useState(3);
+  const [resumePenalty, setResumePenalty] = useState(3);
+  const [externalInterruptOnly, setExternalInterruptOnly] = useState(false);
+  const [promptOnStart, setPromptOnStart] = useState(false);
+  const [promptOnEnd, setPromptOnEnd] = useState(true);
+  const [autoStartAllowed, setAutoStartAllowed] = useState(false);
+  const [autoEndAllowed, setAutoEndAllowed] = useState(false);
+  const [timezone, setTimezone] = useState("");
+  const [timedLabelDraft, setTimedLabelDraft] = useState("");
+  const [timedLabels, setTimedLabels] = useState<
+    Array<{ label: string; startAt: Date | null; endAt: Date | null }>
+  >([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,7 +115,7 @@ export function QuickTileCreate() {
   const hasEnd = !!endDate;
   const hasAnyTemporalConstraint = hasStart || hasEnd;
   const isRecurring = objectiveMode === "recurring";
-  const showFocusUntilEnd = tileKind === "work" && !isRecurring && hasEnd;
+  const showFocusUntilEnd = !isLabelOnly && !isRecurring && hasEnd;
   const recurrenceInterval = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
   const recurrenceWindowValid =
     !recurrenceUseStartAt ||
@@ -121,7 +136,7 @@ export function QuickTileCreate() {
     .slice(0, 8);
 
   const suggestedTitle = (() => {
-    if (tileKind === "label") {
+    if (isLabelOnly) {
       return locale === "ja" ? "期間ラベル" : "Period label";
     }
 
@@ -170,16 +185,13 @@ export function QuickTileCreate() {
 
   // WYSIWYG: when the user picks a condition that lives in a sub-panel,
   // open that panel so the controls are visible without a second click.
+  // (Schedule / Period label / Project / Memo now live in the base panel
+  // and need no auto-navigation.)
   useEffect(() => {
     if (objectiveMode === "recurring" && activePanel === "base") {
       setActivePanel("recurrence");
     }
   }, [objectiveMode, activePanel]);
-  useEffect(() => {
-    if ((useStartAt || useEndAt) && activePanel === "base") {
-      setActivePanel("schedule");
-    }
-  }, [useStartAt, useEndAt, activePanel]);
 
   if (!isOpen) return null;
 
@@ -187,7 +199,7 @@ export function QuickTileCreate() {
     ? recurrenceWindowValid
     : !startDate || !endDate || endDate.getTime() > startDate.getTime();
   const durationReady =
-    tileKind === "label"
+    isLabelOnly
       ? true
       : isRecurring
         ? (workTargetMin ?? 0) > 0
@@ -204,7 +216,7 @@ export function QuickTileCreate() {
       : "");
 
   const doneDefinition = (() => {
-    if (tileKind === "label") {
+    if (isLabelOnly) {
       return locale === "ja"
         ? "指定した期間のラベル付けを完了"
         : "Complete labeling for the selected period";
@@ -234,13 +246,17 @@ export function QuickTileCreate() {
 
   async function handleCreate() {
     setError(null);
+    if (title.trim().length === 0) {
+      setError(t("quickCreate.titleRequired"));
+      return;
+    }
     if (!temporalOrderValid) {
       setError(t("quickCreate.invalidTemporalOrder"));
       return;
     }
 
     if (
-      (tileKind === "work" || tileKind === "break") &&
+      !isLabelOnly &&
       !isRecurring &&
       hasAnyTemporalConstraint &&
       (workTargetMin ?? 0) <= 0
@@ -257,15 +273,22 @@ export function QuickTileCreate() {
 
     const tileId = TileId.new();
     const tile = Tile.create(tileId, title.trim());
-    tile.annotation.semanticRole = tileKind;
-    tile.objective.objectiveMode = objectiveMode;
-    tile.objective.targetWorkMin = tileKind === "work" ? effectiveDurationMin : null;
-    tile.objective.targetRestMin = tileKind === "break" ? effectiveDurationMin : null;
+    if (isLabelOnly) {
+      tile.objective.objectiveMode = "label_only";
+      tile.objective.targetWorkMin = null;
+      tile.objective.targetRestMin = null;
+      tile.objective.doneRule = null;
+    } else {
+      tile.objective.objectiveMode = objectiveMode;
+      tile.objective.targetWorkMin = effectiveDurationMin;
+      tile.objective.targetRestMin = null;
+      tile.objective.doneRule = doneRule;
+    }
     const recurrenceAnchorDate = recurrenceValidFromEnabled
       ? parseDateTimeParts(recurrenceValidFromDateInput, "00:00")
       : null;
     tile.objective.recurrence =
-      objectiveMode === "recurring"
+      objectiveMode === "recurring" && !isLabelOnly
         ? {
             generator: {
               kind: "time_based",
@@ -298,17 +321,34 @@ export function QuickTileCreate() {
           }
         : null;
     tile.core.doneDefinition = doneDefinition;
-    tile.interruption.breakSplitsWork = tileKind === "work" ? breakSplitsWork : false;
     tile.annotation.labels = buildLabels(resolvedProject, selectedTags);
+    tile.annotation.timedLabels = timedLabels
+      .filter((entry) => entry.label.trim().length > 0)
+      .map((entry) => ({
+        label: entry.label.trim(),
+        startAt: entry.startAt,
+        endAt: entry.endAt,
+      }));
     tile.core.nextAction =
       memoInput.trim() ||
-      (tileKind === "label"
+      (isLabelOnly
         ? locale === "ja"
           ? "この期間にラベルを適用"
           : "Apply this label within the selected period"
         : locale === "ja"
           ? "開始して最初の1手を実行"
           : "Start and execute the first step");
+
+    tile.interruption.interruptPenalty = interruptPenalty;
+    tile.interruption.resumePenalty = resumePenalty;
+    tile.interruption.externalInterruptOnly = externalInterruptOnly;
+
+    tile.automation.promptOnStart = promptOnStart;
+    tile.automation.promptOnEnd = promptOnEnd;
+    tile.automation.autoStartAllowed = autoStartAllowed;
+    tile.automation.autoEndAllowed = autoEndAllowed;
+
+    tile.temporal.tz = timezone.trim() ? timezone.trim() : null;
 
     if (!isRecurring && startDate) {
       tile.temporal.fixedStart = startDate;
@@ -344,7 +384,7 @@ export function QuickTileCreate() {
 
       setTitle("");
       setTitleEdited(false);
-      setTileKind("work");
+      setIsLabelOnly(false);
       setUseStartAt(false);
       setUseEndAt(false);
       setStartDateInput(getCurrentLocalDate());
@@ -368,12 +408,22 @@ export function QuickTileCreate() {
       setWorkHoursInput("0");
       setWorkMinutesInput("25");
       setDurationManuallyEdited(false);
-      setBreakSplitsWork(true);
       setSelectedProject(null);
       setProjectDraft("");
       setSelectedTags([]);
       setTagDraft("");
       setMemoInput("");
+      setDoneRule("manual");
+      setInterruptPenalty(3);
+      setResumePenalty(3);
+      setExternalInterruptOnly(false);
+      setPromptOnStart(false);
+      setPromptOnEnd(true);
+      setAutoStartAllowed(false);
+      setAutoEndAllowed(false);
+      setTimezone("");
+      setTimedLabelDraft("");
+      setTimedLabels([]);
       setError(null);
       close();
     } catch (err) {
@@ -430,32 +480,21 @@ export function QuickTileCreate() {
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
-              <SectionBlock title={t("quickCreate.titleTitle")} choiceGrid={false}>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => {
-                    setTitle(e.target.value);
-                    setTitleEdited(true);
-                  }}
-                  placeholder={suggestedTitle}
-                  className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </SectionBlock>
+              <Input
+                id="quick-tile-title"
+                leading={<Type className="h-4 w-4" />}
+                value={title}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setTitleEdited(true);
+                }}
+                placeholder={t("quickCreate.titlePlaceholder")}
+                aria-required="true"
+                aria-label={t("quickCreate.titlePlaceholder")}
+                size="large"
+              />
 
-              <SectionBlock>
-                <ChoiceButton active={tileKind === "work"} onClick={() => setTileKind("work")}>
-                  {t("quickCreate.kindTask")}
-                </ChoiceButton>
-                <ChoiceButton active={tileKind === "break"} onClick={() => setTileKind("break")}>
-                  {t("quickCreate.kindBreak")}
-                </ChoiceButton>
-                <ChoiceButton active={tileKind === "label"} onClick={() => setTileKind("label")}>
-                  {t("quickCreate.kindLabel")}
-                </ChoiceButton>
-              </SectionBlock>
-
-              {tileKind === "work" || tileKind === "break" ? (
+              {!isLabelOnly ? (
                 <SectionBlock title={t("quickCreate.workTargetTitle")} choiceGrid={false}>
                   <DurationInput
                     hours={workHoursInput}
@@ -474,73 +513,36 @@ export function QuickTileCreate() {
                 </SectionBlock>
               ) : null}
 
-              {/* Sub-panel navigation buttons */}
-              <div className="pt-4 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setActivePanel("schedule")}
-                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+              {!isLabelOnly ? (
+                <SectionBlock
+                  title={t("quickCreate.doneRuleTitle")}
+                  helpText={t("quickCreate.doneRuleGuide")}
+                  choiceGrid={false}
                 >
-                  <div className="flex flex-col items-start">
-                    <span>Schedule & Splitting</span>
-                    <span className="text-xs text-foreground-muted font-normal">Set time bounds and interruption rules</span>
+                  <div className="grid grid-cols-3 gap-2">
+                    <ChoiceButton
+                      active={doneRule === "manual"}
+                      onClick={() => setDoneRule("manual")}
+                    >
+                      {t("quickCreate.doneRuleManual")}
+                    </ChoiceButton>
+                    <ChoiceButton
+                      active={doneRule === "time_reached"}
+                      onClick={() => setDoneRule("time_reached")}
+                    >
+                      {t("quickCreate.doneRuleTimeReached")}
+                    </ChoiceButton>
+                    <ChoiceButton
+                      active={doneRule === "interval_end"}
+                      onClick={() => setDoneRule("interval_end")}
+                    >
+                      {t("quickCreate.doneRuleIntervalEnd")}
+                    </ChoiceButton>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel("recurrence")}
-                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
-                >
-                  <div className="flex flex-col items-start">
-                    <span>Recurrence & Objective</span>
-                    <span className="text-xs text-foreground-muted font-normal">Make this a repeating task</span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActivePanel("meta")}
-                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
-                >
-                  <div className="flex flex-col items-start">
-                    <span>Project & Metadata</span>
-                    <span className="text-xs text-foreground-muted font-normal">Tags, memos, and project context</span>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
-                </button>
-              </div>
-            </div>
-        </div>
-{/* Footer Actions */}
-        <div className="border-t border-border bg-surface-0 p-4 shrink-0">
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={!canSubmit || submitting}
-            className="w-full rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
-          >
-            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
-          </button>
-          {error ? <p className="mt-2 text-center text-xs text-danger">{error}</p> : null}
-        </div>
-            </section>
+                </SectionBlock>
+              ) : null}
 
-      {/* Sub Panel: Schedule */}
-      <section className={subPanelClass("schedule")}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {t("quickCreate.back") || "Back"}
-          </button>
-          <h2 className="text-sm font-semibold text-foreground">Schedule & Splitting</h2>
-        </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-6">
+              {/* Schedule (inlined — was a sub-panel before) */}
               <SectionBlock
                 title={t("quickCreate.scheduleTitle")}
                 helpText={t("quickCreate.scheduleGuide")}
@@ -584,59 +586,282 @@ export function QuickTileCreate() {
                 ) : null}
 
                 {!isRecurring && useStartAt ? (
-                  <label className="space-y-1">
+                  <div className="space-y-1">
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="date"
+                        aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "日付" : "date"})`}
                         value={startDateInput}
                         onChange={(e) => setStartDateInput(e.target.value)}
                         className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                       />
                       <input
                         type="time"
+                        aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "時刻" : "time"})`}
                         step={60}
                         value={startTimeInput}
                         onChange={(e) => setStartTimeInput(e.target.value)}
                         className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                       />
                     </div>
-                  </label>
+                  </div>
                 ) : null}
 
                 {!isRecurring && useEndAt ? (
-                  <label className="space-y-1">
+                  <div className="space-y-1">
                     <div className="grid grid-cols-2 gap-2">
                       <input
                         type="date"
+                        aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "日付" : "date"})`}
                         value={endDateInput}
                         onChange={(e) => setEndDateInput(e.target.value)}
                         className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                       />
                       <input
                         type="time"
+                        aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "時刻" : "time"})`}
                         step={60}
                         value={endTimeInput}
                         onChange={(e) => setEndTimeInput(e.target.value)}
                         className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                       />
                     </div>
-                  </label>
+                  </div>
                 ) : null}
               </SectionBlock>
 
-              {tileKind === "work" ? (
-                <SectionBlock title={t("quickCreate.splitTitle")} helpText={t("quickCreate.splitGuide")}>
-                  <ChoiceButton active={breakSplitsWork} onClick={() => setBreakSplitsWork(true)}>
-                    {t("quickCreate.splitAllow")}
-                  </ChoiceButton>
-                  <ChoiceButton active={!breakSplitsWork} onClick={() => setBreakSplitsWork(false)}>
-                    {t("quickCreate.splitKeep")}
-                  </ChoiceButton>
-                </SectionBlock>
-              ) : null}
+              {/* Period label (inlined) */}
+              <SectionBlock
+                title={t("quickCreate.labelOnlyTitle")}
+                helpText={t("quickCreate.labelOnlyGuide")}
+                choiceGrid={false}
+              >
+                <label className="flex items-center gap-2 text-sm text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={isLabelOnly}
+                    onChange={(e) => setIsLabelOnly(e.target.checked)}
+                    aria-describedby="quick-tile-label-only-help"
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                  <span>{t("quickCreate.labelOnly")}</span>
+                </label>
+                <p id="quick-tile-label-only-help" className="text-xs text-foreground-muted">
+                  {t("quickCreate.labelOnlyHelp")}
+                </p>
+              </SectionBlock>
+
+              {/* Project / Tags (inlined — was in meta sub-panel) */}
+              <SectionBlock
+                title={t("quickCreate.metaTitle")}
+                helpText={t("quickCreate.metaGuide")}
+                choiceGrid={false}
+              >
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={projectDraft}
+                    onChange={(e) => {
+                      setProjectDraft(e.target.value);
+                      setSelectedProject(null);
+                    }}
+                    onFocus={() => setIsProjectInputFocused(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setIsProjectInputFocused(false), 100);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const normalized = normalizeTag(projectDraft);
+                      if (!normalized) return;
+                      const matched = existingProjects.find((project) =>
+                        equalsIgnoreCase(project, normalized),
+                      );
+                      const next = matched ?? normalized;
+                      setSelectedProject(next);
+                      setProjectDraft(next);
+                      setIsProjectInputFocused(false);
+                    }}
+                    aria-label={t("quickCreate.projectPlaceholder")}
+                    placeholder={t("quickCreate.projectPlaceholder")}
+                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  {isProjectInputFocused ? (
+                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+                      {projectSuggestions.length > 0 ? (
+                        projectSuggestions.map((project) => (
+                          <button
+                            key={project}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedProject(project);
+                              setProjectDraft(project);
+                              setIsProjectInputFocused(false);
+                            }}
+                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                          >
+                            {project}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
+                          {t("quickCreate.createNew")}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onFocus={() => setIsTagInputFocused(true)}
+                    onBlur={() => {
+                      window.setTimeout(() => setIsTagInputFocused(false), 100);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const normalized = normalizeTag(tagDraft);
+                      if (!normalized) return;
+                      const matched = existingTags.find((tag) => equalsIgnoreCase(tag, normalized));
+                      const next = matched ?? normalized;
+                      setSelectedTags((prev) =>
+                        prev.some((tag) => equalsIgnoreCase(tag, next)) ? prev : [...prev, next],
+                      );
+                      setTagDraft("");
+                    }}
+                    aria-label={t("quickCreate.tagsPlaceholder")}
+                    placeholder={t("quickCreate.tagsPlaceholder")}
+                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  {isTagInputFocused ? (
+                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+                      {tagSuggestions.length > 0 ? (
+                        tagSuggestions.map((tag) => (
+                          <button
+                            key={tag}
+                            type="button"
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              setSelectedTags((prev) =>
+                                prev.some((item) => equalsIgnoreCase(item, tag)) ? prev : [...prev, tag],
+                              );
+                              setTagDraft("");
+                              setIsTagInputFocused(false);
+                            }}
+                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                          >
+                            {tag}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
+                          {t("quickCreate.createNew")}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+
+                {selectedTags.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedTags.map((tag) => (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => setSelectedTags((prev) => prev.filter((item) => item !== tag))}
+                        className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
+                        aria-label={`${t("quickCreate.removeTag")} ${tag}`}
+                      >
+                        #{tag} &times;
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </SectionBlock>
+
+              {/* Memo (inlined — was in meta sub-panel) */}
+              <SectionBlock
+                title={t("quickCreate.memoTitle")}
+                helpText={t("quickCreate.memoGuide")}
+                choiceGrid={false}
+              >
+                <textarea
+                  value={memoInput}
+                  onChange={(e) => setMemoInput(e.target.value)}
+                  placeholder={t("quickCreate.memoPlaceholder")}
+                  aria-label={t("quickCreate.memoPlaceholder")}
+                  rows={3}
+                  className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </SectionBlock>
+
+              {/* Sub-panel navigation buttons */}
+              <div className="pt-4 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("recurrence")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>{t("quickCreate.recurrenceNavTitle")}</span>
+                    <span className="text-xs text-foreground-muted font-normal">{t("quickCreate.recurrenceNavGuide")}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("interrupt")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>{t("quickCreate.interruptNavTitle")}</span>
+                    <span className="text-xs text-foreground-muted font-normal">{t("quickCreate.interruptNavGuide")}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("automation")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>{t("quickCreate.automationNavTitle")}</span>
+                    <span className="text-xs text-foreground-muted font-normal">{t("quickCreate.automationNavGuide")}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("meta")}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                >
+                  <div className="flex flex-col items-start">
+                    <span>{t("quickCreate.metaNavTitle")}</span>
+                    <span className="text-xs text-foreground-muted font-normal">{t("quickCreate.metaNavGuide")}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                </button>
+              </div>
             </div>
         </div>
-      </section>
+{/* Footer Actions */}
+        <div className="border-t border-border bg-surface-0 p-4 shrink-0">
+          <button
+            type="button"
+            onClick={handleCreate}
+            disabled={submitting}
+            className="w-full rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
+          >
+            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
+          </button>
+          {error ? <p role="alert" className="mt-2 text-center text-xs text-danger">{error}</p> : null}
+        </div>
+            </section>
 
       {/* Sub Panel: Recurrence */}
       <section className={subPanelClass("recurrence")}>
@@ -647,9 +872,9 @@ export function QuickTileCreate() {
             className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
-            {t("quickCreate.back") || "Back"}
+            {t("quickCreate.back")}
           </button>
-          <h2 className="text-sm font-semibold text-foreground">Recurrence & Objective</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t("quickCreate.recurrenceNavTitle")}</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-6">
@@ -829,6 +1054,7 @@ export function QuickTileCreate() {
                         {recurrenceUseStartAt ? (
                           <input
                             type="time"
+                            aria-label={t("quickCreate.windowStartAt")}
                             step={60}
                             value={recurrenceStartTimeInput}
                             onChange={(e) => setRecurrenceStartTimeInput(e.target.value)}
@@ -840,6 +1066,7 @@ export function QuickTileCreate() {
                         {recurrenceUseEndAt ? (
                           <input
                             type="time"
+                            aria-label={t("quickCreate.windowEndAt")}
                             step={60}
                             value={recurrenceEndTimeInput}
                             onChange={(e) => setRecurrenceEndTimeInput(e.target.value)}
@@ -872,6 +1099,7 @@ export function QuickTileCreate() {
                         {recurrenceValidFromEnabled ? (
                           <input
                             type="date"
+                            aria-label={t("quickCreate.recurrenceValidFrom")}
                             value={recurrenceValidFromDateInput}
                             onChange={(e) => setRecurrenceValidFromDateInput(e.target.value)}
                             className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
@@ -882,6 +1110,7 @@ export function QuickTileCreate() {
                         {recurrenceValidToEnabled ? (
                           <input
                             type="date"
+                            aria-label={t("quickCreate.recurrenceValidTo")}
                             value={recurrenceValidToDateInput}
                             onChange={(e) => setRecurrenceValidToDateInput(e.target.value)}
                             className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
@@ -898,6 +1127,158 @@ export function QuickTileCreate() {
         </div>
       </section>
 
+      {/* Sub Panel: Interrupt rules */}
+      <section className={subPanelClass("interrupt")}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t("quickCreate.back")}
+          </button>
+          <h2 className="text-sm font-semibold text-foreground">{t("quickCreate.interruptNavTitle")}</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-6">
+            <SectionBlock
+              title={t("quickCreate.interruptPenaltyTitle")}
+              helpText={t("quickCreate.interruptPenaltyGuide")}
+              choiceGrid={false}
+            >
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <ChoiceButton
+                    key={`interrupt-${level}`}
+                    active={interruptPenalty === level}
+                    onClick={() => setInterruptPenalty(level)}
+                  >
+                    {String(level)}
+                  </ChoiceButton>
+                ))}
+              </div>
+            </SectionBlock>
+
+            <SectionBlock
+              title={t("quickCreate.resumePenaltyTitle")}
+              helpText={t("quickCreate.resumePenaltyGuide")}
+              choiceGrid={false}
+            >
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <ChoiceButton
+                    key={`resume-${level}`}
+                    active={resumePenalty === level}
+                    onClick={() => setResumePenalty(level)}
+                  >
+                    {String(level)}
+                  </ChoiceButton>
+                ))}
+              </div>
+            </SectionBlock>
+
+            <SectionBlock
+              title={t("quickCreate.externalInterruptOnlyTitle")}
+              helpText={t("quickCreate.externalInterruptOnlyGuide")}
+              choiceGrid={false}
+            >
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={externalInterruptOnly}
+                  onChange={(e) => setExternalInterruptOnly(e.target.checked)}
+                  aria-label={t("quickCreate.externalInterruptOnlyTitle")}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span>{t("quickCreate.externalInterruptOnlyTitle")}</span>
+              </label>
+            </SectionBlock>
+          </div>
+        </div>
+      </section>
+
+      {/* Sub Panel: Automation */}
+      <section className={subPanelClass("automation")}>
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            {t("quickCreate.back")}
+          </button>
+          <h2 className="text-sm font-semibold text-foreground">{t("quickCreate.automationNavTitle")}</h2>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-6">
+            <SectionBlock choiceGrid={false}>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={promptOnStart}
+                  onChange={(e) => setPromptOnStart(e.target.checked)}
+                  aria-label={t("quickCreate.promptOnStartTitle")}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span>{t("quickCreate.promptOnStartTitle")}</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={promptOnEnd}
+                  onChange={(e) => setPromptOnEnd(e.target.checked)}
+                  aria-label={t("quickCreate.promptOnEndTitle")}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span>{t("quickCreate.promptOnEndTitle")}</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={autoStartAllowed}
+                  onChange={(e) => setAutoStartAllowed(e.target.checked)}
+                  aria-label={t("quickCreate.autoStartAllowedTitle")}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span>{t("quickCreate.autoStartAllowedTitle")}</span>
+              </label>
+              <label className="flex items-center gap-2 text-sm text-foreground">
+                <input
+                  type="checkbox"
+                  checked={autoEndAllowed}
+                  onChange={(e) => setAutoEndAllowed(e.target.checked)}
+                  aria-label={t("quickCreate.autoEndAllowedTitle")}
+                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                />
+                <span>{t("quickCreate.autoEndAllowedTitle")}</span>
+              </label>
+            </SectionBlock>
+
+            <SectionBlock
+              title={t("quickCreate.timezoneTitle")}
+              helpText={t("quickCreate.timezoneGuide")}
+              choiceGrid={false}
+            >
+              <select
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                aria-label={t("quickCreate.timezoneTitle")}
+                className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <option value="">{t("quickCreate.timezoneAuto")}</option>
+                {COMMON_TIMEZONES.map((tz) => (
+                  <option key={tz} value={tz}>
+                    {tz}
+                  </option>
+                ))}
+              </select>
+            </SectionBlock>
+          </div>
+        </div>
+      </section>
+
       {/* Sub Panel: Meta */}
       <section className={subPanelClass("meta")}>
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
@@ -907,154 +1288,64 @@ export function QuickTileCreate() {
             className="flex items-center gap-1 text-sm font-medium text-foreground-subtle hover:text-foreground transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
-            {t("quickCreate.back") || "Back"}
+            {t("quickCreate.back")}
           </button>
-          <h2 className="text-sm font-semibold text-foreground">Project & Metadata</h2>
+          <h2 className="text-sm font-semibold text-foreground">{t("quickCreate.metaNavTitle")}</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-4">
           <div className="space-y-6">
               <SectionBlock
-                title={t("quickCreate.metaTitle")}
-                helpText={t("quickCreate.metaGuide")}
+                title={t("quickCreate.timedLabelsTitle")}
+                helpText={t("quickCreate.timedLabelsGuide")}
                 choiceGrid={false}
               >
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={projectDraft}
-                    onChange={(e) => {
-                      setProjectDraft(e.target.value);
-                      setSelectedProject(null);
-                    }}
-                    onFocus={() => setIsProjectInputFocused(true)}
-                    onBlur={() => {
-                      window.setTimeout(() => setIsProjectInputFocused(false), 100);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      e.preventDefault();
-                      const normalized = normalizeTag(projectDraft);
-                      if (!normalized) return;
-                      const matched = existingProjects.find((project) =>
-                        equalsIgnoreCase(project, normalized),
-                      );
-                      const next = matched ?? normalized;
-                      setSelectedProject(next);
-                      setProjectDraft(next);
-                      setIsProjectInputFocused(false);
-                    }}
-                    placeholder={t("quickCreate.projectPlaceholder")}
-                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                  {isProjectInputFocused ? (
-                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-                      {projectSuggestions.length > 0 ? (
-                        projectSuggestions.map((project) => (
-                          <button
-                            key={project}
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setSelectedProject(project);
-                              setProjectDraft(project);
-                              setIsProjectInputFocused(false);
-                            }}
-                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                          >
-                            {project}
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
-                          {t("quickCreate.createNew")}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={tagDraft}
-                    onChange={(e) => setTagDraft(e.target.value)}
-                    onFocus={() => setIsTagInputFocused(true)}
-                    onBlur={() => {
-                      window.setTimeout(() => setIsTagInputFocused(false), 100);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      e.preventDefault();
-                      const normalized = normalizeTag(tagDraft);
-                      if (!normalized) return;
-                      const matched = existingTags.find((tag) => equalsIgnoreCase(tag, normalized));
-                      const next = matched ?? normalized;
-                      setSelectedTags((prev) =>
-                        prev.some((tag) => equalsIgnoreCase(tag, next)) ? prev : [...prev, next],
-                      );
-                      setTagDraft("");
-                    }}
-                    placeholder={t("quickCreate.tagsPlaceholder")}
-                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                  {isTagInputFocused ? (
-                    <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-                      {tagSuggestions.length > 0 ? (
-                        tagSuggestions.map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              setSelectedTags((prev) =>
-                                prev.some((item) => equalsIgnoreCase(item, tag)) ? prev : [...prev, tag],
-                              );
-                              setTagDraft("");
-                              setIsTagInputFocused(false);
-                            }}
-                            className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                          >
-                            {tag}
-                          </button>
-                        ))
-                      ) : (
-                        <div className="px-2 py-1.5 text-xs text-foreground-muted">
-                          {t("quickCreate.createNew")}
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-
-                {selectedTags.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedTags.map((tag) => (
-                      <button
-                        key={tag}
-                        type="button"
-                        onClick={() => setSelectedTags((prev) => prev.filter((item) => item !== tag))}
-                        className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                        aria-label={`${t("quickCreate.removeTag")} ${tag}`}
+                {timedLabels.length > 0 ? (
+                  <div className="space-y-2">
+                    {timedLabels.map((entry, index) => (
+                      <div
+                        key={`${entry.label}-${index}`}
+                        className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm text-foreground"
                       >
-                        #{tag} &times;
-                      </button>
+                        <span className="truncate">{entry.label}</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setTimedLabels((prev) => prev.filter((_, i) => i !== index))
+                          }
+                          className="ml-2 text-xs text-foreground-muted hover:text-foreground transition-colors"
+                          aria-label={`${t("quickCreate.removeTag")} ${entry.label}`}
+                        >
+                          &times;
+                        </button>
+                      </div>
                     ))}
                   </div>
                 ) : null}
-              </SectionBlock>
-
-              <SectionBlock
-                title={t("quickCreate.memoTitle")}
-                helpText={t("quickCreate.memoGuide")}
-                choiceGrid={false}
-              >
-                <textarea
-                  value={memoInput}
-                  onChange={(e) => setMemoInput(e.target.value)}
-                  placeholder={t("quickCreate.memoPlaceholder")}
-                  rows={4}
-                  className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <input
+                    type="text"
+                    value={timedLabelDraft}
+                    onChange={(e) => setTimedLabelDraft(e.target.value)}
+                    placeholder={t("quickCreate.timedLabelsLabel")}
+                    aria-label={t("quickCreate.timedLabelsLabel")}
+                    className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const trimmed = timedLabelDraft.trim();
+                      if (!trimmed) return;
+                      setTimedLabels((prev) => [
+                        ...prev,
+                        { label: trimmed, startAt: null, endAt: null },
+                      ]);
+                      setTimedLabelDraft("");
+                    }}
+                    className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-primary-fg hover:opacity-90 transition-opacity"
+                  >
+                    {t("quickCreate.timedLabelsAdd")}
+                  </button>
+                </div>
               </SectionBlock>
             </div>
         </div>
@@ -1074,11 +1365,12 @@ function SectionBlock({
   choiceGrid?: boolean;
   children: React.ReactNode;
 }) {
+  const headingId = useId();
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" aria-labelledby={title ? headingId : undefined}>
       {title ? (
         <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-foreground">{title}</p>
+          <h3 id={headingId} className="text-sm font-medium text-foreground">{title}</h3>
           {helpText ? <HelpBadge text={helpText} /> : null}
         </div>
       ) : null}
@@ -1561,3 +1853,28 @@ function toLocalTimeString(date: Date): string {
   const minutes = String(date.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
 }
+
+// Curated list of common IANA timezones for the Automation sub-panel.
+// A full searchable IANA list would be too heavy; this covers the
+// regions our users span. `""` (Use device timezone) is added at the
+// UI layer as the default option.
+const COMMON_TIMEZONES: readonly string[] = [
+  "UTC",
+  "Asia/Tokyo",
+  "Asia/Seoul",
+  "Asia/Shanghai",
+  "Asia/Singapore",
+  "Asia/Kolkata",
+  "Asia/Dubai",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Berlin",
+  "Europe/Moscow",
+  "America/New_York",
+  "America/Chicago",
+  "America/Denver",
+  "America/Los_Angeles",
+  "America/Sao_Paulo",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+];
