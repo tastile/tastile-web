@@ -810,7 +810,7 @@ export function QuickTileCreate() {
                 placeholder={t("quickCreate.memoPlaceholder")}
                 aria-label={t("quickCreate.memoPlaceholder")}
                 rows={3}
-                className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                className="w-full resize-none rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
               />
             ) : (
               <button
@@ -1346,7 +1346,7 @@ export function QuickTileCreate() {
                   {timedLabels.map((entry, index) => (
                     <div
                       key={`${entry.label}-${index}`}
-                      className="flex items-center justify-between rounded-lg bg-surface-2 px-3 py-2 text-sm text-foreground"
+                      className="flex items-center justify-between rounded-md bg-surface-2 px-control py-control text-sm text-foreground"
                     >
                       <span className="truncate">{entry.label}</span>
                       <button
