@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, Tag, X } from "lucide-react";
+import { FormPanel, FormRow, RowInput } from "@/components/ui/form";
 
 interface TimedLabel {
   label: string;
@@ -52,23 +53,23 @@ export function QuickTileMetaSubPanel({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-section">
-        <div className="space-y-section">
-          <div>
-            <h3 className="mb-1 text-sm font-medium text-foreground">
-              {t("quickCreate.timedLabelsTitle")}
-            </h3>
-            <p className="mb-2 text-xs text-foreground-muted">
-              {t("quickCreate.timedLabelsGuide")}
-            </p>
-            <div className="flex items-center gap-2">
+      <div className="flex-1 overflow-y-auto">
+        <FormPanel>
+          <h3 className="mb-1 text-sm font-medium text-foreground">
+            {t("quickCreate.timedLabelsTitle")}
+          </h3>
+          <p className="mb-2 text-xs text-foreground-muted">
+            {t("quickCreate.timedLabelsGuide")}
+          </p>
+          <FormRow icon={<Tag size={20} />}>
+            <div role="group" className="flex w-full items-center gap-2">
               <input
                 type="text"
                 value={timedLabelDraft}
                 onChange={(e) => setTimedLabelDraft(e.target.value)}
                 placeholder={t("quickCreate.timedLabelsLabel")}
                 aria-label={t("quickCreate.timedLabelsLabel")}
-                className="flex-1 rounded-md border border-border bg-surface-1 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
               />
               <button
                 type="button"
@@ -78,35 +79,35 @@ export function QuickTileMetaSubPanel({
                   setTimedLabels([...timedLabels, { label, startAt: null, endAt: null }]);
                   setTimedLabelDraft("");
                 }}
-                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-fg"
+                className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-fg"
               >
                 {t("quickCreate.timedLabelsAdd")}
               </button>
             </div>
-            {timedLabels.length > 0 ? (
-              <ul className="mt-2 space-y-1">
-                {timedLabels.map((entry, idx) => (
-                  <li
-                    key={`${entry.label}-${idx}`}
-                    className="flex items-center justify-between rounded-md border border-border bg-surface-1 px-3 py-1.5 text-sm"
+          </FormRow>
+          {timedLabels.length > 0 ? (
+            <ul className="mt-2 space-y-1">
+              {timedLabels.map((entry, idx) => (
+                <li
+                  key={`${entry.label}-${idx}`}
+                  className="flex items-center justify-between rounded-md border border-border bg-surface-1 px-3 py-1.5 text-sm"
+                >
+                  <span>{entry.label}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setTimedLabels(timedLabels.filter((_, i) => i !== idx))
+                    }
+                    aria-label={`${t("quickCreate.removeTag")} ${entry.label}`}
+                    className="text-foreground-muted"
                   >
-                    <span>{entry.label}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setTimedLabels(timedLabels.filter((_, i) => i !== idx))
-                      }
-                      aria-label={`${t("quickCreate.removeTag")} ${entry.label}`}
-                      className="text-foreground-muted"
-                    >
-                      &times;
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        </div>
+                    &times;
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </FormPanel>
       </div>
     </>
   );

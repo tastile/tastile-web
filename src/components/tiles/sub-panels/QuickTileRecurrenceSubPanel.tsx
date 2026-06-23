@@ -1,7 +1,8 @@
 "use client";
 
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, Clock, Repeat, X } from "lucide-react";
 import type { ObjectiveMode } from "@/lib/domain/tile";
+import { FormPanel, FormRow, RowInput } from "@/components/ui/form";
 import {
   getCurrentLocalDate as getCurrentLocalDateHelper,
   parseNonNegativeInt,
@@ -106,53 +107,58 @@ export function QuickTileRecurrenceSubPanel({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-section">
-        <div className="space-y-section">
-          <div className="grid grid-cols-3 gap-control-compact rounded-full border border-border bg-surface-1 p-control-compact">
-            <button
-              type="button"
-              onClick={() => setObjectiveMode("finish_once")}
-              aria-pressed={objectiveMode === "finish_once"}
-              className="rounded-full px-3 py-1.5 text-sm"
+      <div className="flex-1 overflow-y-auto">
+        <FormPanel>
+          <FormRow icon={<Repeat size={20} />}>
+            <div
+              role="group"
+              className="grid w-full grid-cols-3 gap-control-compact rounded-full border border-border bg-surface-1 p-control-compact"
             >
-              {t("quickCreate.objectiveFinish")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setObjectiveMode("recurring")}
-              aria-pressed={objectiveMode === "recurring"}
-              className="rounded-full px-3 py-1.5 text-sm"
-            >
-              {t("quickCreate.objectiveRecurring")}
-            </button>
-            {showFocusUntilEnd ? (
               <button
                 type="button"
-                onClick={() =>
-                  setObjectiveMode(
-                    objectiveMode === "maximize_within_interval"
-                      ? "finish_once"
-                      : "maximize_within_interval",
-                  )
-                }
-                aria-pressed={objectiveMode === "maximize_within_interval"}
+                onClick={() => setObjectiveMode("finish_once")}
+                aria-pressed={objectiveMode === "finish_once"}
                 className="rounded-full px-3 py-1.5 text-sm"
               >
-                {t("quickCreate.objectiveMaximize")}
+                {t("quickCreate.objectiveFinish")}
               </button>
-            ) : null}
-          </div>
+              <button
+                type="button"
+                onClick={() => setObjectiveMode("recurring")}
+                aria-pressed={objectiveMode === "recurring"}
+                className="rounded-full px-3 py-1.5 text-sm"
+              >
+                {t("quickCreate.objectiveRecurring")}
+              </button>
+              {showFocusUntilEnd ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setObjectiveMode(
+                      objectiveMode === "maximize_within_interval"
+                        ? "finish_once"
+                        : "maximize_within_interval",
+                    )
+                  }
+                  aria-pressed={objectiveMode === "maximize_within_interval"}
+                  className="rounded-full px-3 py-1.5 text-sm"
+                >
+                  {t("quickCreate.objectiveMaximize")}
+                </button>
+              ) : null}
+            </div>
+          </FormRow>
 
           {isRecurring ? (
-            <div className="space-y-section">
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-foreground">
-                  {t("quickCreate.recurrenceTitle")}
-                </h3>
-                <p className="mb-2 text-xs text-foreground-muted">
-                  {t("quickCreate.recurrenceGuide")}
-                </p>
-                <div className="grid grid-cols-3 gap-2">
+            <>
+              <h3 className="mt-2 mb-2 text-sm font-medium text-foreground">
+                {t("quickCreate.recurrenceTitle")}
+              </h3>
+              <p className="mb-2 text-xs text-foreground-muted">
+                {t("quickCreate.recurrenceGuide")}
+              </p>
+              <FormRow icon={<Repeat size={20} />}>
+                <div role="group" className="grid w-full grid-cols-3 gap-2">
                   {FREQ_OPTIONS.map((freq) => (
                     <button
                       key={freq}
@@ -165,29 +171,31 @@ export function QuickTileRecurrenceSubPanel({
                     </button>
                   ))}
                 </div>
-                <label className="mt-2 block space-y-1">
-                  <span className="text-xs text-foreground-muted">
-                    {t("quickCreate.recurrenceInterval")}
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={recurrenceIntervalInput}
-                    onChange={(e) =>
-                      setRecurrenceIntervalInput(sanitizeNumericInput(e.target.value))
-                    }
-                    onBlur={() => {
-                      const n = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
-                      if (n <= 0) setRecurrenceIntervalInput("1");
-                    }}
-                    className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </label>
-              </div>
+              </FormRow>
+              <label className="mt-2 block space-y-1">
+                <span className="text-xs text-foreground-muted">
+                  {t("quickCreate.recurrenceInterval")}
+                </span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={recurrenceIntervalInput}
+                  onChange={(e) =>
+                    setRecurrenceIntervalInput(sanitizeNumericInput(e.target.value))
+                  }
+                  onBlur={() => {
+                    const n = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
+                    if (n <= 0) setRecurrenceIntervalInput("1");
+                  }}
+                  className="w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </label>
 
-              <div>
-                <h3 className="mb-2 text-sm font-medium text-foreground">{t("quickCreate.recurrenceTitle")}</h3>
-                <div className="flex gap-1">
+              <h3 className="mt-4 mb-2 text-sm font-medium text-foreground">
+                {t("quickCreate.recurrenceTitle")}
+              </h3>
+              <FormRow icon={<Repeat size={20} />}>
+                <div role="group" className="flex w-full gap-1">
                   {WEEKDAY_LABELS[locale].map((label, idx) => {
                     const active = recurrenceWeekdays.includes(idx);
                     return (
@@ -209,78 +217,122 @@ export function QuickTileRecurrenceSubPanel({
                     );
                   })}
                 </div>
-              </div>
+              </FormRow>
 
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={recurrenceUseStartAt}
-                  onChange={(e) => setRecurrenceUseStartAt(e.target.checked)}
-                />
-                <span>{t("quickCreate.windowStartAt")}</span>
-              </label>
+              <FormRow icon={<Clock size={20} />}>
+                <div className="flex w-full items-center justify-between">
+                  <label
+                    htmlFor="recurrence-window-start"
+                    className="flex flex-1 cursor-pointer items-center text-sm"
+                  >
+                    <span>{t("quickCreate.windowStartAt")}</span>
+                  </label>
+                  <input
+                    id="recurrence-window-start"
+                    type="checkbox"
+                    checked={recurrenceUseStartAt}
+                    onChange={(e) => setRecurrenceUseStartAt(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                </div>
+              </FormRow>
               {recurrenceUseStartAt ? (
-                <input
+                <RowInput
+                  icon={Clock}
                   type="time"
-                  step={60}
+                  placeholder={t("quickCreate.windowStartAt")}
                   value={recurrenceStartTimeInput}
-                  onChange={(e) => setRecurrenceStartTimeInput(e.target.value)}
-                  className="themed-datetime-input rounded-md bg-surface-2 px-control py-control text-sm"
-                />
-              ) : null}
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={recurrenceUseEndAt}
-                  onChange={(e) => setRecurrenceUseEndAt(e.target.checked)}
-                />
-                <span>{t("quickCreate.windowEndAt")}</span>
-              </label>
-              {recurrenceUseEndAt ? (
-                <input
-                  type="time"
-                  step={60}
-                  value={recurrenceEndTimeInput}
-                  onChange={(e) => setRecurrenceEndTimeInput(e.target.value)}
-                  className="themed-datetime-input rounded-md bg-surface-2 px-control py-control text-sm"
+                  onChange={(value) => setRecurrenceStartTimeInput(value)}
+                  ariaLabel={t("quickCreate.windowStartAt")}
                 />
               ) : null}
 
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={recurrenceValidFromEnabled}
-                  onChange={(e) => setRecurrenceValidFromEnabled(e.target.checked)}
+              <FormRow icon={<Clock size={20} />}>
+                <div className="flex w-full items-center justify-between">
+                  <label
+                    htmlFor="recurrence-window-end"
+                    className="flex flex-1 cursor-pointer items-center text-sm"
+                  >
+                    <span>{t("quickCreate.windowEndAt")}</span>
+                  </label>
+                  <input
+                    id="recurrence-window-end"
+                    type="checkbox"
+                    checked={recurrenceUseEndAt}
+                    onChange={(e) => setRecurrenceUseEndAt(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                </div>
+              </FormRow>
+              {recurrenceUseEndAt ? (
+                <RowInput
+                  icon={Clock}
+                  type="time"
+                  placeholder={t("quickCreate.windowEndAt")}
+                  value={recurrenceEndTimeInput}
+                  onChange={(value) => setRecurrenceEndTimeInput(value)}
+                  ariaLabel={t("quickCreate.windowEndAt")}
                 />
-                <span>{t("quickCreate.recurrenceValidFrom")}</span>
-              </label>
+              ) : null}
+
+              <FormRow icon={<Clock size={20} />}>
+                <div className="flex w-full items-center justify-between">
+                  <label
+                    htmlFor="recurrence-valid-from"
+                    className="flex flex-1 cursor-pointer items-center text-sm"
+                  >
+                    <span>{t("quickCreate.recurrenceValidFrom")}</span>
+                  </label>
+                  <input
+                    id="recurrence-valid-from"
+                    type="checkbox"
+                    checked={recurrenceValidFromEnabled}
+                    onChange={(e) => setRecurrenceValidFromEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                </div>
+              </FormRow>
               {recurrenceValidFromEnabled ? (
-                <input
+                <RowInput
+                  icon={Clock}
                   type="date"
+                  placeholder={t("quickCreate.recurrenceValidFrom")}
                   value={recurrenceValidFromDateInput}
-                  onChange={(e) => setRecurrenceValidFromDateInput(e.target.value)}
-                  className="themed-datetime-input rounded-md bg-surface-2 px-control py-control text-sm"
+                  onChange={(value) => setRecurrenceValidFromDateInput(value)}
+                  ariaLabel={t("quickCreate.recurrenceValidFrom")}
                 />
               ) : null}
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={recurrenceValidToEnabled}
-                  onChange={(e) => setRecurrenceValidToEnabled(e.target.checked)}
-                />
-                <span>{t("quickCreate.recurrenceValidTo")}</span>
-              </label>
+
+              <FormRow icon={<Clock size={20} />}>
+                <div className="flex w-full items-center justify-between">
+                  <label
+                    htmlFor="recurrence-valid-to"
+                    className="flex flex-1 cursor-pointer items-center text-sm"
+                  >
+                    <span>{t("quickCreate.recurrenceValidTo")}</span>
+                  </label>
+                  <input
+                    id="recurrence-valid-to"
+                    type="checkbox"
+                    checked={recurrenceValidToEnabled}
+                    onChange={(e) => setRecurrenceValidToEnabled(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                  />
+                </div>
+              </FormRow>
               {recurrenceValidToEnabled ? (
-                <input
+                <RowInput
+                  icon={Clock}
                   type="date"
+                  placeholder={t("quickCreate.recurrenceValidTo")}
                   value={recurrenceValidToDateInput}
-                  onChange={(e) => setRecurrenceValidToDateInput(e.target.value)}
-                  className="themed-datetime-input rounded-md bg-surface-2 px-control py-control text-sm"
+                  onChange={(value) => setRecurrenceValidToDateInput(value)}
+                  ariaLabel={t("quickCreate.recurrenceValidTo")}
                 />
               ) : null}
-            </div>
+            </>
           ) : null}
-        </div>
+        </FormPanel>
       </div>
     </>
   );

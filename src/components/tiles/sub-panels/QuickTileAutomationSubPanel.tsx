@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, X } from "lucide-react";
+import { ChevronLeft, Globe, X, Zap } from "lucide-react";
+import { FormPanel, FormRow } from "@/components/ui/form";
 
 const TIMEZONES: string[] = [
   "Asia/Tokyo",
@@ -73,60 +74,93 @@ export function QuickTileAutomationSubPanel({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-section">
-        <div className="space-y-section">
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={promptOnStart}
-              onChange={(e) => setPromptOnStart(e.target.checked)}
-              aria-label={t("quickCreate.promptOnStartTitle")}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span>{t("quickCreate.promptOnStartTitle")}</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={promptOnEnd}
-              onChange={(e) => setPromptOnEnd(e.target.checked)}
-              aria-label={t("quickCreate.promptOnEndTitle")}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span>{t("quickCreate.promptOnEndTitle")}</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={autoStartAllowed}
-              onChange={(e) => setAutoStartAllowed(e.target.checked)}
-              aria-label={t("quickCreate.autoStartAllowedTitle")}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span>{t("quickCreate.autoStartAllowedTitle")}</span>
-          </label>
-          <label className="flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={autoEndAllowed}
-              onChange={(e) => setAutoEndAllowed(e.target.checked)}
-              aria-label={t("quickCreate.autoEndAllowedTitle")}
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            />
-            <span>{t("quickCreate.autoEndAllowedTitle")}</span>
-          </label>
+      <div className="flex-1 overflow-y-auto">
+        <FormPanel>
+          <FormRow icon={<Zap size={20} />}>
+            <div className="flex w-full items-center justify-between">
+              <label
+                htmlFor="automation-prompt-on-start"
+                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+              >
+                <span>{t("quickCreate.promptOnStartTitle")}</span>
+              </label>
+              <input
+                id="automation-prompt-on-start"
+                type="checkbox"
+                checked={promptOnStart}
+                onChange={(e) => setPromptOnStart(e.target.checked)}
+                aria-label={t("quickCreate.promptOnStartTitle")}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+            </div>
+          </FormRow>
+          <FormRow icon={<Zap size={20} />}>
+            <div className="flex w-full items-center justify-between">
+              <label
+                htmlFor="automation-prompt-on-end"
+                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+              >
+                <span>{t("quickCreate.promptOnEndTitle")}</span>
+              </label>
+              <input
+                id="automation-prompt-on-end"
+                type="checkbox"
+                checked={promptOnEnd}
+                onChange={(e) => setPromptOnEnd(e.target.checked)}
+                aria-label={t("quickCreate.promptOnEndTitle")}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+            </div>
+          </FormRow>
+          <FormRow icon={<Zap size={20} />}>
+            <div className="flex w-full items-center justify-between">
+              <label
+                htmlFor="automation-auto-start-allowed"
+                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+              >
+                <span>{t("quickCreate.autoStartAllowedTitle")}</span>
+              </label>
+              <input
+                id="automation-auto-start-allowed"
+                type="checkbox"
+                checked={autoStartAllowed}
+                onChange={(e) => setAutoStartAllowed(e.target.checked)}
+                aria-label={t("quickCreate.autoStartAllowedTitle")}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+            </div>
+          </FormRow>
+          <FormRow icon={<Zap size={20} />}>
+            <div className="flex w-full items-center justify-between">
+              <label
+                htmlFor="automation-auto-end-allowed"
+                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+              >
+                <span>{t("quickCreate.autoEndAllowedTitle")}</span>
+              </label>
+              <input
+                id="automation-auto-end-allowed"
+                type="checkbox"
+                checked={autoEndAllowed}
+                onChange={(e) => setAutoEndAllowed(e.target.checked)}
+                aria-label={t("quickCreate.autoEndAllowedTitle")}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+            </div>
+          </FormRow>
 
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-foreground" htmlFor="automation-tz">
-              {t("quickCreate.timezoneTitle")}
-            </label>
-            <p className="text-xs text-foreground-muted">{t("quickCreate.timezoneGuide")}</p>
+          <h3 className="mt-2 mb-1 text-sm font-medium text-foreground">
+            {t("quickCreate.timezoneTitle")}
+          </h3>
+          <p className="mb-2 text-xs text-foreground-muted">
+            {t("quickCreate.timezoneGuide")}
+          </p>
+          <FormRow icon={<Globe size={20} />}>
             <select
-              id="automation-tz"
               value={timezone}
               onChange={(e) => setTimezone(e.target.value)}
               aria-label={t("quickCreate.timezoneTitle")}
-              className="w-full rounded-md border border-border bg-surface-1 px-3 py-2 text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
             >
               <option value="">{t("quickCreate.timezoneAuto")}</option>
               {TIMEZONES.map((tz) => (
@@ -135,8 +169,8 @@ export function QuickTileAutomationSubPanel({
                 </option>
               ))}
             </select>
-          </div>
-        </div>
+          </FormRow>
+        </FormPanel>
       </div>
     </>
   );

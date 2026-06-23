@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronLeft, X } from "lucide-react";
+import { Ban, ChevronLeft, X } from "lucide-react";
+import { FormPanel, FormRow } from "@/components/ui/form";
 
 interface Props {
   onBack: () => void;
@@ -50,16 +51,16 @@ export function QuickTileInterruptSubPanel({
           <X className="h-4 w-4" />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto p-section">
-        <div className="space-y-section">
-          <div>
-            <h3 className="mb-1 text-sm font-medium text-foreground">
-              {t("quickCreate.interruptPenaltyTitle")}
-            </h3>
-            <p className="mb-2 text-xs text-foreground-muted">
-              {t("quickCreate.interruptPenaltyGuide")}
-            </p>
-            <div className="grid grid-cols-5 gap-section">
+      <div className="flex-1 overflow-y-auto">
+        <FormPanel>
+          <h3 className="mb-1 text-sm font-medium text-foreground">
+            {t("quickCreate.interruptPenaltyTitle")}
+          </h3>
+          <p className="mb-2 text-xs text-foreground-muted">
+            {t("quickCreate.interruptPenaltyGuide")}
+          </p>
+          <FormRow icon={<Ban size={20} />}>
+            <div role="group" className="grid w-full grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5].map((level) => (
                 <button
                   key={`interrupt-${level}`}
@@ -72,16 +73,16 @@ export function QuickTileInterruptSubPanel({
                 </button>
               ))}
             </div>
-          </div>
+          </FormRow>
 
-          <div>
-            <h3 className="mb-1 text-sm font-medium text-foreground">
-              {t("quickCreate.resumePenaltyTitle")}
-            </h3>
-            <p className="mb-2 text-xs text-foreground-muted">
-              {t("quickCreate.resumePenaltyGuide")}
-            </p>
-            <div className="grid grid-cols-5 gap-section">
+          <h3 className="mt-2 mb-1 text-sm font-medium text-foreground">
+            {t("quickCreate.resumePenaltyTitle")}
+          </h3>
+          <p className="mb-2 text-xs text-foreground-muted">
+            {t("quickCreate.resumePenaltyGuide")}
+          </p>
+          <FormRow icon={<Ban size={20} />}>
+            <div role="group" className="grid w-full grid-cols-5 gap-2">
               {[1, 2, 3, 4, 5].map((level) => (
                 <button
                   key={`resume-${level}`}
@@ -94,27 +95,33 @@ export function QuickTileInterruptSubPanel({
                 </button>
               ))}
             </div>
-          </div>
+          </FormRow>
 
-          <div>
-            <h3 className="mb-1 text-sm font-medium text-foreground">
-              {t("quickCreate.externalInterruptOnlyTitle")}
-            </h3>
-            <p className="mb-2 text-xs text-foreground-muted">
-              {t("quickCreate.externalInterruptOnlyGuide")}
-            </p>
-            <label className="flex items-center gap-2 text-sm text-foreground">
+          <h3 className="mt-2 mb-1 text-sm font-medium text-foreground">
+            {t("quickCreate.externalInterruptOnlyTitle")}
+          </h3>
+          <p className="mb-2 text-xs text-foreground-muted">
+            {t("quickCreate.externalInterruptOnlyGuide")}
+          </p>
+          <FormRow icon={<Ban size={20} />}>
+            <div className="flex w-full items-center justify-between">
+              <label
+                htmlFor="external-interrupt-only"
+                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+              >
+                <span>{t("quickCreate.externalInterruptOnlyTitle")}</span>
+              </label>
               <input
+                id="external-interrupt-only"
                 type="checkbox"
                 checked={externalInterruptOnly}
                 onChange={(e) => setExternalInterruptOnly(e.target.checked)}
                 aria-label={t("quickCreate.externalInterruptOnlyTitle")}
                 className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
               />
-              <span>{t("quickCreate.externalInterruptOnlyTitle")}</span>
-            </label>
-          </div>
-        </div>
+            </div>
+          </FormRow>
+        </FormPanel>
       </div>
     </>
   );
