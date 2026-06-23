@@ -7,7 +7,7 @@ interface RowSubPanelProps {
   icon: LucideIcon;
   name: string;
   value: string;
-  onClick: () => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
 }
 
