@@ -498,4 +498,36 @@ describe("QuickTileCreate — submit semantics", () => {
 		expect(tile.objective.targetWorkMin).toBeNull();
 		expect(tile.objective.targetRestMin).toBeNull();
 	});
+
+	it("base panel is fully self-sufficient — no sub-panel needed for the common case", async () => {
+		render(<QuickTileCreate />);
+
+		// Fill title (icon-driven input, no sub-panel)
+		fireEvent.change(screen.getByRole("textbox", { name: /quickCreate\.titlePlaceholder/ }), {
+			target: { value: "Smoke test" },
+		});
+
+		// Add a project (icon-driven input with autocomplete, no sub-panel)
+		const projectInput = screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ });
+		fireEvent.change(projectInput, { target: { value: "TestProject" } });
+		fireEvent.keyDown(projectInput, { key: "Enter" });
+
+		// Add a tag (icon-driven chip input, no sub-panel)
+		const tagInput = screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ });
+		fireEvent.change(tagInput, { target: { value: "smoke" } });
+		fireEvent.keyDown(tagInput, { key: "Enter" });
+
+		// Submit without opening any sub-panel
+		fireEvent.click(screen.getByRole("button", { name: /quickCreate\.commit/ }));
+
+		await waitFor(() => expect(executeMock).toHaveBeenCalled());
+		const [command] = executeMock.mock.calls[0];
+		expect(command.type).toBe("create_tile");
+		// Title lands in core.title
+		expect(command.tile.core.title).toBe("Smoke test");
+		// Project and tag are merged into annotation.labels
+		// (project is "project:<name>" prefixed, tags are bare strings)
+		expect(command.tile.annotation.labels).toContain("project:TestProject");
+		expect(command.tile.annotation.labels).toContain("smoke");
+	});
 });
