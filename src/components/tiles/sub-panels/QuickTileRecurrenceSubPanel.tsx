@@ -2,7 +2,7 @@
 
 import { Clock, Repeat } from "lucide-react";
 import type { ObjectiveMode } from "@/lib/domain/tile";
-import { FormPanel, FormRow, RowInput } from "@/components/ui/form";
+import { FormPanel, FormRow, RowInput, RowSegmented } from "@/components/ui/form";
 import { SubPanelHeader } from "./SubPanelHeader";
 import {
   parseNonNegativeInt,
@@ -93,45 +93,18 @@ export function QuickTileRecurrenceSubPanel({
       />
       <div className="flex-1 overflow-y-auto">
         <FormPanel>
-          <FormRow icon={<Repeat size={20} />}>
-            <div
-              role="group"
-              className="grid w-full grid-cols-3 gap-control-compact rounded-full border border-border bg-surface-1 p-control-compact"
-            >
-              <button
-                type="button"
-                onClick={() => setObjectiveMode("finish_once")}
-                aria-pressed={objectiveMode === "finish_once"}
-                className="rounded-full px-3 py-1.5 text-sm"
-              >
-                {t("quickCreate.objectiveFinish")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setObjectiveMode("recurring")}
-                aria-pressed={objectiveMode === "recurring"}
-                className="rounded-full px-3 py-1.5 text-sm"
-              >
-                {t("quickCreate.objectiveRecurring")}
-              </button>
-              {showFocusUntilEnd ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setObjectiveMode(
-                      objectiveMode === "maximize_within_interval"
-                        ? "finish_once"
-                        : "maximize_within_interval",
-                    )
-                  }
-                  aria-pressed={objectiveMode === "maximize_within_interval"}
-                  className="rounded-full px-3 py-1.5 text-sm"
-                >
-                  {t("quickCreate.objectiveMaximize")}
-                </button>
-              ) : null}
-            </div>
-          </FormRow>
+          <RowSegmented
+            icon={Repeat}
+            options={[
+              { value: "finish_once", label: t("quickCreate.objectiveFinish") },
+              { value: "recurring", label: t("quickCreate.objectiveRecurring") },
+              ...(showFocusUntilEnd
+                ? [{ value: "maximize_within_interval", label: t("quickCreate.objectiveMaximize") }]
+                : []),
+            ]}
+            value={objectiveMode}
+            onChange={(v) => setObjectiveMode(v as ObjectiveMode)}
+          />
 
           {isRecurring ? (
             <>
@@ -141,21 +114,17 @@ export function QuickTileRecurrenceSubPanel({
               <p className="mb-2 text-xs text-foreground-muted">
                 {t("quickCreate.recurrenceGuide")}
               </p>
-              <FormRow icon={<Repeat size={20} />}>
-                <div role="group" className="grid w-full grid-cols-3 gap-2">
-                  {FREQ_OPTIONS.map((freq) => (
-                    <button
-                      key={freq}
-                      type="button"
-                      onClick={() => setRecurrenceFrequency(freq)}
-                      aria-pressed={recurrenceFrequency === freq}
-                      className="rounded-md border border-border bg-surface-1 px-3 py-1.5 text-sm"
-                    >
-                      {t(`quickCreate.recurrenceFreq${freq.charAt(0).toUpperCase()}${freq.slice(1)}`)}
-                    </button>
-                  ))}
-                </div>
-              </FormRow>
+              <RowSegmented
+                icon={Repeat}
+                options={FREQ_OPTIONS.map((freq) => ({
+                  value: freq,
+                  label: t(
+                    `quickCreate.recurrenceFreq${freq.charAt(0).toUpperCase()}${freq.slice(1)}`,
+                  ),
+                }))}
+                value={recurrenceFrequency}
+                onChange={(v) => setRecurrenceFrequency(v as RecurrenceFrequency)}
+              />
               <label className="mt-2 block space-y-1">
                 <span className="text-xs text-foreground-muted">
                   {t("quickCreate.recurrenceInterval")}
@@ -175,30 +144,36 @@ export function QuickTileRecurrenceSubPanel({
                 />
               </label>
 
-              <FormRow icon={<Repeat size={20} />}>
-                <div role="group" className="flex w-full gap-1">
-                  {WEEKDAY_LABELS[locale].map((label, idx) => {
-                    const active = recurrenceWeekdays.includes(idx);
-                    return (
-                      <button
-                        key={label}
-                        type="button"
-                        onClick={() =>
-                          setRecurrenceWeekdays(
-                            active
-                              ? recurrenceWeekdays.filter((d) => d !== idx)
-                              : [...recurrenceWeekdays, idx],
-                          )
-                        }
-                        aria-pressed={active}
-                        className="rounded-md border border-border bg-surface-1 px-3 py-1.5 text-xs"
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </FormRow>
+              <div
+                role="group"
+                aria-label={t("quickCreate.recurrenceTitle")}
+                className="flex w-full rounded-md bg-surface-2 p-0.5"
+              >
+                {WEEKDAY_LABELS[locale].map((label, idx) => {
+                  const active = recurrenceWeekdays.includes(idx);
+                  return (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() =>
+                        setRecurrenceWeekdays(
+                          active
+                            ? recurrenceWeekdays.filter((d) => d !== idx)
+                            : [...recurrenceWeekdays, idx],
+                        )
+                      }
+                      aria-pressed={active}
+                      className={
+                        active
+                          ? "flex-1 rounded-sm bg-primary px-2 py-1.5 text-xs text-primary-fg shadow-sm"
+                          : "flex-1 rounded-sm px-2 py-1.5 text-xs text-foreground-muted hover:text-foreground"
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
 
               <FormRow icon={<Clock size={20} />}>
                 <div className="flex w-full items-center justify-between">

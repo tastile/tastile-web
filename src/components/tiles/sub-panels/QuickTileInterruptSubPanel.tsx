@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban } from "lucide-react";
-import { FormPanel, FormRow } from "@/components/ui/form";
+import { FormPanel, FormRow, RowSegmented } from "@/components/ui/form";
 import { SubPanelHeader } from "./SubPanelHeader";
 
 interface Props {
@@ -46,21 +46,15 @@ export function QuickTileInterruptSubPanel({
           <p className="mb-2 text-xs text-foreground-muted">
             {t("quickCreate.interruptPenaltyGuide")}
           </p>
-          <FormRow icon={<Ban size={20} />}>
-            <div role="group" className="grid w-full grid-cols-5 gap-2">
-              {[1, 2, 3, 4, 5].map((level) => (
-                <button
-                  key={`interrupt-${level}`}
-                  type="button"
-                  onClick={() => setInterruptPenalty(level)}
-                  aria-pressed={interruptPenalty === level}
-                  className="rounded-md border border-border bg-surface-1 px-3 py-1.5 text-sm"
-                >
-                  {String(level)}
-                </button>
-              ))}
-            </div>
-          </FormRow>
+          <RowSegmented
+            icon={Ban}
+            options={[1, 2, 3, 4, 5].map((level) => ({
+              value: String(level),
+              label: String(level),
+            }))}
+            value={String(interruptPenalty)}
+            onChange={(v) => setInterruptPenalty(Number(v))}
+          />
 
           <h3 className="mt-2 mb-1 text-sm font-medium text-foreground">
             {t("quickCreate.resumePenaltyTitle")}
@@ -68,21 +62,15 @@ export function QuickTileInterruptSubPanel({
           <p className="mb-2 text-xs text-foreground-muted">
             {t("quickCreate.resumePenaltyGuide")}
           </p>
-          <FormRow icon={<Ban size={20} />}>
-            <div role="group" className="grid w-full grid-cols-5 gap-2">
-              {[1, 2, 3, 4, 5].map((level) => (
-                <button
-                  key={`resume-${level}`}
-                  type="button"
-                  onClick={() => setResumePenalty(level)}
-                  aria-pressed={resumePenalty === level}
-                  className="rounded-md border border-border bg-surface-1 px-3 py-1.5 text-sm"
-                >
-                  {String(level)}
-                </button>
-              ))}
-            </div>
-          </FormRow>
+          <RowSegmented
+            icon={Ban}
+            options={[1, 2, 3, 4, 5].map((level) => ({
+              value: String(level),
+              label: String(level),
+            }))}
+            value={String(resumePenalty)}
+            onChange={(v) => setResumePenalty(Number(v))}
+          />
 
           <h3 className="mt-2 mb-1 text-sm font-medium text-foreground">
             {t("quickCreate.externalInterruptOnlyTitle")}

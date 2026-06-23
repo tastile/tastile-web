@@ -328,7 +328,7 @@ describe("QuickTileCreate — interruption & automation layers", () => {
 		);
 
 		// Set both penalties to 5 and enable external-interrupts-only.
-		const penalty5 = screen.getAllByRole("button", { name: "5" });
+		const penalty5 = screen.getAllByRole("radio", { name: "5" });
 		fireEvent.click(penalty5[0]);
 		fireEvent.click(penalty5[1]);
 		fireEvent.click(
@@ -603,10 +603,10 @@ describe("QuickTileCreate — sub-panel dismissal via base panel click", () => {
 		await waitFor(() => {
 			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
 		});
-		// Click an in-sub-panel control (objectiveFinish button). The sub-panel
+		// Click an in-sub-panel control (objectiveFinish radio). The sub-panel
 		// is a SIBLING of the base panel section, so this click does NOT bubble
 		// to the base panel onClick handler.
-		fireEvent.click(screen.getByRole("button", { name: /objectiveFinish/ }));
+		fireEvent.click(screen.getByRole("radio", { name: /objectiveFinish/ }));
 		// Sub-panel should still be open
 		expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
 	});
