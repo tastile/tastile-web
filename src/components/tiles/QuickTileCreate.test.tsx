@@ -531,3 +531,75 @@ describe("QuickTileCreate — submit semantics", () => {
 		expect(command.tile.annotation.labels).toContain("smoke");
 	});
 });
+
+describe("QuickTileCreate — sub-panel dismissal via base panel click", () => {
+	// Sub-panels render at z-[57]; the base panel is z-[56]. Sub-panels
+	// remain in the DOM but become inactive via class `pointer-events-none
+	// translate-x-full` (desktop) / `translate-y-full` (mobile bottom sheet).
+	// An off-screen element is still queryable by getByRole, so we assert
+	// on the sub-panel's class to verify state transitions.
+	function getSubPanelByZ(container: HTMLElement, markerText: string) {
+		const sections = container.querySelectorAll("section");
+		for (const sec of Array.from(sections)) {
+			if (sec.className.includes("z-[57]") && sec.textContent?.includes(markerText)) {
+				return sec;
+			}
+		}
+		return null;
+	}
+	function isSubPanelActive(sub: Element | null) {
+		if (!sub) return false;
+		const cls = sub.className;
+		// Active = translate offset is "0" AND pointer-events-none is NOT present.
+		// Inactive = translate-x-full OR translate-y-full, with pointer-events-none.
+		const hasTranslateZero = /\btranslate-x-0\b|\btranslate-y-0\b/.test(cls);
+		const isOffscreen = /\btranslate-x-full\b|\btranslate-y-full\b/.test(cls);
+		const hasPointerEventsNone = cls.includes("pointer-events-none");
+		return hasTranslateZero && !isOffscreen && !hasPointerEventsNone;
+	}
+
+	it("clicking on the base panel area dismisses an open sub-panel", async () => {
+		const { container } = render(<QuickTileCreate />);
+		// Open the Recurrence sub-panel
+		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+		});
+		// Click on a base-panel element (the title input) — this should close the sub-panel
+		const title = screen.getByRole("textbox", { name: /titlePlaceholder/ });
+		fireEvent.click(title);
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
+		});
+	});
+
+	it("clicking a different sub-panel nav button switches to that sub-panel", async () => {
+		const { container } = render(<QuickTileCreate />);
+		// Open Recurrence
+		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+		});
+		// Click Interrupt — should switch (stopPropagation prevents dismiss)
+		fireEvent.click(screen.getByRole("button", { name: /interruptNavTitle/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.interruptPenaltyTitle"))).toBe(true);
+		});
+		// And Recurrence should now be inactive
+		expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
+	});
+
+	it("clicking inside a sub-panel does not dismiss it", async () => {
+		const { container } = render(<QuickTileCreate />);
+		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+		});
+		// Click an in-sub-panel control (objectiveFinish button). The sub-panel
+		// is a SIBLING of the base panel section, so this click does NOT bubble
+		// to the base panel onClick handler.
+		fireEvent.click(screen.getByRole("button", { name: /objectiveFinish/ }));
+		// Sub-panel should still be open
+		expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+	});
+});

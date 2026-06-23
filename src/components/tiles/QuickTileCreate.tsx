@@ -494,7 +494,12 @@ export function QuickTileCreate() {
         onClick={close}
         aria-hidden
       />
-      <section className={basePanelClass}>
+      <section
+        className={basePanelClass}
+        onClick={() => {
+          if (activePanel !== "base") setActivePanel("base");
+        }}
+      >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
           <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
           <button
@@ -823,7 +828,10 @@ export function QuickTileCreate() {
             <div className="pt-4 space-y-2">
               <button
                 type="button"
-                onClick={() => setActivePanel("recurrence")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePanel("recurrence");
+                }}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Repeat className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
@@ -831,7 +839,10 @@ export function QuickTileCreate() {
               </button>
               <button
                 type="button"
-                onClick={() => setActivePanel("interrupt")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePanel("interrupt");
+                }}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <AlertTriangle className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
@@ -839,7 +850,10 @@ export function QuickTileCreate() {
               </button>
               <button
                 type="button"
-                onClick={() => setActivePanel("automation")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePanel("automation");
+                }}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Zap className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
@@ -847,7 +861,10 @@ export function QuickTileCreate() {
               </button>
               <button
                 type="button"
-                onClick={() => setActivePanel("meta")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActivePanel("meta");
+                }}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Tag className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
