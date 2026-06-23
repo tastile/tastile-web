@@ -188,9 +188,6 @@ export function QuickTileRecurrenceSubPanel({
                 />
               </label>
 
-              <h3 className="mt-4 mb-2 text-sm font-medium text-foreground">
-                {t("quickCreate.recurrenceTitle")}
-              </h3>
               <FormRow icon={<Repeat size={20} />}>
                 <div role="group" className="flex w-full gap-1">
                   {WEEKDAY_LABELS[locale].map((label, idx) => {
