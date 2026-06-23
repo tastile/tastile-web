@@ -26,7 +26,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      "flex cursor-default select-none items-center rounded-xs px-2 py-1.5 text-xs outline-hidden",
+      "flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs outline-hidden",
       "focus:bg-surface-2 data-[state=open]:bg-surface-2",
       inset && "pl-8",
       className,
@@ -92,7 +92,7 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-xs px-2 py-1.5 text-xs outline-hidden transition-colors",
+      "relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-xs outline-hidden transition-colors",
       "focus:bg-surface-2 focus:text-foreground",
       "text-foreground",
       "data-disabled:pointer-events-none data-disabled:opacity-50",
@@ -111,7 +111,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-xs py-1.5 pl-8 pr-2 text-xs outline-hidden transition-colors",
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-xs outline-hidden transition-colors",
       "focus:bg-surface-2",
       "text-foreground-muted",
       "data-disabled:pointer-events-none data-disabled:opacity-50",
@@ -137,7 +137,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-xs py-1.5 pl-8 pr-2 text-xs outline-hidden transition-colors",
+      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-xs outline-hidden transition-colors",
       "focus:bg-surface-2",
       "text-foreground-muted",
       "data-disabled:pointer-events-none data-disabled:opacity-50",

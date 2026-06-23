@@ -54,7 +54,7 @@ export function BottomSheet({
                 <div />
               )}
               {!hideClose && (
-                <DialogPrimitive.Close className="rounded-xs p-1 opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                <DialogPrimitive.Close className="rounded-sm p-1 opacity-60 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
                   <X size={18} />
                   <span className="sr-only">Close</span>
                 </DialogPrimitive.Close>

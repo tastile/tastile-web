@@ -80,7 +80,7 @@ const SidePanel = ({
           {header && (
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <div className="min-w-0 flex-1">{header}</div>
-              <DialogPrimitive.Close className="ml-4 rounded-xs p-1 opacity-20 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+              <DialogPrimitive.Close className="ml-4 rounded-sm p-1 opacity-20 ring-offset-background transition-opacity hover:opacity-100 focus:outline-hidden focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
                 <X size={16} />
                 <span className="sr-only">Close</span>
               </DialogPrimitive.Close>
