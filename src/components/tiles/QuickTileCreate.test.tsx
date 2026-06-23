@@ -255,6 +255,15 @@ describe("QuickTileCreate — accessibility", () => {
 			screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ }),
 		).toBeTruthy();
 	});
+
+	it("tag input is icon-driven and addable via Enter", () => {
+		render(<QuickTileCreate />);
+		const tagInput = screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ });
+		fireEvent.change(tagInput, { target: { value: "important" } });
+		fireEvent.keyDown(tagInput, { key: "Enter" });
+		// Chip is rendered with the tag
+		expect(screen.getByText("#important")).toBeTruthy();
+	});
 });
 
 describe("QuickTileCreate — interruption & automation layers", () => {

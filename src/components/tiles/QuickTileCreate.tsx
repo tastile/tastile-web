@@ -7,6 +7,7 @@ import {
   CircleDot,
   Clock3,
   Clock4,
+  Plus,
   StopCircle,
   Tag,
   Timer,
@@ -715,8 +716,8 @@ export function QuickTileCreate() {
               </div>
 
               <div className="relative">
-                <input
-                  type="text"
+                <Input
+                  leading={<Plus className="h-4 w-4 text-foreground-muted" aria-hidden="true" />}
                   value={tagDraft}
                   onChange={(e) => setTagDraft(e.target.value)}
                   onFocus={() => setIsTagInputFocused(true)}
@@ -737,7 +738,6 @@ export function QuickTileCreate() {
                   }}
                   aria-label={t("quickCreate.tagsPlaceholder")}
                   placeholder={t("quickCreate.tagsPlaceholder")}
-                  className="w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 {isTagInputFocused ? (
                   <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
@@ -771,17 +771,22 @@ export function QuickTileCreate() {
               </div>
 
               {selectedTags.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-1 flex flex-wrap gap-1">
                   {selectedTags.map((tag) => (
-                    <button
+                    <span
                       key={tag}
-                      type="button"
-                      onClick={() => setSelectedTags((prev) => prev.filter((item) => item !== tag))}
-                      className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
-                      aria-label={`${t("quickCreate.removeTag")} ${tag}`}
+                      className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
                     >
-                      #{tag} &times;
-                    </button>
+                      <span>#{tag}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedTags((prev) => prev.filter((item) => item !== tag))}
+                        aria-label={`${t("quickCreate.removeTag")} ${tag}`}
+                        className="leading-none"
+                      >
+                        &times;
+                      </button>
+                    </span>
                   ))}
                 </div>
               ) : null}
