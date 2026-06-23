@@ -834,7 +834,7 @@ export function QuickTileCreate() {
                 }}
                 className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <Repeat className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <Repeat className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.recurrenceNavTitle")}</span>
               </button>
               <button
@@ -845,7 +845,7 @@ export function QuickTileCreate() {
                 }}
                 className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <AlertTriangle className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <AlertTriangle className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.interruptNavTitle")}</span>
               </button>
               <button
@@ -856,7 +856,7 @@ export function QuickTileCreate() {
                 }}
                 className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <Zap className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <Zap className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.automationNavTitle")}</span>
               </button>
               <button
@@ -867,7 +867,7 @@ export function QuickTileCreate() {
                 }}
                 className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <Tag className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <Tag className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.metaNavTitle")}</span>
               </button>
             </div>
@@ -902,7 +902,7 @@ export function QuickTileCreate() {
             <ChevronLeft className="h-4 w-4" />
             {t("quickCreate.back")}
           </button>
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground">
             {t("quickCreate.recurrenceNavTitle")}
           </h2>
         </div>
@@ -1176,7 +1176,7 @@ export function QuickTileCreate() {
             <ChevronLeft className="h-4 w-4" />
             {t("quickCreate.back")}
           </button>
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground">
             {t("quickCreate.interruptNavTitle")}
           </h2>
         </div>
@@ -1249,7 +1249,7 @@ export function QuickTileCreate() {
             <ChevronLeft className="h-4 w-4" />
             {t("quickCreate.back")}
           </button>
-          <h2 className="text-sm font-semibold text-foreground">
+          <h2 className="text-base font-semibold text-foreground">
             {t("quickCreate.automationNavTitle")}
           </h2>
         </div>
@@ -1332,7 +1332,7 @@ export function QuickTileCreate() {
             <ChevronLeft className="h-4 w-4" />
             {t("quickCreate.back")}
           </button>
-          <h2 className="text-sm font-semibold text-foreground">{t("quickCreate.metaNavTitle")}</h2>
+          <h2 className="text-base font-semibold text-foreground">{t("quickCreate.metaNavTitle")}</h2>
         </div>
         <div className="flex-1 overflow-y-auto p-section">
           <div className="space-y-section">
@@ -1785,7 +1785,7 @@ function PresetButton({ onClick, children }: { onClick: () => void; children: Re
     <button
       type="button"
       onClick={onClick}
-      className="rounded-md bg-surface-2 px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-surface-1"
+      className="rounded-md bg-surface-2 px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-surface-1"
     >
       {children}
     </button>
