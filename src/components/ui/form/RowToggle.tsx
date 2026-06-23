@@ -1,6 +1,7 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import { FormRow } from "./FormRow";
 
 interface RowToggleProps {
@@ -20,23 +21,24 @@ export function RowToggle({ icon: Icon, placeholder, checked, onChange, classNam
         aria-checked={checked}
         aria-label={placeholder}
         onClick={() => onChange(!checked)}
-        className="flex w-full items-center text-left text-sm text-foreground-muted focus:outline-hidden"
+        className="flex w-full items-center justify-between gap-3 text-left text-sm text-foreground-muted focus:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1"
       >
-        {placeholder}
-      </button>
-      <div
-        className={
-          "relative h-5 w-9 rounded-full transition-colors " +
-          (checked ? "bg-primary" : "bg-surface-3")
-        }
-      >
+        <span>{placeholder}</span>
         <span
-          className={
-            "absolute top-0.5 h-4 w-4 rounded-full bg-surface-1 shadow transition-transform " +
-            (checked ? "translate-x-4" : "translate-x-0.5")
-          }
-        />
-      </div>
+          aria-hidden
+          className={cn(
+            "relative h-5 w-9 shrink-0 rounded-full transition-colors",
+            checked ? "bg-primary" : "bg-surface-3",
+          )}
+        >
+          <span
+            className={cn(
+              "absolute top-0.5 h-4 w-4 rounded-full bg-surface-1 shadow transition-transform",
+              checked ? "translate-x-4" : "translate-x-0.5",
+            )}
+          />
+        </span>
+      </button>
     </FormRow>
   );
 }

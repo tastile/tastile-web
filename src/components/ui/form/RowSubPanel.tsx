@@ -21,8 +21,7 @@ export function RowSubPanel({ icon: Icon, name, value, onClick, className }: Row
       <button
         type="button"
         onClick={onClick}
-        aria-label={name}
-        className="flex w-full items-center justify-between gap-3 text-left focus:outline-hidden"
+        className="flex w-full items-center justify-between gap-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1"
       >
         <span className="text-sm text-foreground">{name}</span>
         <span className="text-sm text-foreground-muted">{value}</span>
