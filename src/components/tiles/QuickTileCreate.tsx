@@ -1407,7 +1407,7 @@ function SectionBlock({
 }) {
   const headingId = useId();
   return (
-    <section className="space-y-2" aria-labelledby={title ? headingId : undefined}>
+    <section className="space-y-section" aria-labelledby={title ? headingId : undefined}>
       {title ? (
         <div className="flex items-center gap-2">
           <h3 id={headingId} className="text-sm font-medium text-foreground">
@@ -1456,7 +1456,7 @@ function ChoiceButton({
       onClick={onClick}
       disabled={disabled}
       className={[
-        "w-full rounded-lg px-3 py-2 text-left text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "w-full rounded-md px-control py-control text-left text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         active ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground hover:bg-surface-1",
       ].join(" ")}
     >
