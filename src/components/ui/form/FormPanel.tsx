@@ -8,7 +8,7 @@ interface FormPanelProps {
 
 export function FormPanel({ children, className }: FormPanelProps) {
   return (
-    <div className={cn("p-panel flex flex-col gap-2", className)}>
+    <div data-testid="form-panel" className={cn("p-panel flex flex-col gap-2", className)}>
       {children}
     </div>
   );

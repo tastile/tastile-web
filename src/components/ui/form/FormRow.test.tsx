@@ -10,20 +10,41 @@ describe("FormRow", () => {
         <span data-testid="content">content</span>
       </FormRow>
     );
-    const grid = screen.getByTestId("icon").parentElement?.parentElement;
-    expect(grid?.className).toContain("grid");
-    expect(grid?.className).toContain("grid-cols-[20px_1fr_auto]");
-    expect(grid?.className).toContain("items-center");
-    expect(grid?.className).toContain("min-h-row");
+    const grid = screen.getByTestId("form-row");
+    expect(grid.className).toContain("grid");
+    expect(grid.className).toContain("grid-cols-[20px_1fr_auto]");
+    expect(grid.className).toContain("items-center");
+    expect(grid.className).toContain("min-h-row");
   });
 
-  it("places icon in first column", () => {
+  it("renders the trailing element when provided", () => {
     render(
-      <FormRow icon={<span data-testid="icon">⏱</span>}>
+      <FormRow icon={<span data-testid="icon" />} trailing={<span data-testid="trailing" />}>
         <span>content</span>
       </FormRow>
     );
-    const icon = screen.getByTestId("icon");
-    expect(icon.parentElement?.parentElement?.className).toContain("grid-cols-[20px_1fr_auto]");
+    expect(screen.getByTestId("trailing")).not.toBeNull();
+  });
+
+  it("omits the trailing column when trailing is undefined", () => {
+    render(
+      <FormRow icon={<span data-testid="icon" />}>
+        <span>content</span>
+      </FormRow>
+    );
+    expect(screen.queryByTestId("trailing")).toBeNull();
+  });
+
+  it("uses the 44px tight min-height when tight is true", () => {
+    render(
+      <FormRow tight icon={<span data-testid="icon" />}>
+        <span>content</span>
+      </FormRow>
+    );
+    const grid = screen.getByTestId("form-row");
+    expect(grid.className).toContain("min-h-row-tight");
+    // Class tokens are space-separated; assert "min-h-row " (with trailing space) is absent
+    // so the tight branch is genuinely selected rather than prefixed.
+    expect(grid.className.includes("min-h-row ")).toBe(false);
   });
 });

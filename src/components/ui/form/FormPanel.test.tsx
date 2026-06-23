@@ -10,8 +10,8 @@ describe("FormPanel", () => {
         <span>row</span>
       </FormPanel>
     );
-    const root = screen.getByText("row").parentElement;
-    expect(root?.className).toContain("p-panel");
+    const root = screen.getByTestId("form-panel");
+    expect(root.className).toContain("p-panel");
   });
 
   it("applies a flex column layout with 8px gap between children", () => {
@@ -21,19 +21,20 @@ describe("FormPanel", () => {
         <span>two</span>
       </FormPanel>
     );
-    const root = screen.getByText("one").parentElement;
-    expect(root?.className).toContain("flex");
-    expect(root?.className).toContain("flex-col");
-    expect(root?.className).toContain("gap-2");
+    const root = screen.getByTestId("form-panel");
+    expect(root.className).toContain("flex");
+    expect(root.className).toContain("flex-col");
+    expect(root.className).toContain("gap-2");
   });
 
-  it("merges custom className", () => {
+  it("merges custom className with the base classes", () => {
     render(
       <FormPanel className="extra-class">
         <span>x</span>
       </FormPanel>
     );
-    const root = screen.getByText("x").parentElement;
-    expect(root?.className).toContain("extra-class");
+    const root = screen.getByTestId("form-panel");
+    expect(root.className).toContain("p-panel");
+    expect(root.className).toContain("extra-class");
   });
 });

@@ -12,6 +12,7 @@ interface FormRowProps {
 export function FormRow({ icon, children, trailing, className, tight = false }: FormRowProps) {
   return (
     <div
+      data-testid="form-row"
       className={cn(
         "grid grid-cols-[20px_1fr_auto] items-center gap-3",
         tight ? "min-h-row-tight" : "min-h-row",
