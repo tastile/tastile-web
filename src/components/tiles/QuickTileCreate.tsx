@@ -804,7 +804,12 @@ export function QuickTileCreate() {
               {memoExpanded || memoInput.trim().length > 0 ? (
                 <textarea
                   value={memoInput}
-                  onChange={(e) => setMemoInput(e.target.value)}
+                  onChange={(e) => {
+                    setMemoInput(e.target.value);
+                    if (e.target.value.trim().length === 0) {
+                      setMemoExpanded(false);
+                    }
+                  }}
                   placeholder={t("quickCreate.memoPlaceholder")}
                   aria-label={t("quickCreate.memoPlaceholder")}
                   rows={3}
