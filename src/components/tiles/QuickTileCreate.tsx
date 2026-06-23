@@ -5,7 +5,6 @@ import {
   Bookmark,
   Calendar,
   ChevronLeft,
-  ChevronRight,
   CircleDot,
   Clock3,
   Clock4,
@@ -831,7 +830,6 @@ export function QuickTileCreate() {
               <button
                 type="button"
                 onClick={() => setActivePanel("recurrence")}
-                aria-label={t("quickCreate.recurrenceNavTitle")}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Repeat className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
@@ -840,7 +838,6 @@ export function QuickTileCreate() {
               <button
                 type="button"
                 onClick={() => setActivePanel("interrupt")}
-                aria-label={t("quickCreate.interruptNavTitle")}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <AlertTriangle className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
@@ -849,7 +846,6 @@ export function QuickTileCreate() {
               <button
                 type="button"
                 onClick={() => setActivePanel("automation")}
-                aria-label={t("quickCreate.automationNavTitle")}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Zap className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
@@ -858,7 +854,6 @@ export function QuickTileCreate() {
               <button
                 type="button"
                 onClick={() => setActivePanel("meta")}
-                aria-label={t("quickCreate.metaNavTitle")}
                 className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Tag className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
