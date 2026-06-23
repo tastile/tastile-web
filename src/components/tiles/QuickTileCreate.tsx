@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Calendar,
   ChevronLeft,
   ChevronRight,
   CircleDot,
@@ -38,6 +39,7 @@ export function QuickTileCreate() {
   const [isLabelOnly, setIsLabelOnly] = useState(false);
   const [useStartAt, setUseStartAt] = useState(false);
   const [useEndAt, setUseEndAt] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [startDateInput, setStartDateInput] = useState(() => getCurrentLocalDate());
   const [startTimeInput, setStartTimeInput] = useState(() => getCurrentLocalTime());
   const [endDateInput, setEndDateInput] = useState(() => getCurrentLocalDate());
@@ -124,6 +126,18 @@ export function QuickTileCreate() {
   const hasStart = !!startDate;
   const hasEnd = !!endDate;
   const hasAnyTemporalConstraint = hasStart || hasEnd;
+  const scheduleSummary = (() => {
+    if (hasStart && hasEnd) {
+      return `${t("quickCreate.scheduleSummaryStartEnd")}${startDateInput} ${startTimeInput} - ${endDateInput} ${endTimeInput}`;
+    }
+    if (hasStart) {
+      return `${startDateInput} ${startTimeInput} ${t("quickCreate.scheduleSummaryStartOnly")}`;
+    }
+    if (hasEnd) {
+      return `${t("quickCreate.scheduleSummaryEndOnly")}${endDateInput} ${endTimeInput}`;
+    }
+    return t("quickCreate.scheduleSummaryAnytime");
+  })();
   const isRecurring = objectiveMode === "recurring";
   const showFocusUntilEnd = !isLabelOnly && !isRecurring && hasEnd;
   const recurrenceInterval = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
@@ -542,93 +556,75 @@ export function QuickTileCreate() {
               </div>
             ) : null}
 
-            {/* Schedule (inlined — was a sub-panel before) */}
-            <SectionBlock
-              title={t("quickCreate.scheduleTitle")}
-              helpText={t("quickCreate.scheduleGuide")}
-              choiceGrid={false}
-            >
-              {!isRecurring ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <ChoiceButton
-                    active={useStartAt}
-                    onClick={() => {
-                      const next = !useStartAt;
-                      setUseStartAt(next);
-                      if (!next) {
-                        setStartDateInput("");
-                        setStartTimeInput("");
-                      } else {
-                        setStartDateInput((prev) => prev || getCurrentLocalDate());
-                        setStartTimeInput((prev) => prev || getCurrentLocalTime());
-                      }
-                    }}
-                  >
-                    {t("quickCreate.startAt")}
-                  </ChoiceButton>
-                  <ChoiceButton
-                    active={useEndAt}
-                    onClick={() => {
-                      const next = !useEndAt;
-                      setUseEndAt(next);
-                      if (!next) {
-                        setEndDateInput("");
-                        setEndTimeInput("");
-                      } else {
-                        setEndDateInput((prev) => prev || startDateInput || getCurrentLocalDate());
-                        setEndTimeInput((prev) => prev || getLocalTimeAfterMinutes(60));
-                      }
-                    }}
-                  >
-                    {t("quickCreate.endAt")}
-                  </ChoiceButton>
-                </div>
-              ) : null}
-
-              {!isRecurring && useStartAt ? (
-                <div className="space-y-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="date"
-                      aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "日付" : "date"})`}
-                      value={startDateInput}
-                      onChange={(e) => setStartDateInput(e.target.value)}
-                      className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                    <input
-                      type="time"
-                      aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "時刻" : "time"})`}
-                      step={60}
-                      value={startTimeInput}
-                      onChange={(e) => setStartTimeInput(e.target.value)}
-                      className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                    />
+            {/* Schedule (inlined — was a sub-panel before, now a single pill) */}
+            {!isRecurring ? (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setScheduleOpen((prev) => !prev)}
+                  aria-expanded={scheduleOpen}
+                  aria-label={t("quickCreate.scheduleTitle")}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5"
+                >
+                  <Calendar className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                  <span className="text-sm">{scheduleSummary}</span>
+                </button>
+                {scheduleOpen ? (
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "日付" : "date"})`}
+                          value={startDateInput}
+                          onChange={(e) => {
+                            setStartDateInput(e.target.value);
+                            setUseStartAt(true);
+                          }}
+                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                        <input
+                          type="time"
+                          aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "時刻" : "time"})`}
+                          step={60}
+                          value={startTimeInput}
+                          onChange={(e) => {
+                            setStartTimeInput(e.target.value);
+                            setUseStartAt(true);
+                          }}
+                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="date"
+                          aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "日付" : "date"})`}
+                          value={endDateInput}
+                          onChange={(e) => {
+                            setEndDateInput(e.target.value);
+                            setUseEndAt(true);
+                          }}
+                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                        <input
+                          type="time"
+                          aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "時刻" : "time"})`}
+                          step={60}
+                          value={endTimeInput}
+                          onChange={(e) => {
+                            setEndTimeInput(e.target.value);
+                            setUseEndAt(true);
+                          }}
+                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : null}
-
-              {!isRecurring && useEndAt ? (
-                <div className="space-y-1">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="date"
-                      aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "日付" : "date"})`}
-                      value={endDateInput}
-                      onChange={(e) => setEndDateInput(e.target.value)}
-                      className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                    <input
-                      type="time"
-                      aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "時刻" : "time"})`}
-                      step={60}
-                      value={endTimeInput}
-                      onChange={(e) => setEndTimeInput(e.target.value)}
-                      className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </div>
-                </div>
-              ) : null}
-            </SectionBlock>
+                ) : null}
+              </div>
+            ) : null}
 
             {/* Period label (inlined) */}
             <SectionBlock
@@ -1393,7 +1389,7 @@ function SectionBlock({
 }) {
   const headingId = useId();
   return (
-    <div className="space-y-2" aria-labelledby={title ? headingId : undefined}>
+    <section className="space-y-2" aria-labelledby={title ? headingId : undefined}>
       {title ? (
         <div className="flex items-center gap-2">
           <h3 id={headingId} className="text-sm font-medium text-foreground">
@@ -1403,7 +1399,7 @@ function SectionBlock({
         </div>
       ) : null}
       <div className={choiceGrid ? "grid grid-cols-2 gap-2" : "space-y-2"}>{children}</div>
-    </div>
+    </section>
   );
 }
 

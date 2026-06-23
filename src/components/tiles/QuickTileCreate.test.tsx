@@ -107,12 +107,10 @@ describe("QuickTileCreate — accessibility", () => {
 	it("all visible date and time inputs have accessible names", () => {
 		render(<QuickTileCreate />);
 
-		// Schedule is now inlined in the base panel — no sub-panel to open.
-		// Enable "useStartAt" — its ChoiceButton toggles the visibility
-		// of the start date+time inputs. After enabling, those inputs
-		// must be reachable by accessible name.
-		const startToggle = screen.getByRole("button", { name: "quickCreate.startAt" });
-		fireEvent.click(startToggle);
+		// Schedule is now a single inline pill — click it to expand
+		// the date+time inputs in place.
+		const pill = screen.getByRole("button", { name: /quickCreate\.scheduleTitle/ });
+		fireEvent.click(pill);
 
 		const dateInputs = screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/);
 		const timeInputs = screen.getAllByDisplayValue(/\d{2}:\d{2}/);
@@ -147,6 +145,19 @@ describe("QuickTileCreate — accessibility", () => {
 			const alert = screen.queryByRole("alert");
 			expect(alert).toBeTruthy();
 		});
+	});
+
+	it("date/time is a single inline row that expands on pill click", () => {
+		render(<QuickTileCreate />);
+
+		expect(screen.queryByRole("heading", { name: /quickCreate\.scheduleTitle/ })).toBeNull();
+		// The schedule pill is a button with aria-expanded
+		const pill = screen.getByRole("button", { name: /quickCreate\.scheduleTitle/ });
+		expect(pill.getAttribute("aria-expanded")).toBe("false");
+		fireEvent.click(pill);
+		expect(pill.getAttribute("aria-expanded")).toBe("true");
+		// After click, date+time inputs are revealed inline
+		expect(screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/).length).toBeGreaterThan(0);
 	});
 
 	it("sub-panel navigation buttons are localized via t()", () => {
@@ -201,16 +212,20 @@ describe("QuickTileCreate — accessibility", () => {
 		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleIntervalEnd/ })).toBeTruthy();
 	});
 
-	it("base panel exposes Schedule start/end toggles + period label", () => {
+	it("base panel exposes a schedule pill + period label", () => {
 		render(<QuickTileCreate />);
 
-		// Schedule controls are inlined — no sub-panel nav needed.
+		// Schedule is a single inline pill that expands to show the
+		// date+time inputs (no separate Start/End toggle buttons).
 		expect(
-			screen.getByRole("button", { name: "quickCreate.startAt" }),
+			screen.getByRole("button", { name: /quickCreate\.scheduleTitle/ }),
 		).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "quickCreate.endAt" }),
-		).toBeTruthy();
+			screen.queryByRole("button", { name: "quickCreate.startAt" }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: "quickCreate.endAt" }),
+		).toBeNull();
 		expect(
 			screen.getByRole("checkbox", { name: /quickCreate\.labelOnly/ }),
 		).toBeTruthy();
