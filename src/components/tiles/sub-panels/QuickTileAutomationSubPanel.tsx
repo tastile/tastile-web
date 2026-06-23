@@ -67,7 +67,7 @@ export function QuickTileAutomationSubPanel({
             <div className="flex w-full items-center justify-between">
               <label
                 htmlFor="automation-prompt-on-start"
-                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+                className={`flex flex-1 cursor-pointer items-center text-sm ${promptOnStart ? "text-foreground" : "text-foreground-muted"}`}
               >
                 <span>{t("quickCreate.promptOnStartTitle")}</span>
               </label>
@@ -85,7 +85,7 @@ export function QuickTileAutomationSubPanel({
             <div className="flex w-full items-center justify-between">
               <label
                 htmlFor="automation-prompt-on-end"
-                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+                className={`flex flex-1 cursor-pointer items-center text-sm ${promptOnEnd ? "text-foreground" : "text-foreground-muted"}`}
               >
                 <span>{t("quickCreate.promptOnEndTitle")}</span>
               </label>
@@ -103,7 +103,7 @@ export function QuickTileAutomationSubPanel({
             <div className="flex w-full items-center justify-between">
               <label
                 htmlFor="automation-auto-start-allowed"
-                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+                className={`flex flex-1 cursor-pointer items-center text-sm ${autoStartAllowed ? "text-foreground" : "text-foreground-muted"}`}
               >
                 <span>{t("quickCreate.autoStartAllowedTitle")}</span>
               </label>
@@ -121,7 +121,7 @@ export function QuickTileAutomationSubPanel({
             <div className="flex w-full items-center justify-between">
               <label
                 htmlFor="automation-auto-end-allowed"
-                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+                className={`flex flex-1 cursor-pointer items-center text-sm ${autoEndAllowed ? "text-foreground" : "text-foreground-muted"}`}
               >
                 <span>{t("quickCreate.autoEndAllowedTitle")}</span>
               </label>

@@ -82,7 +82,7 @@ export function QuickTileInterruptSubPanel({
             <div className="flex w-full items-center justify-between">
               <label
                 htmlFor="external-interrupt-only"
-                className="flex flex-1 cursor-pointer items-center text-sm text-foreground"
+                className={`flex flex-1 cursor-pointer items-center text-sm ${externalInterruptOnly ? "text-foreground" : "text-foreground-muted"}`}
               >
                 <span>{t("quickCreate.externalInterruptOnlyTitle")}</span>
               </label>
