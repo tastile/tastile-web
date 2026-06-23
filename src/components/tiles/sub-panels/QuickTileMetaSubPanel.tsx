@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, Tag, X } from "lucide-react";
-import { FormPanel, FormRow, RowInput } from "@/components/ui/form";
+import { FormPanel, FormRow } from "@/components/ui/form";
 
 interface TimedLabel {
   label: string;

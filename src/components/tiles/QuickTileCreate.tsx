@@ -717,7 +717,6 @@ export function QuickTileCreate() {
           setRecurrenceValidFromDateInput={setRecurrenceValidFromDateInput}
           recurrenceValidToDateInput={recurrenceValidToDateInput}
           setRecurrenceValidToDateInput={setRecurrenceValidToDateInput}
-          getCurrentLocalDate={getCurrentLocalDate}
         />
       </section>
 

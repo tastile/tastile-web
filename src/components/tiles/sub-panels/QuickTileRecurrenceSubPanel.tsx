@@ -4,7 +4,6 @@ import { ChevronLeft, Clock, Repeat, X } from "lucide-react";
 import type { ObjectiveMode } from "@/lib/domain/tile";
 import { FormPanel, FormRow, RowInput } from "@/components/ui/form";
 import {
-  getCurrentLocalDate as getCurrentLocalDateHelper,
   parseNonNegativeInt,
   sanitizeNumericInput,
   type RecurrenceFrequency,
@@ -48,7 +47,6 @@ interface Props {
   setRecurrenceValidFromDateInput: (v: string) => void;
   recurrenceValidToDateInput: string;
   setRecurrenceValidToDateInput: (v: string) => void;
-  getCurrentLocalDate: () => string;
 }
 
 export function QuickTileRecurrenceSubPanel({
@@ -83,7 +81,6 @@ export function QuickTileRecurrenceSubPanel({
   recurrenceValidToDateInput,
   setRecurrenceValidToDateInput,
 }: Props) {
-  void getCurrentLocalDateHelper; // referenced through props
   return (
     <>
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
