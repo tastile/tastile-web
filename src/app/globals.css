@@ -152,11 +152,22 @@
        control        (8px) — buttons, inputs, choice rows, pills
        section        (16px) — card padding, row gaps, sub-panel scroll padding
        page           (32px) — page-level padding
+       panel          (24px) — form panel internal padding
+       row            (48px) — row min-height (Material HIG standard)
+       row-tight      (44px) — rows that contain a segmented control or compact input
   */
   --spacing-control-compact: 0.375rem;
   --spacing-control: 0.5rem;
   --spacing-section: 1rem;
   --spacing-page: 2rem;
+  /* Row-based form layout — 2026-06-24.
+     panel (24px) — form panel internal padding
+     row   (48px) — row min-height (Material HIG standard)
+     row-tight (44px) — rows that contain a segmented control or compact input
+  */
+  --spacing-panel: 1.5rem;
+  --spacing-row: 3rem;
+  --spacing-row-tight: 2.75rem;
 
   /* Fonts */
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
