@@ -1,5 +1,3 @@
-"use client";
-
 import { Actor } from "@/lib/domain/actor";
 import { TileId } from "@/lib/domain/ids";
 import {

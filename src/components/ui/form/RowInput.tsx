@@ -12,6 +12,7 @@ interface RowInputProps {
   trailing?: React.ReactNode;
   className?: string;
   ariaLabel?: string;
+  required?: boolean;
 }
 
 export function RowInput({
@@ -23,6 +24,7 @@ export function RowInput({
   trailing,
   className,
   ariaLabel,
+  required = false,
 }: RowInputProps) {
   return (
     <FormRow icon={<Icon size={20} />} trailing={trailing} className={className}>
@@ -32,6 +34,7 @@ export function RowInput({
         onChange={(e) => onChange?.(e.target.value)}
         placeholder={placeholder}
         aria-label={ariaLabel ?? placeholder}
+        aria-required={required ? "true" : undefined}
         className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
       />
     </FormRow>

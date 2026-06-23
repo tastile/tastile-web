@@ -22,7 +22,10 @@ import { Input, Textarea } from "@/components/ui/Input";
 import {
   FormDivider,
   FormPanel,
-  FormRow,
+  RowInput,
+  RowSegmented,
+  RowSubPanel,
+  RowToggle,
 } from "@/components/ui/form";
 import { getSessionClient } from "@/lib/daemon/id-token-client";
 import type { DoneRule, ObjectiveMode, Tile } from "@/lib/domain/tile";
@@ -448,13 +451,17 @@ export function QuickTileCreate() {
         </div>
         <div className="flex-1 overflow-y-auto">
           <FormPanel>
-            <TitleRow
-              title={title}
-              onTitleChange={(value) => {
+            <RowInput
+              icon={FileText}
+              placeholder={t("quickCreate.titlePlaceholder")}
+              value={title}
+              onChange={(value) => {
                 setTitle(value);
                 setTitleEdited(true);
               }}
-              placeholder={t("quickCreate.titlePlaceholder")}
+              ariaLabel={t("quickCreate.titlePlaceholder")}
+              required
+              className="quick-tile-title-row"
             />
 
             {!isLabelOnly ? (
@@ -475,7 +482,7 @@ export function QuickTileCreate() {
             ) : null}
 
             {!isLabelOnly ? (
-              <DoneRuleRow
+              <RowSegmented
                 icon={CheckCircle2}
                 options={DONE_RULE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
                 value={doneRule}
@@ -516,9 +523,9 @@ export function QuickTileCreate() {
               />
             ) : null}
 
-            <PeriodLabelRow
+            <RowToggle
               icon={BookOpen}
-              label={t("quickCreate.labelOnly")}
+              placeholder={t("quickCreate.labelOnly")}
               checked={isLabelOnly}
               onChange={setIsLabelOnly}
             />
@@ -609,33 +616,37 @@ export function QuickTileCreate() {
 
             <FormDivider />
 
-            <SubPanelNavButton
+            <RowSubPanel
               icon={Repeat}
               name={t("quickCreate.recurrenceNavTitle")}
+              value=""
               onClick={(e) => {
                 e.stopPropagation();
                 setActivePanel("recurrence");
               }}
             />
-            <SubPanelNavButton
+            <RowSubPanel
               icon={Ban}
               name={t("quickCreate.interruptNavTitle")}
+              value=""
               onClick={(e) => {
                 e.stopPropagation();
                 setActivePanel("interrupt");
               }}
             />
-            <SubPanelNavButton
+            <RowSubPanel
               icon={Zap}
               name={t("quickCreate.automationNavTitle")}
+              value=""
               onClick={(e) => {
                 e.stopPropagation();
                 setActivePanel("automation");
               }}
             />
-            <SubPanelNavButton
+            <RowSubPanel
               icon={Clock4}
               name={t("quickCreate.metaNavTitle")}
+              value=""
               onClick={(e) => {
                 e.stopPropagation();
                 setActivePanel("meta");
@@ -751,117 +762,6 @@ export function QuickTileCreate() {
 }
 
 // --- inline row subcomponents ------------------------------------------
-
-function TitleRow({
-  title,
-  onTitleChange,
-  placeholder,
-}: {
-  title: string;
-  onTitleChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <FormRow icon={<FileText size={20} />}>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => onTitleChange(e.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        aria-required="true"
-        data-testid="quick-tile-title-input"
-        className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-      />
-    </FormRow>
-  );
-}
-
-function PeriodLabelRow({
-  icon: Icon,
-  label,
-  checked,
-  onChange,
-}: {
-  icon: typeof BookOpen;
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <FormRow icon={<Icon size={20} />}>
-      <label className="flex w-full cursor-pointer items-center gap-3 text-sm text-foreground">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          aria-label={label}
-          className="h-4 w-4 shrink-0 rounded border-border text-primary focus:ring-primary"
-        />
-        <span>{label}</span>
-      </label>
-    </FormRow>
-  );
-}
-
-function DoneRuleRow<V extends string>({
-  icon: Icon,
-  options,
-  value,
-  onChange,
-}: {
-  icon: typeof CheckCircle2;
-  options: ReadonlyArray<{ value: V; label: string }>;
-  value: V;
-  onChange: (value: V) => void;
-}) {
-  return (
-    <FormRow icon={<Icon size={20} />} tight>
-      <div role="group" className="flex w-full gap-1">
-        {options.map((opt) => {
-          const active = opt.value === value;
-          return (
-            <button
-              key={opt.value}
-              type="button"
-              onClick={() => onChange(opt.value)}
-              aria-pressed={active}
-              className={cn(
-                "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition-colors",
-                active
-                  ? "bg-primary text-primary-fg"
-                  : "bg-surface-2 text-foreground-muted hover:text-foreground",
-              )}
-            >
-              {opt.label}
-            </button>
-          );
-        })}
-      </div>
-    </FormRow>
-  );
-}
-
-function SubPanelNavButton({
-  icon: Icon,
-  name,
-  onClick,
-}: {
-  icon: typeof Repeat;
-  name: string;
-  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex items-center gap-2 rounded-md border border-border bg-surface-1 px-control py-control text-left"
-    >
-      <Icon className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-      <span>{name}</span>
-    </button>
-  );
-}
 
 function DurationRow({
   hours,

@@ -186,14 +186,19 @@ describe("QuickTileCreate — accessibility", () => {
 			screen.getByRole("button", { name: /quickCreate\.metaNavTitle/ }),
 		];
 		for (const btn of buttons) {
-			const allSvgs = btn.querySelectorAll("svg");
+			// RowSubPanel renders the icon as a sibling (FormRow icon column),
+			// not inside the button. Walk up to the FormRow container so we can
+			// assert the icon appears before the title text within the same row.
+			const row = btn.closest('[data-testid="form-row"]');
+			expect(row, `button ${btn.textContent} is not inside a FormRow`).toBeTruthy();
+			const allSvgs = row!.querySelectorAll("svg");
 			const titleSpan = btn.querySelector("span");
-			expect(allSvgs.length, `button ${btn.textContent} has no svg`).toBeGreaterThan(0);
+			expect(allSvgs.length, `row ${btn.textContent} has no svg`).toBeGreaterThan(0);
 			// The first svg must appear before the title span in DOM order (leading, not trailing)
 			const pos = allSvgs[0].compareDocumentPosition(titleSpan!);
 			expect(
 				pos & Node.DOCUMENT_POSITION_FOLLOWING,
-				`button ${btn.textContent} first svg is not leading the title`,
+				`row ${btn.textContent} first svg is not leading the title`,
 			).toBeTruthy();
 		}
 	});
@@ -214,23 +219,24 @@ describe("QuickTileCreate — accessibility", () => {
 		render(<QuickTileCreate />);
 
 		// The completion trigger is always required (not a sub-panel).
+		// RowSegmented primitive renders role="radiogroup" + role="radio" children.
 		expect(
-			screen.getByRole("button", { name: "quickCreate.doneRuleTimeReached" }),
+			screen.getByRole("radio", { name: "quickCreate.doneRuleTimeReached" }),
 		).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "quickCreate.doneRuleIntervalEnd" }),
+			screen.getByRole("radio", { name: "quickCreate.doneRuleIntervalEnd" }),
 		).toBeTruthy();
 		expect(
-			screen.getByRole("button", { name: "quickCreate.doneRuleManual" }),
+			screen.getByRole("radio", { name: "quickCreate.doneRuleManual" }),
 		).toBeTruthy();
 	});
 
 	it("DoneRule row has no section heading; 3 options remain", () => {
 		render(<QuickTileCreate />);
 		expect(screen.queryByRole("heading", { name: /quickCreate\.doneRuleTitle/ })).toBeNull();
-		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleManual/ })).toBeTruthy();
-		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleTimeReached/ })).toBeTruthy();
-		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleIntervalEnd/ })).toBeTruthy();
+		expect(screen.getByRole("radio", { name: /quickCreate\.doneRuleManual/ })).toBeTruthy();
+		expect(screen.getByRole("radio", { name: /quickCreate\.doneRuleTimeReached/ })).toBeTruthy();
+		expect(screen.getByRole("radio", { name: /quickCreate\.doneRuleIntervalEnd/ })).toBeTruthy();
 	});
 
 	it("base panel exposes a schedule pill + period label", () => {
@@ -247,8 +253,9 @@ describe("QuickTileCreate — accessibility", () => {
 		expect(
 			screen.queryByRole("button", { name: "quickCreate.endAt" }),
 		).toBeNull();
+		// RowToggle primitive renders role="switch".
 		expect(
-			screen.getByRole("checkbox", { name: /quickCreate\.labelOnly/ }),
+			screen.getByRole("switch", { name: /quickCreate\.labelOnly/ }),
 		).toBeTruthy();
 	});
 
@@ -296,8 +303,8 @@ describe("QuickTileCreate — accessibility", () => {
 	it("period label is a toggle switch with no section heading", () => {
 		render(<QuickTileCreate />);
 		expect(screen.queryByRole("heading", { name: /quickCreate\.labelOnlyTitle/ })).toBeNull();
-		// Checkbox still present, reachable by its accessible name
-		expect(screen.getByRole("checkbox", { name: /quickCreate\.labelOnly/ })).toBeTruthy();
+		// RowToggle primitive renders role="switch", reachable by its accessible name.
+		expect(screen.getByRole("switch", { name: /quickCreate\.labelOnly/ })).toBeTruthy();
 	});
 
 	it("tag input is icon-driven and addable via Enter", () => {
@@ -392,9 +399,9 @@ describe("QuickTileCreate — interruption & automation layers", () => {
 	it("doneRule choice row drives tile.objective.doneRule", async () => {
 		render(<QuickTileCreate />);
 
-		// Pick "When target work reached".
+		// Pick "When target work reached" (RowSegmented renders role="radio").
 		fireEvent.click(
-			screen.getByRole("button", { name: "quickCreate.doneRuleTimeReached" }),
+			screen.getByRole("radio", { name: "quickCreate.doneRuleTimeReached" }),
 		);
 
 		fireEvent.click(screen.getByRole("button", { name: "quickCreate.commit" }));
@@ -469,9 +476,9 @@ describe("QuickTileCreate — submit semantics", () => {
 		render(<QuickTileCreate />);
 
 		// The label-only toggle is now inlined in the base panel — no
-		// sub-panel to open. The toggle is a real checkbox (not a
-		// ChoiceButton), reachable by role and accessible name.
-		const labelToggle = screen.getByRole("checkbox", {
+		// sub-panel to open. The toggle uses the RowToggle primitive
+		// which renders role="switch".
+		const labelToggle = screen.getByRole("switch", {
 			name: /quickCreate\.labelOnly/,
 		});
 		expect(labelToggle).toBeTruthy();
