@@ -272,6 +272,13 @@ describe("QuickTileCreate — accessibility", () => {
 		).toBeTruthy();
 	});
 
+	it("period label is a toggle switch with no section heading", () => {
+		render(<QuickTileCreate />);
+		expect(screen.queryByRole("heading", { name: /quickCreate\.labelOnlyTitle/ })).toBeNull();
+		// Checkbox still present, reachable by its accessible name
+		expect(screen.getByRole("checkbox", { name: /quickCreate\.labelOnly/ })).toBeTruthy();
+	});
+
 	it("tag input is icon-driven and addable via Enter", () => {
 		render(<QuickTileCreate />);
 		const tagInput = screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ });

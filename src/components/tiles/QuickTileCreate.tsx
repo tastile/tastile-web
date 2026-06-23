@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Bookmark,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -633,25 +634,19 @@ export function QuickTileCreate() {
             ) : null}
 
             {/* Period label (inlined) */}
-            <SectionBlock
-              title={t("quickCreate.labelOnlyTitle")}
-              helpText={t("quickCreate.labelOnlyGuide")}
-              choiceGrid={false}
-            >
-              <label className="flex items-center gap-2 text-sm text-foreground">
-                <input
-                  type="checkbox"
-                  checked={isLabelOnly}
-                  onChange={(e) => setIsLabelOnly(e.target.checked)}
-                  aria-describedby="quick-tile-label-only-help"
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                />
-                <span>{t("quickCreate.labelOnly")}</span>
-              </label>
-              <p id="quick-tile-label-only-help" className="text-xs text-foreground-muted">
-                {t("quickCreate.labelOnlyHelp")}
-              </p>
-            </SectionBlock>
+            <label className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5 cursor-pointer">
+              <Bookmark
+                className="h-4 w-4 text-foreground-muted"
+                aria-hidden="true"
+              />
+              <input
+                type="checkbox"
+                checked={isLabelOnly}
+                onChange={(e) => setIsLabelOnly(e.target.checked)}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              />
+              <span className="text-sm">{t("quickCreate.labelOnly")}</span>
+            </label>
 
             {/* Project / Tags (inlined — was in meta sub-panel) */}
             <SectionBlock choiceGrid={false}>
