@@ -132,6 +132,7 @@ export function QuickTileCreate() {
   >([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [invalidField, setInvalidField] = useState<"title" | "duration" | null>(null);
 
   // --- derived values ---------------------------------------------------
   const workTargetMin = parseDurationToMinutes(workHoursInput, workMinutesInput);
@@ -275,8 +276,10 @@ export function QuickTileCreate() {
   // --- submit handler ---------------------------------------------------
   async function handleCreate() {
     setError(null);
+    setInvalidField(null);
     if (title.trim().length === 0) {
       setError(t("quickCreate.titleRequired"));
+      setInvalidField("title");
       return;
     }
     if (!temporalOrderValid) {
@@ -285,6 +288,7 @@ export function QuickTileCreate() {
     }
     if (!isLabelOnly && !isRecurring && hasAnyTemporalConstraint && (workTargetMin ?? 0) <= 0) {
       setError(t("quickCreate.durationRequired"));
+      setInvalidField("duration");
       return;
     }
     if (objectiveMode === "recurring" && recurrenceInterval <= 0) {
@@ -458,9 +462,12 @@ export function QuickTileCreate() {
               onChange={(value) => {
                 setTitle(value);
                 setTitleEdited(true);
+                if (invalidField === "title") setInvalidField(null);
               }}
               ariaLabel={t("quickCreate.titlePlaceholder")}
+              ariaDescribedBy={invalidField === "title" ? "quick-create-error" : undefined}
               required
+              invalid={invalidField === "title"}
               className="quick-tile-title-row"
             />
 
@@ -470,13 +477,16 @@ export function QuickTileCreate() {
                 minutes={workMinutesInput}
                 hoursUnit={t("quickCreate.hoursUnit")}
                 minutesUnit={t("quickCreate.minutesUnit")}
+                ariaLabel={t("quickCreate.durationAriaLabel")}
                 onHoursChange={(value) => {
                   setDurationManuallyEdited(true);
                   setWorkHoursInput(value);
+                  if (invalidField === "duration") setInvalidField(null);
                 }}
                 onMinutesChange={(value) => {
                   setDurationManuallyEdited(true);
                   setWorkMinutesInput(value);
+                  if (invalidField === "duration") setInvalidField(null);
                 }}
               />
             ) : null}
@@ -668,7 +678,7 @@ export function QuickTileCreate() {
             {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
           </Button>
           {error ? (
-            <p role="alert" className="mt-2 text-center text-xs text-danger">
+            <p id="quick-create-error" role="alert" className="mt-2 text-center text-xs text-danger">
               {error}
             </p>
           ) : null}
@@ -768,6 +778,9 @@ function DurationRow({
   minutes,
   hoursUnit,
   minutesUnit,
+  ariaLabel,
+  ariaDescribedBy,
+  invalid,
   onHoursChange,
   onMinutesChange,
 }: {
@@ -775,6 +788,9 @@ function DurationRow({
   minutes: string;
   hoursUnit: string;
   minutesUnit: string;
+  ariaLabel?: string;
+  ariaDescribedBy?: string;
+  invalid?: boolean;
   onHoursChange: (value: string) => void;
   onMinutesChange: (value: string) => void;
 }) {
@@ -790,7 +806,9 @@ function DurationRow({
         <input
           type="text"
           inputMode="numeric"
-          aria-label={`${hours} ${hoursUnit} ${minutes} ${minutesUnit}`}
+          aria-label={ariaLabel ?? `${hoursUnit} / ${minutesUnit}`}
+          aria-invalid={invalid ? "true" : undefined}
+          aria-describedby={ariaDescribedBy}
           value={duration}
           onChange={(e) => {
             const parsed = parseHHMM(e.target.value);

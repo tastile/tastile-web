@@ -99,8 +99,9 @@ describe("QuickTileCreate — accessibility", () => {
 		render(<QuickTileCreate />);
 
 		expect(screen.queryByRole("heading", { name: /quickCreate\.workTargetTitle/ })).toBeNull();
-		// DurationInput is reachable by its aria-label (which includes "hours" + "minutes" units).
-		const duration = screen.getByRole("textbox", { name: /hours/i });
+		// DurationInput is reachable by its static aria-label (the field's purpose,
+		// not the current value — avoids re-announcing the value on every keystroke).
+		const duration = screen.getByRole("textbox", { name: /durationAriaLabel/ });
 		expect(duration).toBeTruthy();
 	});
 
