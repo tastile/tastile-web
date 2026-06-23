@@ -7,6 +7,7 @@ import {
   CircleDot,
   Clock3,
   Clock4,
+  MessageSquare,
   Plus,
   StopCircle,
   Tag,
@@ -82,6 +83,7 @@ export function QuickTileCreate() {
   const [tagDraft, setTagDraft] = useState("");
   const [isTagInputFocused, setIsTagInputFocused] = useState(false);
   const [memoInput, setMemoInput] = useState("");
+  const [memoExpanded, setMemoExpanded] = useState(false);
   const [doneRule, setDoneRule] = useState<DoneRule>("manual");
   const [interruptPenalty, setInterruptPenalty] = useState(3);
   const [resumePenalty, setResumePenalty] = useState(3);
@@ -434,6 +436,7 @@ export function QuickTileCreate() {
       setSelectedTags([]);
       setTagDraft("");
       setMemoInput("");
+      setMemoExpanded(false);
       setDoneRule("manual");
       setInterruptPenalty(3);
       setResumePenalty(3);
@@ -798,14 +801,26 @@ export function QuickTileCreate() {
               helpText={t("quickCreate.memoGuide")}
               choiceGrid={false}
             >
-              <textarea
-                value={memoInput}
-                onChange={(e) => setMemoInput(e.target.value)}
-                placeholder={t("quickCreate.memoPlaceholder")}
-                aria-label={t("quickCreate.memoPlaceholder")}
-                rows={3}
-                className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
+              {memoExpanded || memoInput.trim().length > 0 ? (
+                <textarea
+                  value={memoInput}
+                  onChange={(e) => setMemoInput(e.target.value)}
+                  placeholder={t("quickCreate.memoPlaceholder")}
+                  aria-label={t("quickCreate.memoPlaceholder")}
+                  rows={3}
+                  className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMemoExpanded(true)}
+                  aria-label={t("quickCreate.memoPlaceholder")}
+                  className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5"
+                >
+                  <MessageSquare className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                  <span>{t("quickCreate.memoAdd")}</span>
+                </button>
+              )}
             </SectionBlock>
 
             {/* Sub-panel navigation buttons */}

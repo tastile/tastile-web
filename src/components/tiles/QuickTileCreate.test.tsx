@@ -234,14 +234,30 @@ describe("QuickTileCreate — accessibility", () => {
 	it("base panel exposes Project + Tag + Memo inputs", () => {
 		render(<QuickTileCreate />);
 
-		// Project / Tag / Memo were promoted from the meta sub-panel to
-		// the base panel — they must be reachable without opening a sub-panel.
+		// Project / Tag were promoted from the meta sub-panel to the base
+		// panel — they must be reachable without opening a sub-panel.
 		expect(
 			screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ }),
 		).toBeTruthy();
 		expect(
 			screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ }),
 		).toBeTruthy();
+		// Memo is collapsed by default — only the "Add a note" placeholder
+		// button is visible until the user clicks it.
+		expect(
+			screen.getByRole("button", { name: /quickCreate\.memoPlaceholder/ }),
+		).toBeTruthy();
+	});
+
+	it("memo is collapsed by default; clicking 'Add note' reveals a textarea", () => {
+		render(<QuickTileCreate />);
+		// When empty, only an "Add note" placeholder button is visible, not a textarea
+		expect(
+			screen.queryByRole("textbox", { name: /quickCreate\.memoPlaceholder/ }),
+		).toBeNull();
+		// Click the placeholder to expand
+		const addNote = screen.getByRole("button", { name: /quickCreate\.memoPlaceholder/ });
+		fireEvent.click(addNote);
 		expect(
 			screen.getByRole("textbox", { name: /quickCreate\.memoPlaceholder/ }),
 		).toBeTruthy();
