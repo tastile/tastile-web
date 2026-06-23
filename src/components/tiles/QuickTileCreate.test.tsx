@@ -177,6 +177,27 @@ describe("QuickTileCreate — accessibility", () => {
 		).toBeNull();
 	});
 
+	it("sub-panel nav buttons have a leading lucide icon (before the title text)", () => {
+		render(<QuickTileCreate />);
+		const buttons = [
+			screen.getByRole("button", { name: /quickCreate\.recurrenceNavTitle/ }),
+			screen.getByRole("button", { name: /quickCreate\.interruptNavTitle/ }),
+			screen.getByRole("button", { name: /quickCreate\.automationNavTitle/ }),
+			screen.getByRole("button", { name: /quickCreate\.metaNavTitle/ }),
+		];
+		for (const btn of buttons) {
+			const allSvgs = btn.querySelectorAll("svg");
+			const titleSpan = btn.querySelector("span");
+			expect(allSvgs.length, `button ${btn.textContent} has no svg`).toBeGreaterThan(0);
+			// The first svg must appear before the title span in DOM order (leading, not trailing)
+			const pos = allSvgs[0].compareDocumentPosition(titleSpan!);
+			expect(
+				pos & Node.DOCUMENT_POSITION_FOLLOWING,
+				`button ${btn.textContent} first svg is not leading the title`,
+			).toBeTruthy();
+		}
+	});
+
 	it("base panel exposes interrupt rules and automation nav entries", () => {
 		render(<QuickTileCreate />);
 

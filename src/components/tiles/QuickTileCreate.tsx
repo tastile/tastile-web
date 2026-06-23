@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertTriangle,
   Bookmark,
   Calendar,
   ChevronLeft,
@@ -10,11 +11,13 @@ import {
   Clock4,
   MessageSquare,
   Plus,
+  Repeat,
   StopCircle,
   Tag,
   Timer,
   Type,
   X,
+  Zap,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { Input } from "@/components/ui/Input";
@@ -823,59 +826,43 @@ export function QuickTileCreate() {
               )}
             </SectionBlock>
 
-            {/* Sub-panel navigation buttons */}
+            {/* Sub-panel navigation buttons — compact icon-prefixed pills */}
             <div className="pt-4 space-y-2">
               <button
                 type="button"
                 onClick={() => setActivePanel("recurrence")}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                aria-label={t("quickCreate.recurrenceNavTitle")}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <div className="flex flex-col items-start">
-                  <span>{t("quickCreate.recurrenceNavTitle")}</span>
-                  <span className="text-xs text-foreground-muted font-normal">
-                    {t("quickCreate.recurrenceNavGuide")}
-                  </span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                <Repeat className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <span>{t("quickCreate.recurrenceNavTitle")}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActivePanel("interrupt")}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                aria-label={t("quickCreate.interruptNavTitle")}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <div className="flex flex-col items-start">
-                  <span>{t("quickCreate.interruptNavTitle")}</span>
-                  <span className="text-xs text-foreground-muted font-normal">
-                    {t("quickCreate.interruptNavGuide")}
-                  </span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                <AlertTriangle className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <span>{t("quickCreate.interruptNavTitle")}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActivePanel("automation")}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                aria-label={t("quickCreate.automationNavTitle")}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <div className="flex flex-col items-start">
-                  <span>{t("quickCreate.automationNavTitle")}</span>
-                  <span className="text-xs text-foreground-muted font-normal">
-                    {t("quickCreate.automationNavGuide")}
-                  </span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                <Zap className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <span>{t("quickCreate.automationNavTitle")}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActivePanel("meta")}
-                className="flex w-full items-center justify-between rounded-lg border border-border bg-surface-0 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2 transition-colors"
+                aria-label={t("quickCreate.metaNavTitle")}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
-                <div className="flex flex-col items-start">
-                  <span>{t("quickCreate.metaNavTitle")}</span>
-                  <span className="text-xs text-foreground-muted font-normal">
-                    {t("quickCreate.metaNavGuide")}
-                  </span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-foreground-subtle" />
+                <Tag className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
+                <span>{t("quickCreate.metaNavTitle")}</span>
               </button>
             </div>
           </div>
