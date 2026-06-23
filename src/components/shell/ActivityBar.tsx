@@ -1,22 +1,22 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   CheckSquare,
   Layers,
+  Library,
+  type LucideIcon,
   PanelLeftDashed,
   Plus,
   Repeat,
-  Library,
   Settings,
-  type LucideIcon,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { useShellStore, type SidebarBehavior } from "@/lib/stores/shell-store";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { type SidebarBehavior, useShellStore } from "@/lib/stores/shell-store";
 import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
@@ -26,11 +26,11 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: "/dashboard/calendar",   label: "Timeline",   Icon: CalendarDays },
-  { path: "/dashboard/tasks",      label: "Tasks",      Icon: CheckSquare  },
-  { path: "/dashboard/projects",   label: "Projects",   Icon: Layers       },
-  { path: "/dashboard/schedule",   label: "Schedule",   Icon: Repeat       },
-  { path: "/dashboard/references", label: "References", Icon: Library      },
+  { path: "/dashboard/calendar", label: "Timeline", Icon: CalendarDays },
+  { path: "/dashboard/tasks", label: "Tasks", Icon: CheckSquare },
+  { path: "/dashboard/projects", label: "Projects", Icon: Layers },
+  { path: "/dashboard/schedule", label: "Schedule", Icon: Repeat },
+  { path: "/dashboard/references", label: "References", Icon: Library },
 ];
 
 const PREF_ITEM: NavItem = { path: "/dashboard/preferences", label: "Preferences", Icon: Settings };
@@ -45,15 +45,13 @@ export function ActivityBar() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // 実際に展開するか判定
-  const expanded =
-    sidebarBehavior === "open" ||
-    (sidebarBehavior === "expandable" && hovered);
+  const expanded = sidebarBehavior === "open" || (sidebarBehavior === "expandable" && hovered);
 
   return (
     <div
       className={cn(
         "hidden md:block relative shrink-0 transition-[width] duration-200 ease-in-out z-20",
-        sidebarBehavior === "open" ? "w-48" : "w-12"
+        sidebarBehavior === "open" ? "w-48" : "w-12",
       )}
     >
       <nav
@@ -67,137 +65,137 @@ export function ActivityBar() {
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-      {/* タスク作成ボタン — アクセントカラー */}
-      <div className="px-1 pt-1">
-        <NavButton
-          label={t("nav.new")}
-          Icon={Plus}
-          expanded={expanded}
-          onClick={openQuickCreate}
-          className="text-foreground hover:bg-surface-2"
-        />
-      </div>
+        {/* タスク作成ボタン — アクセントカラー */}
+        <div className="px-1 pt-1">
+          <NavButton
+            label={t("nav.new")}
+            Icon={Plus}
+            expanded={expanded}
+            onClick={openQuickCreate}
+            className="text-foreground hover:bg-surface-2"
+          />
+        </div>
 
-      {/* ナビゲーション項目 */}
-      <div className="flex flex-1 flex-col gap-0.5 px-1 pt-2 overflow-hidden">
-        {NAV_ITEMS.map(({ path, label, Icon }) => {
-          const active = pathname === path || pathname.startsWith(path + "/");
-          return (
-            <NavLink
-              key={path}
-              href={path}
-              label={label}
-              Icon={Icon}
-              active={active}
-              expanded={expanded}
-            />
-          );
-        })}
-        <div className="mx-2 my-2 h-px bg-border shrink-0" />
-        <NavLink
-          href={PREF_ITEM.path}
-          label={PREF_ITEM.label}
-          Icon={PREF_ITEM.Icon}
-          active={pathname?.startsWith("/dashboard/preferences")}
-          expanded={expanded}
-        />
-      </div>
+        {/* ナビゲーション項目 */}
+        <div className="flex flex-1 flex-col gap-0.5 px-1 pt-2 overflow-hidden">
+          {NAV_ITEMS.map(({ path, label, Icon }) => {
+            const active = pathname === path || pathname.startsWith(`${path}/`);
+            return (
+              <NavLink
+                key={path}
+                href={path}
+                label={label}
+                Icon={Icon}
+                active={active}
+                expanded={expanded}
+              />
+            );
+          })}
+          <div className="mx-2 my-2 h-px bg-border shrink-0" />
+          <NavLink
+            href={PREF_ITEM.path}
+            label={PREF_ITEM.label}
+            Icon={PREF_ITEM.Icon}
+            active={pathname?.startsWith("/dashboard/preferences")}
+            expanded={expanded}
+          />
+        </div>
 
-      {/* 開閉コントロール — 下揃え */}
-      <div className="relative px-1 pb-1">
-        <button
-          type="button"
-          onClick={() => setDropdownOpen((v) => !v)}
-          aria-label="Sidebar control"
-          aria-haspopup="true"
-          aria-expanded={dropdownOpen}
-          className={cn(
-            "relative flex h-10 w-full items-center overflow-hidden rounded-md",
-            "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-            "transition-colors",
-          )}
-        >
-          <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
-            <PanelLeftDashed className="h-4 w-4" aria-hidden />
-          </span>
-          <span
+        {/* 開閉コントロール — 下揃え */}
+        <div className="relative px-1 pb-1">
+          <button
+            type="button"
+            onClick={() => setDropdownOpen((v) => !v)}
+            aria-label="Sidebar control"
+            aria-haspopup="true"
+            aria-expanded={dropdownOpen}
             className={cn(
-              "absolute left-10 whitespace-nowrap text-sm",
-              "transition-[opacity,transform] duration-200",
-              expanded
-                ? "opacity-100 translate-x-0"
-                : "opacity-0 -translate-x-2 pointer-events-none",
+              "relative flex h-10 w-full items-center overflow-hidden rounded-md",
+              "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+              "transition-colors",
             )}
           >
-            Sidebar
-          </span>
-        </button>
-
-        {/* ドロップダウンメニュー */}
-        {dropdownOpen && (
-          <>
-            {/* オーバーレイ（外クリックで閉じる）*/}
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setDropdownOpen(false)}
-              aria-hidden
-            />
-            <div
-              role="menu"
+            <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
+              <PanelLeftDashed className="h-4 w-4" aria-hidden />
+            </span>
+            <span
               className={cn(
-                "absolute bottom-full left-1 z-50 mb-1",
-                "w-44 rounded-lg border border-border bg-surface-elevated shadow-lg",
-                "py-1",
+                "absolute left-10 whitespace-nowrap text-sm",
+                "transition-[opacity,transform] duration-200",
+                expanded
+                  ? "opacity-100 translate-x-0"
+                  : "opacity-0 -translate-x-2 pointer-events-none",
               )}
             >
-              <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-                Sidebar control
-              </div>
-              <div className="mx-2 my-1 h-px bg-border" />
-              {(
-                [
-                  { value: "open",       label: "Expanded"       },
-                  { value: "closed",     label: "Collapsed"      },
-                  { value: "expandable", label: "Expand on hover" },
-                ] as { value: SidebarBehavior; label: string }[]
-              ).map(({ value, label }) => (
-                <button
-                  key={value}
-                  role="menuitemradio"
-                  aria-checked={sidebarBehavior === value}
-                  type="button"
-                  onClick={() => {
-                    setSidebarBehavior(value);
-                    setDropdownOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-2 px-3 py-1.5 text-sm",
-                    "hover:bg-surface-2 transition-colors",
-                    sidebarBehavior === value
-                      ? "text-foreground font-medium"
-                      : "text-foreground-subtle",
-                  )}
-                >
-                  <span
+              Sidebar
+            </span>
+          </button>
+
+          {/* ドロップダウンメニュー */}
+          {dropdownOpen && (
+            <>
+              {/* オーバーレイ（外クリックで閉じる）*/}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setDropdownOpen(false)}
+                aria-hidden
+              />
+              <div
+                role="menu"
+                className={cn(
+                  "absolute bottom-full left-1 z-50 mb-1",
+                  "w-44 rounded-lg border border-border bg-surface-elevated shadow-lg",
+                  "py-1",
+                )}
+              >
+                <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+                  Sidebar control
+                </div>
+                <div className="mx-2 my-1 h-px bg-border" />
+                {(
+                  [
+                    { value: "open", label: "Expanded" },
+                    { value: "closed", label: "Collapsed" },
+                    { value: "expandable", label: "Expand on hover" },
+                  ] as { value: SidebarBehavior; label: string }[]
+                ).map(({ value, label }) => (
+                  <button
+                    key={value}
+                    role="menuitemradio"
+                    aria-checked={sidebarBehavior === value}
+                    type="button"
+                    onClick={() => {
+                      setSidebarBehavior(value);
+                      setDropdownOpen(false);
+                    }}
                     className={cn(
-                      "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border",
+                      "flex w-full items-center gap-2 px-3 py-1.5 text-sm",
+                      "hover:bg-surface-2 transition-colors",
                       sidebarBehavior === value
-                        ? "border-primary bg-primary"
-                        : "border-foreground-subtle",
+                        ? "text-foreground font-medium"
+                        : "text-foreground-subtle",
                     )}
                   >
-                    {sidebarBehavior === value && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary-fg" />
-                    )}
-                  </span>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </nav>
+                    <span
+                      className={cn(
+                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border",
+                        sidebarBehavior === value
+                          ? "border-primary bg-primary"
+                          : "border-foreground-subtle",
+                      )}
+                    >
+                      {sidebarBehavior === value && (
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary-fg" />
+                      )}
+                    </span>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </nav>
     </div>
   );
 }
@@ -285,22 +283,15 @@ function NavLink({ href, label, Icon, active, expanded }: NavLinkProps) {
         {/* アクティブインジケーター削除 */}
         {/* アイコン */}
         <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
-          <Icon
-            className={cn("h-4 w-4", active ? "text-foreground" : "")}
-            aria-hidden
-          />
+          <Icon className={cn("h-4 w-4", active ? "text-foreground" : "")} aria-hidden />
         </span>
         {/* ラベル (展開時のみ) */}
         <span
           className={cn(
             "absolute left-10 whitespace-nowrap text-sm",
             "transition-[opacity,transform] duration-200",
-            active
-              ? "text-foreground"
-              : "text-foreground-subtle group-hover/item:text-foreground",
-            expanded
-              ? "opacity-100 translate-x-0"
-              : "opacity-0 -translate-x-2 pointer-events-none",
+            active ? "text-foreground" : "text-foreground-subtle group-hover/item:text-foreground",
+            expanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none",
           )}
         >
           {label}

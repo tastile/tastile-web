@@ -107,7 +107,11 @@ export function RecurringTileConfigDialog() {
     const payload = {
       generator:
         gen.kind === "time_based"
-          ? { kind: "time_based" as const, step_min: stepMin, anchor_epoch_min: gen.anchor_epoch_min }
+          ? {
+              kind: "time_based" as const,
+              step_min: stepMin,
+              anchor_epoch_min: gen.anchor_epoch_min,
+            }
           : { kind: "focus_block_based" as const, phases: gen.phases },
       window: {
         weekday_mask: weekdaysToBitmask(weekdays),
@@ -137,13 +141,18 @@ export function RecurringTileConfigDialog() {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
+    <button
+      type="button"
+      aria-label="Close schedule editor"
+      className="fixed inset-0 z-50 cursor-default bg-foreground/50"
       onClick={handleCancel}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">Edit Schedule</h2>
@@ -160,10 +169,10 @@ export function RecurringTileConfigDialog() {
           <div className="py-8 text-center text-sm text-foreground-subtle">Loading...</div>
         ) : (
           <div className="flex flex-col gap-4 mb-6">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-foreground">
+            <fieldset>
+              <legend className="mb-2 block text-sm font-medium text-foreground">
                 Active days
-              </label>
+              </legend>
               <div className="grid grid-cols-7 gap-1">
                 {WEEKDAY_LABELS.map((label, i) => (
                   <button
@@ -182,60 +191,82 @@ export function RecurringTileConfigDialog() {
                   </button>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
+                <label
+                  htmlFor="recurring-window-start-h"
+                  className="mb-1 block text-sm font-medium text-foreground"
+                >
                   Window start
                 </label>
                 <div className="flex items-center gap-1">
                   <input
+                    id="recurring-window-start-h"
                     type="number"
                     min={0}
                     max={23}
                     value={startHHMM.h}
                     onChange={(e) =>
-                      setStartHHMM((p) => ({ ...p, h: Math.max(0, Math.min(23, parseInt(e.target.value) || 0)) }))
+                      setStartHHMM((p) => ({
+                        ...p,
+                        h: Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)),
+                      }))
                     }
                     className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
                   />
                   <span className="text-foreground-muted">:</span>
                   <input
+                    aria-label="Window start minutes"
                     type="number"
                     min={0}
                     max={59}
                     value={startHHMM.m}
                     onChange={(e) =>
-                      setStartHHMM((p) => ({ ...p, m: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) }))
+                      setStartHHMM((p) => ({
+                        ...p,
+                        m: Math.max(0, Math.min(59, parseInt(e.target.value, 10) || 0)),
+                      }))
                     }
                     className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground">
+                <label
+                  htmlFor="recurring-window-end-h"
+                  className="mb-1 block text-sm font-medium text-foreground"
+                >
                   Window end
                 </label>
                 <div className="flex items-center gap-1">
                   <input
+                    id="recurring-window-end-h"
                     type="number"
                     min={0}
                     max={23}
                     value={endHHMM.h}
                     onChange={(e) =>
-                      setEndHHMM((p) => ({ ...p, h: Math.max(0, Math.min(23, parseInt(e.target.value) || 0)) }))
+                      setEndHHMM((p) => ({
+                        ...p,
+                        h: Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)),
+                      }))
                     }
                     className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
                   />
                   <span className="text-foreground-muted">:</span>
                   <input
+                    aria-label="Window end minutes"
                     type="number"
                     min={0}
                     max={59}
                     value={endHHMM.m}
                     onChange={(e) =>
-                      setEndHHMM((p) => ({ ...p, m: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) }))
+                      setEndHHMM((p) => ({
+                        ...p,
+                        m: Math.max(0, Math.min(59, parseInt(e.target.value, 10) || 0)),
+                      }))
                     }
                     className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
                   />
@@ -244,14 +275,18 @@ export function RecurringTileConfigDialog() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground">
+              <label
+                htmlFor="recurring-interval"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
                 Interval (minutes)
               </label>
               <input
+                id="recurring-interval"
                 type="number"
                 min={1}
                 value={stepMin}
-                onChange={(e) => setStepMin(Math.max(1, parseInt(e.target.value) || 1))}
+                onChange={(e) => setStepMin(Math.max(1, parseInt(e.target.value, 10) || 1))}
                 className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
               />
               <p className="mt-1 text-xs text-foreground-subtle">
@@ -283,6 +318,6 @@ export function RecurringTileConfigDialog() {
           </button>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

@@ -1,32 +1,20 @@
 "use client";
 
-import {
-  Calendar,
-  ChevronRight,
-  Coffee,
-  ListChecks,
-  Loader2,
-  Timer,
-} from "lucide-react";
+import { Calendar, ChevronRight, Coffee, ListChecks, Loader2, Timer } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { TimelineSidePanel } from "@/components/panels/CalendarSidePanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { buildTimelineView, parseCustomRangeBoundary } from "@/lib/core/dashboard-workspace";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
-import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 export default function TimelinePage() {
   const { state, loading } = useExecutionEngineContext();
-  const {
-    timelineScale,
-    customStartIso,
-    customEndIso,
-    setTimelineScale,
-    setCustomRange,
-  } = useDashboardWorkspaceStorePlaceholder();
+  const { timelineScale, customStartIso, customEndIso, setTimelineScale, setCustomRange } =
+    useDashboardWorkspaceStorePlaceholder();
   const [nowMs, setNowMs] = useState<number | null>(null);
   // anchor: ミニカレンダーの選択日
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
@@ -45,7 +33,7 @@ export default function TimelinePage() {
       scale={timelineScale}
       onSelectDate={handleSelectDate}
       onScaleChange={setTimelineScale}
-    />
+    />,
   );
 
   useEffect(() => {
@@ -75,7 +63,7 @@ export default function TimelinePage() {
       work: work.length,
       breaks: brk.length,
       fixed: fixed.length,
-      workMin: work.reduce((s, b) => s + ((b.endAt.getTime() - b.startAt.getTime()) / 60000), 0),
+      workMin: work.reduce((s, b) => s + (b.endAt.getTime() - b.startAt.getTime()) / 60000, 0),
     };
   }, [view]);
 
@@ -112,9 +100,7 @@ export default function TimelinePage() {
                 onClick={() => setTimelineScale(s)}
                 className={cn(
                   "h-7 rounded px-2 text-xs font-medium transition-colors",
-                  timelineScale === s
-                    ? "bg-surface-3 text-ink-1"
-                    : "text-ink-3 hover:text-ink-1",
+                  timelineScale === s ? "bg-surface-3 text-ink-1" : "text-ink-3 hover:text-ink-1",
                 )}
                 aria-pressed={timelineScale === s}
               >
@@ -165,42 +151,44 @@ export default function TimelinePage() {
               </div>
             ) : null}
             <ol className="divide-y divide-border">
-            {view.blocks.map((b) => (
-              <li
-                key={b.id}
-                className="grid grid-cols-[60px_1fr_auto] items-center gap-3 px-4 py-2.5"
-              >
-                <span
-                  className={cn(
-                    "inline-flex h-5 w-fit items-center rounded px-1.5 font-mono text-[10px] font-bold",
-                    b.type === "work"
-                      ? "bg-accent-soft text-accent"
-                      : b.type === "break"
-                        ? "bg-status-warn-soft text-status-warn"
-                        : "bg-status-active-soft text-status-active",
-                  )}
+              {view.blocks.map((b) => (
+                <li
+                  key={b.id}
+                  className="grid grid-cols-[60px_1fr_auto] items-center gap-3 px-4 py-2.5"
                 >
-                  {b.type}
-                </span>
-                <div className="min-w-0">
-                  <div className="truncate text-sm text-ink-1">{b.title}</div>
-                  <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-ink-3">
-                    <span>{b.startLabel}</span>
-                    <span className="text-ink-4">→</span>
-                    <span>{b.endLabel}</span>
-                    <span className="text-ink-4">·</span>
-                    <span>{b.durationLabel}</span>
+                  <span
+                    className={cn(
+                      "inline-flex h-5 w-fit items-center rounded px-1.5 font-mono text-[10px] font-bold",
+                      b.type === "work"
+                        ? "bg-accent-soft text-accent"
+                        : b.type === "break"
+                          ? "bg-status-warn-soft text-status-warn"
+                          : "bg-status-active-soft text-status-active",
+                    )}
+                  >
+                    {b.type}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm text-ink-1">{b.title}</div>
+                    <div className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-ink-3">
+                      <span>{b.startLabel}</span>
+                      <span className="text-ink-4">→</span>
+                      <span>{b.endLabel}</span>
+                      <span className="text-ink-4">·</span>
+                      <span>{b.durationLabel}</span>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StatusDot
-                    status={b.status === "active" ? "active" : b.status === "done" ? "done" : "pending"}
-                    size="xs"
-                  />
-                  <ChevronRight className="h-3.5 w-3.5 text-ink-4" />
-                </div>
-              </li>
-            ))}
+                  <div className="flex items-center gap-2">
+                    <StatusDot
+                      status={
+                        b.status === "active" ? "active" : b.status === "done" ? "done" : "pending"
+                      }
+                      size="xs"
+                    />
+                    <ChevronRight className="h-3.5 w-3.5 text-ink-4" />
+                  </div>
+                </li>
+              ))}
             </ol>
           </div>
         )}

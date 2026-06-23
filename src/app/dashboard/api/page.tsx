@@ -1,28 +1,19 @@
 "use client";
 
-import {
-  ChevronRight,
-  Code2,
-  Copy,
-  Database,
-  Lock,
-  PlayCircle,
-  Search,
-  X,
-} from "lucide-react";
+import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Pill } from "@/components/ui/StatusDot";
 import {
+  type ApiTag,
   ENDPOINTS,
   ENDPOINTS_BY_TAG,
-  TAG_ORDER,
-  type ApiTag,
   type EndpointKey,
   getCoreClient,
   type Result,
+  TAG_ORDER,
 } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils/cn";
 
@@ -85,12 +76,10 @@ export default function ApiExplorerPage() {
           </>
         }
         actions={
-          <>
-            <Button variant="secondary" size="medium">
-              <Code2 className="h-3.5 w-3.5" />
-              Download OpenAPI
-            </Button>
-          </>
+          <Button variant="secondary" size="medium">
+            <Code2 className="h-3.5 w-3.5" />
+            Download OpenAPI
+          </Button>
         }
       />
 
@@ -192,7 +181,9 @@ export default function ApiExplorerPage() {
       </Card>
 
       {/* Detail */}
-      {focus ? <EndpointDetail key={focus} endpointKey={focus} onClose={() => setFocus(null)} /> : null}
+      {focus ? (
+        <EndpointDetail key={focus} endpointKey={focus} onClose={() => setFocus(null)} />
+      ) : null}
     </PageContainer>
   );
 }
@@ -321,9 +312,9 @@ function EndpointDetail({
           {meta.method === "POST" ? (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between">
-                <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
                   Request body
-                </label>
+                </span>
                 <button
                   type="button"
                   onClick={() => setBodyText(defaultBody(endpointKey))}
@@ -346,7 +337,13 @@ function EndpointDetail({
           )}
 
           <div className="mt-4 flex items-center gap-2">
-            <Button variant="primary" size="medium" onClick={run} loading={running} disabled={running}>
+            <Button
+              variant="primary"
+              size="medium"
+              onClick={run}
+              loading={running}
+              disabled={running}
+            >
               <PlayCircle className="h-3.5 w-3.5" />
               Run request
             </Button>
@@ -358,18 +355,16 @@ function EndpointDetail({
               <Copy className="h-3.5 w-3.5" />
               Copy as curl
             </Button>
-            <span className="ml-auto font-mono text-[10px] text-ink-4">
-              {endpointKey}
-            </span>
+            <span className="ml-auto font-mono text-[10px] text-ink-4">{endpointKey}</span>
           </div>
         </div>
 
         {/* Right: response */}
         <div className="p-4">
           <div className="mb-1.5 flex items-center justify-between">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
               Response
-            </label>
+            </span>
             {response ? (
               <span
                 className={cn(
@@ -387,7 +382,11 @@ function EndpointDetail({
           </div>
           <pre className="min-h-[12rem] overflow-auto rounded-md border border-border bg-surface-0 p-2 font-mono text-[11px] text-ink-1">
             {response
-              ? JSON.stringify(response.ok ? response.data : response.error.body ?? response.error, null, 2)
+              ? JSON.stringify(
+                  response.ok ? response.data : (response.error.body ?? response.error),
+                  null,
+                  2,
+                )
               : "// Click Run request to invoke this endpoint."}
           </pre>
           {response && !response.ok ? (
@@ -408,12 +407,43 @@ function defaultBody(k: EndpointKey): string {
         {
           tile_id: "00000000-0000-0000-0000-000000000000",
           tile: {
-            core: { id: "00000000-0000-0000-0000-000000000000", title: "Untitled", nextAction: null, doneDefinition: null, startedAt: null, completedAt: null },
+            core: {
+              id: "00000000-0000-0000-0000-000000000000",
+              title: "Untitled",
+              nextAction: null,
+              doneDefinition: null,
+              startedAt: null,
+              completedAt: null,
+            },
             work: { segments: [] },
-            temporal: { tz: null, releaseAt: null, dueAt: null, fixedStart: null, fixedEnd: null, activeStart: null, activeEnd: null },
-            objective: { objectiveMode: "finish_once", targetWorkMin: 25, targetRestMin: null, doneRule: "manual", recurrence: null },
-            interruption: { interruptPenalty: 3, resumePenalty: 3, breakSplitsWork: true, externalInterruptOnly: false },
-            automation: { promptOnStart: false, promptOnEnd: true, autoStartAllowed: false, autoEndAllowed: false },
+            temporal: {
+              tz: null,
+              releaseAt: null,
+              dueAt: null,
+              fixedStart: null,
+              fixedEnd: null,
+              activeStart: null,
+              activeEnd: null,
+            },
+            objective: {
+              objectiveMode: "finish_once",
+              targetWorkMin: 25,
+              targetRestMin: null,
+              doneRule: "manual",
+              recurrence: null,
+            },
+            interruption: {
+              interruptPenalty: 3,
+              resumePenalty: 3,
+              breakSplitsWork: true,
+              externalInterruptOnly: false,
+            },
+            automation: {
+              promptOnStart: false,
+              promptOnEnd: true,
+              autoStartAllowed: false,
+              autoEndAllowed: false,
+            },
             annotation: { semanticRole: "work", labels: [], timedLabels: [] },
           },
         },
@@ -425,22 +455,47 @@ function defaultBody(k: EndpointKey): string {
     case "deferTile":
     case "deleteTile":
     case "extendTile":
-      return JSON.stringify({ tile_id: "00000000-0000-0000-0000-000000000000", started_at: new Date().toISOString() }, null, 2);
+      return JSON.stringify(
+        { tile_id: "00000000-0000-0000-0000-000000000000", started_at: new Date().toISOString() },
+        null,
+        2,
+      );
     case "startBreak":
       return JSON.stringify({ linked_tile_id: null, break_min: 5, reason: null }, null, 2);
     case "endBreak":
       return JSON.stringify({ tile_id: null, ended_at: new Date().toISOString() }, null, 2);
     case "requestPrompt":
-      return JSON.stringify({ tile_id: null, requested_at: new Date().toISOString(), reason: "user_requested" }, null, 2);
+      return JSON.stringify(
+        { tile_id: null, requested_at: new Date().toISOString(), reason: "user_requested" },
+        null,
+        2,
+      );
     case "respondStartupRecovery":
-      return JSON.stringify({ prompt_id: "p-1", tile_id: "00000000-0000-0000-0000-000000000000", action: "confirm_continue", stop_at: null }, null, 2);
+      return JSON.stringify(
+        {
+          prompt_id: "p-1",
+          tile_id: "00000000-0000-0000-0000-000000000000",
+          action: "confirm_continue",
+          stop_at: null,
+        },
+        null,
+        2,
+      );
     case "attachMemo":
-      return JSON.stringify({ tile_id: "00000000-0000-0000-0000-000000000000", body: "Quick note" }, null, 2);
+      return JSON.stringify(
+        { tile_id: "00000000-0000-0000-0000-000000000000", body: "Quick note" },
+        null,
+        2,
+      );
     case "tick":
     case "tickAt":
       return JSON.stringify({ at: new Date().toISOString() }, null, 2);
     case "tickRange":
-      return JSON.stringify({ start: new Date().toISOString(), end: new Date(Date.now() + 3600_000).toISOString() }, null, 2);
+      return JSON.stringify(
+        { start: new Date().toISOString(), end: new Date(Date.now() + 3600_000).toISOString() },
+        null,
+        2,
+      );
     default:
       return "{}";
   }

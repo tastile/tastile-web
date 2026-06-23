@@ -66,7 +66,6 @@ export function useTileList(args: UseTileListArgs = {}) {
     error: null,
   });
   const mountedRef = useRef(true);
-  const argsKey = `${args.viewMode ?? ""}:${args.lifecycle ?? ""}:${args.limit ?? ""}:${args.search ?? ""}:${args.excludeFuture ?? ""}:${args.range ?? ""}:${args.granularity ?? ""}`;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -109,8 +108,15 @@ export function useTileList(args: UseTileListArgs = {}) {
       cancelled = true;
       mountedRef.current = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- argsKey covers all deps
-  }, [argsKey]);
+  }, [
+    args.search,
+    args.range,
+    args.granularity,
+    args.viewMode,
+    args.limit,
+    args.lifecycle,
+    args.excludeFuture,
+  ]);
 
   return state;
 }

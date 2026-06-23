@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
+import * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
 const Dialog = DialogPrimitive.Root;
@@ -55,7 +55,7 @@ const dialogContentVariants = cva(
     defaultVariants: {
       size: "medium",
     },
-  }
+  },
 );
 
 const DialogContent = React.forwardRef<
@@ -85,13 +85,19 @@ const DialogContent = React.forwardRef<
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn("flex flex-col gap-1.5 text-center sm:text-left px-6 py-4", className)} {...props} />
+  <div
+    className={cn("flex flex-col gap-1.5 text-center sm:text-left px-6 py-4", className)}
+    {...props}
+  />
 );
 DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 border-t px-6 py-4", className)}
+    className={cn(
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 border-t px-6 py-4",
+      className,
+    )}
     {...props}
   />
 );

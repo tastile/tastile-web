@@ -24,7 +24,11 @@ export function ReferencesMain() {
     <PageContainer>
       <PageHeader
         title="References"
-        description={enabled.length > 0 ? `Showing tiles for ${enabled.length} selected labels` : "Select labels from the sidebar to view references"}
+        description={
+          enabled.length > 0
+            ? `Showing tiles for ${enabled.length} selected labels`
+            : "Select labels from the sidebar to view references"
+        }
       />
       <div className="flex flex-col gap-2 pt-4">
         {loading && (
@@ -44,9 +48,7 @@ export function ReferencesMain() {
           </div>
         )}
         {!loading &&
-          filteredTiles.map((t) => (
-            <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
-          ))}
+          filteredTiles.map((t) => <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />)}
       </div>
     </PageContainer>
   );

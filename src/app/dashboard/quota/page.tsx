@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -32,7 +32,7 @@ export default function QuotaPage() {
   const [session, setSession] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     const client = getCoreClient();
     const [q, s] = await Promise.all([
@@ -42,12 +42,11 @@ export default function QuotaPage() {
     setData(q);
     setSession(s);
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
-     
     void load();
-  }, []);
+  }, [load]);
 
   const plan = (data?.ok && data.data.plan) || (session?.ok ? "free" : "—");
   const tilesUsed = Number(data?.ok && data.data.tiles_used) || 0;
@@ -82,9 +81,7 @@ export default function QuotaPage() {
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-            Tiles
-          </div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Tiles</div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-mono text-4xl font-semibold tabular-nums text-ink-1">
               {tilesUsed}
@@ -127,7 +124,8 @@ export default function QuotaPage() {
             <span className="text-sm text-ink-3">/ {historyLimit} days</span>
           </div>
           <p className="mt-3 text-xs text-ink-3">
-            Events older than the retention window are pruned. Export before upgrading if you need them.
+            Events older than the retention window are pruned. Export before upgrading if you need
+            them.
           </p>
           <div className="mt-3">
             <Link
@@ -141,9 +139,7 @@ export default function QuotaPage() {
       </section>
 
       <Card>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-          Plan
-        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Plan</div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-md bg-accent-soft text-accent">
             <Sparkles className="h-5 w-5" />
@@ -167,9 +163,7 @@ export default function QuotaPage() {
       </Card>
 
       <Card>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-          Session
-        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Session</div>
         {session?.ok ? (
           <pre className="mt-3 max-h-72 overflow-auto rounded-md border border-border bg-surface-0 p-3 font-mono text-[11px] text-ink-1">
             {JSON.stringify(session.data, null, 2)}

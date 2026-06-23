@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
+import { allDayBlocksFor, blocksForDate } from "@/lib/projection/calendar-projection";
 import { getCurrentTimeIndicatorPosition } from "@/lib/projection/current-time-indicator";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
 import { useTileEditStore } from "@/lib/stores/tile-edit-store";
-import { blocksForDate, allDayBlocksFor } from "@/lib/projection/calendar-projection";
-import { TileBlock } from "./TileBlock";
-import { AllDayLane } from "./AllDayLane";
 import { cn } from "@/lib/utils/cn";
+import { AllDayLane } from "./AllDayLane";
+import { TileBlock } from "./TileBlock";
 
 function formatHour(slot: Date): string {
   const h = slot.getUTCHours();
@@ -16,7 +16,7 @@ function formatHour(slot: Date): string {
 }
 
 function getWeekDates(anchor: string): string[] {
-  const d = new Date(anchor + "T00:00:00Z");
+  const d = new Date(`${anchor}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() - d.getUTCDay());
   const dates = [];
   for (let i = 0; i < 7; i++) {
@@ -47,7 +47,11 @@ export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: numbe
   }
 
   if (loading || !projection) {
-    return <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">Loading…</div>;
+    return (
+      <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">
+        Loading…
+      </div>
+    );
   }
 
   const weekDates = getWeekDates(anchor);
@@ -60,7 +64,7 @@ export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: numbe
       <div className="flex border-b border-border bg-surface-1">
         <div className="w-16 shrink-0 border-r border-border" />
         {weekDates.map((date) => {
-          const d = new Date(date + "T00:00:00Z");
+          const d = new Date(`${date}T00:00:00Z`);
           const dayName = d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
           const dayNum = d.getUTCDate();
           const isToday = date === todayIso;
@@ -69,7 +73,9 @@ export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: numbe
               key={date}
               className={cn(
                 "flex-1 border-r border-border py-2 text-center text-xs",
-                isToday ? "bg-surface-elevated font-semibold text-primary" : "text-foreground-subtle",
+                isToday
+                  ? "bg-surface-elevated font-semibold text-primary"
+                  : "text-foreground-subtle",
               )}
             >
               <div className="uppercase tracking-widest">{dayName}</div>
@@ -147,7 +153,13 @@ export function WeekView({ anchor, tzOffset }: { anchor: string; tzOffset: numbe
                         block={block}
                         onClick={() => {
                           if (block.tile_id) {
-                            openEdit(block.tile_id, block.title, block.start_at, block.end_at || "", []);
+                            openEdit(
+                              block.tile_id,
+                              block.title,
+                              block.start_at,
+                              block.end_at || "",
+                              [],
+                            );
                           }
                         }}
                         dimmed={isDimmed}

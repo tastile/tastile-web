@@ -19,4 +19,3 @@ export function getCurrentTimeIndicatorPosition(
     topPx: minutesFromMidnight * PX_PER_MINUTE,
   };
 }
-

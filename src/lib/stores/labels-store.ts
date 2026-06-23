@@ -40,8 +40,7 @@ export const useLabelsStore = create<LabelsState>()(
         const next = PALETTE.find((c) => !used.has(c)) ?? PALETTE[0];
         set((s) => ({ labels: { ...s.labels, [name]: { name, color: next } } }));
       },
-      setColor: (name, color) =>
-        set((s) => ({ labels: { ...s.labels, [name]: { name, color } } })),
+      setColor: (name, color) => set((s) => ({ labels: { ...s.labels, [name]: { name, color } } })),
       remove: (name) =>
         set((s) => {
           const rest = { ...s.labels };

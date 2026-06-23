@@ -1,9 +1,9 @@
 "use client";
 
-import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { X } from "lucide-react";
+import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 import { Button } from "./Button";
 
@@ -47,7 +47,7 @@ const sidePanelVariants = cva(
       size: "medium",
       align: "right",
     },
-  }
+  },
 );
 
 const SidePanel = ({
@@ -116,5 +116,5 @@ const SidePanel = ({
 
 SidePanel.displayName = "SidePanel";
 
-export { SidePanel, sidePanelVariants };
 export type { SidePanelProps };
+export { SidePanel, sidePanelVariants };

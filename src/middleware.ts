@@ -168,8 +168,7 @@ export default async function middleware(request: NextRequest) {
 
 export function isNativeAuthReturnRequest(searchParams: URLSearchParams): boolean {
   return (
-    searchParams.get("redirect_uri") === "tastile://auth/callback" &&
-    !!searchParams.get("state")
+    searchParams.get("redirect_uri") === "tastile://auth/callback" && !!searchParams.get("state")
   );
 }
 

@@ -1,26 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import {
   Bell,
-  Search,
-  Menu,
   CalendarDays,
   CheckSquare,
   Layers,
-  Repeat,
   Library,
-  Settings,
+  Menu,
   Plus,
+  Repeat,
+  Search,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
-import { useActiveTile } from "@/lib/hooks/use-active-tile";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { TastileLogo } from "@/components/TastileLogo";
-import { cn } from "@/lib/utils/cn";
 import { BottomSheet } from "@/components/ui/BottomSheet";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +25,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
+import { useActiveTile } from "@/lib/hooks/use-active-tile";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { cn } from "@/lib/utils/cn";
 
 interface FloatingHeaderProps {
   userName: string;
@@ -37,15 +37,19 @@ interface FloatingHeaderProps {
 }
 
 const NAV_ITEMS = [
-  { path: "/dashboard/calendar",   label: "Timeline",   Icon: CalendarDays },
-  { path: "/dashboard/tasks",      label: "Tasks",      Icon: CheckSquare  },
-  { path: "/dashboard/projects",   label: "Projects",   Icon: Layers       },
-  { path: "/dashboard/schedule",   label: "Schedule",   Icon: Repeat       },
-  { path: "/dashboard/references", label: "References", Icon: Library      },
+  { path: "/dashboard/calendar", label: "Timeline", Icon: CalendarDays },
+  { path: "/dashboard/tasks", label: "Tasks", Icon: CheckSquare },
+  { path: "/dashboard/projects", label: "Projects", Icon: Layers },
+  { path: "/dashboard/schedule", label: "Schedule", Icon: Repeat },
+  { path: "/dashboard/references", label: "References", Icon: Library },
   { path: "/dashboard/preferences/general", label: "Preferences", Icon: Settings },
 ];
 
-export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: FloatingHeaderProps) {
+export function FloatingHeader({
+  userName,
+  onOpenSearch,
+  onOpenNotifications,
+}: FloatingHeaderProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const { t } = useTranslation();
@@ -62,7 +66,9 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
   const main = snapshot?.main_tile;
   const ends = snapshot?.main_tile_ends_at ? new Date(snapshot.main_tile_ends_at) : null;
   const remainingSec = ends ? Math.max(0, Math.round((ends.getTime() - nowMs) / 1000)) : 0;
-  const mm = Math.floor(remainingSec / 60).toString().padStart(2, "0");
+  const mm = Math.floor(remainingSec / 60)
+    .toString()
+    .padStart(2, "0");
   const ss = (remainingSec % 60).toString().padStart(2, "0");
 
   const isWorking = snapshot?.is_working ?? false;
@@ -70,10 +76,7 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
 
   return (
     <>
-      <header
-        className="fixed inset-x-0 top-0 z-50 flex h-12 items-center bg-surface-0/70 backdrop-blur-md"
-        role="banner"
-      >
+      <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center bg-surface-0/70 backdrop-blur-md">
         {/* 左: ロゴ */}
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link
@@ -97,12 +100,18 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
             <span className="font-semibold">{status}</span>
             {main ? (
               <>
-                <span aria-hidden className="text-foreground-subtle">·</span>
+                <span aria-hidden className="text-foreground-subtle">
+                  ·
+                </span>
                 <span className="truncate max-w-[200px] text-foreground">{main.title}</span>
                 {ends ? (
                   <>
-                    <span aria-hidden className="text-foreground-subtle">·</span>
-                    <span className="tabular-nums">{mm}:{ss} left</span>
+                    <span aria-hidden className="text-foreground-subtle">
+                      ·
+                    </span>
+                    <span className="tabular-nums">
+                      {mm}:{ss} left
+                    </span>
                   </>
                 ) : null}
               </>
@@ -161,9 +170,7 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
-                Log out
-              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">Log out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
 
@@ -223,7 +230,7 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
           {/* ナビゲーション項目 */}
           <nav className="flex flex-col gap-1">
             {NAV_ITEMS.map(({ path, label, Icon }) => {
-              const active = pathname === path || pathname.startsWith(path + "/");
+              const active = pathname === path || pathname.startsWith(`${path}/`);
               return (
                 <Link
                   key={path}
@@ -233,7 +240,7 @@ export function FloatingHeader({ userName, onOpenSearch, onOpenNotifications }: 
                     "flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors",
                     active
                       ? "bg-surface-2 text-foreground font-medium"
-                      : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+                      : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
                   )}
                 >
                   <Icon className="h-4 w-4" />

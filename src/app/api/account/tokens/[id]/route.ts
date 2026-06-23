@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAccountUserSub } from "@/lib/cognito/account-session";
 import { coreUrl, ensureDefaultApiToken } from "@/lib/account/api-token-session";
+import { getAccountUserSub } from "@/lib/cognito/account-session";
 
 type Context = {
   params: Promise<{ id: string }>;

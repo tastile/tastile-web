@@ -20,7 +20,7 @@ export function ProjectsSidePanel() {
     const name = prompt("Project name:");
     if (!name) return;
     const labelsStr = prompt("Enter comma-separated labels to filter by (e.g. 'work,important'):");
-    const labels = labelsStr ? labelsStr.split(",").map(l => l.trim()) : [];
+    const labels = labelsStr ? labelsStr.split(",").map((l) => l.trim()) : [];
     create(name, labels, "#6b7280");
   }
 
@@ -37,7 +37,9 @@ export function ProjectsSidePanel() {
   return (
     <div className="flex flex-col gap-2 pt-2">
       <div className="flex items-center justify-between px-4 pt-2 pb-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">Projects</span>
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+          Projects
+        </span>
         <button
           type="button"
           onClick={handleCreate}
@@ -50,6 +52,7 @@ export function ProjectsSidePanel() {
       <div className="px-2">
         <div className="flex flex-col space-y-0.5">
           <button
+            type="button"
             onClick={() => handleSelect(null)}
             className={cn(
               "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
@@ -58,16 +61,14 @@ export function ProjectsSidePanel() {
                 : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
             )}
           >
-            <span
-              aria-hidden
-              className="h-2.5 w-2.5 shrink-0 rounded-full bg-border"
-            />
+            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-border" />
             <span className="min-w-0 flex-1 truncate">All Projects</span>
           </button>
-          
+
           {projectList.map((p) => (
             <button
               key={p.id}
+              type="button"
               onClick={() => handleSelect(p.id)}
               className={cn(
                 "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",

@@ -2,15 +2,14 @@
 
 import { KeyRound, Mail, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { TileStatistics } from "@/components/account/TileStatistics";
 import { UsageDashboard } from "@/components/account/UsageDashboard";
-import { useSidePanel } from "@/lib/context/side-panel-context";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 
 export type TabId = "profile" | "subscription" | "statistics" | "usage" | "tokens";
 
@@ -26,7 +25,11 @@ type Notice = { tone: "success" | "error"; text: string } | null;
 
 export default function AccountPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-sm text-foreground-subtle">Loading account settings...</div>}>
+    <Suspense
+      fallback={
+        <div className="p-8 text-sm text-foreground-subtle">Loading account settings...</div>
+      }
+    >
       <AccountPageInner />
     </Suspense>
   );

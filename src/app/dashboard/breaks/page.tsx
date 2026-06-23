@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Coffee,
-  Loader2,
-  Pause,
-  PauseCircle,
-  Play,
-  RefreshCw,
-  Timer,
-} from "lucide-react";
+import { Coffee, Loader2, Pause, PauseCircle, Play, RefreshCw, Timer } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -25,7 +17,7 @@ export default function BreaksPage() {
   const [busy, setBusy] = useState(false);
 
   const activeTile: Tile | null = state.execution.activeTileId
-    ? state.tiles.get(state.execution.activeTileId) ?? null
+    ? (state.tiles.get(state.execution.activeTileId) ?? null)
     : null;
   const isOnBreak = state.execution.phaseKind === "break";
 
@@ -112,8 +104,8 @@ export default function BreaksPage() {
             <Pause className="h-3.5 w-3.5" /> Start a break
           </div>
           <p className="mt-2 text-sm text-ink-3">
-            Choose a duration. The engine emits a <code className="font-mono">break_started</code> event
-            and a prompt will appear at the end so you can decide what&apos;s next.
+            Choose a duration. The engine emits a <code className="font-mono">break_started</code>{" "}
+            event and a prompt will appear at the end so you can decide what&apos;s next.
           </p>
           <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {BREAK_PRESETS.map((m) => (
@@ -135,8 +127,13 @@ export default function BreaksPage() {
             ))}
           </div>
           <div className="mt-4 rounded-md border border-dashed border-border p-2.5 text-[11px] text-ink-3">
-            Linked to active tile: <span className="font-mono text-ink-1">{activeTile?.core.title ?? "—"}</span>.
-            Change the active tile from the <a href="/dashboard" className="text-accent hover:underline">home page</a>.
+            Linked to active tile:{" "}
+            <span className="font-mono text-ink-1">{activeTile?.core.title ?? "—"}</span>. Change
+            the active tile from the{" "}
+            <a href="/dashboard" className="text-accent hover:underline">
+              home page
+            </a>
+            .
           </div>
         </Card>
 
@@ -147,8 +144,8 @@ export default function BreaksPage() {
           {breakTiles.length === 0 ? (
             <p className="mt-3 text-sm text-ink-3">
               No break-shaped tiles yet. Create one with{" "}
-              <code className="font-mono">objectiveMode = &quot;label_only&quot;</code> and
-              a <code className="font-mono">targetRestMin</code>.
+              <code className="font-mono">objectiveMode = &quot;label_only&quot;</code> and a{" "}
+              <code className="font-mono">targetRestMin</code>.
             </p>
           ) : (
             <ul className="mt-3 divide-y divide-border">
@@ -191,11 +188,12 @@ export default function BreaksPage() {
               >
                 <span className="truncate text-ink-1">{b.title}</span>
                 <span className="font-mono text-[10px] text-ink-4">
-                  {new Date(b.startAt).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}
+                  {new Date(b.startAt).toLocaleTimeString(undefined, {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
-                <span className="font-mono text-[10px] text-ink-3">
-                  {b.durationMin ?? "—"}m
-                </span>
+                <span className="font-mono text-[10px] text-ink-3">{b.durationMin ?? "—"}m</span>
               </li>
             ))}
           </ul>

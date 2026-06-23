@@ -16,7 +16,13 @@ interface TileEditState {
   draft: TileEditDraft | null;
   open: boolean;
   openCreate: (title: string, startAt: string, endAt: string) => void;
-  openEdit: (tileId: string, title: string, startAt: string, endAt: string, labels: string[]) => void;
+  openEdit: (
+    tileId: string,
+    title: string,
+    startAt: string,
+    endAt: string,
+    labels: string[],
+  ) => void;
   close: () => void;
 }
 

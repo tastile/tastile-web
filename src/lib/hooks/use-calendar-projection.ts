@@ -46,7 +46,6 @@ interface HookState {
 export function useCalendarProjection(args: UseCalendarProjectionArgs) {
   const [state, setState] = useState<HookState>({ projection: null, loading: true, error: null });
   const mountedRef = useRef(true);
-  const argsKey = `${args.view}:${args.anchor}:${args.tzOffset}`;
 
   useEffect(() => {
     mountedRef.current = true;
@@ -79,8 +78,7 @@ export function useCalendarProjection(args: UseCalendarProjectionArgs) {
       cancelled = true;
       mountedRef.current = false;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- argsKey covers all deps
-  }, [argsKey]);
+  }, [args.anchor.includes, args.tzOffset, args.view, args.anchor]);
 
   return state;
 }

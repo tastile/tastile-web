@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAccountUserSub } from "@/lib/cognito/account-session";
 import { coreUrl, ensureDefaultApiToken, setApiTokenCookie } from "@/lib/account/api-token-session";
+import { getAccountUserSub } from "@/lib/cognito/account-session";
 
 export async function GET() {
   return proxyTokens();
@@ -31,7 +31,12 @@ async function proxyTokens(init?: { method?: string; body?: string }) {
   });
 
   const createdBody =
-    init?.method === "POST" && response.ok ? await response.clone().json().catch(() => null) : null;
+    init?.method === "POST" && response.ok
+      ? await response
+          .clone()
+          .json()
+          .catch(() => null)
+      : null;
   const forwarded = await forward(response);
   for (const cookie of shell.cookies.getAll()) {
     forwarded.cookies.set(cookie);

@@ -1,10 +1,10 @@
 "use client";
 
 import { Suspense } from "react";
-import { TasksMain } from "@/components/tasks/TasksMain";
 import { TasksSidePanel } from "@/components/panels/TasksSidePanel";
-import { useTrackVisit } from "@/lib/hooks/use-track-visit";
+import { TasksMain } from "@/components/tasks/TasksMain";
 import { useSidePanel } from "@/lib/context/side-panel-context";
+import { useTrackVisit } from "@/lib/hooks/use-track-visit";
 
 export default function TasksPage() {
   return (

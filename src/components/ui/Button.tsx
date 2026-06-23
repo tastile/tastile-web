@@ -1,8 +1,8 @@
 "use client";
 
-import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Loader2 } from "lucide-react";
+import { type ButtonHTMLAttributes, forwardRef } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const buttonVariants = cva(
@@ -146,7 +146,7 @@ const buttonVariants = cva(
       variant: "primary",
       size: "medium",
     },
-  }
+  },
 );
 
 const iconContainerVariants = cva("inline-flex items-center justify-center shrink-0", {

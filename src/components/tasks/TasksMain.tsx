@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -24,11 +24,11 @@ export function TasksMain() {
 
   const filterDesc = useMemo(() => {
     const parts = [];
-    
-    const num = parseInt(range);
+
+    const num = parseInt(range, 10);
     const unit = range.slice(-1);
     const unitStr = unit === "d" ? "days" : unit === "w" ? "weeks" : unit === "m" ? "months" : "";
-    if (!isNaN(num)) {
+    if (!Number.isNaN(num)) {
       parts.push(`Range: ${num} ${unitStr}`);
     }
 
@@ -57,11 +57,8 @@ export function TasksMain() {
 
   return (
     <PageContainer>
-      <PageHeader
-        title="Tasks"
-        description="Manage and view your actionable items"
-      />
-      
+      <PageHeader title="Tasks" description="Manage and view your actionable items" />
+
       {/* スコープ情報バー */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
         <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">

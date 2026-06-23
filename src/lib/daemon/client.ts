@@ -387,6 +387,7 @@ function toCreateTileRequest(tile: Tile): Record<string, unknown> {
     next_action: tile.core.nextAction,
     done_definition: tile.core.doneDefinition,
     temporal: {
+      tz: tile.temporal.tz,
       release_at: tile.temporal.releaseAt,
       due_at: tile.temporal.dueAt,
       fixed_start: tile.temporal.fixedStart,

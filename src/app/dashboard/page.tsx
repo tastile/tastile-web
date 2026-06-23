@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
 import { getLastVisitedPath } from "@/lib/hooks/use-track-visit";
 
 const REDIRECTABLE_PATHS = [
@@ -26,7 +26,9 @@ const REDIRECTABLE_PATHS = [
 
 export default function DashboardPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-xs text-foreground-subtle">Loading dashboard...</div>}>
+    <Suspense
+      fallback={<div className="p-6 text-xs text-foreground-subtle">Loading dashboard...</div>}
+    >
       <DashboardPageInner />
     </Suspense>
   );

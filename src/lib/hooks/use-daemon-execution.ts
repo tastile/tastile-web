@@ -67,10 +67,7 @@ export function useDaemonExecution() {
       DEFAULT_DAEMON_BASE_URL,
     [],
   );
-  const usesCloudCoreApi = useMemo(
-    () => !isLocalDaemonUrl(rawBaseUrl),
-    [rawBaseUrl],
-  );
+  const usesCloudCoreApi = useMemo(() => !isLocalDaemonUrl(rawBaseUrl), [rawBaseUrl]);
   const baseUrl = useMemo(
     () => (usesCloudCoreApi ? "/api/proxy" : rawBaseUrl),
     [rawBaseUrl, usesCloudCoreApi],
@@ -287,7 +284,9 @@ export function useDaemonExecution() {
 function isLocalDaemonUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "10.0.2.2";
+    return (
+      url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "10.0.2.2"
+    );
   } catch {
     return false;
   }

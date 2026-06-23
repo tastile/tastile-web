@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Calendar,
-  CalendarDays,
-  Coffee,
-  Database,
-  Loader2,
-  PinIcon,
-  Timer,
-} from "lucide-react";
+import { Calendar, CalendarDays, Coffee, Database, Loader2, PinIcon, Timer } from "lucide-react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -16,7 +8,7 @@ import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
-import { ENDPOINTS, getCoreClient, type EndpointKey, type Result } from "@/lib/api/endpoints";
+import { ENDPOINTS, type EndpointKey, getCoreClient, type Result } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
@@ -40,7 +32,9 @@ const rangeLabel: Record<ViewKey, string> = {
 export default function CalendarViewPage() {
   const router = useRouter();
   const params = useParams<{ view: string }>();
-  const view = (VIEWS as readonly string[]).includes(params.view) ? (params.view as ViewKey) : "day";
+  const view = (VIEWS as readonly string[]).includes(params.view)
+    ? (params.view as ViewKey)
+    : "day";
   const endpoint = endpointByView[view];
 
   // anchor: カレンダーの選択日 (YYYY-MM-DD)
@@ -63,24 +57,28 @@ export default function CalendarViewPage() {
       onSelectDate={setAnchor}
       visibleTypes={visibleTypes}
       onToggleType={toggleType}
-    />
+    />,
   );
 
   const [data, setData] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
-    setLoading(true);
-    setData(null);
-    const result = await getCoreClient().call(endpoint);
-    setData(result);
-    setLoading(false);
-  }
-
   useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setData(null);
+      const result = await getCoreClient().call(endpoint);
+      if (!cancelled) {
+        setData(result);
+        setLoading(false);
+      }
+    }
     void load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view]);
+    return () => {
+      cancelled = true;
+    };
+  }, [endpoint]);
 
   const blocks = useMemo<CalendarBlock[]>(() => {
     if (!data?.ok || !data.data) return [];
@@ -154,10 +152,30 @@ export default function CalendarViewPage() {
       />
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <SummaryCard label="Work" value={summary.work} icon={<Timer className="h-3.5 w-3.5" />} tone="accent" />
-        <SummaryCard label="Breaks" value={summary.brk} icon={<Coffee className="h-3.5 w-3.5" />} tone="warn" />
-        <SummaryCard label="Fixed" value={summary.fixed} icon={<PinIcon className="h-3.5 w-3.5" />} tone="active" />
-        <SummaryCard label="Total" value={summary.total} icon={<Calendar className="h-3.5 w-3.5" />} tone="default" />
+        <SummaryCard
+          label="Work"
+          value={summary.work}
+          icon={<Timer className="h-3.5 w-3.5" />}
+          tone="accent"
+        />
+        <SummaryCard
+          label="Breaks"
+          value={summary.brk}
+          icon={<Coffee className="h-3.5 w-3.5" />}
+          tone="warn"
+        />
+        <SummaryCard
+          label="Fixed"
+          value={summary.fixed}
+          icon={<PinIcon className="h-3.5 w-3.5" />}
+          tone="active"
+        />
+        <SummaryCard
+          label="Total"
+          value={summary.total}
+          icon={<Calendar className="h-3.5 w-3.5" />}
+          tone="default"
+        />
       </section>
 
       <Card padded={false}>
@@ -236,7 +254,13 @@ function SummaryCard({
         <span className="font-mono text-3xl font-semibold tabular-nums text-ink-1">{value}</span>
         <StatusDot
           status={
-            tone === "accent" ? "active" : tone === "warn" ? "warn" : tone === "active" ? "started" : "neutral"
+            tone === "accent"
+              ? "active"
+              : tone === "warn"
+                ? "warn"
+                : tone === "active"
+                  ? "started"
+                  : "neutral"
           }
           size="xs"
         />
@@ -280,9 +304,7 @@ function WeekGrid({ blocks }: { blocks: CalendarBlock[] }) {
   return (
     <div className="grid grid-cols-7">
       {days.map((d) => {
-        const dayBlocks = blocks.filter(
-          (b) => sameDay(new Date(b.startAt), d),
-        );
+        const dayBlocks = blocks.filter((b) => sameDay(new Date(b.startAt), d));
         return (
           <div key={d.toISOString()} className="border-r border-border last:border-r-0">
             <div className="border-b border-border bg-surface-0 px-3 py-2 text-center">
@@ -381,14 +403,8 @@ function YearGrid({ blocks }: { blocks: CalendarBlock[] }) {
               <span>breaks</span>
             </div>
             <div className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-surface-2">
-              <div
-                className="bg-accent"
-                style={{ width: `${Math.min(100, work * 10)}%` }}
-              />
-              <div
-                className="bg-status-warn"
-                style={{ width: `${Math.min(100, brk * 10)}%` }}
-              />
+              <div className="bg-accent" style={{ width: `${Math.min(100, work * 10)}%` }} />
+              <div className="bg-status-warn" style={{ width: `${Math.min(100, brk * 10)}%` }} />
             </div>
           </div>
         );
@@ -418,12 +434,7 @@ function BlockChip({
         compact ? (dense ? "px-1.5 py-0.5" : "px-2 py-1") : "px-2.5 py-1.5",
       )}
     >
-      <div
-        className={cn(
-          "truncate font-medium",
-          compact && dense ? "text-[10px]" : "text-xs",
-        )}
-      >
+      <div className={cn("truncate font-medium", compact && dense ? "text-[10px]" : "text-xs")}>
         {block.title}
       </div>
       {!compact ? (

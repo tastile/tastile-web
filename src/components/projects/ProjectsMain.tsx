@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -12,7 +12,7 @@ import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 export function ProjectsMain() {
   const searchParams = useSearchParams();
   const projectId = searchParams.get("project");
-  
+
   const { projects } = useProjectsStore();
   const project = projectId ? projects[projectId] : null;
 
@@ -26,9 +26,7 @@ export function ProjectsMain() {
   const filteredTiles = useMemo(() => {
     let filtered = tiles;
     if (project && project.labelFilter.length > 0) {
-      filtered = filtered.filter((t) =>
-        t.labels?.some((l) => project.labelFilter.includes(l))
-      );
+      filtered = filtered.filter((t) => t.labels?.some((l) => project.labelFilter.includes(l)));
     }
     return filtered;
   }, [tiles, project]);
@@ -46,7 +44,7 @@ export function ProjectsMain() {
           {project ? (
             <>
               <span className="h-2 w-2 rounded-full" style={{ backgroundColor: project.color }} />
-              Labels: {project.labelFilter.map(l => `#${l}`).join(", ")}
+              Labels: {project.labelFilter.map((l) => `#${l}`).join(", ")}
             </>
           ) : (
             "All project tiles"

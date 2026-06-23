@@ -5,6 +5,7 @@ import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { Actor } from "@/lib/domain/actor";
 import type { PhaseKind } from "@/lib/domain/execution";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
+
 // TODO(new-shell): wire to new component
 
 interface ActiveExecutionBarProps {

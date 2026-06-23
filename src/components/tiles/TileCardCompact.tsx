@@ -5,7 +5,7 @@ import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
-import { formatFriendlyDateTime, formatDuration } from "@/lib/utils/tile-formatters";
+import { formatDuration, formatFriendlyDateTime } from "@/lib/utils/tile-formatters";
 import { LoadingCard } from "./shared/LoadingCard";
 import { TileStatusIcon } from "./shared/TileStatusIcon";
 
@@ -37,9 +37,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
     tile.work.segments.find((segment) => segment.startAt)?.startAt ??
     null;
   const durationText = resolveDurationText(tile, locale);
-  const startText = startAt
-    ? formatFriendlyDateTime(startAt, locale, tile.temporal.tz)
-    : "";
+  const startText = startAt ? formatFriendlyDateTime(startAt, locale, tile.temporal.tz) : "";
 
   const handleStatusClick = () => {
     if (onStart) {
@@ -92,7 +90,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
         >
           {tile.core.title}
         </h4>
-        
+
         {/* ラベル・プロジェクトバッジ */}
         <div className="flex flex-wrap gap-1 shrink-0">
           {tile.annotation.labels.map((label) => {
@@ -118,7 +116,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
       {/* 時間関連のメタデータ列 */}
       <div className="flex items-center gap-4 shrink-0 text-xs text-foreground-subtle select-none">
         {/* 所要時間 */}
-        {(tile.objective.targetWorkMin || tile.objective.targetRestMin) ? (
+        {tile.objective.targetWorkMin || tile.objective.targetRestMin ? (
           <div className="font-mono text-right min-w-[48px] bg-surface-3/50 border border-border px-1.5 py-0.5 rounded text-[10px] text-foreground-subtle">
             {durationText}
           </div>

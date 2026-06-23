@@ -1,11 +1,11 @@
 "use client";
 
+import { Clock, Flame, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Search, Flame, ShieldAlert, Clock, RefreshCw } from "lucide-react";
 import { useEffect, useState, useTransition } from "react";
-import { cn } from "@/lib/utils/cn";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { cn } from "@/lib/utils/cn";
 
 export function TasksSidePanel() {
   const router = useRouter();
@@ -32,9 +32,9 @@ export function TasksSidePanel() {
   // パラメータ変更 of 初期同期
   useEffect(() => {
     // Rangeの同期
-    const num = parseInt(rawRange);
+    const num = parseInt(rawRange, 10);
     const unit = rawRange.slice(-1) as "d" | "w" | "m";
-    if (!isNaN(num) && ["d", "w", "m"].includes(unit)) {
+    if (!Number.isNaN(num) && ["d", "w", "m"].includes(unit)) {
       setRangeVal(num);
       setRangeUnit(unit);
     } else {
@@ -44,12 +44,12 @@ export function TasksSidePanel() {
 
     // Granularityの同期
     const gParts = rawGranularity.split(",");
-    
+
     // min_Xm の同期
     const minPart = gParts.find((p) => p.startsWith("min_"));
     if (minPart) {
-      const minutes = parseInt(minPart.replace("min_", "").replace("m", ""));
-      if (!isNaN(minutes)) {
+      const minutes = parseInt(minPart.replace("min_", "").replace("m", ""), 10);
+      if (!Number.isNaN(minutes)) {
         setMinDuration(minutes);
       }
     } else {
@@ -82,7 +82,10 @@ export function TasksSidePanel() {
 
     // Granularity (Duration + Priority - 常に設定)
     const targetDuration = updates.duration ?? { val: minDuration };
-    const targetPriority = updates.priority ?? { high: highPriorityOnly, nolow: excludeLowPriority };
+    const targetPriority = updates.priority ?? {
+      high: highPriorityOnly,
+      nolow: excludeLowPriority,
+    };
 
     const parts = ["no_breaks"];
     // 0分であっても常に min_0m を明示的に設定する（無効という選択肢を廃止）
@@ -156,7 +159,7 @@ export function TasksSidePanel() {
                 max="365"
                 value={rangeVal}
                 onChange={(e) => {
-                  const val = Math.max(1, parseInt(e.target.value) || 1);
+                  const val = Math.max(1, parseInt(e.target.value, 10) || 1);
                   setRangeVal(val);
                   applyFilters({ range: { val, unit: rangeUnit } });
                 }}
@@ -188,7 +191,7 @@ export function TasksSidePanel() {
               max={rangeUnit === "d" ? 90 : rangeUnit === "w" ? 12 : 6}
               value={rangeVal}
               onChange={(e) => {
-                const val = parseInt(e.target.value);
+                const val = parseInt(e.target.value, 10);
                 setRangeVal(val);
                 applyFilters({ range: { val, unit: rangeUnit } });
               }}
@@ -220,11 +223,13 @@ export function TasksSidePanel() {
               max="240"
               value={minDuration}
               onChange={(e) => {
-                const val = Math.max(0, parseInt(e.target.value) || 0);
+                const val = Math.max(0, parseInt(e.target.value, 10) || 0);
                 setMinDuration(val);
                 applyFilters({ duration: { val } });
               }}
-              trailing={<span className="text-[10px] text-foreground-subtle select-none">minutes</span>}
+              trailing={
+                <span className="text-[10px] text-foreground-subtle select-none">minutes</span>
+              }
               className="h-8"
             />
           </div>
@@ -237,7 +242,7 @@ export function TasksSidePanel() {
               step="5"
               value={minDuration}
               onChange={(e) => {
-                const val = parseInt(e.target.value);
+                const val = parseInt(e.target.value, 10);
                 setMinDuration(val);
                 applyFilters({ duration: { val } });
               }}
@@ -259,7 +264,9 @@ export function TasksSidePanel() {
         <div className="space-y-3">
           {/* High Priority Switch */}
           <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">High Priority Only</span>
+            <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">
+              High Priority Only
+            </span>
             <div className="relative">
               <input
                 type="checkbox"
@@ -271,18 +278,22 @@ export function TasksSidePanel() {
                 }}
                 className="sr-only peer"
               />
-              <div className={cn(
-                "w-9 h-5 rounded-full transition-colors cursor-pointer border border-transparent outline-none",
-                "bg-surface-3 peer-checked:bg-primary",
-                "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm",
-                "peer-checked:after:translate-x-4"
-              )} />
+              <div
+                className={cn(
+                  "w-9 h-5 rounded-full transition-colors cursor-pointer border border-transparent outline-none",
+                  "bg-surface-3 peer-checked:bg-primary",
+                  "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm",
+                  "peer-checked:after:translate-x-4",
+                )}
+              />
             </div>
           </label>
 
           {/* Exclude Low Priority Switch */}
           <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">Exclude Low Priority</span>
+            <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">
+              Exclude Low Priority
+            </span>
             <div className="relative">
               <input
                 type="checkbox"
@@ -294,12 +305,14 @@ export function TasksSidePanel() {
                 }}
                 className="sr-only peer"
               />
-              <div className={cn(
-                "w-9 h-5 rounded-full transition-colors cursor-pointer border border-transparent outline-none",
-                "bg-surface-3 peer-checked:bg-primary",
-                "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm",
-                "peer-checked:after:translate-x-4"
-              )} />
+              <div
+                className={cn(
+                  "w-9 h-5 rounded-full transition-colors cursor-pointer border border-transparent outline-none",
+                  "bg-surface-3 peer-checked:bg-primary",
+                  "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm",
+                  "peer-checked:after:translate-x-4",
+                )}
+              />
             </div>
           </label>
         </div>

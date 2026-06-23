@@ -20,12 +20,12 @@ import { Actor } from "@/lib/domain/actor";
 import { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
+import { type TileListView, useTileList } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
 // TODO(new-shell): wire to new component
 import { useDialogStore } from "@/lib/stores/dialog-store";
 import type { Locale } from "@/lib/stores/locale-store";
 import { formatDateTime, formatDuration } from "@/lib/utils/tile-formatters";
-import { useTileList, type TileListView } from "@/lib/hooks/use-tile-list";
 
 const MAX_VISIBLE_TILES = 60;
 const MAX_VISIBLE_CHANGES = 120;
@@ -68,12 +68,15 @@ function mapListViewToTile(item: TileListView): Tile {
       recurrence: item.recurrence
         ? {
             generator: {
-              stepMin: item.recurrence.step_min,
-              anchorEpochMin: null,
+              kind: "time_based" as const,
+              step_min: item.recurrence.step_min,
+              anchor_epoch_min: null,
             },
             window: {
-              startOffsetMin: item.recurrence.window_start_min,
-              endOffsetMin: item.recurrence.window_end_min,
+              weekday_mask: 0,
+              start_offset_min: item.recurrence.window_start_min,
+              end_offset_min: item.recurrence.window_end_min,
+              exclusions: [],
             },
             selector: {
               expression: item.recurrence.expression,
@@ -106,10 +109,7 @@ function TilesPageInner() {
   const { openDeleteDialog } = useDialogStore();
   const { locale } = useTranslation();
   const [sectionLimitById, setSectionLimitById] = useState<Record<string, number>>({});
-  const projection = useMemo(
-    () => buildDashboardProjectionPlaceholder(state),
-    [state],
-  );
+  const projection = useMemo(() => buildDashboardProjectionPlaceholder(state), [state]);
   const searchParams = useSearchParams();
   const {
     timelineScale,
@@ -127,8 +127,12 @@ function TilesPageInner() {
 
   // Filters state
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterRange, setFilterRange] = useState<"all" | "today" | "recent" | "exclude_future">("all");
-  const [filterGranularity, setFilterGranularity] = useState<"all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m">("min_5m"); // Default to min 5m to hide tiny breaks
+  const [filterRange, setFilterRange] = useState<"all" | "today" | "recent" | "exclude_future">(
+    "all",
+  );
+  const [filterGranularity, setFilterGranularity] = useState<
+    "all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m"
+  >("min_5m"); // Default to min 5m to hide tiny breaks
   const [filterLimit, setFilterLimit] = useState<number>(50); // Default limit to 50 items
 
   // Fetch tiles from API using useTileList with query scopes
@@ -312,10 +316,14 @@ function TilesPageInner() {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-semibold text-foreground-muted">範囲:</span>
+                <span className="text-[10px] uppercase font-semibold text-foreground-muted">
+                  範囲:
+                </span>
                 <select
                   value={filterRange}
-                  onChange={(e) => setFilterRange(e.target.value as "all" | "today" | "recent" | "exclude_future")}
+                  onChange={(e) =>
+                    setFilterRange(e.target.value as "all" | "today" | "recent" | "exclude_future")
+                  }
                   className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
                 >
                   <option value="all">すべて</option>
@@ -325,10 +333,16 @@ function TilesPageInner() {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-semibold text-foreground-muted">粒度:</span>
+                <span className="text-[10px] uppercase font-semibold text-foreground-muted">
+                  粒度:
+                </span>
                 <select
                   value={filterGranularity}
-                  onChange={(e) => setFilterGranularity(e.target.value as "all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m")}
+                  onChange={(e) =>
+                    setFilterGranularity(
+                      e.target.value as "all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m",
+                    )
+                  }
                   className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
                 >
                   <option value="all">すべて（休憩含む）</option>
@@ -339,7 +353,9 @@ function TilesPageInner() {
                 </select>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] uppercase font-semibold text-foreground-muted">最大数:</span>
+                <span className="text-[10px] uppercase font-semibold text-foreground-muted">
+                  最大数:
+                </span>
                 <select
                   value={filterLimit}
                   onChange={(e) => setFilterLimit(Number(e.target.value))}
@@ -638,11 +654,12 @@ function resolveDurationText(tile: Tile, locale: Locale): string {
 }
 
 // TODO(new-shell): wire to new component
-function buildDashboardProjectionPlaceholder(
-  state: import("@/lib/core/state").AppState,
-) {
+function buildDashboardProjectionPlaceholder(state: import("@/lib/core/state").AppState) {
   return {
-    next: { main: null as import("@/lib/domain/tile").Tile | null, quick: [] as import("@/lib/domain/tile").Tile[] },
+    next: {
+      main: null as import("@/lib/domain/tile").Tile | null,
+      quick: [] as import("@/lib/domain/tile").Tile[],
+    },
     tiles: {
       ordered: Array.from(state.tiles.values()) as import("@/lib/domain/tile").Tile[],
       ready: [] as import("@/lib/domain/tile").Tile[],
@@ -657,8 +674,7 @@ function useDashboardWorkspaceStorePlaceholder() {
   const [customStartIso, setCustomStartIso] = useState<string | null>(null);
   const [customEndIso, setCustomEndIso] = useState<string | null>(null);
   const [activeTilesTab, setActiveTilesTab] = useState<"list" | "timeline" | "changes">("list");
-  const [listGroupingMode, setListGroupingMode] =
-    useState<"state" | "project" | "tag">("state");
+  const [listGroupingMode, setListGroupingMode] = useState<"state" | "project" | "tag">("state");
   const [listViewMode, setListViewMode] = useState<"compact" | "comfortable" | "detailed">(
     "comfortable",
   );

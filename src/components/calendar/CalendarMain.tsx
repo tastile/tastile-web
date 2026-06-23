@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
-import { useSidePanel } from "@/lib/context/side-panel-context";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
+import { useSidePanel } from "@/lib/context/side-panel-context";
+import { cn } from "@/lib/utils/cn";
 import { DayView } from "./DayView";
-import { WeekView } from "./WeekView";
 import { MonthView } from "./MonthView";
+import { WeekView } from "./WeekView";
 
 export type CalendarView = "day" | "week" | "month" | "year";
 
@@ -19,7 +19,7 @@ function localIsoDate(now = new Date()): string {
 }
 
 function shiftDate(dateStr: string, view: CalendarView, delta: -1 | 1): string {
-  const d = new Date(dateStr + "T00:00:00Z");
+  const d = new Date(`${dateStr}T00:00:00Z`);
   void d.getTime();
   if (view === "day") d.setUTCDate(d.getUTCDate() + delta);
   else if (view === "week") d.setUTCDate(d.getUTCDate() + delta * 7);
@@ -29,9 +29,15 @@ function shiftDate(dateStr: string, view: CalendarView, delta: -1 | 1): string {
 }
 
 function formatAnchor(view: CalendarView, anchor: string): string {
-  const d = new Date(anchor + "T00:00:00Z");
+  const d = new Date(`${anchor}T00:00:00Z`);
   if (view === "day") {
-    return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+    return d.toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
   }
   if (view === "week") {
     const start = new Date(d);
@@ -84,7 +90,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
       onSelectDate={setAnchor}
       visibleTypes={visibleTypes}
       onToggleType={toggleType}
-    />
+    />,
   );
 
   const setView = (v: CalendarView) => {
@@ -129,7 +135,9 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
               onClick={() => setView(v)}
               className={cn(
                 "rounded px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
-                view === v ? "bg-surface-2 text-foreground" : "text-foreground-subtle hover:text-foreground",
+                view === v
+                  ? "bg-surface-2 text-foreground"
+                  : "text-foreground-subtle hover:text-foreground",
               )}
             >
               {v}
@@ -141,7 +149,11 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
         {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} /> : null}
         {view === "week" ? <WeekView anchor={anchor} tzOffset={tzOffset} /> : null}
         {view === "month" ? <MonthView anchor={anchor} tzOffset={tzOffset} /> : null}
-        {view === "year" ? <div className="py-8 text-center text-xs text-foreground-subtle">Year view — coming soon</div> : null}
+        {view === "year" ? (
+          <div className="py-8 text-center text-xs text-foreground-subtle">
+            Year view — coming soon
+          </div>
+        ) : null}
       </div>
     </div>
   );

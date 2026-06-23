@@ -21,7 +21,11 @@ const statusClass: Record<StatusKind, { dot: string; ring: string; text: string 
   deferred: { dot: "bg-status-warn", ring: "ring-status-warn/30", text: "text-status-warn" },
   warn: { dot: "bg-status-warn", ring: "ring-status-warn/30", text: "text-status-warn" },
   danger: { dot: "bg-status-danger", ring: "ring-status-danger/30", text: "text-status-danger" },
-  pending: { dot: "bg-status-pending", ring: "ring-status-pending/30", text: "text-status-pending" },
+  pending: {
+    dot: "bg-status-pending",
+    ring: "ring-status-pending/30",
+    text: "text-status-pending",
+  },
   neutral: { dot: "bg-ink-4", ring: "ring-ink-4/20", text: "text-ink-3" },
 };
 
@@ -44,9 +48,7 @@ export function StatusDot({ status, size = "sm", pulse, label, className }: Stat
           dim,
           cls.dot,
           cls.ring,
-          pulse && (status === "active" || status === "started")
-            ? "animate-pulse"
-            : null,
+          pulse && (status === "active" || status === "started") ? "animate-pulse" : null,
         )}
         aria-hidden="true"
       />

@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  type ReactNode,
-} from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 
 // ─────────────────────────────────────────────
 // Types
@@ -33,9 +26,7 @@ export function SidePanelProvider({ children }: { children: ReactNode }) {
   const register = useCallback((node: ReactNode | null) => setContent(node), []);
 
   return (
-    <SidePanelContext.Provider value={{ content, register }}>
-      {children}
-    </SidePanelContext.Provider>
+    <SidePanelContext.Provider value={{ content, register }}>{children}</SidePanelContext.Provider>
   );
 }
 
@@ -55,9 +46,7 @@ export function useSidePanel(content: ReactNode) {
   useEffect(() => {
     register(content);
     return () => register(null);
-    // content は安定した JSX なので deps は register のみで十分
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [register]);
+  }, [register, content]);
 }
 
 // ─────────────────────────────────────────────

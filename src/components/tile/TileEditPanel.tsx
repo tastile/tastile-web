@@ -1,7 +1,7 @@
 "use client";
 
+import { Loader2, X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { X, Loader2 } from "lucide-react";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { useTileEditStore } from "@/lib/stores/tile-edit-store";
 
@@ -142,7 +142,12 @@ function TileEditPanelInner() {
 
   return (
     <>
-      <div className="fixed inset-0 z-[55] bg-foreground/5 backdrop-blur-[0.5px]" onClick={close} />
+      <button
+        type="button"
+        aria-label="Close tile editor"
+        className="fixed inset-0 z-[55] cursor-default bg-foreground/5 backdrop-blur-[0.5px]"
+        onClick={close}
+      />
       <div className="fixed inset-y-0 right-0 z-[56] w-96 overflow-y-auto bg-surface-1 shadow-lg">
         <div className="flex items-center justify-between border-b border-surface-2 px-4 py-3">
           <h3 className="text-sm font-semibold text-foreground">
@@ -159,25 +164,32 @@ function TileEditPanelInner() {
 
         <div className="flex flex-col gap-4 p-4">
           <div>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+            <label
+              htmlFor="tile-edit-title"
+              className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle"
+            >
               Title
             </label>
             <input
+              id="tile-edit-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="What needs to be done?"
-              autoFocus
               className="w-full rounded-md bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-foreground-subtle outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+              <label
+                htmlFor="tile-edit-start"
+                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle"
+              >
                 Start
               </label>
               <input
+                id="tile-edit-start"
                 type="datetime-local"
                 value={startAt}
                 onChange={(e) => setStartAt(e.target.value)}
@@ -185,10 +197,14 @@ function TileEditPanelInner() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+              <label
+                htmlFor="tile-edit-end"
+                className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle"
+              >
                 End
               </label>
               <input
+                id="tile-edit-end"
                 type="datetime-local"
                 value={endAt}
                 onChange={(e) => setEndAt(e.target.value)}
@@ -198,14 +214,25 @@ function TileEditPanelInner() {
           </div>
 
           <div>
-            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+            <label
+              htmlFor="tile-edit-labels"
+              className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle"
+            >
               Labels
             </label>
             <input
+              id="tile-edit-labels"
               type="text"
               placeholder="Comma-separated labels"
               value={labels.join(", ")}
-              onChange={(e) => setLabels(e.target.value.split(",").map((s) => s.trim()).filter(Boolean))}
+              onChange={(e) =>
+                setLabels(
+                  e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                )
+              }
               className="w-full rounded-md bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-foreground-subtle outline-none"
             />
           </div>

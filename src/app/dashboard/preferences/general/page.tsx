@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   getSecurityLockEnabled,
@@ -10,8 +12,6 @@ import {
 } from "@/lib/security/security-lock-policy";
 import { useLocaleStore } from "@/lib/stores/locale-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
-import { useSidePanel } from "@/lib/context/side-panel-context";
-import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 
 export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
@@ -142,7 +142,9 @@ function ThemeButton({ active, onClick, label, description }: ThemeButtonProps) 
       type="button"
       onClick={onClick}
       className={`rounded-md border p-4 text-left transition-colors ${
-        active ? "border-primary bg-surface-0 ring-1 ring-primary" : "border-border bg-surface-0 hover:border-foreground-muted"
+        active
+          ? "border-primary bg-surface-0 ring-1 ring-primary"
+          : "border-border bg-surface-0 hover:border-foreground-muted"
       }`}
     >
       <p className="text-sm font-medium text-foreground">{label}</p>
@@ -163,7 +165,9 @@ function LanguageButton({ active, onClick, label }: LanguageButtonProps) {
       type="button"
       onClick={onClick}
       className={`rounded-md border p-4 text-left transition-colors ${
-        active ? "border-primary bg-surface-0 ring-1 ring-primary" : "border-border bg-surface-0 hover:border-foreground-muted"
+        active
+          ? "border-primary bg-surface-0 ring-1 ring-primary"
+          : "border-border bg-surface-0 hover:border-foreground-muted"
       }`}
     >
       <p className="text-sm font-medium text-foreground">{label}</p>

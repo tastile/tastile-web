@@ -40,10 +40,14 @@ export function formatFriendlyDateTime(
 
   const now = new Date();
   const targetDate = new Date(date);
-  
+
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const startOfTarget = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate());
-  
+  const startOfTarget = new Date(
+    targetDate.getFullYear(),
+    targetDate.getMonth(),
+    targetDate.getDate(),
+  );
+
   const diffTime = startOfTarget.getTime() - startOfToday.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
@@ -58,8 +62,11 @@ export function formatFriendlyDateTime(
     if (diffDays === 0) return `今日 ${timeStr}`;
     if (diffDays === 1) return `明日 ${timeStr}`;
     if (diffDays === -1) return `昨日 ${timeStr}`;
-    
-    const dayOfWeek = new Intl.DateTimeFormat("ja-JP", { weekday: "short", timeZone: timeZone ?? undefined }).format(targetDate);
+
+    const dayOfWeek = new Intl.DateTimeFormat("ja-JP", {
+      weekday: "short",
+      timeZone: timeZone ?? undefined,
+    }).format(targetDate);
     const dateStr = new Intl.DateTimeFormat("ja-JP", {
       month: "numeric",
       day: "numeric",
@@ -70,7 +77,7 @@ export function formatFriendlyDateTime(
     if (diffDays === 0) return `Today ${timeStr}`;
     if (diffDays === 1) return `Tomorrow ${timeStr}`;
     if (diffDays === -1) return `Yesterday ${timeStr}`;
-    
+
     const dateStr = new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",

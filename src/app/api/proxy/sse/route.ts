@@ -1,10 +1,10 @@
-import { NextRequest } from "next/server";
-import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
+import type { NextRequest } from "next/server";
 import {
   ensureDefaultApiTokenForUser,
   getApiTokenFromRequest,
 } from "@/lib/account/api-token-session";
+import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(
-          new TextEncoder().encode("data: {\"event_id\":\"state-connected\",\"payload\":null}\n\n"),
+          new TextEncoder().encode('data: {"event_id":"state-connected","payload":null}\n\n'),
         );
         controller.close();
       },

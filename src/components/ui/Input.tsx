@@ -1,7 +1,7 @@
 "use client";
 
-import { type InputHTMLAttributes, type TextareaHTMLAttributes, forwardRef } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
+import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const inputVariants = cva(
@@ -33,7 +33,7 @@ const inputVariants = cva(
     defaultVariants: {
       size: "small",
     },
-  }
+  },
 );
 
 export interface InputProps
@@ -60,7 +60,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
       >
         {leading ? (
-          <span className="shrink-0 text-foreground-muted group-focus-within:text-foreground" aria-hidden>
+          <span
+            className="shrink-0 text-foreground-muted group-focus-within:text-foreground"
+            aria-hidden
+          >
             {leading}
           </span>
         ) : null}
@@ -79,7 +82,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {trailing ? (
-          <span className="shrink-0 text-foreground-muted group-focus-within:text-foreground" aria-hidden>
+          <span
+            className="shrink-0 text-foreground-muted group-focus-within:text-foreground"
+            aria-hidden
+          >
             {trailing}
           </span>
         ) : null}
@@ -133,10 +139,7 @@ function FieldLabel({
 }) {
   return (
     <div className="flex items-baseline justify-between gap-2">
-      <label
-        htmlFor={htmlFor}
-        className="text-sm font-medium text-foreground"
-      >
+      <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
         {children}
         {required ? <span className="ml-0.5 text-danger">*</span> : null}
       </label>
@@ -145,4 +148,4 @@ function FieldLabel({
   );
 }
 
-export { Input, Textarea, FieldLabel, inputVariants };
+export { FieldLabel, Input, inputVariants, Textarea };

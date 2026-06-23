@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Compass, FileCode2, Hash, Layers, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Search, X, ArrowRight, Hash, FileCode2, Layers, Compass } from "lucide-react";
-import { ENDPOINTS, TAG_ORDER, type EndpointKey } from "@/lib/api/endpoints";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ENDPOINTS, type EndpointKey, TAG_ORDER } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils/cn";
 
 interface PaletteItem {
@@ -18,20 +18,104 @@ interface PaletteItem {
 }
 
 const NAV: PaletteItem[] = [
-  { id: "nav:home", group: "Navigation", title: "Home", subtitle: "Overview & now", href: "/dashboard" },
-  { id: "nav:execute", group: "Navigation", title: "Execute", subtitle: "Active phase", href: "/dashboard/execute" },
-  { id: "nav:prompts", group: "Navigation", title: "Prompts", subtitle: "Pending decisions", href: "/dashboard/prompts" },
-  { id: "nav:breaks", group: "Navigation", title: "Breaks", subtitle: "Rest windows", href: "/dashboard/breaks" },
-  { id: "nav:tiles", group: "Navigation", title: "Tiles", subtitle: "Lifecycle list", href: "/dashboard/tiles" },
-  { id: "nav:timeline", group: "Navigation", title: "Timeline", subtitle: "Today's plan", href: "/dashboard/timeline" },
-  { id: "nav:calendar", group: "Navigation", title: "Calendar", subtitle: "Day / week / month / year", href: "/dashboard/calendar" },
-  { id: "nav:history", group: "Navigation", title: "History", subtitle: "Completed events", href: "/dashboard/history" },
-  { id: "nav:runtime", group: "Navigation", title: "Runtime", subtitle: "Health, version, paths", href: "/dashboard/runtime" },
-  { id: "nav:events", group: "Navigation", title: "Events log", subtitle: "Append-only stream", href: "/dashboard/events" },
-  { id: "nav:api", group: "Navigation", title: "API explorer", subtitle: "All 45 endpoints", href: "/dashboard/api" },
-  { id: "nav:quota", group: "Navigation", title: "Quota", subtitle: "Plan limits", href: "/dashboard/quota" },
-  { id: "nav:settings", group: "Navigation", title: "Settings", subtitle: "Preferences", href: "/dashboard/preferences/general" },
-  { id: "nav:account", group: "Navigation", title: "Account", subtitle: "Profile & security", href: "/dashboard/preferences/account" },
+  {
+    id: "nav:home",
+    group: "Navigation",
+    title: "Home",
+    subtitle: "Overview & now",
+    href: "/dashboard",
+  },
+  {
+    id: "nav:execute",
+    group: "Navigation",
+    title: "Execute",
+    subtitle: "Active phase",
+    href: "/dashboard/execute",
+  },
+  {
+    id: "nav:prompts",
+    group: "Navigation",
+    title: "Prompts",
+    subtitle: "Pending decisions",
+    href: "/dashboard/prompts",
+  },
+  {
+    id: "nav:breaks",
+    group: "Navigation",
+    title: "Breaks",
+    subtitle: "Rest windows",
+    href: "/dashboard/breaks",
+  },
+  {
+    id: "nav:tiles",
+    group: "Navigation",
+    title: "Tiles",
+    subtitle: "Lifecycle list",
+    href: "/dashboard/tiles",
+  },
+  {
+    id: "nav:timeline",
+    group: "Navigation",
+    title: "Timeline",
+    subtitle: "Today's plan",
+    href: "/dashboard/timeline",
+  },
+  {
+    id: "nav:calendar",
+    group: "Navigation",
+    title: "Calendar",
+    subtitle: "Day / week / month / year",
+    href: "/dashboard/calendar",
+  },
+  {
+    id: "nav:history",
+    group: "Navigation",
+    title: "History",
+    subtitle: "Completed events",
+    href: "/dashboard/history",
+  },
+  {
+    id: "nav:runtime",
+    group: "Navigation",
+    title: "Runtime",
+    subtitle: "Health, version, paths",
+    href: "/dashboard/runtime",
+  },
+  {
+    id: "nav:events",
+    group: "Navigation",
+    title: "Events log",
+    subtitle: "Append-only stream",
+    href: "/dashboard/events",
+  },
+  {
+    id: "nav:api",
+    group: "Navigation",
+    title: "API explorer",
+    subtitle: "All 45 endpoints",
+    href: "/dashboard/api",
+  },
+  {
+    id: "nav:quota",
+    group: "Navigation",
+    title: "Quota",
+    subtitle: "Plan limits",
+    href: "/dashboard/quota",
+  },
+  {
+    id: "nav:settings",
+    group: "Navigation",
+    title: "Settings",
+    subtitle: "Preferences",
+    href: "/dashboard/preferences/general",
+  },
+  {
+    id: "nav:account",
+    group: "Navigation",
+    title: "Account",
+    subtitle: "Profile & security",
+    href: "/dashboard/preferences/account",
+  },
 ];
 
 function buildEndpointItems(): PaletteItem[] {
@@ -68,12 +152,12 @@ export function CommandPalette() {
   });
   const inputRef = useRef<HTMLInputElement>(null);
 
-  function openPalette() {
+  const openPalette = useCallback(() => {
     setQuery("");
     setActiveIndex(0);
     setOpen(true);
     window.setTimeout(() => inputRef.current?.focus(), 16);
-  }
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -98,7 +182,7 @@ export function CommandPalette() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("tastile:open-command", onCustom);
     };
-  }, [open]);
+  }, [open, openPalette]);
 
   const items = useMemo(() => {
     const endpointItems = buildEndpointItems();
@@ -160,7 +244,11 @@ export function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[var(--z-command)] flex items-start justify-center pt-[10vh]" role="dialog" aria-modal>
+    <div
+      className="fixed inset-0 z-[var(--z-command)] flex items-start justify-center pt-[10vh]"
+      role="dialog"
+      aria-modal
+    >
       <div
         className="absolute inset-0 bg-surface-overlay backdrop-blur-sm"
         onClick={() => setOpen(false)}
@@ -244,7 +332,10 @@ function GroupedList({
   onHover: (i: number) => void;
 }) {
   let cursor = -1;
-  const groups: Record<string, { start: number; rows: Array<{ item: PaletteItem; index: number }> }> = {};
+  const groups: Record<
+    string,
+    { start: number; rows: Array<{ item: PaletteItem; index: number }> }
+  > = {};
   for (const it of items) {
     cursor += 1;
     if (!groups[it.group]) groups[it.group] = { start: cursor, rows: [] };

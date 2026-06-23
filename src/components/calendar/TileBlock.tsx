@@ -35,17 +35,15 @@ export function TileBlock({
       className={cn(
         "relative w-full overflow-hidden rounded-md px-2 py-1 text-left",
         "bg-[color-mix(in_oklab,var(--accent)_8%,transparent)]",
-        notEditable ? "cursor-default" : "hover:bg-[color-mix(in_oklab,var(--accent)_14%,transparent)]",
+        notEditable
+          ? "cursor-default"
+          : "hover:bg-[color-mix(in_oklab,var(--accent)_14%,transparent)]",
       )}
     >
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-1 bg-[var(--accent)]"
-      />
+      <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-[var(--accent)]" />
       <div className="text-xs font-medium text-foreground">{block.title}</div>
       <div className="font-mono text-[10px] text-foreground-subtle">
-        {Math.round(minutes)}m
-        {notEditable ? " · read-only" : ""}
+        {Math.round(minutes)}m{notEditable ? " · read-only" : ""}
       </div>
     </button>
   );

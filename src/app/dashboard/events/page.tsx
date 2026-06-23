@@ -13,7 +13,7 @@ import {
   Search,
   Terminal,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -31,24 +31,27 @@ interface DebugEvent {
 }
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<Result<{ events: DebugEvent[]; count: number } | DebugEvent[]> | null>(null);
+  const [events, setEvents] = useState<Result<
+    { events: DebugEvent[]; count: number } | DebugEvent[]
+  > | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("All");
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setEvents(null);
-    const result = await getCoreClient().call<{ events: DebugEvent[]; count: number } | DebugEvent[]>("getDebugEvents");
+    const result = await getCoreClient().call<
+      { events: DebugEvent[]; count: number } | DebugEvent[]
+    >("getDebugEvents");
     setEvents(result);
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
-     
     void load();
-  }, []);
+  }, [load]);
 
   const list: DebugEvent[] = useMemo(() => {
     if (!events?.ok) return [];
@@ -59,7 +62,9 @@ export default function EventsPage() {
 
   const types = useMemo(() => {
     const set = new Set<string>();
-    list.forEach((e) => set.add(e.type));
+    list.forEach((e) => {
+      set.add(e.type);
+    });
     return ["All", ...Array.from(set).sort()];
   }, [list]);
 
@@ -107,7 +112,12 @@ export default function EventsPage() {
         }
         actions={
           <>
-            <Button variant="secondary" size="medium" onClick={downloadJson} disabled={!list.length}>
+            <Button
+              variant="secondary"
+              size="medium"
+              onClick={downloadJson}
+              disabled={!list.length}
+            >
               <Download className="h-3.5 w-3.5" />
               Download JSON
             </Button>
@@ -247,7 +257,14 @@ function FragmentRow({
               <Field label="Event ID" value={event.id} />
               <Field label="Occurred" value={event.occurred_at} />
               <Field label="Tile" value={event.tile_id ?? "—"} />
-              <Field label="Actor" value={event.actor ? `${event.actor.kind}${event.actor.id ? ` · ${event.actor.id}` : ""}` : "—"} />
+              <Field
+                label="Actor"
+                value={
+                  event.actor
+                    ? `${event.actor.kind}${event.actor.id ? ` · ${event.actor.id}` : ""}`
+                    : "—"
+                }
+              />
             </div>
           </td>
         </tr>

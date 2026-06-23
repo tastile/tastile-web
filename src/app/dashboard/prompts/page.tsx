@@ -52,11 +52,7 @@ export default function PromptsPage() {
         meta={
           <>
             <Pill variant={pending ? "warn" : "default"}>
-              <StatusDot
-                status={pending ? "warn" : "ready"}
-                pulse={!!pending}
-                size="xs"
-              />
+              <StatusDot status={pending ? "warn" : "ready"} pulse={!!pending} size="xs" />
               {pending ? "1 pending" : "0 pending"}
             </Pill>
             <Pill variant="default">Critical · Elevated · Soft</Pill>
@@ -145,7 +141,11 @@ export default function PromptsPage() {
                     loading={responding}
                     disabled={responding}
                   >
-                    {primaryAction(a) ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                    {primaryAction(a) ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
                     {humanize(a)}
                   </Button>
                 ))}
@@ -177,8 +177,8 @@ export default function PromptsPage() {
             Prompt anatomy
           </div>
           <p className="mt-2 text-xs text-ink-3">
-            A prompt is a fact the engine could not resolve on its own. It carries the
-            request, the suggested action, and the reasons — never the result.
+            A prompt is a fact the engine could not resolve on its own. It carries the request, the
+            suggested action, and the reasons — never the result.
           </p>
           <dl className="mt-4 space-y-2 text-xs">
             <Field label="prompt_id" value="unique per emission" />

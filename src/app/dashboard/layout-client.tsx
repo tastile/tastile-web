@@ -1,19 +1,19 @@
 "use client";
 
+import { PanelLeftDashed } from "lucide-react";
 import { useEffect, useState } from "react";
-import { FloatingHeader } from "@/components/shell/FloatingHeader";
-import { ActivityBar } from "@/components/shell/ActivityBar";
-import { SideToolPanel } from "@/components/shell/SideToolPanel";
-import { SecurityLockGate } from "@/components/security/SecurityLockGate";
-import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
+import { SearchOverlay } from "@/components/search/SearchOverlay";
+import { SecurityLockGate } from "@/components/security/SecurityLockGate";
+import { ActivityBar } from "@/components/shell/ActivityBar";
+import { FloatingHeader } from "@/components/shell/FloatingHeader";
+import { SideToolPanel } from "@/components/shell/SideToolPanel";
 import { TileEditPanel } from "@/components/tile/TileEditPanel";
 import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { PanelLeftDashed } from "lucide-react";
 
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   return (
@@ -87,14 +87,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       )}
 
       {/* モバイル用サイドパネルドロワー */}
-      <BottomSheet
-        open={mobileSidePanelOpen}
-        onOpenChange={setMobileSidePanelOpen}
-        title="Details"
-      >
-        <div className="py-2">
-          {sidePanelContent}
-        </div>
+      <BottomSheet open={mobileSidePanelOpen} onOpenChange={setMobileSidePanelOpen} title="Details">
+        <div className="py-2">{sidePanelContent}</div>
       </BottomSheet>
     </div>
   );

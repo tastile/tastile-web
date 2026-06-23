@@ -148,8 +148,11 @@
   /* Fonts */
   --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
-  --font-jp-heading: "YakuHanJP", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
+  --font-jp:
+    "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+    sans-serif;
+  --font-jp-heading:
+    "YakuHanJP", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
 
 /* ============================================
@@ -282,6 +285,7 @@ button {
 /* ============================================
    Scrollbar — thin, semi-transparent, hover-only
    ============================================ */
+/* biome-ignore lint/style/noDescendingSpecificity: selectors target different properties; functional order is preserved. */
 * {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;

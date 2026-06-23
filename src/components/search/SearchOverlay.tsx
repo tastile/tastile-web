@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
 import { Search } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 
 const DASHBOARD_ROUTES = [
@@ -23,11 +23,7 @@ const DASHBOARD_ROUTES = [
   { path: "/dashboard/runtime", label: "Runtime" },
 ];
 
-export function SearchOverlayInner({
-  onClose,
-}: {
-  onClose: () => void;
-}) {
+export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const { tiles } = useTileList({ search: query || undefined });
@@ -37,10 +33,20 @@ export function SearchOverlayInner({
     query ? r.label.toLowerCase().includes(query.toLowerCase()) : false,
   );
 
-  const results = useMemo(() => [
-    ...tiles.slice(0, 5).map((t) => ({ type: "tile" as const, id: t.id, label: t.title, path: "/dashboard/tiles" })),
-    ...filteredRoutes.slice(0, 5).map((r) => ({ type: "route" as const, id: r.path, label: r.label, path: r.path })),
-  ], [tiles, filteredRoutes]);
+  const results = useMemo(
+    () => [
+      ...tiles.slice(0, 5).map((t) => ({
+        type: "tile" as const,
+        id: t.id,
+        label: t.title,
+        path: "/dashboard/tiles",
+      })),
+      ...filteredRoutes
+        .slice(0, 5)
+        .map((r) => ({ type: "route" as const, id: r.path, label: r.label, path: r.path })),
+    ],
+    [tiles, filteredRoutes],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -61,11 +67,24 @@ export function SearchOverlayInner({
   );
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-start justify-center pt-24" onClick={onClose}>
-      <div className="absolute inset-0 bg-foreground/20 backdrop-blur-[1px]" />
+    <button
+      type="button"
+      aria-label="Close search"
+      className="fixed inset-0 z-[60] flex items-start justify-center pt-24 cursor-default bg-foreground/20 backdrop-blur-[1px]"
+      onClick={onClose}
+    >
       <div
-        className="relative w-[600px] rounded-xl bg-surface-1 shadow-lg"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search tiles and pages"
+        className="relative w-[600px] rounded-xl bg-surface-1 shadow-lg text-left"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            e.stopPropagation();
+            onClose();
+          }
+        }}
       >
         <div className="flex items-center gap-2 border-b border-surface-2 px-4 py-3">
           <Search className="h-4 w-4 text-foreground-subtle" />
@@ -74,12 +93,16 @@ export function SearchOverlayInner({
             type="text"
             placeholder="Search tiles and pages…"
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
             onKeyDown={handleKeyDown}
-            autoFocus
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-subtle outline-none"
           />
-          <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-foreground-subtle">ESC</kbd>
+          <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-foreground-subtle">
+            ESC
+          </kbd>
         </div>
         {results.length > 0 && (
           <div className="max-h-80 overflow-y-auto p-2">
@@ -87,9 +110,14 @@ export function SearchOverlayInner({
               <button
                 key={r.id}
                 type="button"
-                onClick={() => { window.location.href = r.path; onClose(); }}
+                onClick={() => {
+                  window.location.href = r.path;
+                  onClose();
+                }}
                 className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm ${
-                  i === selectedIndex ? "bg-surface-2 text-foreground" : "text-foreground-muted hover:bg-surface-2"
+                  i === selectedIndex
+                    ? "bg-surface-2 text-foreground"
+                    : "text-foreground-muted hover:bg-surface-2"
                 }`}
               >
                 {r.type === "tile" ? (
@@ -106,17 +134,11 @@ export function SearchOverlayInner({
           <div className="p-4 text-center text-xs text-foreground-subtle">No results</div>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
-export function SearchOverlay({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
   if (!open) return null;
   return <SearchOverlayInner key="search-overlay" onClose={onClose} />;
 }

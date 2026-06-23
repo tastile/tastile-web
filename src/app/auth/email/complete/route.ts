@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 import {
   COOKIE_EMAIL_AUTH_SESSION,
   COOKIE_EMAIL_AUTH_USERNAME,
@@ -11,7 +12,6 @@ import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { completeEmailOtpSignIn } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
-import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 
 export async function POST(request: NextRequest) {
   const env = tryGetCognitoEnv();

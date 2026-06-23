@@ -1,20 +1,20 @@
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
-import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
+import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
 
 const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
-const DEFAULT_TOKEN_NAME = "Default API key";
+// Name used when registering the per-login session token. The plaintext
+// `access_token` is only ever returned at this POST — afterwards the server
+// only retains its hash, so the client must keep the cookie or re-login.
+const SESSION_TOKEN_NAME = "Web session";
 const TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const bootstrapLocks = new Map<string, Promise<string | null>>();
 
-type ApiTokenView = {
+type CreatedApiToken = {
   token_id: string;
   name: string;
   revoked_at: string | null;
-};
-
-type CreatedApiToken = ApiTokenView & {
   access_token: string;
 };
 
@@ -65,24 +65,13 @@ async function createDefaultApiTokenForUser(
     "x-tastile-web-bridge-secret": bridgeSecret,
     "x-tastile-web-session-user": userSub,
   };
-  const listResponse = await fetch(`${coreUrl()}/auth/api-tokens`, {
-    method: "GET",
-    headers,
-    cache: "no-store",
-  });
-  if (!listResponse.ok) return null;
-
-  const tokens = (await listResponse.json()) as ApiTokenView[];
-  const activeDefault = tokens.find((token) => token.name === DEFAULT_TOKEN_NAME && !token.revoked_at);
-  if (activeDefault) return null;
-
   const createResponse = await fetch(`${coreUrl()}/auth/api-tokens`, {
     method: "POST",
     headers: {
       ...headers,
       "content-type": "application/json",
     },
-    body: JSON.stringify({ name: DEFAULT_TOKEN_NAME }),
+    body: JSON.stringify({ name: SESSION_TOKEN_NAME }),
     cache: "no-store",
   });
   if (!createResponse.ok) return null;

@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { type NextRequest, NextResponse } from "next/server";
 import {
   ensureDefaultApiTokenForUser,
   getApiTokenFromRequest,
   setApiTokenCookie,
 } from "@/lib/account/api-token-session";
+import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 const CLOUD_API_BASE =
   process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
@@ -49,15 +49,15 @@ function mockTileFromCreate(body: Record<string, unknown>): MockTile {
     title: String(tile.title ?? body.title ?? "Untitled"),
     lifecycle: "ready",
     next_action: (tile.next_action as string) ?? null,
-    done_definition: (tile.core as Record<string, unknown>)?.done_definition as string ?? null,
+    done_definition: ((tile.core as Record<string, unknown>)?.done_definition as string) ?? null,
     worked_minutes: 0,
     break_minutes: 0,
-    semantic_role: annotation.semantic_role as string ?? "work",
+    semantic_role: (annotation.semantic_role as string) ?? "work",
     labels: (annotation.labels as string[]) ?? [],
-    objective_mode: objective.objective_mode as string ?? null,
-    target_work_min: objective.target_work_min as number ?? null,
-    target_rest_min: objective.target_rest_min as number ?? null,
-    done_rule: objective.done_rule as string ?? null,
+    objective_mode: (objective.objective_mode as string) ?? null,
+    target_work_min: (objective.target_work_min as number) ?? null,
+    target_rest_min: (objective.target_rest_min as number) ?? null,
+    done_rule: (objective.done_rule as string) ?? null,
     resume_note: null,
     projected_next_start_at: null,
     temporal: {
@@ -72,7 +72,12 @@ function mockTileFromCreate(body: Record<string, unknown>): MockTile {
   };
 }
 
-function handleMockRequest(path: string, method: string, body: unknown, searchParams: URLSearchParams): NextResponse | null {
+function handleMockRequest(
+  path: string,
+  method: string,
+  body: unknown,
+  searchParams: URLSearchParams,
+): NextResponse | null {
   if (path === "read/tiles" && method === "GET") {
     return NextResponse.json({
       tiles: mockTiles,
@@ -299,10 +304,7 @@ function handleMockRequest(path: string, method: string, body: unknown, searchPa
   return null;
 }
 
-async function proxyRequest(
-  request: NextRequest,
-  pathSegments: string[],
-): Promise<NextResponse> {
+async function proxyRequest(request: NextRequest, pathSegments: string[]): Promise<NextResponse> {
   const path = pathSegments.join("/");
 
   if (isE2EBypass) {
@@ -310,7 +312,12 @@ async function proxyRequest(
       request.method !== "GET" && request.method !== "HEAD"
         ? await request.json().catch(() => ({}))
         : null;
-    const mockResponse = handleMockRequest(path, request.method, body, request.nextUrl.searchParams);
+    const mockResponse = handleMockRequest(
+      path,
+      request.method,
+      body,
+      request.nextUrl.searchParams,
+    );
     if (mockResponse) return mockResponse;
   }
 

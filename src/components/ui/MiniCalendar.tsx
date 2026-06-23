@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -36,12 +36,16 @@ export function MiniCalendar({ selected, onSelect }: MiniCalendarProps) {
   }
 
   function prevMonth() {
-    if (viewMonth === 0) { setViewYear((y) => y - 1); setViewMonth(11); }
-    else setViewMonth((m) => m - 1);
+    if (viewMonth === 0) {
+      setViewYear((y) => y - 1);
+      setViewMonth(11);
+    } else setViewMonth((m) => m - 1);
   }
   function nextMonth() {
-    if (viewMonth === 11) { setViewYear((y) => y + 1); setViewMonth(0); }
-    else setViewMonth((m) => m + 1);
+    if (viewMonth === 11) {
+      setViewYear((y) => y + 1);
+      setViewMonth(0);
+    } else setViewMonth((m) => m + 1);
   }
 
   const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString("en-US", {
@@ -100,7 +104,10 @@ export function MiniCalendar({ selected, onSelect }: MiniCalendarProps) {
               className={cn(
                 "flex h-6 w-full items-center justify-center rounded text-[11px] tabular-nums transition-colors",
                 !isCurrentMonth && "text-foreground-lighter",
-                isCurrentMonth && !isToday && !isSelected && "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+                isCurrentMonth &&
+                  !isToday &&
+                  !isSelected &&
+                  "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
                 isToday && !isSelected && "font-semibold text-primary",
                 isSelected && "bg-primary text-primary-fg font-semibold",
               )}

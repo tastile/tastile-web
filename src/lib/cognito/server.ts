@@ -81,8 +81,7 @@ export function parseIdTokenClaims(idToken: string): IdTokenClaims {
   return {
     sub: json.sub,
     email: typeof json.email === "string" ? json.email : undefined,
-    emailVerified:
-      typeof json.email_verified === "boolean" ? json.email_verified : undefined,
+    emailVerified: typeof json.email_verified === "boolean" ? json.email_verified : undefined,
     preferredUsername:
       typeof json.preferred_username === "string" ? json.preferred_username : undefined,
     exp: Number(json.exp),

@@ -29,9 +29,7 @@ export function PageHeader({
       )}
     >
       <div className="min-w-0 flex-1">
-        {eyebrow ? (
-          <div className="mb-2 text-xs font-medium text-ink-3">{eyebrow}</div>
-        ) : null}
+        {eyebrow ? <div className="mb-2 text-xs font-medium text-ink-3">{eyebrow}</div> : null}
         <h1 className="text-balance text-2xl font-semibold tracking-tight text-ink-1 sm:text-3xl">
           {title}
         </h1>
@@ -40,14 +38,18 @@ export function PageHeader({
         ) : null}
         {meta ? <div className="mt-3 flex flex-wrap items-center gap-2">{meta}</div> : null}
       </div>
-      {actions ? (
-        <div className="flex flex-wrap items-center gap-2">{actions}</div>
-      ) : null}
+      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
     </header>
   );
 }
 
-export function PageContainer({ children, className }: { children: ReactNode; className?: string }) {
+export function PageContainer({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8", className)}>
       {children}

@@ -29,14 +29,7 @@ export type Result<T> =
   | { ok: true; data: T; status: number; latencyMs: number }
   | { ok: false; error: ApiError };
 
-export type ApiTag =
-  | "Public"
-  | "Auth"
-  | "Commands"
-  | "Read"
-  | "Views"
-  | "Prompts"
-  | "Debug";
+export type ApiTag = "Public" | "Auth" | "Commands" | "Read" | "Views" | "Prompts" | "Debug";
 
 export interface EndpointMeta {
   method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -51,77 +44,439 @@ export interface EndpointMeta {
 
 export const ENDPOINTS = {
   // Public
-  getHealth: { method: "GET", path: "/health", tag: "Public", summary: "Health check", auth: false, keywords: ["ping", "status"] } as EndpointMeta,
-  getReady: { method: "GET", path: "/ready", tag: "Public", summary: "Readiness check", auth: false, keywords: ["ready", "warmup"] } as EndpointMeta,
-  getVersion: { method: "GET", path: "/version", tag: "Public", summary: "Version info", auth: false, keywords: ["version", "build", "release"] } as EndpointMeta,
-  getRuntimePaths: { method: "GET", path: "/read/runtime-paths", tag: "Public", summary: "Runtime paths", auth: false, keywords: ["paths", "storage", "debug"] } as EndpointMeta,
+  getHealth: {
+    method: "GET",
+    path: "/health",
+    tag: "Public",
+    summary: "Health check",
+    auth: false,
+    keywords: ["ping", "status"],
+  } as EndpointMeta,
+  getReady: {
+    method: "GET",
+    path: "/ready",
+    tag: "Public",
+    summary: "Readiness check",
+    auth: false,
+    keywords: ["ready", "warmup"],
+  } as EndpointMeta,
+  getVersion: {
+    method: "GET",
+    path: "/version",
+    tag: "Public",
+    summary: "Version info",
+    auth: false,
+    keywords: ["version", "build", "release"],
+  } as EndpointMeta,
+  getRuntimePaths: {
+    method: "GET",
+    path: "/read/runtime-paths",
+    tag: "Public",
+    summary: "Runtime paths",
+    auth: false,
+    keywords: ["paths", "storage", "debug"],
+  } as EndpointMeta,
 
   // Auth
-  startOAuth: { method: "POST", path: "/auth/oauth/start", tag: "Auth", summary: "Start OAuth flow", auth: false, keywords: ["oauth", "signin", "login"] } as EndpointMeta,
-  getOAuthStatus: { method: "GET", path: "/auth/oauth/status", tag: "Auth", summary: "OAuth status", auth: false, keywords: ["oauth", "status"] } as EndpointMeta,
-  exchangeOAuthCode: { method: "POST", path: "/auth/oauth/exchange", tag: "Auth", summary: "Exchange OAuth code", auth: false, keywords: ["oauth", "exchange"] } as EndpointMeta,
-  oauthCallback: { method: "GET", path: "/auth/callback", tag: "Auth", summary: "OAuth callback", auth: false, keywords: ["callback"] } as EndpointMeta,
-  signIn: { method: "POST", path: "/auth/signin", tag: "Auth", summary: "Sign in", auth: false, keywords: ["signin", "login"] } as EndpointMeta,
-  signUp: { method: "POST", path: "/auth/signup", tag: "Auth", summary: "Sign up", auth: false, keywords: ["signup", "register"] } as EndpointMeta,
-  signOut: { method: "POST", path: "/auth/signout", tag: "Auth", summary: "Sign out", auth: false, keywords: ["signout", "logout"] } as EndpointMeta,
-  getSession: { method: "GET", path: "/auth/session", tag: "Auth", summary: "Current session", auth: true, keywords: ["session", "me"] } as EndpointMeta,
-  getTileQuota: { method: "GET", path: "/auth/tile-quota", tag: "Auth", summary: "Tile quota", auth: true, keywords: ["quota", "limit", "plan"] } as EndpointMeta,
-  restoreSession: { method: "POST", path: "/auth/session/restore", tag: "Auth", summary: "Restore session", auth: false, keywords: ["restore", "session"] } as EndpointMeta,
+  startOAuth: {
+    method: "POST",
+    path: "/auth/oauth/start",
+    tag: "Auth",
+    summary: "Start OAuth flow",
+    auth: false,
+    keywords: ["oauth", "signin", "login"],
+  } as EndpointMeta,
+  getOAuthStatus: {
+    method: "GET",
+    path: "/auth/oauth/status",
+    tag: "Auth",
+    summary: "OAuth status",
+    auth: false,
+    keywords: ["oauth", "status"],
+  } as EndpointMeta,
+  exchangeOAuthCode: {
+    method: "POST",
+    path: "/auth/oauth/exchange",
+    tag: "Auth",
+    summary: "Exchange OAuth code",
+    auth: false,
+    keywords: ["oauth", "exchange"],
+  } as EndpointMeta,
+  oauthCallback: {
+    method: "GET",
+    path: "/auth/callback",
+    tag: "Auth",
+    summary: "OAuth callback",
+    auth: false,
+    keywords: ["callback"],
+  } as EndpointMeta,
+  signIn: {
+    method: "POST",
+    path: "/auth/signin",
+    tag: "Auth",
+    summary: "Sign in",
+    auth: false,
+    keywords: ["signin", "login"],
+  } as EndpointMeta,
+  signUp: {
+    method: "POST",
+    path: "/auth/signup",
+    tag: "Auth",
+    summary: "Sign up",
+    auth: false,
+    keywords: ["signup", "register"],
+  } as EndpointMeta,
+  signOut: {
+    method: "POST",
+    path: "/auth/signout",
+    tag: "Auth",
+    summary: "Sign out",
+    auth: false,
+    keywords: ["signout", "logout"],
+  } as EndpointMeta,
+  getSession: {
+    method: "GET",
+    path: "/auth/session",
+    tag: "Auth",
+    summary: "Current session",
+    auth: true,
+    keywords: ["session", "me"],
+  } as EndpointMeta,
+  getTileQuota: {
+    method: "GET",
+    path: "/auth/tile-quota",
+    tag: "Auth",
+    summary: "Tile quota",
+    auth: true,
+    keywords: ["quota", "limit", "plan"],
+  } as EndpointMeta,
+  restoreSession: {
+    method: "POST",
+    path: "/auth/session/restore",
+    tag: "Auth",
+    summary: "Restore session",
+    auth: false,
+    keywords: ["restore", "session"],
+  } as EndpointMeta,
 
   // Commands
-  createTile: { method: "POST", path: "/commands/tile/create", tag: "Commands", summary: "Create tile", auth: true, keywords: ["create", "tile", "new"] } as EndpointMeta,
-  startTile: { method: "POST", path: "/commands/tile/start", tag: "Commands", summary: "Start tile", auth: true, keywords: ["start", "run", "tile"] } as EndpointMeta,
-  completeTile: { method: "POST", path: "/commands/tile/complete", tag: "Commands", summary: "Complete tile", auth: true, keywords: ["complete", "done", "tile"] } as EndpointMeta,
-  deferTile: { method: "POST", path: "/commands/tile/defer", tag: "Commands", summary: "Defer tile", auth: true, keywords: ["defer", "snooze", "tile"] } as EndpointMeta,
-  deleteTile: { method: "POST", path: "/commands/tile/delete", tag: "Commands", summary: "Delete tile", auth: true, keywords: ["delete", "remove", "tile"] } as EndpointMeta,
-  updateTile: { method: "POST", path: "/commands/tile/update", tag: "Commands", summary: "Update tile", auth: true, keywords: ["update", "edit", "tile"] } as EndpointMeta,
-  extendTile: { method: "POST", path: "/commands/tile/extend", tag: "Commands", summary: "Extend tile", auth: true, keywords: ["extend", "more", "tile"] } as EndpointMeta,
-  attachMemo: { method: "POST", path: "/commands/memo/attach", tag: "Commands", summary: "Attach memo", auth: true, keywords: ["memo", "note", "attach"] } as EndpointMeta,
-  startBreak: { method: "POST", path: "/commands/break/start", tag: "Commands", summary: "Start break", auth: true, keywords: ["break", "rest", "pause"] } as EndpointMeta,
-  endBreak: { method: "POST", path: "/commands/break/end", tag: "Commands", summary: "End break", auth: true, keywords: ["break", "end", "resume"] } as EndpointMeta,
-  listRecurringTiles: { method: "GET", path: "/commands/recurring-tile", tag: "Commands", summary: "List recurring tiles", auth: true, keywords: ["recurring", "list", "templates"] } as EndpointMeta,
-  getRecurringTile: { method: "GET", path: "/commands/recurring-tile/{id}", tag: "Commands", summary: "Get recurring tile", auth: true, keywords: ["recurring", "get"] } as EndpointMeta,
-  putRecurringTile: { method: "PUT", path: "/commands/recurring-tile/{id}", tag: "Commands", summary: "Update recurring tile", auth: true, keywords: ["recurring", "update"] } as EndpointMeta,
-  respondStartupRecovery: { method: "POST", path: "/commands/prompt/respond-startup-recovery", tag: "Commands", summary: "Respond startup recovery", auth: true, keywords: ["recovery", "startup", "prompt"] } as EndpointMeta,
-  requestPrompt: { method: "POST", path: "/commands/prompt/request", tag: "Commands", summary: "Request prompt", auth: true, keywords: ["prompt", "request"] } as EndpointMeta,
-  tick: { method: "POST", path: "/commands/tick", tag: "Commands", summary: "Tick (advance time)", auth: true, keywords: ["tick", "advance"] } as EndpointMeta,
-  tickAt: { method: "POST", path: "/commands/tick-at", tag: "Commands", summary: "Tick at timestamp", auth: true, keywords: ["tick", "at"] } as EndpointMeta,
-  tickRange: { method: "POST", path: "/commands/tick-range", tag: "Commands", summary: "Tick range", auth: true, keywords: ["tick", "range"] } as EndpointMeta,
+  createTile: {
+    method: "POST",
+    path: "/commands/tile/create",
+    tag: "Commands",
+    summary: "Create tile",
+    auth: true,
+    keywords: ["create", "tile", "new"],
+  } as EndpointMeta,
+  startTile: {
+    method: "POST",
+    path: "/commands/tile/start",
+    tag: "Commands",
+    summary: "Start tile",
+    auth: true,
+    keywords: ["start", "run", "tile"],
+  } as EndpointMeta,
+  completeTile: {
+    method: "POST",
+    path: "/commands/tile/complete",
+    tag: "Commands",
+    summary: "Complete tile",
+    auth: true,
+    keywords: ["complete", "done", "tile"],
+  } as EndpointMeta,
+  deferTile: {
+    method: "POST",
+    path: "/commands/tile/defer",
+    tag: "Commands",
+    summary: "Defer tile",
+    auth: true,
+    keywords: ["defer", "snooze", "tile"],
+  } as EndpointMeta,
+  deleteTile: {
+    method: "POST",
+    path: "/commands/tile/delete",
+    tag: "Commands",
+    summary: "Delete tile",
+    auth: true,
+    keywords: ["delete", "remove", "tile"],
+  } as EndpointMeta,
+  updateTile: {
+    method: "POST",
+    path: "/commands/tile/update",
+    tag: "Commands",
+    summary: "Update tile",
+    auth: true,
+    keywords: ["update", "edit", "tile"],
+  } as EndpointMeta,
+  extendTile: {
+    method: "POST",
+    path: "/commands/tile/extend",
+    tag: "Commands",
+    summary: "Extend tile",
+    auth: true,
+    keywords: ["extend", "more", "tile"],
+  } as EndpointMeta,
+  attachMemo: {
+    method: "POST",
+    path: "/commands/memo/attach",
+    tag: "Commands",
+    summary: "Attach memo",
+    auth: true,
+    keywords: ["memo", "note", "attach"],
+  } as EndpointMeta,
+  startBreak: {
+    method: "POST",
+    path: "/commands/break/start",
+    tag: "Commands",
+    summary: "Start break",
+    auth: true,
+    keywords: ["break", "rest", "pause"],
+  } as EndpointMeta,
+  endBreak: {
+    method: "POST",
+    path: "/commands/break/end",
+    tag: "Commands",
+    summary: "End break",
+    auth: true,
+    keywords: ["break", "end", "resume"],
+  } as EndpointMeta,
+  listRecurringTiles: {
+    method: "GET",
+    path: "/commands/recurring-tile",
+    tag: "Commands",
+    summary: "List recurring tiles",
+    auth: true,
+    keywords: ["recurring", "list", "templates"],
+  } as EndpointMeta,
+  getRecurringTile: {
+    method: "GET",
+    path: "/commands/recurring-tile/{id}",
+    tag: "Commands",
+    summary: "Get recurring tile",
+    auth: true,
+    keywords: ["recurring", "get"],
+  } as EndpointMeta,
+  putRecurringTile: {
+    method: "PUT",
+    path: "/commands/recurring-tile/{id}",
+    tag: "Commands",
+    summary: "Update recurring tile",
+    auth: true,
+    keywords: ["recurring", "update"],
+  } as EndpointMeta,
+  respondStartupRecovery: {
+    method: "POST",
+    path: "/commands/prompt/respond-startup-recovery",
+    tag: "Commands",
+    summary: "Respond startup recovery",
+    auth: true,
+    keywords: ["recovery", "startup", "prompt"],
+  } as EndpointMeta,
+  requestPrompt: {
+    method: "POST",
+    path: "/commands/prompt/request",
+    tag: "Commands",
+    summary: "Request prompt",
+    auth: true,
+    keywords: ["prompt", "request"],
+  } as EndpointMeta,
+  tick: {
+    method: "POST",
+    path: "/commands/tick",
+    tag: "Commands",
+    summary: "Tick (advance time)",
+    auth: true,
+    keywords: ["tick", "advance"],
+  } as EndpointMeta,
+  tickAt: {
+    method: "POST",
+    path: "/commands/tick-at",
+    tag: "Commands",
+    summary: "Tick at timestamp",
+    auth: true,
+    keywords: ["tick", "at"],
+  } as EndpointMeta,
+  tickRange: {
+    method: "POST",
+    path: "/commands/tick-range",
+    tag: "Commands",
+    summary: "Tick range",
+    auth: true,
+    keywords: ["tick", "range"],
+  } as EndpointMeta,
 
   // Read
-  getTiles: { method: "GET", path: "/read/tiles", tag: "Read", summary: "List tiles", auth: true, keywords: ["tiles", "list"] } as EndpointMeta,
-  getTile: { method: "GET", path: "/read/tile/{id}", tag: "Read", summary: "Get tile by id", auth: true, keywords: ["tile", "detail"] } as EndpointMeta,
-  getEditableTile: { method: "GET", path: "/read/tile/{id}/editable", tag: "Read", summary: "Get editable tile", auth: true, keywords: ["tile", "edit"] } as EndpointMeta,
-  getTilesInProgress: { method: "GET", path: "/read/tiles-in-progress", tag: "Read", summary: "Tiles in progress", auth: true, keywords: ["tiles", "active", "progress"] } as EndpointMeta,
-  getActiveTile: { method: "GET", path: "/read/active-tile", tag: "Read", summary: "Active tile", auth: true, keywords: ["active", "tile"] } as EndpointMeta,
-  getExecution: { method: "GET", path: "/read/execution", tag: "Read", summary: "Execution state", auth: true, keywords: ["execution", "state"] } as EndpointMeta,
-  getExecutionView: { method: "GET", path: "/read/execution-view", tag: "Read", summary: "Execution view", auth: true, keywords: ["execution", "view"] } as EndpointMeta,
-  getEventsState: { method: "GET", path: "/read/events/state", tag: "Read", summary: "Events state", auth: true, keywords: ["events", "state"] } as EndpointMeta,
-  getPlacements: { method: "GET", path: "/read/placements", tag: "Read", summary: "Placement rows (work ↔ time-block allocations)", auth: true, keywords: ["placements", "schedule", "allocations"] } as EndpointMeta,
-  getCandidates: { method: "GET", path: "/read/candidates", tag: "Read", summary: "Unscheduled work candidates", auth: true, keywords: ["candidates", "unscheduled", "queue"] } as EndpointMeta,
+  getTiles: {
+    method: "GET",
+    path: "/read/tiles",
+    tag: "Read",
+    summary: "List tiles",
+    auth: true,
+    keywords: ["tiles", "list"],
+  } as EndpointMeta,
+  getTile: {
+    method: "GET",
+    path: "/read/tile/{id}",
+    tag: "Read",
+    summary: "Get tile by id",
+    auth: true,
+    keywords: ["tile", "detail"],
+  } as EndpointMeta,
+  getEditableTile: {
+    method: "GET",
+    path: "/read/tile/{id}/editable",
+    tag: "Read",
+    summary: "Get editable tile",
+    auth: true,
+    keywords: ["tile", "edit"],
+  } as EndpointMeta,
+  getTilesInProgress: {
+    method: "GET",
+    path: "/read/tiles-in-progress",
+    tag: "Read",
+    summary: "Tiles in progress",
+    auth: true,
+    keywords: ["tiles", "active", "progress"],
+  } as EndpointMeta,
+  getActiveTile: {
+    method: "GET",
+    path: "/read/active-tile",
+    tag: "Read",
+    summary: "Active tile",
+    auth: true,
+    keywords: ["active", "tile"],
+  } as EndpointMeta,
+  getExecution: {
+    method: "GET",
+    path: "/read/execution",
+    tag: "Read",
+    summary: "Execution state",
+    auth: true,
+    keywords: ["execution", "state"],
+  } as EndpointMeta,
+  getExecutionView: {
+    method: "GET",
+    path: "/read/execution-view",
+    tag: "Read",
+    summary: "Execution view",
+    auth: true,
+    keywords: ["execution", "view"],
+  } as EndpointMeta,
+  getEventsState: {
+    method: "GET",
+    path: "/read/events/state",
+    tag: "Read",
+    summary: "Events state",
+    auth: true,
+    keywords: ["events", "state"],
+  } as EndpointMeta,
+  getPlacements: {
+    method: "GET",
+    path: "/read/placements",
+    tag: "Read",
+    summary: "Placement rows (work ↔ time-block allocations)",
+    auth: true,
+    keywords: ["placements", "schedule", "allocations"],
+  } as EndpointMeta,
+  getCandidates: {
+    method: "GET",
+    path: "/read/candidates",
+    tag: "Read",
+    summary: "Unscheduled work candidates",
+    auth: true,
+    keywords: ["candidates", "unscheduled", "queue"],
+  } as EndpointMeta,
 
   // Views
-  getTileList: { method: "GET", path: "/views/tile-list", tag: "Views", summary: "Tile list view", auth: true, keywords: ["view", "tile", "list"] } as EndpointMeta,
-  getActiveTileView: { method: "GET", path: "/views/active-tile", tag: "Views", summary: "Active tile view", auth: true, keywords: ["view", "active"] } as EndpointMeta,
-  getPendingPrompt: { method: "GET", path: "/views/pending-prompt", tag: "Views", summary: "Pending prompt", auth: true, keywords: ["prompt", "pending"] } as EndpointMeta,
-  getTimelineToday: { method: "GET", path: "/views/timeline/today", tag: "Views", summary: "Timeline today", auth: true, keywords: ["timeline", "today"] } as EndpointMeta,
-  getCalendarDay: { method: "GET", path: "/views/calendar/day", tag: "Views", summary: "Calendar day", auth: true, keywords: ["calendar", "day"] } as EndpointMeta,
-  getCalendarWeek: { method: "GET", path: "/views/calendar/week", tag: "Views", summary: "Calendar week", auth: true, keywords: ["calendar", "week"] } as EndpointMeta,
-  getCalendarMonth: { method: "GET", path: "/views/calendar/month", tag: "Views", summary: "Calendar month", auth: true, keywords: ["calendar", "month"] } as EndpointMeta,
-  getCalendarYear: { method: "GET", path: "/views/calendar/year", tag: "Views", summary: "Calendar year", auth: true, keywords: ["calendar", "year"] } as EndpointMeta,
+  getTileList: {
+    method: "GET",
+    path: "/views/tile-list",
+    tag: "Views",
+    summary: "Tile list view",
+    auth: true,
+    keywords: ["view", "tile", "list"],
+  } as EndpointMeta,
+  getActiveTileView: {
+    method: "GET",
+    path: "/views/active-tile",
+    tag: "Views",
+    summary: "Active tile view",
+    auth: true,
+    keywords: ["view", "active"],
+  } as EndpointMeta,
+  getPendingPrompt: {
+    method: "GET",
+    path: "/views/pending-prompt",
+    tag: "Views",
+    summary: "Pending prompt",
+    auth: true,
+    keywords: ["prompt", "pending"],
+  } as EndpointMeta,
+  getTimelineToday: {
+    method: "GET",
+    path: "/views/timeline/today",
+    tag: "Views",
+    summary: "Timeline today",
+    auth: true,
+    keywords: ["timeline", "today"],
+  } as EndpointMeta,
+  getCalendarDay: {
+    method: "GET",
+    path: "/views/calendar/day",
+    tag: "Views",
+    summary: "Calendar day",
+    auth: true,
+    keywords: ["calendar", "day"],
+  } as EndpointMeta,
+  getCalendarWeek: {
+    method: "GET",
+    path: "/views/calendar/week",
+    tag: "Views",
+    summary: "Calendar week",
+    auth: true,
+    keywords: ["calendar", "week"],
+  } as EndpointMeta,
+  getCalendarMonth: {
+    method: "GET",
+    path: "/views/calendar/month",
+    tag: "Views",
+    summary: "Calendar month",
+    auth: true,
+    keywords: ["calendar", "month"],
+  } as EndpointMeta,
+  getCalendarYear: {
+    method: "GET",
+    path: "/views/calendar/year",
+    tag: "Views",
+    summary: "Calendar year",
+    auth: true,
+    keywords: ["calendar", "year"],
+  } as EndpointMeta,
 
   // Prompts
-  getCurrentPrompt: { method: "GET", path: "/prompts/current", tag: "Prompts", summary: "Current prompt", auth: true, keywords: ["prompt", "current"] } as EndpointMeta,
+  getCurrentPrompt: {
+    method: "GET",
+    path: "/prompts/current",
+    tag: "Prompts",
+    summary: "Current prompt",
+    auth: true,
+    keywords: ["prompt", "current"],
+  } as EndpointMeta,
 
   // Debug
-  getDebugEvents: { method: "GET", path: "/debug/events", tag: "Debug", summary: "Debug events", auth: true, keywords: ["debug", "events", "log"] } as EndpointMeta,
+  getDebugEvents: {
+    method: "GET",
+    path: "/debug/events",
+    tag: "Debug",
+    summary: "Debug events",
+    auth: true,
+    keywords: ["debug", "events", "log"],
+  } as EndpointMeta,
 } as const;
 
 export type EndpointKey = keyof typeof ENDPOINTS;
 
-export const ENDPOINTS_BY_TAG: Record<ApiTag, EndpointKey[]> = Object.entries(
-  ENDPOINTS,
-).reduce(
+export const ENDPOINTS_BY_TAG: Record<ApiTag, EndpointKey[]> = Object.entries(ENDPOINTS).reduce(
   (acc, [key, meta]) => {
     acc[meta.tag as ApiTag].push(key as EndpointKey);
     return acc;
@@ -275,7 +630,11 @@ let _client: CoreClient | null = null;
 function isLocalUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
-    return parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost" || parsed.hostname === "10.0.2.2";
+    return (
+      parsed.hostname === "127.0.0.1" ||
+      parsed.hostname === "localhost" ||
+      parsed.hostname === "10.0.2.2"
+    );
   } catch {
     return false;
   }
@@ -283,7 +642,10 @@ function isLocalUrl(url: string): boolean {
 
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
-  const rawBaseUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "http://127.0.0.1:3140";
+  const rawBaseUrl =
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
+    "http://127.0.0.1:3140";
   const usesCloudProxy = !isLocalUrl(rawBaseUrl);
   const baseUrl = usesCloudProxy ? "/api/proxy" : rawBaseUrl;
   _client = new CoreClient({

@@ -1,8 +1,8 @@
 "use client";
 
-import * as React from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
+import type * as React from "react";
 import { cn } from "@/lib/utils/cn";
 
 interface BottomSheetProps {
@@ -27,7 +27,7 @@ export function BottomSheet({
       <DialogPrimitive.Portal>
         {/* 背景の遮蔽 */}
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 transition-opacity duration-200" />
-        
+
         {/* ボトムシートのコンテンツ本体 */}
         <DialogPrimitive.Content
           className={cn(
@@ -36,7 +36,7 @@ export function BottomSheet({
             "data-[state=open]:animate-in data-[state=closed]:animate-out",
             "data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
             "transition-all duration-300 ease-out",
-            className
+            className,
           )}
         >
           {/* ボトムシート上部のドラッグインジケータ */}
@@ -63,9 +63,7 @@ export function BottomSheet({
           )}
 
           {/* メインコンテンツスクロールエリア */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {children}
-          </div>
+          <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>

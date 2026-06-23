@@ -1,23 +1,12 @@
 "use client";
 
-import {
-  Activity,
-  AlertTriangle,
-  CheckCircle2,
-  Loader2,
-  Network,
-  RefreshCw,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { Activity, AlertTriangle, CheckCircle2, Loader2, Network, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
-import {
-  ENDPOINTS,
-  getCoreClient,
-  type Result,
-} from "@/lib/api/endpoints";
+import { ENDPOINTS, getCoreClient, type Result } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils/cn";
 
 interface HealthData {
@@ -51,7 +40,7 @@ export default function RuntimePage() {
   const [paths, setPaths] = useState<Result<RuntimePaths> | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     const client = getCoreClient();
     const [h, v, p] = await Promise.all([
@@ -63,12 +52,11 @@ export default function RuntimePage() {
     setVersion(v);
     setPaths(p);
     setLoading(false);
-  }
+  }, []);
 
   useEffect(() => {
-     
     void load();
-  }, []);
+  }, [load]);
 
   return (
     <PageContainer>
@@ -86,9 +74,7 @@ export default function RuntimePage() {
               />
               {health?.ok ? "Healthy" : health ? "Error" : "Loading"}
             </Pill>
-            <Pill variant="default">
-              {version?.ok ? `v${version.data.version}` : "—"}
-            </Pill>
+            <Pill variant="default">{version?.ok ? `v${version.data.version}` : "—"}</Pill>
             <Pill variant="default">
               <Network className="h-3 w-3" />
               http://127.0.0.1:3140
@@ -145,9 +131,15 @@ export default function RuntimePage() {
             ) : version.ok ? (
               <dl className="space-y-1.5 text-xs">
                 <Row label="Version" value={version.data.version} mono />
-                {version.data.api_version ? <Row label="API" value={version.data.api_version} mono /> : null}
-                {version.data.commit ? <Row label="Commit" value={version.data.commit} mono /> : null}
-                {version.data.built_at ? <Row label="Built" value={version.data.built_at} mono /> : null}
+                {version.data.api_version ? (
+                  <Row label="API" value={version.data.api_version} mono />
+                ) : null}
+                {version.data.commit ? (
+                  <Row label="Commit" value={version.data.commit} mono />
+                ) : null}
+                {version.data.built_at ? (
+                  <Row label="Built" value={version.data.built_at} mono />
+                ) : null}
               </dl>
             ) : (
               <ErrorRow error={version.error} />
@@ -203,7 +195,10 @@ export default function RuntimePage() {
           description="What the web client talks to. Override with NEXT_PUBLIC_TASTILE_CORE_URL."
         />
         <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-          <EnvRow label="Base URL" value={process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:3140"} />
+          <EnvRow
+            label="Base URL"
+            value={process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:3140"}
+          />
           <EnvRow label="Auth" value="Cognito JWT · Bearer" />
           <EnvRow label="Token source" value="window.__tastileIdToken" />
           <EnvRow label="Spec" value="OpenAPI 3.0.3 · 45 endpoints" />
@@ -227,12 +222,16 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
     <div className="flex items-center justify-between rounded-md border border-border bg-surface-0 p-3">
       <div className="min-w-0">
         <div className="text-xs font-semibold text-ink-1">{label}</div>
-        <code className="font-mono text-[10px] text-ink-3">{meta.method} {meta.path}</code>
+        <code className="font-mono text-[10px] text-ink-3">
+          {meta.method} {meta.path}
+        </code>
       </div>
       <div className="flex items-center gap-2">
         {result ? (
           <Pill variant={result.ok ? "active" : "danger"}>
-            {result.ok ? `${result.status} ${result.latencyMs}ms` : `${result.error.status} ${result.error.kind}`}
+            {result.ok
+              ? `${result.status} ${result.latencyMs}ms`
+              : `${result.error.status} ${result.error.kind}`}
           </Pill>
         ) : null}
         <Button variant="secondary" size="small" onClick={run} loading={loading}>
@@ -285,7 +284,9 @@ function ErrorRow({ error }: { error: { kind: string; message: string; status: n
     <div className="flex items-start gap-2 rounded-md border border-status-danger/30 bg-status-danger-soft p-2.5 text-xs text-status-danger">
       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div className="min-w-0">
-        <div className="font-semibold">{error.kind} · {error.status}</div>
+        <div className="font-semibold">
+          {error.kind} · {error.status}
+        </div>
         <div className="truncate">{error.message}</div>
       </div>
     </div>

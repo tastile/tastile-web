@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 import {
   COOKIE_OAUTH_NEXT,
   COOKIE_OAUTH_STATE,
@@ -8,7 +9,6 @@ import {
 } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { exchangeCodeForTokens, parseIdTokenClaims } from "@/lib/cognito/server";
-import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 
 export async function GET(request: NextRequest) {
   const env = tryGetCognitoEnv();

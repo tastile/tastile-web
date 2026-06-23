@@ -2,12 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
+import {
+  allDayBlocksFor,
+  blocksForDate,
+  hourSlotsForDay,
+} from "@/lib/projection/calendar-projection";
 import { getCurrentTimeIndicatorPosition } from "@/lib/projection/current-time-indicator";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
 import { useTileEditStore } from "@/lib/stores/tile-edit-store";
-import { blocksForDate, allDayBlocksFor, hourSlotsForDay } from "@/lib/projection/calendar-projection";
-import { TileBlock } from "./TileBlock";
 import { AllDayLane } from "./AllDayLane";
+import { TileBlock } from "./TileBlock";
 
 function formatHour(slot: Date): string {
   const h = slot.getUTCHours();
@@ -35,7 +39,11 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
   }
 
   if (loading || !projection) {
-    return <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">Loading…</div>;
+    return (
+      <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">
+        Loading…
+      </div>
+    );
   }
 
   const slots = hourSlotsForDay(anchor, tzOffset);
@@ -77,7 +85,13 @@ export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number
                         block={block}
                         onClick={() => {
                           if (block.tile_id) {
-                            openEdit(block.tile_id, block.title, block.start_at, block.end_at || "", []);
+                            openEdit(
+                              block.tile_id,
+                              block.title,
+                              block.start_at,
+                              block.end_at || "",
+                              [],
+                            );
                           }
                         }}
                         dimmed={isDimmed}

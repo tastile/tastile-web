@@ -17,10 +17,10 @@ interface CalendarSidePanelProps {
 }
 
 const BLOCK_TYPES = [
-  { key: "work",  label: "Work",  color: "bg-primary" },
-  { key: "break", label: "Break", color: "bg-warning"  },
-  { key: "fixed", label: "Fixed", color: "bg-success"  },
-  { key: "done",  label: "Done",  color: "bg-foreground-lighter" },
+  { key: "work", label: "Work", color: "bg-primary" },
+  { key: "break", label: "Break", color: "bg-warning" },
+  { key: "fixed", label: "Fixed", color: "bg-success" },
+  { key: "done", label: "Done", color: "bg-foreground-lighter" },
 ] as const;
 
 export function CalendarSidePanel({
@@ -68,6 +68,7 @@ export function CalendarSidePanel({
                         className="h-2 w-2 fill-none stroke-white stroke-2"
                         aria-hidden
                       >
+                        <title>Visible</title>
                         <polyline points="1,4 3.5,6.5 9,1" />
                       </svg>
                     )}
@@ -98,9 +99,9 @@ interface TimelineSidePanelProps {
 }
 
 const SCALES: { key: TimelineScale; label: string }[] = [
-  { key: "day",    label: "Day"    },
-  { key: "week",   label: "Week"   },
-  { key: "month",  label: "Month"  },
+  { key: "day", label: "Day" },
+  { key: "week", label: "Week" },
+  { key: "month", label: "Month" },
   { key: "custom", label: "Custom" },
 ];
 

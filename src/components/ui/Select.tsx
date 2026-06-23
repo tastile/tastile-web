@@ -25,14 +25,14 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           size === "small" && "h-8 pl-2.5 pr-8 text-xs",
           size === "medium" && "h-9 pl-3 pr-8 text-sm",
           size === "large" && "h-10 pl-3 pr-8 text-sm",
-          className
+          className,
         )}
         {...props}
       >
         {children}
       </select>
     );
-  }
+  },
 );
 
 Select.displayName = "Select";

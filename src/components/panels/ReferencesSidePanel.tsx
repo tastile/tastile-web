@@ -1,9 +1,9 @@
 "use client";
 
 import { useTileList } from "@/lib/hooks/use-tile-list";
+import { groupTilesByLabel } from "@/lib/projection/label-grouping";
 import { useLabelsStore } from "@/lib/stores/labels-store";
 import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
-import { groupTilesByLabel } from "@/lib/projection/label-grouping";
 import { cn } from "@/lib/utils/cn";
 
 export function ReferencesSidePanel() {

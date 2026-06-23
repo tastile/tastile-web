@@ -9,7 +9,11 @@ const SECTIONS = [
     label: "Project Settings",
     items: [
       { id: "general", path: "/dashboard/preferences/general", label: "General" },
-      { id: "statistics", path: "/dashboard/preferences/account?tab=statistics", label: "Statistics" },
+      {
+        id: "statistics",
+        path: "/dashboard/preferences/account?tab=statistics",
+        label: "Statistics",
+      },
     ],
   },
   {
@@ -22,7 +26,11 @@ const SECTIONS = [
   {
     label: "Billing",
     items: [
-      { id: "subscription", path: "/dashboard/preferences/account?tab=subscription", label: "Subscription" },
+      {
+        id: "subscription",
+        path: "/dashboard/preferences/account?tab=subscription",
+        label: "Subscription",
+      },
       { id: "usage", path: "/dashboard/preferences/account?tab=usage", label: "Usage" },
     ],
   },
@@ -43,7 +51,7 @@ export function PreferencesSidePanel() {
           {section.items.map((tab) => {
             const isPathMatch = pathname === tab.path.split("?")[0];
             const tabParam = tab.path.includes("?tab=") ? tab.path.split("?tab=")[1] : null;
-            
+
             let isActive = false;
             if (tab.id === "profile") {
               isActive = isPathMatch && !currentTab;

@@ -1,5 +1,5 @@
 import { TileId } from "@/lib/domain/ids";
-import type { Tile, ObjectiveMode, DoneRule, SemanticRole } from "@/lib/domain/tile";
+import type { DoneRule, ObjectiveMode, SemanticRole, Tile } from "@/lib/domain/tile";
 import type { TileListView } from "@/lib/hooks/use-tile-list";
 
 export function mapListViewToTile(item: TileListView): Tile {
@@ -32,12 +32,15 @@ export function mapListViewToTile(item: TileListView): Tile {
       recurrence: item.recurrence
         ? {
             generator: {
-              stepMin: item.recurrence.step_min,
-              anchorEpochMin: null,
+              kind: "time_based" as const,
+              step_min: item.recurrence.step_min,
+              anchor_epoch_min: null,
             },
             window: {
-              startOffsetMin: item.recurrence.window_start_min,
-              endOffsetMin: item.recurrence.window_end_min,
+              weekday_mask: 0,
+              start_offset_min: item.recurrence.window_start_min,
+              end_offset_min: item.recurrence.window_end_min,
+              exclusions: [],
             },
             selector: {
               expression: item.recurrence.expression,

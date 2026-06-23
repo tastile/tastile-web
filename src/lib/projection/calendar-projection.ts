@@ -1,6 +1,12 @@
-import type { CalendarBlockView, CalendarProjectionView } from "@/lib/hooks/use-calendar-projection";
+import type {
+  CalendarBlockView,
+  CalendarProjectionView,
+} from "@/lib/hooks/use-calendar-projection";
 
-export function blocksForDate(projection: CalendarProjectionView, dateStr: string): CalendarBlockView[] {
+export function blocksForDate(
+  projection: CalendarProjectionView,
+  dateStr: string,
+): CalendarBlockView[] {
   return projection.blocks.filter((b) => {
     const start = b.start_at.slice(0, 10);
     const end = b.end_at.slice(0, 10);
@@ -8,7 +14,10 @@ export function blocksForDate(projection: CalendarProjectionView, dateStr: strin
   });
 }
 
-export function allDayBlocksFor(projection: CalendarProjectionView, dateStr: string): CalendarBlockView[] {
+export function allDayBlocksFor(
+  projection: CalendarProjectionView,
+  dateStr: string,
+): CalendarBlockView[] {
   return projection.all_day_spans.filter((b) => {
     const start = b.start_at.slice(0, 10);
     const end = b.end_at.slice(0, 10);

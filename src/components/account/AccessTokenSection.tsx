@@ -19,7 +19,7 @@ type CreatedToken = ApiToken & {
 
 export function AccessTokenSection() {
   const [tokens, setTokens] = useState<ApiToken[]>([]);
-  const [name, setName] = useState("Default API key");
+  const [name, setName] = useState("");
   const [createdToken, setCreatedToken] = useState<CreatedToken | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -60,7 +60,7 @@ export function AccessTokenSection() {
       if (!response.ok) throw new Error("トークンを作成できませんでした。");
       const created = (await response.json()) as CreatedToken;
       setCreatedToken(created);
-      setName("Default API key");
+      setName("");
       await loadTokens();
     } catch (err) {
       setError(err instanceof Error ? err.message : "トークン作成に失敗しました。");
@@ -117,7 +117,9 @@ export function AccessTokenSection() {
         </p>
       </div>
 
-      {error ? <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div> : null}
+      {error ? (
+        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
+      ) : null}
 
       {createdToken ? (
         <section className="rounded-lg bg-success/10 p-4">
