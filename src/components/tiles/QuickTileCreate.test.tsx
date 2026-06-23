@@ -193,6 +193,14 @@ describe("QuickTileCreate — accessibility", () => {
 		).toBeTruthy();
 	});
 
+	it("DoneRule row has no section heading; 3 options remain", () => {
+		render(<QuickTileCreate />);
+		expect(screen.queryByRole("heading", { name: /quickCreate\.doneRuleTitle/ })).toBeNull();
+		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleManual/ })).toBeTruthy();
+		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleTimeReached/ })).toBeTruthy();
+		expect(screen.getByRole("button", { name: /quickCreate\.doneRuleIntervalEnd/ })).toBeTruthy();
+	});
+
 	it("base panel exposes Schedule start/end toggles + period label", () => {
 		render(<QuickTileCreate />);
 

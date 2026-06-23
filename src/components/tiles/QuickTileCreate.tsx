@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock3, X, ChevronLeft, ChevronRight, Type, Timer } from "lucide-react";
+import { Clock3, Clock4, CircleDot, StopCircle, X, ChevronLeft, ChevronRight, Type, Timer } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { getSessionClient } from "@/lib/daemon/id-token-client";
 import { cn } from "@/lib/utils/cn";
@@ -515,32 +515,29 @@ export function QuickTileCreate() {
               ) : null}
 
               {!isLabelOnly ? (
-                <SectionBlock
-                  title={t("quickCreate.doneRuleTitle")}
-                  helpText={t("quickCreate.doneRuleGuide")}
-                  choiceGrid={false}
-                >
-                  <div className="grid grid-cols-3 gap-2">
-                    <ChoiceButton
-                      active={doneRule === "manual"}
-                      onClick={() => setDoneRule("manual")}
-                    >
-                      {t("quickCreate.doneRuleManual")}
-                    </ChoiceButton>
-                    <ChoiceButton
-                      active={doneRule === "time_reached"}
-                      onClick={() => setDoneRule("time_reached")}
-                    >
-                      {t("quickCreate.doneRuleTimeReached")}
-                    </ChoiceButton>
-                    <ChoiceButton
-                      active={doneRule === "interval_end"}
-                      onClick={() => setDoneRule("interval_end")}
-                    >
-                      {t("quickCreate.doneRuleIntervalEnd")}
-                    </ChoiceButton>
-                  </div>
-                </SectionBlock>
+                <div className="grid grid-cols-3 gap-1 rounded-full border border-border bg-surface-1 p-1">
+                  <ChoiceButton
+                    active={doneRule === "manual"}
+                    onClick={() => setDoneRule("manual")}
+                  >
+                    <CircleDot className="mr-1 inline-block h-3.5 w-3.5" aria-hidden="true" />
+                    {t("quickCreate.doneRuleManual")}
+                  </ChoiceButton>
+                  <ChoiceButton
+                    active={doneRule === "time_reached"}
+                    onClick={() => setDoneRule("time_reached")}
+                  >
+                    <Clock4 className="mr-1 inline-block h-3.5 w-3.5" aria-hidden="true" />
+                    {t("quickCreate.doneRuleTimeReached")}
+                  </ChoiceButton>
+                  <ChoiceButton
+                    active={doneRule === "interval_end"}
+                    onClick={() => setDoneRule("interval_end")}
+                  >
+                    <StopCircle className="mr-1 inline-block h-3.5 w-3.5" aria-hidden="true" />
+                    {t("quickCreate.doneRuleIntervalEnd")}
+                  </ChoiceButton>
+                </div>
               ) : null}
 
               {/* Schedule (inlined — was a sub-panel before) */}
