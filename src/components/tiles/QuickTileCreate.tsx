@@ -793,37 +793,31 @@ export function QuickTileCreate() {
             </SectionBlock>
 
             {/* Memo (inlined — was in meta sub-panel) */}
-            <SectionBlock
-              title={t("quickCreate.memoTitle")}
-              helpText={t("quickCreate.memoGuide")}
-              choiceGrid={false}
-            >
-              {memoExpanded || memoInput.trim().length > 0 ? (
-                <textarea
-                  value={memoInput}
-                  onChange={(e) => {
-                    setMemoInput(e.target.value);
-                    if (e.target.value.trim().length === 0) {
-                      setMemoExpanded(false);
-                    }
-                  }}
-                  placeholder={t("quickCreate.memoPlaceholder")}
-                  aria-label={t("quickCreate.memoPlaceholder")}
-                  rows={3}
-                  className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setMemoExpanded(true)}
-                  aria-label={t("quickCreate.memoPlaceholder")}
-                  className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5"
-                >
-                  <MessageSquare className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-                  <span>{t("quickCreate.memoAdd")}</span>
-                </button>
-              )}
-            </SectionBlock>
+            {memoExpanded || memoInput.trim().length > 0 ? (
+              <textarea
+                value={memoInput}
+                onChange={(e) => {
+                  setMemoInput(e.target.value);
+                  if (e.target.value.trim().length === 0) {
+                    setMemoExpanded(false);
+                  }
+                }}
+                placeholder={t("quickCreate.memoPlaceholder")}
+                aria-label={t("quickCreate.memoPlaceholder")}
+                rows={3}
+                className="w-full resize-none rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setMemoExpanded(true)}
+                aria-label={t("quickCreate.memoPlaceholder")}
+                className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5"
+              >
+                <MessageSquare className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+                <span>{t("quickCreate.memoAdd")}</span>
+              </button>
+            )}
 
             {/* Sub-panel navigation buttons — compact icon-prefixed pills */}
             <div className="pt-4 space-y-2">
