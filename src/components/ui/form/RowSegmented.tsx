@@ -39,7 +39,7 @@ export function RowSegmented<V extends string>({
               className={cn(
                 "flex-1 rounded-sm px-3 py-1.5 text-sm transition-colors",
                 active
-                  ? "bg-surface-1 text-foreground shadow-sm"
+                  ? "bg-primary text-primary-fg shadow-sm"
                   : "text-foreground-muted hover:text-foreground",
               )}
             >
