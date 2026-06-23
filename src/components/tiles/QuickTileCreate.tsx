@@ -500,7 +500,7 @@ export function QuickTileCreate() {
           if (activePanel !== "base") setActivePanel("base");
         }}
       >
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
           <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
           <button
             type="button"
@@ -511,7 +511,7 @@ export function QuickTileCreate() {
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-section">
           <div className="space-y-4">
             <Input
               id="quick-tile-title"
@@ -528,7 +528,7 @@ export function QuickTileCreate() {
             />
 
             {!isLabelOnly ? (
-              <div className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5">
+              <div className="flex items-center gap-control rounded-md border border-border bg-surface-1 px-control py-control">
                 <Timer className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                 <DurationInput
                   hours={workHoursInput}
@@ -548,7 +548,7 @@ export function QuickTileCreate() {
             ) : null}
 
             {!isLabelOnly ? (
-              <div className="grid grid-cols-3 gap-1 rounded-full border border-border bg-surface-1 p-1">
+              <div className="grid grid-cols-3 gap-control-compact rounded-full border border-border bg-surface-1 p-control-compact">
                 <ChoiceButton active={doneRule === "manual"} onClick={() => setDoneRule("manual")}>
                   <CircleDot className="mr-1 inline-block h-4 w-4" aria-hidden="true" />
                   {t("quickCreate.doneRuleManual")}
@@ -578,7 +578,7 @@ export function QuickTileCreate() {
                   onClick={() => setScheduleOpen((prev) => !prev)}
                   aria-expanded={scheduleOpen}
                   aria-label={t("quickCreate.scheduleTitle")}
-                  className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5"
+                  className="flex items-center gap-control rounded-md border border-border bg-surface-1 px-control py-control"
                 >
                   <Calendar className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                   <span className="text-sm">{scheduleSummary}</span>
@@ -595,7 +595,7 @@ export function QuickTileCreate() {
                             setStartDateInput(e.target.value);
                             setUseStartAt(true);
                           }}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                         <input
                           type="time"
@@ -606,7 +606,7 @@ export function QuickTileCreate() {
                             setStartTimeInput(e.target.value);
                             setUseStartAt(true);
                           }}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                       </div>
                     </div>
@@ -620,7 +620,7 @@ export function QuickTileCreate() {
                             setEndDateInput(e.target.value);
                             setUseEndAt(true);
                           }}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                         <input
                           type="time"
@@ -631,7 +631,7 @@ export function QuickTileCreate() {
                             setEndTimeInput(e.target.value);
                             setUseEndAt(true);
                           }}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                       </div>
                     </div>
@@ -641,7 +641,7 @@ export function QuickTileCreate() {
             ) : null}
 
             {/* Period label (inlined) */}
-            <label className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5 cursor-pointer">
+            <label className="flex items-center gap-2 rounded-md border border-border bg-surface-1 px-control py-control cursor-pointer">
               <Bookmark
                 className="h-4 w-4 text-foreground-muted"
                 aria-hidden="true"
@@ -817,7 +817,7 @@ export function QuickTileCreate() {
                 type="button"
                 onClick={() => setMemoExpanded(true)}
                 aria-label={t("quickCreate.memoPlaceholder")}
-                className="flex items-center gap-2 rounded-full border border-border bg-surface-1 px-3 py-1.5"
+                className="flex items-center gap-2 rounded-md border border-border bg-surface-1 px-control py-control"
               >
                 <MessageSquare className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.memoAdd")}</span>
@@ -832,7 +832,7 @@ export function QuickTileCreate() {
                   e.stopPropagation();
                   setActivePanel("recurrence");
                 }}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Repeat className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.recurrenceNavTitle")}</span>
@@ -843,7 +843,7 @@ export function QuickTileCreate() {
                   e.stopPropagation();
                   setActivePanel("interrupt");
                 }}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <AlertTriangle className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.interruptNavTitle")}</span>
@@ -854,7 +854,7 @@ export function QuickTileCreate() {
                   e.stopPropagation();
                   setActivePanel("automation");
                 }}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Zap className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.automationNavTitle")}</span>
@@ -865,7 +865,7 @@ export function QuickTileCreate() {
                   e.stopPropagation();
                   setActivePanel("meta");
                 }}
-                className="flex items-center gap-1.5 rounded-full border border-border bg-surface-1 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
+                className="flex items-center gap-control-compact rounded-full border border-border bg-surface-1 px-control-compact py-control-compact text-xs font-medium text-foreground hover:bg-surface-2 transition-colors"
               >
                 <Tag className="h-3.5 w-3.5 text-foreground-muted" aria-hidden="true" />
                 <span>{t("quickCreate.metaNavTitle")}</span>
@@ -874,12 +874,12 @@ export function QuickTileCreate() {
           </div>
         </div>
         {/* Footer Actions */}
-        <div className="border-t border-border bg-surface-0 p-4 shrink-0">
+        <div className="border-t border-border bg-surface-0 p-section shrink-0">
           <button
             type="button"
             onClick={handleCreate}
             disabled={submitting}
-            className="w-full rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
+            className="w-full rounded-full bg-primary px-4 py-control text-sm font-semibold text-primary-fg transition-opacity disabled:opacity-50"
           >
             {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
           </button>
@@ -893,7 +893,7 @@ export function QuickTileCreate() {
 
       {/* Sub Panel: Recurrence */}
       <section className={subPanelClass("recurrence")}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
           <button
             type="button"
             onClick={() => setActivePanel("base")}
@@ -906,8 +906,8 @@ export function QuickTileCreate() {
             {t("quickCreate.recurrenceNavTitle")}
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-section">
+          <div className="space-y-section">
             <SectionBlock>
               <ChoiceButton
                 active={objectiveMode === "finish_once"}
@@ -1096,7 +1096,7 @@ export function QuickTileCreate() {
                           step={60}
                           value={recurrenceStartTimeInput}
                           onChange={(e) => setRecurrenceStartTimeInput(e.target.value)}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                       ) : (
                         <div />
@@ -1108,7 +1108,7 @@ export function QuickTileCreate() {
                           step={60}
                           value={recurrenceEndTimeInput}
                           onChange={(e) => setRecurrenceEndTimeInput(e.target.value)}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                       ) : (
                         <div />
@@ -1140,7 +1140,7 @@ export function QuickTileCreate() {
                           aria-label={t("quickCreate.recurrenceValidFrom")}
                           value={recurrenceValidFromDateInput}
                           onChange={(e) => setRecurrenceValidFromDateInput(e.target.value)}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                       ) : (
                         <div />
@@ -1151,7 +1151,7 @@ export function QuickTileCreate() {
                           aria-label={t("quickCreate.recurrenceValidTo")}
                           value={recurrenceValidToDateInput}
                           onChange={(e) => setRecurrenceValidToDateInput(e.target.value)}
-                          className="themed-datetime-input w-full rounded-lg bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
                         />
                       ) : (
                         <div />
@@ -1167,7 +1167,7 @@ export function QuickTileCreate() {
 
       {/* Sub Panel: Interrupt rules */}
       <section className={subPanelClass("interrupt")}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
           <button
             type="button"
             onClick={() => setActivePanel("base")}
@@ -1180,8 +1180,8 @@ export function QuickTileCreate() {
             {t("quickCreate.interruptNavTitle")}
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-section">
+          <div className="space-y-section">
             <SectionBlock
               title={t("quickCreate.interruptPenaltyTitle")}
               helpText={t("quickCreate.interruptPenaltyGuide")}
@@ -1240,7 +1240,7 @@ export function QuickTileCreate() {
 
       {/* Sub Panel: Automation */}
       <section className={subPanelClass("automation")}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
           <button
             type="button"
             onClick={() => setActivePanel("base")}
@@ -1253,8 +1253,8 @@ export function QuickTileCreate() {
             {t("quickCreate.automationNavTitle")}
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-section">
+          <div className="space-y-section">
             <SectionBlock choiceGrid={false}>
               <label className="flex items-center gap-2 text-sm text-foreground">
                 <input
@@ -1323,7 +1323,7 @@ export function QuickTileCreate() {
 
       {/* Sub Panel: Meta */}
       <section className={subPanelClass("meta")}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
           <button
             type="button"
             onClick={() => setActivePanel("base")}
@@ -1334,8 +1334,8 @@ export function QuickTileCreate() {
           </button>
           <h2 className="text-sm font-semibold text-foreground">{t("quickCreate.metaNavTitle")}</h2>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-section">
+          <div className="space-y-section">
             <SectionBlock
               title={t("quickCreate.timedLabelsTitle")}
               helpText={t("quickCreate.timedLabelsGuide")}
