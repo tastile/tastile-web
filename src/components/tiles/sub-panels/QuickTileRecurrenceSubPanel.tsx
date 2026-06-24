@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Repeat } from "lucide-react";
+import { ChevronRight, Clock, Repeat } from "lucide-react";
 import type { ObjectiveMode } from "@/lib/domain/tile";
 import { FormPanel, FormRow, RowInput, RowSegmented } from "@/components/ui/form";
 import { SubPanelHeader } from "./SubPanelHeader";
@@ -195,7 +195,7 @@ export function QuickTileRecurrenceSubPanel({
               {recurrenceUseStartAt ? (
                 <div className="relative ml-3 border-l border-border pl-3">
                   <RowInput
-                    icon={Clock}
+                    icon={ChevronRight}
                     type="time"
                     placeholder={t("quickCreate.windowStartAt")}
                     value={recurrenceStartTimeInput}
@@ -225,7 +225,7 @@ export function QuickTileRecurrenceSubPanel({
               {recurrenceUseEndAt ? (
                 <div className="relative ml-3 border-l border-border pl-3">
                   <RowInput
-                    icon={Clock}
+                    icon={ChevronRight}
                     type="time"
                     placeholder={t("quickCreate.windowEndAt")}
                     value={recurrenceEndTimeInput}
@@ -255,7 +255,7 @@ export function QuickTileRecurrenceSubPanel({
               {recurrenceValidFromEnabled ? (
                 <div className="relative ml-3 border-l border-border pl-3">
                   <RowInput
-                    icon={Clock}
+                    icon={ChevronRight}
                     type="date"
                     placeholder={t("quickCreate.recurrenceValidFrom")}
                     value={recurrenceValidFromDateInput}
@@ -285,7 +285,7 @@ export function QuickTileRecurrenceSubPanel({
               {recurrenceValidToEnabled ? (
                 <div className="relative ml-3 border-l border-border pl-3">
                   <RowInput
-                    icon={Clock}
+                    icon={ChevronRight}
                     type="date"
                     placeholder={t("quickCreate.recurrenceValidTo")}
                     value={recurrenceValidToDateInput}
