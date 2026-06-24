@@ -193,16 +193,14 @@ export function QuickTileRecurrenceSubPanel({
                 </div>
               </FormRow>
               {recurrenceUseStartAt ? (
-                <div className="relative ml-3 border-l border-border pl-3">
-                  <RowInput
-                    icon={ChevronRight}
-                    type="time"
-                    placeholder={t("quickCreate.windowStartAt")}
-                    value={recurrenceStartTimeInput}
-                    onChange={(value) => setRecurrenceStartTimeInput(value)}
-                    ariaLabel={t("quickCreate.windowStartAt")}
-                  />
-                </div>
+                <RowInput
+                  icon={ChevronRight}
+                  type="time"
+                  placeholder={t("quickCreate.windowStartAt")}
+                  value={recurrenceStartTimeInput}
+                  onChange={(value) => setRecurrenceStartTimeInput(value)}
+                  ariaLabel={t("quickCreate.windowStartAt")}
+                />
               ) : null}
 
               <FormRow icon={<Clock size={20} />}>
@@ -223,16 +221,14 @@ export function QuickTileRecurrenceSubPanel({
                 </div>
               </FormRow>
               {recurrenceUseEndAt ? (
-                <div className="relative ml-3 border-l border-border pl-3">
-                  <RowInput
-                    icon={ChevronRight}
-                    type="time"
-                    placeholder={t("quickCreate.windowEndAt")}
-                    value={recurrenceEndTimeInput}
-                    onChange={(value) => setRecurrenceEndTimeInput(value)}
-                    ariaLabel={t("quickCreate.windowEndAt")}
-                  />
-                </div>
+                <RowInput
+                  icon={ChevronRight}
+                  type="time"
+                  placeholder={t("quickCreate.windowEndAt")}
+                  value={recurrenceEndTimeInput}
+                  onChange={(value) => setRecurrenceEndTimeInput(value)}
+                  ariaLabel={t("quickCreate.windowEndAt")}
+                />
               ) : null}
 
               <FormRow icon={<Clock size={20} />}>
@@ -253,16 +249,14 @@ export function QuickTileRecurrenceSubPanel({
                 </div>
               </FormRow>
               {recurrenceValidFromEnabled ? (
-                <div className="relative ml-3 border-l border-border pl-3">
-                  <RowInput
-                    icon={ChevronRight}
-                    type="date"
-                    placeholder={t("quickCreate.recurrenceValidFrom")}
-                    value={recurrenceValidFromDateInput}
-                    onChange={(value) => setRecurrenceValidFromDateInput(value)}
-                    ariaLabel={t("quickCreate.recurrenceValidFrom")}
-                  />
-                </div>
+                <RowInput
+                  icon={ChevronRight}
+                  type="date"
+                  placeholder={t("quickCreate.recurrenceValidFrom")}
+                  value={recurrenceValidFromDateInput}
+                  onChange={(value) => setRecurrenceValidFromDateInput(value)}
+                  ariaLabel={t("quickCreate.recurrenceValidFrom")}
+                />
               ) : null}
 
               <FormRow icon={<Clock size={20} />}>
@@ -283,16 +277,14 @@ export function QuickTileRecurrenceSubPanel({
                 </div>
               </FormRow>
               {recurrenceValidToEnabled ? (
-                <div className="relative ml-3 border-l border-border pl-3">
-                  <RowInput
-                    icon={ChevronRight}
-                    type="date"
-                    placeholder={t("quickCreate.recurrenceValidTo")}
-                    value={recurrenceValidToDateInput}
-                    onChange={(value) => setRecurrenceValidToDateInput(value)}
-                    ariaLabel={t("quickCreate.recurrenceValidTo")}
-                  />
-                </div>
+                <RowInput
+                  icon={ChevronRight}
+                  type="date"
+                  placeholder={t("quickCreate.recurrenceValidTo")}
+                  value={recurrenceValidToDateInput}
+                  onChange={(value) => setRecurrenceValidToDateInput(value)}
+                  ariaLabel={t("quickCreate.recurrenceValidTo")}
+                />
               ) : null}
             </>
           ) : null}
