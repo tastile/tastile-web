@@ -5,6 +5,7 @@ import {
   BookOpen,
   Calendar,
   CheckCircle2,
+  ChevronDown,
   Clock,
   Clock4,
   FileText,
@@ -18,10 +19,11 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Input, Textarea } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Input";
 import {
   FormDivider,
   FormPanel,
+  FormRow,
   RowInput,
   RowSegmented,
   RowSubPanel,
@@ -805,8 +807,7 @@ function DurationRow({
     return formatHHMM(h, m);
   })();
   return (
-    <div className="flex items-center gap-control rounded-md border border-border bg-surface-1 px-control py-control">
-      <Clock className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+    <FormRow icon={<Clock size={20} />}>
       <div className="flex items-center gap-2 text-sm">
         <input
           type="text"
@@ -831,7 +832,7 @@ function DurationRow({
         <span className="text-foreground-muted">/</span>
         <span className="text-foreground-muted">{minutesUnit}</span>
       </div>
-    </div>
+    </FormRow>
   );
 }
 
@@ -872,56 +873,62 @@ function ScheduleRow(props: {
     endTimeAriaLabel,
   } = props;
   return (
-    <div>
-      <button
-        type="button"
-        onClick={onToggleSchedule}
-        aria-expanded={scheduleOpen}
-        aria-label={scheduleTitle}
-        className="flex w-full items-center gap-control rounded-md border border-border bg-surface-1 px-control py-control text-left"
+    <>
+      <FormRow
+        icon={<Calendar size={20} />}
+        trailing={
+          <ChevronDown
+            size={16}
+            className={`text-foreground-muted transition-transform ${scheduleOpen ? "rotate-180" : ""}`}
+            aria-hidden="true"
+          />
+        }
       >
-        <Calendar className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-        <span className="text-sm">{scheduleSummary}</span>
-      </button>
+        <button
+          type="button"
+          onClick={onToggleSchedule}
+          aria-expanded={scheduleOpen}
+          aria-label={scheduleTitle}
+          className="flex w-full items-center text-left text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {scheduleSummary}
+        </button>
+      </FormRow>
       {scheduleOpen ? (
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="date"
-              aria-label={startAriaLabel}
-              value={startDateInput}
-              onChange={(e) => onStartDateChange(e.target.value)}
-              className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <input
-              type="time"
-              aria-label={startTimeAriaLabel}
-              step={60}
-              value={startTimeInput}
-              onChange={(e) => onStartTimeChange(e.target.value)}
-              className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="date"
-              aria-label={endDateAriaLabel}
-              value={endDateInput}
-              onChange={(e) => onEndDateChange(e.target.value)}
-              className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-            <input
-              type="time"
-              aria-label={endTimeAriaLabel}
-              step={60}
-              value={endTimeInput}
-              onChange={(e) => onEndTimeChange(e.target.value)}
-              className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-            />
-          </div>
+        <div className="ml-[32px] grid grid-cols-2 gap-2">
+          <input
+            type="date"
+            aria-label={startAriaLabel}
+            value={startDateInput}
+            onChange={(e) => onStartDateChange(e.target.value)}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <input
+            type="time"
+            aria-label={startTimeAriaLabel}
+            step={60}
+            value={startTimeInput}
+            onChange={(e) => onStartTimeChange(e.target.value)}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <input
+            type="date"
+            aria-label={endDateAriaLabel}
+            value={endDateInput}
+            onChange={(e) => onEndDateChange(e.target.value)}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <input
+            type="time"
+            aria-label={endTimeAriaLabel}
+            step={60}
+            value={endTimeInput}
+            onChange={(e) => onEndTimeChange(e.target.value)}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -956,51 +963,55 @@ function ProjectRow(props: {
     createNewLabel,
   } = props;
   return (
-    <div className="space-y-2">
+    <>
       {resolvedProject ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-          <Tag className="h-3 w-3" aria-hidden="true" />
-          {resolvedProject}
-        </span>
+        <div className="ml-[32px]">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+            <Tag className="h-3 w-3" aria-hidden="true" />
+            {resolvedProject}
+          </span>
+        </div>
       ) : null}
-      <div className="relative">
-        <Input
-          leading={<Icon className="h-4 w-4" />}
-          value={projectDraft}
-          onChange={(e) => onProjectDraftChange(e.target.value)}
-          onFocus={onProjectFocus}
-          onBlur={onProjectBlur}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            e.preventDefault();
-            onCommitProject();
-          }}
-          aria-label={ariaLabel}
-          placeholder={placeholder}
-        />
-        {isProjectInputFocused ? (
-          <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-            {projectSuggestions.length > 0 ? (
-              projectSuggestions.map((project) => (
-                <button
-                  key={project}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onPickSuggestion(project);
-                  }}
-                  className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                >
-                  {project}
-                </button>
-              ))
-            ) : (
-              <div className="px-2 py-1.5 text-xs text-foreground-muted">{createNewLabel}</div>
-            )}
-          </div>
-        ) : null}
-      </div>
-    </div>
+      <FormRow icon={<Icon size={20} />}>
+        <div className="relative">
+          <input
+            value={projectDraft}
+            onChange={(e) => onProjectDraftChange(e.target.value)}
+            onFocus={onProjectFocus}
+            onBlur={onProjectBlur}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              onCommitProject();
+            }}
+            aria-label={ariaLabel}
+            placeholder={placeholder}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+          />
+          {isProjectInputFocused ? (
+            <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+              {projectSuggestions.length > 0 ? (
+                projectSuggestions.map((project) => (
+                  <button
+                    key={project}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      onPickSuggestion(project);
+                    }}
+                    className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                  >
+                    {project}
+                  </button>
+                ))
+              ) : (
+                <div className="px-2 py-1.5 text-xs text-foreground-muted">{createNewLabel}</div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </FormRow>
+    </>
   );
 }
 
@@ -1038,46 +1049,48 @@ function TagRow(props: {
     removeTagLabel,
   } = props;
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        <Input
-          leading={<Plus className="h-4 w-4 text-foreground-muted" aria-hidden="true" />}
-          value={tagDraft}
-          onChange={(e) => onTagDraftChange(e.target.value)}
-          onFocus={onTagFocus}
-          onBlur={onTagBlur}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            e.preventDefault();
-            onAddTag();
-          }}
-          aria-label={ariaLabel}
-          placeholder={placeholder}
-        />
-        {isTagInputFocused ? (
-          <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-            {tagSuggestions.length > 0 ? (
-              tagSuggestions.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    onPickSuggestion(tag);
-                  }}
-                  className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                >
-                  {tag}
-                </button>
-              ))
-            ) : (
-              <div className="px-2 py-1.5 text-xs text-foreground-muted">{createNewLabel}</div>
-            )}
-          </div>
-        ) : null}
-      </div>
+    <>
+      <FormRow icon={<Plus size={20} />}>
+        <div className="relative">
+          <input
+            value={tagDraft}
+            onChange={(e) => onTagDraftChange(e.target.value)}
+            onFocus={onTagFocus}
+            onBlur={onTagBlur}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              onAddTag();
+            }}
+            aria-label={ariaLabel}
+            placeholder={placeholder}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+          />
+          {isTagInputFocused ? (
+            <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
+              {tagSuggestions.length > 0 ? (
+                tagSuggestions.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      onPickSuggestion(tag);
+                    }}
+                    className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
+                  >
+                    {tag}
+                  </button>
+                ))
+              ) : (
+                <div className="px-2 py-1.5 text-xs text-foreground-muted">{createNewLabel}</div>
+              )}
+            </div>
+          ) : null}
+        </div>
+      </FormRow>
       {selectedTags.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
+        <div className="ml-[32px] flex flex-wrap gap-1">
           {selectedTags.map((tag) => (
             <span
               key={tag}
@@ -1096,7 +1109,7 @@ function TagRow(props: {
           ))}
         </div>
       ) : null}
-    </div>
+    </>
   );
 }
 
@@ -1111,29 +1124,29 @@ function MemoRow(props: {
   const { expanded, memoInput, onMemoChange, onExpand, placeholder, memoAddLabel } = props;
   if (expanded) {
     return (
-      <div className="flex items-start gap-control rounded-md border border-border bg-surface-1 px-control py-control">
-        <MessageSquare className="mt-1 h-4 w-4 text-foreground-muted" aria-hidden="true" />
+      <FormRow icon={<MessageSquare size={20} />}>
         <Textarea
           value={memoInput}
           onChange={(e) => onMemoChange(e.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
           rows={3}
-          className="min-h-12 flex-1 resize-none border-0 bg-transparent p-0 focus:ring-0"
+          className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
         />
-      </div>
+      </FormRow>
     );
   }
   return (
-    <button
-      type="button"
-      onClick={onExpand}
-      aria-label={placeholder}
-      className="flex w-full items-center gap-2 rounded-md border border-border bg-surface-1 px-control py-control"
-    >
-      <MessageSquare className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
-      <span>{memoAddLabel}</span>
-    </button>
+    <FormRow icon={<MessageSquare size={20} />}>
+      <button
+        type="button"
+        onClick={onExpand}
+        aria-label={placeholder}
+        className="flex w-full items-center text-left text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        {memoAddLabel}
+      </button>
+    </FormRow>
   );
 }
 
