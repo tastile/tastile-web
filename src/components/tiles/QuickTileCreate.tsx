@@ -433,7 +433,13 @@ export function QuickTileCreate() {
     <>
       <div
         className="fixed inset-0 z-[55] bg-foreground/10 backdrop-blur-[1px]"
-        onClick={close}
+        onClick={() => {
+          if (activePanel !== "base") {
+            setActivePanel("base");
+          } else {
+            close();
+          }
+        }}
         aria-hidden
       />
       <section

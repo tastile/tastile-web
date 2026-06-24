@@ -629,4 +629,25 @@ describe("QuickTileCreate — sub-panel dismissal via base panel click", () => {
 		// still in the accessibility tree).
 		expect(screen.getByRole("button", { name: /recurrenceNavTitle/ })).toBeTruthy();
 	});
+
+	it("backdrop click peels one layer at a time: sub-panel first, then create panel", async () => {
+		const { container } = render(<QuickTileCreate />);
+		// Open Recurrence sub-panel
+		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+		});
+		// First backdrop click — dismisses the sub-panel only; the create panel
+		// remains mounted.
+		fireEvent.click(container.querySelector('[aria-hidden="true"]') as Element);
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
+		});
+		expect(screen.getByRole("button", { name: /recurrenceNavTitle/ })).toBeTruthy();
+		// Second backdrop click — now the create panel itself unmounts.
+		fireEvent.click(container.querySelector('[aria-hidden="true"]') as Element);
+		await waitFor(() => {
+			expect(screen.queryByRole("button", { name: /recurrenceNavTitle/ })).toBeNull();
+		});
+	});
 });
