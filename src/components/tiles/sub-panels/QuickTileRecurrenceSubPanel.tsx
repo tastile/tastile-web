@@ -2,7 +2,7 @@
 
 import { ChevronRight, Clock, Repeat } from "lucide-react";
 import type { ObjectiveMode } from "@/lib/domain/tile";
-import { FormPanel, FormRow, RowInput, RowSegmented } from "@/components/ui/form";
+import { FormPanel, RowInput, RowSegmented, RowToggle } from "@/components/ui/form";
 import { SubPanelHeader } from "./SubPanelHeader";
 import {
   parseNonNegativeInt,
@@ -175,23 +175,12 @@ export function QuickTileRecurrenceSubPanel({
                 })}
               </div>
 
-              <FormRow icon={<Clock size={20} />}>
-                <div className="flex w-full items-center justify-between">
-                  <label
-                    htmlFor="recurrence-window-start"
-                    className={`flex flex-1 cursor-pointer items-center text-sm ${recurrenceUseStartAt ? "text-foreground" : "text-foreground-muted"}`}
-                  >
-                    <span>{t("quickCreate.windowStartAt")}</span>
-                  </label>
-                  <input
-                    id="recurrence-window-start"
-                    type="checkbox"
-                    checked={recurrenceUseStartAt}
-                    onChange={(e) => setRecurrenceUseStartAt(e.target.checked)}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                </div>
-              </FormRow>
+              <RowToggle
+                icon={Clock}
+                placeholder={t("quickCreate.windowStartAt")}
+                checked={recurrenceUseStartAt}
+                onChange={setRecurrenceUseStartAt}
+              />
               {recurrenceUseStartAt ? (
                 <RowInput
                   icon={ChevronRight}
@@ -203,23 +192,12 @@ export function QuickTileRecurrenceSubPanel({
                 />
               ) : null}
 
-              <FormRow icon={<Clock size={20} />}>
-                <div className="flex w-full items-center justify-between">
-                  <label
-                    htmlFor="recurrence-window-end"
-                    className={`flex flex-1 cursor-pointer items-center text-sm ${recurrenceUseEndAt ? "text-foreground" : "text-foreground-muted"}`}
-                  >
-                    <span>{t("quickCreate.windowEndAt")}</span>
-                  </label>
-                  <input
-                    id="recurrence-window-end"
-                    type="checkbox"
-                    checked={recurrenceUseEndAt}
-                    onChange={(e) => setRecurrenceUseEndAt(e.target.checked)}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                </div>
-              </FormRow>
+              <RowToggle
+                icon={Clock}
+                placeholder={t("quickCreate.windowEndAt")}
+                checked={recurrenceUseEndAt}
+                onChange={setRecurrenceUseEndAt}
+              />
               {recurrenceUseEndAt ? (
                 <RowInput
                   icon={ChevronRight}
@@ -231,23 +209,12 @@ export function QuickTileRecurrenceSubPanel({
                 />
               ) : null}
 
-              <FormRow icon={<Clock size={20} />}>
-                <div className="flex w-full items-center justify-between">
-                  <label
-                    htmlFor="recurrence-valid-from"
-                    className={`flex flex-1 cursor-pointer items-center text-sm ${recurrenceValidFromEnabled ? "text-foreground" : "text-foreground-muted"}`}
-                  >
-                    <span>{t("quickCreate.recurrenceValidFrom")}</span>
-                  </label>
-                  <input
-                    id="recurrence-valid-from"
-                    type="checkbox"
-                    checked={recurrenceValidFromEnabled}
-                    onChange={(e) => setRecurrenceValidFromEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                </div>
-              </FormRow>
+              <RowToggle
+                icon={Clock}
+                placeholder={t("quickCreate.recurrenceValidFrom")}
+                checked={recurrenceValidFromEnabled}
+                onChange={setRecurrenceValidFromEnabled}
+              />
               {recurrenceValidFromEnabled ? (
                 <RowInput
                   icon={ChevronRight}
@@ -259,23 +226,12 @@ export function QuickTileRecurrenceSubPanel({
                 />
               ) : null}
 
-              <FormRow icon={<Clock size={20} />}>
-                <div className="flex w-full items-center justify-between">
-                  <label
-                    htmlFor="recurrence-valid-to"
-                    className={`flex flex-1 cursor-pointer items-center text-sm ${recurrenceValidToEnabled ? "text-foreground" : "text-foreground-muted"}`}
-                  >
-                    <span>{t("quickCreate.recurrenceValidTo")}</span>
-                  </label>
-                  <input
-                    id="recurrence-valid-to"
-                    type="checkbox"
-                    checked={recurrenceValidToEnabled}
-                    onChange={(e) => setRecurrenceValidToEnabled(e.target.checked)}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                </div>
-              </FormRow>
+              <RowToggle
+                icon={Clock}
+                placeholder={t("quickCreate.recurrenceValidTo")}
+                checked={recurrenceValidToEnabled}
+                onChange={setRecurrenceValidToEnabled}
+              />
               {recurrenceValidToEnabled ? (
                 <RowInput
                   icon={ChevronRight}

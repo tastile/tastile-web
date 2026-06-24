@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban } from "lucide-react";
-import { FormPanel, FormRow, RowSegmented } from "@/components/ui/form";
+import { FormPanel, RowSegmented, RowToggle } from "@/components/ui/form";
 import { SubPanelHeader } from "./SubPanelHeader";
 
 interface Props {
@@ -78,24 +78,12 @@ export function QuickTileInterruptSubPanel({
           <p className="mb-2 text-xs text-foreground-muted">
             {t("quickCreate.externalInterruptOnlyGuide")}
           </p>
-          <FormRow icon={<Ban size={20} />}>
-            <div className="flex w-full items-center justify-between">
-              <label
-                htmlFor="external-interrupt-only"
-                className={`flex flex-1 cursor-pointer items-center text-sm ${externalInterruptOnly ? "text-foreground" : "text-foreground-muted"}`}
-              >
-                <span>{t("quickCreate.externalInterruptOnlyTitle")}</span>
-              </label>
-              <input
-                id="external-interrupt-only"
-                type="checkbox"
-                checked={externalInterruptOnly}
-                onChange={(e) => setExternalInterruptOnly(e.target.checked)}
-                aria-label={t("quickCreate.externalInterruptOnlyTitle")}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              />
-            </div>
-          </FormRow>
+          <RowToggle
+            icon={Ban}
+            placeholder={t("quickCreate.externalInterruptOnlyTitle")}
+            checked={externalInterruptOnly}
+            onChange={setExternalInterruptOnly}
+          />
         </FormPanel>
       </div>
     </>

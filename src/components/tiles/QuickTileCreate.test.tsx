@@ -332,7 +332,7 @@ describe("QuickTileCreate — interruption & automation layers", () => {
 		fireEvent.click(penalty5[0]);
 		fireEvent.click(penalty5[1]);
 		fireEvent.click(
-			screen.getByRole("checkbox", {
+			screen.getByRole("switch", {
 				name: /quickCreate\.externalInterruptOnlyTitle/,
 			}),
 		);
@@ -360,13 +360,13 @@ describe("QuickTileCreate — interruption & automation layers", () => {
 		// Toggle promptOnStart, autoStartAllowed, autoEndAllowed on.
 		// promptOnEnd is on by default per Tile.create — leave it.
 		fireEvent.click(
-			screen.getByRole("checkbox", { name: /quickCreate\.promptOnStartTitle/ }),
+			screen.getByRole("switch", { name: /quickCreate\.promptOnStartTitle/ }),
 		);
 		fireEvent.click(
-			screen.getByRole("checkbox", { name: /quickCreate\.autoStartAllowedTitle/ }),
+			screen.getByRole("switch", { name: /quickCreate\.autoStartAllowedTitle/ }),
 		);
 		fireEvent.click(
-			screen.getByRole("checkbox", { name: /quickCreate\.autoEndAllowedTitle/ }),
+			screen.getByRole("switch", { name: /quickCreate\.autoEndAllowedTitle/ }),
 		);
 
 		// Pick Asia/Tokyo from the timezone select.
