@@ -688,7 +688,7 @@ export function QuickTileCreate() {
       <section className={subPanelClass("recurrence")} data-testid="quick-tile-recurrence-subpanel">
         <QuickTileRecurrenceSubPanel
           onBack={() => setActivePanel("base")}
-          onClose={close}
+          onClose={() => setActivePanel("base")}
           t={t}
           locale={locale}
           objectiveMode={objectiveMode}
@@ -723,7 +723,7 @@ export function QuickTileCreate() {
       <section className={subPanelClass("interrupt")} data-testid="quick-tile-interrupt-subpanel">
         <QuickTileInterruptSubPanel
           onBack={() => setActivePanel("base")}
-          onClose={close}
+          onClose={() => setActivePanel("base")}
           t={t}
           locale={locale}
           interruptPenalty={interruptPenalty}
@@ -738,7 +738,7 @@ export function QuickTileCreate() {
       <section className={subPanelClass("automation")} data-testid="quick-tile-automation-subpanel">
         <QuickTileAutomationSubPanel
           onBack={() => setActivePanel("base")}
-          onClose={close}
+          onClose={() => setActivePanel("base")}
           t={t}
           locale={locale}
           promptOnStart={promptOnStart}
@@ -757,7 +757,7 @@ export function QuickTileCreate() {
       <section className={subPanelClass("meta")} data-testid="quick-tile-meta-subpanel">
         <QuickTileMetaSubPanel
           onBack={() => setActivePanel("base")}
-          onClose={close}
+          onClose={() => setActivePanel("base")}
           t={t}
           locale={locale}
           timedLabelDraft={timedLabelDraft}

@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/i18n/use-translation", () => ({
@@ -609,5 +609,24 @@ describe("QuickTileCreate — sub-panel dismissal via base panel click", () => {
 		fireEvent.click(screen.getByRole("radio", { name: /objectiveFinish/ }));
 		// Sub-panel should still be open
 		expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+	});
+
+	it("sub-panel X button dismisses only the sub-panel, not the create panel", async () => {
+		const { container } = render(<QuickTileCreate />);
+		// Open Recurrence
+		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
+		});
+		// Click the X (Close panel) on the sub-panel header — should only
+		// dismiss the sub-panel; the create panel itself stays mounted.
+		const subPanel = screen.getByTestId("quick-tile-recurrence-subpanel");
+		fireEvent.click(within(subPanel).getByRole("button", { name: /Close panel|パネルを閉じる/ }));
+		await waitFor(() => {
+			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
+		});
+		// The create panel should still be present (the base nav buttons are
+		// still in the accessibility tree).
+		expect(screen.getByRole("button", { name: /recurrenceNavTitle/ })).toBeTruthy();
 	});
 });
