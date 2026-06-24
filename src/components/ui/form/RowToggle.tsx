@@ -27,14 +27,16 @@ export function RowToggle({ icon: Icon, placeholder, checked, onChange, classNam
         <span
           aria-hidden
           className={cn(
-            "relative h-5 w-9 shrink-0 rounded-full transition-colors",
-            checked ? "bg-primary" : "bg-surface-3",
+            "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors",
+            checked
+              ? "border-primary bg-primary"
+              : "border-border bg-surface-2",
           )}
         >
           <span
             className={cn(
-              "absolute top-0.5 h-4 w-4 rounded-full bg-surface-1 shadow transition-transform",
-              checked ? "translate-x-4" : "translate-x-0.5",
+              "inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform",
+              checked ? "translate-x-[1.375rem]" : "translate-x-0.5",
             )}
           />
         </span>
