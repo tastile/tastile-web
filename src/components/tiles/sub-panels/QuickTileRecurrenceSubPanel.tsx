@@ -1,14 +1,14 @@
 "use client";
 
 import { ChevronRight, Clock, Repeat } from "lucide-react";
-import type { ObjectiveMode } from "@/lib/domain/tile";
 import { FormPanel, RowInput, RowSegmented, RowToggle } from "@/components/ui/form";
-import { SubPanelHeader } from "./SubPanelHeader";
+import type { ObjectiveMode } from "@/lib/domain/tile";
 import {
   parseNonNegativeInt,
-  sanitizeNumericInput,
   type RecurrenceFrequency,
+  sanitizeNumericInput,
 } from "../build-command";
+import { SubPanelHeader } from "./SubPanelHeader";
 
 const WEEKDAY_LABELS: Record<"ja" | "en", string[]> = {
   ja: ["日", "月", "火", "水", "木", "金", "土"],
@@ -133,9 +133,7 @@ export function QuickTileRecurrenceSubPanel({
                   type="text"
                   inputMode="numeric"
                   value={recurrenceIntervalInput}
-                  onChange={(e) =>
-                    setRecurrenceIntervalInput(sanitizeNumericInput(e.target.value))
-                  }
+                  onChange={(e) => setRecurrenceIntervalInput(sanitizeNumericInput(e.target.value))}
                   onBlur={() => {
                     const n = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
                     if (n <= 0) setRecurrenceIntervalInput("1");
@@ -144,10 +142,9 @@ export function QuickTileRecurrenceSubPanel({
                 />
               </label>
 
-              <div
-                role="group"
+              <fieldset
                 aria-label={t("quickCreate.recurrenceTitle")}
-                className="flex w-full rounded-md bg-surface-2 p-0.5"
+                className="flex w-full rounded-md bg-surface-2 p-0.5 border-0 p-0 m-0"
               >
                 {WEEKDAY_LABELS[locale].map((label, idx) => {
                   const active = recurrenceWeekdays.includes(idx);
@@ -173,7 +170,7 @@ export function QuickTileRecurrenceSubPanel({
                     </button>
                   );
                 })}
-              </div>
+              </fieldset>
 
               <RowToggle
                 icon={Clock}

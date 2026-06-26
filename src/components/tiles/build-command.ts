@@ -174,10 +174,8 @@ function buildRecurrence(state: QuickCreateFormState): RecurrenceModel | null {
     generator,
     window: {
       weekday_mask: weekdaysToBitmask(state.recurrenceWeekdays),
-      start_offset_min:
-        state.recurrenceUseStartAt && startOffsetMin !== null ? startOffsetMin : 0,
-      end_offset_min:
-        state.recurrenceUseEndAt && endOffsetMin !== null ? endOffsetMin : 1440,
+      start_offset_min: state.recurrenceUseStartAt && startOffsetMin !== null ? startOffsetMin : 0,
+      end_offset_min: state.recurrenceUseEndAt && endOffsetMin !== null ? endOffsetMin : 1440,
       exclusions: [],
     },
     selector: {
@@ -197,9 +195,7 @@ function buildDoneDefinition(
       : "Complete labeling for the selected period";
   }
   if (state.objectiveMode === "recurring") {
-    return locale === "ja"
-      ? "1サイクル実行したら完了（定期）"
-      : "Complete one cycle (recurring)";
+    return locale === "ja" ? "1サイクル実行したら完了（定期）" : "Complete one cycle (recurring)";
   }
   if (state.objectiveMode === "maximize_within_interval") {
     const startDate = state.useStartAt
@@ -217,9 +213,7 @@ function buildDoneDefinition(
   }
   const text = effectiveDurationMin ? formatDuration(effectiveDurationMin, locale) : null;
   if (text) {
-    return locale === "ja"
-      ? `${text}の実行を完了`
-      : `Complete ${text} of work`;
+    return locale === "ja" ? `${text}の実行を完了` : `Complete ${text} of work`;
   }
   return locale === "ja" ? "1回の実行を完了" : "Complete one run";
 }
@@ -232,9 +226,7 @@ function buildNextAction(state: QuickCreateFormState, locale: Locale): string {
       ? "この期間にラベルを適用"
       : "Apply this label within the selected period";
   }
-  return locale === "ja"
-    ? "開始して最初の1手を実行"
-    : "Start and execute the first step";
+  return locale === "ja" ? "開始して最初の1手を実行" : "Start and execute the first step";
 }
 
 function buildLabels(projectInput: string, selectedTags: string[]): string[] {
@@ -250,10 +242,7 @@ function buildLabels(projectInput: string, selectedTags: string[]): string[] {
 
 // --- helpers (formerly inline in QuickTileCreate) ---
 
-export function parseDurationToMinutes(
-  hoursValue: string,
-  minutesValue: string,
-): number | null {
+export function parseDurationToMinutes(hoursValue: string, minutesValue: string): number | null {
   const hours = parseNonNegativeInt(hoursValue);
   const minutes = parseNonNegativeInt(minutesValue);
   if (hours === null && minutes === null) return null;
@@ -362,9 +351,10 @@ export function toLocalTimeString(date: Date): string {
   return `${hours}:${minutes}`;
 }
 
-export function deriveProjectAndTags(state: {
-  tiles: Map<unknown, Tile>;
-}): { existingProjects: string[]; existingTags: string[] } {
+export function deriveProjectAndTags(state: { tiles: Map<unknown, Tile> }): {
+  existingProjects: string[];
+  existingTags: string[];
+} {
   const projectSet = new Set<string>();
   const tagSet = new Set<string>();
   for (const tile of state.tiles.values()) {

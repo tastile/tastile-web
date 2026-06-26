@@ -12,6 +12,7 @@
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
+    "lint:biome": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:unit": "node scripts/run-vitest.mjs",
@@ -40,6 +41,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.5.1",
     "@playwright/test": "^1.54.2",
     "@tailwindcss/postcss": "^4",
     "@testing-library/react": "^16.3.2",

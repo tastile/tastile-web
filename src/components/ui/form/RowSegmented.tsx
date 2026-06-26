@@ -30,6 +30,7 @@ export function RowSegmented<V extends string>({
         {options.map((opt) => {
           const active = opt.value === value;
           return (
+            // biome-ignore lint/a11y/useSemanticElements: custom button-styled segmented control requires role="radio" on a button for visual flexibility
             <button
               key={opt.value}
               type="button"

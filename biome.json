@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.0.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.1/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -14,9 +14,9 @@
       "src/**/*.css",
       "!**/*.test.{ts,tsx}",
       "!**/*.test-d.{ts,tsx}",
-      "!**/__tests__/**",
-      "!**/__mocks__/**",
-      "!.next/**"
+      "!**/__tests__",
+      "!**/__mocks__",
+      "!.next"
     ]
   },
   "css": {
@@ -41,7 +41,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "a11y": {
         "useButtonType": "error",
         "noSvgWithoutTitle": "error",

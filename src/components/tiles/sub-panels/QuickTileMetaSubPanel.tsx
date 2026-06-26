@@ -45,11 +45,9 @@ export function QuickTileMetaSubPanel({
           <h3 className="mb-1 text-sm font-medium text-foreground">
             {t("quickCreate.timedLabelsTitle")}
           </h3>
-          <p className="mb-2 text-xs text-foreground-muted">
-            {t("quickCreate.timedLabelsGuide")}
-          </p>
+          <p className="mb-2 text-xs text-foreground-muted">{t("quickCreate.timedLabelsGuide")}</p>
           <FormRow icon={<Tag size={20} />}>
-            <div role="group" className="flex w-full items-center gap-2">
+            <fieldset className="flex w-full items-center gap-2 border-0 p-0 m-0">
               <input
                 type="text"
                 value={timedLabelDraft}
@@ -70,7 +68,7 @@ export function QuickTileMetaSubPanel({
               >
                 {t("quickCreate.timedLabelsAdd")}
               </button>
-            </div>
+            </fieldset>
           </FormRow>
           {timedLabels.length > 0 ? (
             <ul className="mt-2 space-y-1">
@@ -82,9 +80,7 @@ export function QuickTileMetaSubPanel({
                   <span>{entry.label}</span>
                   <button
                     type="button"
-                    onClick={() =>
-                      setTimedLabels(timedLabels.filter((_, i) => i !== idx))
-                    }
+                    onClick={() => setTimedLabels(timedLabels.filter((_, i) => i !== idx))}
                     aria-label={`${t("quickCreate.removeTag")} ${entry.label}`}
                     className="text-foreground-muted"
                   >

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isNativeAuthReturnRequest } from "./middleware";
+import { isNativeAuthReturnRequest } from "./proxy";
 
 describe("middleware native auth return detection", () => {
 	it("detects native app auth requests that must not bounce to dashboard", () => {

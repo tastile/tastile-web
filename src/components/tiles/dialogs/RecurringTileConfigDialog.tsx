@@ -1,7 +1,8 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Loader2, Repeat, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { FormPanel, RowInput, RowSegmented } from "@/components/ui/form";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useDialogStore } from "@/lib/stores/dialog-store";
@@ -23,10 +24,10 @@ interface RecurringTileData {
   };
 }
 
-const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAY_LABELS_JA = ["月", "火", "水", "木", "金", "土", "日"];
+const WEEKDAY_LABELS_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 function bitmaskToWeekdays(mask: number): boolean[] {
-  // Server: bit 0=Mon..bit 6=Sun. UI: 0=Mon..6=Sun.
   const result = [false, false, false, false, false, false, false];
   for (let i = 0; i < 7; i++) {
     result[i] = (mask & (1 << i)) !== 0;
@@ -50,25 +51,54 @@ function hhmmToMinutes(h: number, m: number): number {
   return Math.max(0, Math.min(1440, h * 60 + m));
 }
 
+function formatHHMM(h: number, m: number): string {
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function parseHHMM(raw: string): { h: number; m: number } | null {
+  const match = /^(\d{1,2}):(\d{1,2})$/.exec(raw.trim());
+  if (!match) return null;
+  const h = Number.parseInt(match[1] ?? "", 10);
+  const m = Number.parseInt(match[2] ?? "", 10);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return { h, m };
+}
+
+function describeInterval(min: number): string {
+  if (min < 60) return `${min}m`;
+  if (min < 1440) {
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m === 0 ? `${h}h` : `${h}h ${m}m`;
+  }
+  const d = Math.floor(min / 1440);
+  const h = Math.floor((min % 1440) / 60);
+  return h === 0 ? `${d}d` : `${d}d ${h}h`;
+}
+
 export function RecurringTileConfigDialog() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { recurringDialog, closeRecurringDialog } = useDialogStore();
 
   const [data, setData] = useState<RecurringTileData | null>(null);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const tileId = recurringDialog.tileId;
 
   const [weekdays, setWeekdays] = useState<boolean[]>([true, true, true, true, true, false, false]);
-  const [startHHMM, setStartHHMM] = useState({ h: 9, m: 0 });
-  const [endHHMM, setEndHHMM] = useState({ h: 18, m: 0 });
+  const [startHHMM, setStartHHMM] = useState<{ h: number; m: number }>({ h: 9, m: 0 });
+  const [endHHMM, setEndHHMM] = useState<{ h: number; m: number }>({ h: 18, m: 0 });
   const [stepMin, setStepMin] = useState(1440);
+  const [stepInput, setStepInput] = useState("1440");
 
   useEffect(() => {
     if (!tileId) return;
     let mounted = true;
     setLoading(true);
+    setError(null);
 
     getCoreClient()
       .call<RecurringTileData>("getRecurringTile", { pathParams: { id: tileId } })
@@ -84,10 +114,22 @@ export function RecurringTileConfigDialog() {
           const gen = res.data.recurrence.generator;
           if (gen.kind === "time_based") {
             setStepMin(gen.step_min);
+            setStepInput(String(gen.step_min));
+          } else {
+            const total = gen.phases.reduce((acc, p) => acc + p.focus_min + p.break_min, 0);
+            if (total > 0) {
+              setStepMin(total);
+              setStepInput(String(total));
+            }
           }
         } else if (!res.ok) {
-          console.error("Failed to load recurring config", res.error);
+          setError(res.error.message);
         }
+      })
+      .catch((err) => {
+        if (!mounted) return;
+        setLoading(false);
+        setError(err instanceof Error ? err.message : "Unknown error");
       });
 
     return () => {
@@ -102,6 +144,7 @@ export function RecurringTileConfigDialog() {
   const handleSave = async () => {
     if (!data) return;
     setSaving(true);
+    setError(null);
 
     const gen = data.recurrence.generator;
     const payload = {
@@ -132,7 +175,7 @@ export function RecurringTileConfigDialog() {
       closeRecurringDialog();
       window.dispatchEvent(new Event("tastile:refresh-tiles"));
     } else {
-      console.error("Failed to save recurring config", res.error);
+      setError(res.error.message);
     }
   };
 
@@ -140,184 +183,166 @@ export function RecurringTileConfigDialog() {
     setWeekdays((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
   };
 
+  const startStr = formatHHMM(startHHMM.h, startHHMM.m);
+  const endStr = formatHHMM(endHHMM.h, endHHMM.m);
+  const weekdayLabels = locale === "ja" ? WEEKDAY_LABELS_JA : WEEKDAY_LABELS_EN;
+  const focusedWeekdayValue = (() => {
+    const idx = weekdays.findIndex((v) => v);
+    return idx >= 0 ? String(idx) : "0";
+  })();
+
   return (
-    <button
-      type="button"
-      aria-label="Close schedule editor"
-      className="fixed inset-0 z-50 cursor-default bg-foreground/50"
-      onClick={handleCancel}
-    >
-      <div
+    <>
+      <button
+        type="button"
+        aria-label={t("common.cancel")}
+        className="fixed inset-0 z-50 cursor-default bg-foreground/30 backdrop-blur-[0.5px]"
+        onClick={handleCancel}
+      />
+
+      <aside
         role="dialog"
         aria-modal="true"
-        className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
+        aria-label={t("quickCreate.recurrenceNavTitle")}
+        className="fixed inset-y-0 right-0 z-[60] flex w-full max-w-md flex-col border-l border-border bg-surface-1 shadow-lg"
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Edit Schedule</h2>
+        <header className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Repeat className="h-4 w-4 text-foreground-muted" aria-hidden="true" />
+            <h2 className="text-base font-semibold text-foreground">
+              {t("quickCreate.recurrenceNavTitle")}
+            </h2>
+          </div>
           <button
             type="button"
+            aria-label={t("common.cancel")}
             onClick={handleCancel}
-            className="rounded-full p-1 text-foreground-muted hover:bg-surface-2"
+            className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
+        </header>
+
+        {error ? (
+          <div
+            role="alert"
+            className="border-b border-border bg-danger/10 px-4 py-2 text-xs text-danger"
+          >
+            {error}
+          </div>
+        ) : null}
+
+        <div className="flex-1 overflow-y-auto">
+          <FormPanel>
+            {loading ? (
+              <div className="flex items-center gap-2 py-4 text-sm text-foreground-muted">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              <>
+                <RowSegmented
+                  icon={Repeat}
+                  options={weekdayLabels.map((label, i) => ({ value: String(i), label }))}
+                  value={focusedWeekdayValue}
+                  onChange={() => {
+                    /* visual only — toggle via the day chips below */
+                  }}
+                />
+
+                <div className="-mt-1 ml-[32px] flex flex-wrap items-center gap-1.5">
+                  {weekdayLabels.map((label, i) => {
+                    const active = weekdays[i] ?? false;
+                    return (
+                      // biome-ignore lint/a11y/useSemanticElements: custom button-styled weekday chip requires role="checkbox" on a button for visual flexibility
+                      <button
+                        key={label}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={active}
+                        aria-label={label}
+                        onClick={() => toggleWeekday(i)}
+                        className={
+                          (active
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2") +
+                          " rounded-md border px-2 py-0.5 text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                        }
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <RowInput
+                  icon={Loader2}
+                  type="time"
+                  placeholder={t("quickCreate.windowStartAt")}
+                  value={startStr}
+                  onChange={(v) => {
+                    const parsed = parseHHMM(v);
+                    if (parsed) setStartHHMM(parsed);
+                  }}
+                  ariaLabel={t("quickCreate.windowStartAt")}
+                />
+
+                <RowInput
+                  icon={Loader2}
+                  type="time"
+                  placeholder={t("quickCreate.windowEndAt")}
+                  value={endStr}
+                  onChange={(v) => {
+                    const parsed = parseHHMM(v);
+                    if (parsed) setEndHHMM(parsed);
+                  }}
+                  ariaLabel={t("quickCreate.windowEndAt")}
+                />
+
+                <RowInput
+                  icon={Repeat}
+                  type="text"
+                  placeholder={t("quickCreate.recurrenceInterval")}
+                  value={stepInput}
+                  onChange={(v) => {
+                    const sanitized = v.replace(/[^0-9]/g, "");
+                    setStepInput(sanitized);
+                    const n = Number.parseInt(sanitized, 10);
+                    if (Number.isFinite(n) && n > 0) {
+                      setStepMin(n);
+                    }
+                  }}
+                  ariaLabel={t("quickCreate.recurrenceInterval")}
+                  trailing={
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-foreground-subtle tabular-nums">
+                      {describeInterval(stepMin)}
+                    </span>
+                  }
+                />
+              </>
+            )}
+          </FormPanel>
         </div>
 
-        {loading ? (
-          <div className="py-8 text-center text-sm text-foreground-subtle">Loading...</div>
-        ) : (
-          <div className="flex flex-col gap-4 mb-6">
-            <fieldset>
-              <legend className="mb-2 block text-sm font-medium text-foreground">
-                Active days
-              </legend>
-              <div className="grid grid-cols-7 gap-1">
-                {WEEKDAY_LABELS.map((label, i) => (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => toggleWeekday(i)}
-                    aria-pressed={weekdays[i]}
-                    className={
-                      "rounded-md border px-2 py-1.5 text-xs font-medium transition-colors " +
-                      (weekdays[i]
-                        ? "border-primary bg-primary text-primary-fg"
-                        : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-2")
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label
-                  htmlFor="recurring-window-start-h"
-                  className="mb-1 block text-sm font-medium text-foreground"
-                >
-                  Window start
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    id="recurring-window-start-h"
-                    type="number"
-                    min={0}
-                    max={23}
-                    value={startHHMM.h}
-                    onChange={(e) =>
-                      setStartHHMM((p) => ({
-                        ...p,
-                        h: Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)),
-                      }))
-                    }
-                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                  />
-                  <span className="text-foreground-muted">:</span>
-                  <input
-                    aria-label="Window start minutes"
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={startHHMM.m}
-                    onChange={(e) =>
-                      setStartHHMM((p) => ({
-                        ...p,
-                        m: Math.max(0, Math.min(59, parseInt(e.target.value, 10) || 0)),
-                      }))
-                    }
-                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                  />
-                </div>
-              </div>
-              <div>
-                <label
-                  htmlFor="recurring-window-end-h"
-                  className="mb-1 block text-sm font-medium text-foreground"
-                >
-                  Window end
-                </label>
-                <div className="flex items-center gap-1">
-                  <input
-                    id="recurring-window-end-h"
-                    type="number"
-                    min={0}
-                    max={23}
-                    value={endHHMM.h}
-                    onChange={(e) =>
-                      setEndHHMM((p) => ({
-                        ...p,
-                        h: Math.max(0, Math.min(23, parseInt(e.target.value, 10) || 0)),
-                      }))
-                    }
-                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                  />
-                  <span className="text-foreground-muted">:</span>
-                  <input
-                    aria-label="Window end minutes"
-                    type="number"
-                    min={0}
-                    max={59}
-                    value={endHHMM.m}
-                    onChange={(e) =>
-                      setEndHHMM((p) => ({
-                        ...p,
-                        m: Math.max(0, Math.min(59, parseInt(e.target.value, 10) || 0)),
-                      }))
-                    }
-                    className="w-16 rounded-md border border-border bg-surface-0 px-2 py-1.5 text-sm text-foreground focus:border-primary focus:outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label
-                htmlFor="recurring-interval"
-                className="mb-1 block text-sm font-medium text-foreground"
-              >
-                Interval (minutes)
-              </label>
-              <input
-                id="recurring-interval"
-                type="number"
-                min={1}
-                value={stepMin}
-                onChange={(e) => setStepMin(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="w-full rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
-              />
-              <p className="mt-1 text-xs text-foreground-subtle">
-                {stepMin < 60
-                  ? `${stepMin} minutes`
-                  : stepMin < 1440
-                    ? `${Math.floor(stepMin / 60)}h ${stepMin % 60}m`
-                    : `${Math.floor(stepMin / 1440)}d ${Math.floor((stepMin % 1440) / 60)}h`}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2">
+        <footer className="flex shrink-0 items-center justify-end gap-2 border-t border-border px-4 py-3">
           <button
             type="button"
             onClick={handleCancel}
-            className="rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
+            className="rounded-md px-3 py-1.5 text-xs text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
             {t("common.cancel")}
           </button>
           <button
             type="button"
             onClick={handleSave}
-            disabled={loading || saving}
-            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-50"
+            disabled={loading || saving || !data}
+            className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-fg hover:bg-primary-hover focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40"
           >
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" /> : null}
             {saving ? "Saving..." : t("common.save")}
           </button>
-        </div>
-      </div>
-    </button>
+        </footer>
+      </aside>
+    </>
   );
 }

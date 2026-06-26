@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Input";
 import {
   FormDivider,
   FormPanel,
@@ -29,6 +28,7 @@ import {
   RowSubPanel,
   RowToggle,
 } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/Input";
 import { getSessionClient } from "@/lib/daemon/id-token-client";
 import type { DoneRule, ObjectiveMode, Tile } from "@/lib/domain/tile";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
@@ -37,11 +37,9 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import {
-  type CreateTileCommand,
-  type QuickCreateFormState,
-  type RecurrenceFrequency,
   Actor,
   buildCreateTileCommand,
+  type CreateTileCommand,
   deriveProjectAndTags,
   equalsIgnoreCase,
   formatDateShort,
@@ -56,11 +54,13 @@ import {
   parseDurationToMinutes,
   parseNonNegativeInt,
   parseTimeToMinutes,
+  type QuickCreateFormState,
+  type RecurrenceFrequency,
 } from "./build-command";
-import { QuickTileRecurrenceSubPanel } from "./sub-panels/QuickTileRecurrenceSubPanel";
-import { QuickTileInterruptSubPanel } from "./sub-panels/QuickTileInterruptSubPanel";
 import { QuickTileAutomationSubPanel } from "./sub-panels/QuickTileAutomationSubPanel";
+import { QuickTileInterruptSubPanel } from "./sub-panels/QuickTileInterruptSubPanel";
 import { QuickTileMetaSubPanel } from "./sub-panels/QuickTileMetaSubPanel";
+import { QuickTileRecurrenceSubPanel } from "./sub-panels/QuickTileRecurrenceSubPanel";
 
 const DONE_RULE_OPTIONS: ReadonlyArray<{ value: DoneRule; label: string }> = [
   { value: "manual", label: "quickCreate.doneRuleManual" },
@@ -189,7 +189,9 @@ export function QuickTileCreate() {
       recurrenceEndOffsetMin !== null &&
       recurrenceEndOffsetMin > recurrenceStartOffsetMin);
 
-  const { existingProjects, existingTags } = deriveProjectAndTags(state as { tiles: Map<unknown, Tile> });
+  const { existingProjects, existingTags } = deriveProjectAndTags(
+    state as { tiles: Map<unknown, Tile> },
+  );
   const normalizedProjectDraft = normalizeTag(projectDraft);
   const resolvedProject =
     selectedProject ??
@@ -444,6 +446,8 @@ export function QuickTileCreate() {
         }}
         aria-hidden
       />
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: base panel doubles as click target to return to base from sub-panel */}
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: base panel doubles as click target to return to base from sub-panel */}
       <section
         className={basePanelClass}
         onClick={() => {
@@ -502,7 +506,10 @@ export function QuickTileCreate() {
             {!isLabelOnly ? (
               <RowSegmented
                 icon={CheckCircle2}
-                options={DONE_RULE_OPTIONS.map((opt) => ({ value: opt.value, label: t(opt.label) }))}
+                options={DONE_RULE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: t(opt.label),
+                }))}
                 value={doneRule}
                 onChange={setDoneRule}
               />
@@ -686,7 +693,11 @@ export function QuickTileCreate() {
             {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
           </Button>
           {error ? (
-            <p id="quick-create-error" role="alert" className="mt-2 text-center text-xs text-danger">
+            <p
+              id="quick-create-error"
+              role="alert"
+              className="mt-2 text-center text-xs text-danger"
+            >
               {error}
             </p>
           ) : null}

@@ -91,9 +91,7 @@ export function QuickTileAutomationSubPanel({
           <h3 className="mt-2 mb-1 text-sm font-medium text-foreground">
             {t("quickCreate.timezoneTitle")}
           </h3>
-          <p className="mb-2 text-xs text-foreground-muted">
-            {t("quickCreate.timezoneGuide")}
-          </p>
+          <p className="mb-2 text-xs text-foreground-muted">{t("quickCreate.timezoneGuide")}</p>
           <FormRow icon={<Globe size={20} />}>
             <select
               value={timezone}

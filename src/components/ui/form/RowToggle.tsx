@@ -12,7 +12,13 @@ interface RowToggleProps {
   className?: string;
 }
 
-export function RowToggle({ icon: Icon, placeholder, checked, onChange, className }: RowToggleProps) {
+export function RowToggle({
+  icon: Icon,
+  placeholder,
+  checked,
+  onChange,
+  className,
+}: RowToggleProps) {
   return (
     <FormRow icon={<Icon size={20} />} className={className}>
       <button
@@ -28,9 +34,7 @@ export function RowToggle({ icon: Icon, placeholder, checked, onChange, classNam
           aria-hidden
           className={cn(
             "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors",
-            checked
-              ? "border-primary bg-primary"
-              : "border-border bg-surface-2",
+            checked ? "border-primary bg-primary" : "border-border bg-surface-2",
           )}
         >
           <span
