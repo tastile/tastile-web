@@ -35,6 +35,18 @@ const FORBIDDEN_NO_TOKEN: ApiError = {
   violations: [],
 };
 
+// Single source of truth for the 8 ApiErrorKind numeric values.
+const VALID_API_ERROR_KINDS: ReadonlySet<number> = new Set<number>([
+  ApiErrorKind.VALIDATION,
+  ApiErrorKind.FORBIDDEN,
+  ApiErrorKind.STALE_REVISION,
+  ApiErrorKind.IDEMPOTENCY_KEY_REUSED,
+  ApiErrorKind.NOT_FOUND,
+  ApiErrorKind.CONFLICT,
+  ApiErrorKind.BLOCKED,
+  ApiErrorKind.RETRYABLE,
+]);
+
 function networkError(message: string): ApiError {
   return {
     kind: ApiErrorKind.RETRYABLE,
@@ -55,7 +67,7 @@ async function parseJson(res: Response): Promise<unknown> {
 function toApiError(raw: unknown, fallbackMessage: string): ApiError {
   if (raw && typeof raw === "object") {
     const r = raw as Record<string, unknown>;
-    if (typeof r.kind === "number") {
+    if (typeof r.kind === "number" && VALID_API_ERROR_KINDS.has(r.kind)) {
       return {
         kind: r.kind,
         message: typeof r.message === "string" ? r.message : fallbackMessage,
@@ -68,11 +80,31 @@ function toApiError(raw: unknown, fallbackMessage: string): ApiError {
   return networkError(fallbackMessage);
 }
 
-export async function postV1Command<TReq, TRes>(
+/**
+ * Validate that a parsed JSON body matches the minimal `CommandResponse`
+ * shape (`commandId` and `acceptedAt` are mandatory strings). Returns an
+ * `ApiError` (RETRYABLE) on mismatch so callers can render a coherent
+ * failure without crashing on unexpected payloads.
+ */
+function validateCommandResponse(raw: unknown): ApiError | null {
+  if (!raw || typeof raw !== "object") {
+    return networkError("response body is not an object");
+  }
+  const r = raw as Record<string, unknown>;
+  if (typeof r.commandId !== "string") {
+    return networkError("response missing string field: commandId");
+  }
+  if (typeof r.acceptedAt !== "string") {
+    return networkError("response missing string field: acceptedAt");
+  }
+  return null;
+}
+
+export async function postV1Command<TReq>(
   client: V1Client,
   path: string,
   envelope: CommandRequest<TReq>,
-): Promise<Result<CommandResponse & { payload: TRes }>> {
+): Promise<Result<CommandResponse>> {
   const token = await client.getIdToken();
   if (!token) {
     return { ok: false, error: FORBIDDEN_NO_TOKEN };
@@ -103,8 +135,12 @@ export async function postV1Command<TReq, TRes>(
     };
   }
 
-  const data = (await res.json()) as CommandResponse;
-  return { ok: true, data: { ...data, payload: undefined as unknown as TRes }, status: res.status };
+  const raw = await parseJson(res);
+  const shapeError = validateCommandResponse(raw);
+  if (shapeError) {
+    return { ok: false, error: shapeError };
+  }
+  return { ok: true, data: raw as CommandResponse, status: res.status };
 }
 
 export async function getV1Read<T>(
@@ -139,6 +175,9 @@ export async function getV1Read<T>(
     };
   }
 
-  const data = (await res.json()) as T;
-  return { ok: true, data, status: res.status };
+  const raw = await parseJson(res);
+  if (!raw || typeof raw !== "object") {
+    return { ok: false, error: networkError("response body is not an object") };
+  }
+  return { ok: true, data: raw as T, status: res.status };
 }

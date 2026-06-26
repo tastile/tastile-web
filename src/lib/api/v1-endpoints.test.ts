@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { postV1Command, getV1Read, type V1Client } from "./v1-endpoints";
+import { ApiErrorKind } from "@/lib/domain/v1/constants";
 
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch as unknown as typeof fetch;
@@ -22,6 +23,15 @@ const baseClient = (): V1Client => ({
   baseUrl: "https://api.example.com",
   getIdToken: async () => "tok",
 });
+
+// Shared across the 6 tests that POST without caring about the request
+// envelope — keeps the diff tiny and the call sites readable.
+const emptyEnvelope = {
+  expectedRevision: null,
+  idempotencyKey: "k",
+  occurredAt: "o",
+  payload: {},
+};
 
 describe("postV1Command", () => {
   beforeEach(() => mockFetch.mockReset());
@@ -72,12 +82,7 @@ describe("postV1Command", () => {
         pending: [{ kind: 0, target: null, notBefore: null }],
       }),
     );
-    const res = await postV1Command(baseClient(), "/v1/x", {
-      expectedRevision: 4,
-      idempotencyKey: "k",
-      occurredAt: "o",
-      payload: {},
-    });
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.status).toBe(200);
@@ -87,20 +92,35 @@ describe("postV1Command", () => {
     }
   });
 
+  it("returns RETRYABLE ApiError when 2xx body is missing commandId", async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ acceptedAt: "t1" }));
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
+      expect(res.error.message).toContain("commandId");
+    }
+  });
+
+  it("returns RETRYABLE ApiError when 2xx body is missing acceptedAt", async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ commandId: "c1" }));
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
+      expect(res.error.message).toContain("acceptedAt");
+    }
+  });
+
   it("returns {ok:false,error:ApiError} when id token is missing (FORBIDDEN)", async () => {
     const client: V1Client = {
       baseUrl: "https://api.example.com",
       getIdToken: async () => null,
     };
-    const res = await postV1Command(client, "/v1/x", {
-      expectedRevision: null,
-      idempotencyKey: "k",
-      occurredAt: "o",
-      payload: {},
-    });
+    const res = await postV1Command(client, "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(1);
+      expect(res.error.kind).toBe(ApiErrorKind.FORBIDDEN);
       expect(res.error.message).toBe("no id token");
       expect(res.error.currentRevision).toBeNull();
       expect(res.error.violations).toEqual([]);
@@ -111,7 +131,7 @@ describe("postV1Command", () => {
   it("returns ApiError with parsed violations on non-2xx", async () => {
     mockFetch.mockResolvedValueOnce(
       errResponse(422, {
-        kind: 0,
+        kind: ApiErrorKind.VALIDATION,
         message: "bad payload",
         currentRevision: 3,
         violations: [
@@ -119,32 +139,39 @@ describe("postV1Command", () => {
         ],
       }),
     );
-    const res = await postV1Command(baseClient(), "/v1/x", {
-      expectedRevision: null,
-      idempotencyKey: "k",
-      occurredAt: "o",
-      payload: {},
-    });
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(0);
+      expect(res.error.kind).toBe(ApiErrorKind.VALIDATION);
       expect(res.error.message).toBe("bad payload");
       expect(res.error.currentRevision).toBe(3);
       expect(res.error.violations).toHaveLength(1);
     }
   });
 
-  it("returns network ApiError (RETRYABLE) when fetch throws", async () => {
-    mockFetch.mockRejectedValueOnce(new Error("socket reset"));
-    const res = await postV1Command(baseClient(), "/v1/x", {
-      expectedRevision: null,
-      idempotencyKey: "k",
-      occurredAt: "o",
-      payload: {},
-    });
+  it("coerces out-of-range kind to RETRYABLE on non-2xx", async () => {
+    mockFetch.mockResolvedValueOnce(
+      errResponse(500, {
+        kind: 99,
+        message: "weird",
+        currentRevision: null,
+        violations: [],
+      }),
+    );
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(7);
+      expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
+      expect(res.error.message).toContain("500");
+    }
+  });
+
+  it("returns network ApiError (RETRYABLE) when fetch throws", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("socket reset"));
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    expect(res.ok).toBe(false);
+    if (!res.ok) {
+      expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
       expect(res.error.message).toBe("socket reset");
       expect(res.error.currentRevision).toBeNull();
       expect(res.error.violations).toEqual([]);
@@ -159,15 +186,10 @@ describe("postV1Command", () => {
         throw new Error("invalid json");
       },
     } as unknown as Response);
-    const res = await postV1Command(baseClient(), "/v1/x", {
-      expectedRevision: null,
-      idempotencyKey: "k",
-      occurredAt: "o",
-      payload: {},
-    });
+    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(7);
+      expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
       expect(res.error.message).toContain("500");
     }
   });
@@ -193,7 +215,7 @@ describe("getV1Read", () => {
   it("returns ApiError on non-2xx", async () => {
     mockFetch.mockResolvedValueOnce(
       errResponse(404, {
-        kind: 4,
+        kind: ApiErrorKind.NOT_FOUND,
         message: "missing",
         currentRevision: null,
         violations: [],
@@ -202,7 +224,7 @@ describe("getV1Read", () => {
     const res = await getV1Read(baseClient(), "/v1/tiles/missing");
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(4);
+      expect(res.error.kind).toBe(ApiErrorKind.NOT_FOUND);
       expect(res.error.message).toBe("missing");
     }
   });
@@ -215,7 +237,7 @@ describe("getV1Read", () => {
     const res = await getV1Read(client, "/v1/x");
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(1);
+      expect(res.error.kind).toBe(ApiErrorKind.FORBIDDEN);
     }
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -225,7 +247,7 @@ describe("getV1Read", () => {
     const res = await getV1Read(baseClient(), "/v1/x");
     expect(res.ok).toBe(false);
     if (!res.ok) {
-      expect(res.error.kind).toBe(7);
+      expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
       expect(res.error.message).toBe("offline");
     }
   });

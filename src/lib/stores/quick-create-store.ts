@@ -69,7 +69,6 @@ export interface QuickCreateState {
   meta: MetaSlice;
 
   setField: (path: string, value: unknown) => void;
-  setKind: (kind: number) => void;
   setLabelOnly: (isLabelOnly: boolean) => void;
   reset: () => void;
 }
@@ -79,6 +78,7 @@ export interface QuickCreateState {
 function defaultConditionRoot(): Plan["completion"]["root"] {
   // A placeholder ALL node. Editors replace this; tests only assert the
   // shape exists, not its semantic correctness.
+  // TODO: validate before submit — `kind` should be a ConditionKindValue.
   return { kind: 0, children: [], term: null };
 }
 
@@ -122,6 +122,8 @@ function defaultRecurring(): RecurringSlice {
     life: {
       active: { startDate: "", endDate: "" },
       state: RecurringState.ACTIVE,
+      // TODO: validate before submit — `actor.kind` should be an ActorKindValue
+      // and `at` should be a real ISO timestamp.
       changed: {
         at: new Date().toISOString(),
         actor: { id: "self", kind: 0, ownerId: null },
@@ -175,6 +177,11 @@ function setDeepPath(
   path: string,
   value: unknown,
 ): QuickCreateState {
+  // NOTE: if an intermediate segment is null/undefined or a non-object
+  // primitive, the original state is returned unchanged. Callers must
+  // initialise nested objects explicitly (e.g. via `buildDefaultQuickCreateState`)
+  // before assigning to a deep path. Array-index path segments are not
+  // supported and are intentionally out of scope here.
   const segments = path.split(".");
   if (segments.length === 0) return state;
   const [head, ...rest] = segments;
@@ -202,14 +209,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   close: () => set({ isOpen: false }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
-  setKind: (_kind) =>
-    set((state) => {
-      // TileKind maps: RECURRING=0 → keep; PLACEMENT=1 / EXECUTION=2 are
-      // derived aggregates and don't change Plan.role here. Editors will
-      // mutate Plan/Recurring accordingly.
-      void _kind;
-      return state;
-    }),
   setLabelOnly: (isLabelOnly) =>
     set((state) => ({
       plan: {
@@ -218,5 +217,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       },
       meta: { ...state.meta, isLabelOnly },
     })),
-  reset: () => set(() => buildDefaultQuickCreateState()),
+  reset: () =>
+    set((state) => ({
+      ...buildDefaultQuickCreateState(),
+      // Preserve the current open/close state — `reset` only clears form
+      // fields, it does not dismiss the panel.
+      isOpen: state.isOpen,
+    })),
 }));

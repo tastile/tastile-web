@@ -81,26 +81,13 @@ describe("useQuickCreateStore", () => {
     });
   });
 
-  describe("setKind", () => {
-    it("defaults to RECURRING (0)", () => {
-      expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.EXECUTABLE);
-    });
-
-    it("switches plan.role and identity kind together", () => {
-      useQuickCreateStore.getState().setKind(1);
-      expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.EXECUTABLE);
-      useQuickCreateStore.getState().setLabelOnly(true);
-      expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.LABEL);
-    });
-  });
-
   describe("setLabelOnly", () => {
-    it("flips role to LABEL (1)", () => {
+    it("flips role to LABEL", () => {
       useQuickCreateStore.getState().setLabelOnly(true);
       expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.LABEL);
     });
 
-    it("flips role back to EXECUTABLE (0)", () => {
+    it("flips role back to EXECUTABLE", () => {
       useQuickCreateStore.getState().setLabelOnly(true);
       useQuickCreateStore.getState().setLabelOnly(false);
       expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.EXECUTABLE);
@@ -113,7 +100,7 @@ describe("useQuickCreateStore", () => {
   });
 
   describe("reset", () => {
-    it("clears all state back to defaults", () => {
+    it("clears all field state back to defaults", () => {
       const s = useQuickCreateStore.getState();
       s.setField("identity.title", "leak");
       s.setField("meta.memo", "leak");
@@ -124,6 +111,23 @@ describe("useQuickCreateStore", () => {
       expect(r.meta.memo).toBe("");
       expect(r.meta.isLabelOnly).toBe(false);
       expect(r.plan.role).toBe(PlanRole.EXECUTABLE);
+    });
+
+    it("preserves isOpen when called while panel is closed", () => {
+      useQuickCreateStore.getState().close();
+      expect(useQuickCreateStore.getState().isOpen).toBe(false);
+      useQuickCreateStore.getState().reset();
+      expect(useQuickCreateStore.getState().isOpen).toBe(false);
+    });
+
+    it("preserves isOpen when called while panel is open", () => {
+      useQuickCreateStore.getState().open();
+      expect(useQuickCreateStore.getState().isOpen).toBe(true);
+      useQuickCreateStore.getState().setField("identity.title", "leak");
+      useQuickCreateStore.getState().reset();
+      const r = useQuickCreateStore.getState();
+      expect(r.isOpen).toBe(true);
+      expect(r.identity.title).toBe("");
     });
   });
 });
