@@ -11,7 +11,8 @@ import type {
   TileKindValue,
 } from "./constants";
 import type { ConditionNode } from "./condition";
-import type { Completion, TimeRequirement, TaskDefinition } from "./completion";
+import type { Completion } from "./completion";
+import type { ChangeRule } from "./change-set";
 import type { Reference } from "./reference";
 import type { Metric } from "./metric";
 import type { Stamp } from "./actor";
@@ -112,7 +113,7 @@ export interface PlacementProposalDraft {
 export interface FlowOutput {
   kind: number;
   proposal: PlacementProposalDraft | null;
-  change: import("./change-set").ChangeRule | null;
+  change: ChangeRule | null;
 }
 
 export interface FlowCandidate {
@@ -147,7 +148,7 @@ export interface Decision {
     id: string;
     label: string;
     /** ChangeRule applied when the user picks this option. */
-    change: import("./change-set").ChangeRule | null;
+    change: ChangeRule | null;
   }>;
 }
 
@@ -230,7 +231,7 @@ export interface Frame {
 export interface RecurringOutput {
   kind: number;
   proposal: PlacementProposalDraft | null;
-  change: import("./change-set").ChangeRule | null;
+  change: ChangeRule | null;
 }
 
 export interface RecurringRule {

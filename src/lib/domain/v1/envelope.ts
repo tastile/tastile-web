@@ -8,6 +8,7 @@
  */
 
 import type { AggregateKindValue } from "./constants";
+import type { ResolutionViolation } from "./placement";
 
 // ---------- helpers ----------
 
@@ -119,14 +120,6 @@ export interface CommandResponse {
   /** CommandResult numeric value. See `constants.ts` `CommandResult`. */
   result: number;
   pending: PendingWork[];
-}
-
-export interface ResolutionViolation {
-  /** ApiErrorKind numeric value. See `constants.ts` `ApiErrorKind`. */
-  kind: number;
-  message: string;
-  currentRevision: number | null;
-  violations: ResolutionViolation[];
 }
 
 export interface ApiError {

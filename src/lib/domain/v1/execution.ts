@@ -7,10 +7,9 @@
 import type {
   ExecutionSegmentKindValue,
   ExecutionStateValue,
-  ResolutionStateValue,
 } from "./constants";
 import type { VersionRef } from "./change-set";
-import type { EffectivePlacementRef } from "./placement";
+import type { EffectivePlacementRef, ResolutionInfo } from "./placement";
 
 // ---------- ExecutionSegment (child table) ----------
 
@@ -95,16 +94,4 @@ export interface EffectiveExecution {
   execution: Execution;
   revision: number;
   resolution: ResolutionInfo;
-}
-
-export interface ResolutionInfo {
-  /** OPEN=0 | CLOSED=1 | BLOCKED=2 (ResolutionState) */
-  state: ResolutionStateValue;
-  resolvedAt: string;
-  resolutionHash: string;
-  violations: Array<{
-    /** ApiErrorKind numeric value. */
-    kind: number;
-    message: string;
-  }>;
 }
