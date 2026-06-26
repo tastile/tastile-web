@@ -90,6 +90,10 @@ export interface BuiltEnvelope<T> {
 
 // ---------- path constants ----------
 
+// All v1 command paths use `{tileId}` as a placeholder for the runtime
+// tile ID. Keep this in lockstep with the V1_PATH builders and substituteTileId.
+const TILE_ID_PLACEHOLDER = "{tileId}";
+
 /**
  * v1 command endpoint paths. Local to this builder — `v1-endpoints.ts`
  * (the HTTP client) does not export a path table, and these strings
@@ -98,11 +102,9 @@ export interface BuiltEnvelope<T> {
  */
 const V1_PATH = {
   createTile: "/v1/tiles",
-  setPlan: (tileIdPath: string): string => `/v1/tiles/${tileIdPath}/plan`,
-  appendFrames: (tileIdPath: string): string =>
-    `/v1/recurrings/${tileIdPath}/frames`,
-  appendRules: (tileIdPath: string): string =>
-    `/v1/recurrings/${tileIdPath}/rules`,
+  setPlan: (id: string) => `/v1/tiles/${id}/plan`,
+  appendFrames: (id: string) => `/v1/recurrings/${id}/frames`,
+  appendRules: (id: string) => `/v1/recurrings/${id}/rules`,
 } as const;
 
 // ---------- builder ----------
@@ -115,7 +117,7 @@ export function buildCreateTileCommandV1(
   const envelopes: BuiltEnvelope<unknown>[] = [];
   // `{tileId}` is a placeholder substituted by `substituteTileId` after
   // CREATE_TILE returns the new aggregate id.
-  const tileIdPath = "{tileId}";
+  const tileIdPath = TILE_ID_PLACEHOLDER;
 
   // 1. CREATE_TILE — no expected revision; the server creates the aggregate.
   const createPayload = {
@@ -199,6 +201,6 @@ export function substituteTileId(
 ): BuiltEnvelope<unknown>[] {
   return envelopes.map((e) => ({
     ...e,
-    path: e.path.replace("{tileId}", tileId),
+    path: e.path.replace(TILE_ID_PLACEHOLDER, tileId),
   }));
 }
