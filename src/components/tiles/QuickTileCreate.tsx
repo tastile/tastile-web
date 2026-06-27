@@ -1,401 +1,326 @@
+/**
+ * QuickTileCreate — v1 構造エディタ.
+ *
+ * Single panel with seven sections, each 1:1 with a v1 spec chapter:
+ *   §1 Identity   — Tile.Base (title, description, kind, visual, externalId)
+ *   §2 Plan       — Plan.role, completion, references, planning, metrics, decisions
+ *   §3 Time       — Span, DurationRange
+ *   §4 Windows    — Window[] editor (kind + bounds + referenceId; Phase A scope per HARNESS.md)
+ *   §5 Recurring  — life + FrameRule editor (kind picker + per-kind fields); only when kind = RECURRING
+ *   §6 Advanced   — changeSets[], rules[] (ChangeSet layer; stub until Phase D)
+ *   §7 Meta       — project, tags, memo
+ *
+ * All field state lives in `useQuickCreateStore`. The submit flow
+ * (`@/lib/api/v1/submit`) reads the store directly and posts the v1
+ * envelope sequence — there is no v7-shaped intermediate form state.
+ *
+ * Phase scope per HARNESS.md "Phase A: 核":
+ *   Phase A (live): Tile.Base (Visual + Description) / Plan.role / Span /
+ *     DurationRange / Window / Recurring.life / FrameRule kind picker
+ *   Phase B (stub): Condition tree editor (completion.root, timeRequirements, tasks)
+ *   Phase C (stub): Metrics / Flows / Candidates / ChangeSet conflicts
+ *   Phase D (stub): DecisionRun / Session / InteractionTree / Delivery
+ */
+
 "use client";
 
 import {
-  Ban,
-  BookOpen,
+  AlertCircle,
   Calendar,
   CheckCircle2,
   ChevronDown,
   Clock,
-  Clock4,
   FileText,
   FolderOpen,
+  ListChecks,
   MessageSquare,
+  Palette,
   Plus,
   Repeat,
+  Settings2,
   Tag,
+  Type,
   X,
-  Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { Textarea } from "@/components/ui/Input";
 import {
   FormDivider,
   FormPanel,
   FormRow,
   RowInput,
   RowSegmented,
-  RowSubPanel,
   RowToggle,
 } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/Input";
-import { getSessionClient } from "@/lib/daemon/id-token-client";
-import type { DoneRule, ObjectiveMode, Tile } from "@/lib/domain/tile";
-import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
+import { makeV1Client, submitCreateTileV1 } from "@/lib/api/v1/submit";
+import {
+  ConditionKind,
+  HolidayKind,
+  PlanRole,
+  RecurringState,
+  TileKind,
+  type PlanRoleValue,
+  type RecurringStateValue,
+  type TileKindValue,
+} from "@/lib/domain/v1/constants";
+import type { Window } from "@/lib/domain/v1/window";
+import type {
+  FrameRule,
+  FrameGenerator,
+  CalendarGenerator,
+  ReferenceGenerator,
+  StepGenerator,
+  TransformGenerator,
+} from "@/lib/domain/v1/tile";
+import { uuidv7 } from "@/lib/domain/v1/envelope";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
-import {
-  deriveProjectAndTags,
-  equalsIgnoreCase,
-  formatDateShort,
-  formatDuration,
-  getCurrentLocalDate,
-  getCurrentLocalTime,
-  getLocalTimeAfterMinutes,
-  minutesToHourMinuteStrings,
-  normalizeTag,
-  parseBoundedDurationMinutes,
-  parseDateTimeParts,
-  parseDurationToMinutes,
-  parseNonNegativeInt,
-  parseTimeToMinutes,
-  type QuickCreateFormState,
-  type RecurrenceFrequency,
-} from "./build-command";
-import { submitCreateTileV1, makeV1Client } from "@/lib/api/v1/submit";
-import { QuickTileAutomationSubPanel } from "./sub-panels/QuickTileAutomationSubPanel";
-import { QuickTileInterruptSubPanel } from "./sub-panels/QuickTileInterruptSubPanel";
-import { QuickTileMetaSubPanel } from "./sub-panels/QuickTileMetaSubPanel";
-import { QuickTileRecurrenceSubPanel } from "./sub-panels/QuickTileRecurrenceSubPanel";
 
-const DONE_RULE_OPTIONS: ReadonlyArray<{ value: DoneRule; label: string }> = [
-  { value: "manual", label: "quickCreate.doneRuleManual" },
-  { value: "time_reached", label: "quickCreate.doneRuleTimeReached" },
-  { value: "interval_end", label: "quickCreate.doneRuleIntervalEnd" },
+// ---------- kind / role / state option sets ----------
+
+const TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> = [
+  { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
+  { value: TileKind.PLACEMENT, label: "quickCreate.kindPlacement" },
+  { value: TileKind.EXECUTION, label: "quickCreate.kindExecution" },
 ];
 
-type ActivePanel = "base" | "recurrence" | "interrupt" | "automation" | "meta";
+const PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
+  { value: PlanRole.EXECUTABLE, label: "quickCreate.roleExecutable" },
+  { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
+];
+
+const RECURRING_STATE_OPTIONS: ReadonlyArray<{
+  value: RecurringStateValue;
+  label: string;
+}> = [
+  { value: RecurringState.ACTIVE, label: "quickCreate.recurringStateActive" },
+  { value: RecurringState.PAUSED, label: "quickCreate.recurringStatePaused" },
+  { value: RecurringState.ENDED, label: "quickCreate.recurringStateEnded" },
+  {
+    value: RecurringState.CANCELLED,
+    label: "quickCreate.recurringStateCancelled",
+  },
+];
+
+// ---------- helpers ----------
+
+function localDateTimeToIso(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString();
+}
+
+function isoToLocalDateTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  // datetime-local needs "YYYY-MM-DDTHH:MM" with no timezone suffix.
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function localDateToIsoDate(value: string): string {
+  // Date inputs give "YYYY-MM-DD"; emit as ISO date (start of day UTC).
+  return value ? `${value}T00:00:00.000Z` : "";
+}
+
+function normalizeHexColor(value: string): string {
+  // <input type="color"> requires a #rrggbb value; empty / partial strings
+  // fall back to black so the picker always has a usable state.
+  return /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000";
+}
+
+const FRAME_GENERATOR_KIND_OPTIONS = [
+  { value: "step", label: "quickCreate.frameRuleKindStep" },
+  { value: "reference", label: "quickCreate.frameRuleKindReference" },
+  { value: "calendar", label: "quickCreate.frameRuleKindCalendar" },
+  { value: "transform", label: "quickCreate.frameRuleKindTransform" },
+] as const;
+
+const CALENDAR_UNIT_OPTIONS = [
+  { value: "0", label: "quickCreate.frameRuleUnitDay" },
+  { value: "1", label: "quickCreate.frameRuleUnitWeek" },
+  { value: "2", label: "quickCreate.frameRuleUnitMonth" },
+] as const;
+
+const REFERENCE_ALIGN_OPTIONS = [
+  { value: "0", label: "quickCreate.frameRuleAlignStart" },
+  { value: "1", label: "quickCreate.frameRuleAlignEnd" },
+  { value: "2", label: "quickCreate.frameRuleAlignCenter" },
+] as const;
+
+const HOLIDAY_KIND_OPTIONS = [
+  { value: String(HolidayKind.NOT_HOLIDAY), label: "quickCreate.frameRuleHolidayNotHoliday" },
+  { value: String(HolidayKind.HOLIDAY), label: "quickCreate.frameRuleHolidayHoliday" },
+  { value: String(HolidayKind.ANY), label: "quickCreate.frameRuleHolidayAny" },
+] as const;
+
+const WINDOW_KIND_OPTIONS = [
+  { value: "0", label: "quickCreate.windowKindCalendar" },
+  { value: "1", label: "quickCreate.windowKindLabelSpan" },
+  { value: "2", label: "quickCreate.windowKindParentSpan" },
+  { value: "3", label: "quickCreate.windowKindGap" },
+] as const;
+
+type FrameGeneratorKind = FrameGenerator["kind"];
+
+function defaultFrameGenerator(kind: FrameGeneratorKind): FrameGenerator {
+  switch (kind) {
+    case "step":
+      return { kind: "step", value: { step: 0, origin: null, bounds: null } };
+    case "reference":
+      return { kind: "reference", value: { referenceId: "", align: 0 } };
+    case "calendar":
+      return {
+        kind: "calendar",
+        value: { unit: 0, weekdayMask: null, holidayKind: HolidayKind.ANY },
+      };
+    case "transform":
+      return {
+        kind: "transform",
+        value: { sourceFrameId: "", shift: null, scale: null },
+      };
+  }
+}
+
+// ---------- main component ----------
 
 export function QuickTileCreate() {
-  const { isOpen, close } = useQuickCreateStore();
+  const isOpen = useQuickCreateStore((s) => s.isOpen);
+  const close = useQuickCreateStore((s) => s.close);
+  const reset = useQuickCreateStore((s) => s.reset);
+  const setField = useQuickCreateStore((s) => s.setField);
+  const setLabelOnly = useQuickCreateStore((s) => s.setLabelOnly);
+
+  const identity = useQuickCreateStore((s) => s.identity);
+  const plan = useQuickCreateStore((s) => s.plan);
+  const time = useQuickCreateStore((s) => s.time);
+  const windows = useQuickCreateStore((s) => s.windows);
+  const recurring = useQuickCreateStore((s) => s.recurring);
+  const advanced = useQuickCreateStore((s) => s.advanced);
+  const meta = useQuickCreateStore((s) => s.meta);
+
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
-  const { state } = useExecutionEngineContext();
 
-  const [activePanel, setActivePanel] = useState<ActivePanel>("base");
-
-  const [title, setTitle] = useState("");
-  const [titleEdited, setTitleEdited] = useState(false);
-  const [isLabelOnly, setIsLabelOnly] = useState(false);
-  const [useStartAt, setUseStartAt] = useState(false);
-  const [useEndAt, setUseEndAt] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-  const [startDateInput, setStartDateInput] = useState(() => getCurrentLocalDate());
-  const [startTimeInput, setStartTimeInput] = useState(() => getCurrentLocalTime());
-  const [endDateInput, setEndDateInput] = useState(() => getCurrentLocalDate());
-  const [endTimeInput, setEndTimeInput] = useState(() => getLocalTimeAfterMinutes(60));
-  const [objectiveMode, setObjectiveMode] = useState<ObjectiveMode>("finish_once");
-  const [recurrenceFrequency, setRecurrenceFrequency] = useState<RecurrenceFrequency>("daily");
-  const [recurrenceIntervalInput, setRecurrenceIntervalInput] = useState("1");
-  const [recurrenceWeekdays, setRecurrenceWeekdays] = useState<number[]>([new Date().getDay()]);
-  const [recurrenceUseStartAt, setRecurrenceUseStartAt] = useState(true);
-  const [recurrenceUseEndAt, setRecurrenceUseEndAt] = useState(true);
-  const [recurrenceStartTimeInput, setRecurrenceStartTimeInput] = useState(() =>
-    getCurrentLocalTime(),
-  );
-  const [recurrenceEndTimeInput, setRecurrenceEndTimeInput] = useState(() =>
-    getLocalTimeAfterMinutes(60),
-  );
-  const [recurrenceValidFromEnabled, setRecurrenceValidFromEnabled] = useState(false);
-  const [recurrenceValidToEnabled, setRecurrenceValidToEnabled] = useState(false);
-  const [recurrenceValidFromDateInput, setRecurrenceValidFromDateInput] = useState(() =>
-    getCurrentLocalDate(),
-  );
-  const [recurrenceValidToDateInput, setRecurrenceValidToDateInput] = useState(() =>
-    getCurrentLocalDate(),
-  );
-  const [workHoursInput, setWorkHoursInput] = useState("0");
-  const [workMinutesInput, setWorkMinutesInput] = useState("25");
-  const [durationManuallyEdited, setDurationManuallyEdited] = useState(false);
-  const [projectDraft, setProjectDraft] = useState("");
-  const [selectedProject, setSelectedProject] = useState<string | null>(null);
-  const [isProjectInputFocused, setIsProjectInputFocused] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [tagDraft, setTagDraft] = useState("");
-  const [isTagInputFocused, setIsTagInputFocused] = useState(false);
-  const [memoInput, setMemoInput] = useState("");
-  const [memoExpanded, setMemoExpanded] = useState(false);
-  const [doneRule, setDoneRule] = useState<DoneRule>("manual");
-  const [interruptPenalty, setInterruptPenalty] = useState(3);
-  const [resumePenalty, setResumePenalty] = useState(3);
-  const [externalInterruptOnly, setExternalInterruptOnly] = useState(false);
-  const [promptOnStart, setPromptOnStart] = useState(false);
-  const [promptOnEnd, setPromptOnEnd] = useState(true);
-  const [autoStartAllowed, setAutoStartAllowed] = useState(false);
-  const [autoEndAllowed, setAutoEndAllowed] = useState(false);
-  const [timezone, setTimezone] = useState("");
-  const [timedLabelDraft, setTimedLabelDraft] = useState("");
-  const [timedLabels, setTimedLabels] = useState<
-    Array<{ label: string; startAt: Date | null; endAt: Date | null }>
-  >([]);
+  const [memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [invalidField, setInvalidField] = useState<"title" | "duration" | null>(null);
-
-  // --- derived values ---------------------------------------------------
-  const workTargetMin = parseDurationToMinutes(workHoursInput, workMinutesInput);
-  const boundedDurationMin = parseBoundedDurationMinutes(
-    startDateInput,
-    startTimeInput,
-    endDateInput,
-    endTimeInput,
-  );
-  const recurrenceStartOffsetMin = parseTimeToMinutes(recurrenceStartTimeInput);
-  const recurrenceEndOffsetMin = parseTimeToMinutes(recurrenceEndTimeInput);
-  const recurringWindowDurationMin =
-    recurrenceUseStartAt &&
-    recurrenceUseEndAt &&
-    recurrenceStartOffsetMin !== null &&
-    recurrenceEndOffsetMin !== null &&
-    recurrenceEndOffsetMin > recurrenceStartOffsetMin
-      ? recurrenceEndOffsetMin - recurrenceStartOffsetMin
-      : null;
-  const effectiveDurationMin =
-    recurringWindowDurationMin && !durationManuallyEdited
-      ? recurringWindowDurationMin
-      : boundedDurationMin && !durationManuallyEdited
-        ? boundedDurationMin
-        : (workTargetMin ?? boundedDurationMin);
-  const workTargetText = effectiveDurationMin ? formatDuration(effectiveDurationMin, locale) : null;
-
-  const startDate = useStartAt ? parseDateTimeParts(startDateInput, startTimeInput) : null;
-  const endDate = useEndAt ? parseDateTimeParts(endDateInput, endTimeInput) : null;
-  const hasStart = !!startDate;
-  const hasEnd = !!endDate;
-  const hasAnyTemporalConstraint = hasStart || hasEnd;
-  const scheduleSummary = (() => {
-    if (hasStart && hasEnd) {
-      return `${t("quickCreate.scheduleSummaryStartEnd")}${startDateInput} ${startTimeInput} - ${endDateInput} ${endTimeInput}`;
-    }
-    if (hasStart) {
-      return `${t("quickCreate.scheduleSummaryStartOnly")}${startDateInput} ${startTimeInput}`;
-    }
-    if (hasEnd) {
-      return `${t("quickCreate.scheduleSummaryEndOnly")}${endDateInput} ${endTimeInput}`;
-    }
-    return t("quickCreate.scheduleSummaryAnytime");
-  })();
-  const isRecurring = objectiveMode === "recurring";
-  const showFocusUntilEnd = !isLabelOnly && !isRecurring && hasEnd;
-  const recurrenceInterval = parseNonNegativeInt(recurrenceIntervalInput) ?? 0;
-  const recurrenceWindowValid =
-    !recurrenceUseStartAt ||
-    !recurrenceUseEndAt ||
-    (recurrenceStartOffsetMin !== null &&
-      recurrenceEndOffsetMin !== null &&
-      recurrenceEndOffsetMin > recurrenceStartOffsetMin);
-
-  const { existingProjects, existingTags } = deriveProjectAndTags(
-    state as { tiles: Map<unknown, Tile> },
-  );
-  const normalizedProjectDraft = normalizeTag(projectDraft);
-  const resolvedProject =
-    selectedProject ??
-    (normalizedProjectDraft
-      ? (existingProjects.find((project) => equalsIgnoreCase(project, normalizedProjectDraft)) ??
-        normalizedProjectDraft)
-      : "");
-  const projectSuggestions = existingProjects
-    .filter((project) => project.toLowerCase().includes(projectDraft.trim().toLowerCase()))
-    .slice(0, 8);
-  const tagSuggestions = existingTags
-    .filter(
-      (tag) =>
-        tag.toLowerCase().includes(tagDraft.trim().toLowerCase()) &&
-        !selectedTags.some((selected) => equalsIgnoreCase(selected, tag)),
-    )
-    .slice(0, 8);
-
-  const suggestedTitle = useMemo(() => {
-    if (isLabelOnly) {
-      return locale === "ja" ? "期間ラベル" : "Period label";
-    }
-    if (objectiveMode === "recurring") {
-      if (workTargetText) {
-        return locale === "ja"
-          ? `定期タスク ${workTargetText}`
-          : `Recurring task ${workTargetText}`;
-      }
-      return locale === "ja" ? "定期タスク" : "Recurring task";
-    }
-    if (objectiveMode === "maximize_within_interval" && showFocusUntilEnd) {
-      if (startDate && endDate) {
-        return locale === "ja"
-          ? `${formatDateShort(startDate, locale)} - ${formatDateShort(endDate, locale)} で最大化`
-          : `Maximize in ${formatDateShort(startDate, locale)} - ${formatDateShort(endDate, locale)}`;
-      }
-      return locale === "ja" ? "できる限り進める" : "Maximize progress";
-    }
-    if (workTargetText) {
-      return locale === "ja" ? `作業 ${workTargetText}` : `Task ${workTargetText}`;
-    }
-    return locale === "ja" ? "作業タスク" : "Task";
-  }, [isLabelOnly, objectiveMode, workTargetText, showFocusUntilEnd, startDate, endDate, locale]);
-
-  useEffect(() => {
-    if (!titleEdited) setTitle(suggestedTitle);
-  }, [suggestedTitle, titleEdited]);
-
-  useEffect(() => {
-    if (!showFocusUntilEnd && objectiveMode === "maximize_within_interval") {
-      setObjectiveMode("finish_once");
-    }
-  }, [showFocusUntilEnd, objectiveMode]);
-
-  useEffect(() => {
-    const autoDerived = recurringWindowDurationMin ?? boundedDurationMin;
-    if (autoDerived && !durationManuallyEdited) {
-      const { hours, minutes } = minutesToHourMinuteStrings(autoDerived);
-      setWorkHoursInput(hours);
-      setWorkMinutesInput(minutes);
-    }
-  }, [boundedDurationMin, recurringWindowDurationMin, durationManuallyEdited]);
-
-  // WYSIWYG: switching to recurring opens the Recurrence sub-panel.
-  useEffect(() => {
-    if (objectiveMode === "recurring" && activePanel === "base") {
-      setActivePanel("recurrence");
-    }
-  }, [objectiveMode, activePanel]);
+  const [invalidField, setInvalidField] = useState<"title" | null>(null);
 
   if (!isOpen) return null;
 
-  // --- submit validity --------------------------------------------------
-  const temporalOrderValid = isRecurring
-    ? recurrenceWindowValid
-    : !startDate || !endDate || endDate.getTime() > startDate.getTime();
-  const durationReady = isLabelOnly
-    ? true
-    : isRecurring
-      ? (workTargetMin ?? 0) > 0
-      : !hasAnyTemporalConstraint || (workTargetMin ?? 0) > 0;
-  const recurrenceReady = !isRecurring || recurrenceInterval > 0;
-  const canSubmit =
-    title.trim().length > 0 && temporalOrderValid && durationReady && recurrenceReady;
+  // --- validity -------------------------------------------------------------
 
-  // --- submit handler ---------------------------------------------------
+  const titleOk = identity.title.trim().length > 0;
+  const kindIsRecurring = identity.kind === TileKind.RECURRING;
+  const spanHasStart = !!time.span.start;
+  const spanHasEnd = !!time.span.end;
+  const spanOrderValid =
+    !spanHasStart || !spanHasEnd || time.span.end > time.span.start;
+  const durationValid =
+    meta.isLabelOnly ||
+    time.durationMinMax.minMs === null ||
+    time.durationMinMax.maxMs === null ||
+    time.durationMinMax.minMs <= time.durationMinMax.maxMs;
+  const canSubmit = titleOk && spanOrderValid && durationValid;
+
+  // --- windows array helpers ------------------------------------------------
+  // setField doesn't traverse arrays, so each array mutation rewrites the
+  // whole array. Frames / FrameRules share the same shape; see FrameRule
+  // helpers below for the discriminated-union twist.
+
+  function addWindow() {
+    const newWindow: Window = {
+      id: uuidv7(),
+      owner: "self",
+      kind: 0, // CALENDAR
+      bounds: { start: "", end: "" },
+      rules: [],
+      referenceId: null,
+    };
+    setField("windows", [...windows, newWindow]);
+  }
+
+  function removeWindow(index: number) {
+    setField(
+      "windows",
+      windows.filter((_, i) => i !== index),
+    );
+  }
+
+  function updateWindow(
+    index: number,
+    updater: (current: Window) => Window,
+  ) {
+    setField(
+      "windows",
+      windows.map((w, i) => (i === index ? updater(w) : w)),
+    );
+  }
+
+  function addFrameRule() {
+    const newRule: FrameRule = {
+      id: uuidv7(),
+      generator: {
+        kind: "step",
+        value: { step: 0, origin: null, bounds: null },
+      },
+      active: null,
+    };
+    setField("recurring.frameRules", [...recurring.frameRules, newRule]);
+  }
+
+  function removeFrameRule(index: number) {
+    setField(
+      "recurring.frameRules",
+      recurring.frameRules.filter((_, i) => i !== index),
+    );
+  }
+
+  function updateFrameRule(
+    index: number,
+    updater: (current: FrameRule) => FrameRule,
+  ) {
+    setField(
+      "recurring.frameRules",
+      recurring.frameRules.map((r, i) => (i === index ? updater(r) : r)),
+    );
+  }
+
+  // --- submit ---------------------------------------------------------------
+
   async function handleCreate() {
     setError(null);
     setInvalidField(null);
-    if (title.trim().length === 0) {
+    if (!titleOk) {
       setError(t("quickCreate.titleRequired"));
       setInvalidField("title");
       return;
     }
-    if (!temporalOrderValid) {
+    if (!spanOrderValid) {
       setError(t("quickCreate.invalidTemporalOrder"));
-      return;
-    }
-    if (!isLabelOnly && !isRecurring && hasAnyTemporalConstraint && (workTargetMin ?? 0) <= 0) {
-      setError(t("quickCreate.durationRequired"));
-      setInvalidField("duration");
-      return;
-    }
-    if (objectiveMode === "recurring" && recurrenceInterval <= 0) {
-      setError(t("quickCreate.recurrenceStepRequired"));
       return;
     }
     if (!canSubmit) return;
 
-    const formState: QuickCreateFormState = {
-      title,
-      isLabelOnly,
-      useStartAt,
-      useEndAt,
-      startDateInput,
-      startTimeInput,
-      endDateInput,
-      endTimeInput,
-      objectiveMode,
-      recurrenceFrequency,
-      recurrenceIntervalInput,
-      recurrenceWeekdays,
-      recurrenceUseStartAt,
-      recurrenceUseEndAt,
-      recurrenceStartTimeInput,
-      recurrenceEndTimeInput,
-      recurrenceValidFromEnabled,
-      recurrenceValidToEnabled,
-      recurrenceValidFromDateInput,
-      recurrenceValidToDateInput,
-      workHoursInput,
-      workMinutesInput,
-      resolvedProject,
-      selectedTags,
-      memoInput,
-      doneRule,
-      interruptPenalty,
-      resumePenalty,
-      externalInterruptOnly,
-      promptOnStart,
-      promptOnEnd,
-      autoStartAllowed,
-      autoEndAllowed,
-      timezone,
-      timedLabels,
-    };
     const v1Client = makeV1Client();
-
     setSubmitting(true);
     try {
-      const result = await submitCreateTileV1({
-        client: v1Client,
-        formState,
-        effectiveDurationMin,
-      });
+      const result = await submitCreateTileV1({ client: v1Client });
       if (!result.ok) {
         throw new Error(
           `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
         );
       }
-
-      // Reset form
-      setTitle("");
-      setTitleEdited(false);
-      setIsLabelOnly(false);
-      setUseStartAt(false);
-      setUseEndAt(false);
+      reset();
       setScheduleOpen(false);
-      setStartDateInput(getCurrentLocalDate());
-      setStartTimeInput(getCurrentLocalTime());
-      setEndDateInput(getCurrentLocalDate());
-      setEndTimeInput(getLocalTimeAfterMinutes(60));
-      setObjectiveMode("finish_once");
-      setRecurrenceFrequency("daily");
-      setRecurrenceIntervalInput("1");
-      setRecurrenceWeekdays([new Date().getDay()]);
-      setRecurrenceUseStartAt(true);
-      setRecurrenceUseEndAt(true);
-      setRecurrenceStartTimeInput(getCurrentLocalTime());
-      setRecurrenceEndTimeInput(getLocalTimeAfterMinutes(60));
-      setRecurrenceValidFromEnabled(false);
-      setRecurrenceValidToEnabled(false);
-      setRecurrenceValidFromDateInput(getCurrentLocalDate());
-      setRecurrenceValidToDateInput(getCurrentLocalDate());
-      setWorkHoursInput("0");
-      setWorkMinutesInput("25");
-      setDurationManuallyEdited(false);
-      setSelectedProject(null);
-      setProjectDraft("");
-      setSelectedTags([]);
-      setTagDraft("");
-      setMemoInput("");
       setMemoExpanded(false);
-      setDoneRule("manual");
-      setInterruptPenalty(3);
-      setResumePenalty(3);
-      setExternalInterruptOnly(false);
-      setPromptOnStart(false);
-      setPromptOnEnd(true);
-      setAutoStartAllowed(false);
-      setAutoEndAllowed(false);
-      setTimezone("");
-      setTimedLabelDraft("");
-      setTimedLabels([]);
-      setError(null);
-      setActivePanel("base");
       close();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("quickCreate.createError"));
@@ -404,57 +329,32 @@ export function QuickTileCreate() {
     }
   }
 
-  // --- panel classes ----------------------------------------------------
-  const basePanelClass = isDesktop
+  // --- panel container ------------------------------------------------------
+
+  const panelClass = isDesktop
     ? cn(
         "fixed inset-y-0 right-0 z-[56]",
-        "w-[32rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-        activePanel !== "base" ? "-translate-x-6 brightness-[0.7]" : "translate-x-0",
+        "w-[32rem] flex flex-col bg-surface-0 shadow-lg border-l border-border",
         "[animation:slideInFromRight_0.22s_ease-out]",
       )
     : cn(
         "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[80vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-        activePanel !== "base" ? "translate-y-6 brightness-[0.7]" : "translate-y-0",
+        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg",
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
-
-  const subPanelClass = (panelName: ActivePanel) =>
-    isDesktop
-      ? cn(
-          "fixed inset-y-0 right-0 z-[57]",
-          "w-[28rem] flex flex-col bg-surface-0 shadow-2xl border-l border-border transition-transform duration-300 ease-out",
-          activePanel === panelName ? "translate-x-0" : "translate-x-full pointer-events-none",
-        )
-      : cn(
-          "fixed inset-x-0 bottom-0 z-[57]",
-          "h-[75vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-2xl transition-transform duration-300 ease-out",
-          activePanel === panelName ? "translate-y-0" : "translate-y-full pointer-events-none",
-        );
 
   return (
     <>
       <div
         className="fixed inset-0 z-[55] bg-foreground/10 backdrop-blur-[1px]"
-        onClick={() => {
-          if (activePanel !== "base") {
-            setActivePanel("base");
-          } else {
-            close();
-          }
-        }}
+        onClick={close}
         aria-hidden
       />
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: base panel doubles as click target to return to base from sub-panel */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: base panel doubles as click target to return to base from sub-panel */}
-      <section
-        className={basePanelClass}
-        onClick={() => {
-          if (activePanel !== "base") setActivePanel("base");
-        }}
-      >
+      <section className={panelClass} aria-label={t("quickCreate.title")}>
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
-          <h2 className="text-base font-semibold text-foreground">{t("quickCreate.title")}</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {t("quickCreate.title")}
+          </h2>
           <button
             type="button"
             onClick={close}
@@ -464,220 +364,304 @@ export function QuickTileCreate() {
             <X className="h-4 w-4" />
           </button>
         </div>
+
         <div className="flex-1 overflow-y-auto">
           <FormPanel>
+            {/* §1 Identity */}
+            <SectionHeader icon={Type} title="§1 Identity (Tile.Base)" />
             <RowInput
               icon={FileText}
               placeholder={t("quickCreate.titlePlaceholder")}
-              value={title}
+              value={identity.title}
               onChange={(value) => {
-                setTitle(value);
-                setTitleEdited(true);
+                setField("identity.title", value);
                 if (invalidField === "title") setInvalidField(null);
               }}
               ariaLabel={t("quickCreate.titlePlaceholder")}
               ariaDescribedBy={invalidField === "title" ? "quick-create-error" : undefined}
               required
               invalid={invalidField === "title"}
-              className="quick-tile-title-row"
             />
-
-            {!isLabelOnly ? (
-              <DurationRow
-                hours={workHoursInput}
-                minutes={workMinutesInput}
-                hoursUnit={t("quickCreate.hoursUnit")}
-                minutesUnit={t("quickCreate.minutesUnit")}
-                ariaLabel={t("quickCreate.durationAriaLabel")}
-                onHoursChange={(value) => {
-                  setDurationManuallyEdited(true);
-                  setWorkHoursInput(value);
-                  if (invalidField === "duration") setInvalidField(null);
-                }}
-                onMinutesChange={(value) => {
-                  setDurationManuallyEdited(true);
-                  setWorkMinutesInput(value);
-                  if (invalidField === "duration") setInvalidField(null);
-                }}
+            <FormRow icon={<FileText size={20} />}>
+              <Textarea
+                value={identity.description ?? ""}
+                onChange={(e) =>
+                  setField(
+                    "identity.description",
+                    e.target.value.trim() ? e.target.value : null,
+                  )
+                }
+                placeholder={t("quickCreate.descriptionPlaceholder")}
+                aria-label={t("quickCreate.descriptionPlaceholder")}
+                rows={2}
+                className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
               />
-            ) : null}
-
-            {!isLabelOnly ? (
-              <RowSegmented
-                icon={CheckCircle2}
-                options={DONE_RULE_OPTIONS.map((opt) => ({
-                  value: opt.value,
-                  label: t(opt.label),
-                }))}
-                value={doneRule}
-                onChange={setDoneRule}
-              />
-            ) : null}
-
-            {!isRecurring ? (
-              <ScheduleRow
-                scheduleOpen={scheduleOpen}
-                onToggleSchedule={() => setScheduleOpen((prev) => !prev)}
-                scheduleSummary={scheduleSummary}
-                scheduleTitle={t("quickCreate.scheduleTitle")}
-                startDateInput={startDateInput}
-                startTimeInput={startTimeInput}
-                endDateInput={endDateInput}
-                endTimeInput={endTimeInput}
-                onStartDateChange={(value) => {
-                  setStartDateInput(value);
-                  setUseStartAt(true);
-                }}
-                onStartTimeChange={(value) => {
-                  setStartTimeInput(value);
-                  setUseStartAt(true);
-                }}
-                onEndDateChange={(value) => {
-                  setEndDateInput(value);
-                  setUseEndAt(true);
-                }}
-                onEndTimeChange={(value) => {
-                  setEndTimeInput(value);
-                  setUseEndAt(true);
-                }}
-                startAriaLabel={`${t("quickCreate.startAt")} (${locale === "ja" ? "日付" : "date"})`}
-                startTimeAriaLabel={`${t("quickCreate.startAt")} (${locale === "ja" ? "時刻" : "time"})`}
-                endDateAriaLabel={`${t("quickCreate.endAt")} (${locale === "ja" ? "日付" : "date"})`}
-                endTimeAriaLabel={`${t("quickCreate.endAt")} (${locale === "ja" ? "時刻" : "time"})`}
-              />
-            ) : null}
-
-            <RowToggle
-              icon={BookOpen}
-              placeholder={t("quickCreate.labelOnly")}
-              checked={isLabelOnly}
-              onChange={setIsLabelOnly}
+            </FormRow>
+            <RowSegmented
+              icon={CheckCircle2}
+              options={TILE_KIND_OPTIONS.map((opt) => ({
+                value: String(opt.value),
+                label: t(opt.label),
+              }))}
+              value={String(identity.kind)}
+              onChange={(value) => {
+                const next = Number(value) as TileKindValue;
+                setField("identity.kind", next);
+              }}
             />
-
-            <ProjectRow
-              icon={FolderOpen}
-              resolvedProject={resolvedProject}
-              projectDraft={projectDraft}
-              onProjectDraftChange={(value) => {
-                setProjectDraft(value);
-                setSelectedProject(null);
-              }}
-              onCommitProject={() => {
-                const normalized = normalizeTag(projectDraft);
-                if (!normalized) return;
-                const matched = existingProjects.find((project) =>
-                  equalsIgnoreCase(project, normalized),
-                );
-                const next = matched ?? normalized;
-                setSelectedProject(next);
-                setProjectDraft(next);
-                setIsProjectInputFocused(false);
-              }}
-              isProjectInputFocused={isProjectInputFocused}
-              onProjectFocus={() => setIsProjectInputFocused(true)}
-              onProjectBlur={() => {
-                window.setTimeout(() => setIsProjectInputFocused(false), 100);
-              }}
-              projectSuggestions={projectSuggestions}
-              onPickSuggestion={(project) => {
-                setSelectedProject(project);
-                setProjectDraft(project);
-                setIsProjectInputFocused(false);
-              }}
-              ariaLabel={t("quickCreate.projectPlaceholder")}
-              placeholder={t("quickCreate.projectPlaceholder")}
-              createNewLabel={t("quickCreate.createNew")}
-            />
-
-            <TagRow
-              icon={Tag}
-              selectedTags={selectedTags}
-              tagDraft={tagDraft}
-              onTagDraftChange={setTagDraft}
-              onAddTag={() => {
-                const normalized = normalizeTag(tagDraft);
-                if (!normalized) return;
-                const matched = existingTags.find((tag) => equalsIgnoreCase(tag, normalized));
-                const next = matched ?? normalized;
-                setSelectedTags((prev) =>
-                  prev.some((tag) => equalsIgnoreCase(tag, next)) ? prev : [...prev, next],
-                );
-                setTagDraft("");
-              }}
-              onRemoveTag={(tag) =>
-                setSelectedTags((prev) => prev.filter((item) => !equalsIgnoreCase(item, tag)))
+            <FormRow icon={<Palette size={20} />}>
+              <div className="flex w-full items-center gap-3 text-sm">
+                <label className="flex items-center gap-1.5">
+                  <span className="text-foreground-muted">
+                    {t("quickCreate.visualColorLabel")}
+                  </span>
+                  <input
+                    type="color"
+                    aria-label={t("quickCreate.visualColorLabel")}
+                    value={normalizeHexColor(identity.visual.color)}
+                    onChange={(e) =>
+                      setField("identity.visual.color", e.target.value)
+                    }
+                    className="h-8 w-12 cursor-pointer rounded border-0 bg-transparent"
+                  />
+                </label>
+                <label className="flex flex-1 items-center gap-1.5">
+                  <span className="text-foreground-muted">
+                    {t("quickCreate.visualIconLabel")}
+                  </span>
+                  <input
+                    type="text"
+                    aria-label={t("quickCreate.visualIconLabel")}
+                    placeholder={t("quickCreate.visualIconPlaceholder")}
+                    value={identity.visual.icon}
+                    onChange={(e) =>
+                      setField("identity.visual.icon", e.target.value)
+                    }
+                    className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+                  />
+                </label>
+              </div>
+            </FormRow>
+            <RowInput
+              icon={Type}
+              placeholder={t("quickCreate.externalIdPlaceholder")}
+              value={identity.externalId ?? ""}
+              onChange={(value) =>
+                setField("identity.externalId", value.trim() ? value : null)
               }
-              isTagInputFocused={isTagInputFocused}
-              onTagFocus={() => setIsTagInputFocused(true)}
-              onTagBlur={() => {
-                window.setTimeout(() => setIsTagInputFocused(false), 100);
-              }}
-              tagSuggestions={tagSuggestions}
-              onPickSuggestion={(tag) => {
-                setSelectedTags((prev) =>
-                  prev.some((item) => equalsIgnoreCase(item, tag)) ? prev : [...prev, tag],
-                );
-                setTagDraft("");
-                setIsTagInputFocused(false);
-              }}
-              ariaLabel={t("quickCreate.tagsPlaceholder")}
-              placeholder={t("quickCreate.tagsPlaceholder")}
-              createNewLabel={t("quickCreate.createNew")}
-              removeTagLabel={t("quickCreate.removeTag")}
-            />
-
-            <MemoRow
-              expanded={memoExpanded || memoInput.trim().length > 0}
-              memoInput={memoInput}
-              onMemoChange={(value) => {
-                setMemoInput(value);
-                if (value.trim().length === 0) setMemoExpanded(false);
-              }}
-              onExpand={() => setMemoExpanded(true)}
-              placeholder={t("quickCreate.memoPlaceholder")}
-              memoAddLabel={t("quickCreate.memoAdd")}
+              ariaLabel={t("quickCreate.externalIdPlaceholder")}
             />
 
             <FormDivider />
 
-            <RowSubPanel
-              icon={Repeat}
-              name={t("quickCreate.recurrenceNavTitle")}
-              value=""
-              onClick={(e) => {
-                e.stopPropagation();
-                setActivePanel("recurrence");
+            {/* §2 Plan */}
+            <SectionHeader icon={ListChecks} title="§2 Plan" />
+            <RowSegmented
+              icon={CheckCircle2}
+              options={PLAN_ROLE_OPTIONS.map((opt) => ({
+                value: String(opt.value),
+                label: t(opt.label),
+              }))}
+              value={String(plan.role)}
+              onChange={(value) => {
+                const next = Number(value) as PlanRoleValue;
+                setField("plan.role", next);
+                setLabelOnly(next === PlanRole.LABEL);
               }}
             />
-            <RowSubPanel
-              icon={Ban}
-              name={t("quickCreate.interruptNavTitle")}
-              value=""
-              onClick={(e) => {
-                e.stopPropagation();
-                setActivePanel("interrupt");
-              }}
+            <RowToggle
+              icon={Tag}
+              placeholder={t("quickCreate.labelOnly")}
+              checked={meta.isLabelOnly}
+              onChange={setLabelOnly}
             />
-            <RowSubPanel
-              icon={Zap}
-              name={t("quickCreate.automationNavTitle")}
-              value=""
-              onClick={(e) => {
-                e.stopPropagation();
-                setActivePanel("automation");
-              }}
+            <StubRow
+              icon={ListChecks}
+              title={t("quickCreate.completionTitle")}
+              count={plan.completion.root.children.length}
+              badge="Phase B"
             />
-            <RowSubPanel
-              icon={Clock4}
-              name={t("quickCreate.metaNavTitle")}
-              value=""
-              onClick={(e) => {
-                e.stopPropagation();
-                setActivePanel("meta");
+            <StubRow
+              icon={ListChecks}
+              title={t("quickCreate.referencesTitle")}
+              count={plan.references.length}
+              badge="Phase B"
+            />
+            <StubRow
+              icon={ListChecks}
+              title={t("quickCreate.planningTitle")}
+              count={
+                plan.planning.placementRules.length +
+                plan.planning.nestingRules.length +
+                plan.planning.flows.length
+              }
+              badge="Phase C"
+            />
+            <StubRow
+              icon={ListChecks}
+              title={t("quickCreate.metricsTitle")}
+              count={plan.metrics.length}
+              badge="Phase C"
+            />
+            <StubRow
+              icon={ListChecks}
+              title={t("quickCreate.decisionsTitle")}
+              count={plan.decisions.length}
+              badge="Phase D"
+            />
+
+            <FormDivider />
+
+            {/* §3 Time */}
+            <SectionHeader icon={Clock} title="§3 Time (Span + Range)" />
+            <ScheduleRow
+              scheduleOpen={scheduleOpen}
+              onToggleSchedule={() => setScheduleOpen((prev) => !prev)}
+              spanStart={time.span.start}
+              spanEnd={time.span.end}
+              onStartChange={(value) => {
+                const iso = localDateTimeToIso(value);
+                setField("time.span.start", iso ?? "");
               }}
+              onEndChange={(value) => {
+                const iso = localDateTimeToIso(value);
+                setField("time.span.end", iso ?? "");
+              }}
+              locale={locale}
+              t={t}
+            />
+            <DurationRangeRow
+              minMs={time.durationMinMax.minMs}
+              maxMs={time.durationMinMax.maxMs}
+              onMinChange={(value) => {
+                setField("time.durationMinMax.minMs", value);
+              }}
+              onMaxChange={(value) => {
+                setField("time.durationMinMax.maxMs", value);
+              }}
+              t={t}
+            />
+
+            <FormDivider />
+
+            {/* §4 Windows */}
+            <SectionHeader icon={Calendar} title="§4 Windows" />
+            {windows.map((w, i) => (
+              <WindowRow
+                key={w.id}
+                window={w}
+                index={i}
+                onUpdate={updateWindow}
+                onRemove={removeWindow}
+                t={t}
+                locale={locale}
+              />
+            ))}
+            <button
+              type="button"
+              onClick={addWindow}
+              aria-label={t("quickCreate.windowsAdd")}
+              className="ml-[32px] flex items-center gap-1.5 text-sm text-primary hover:underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span>{t("quickCreate.windowsAdd")}</span>
+            </button>
+
+            {/* §5 Recurring — only when kind=RECURRING */}
+            {kindIsRecurring ? (
+              <>
+                <FormDivider />
+                <SectionHeader icon={Repeat} title="§5 Recurring" />
+                <RecurringLifeEditor
+                  activeStart={recurring.life.active.startDate}
+                  activeEnd={recurring.life.active.endDate}
+                  state={recurring.life.state}
+                  onActiveStartChange={(value) =>
+                    setField("recurring.life.active.startDate", value)
+                  }
+                  onActiveEndChange={(value) =>
+                    setField("recurring.life.active.endDate", value)
+                  }
+                  onStateChange={(value) =>
+                    setField("recurring.life.state", value)
+                  }
+                  t={t}
+                />
+                <FrameRulesList
+                  rules={recurring.frameRules}
+                  onAdd={addFrameRule}
+                  onRemove={removeFrameRule}
+                  onUpdate={updateFrameRule}
+                  t={t}
+                />
+                <StubRow
+                  icon={Repeat}
+                  title={t("quickCreate.recurringRulesTitle")}
+                  count={recurring.rules.length}
+                  badge="Phase D"
+                />
+              </>
+            ) : null}
+
+            <FormDivider />
+
+            {/* §6 Advanced */}
+            <SectionHeader icon={Settings2} title="§6 Advanced (ChangeSet)" />
+            <StubRow
+              icon={Settings2}
+              title={t("quickCreate.changeSetsTitle")}
+              count={advanced.changeSets.length}
+              badge="Phase D"
+            />
+            <StubRow
+              icon={Settings2}
+              title={t("quickCreate.changeRulesTitle")}
+              count={advanced.rules.length}
+              badge="Phase D"
+            />
+
+            <FormDivider />
+
+            {/* §7 Meta */}
+            <SectionHeader icon={FolderOpen} title="§7 Meta" />
+            <RowInput
+              icon={FolderOpen}
+              placeholder={t("quickCreate.projectPlaceholder")}
+              value={meta.project ?? ""}
+              onChange={(value) =>
+                setField("meta.project", value.trim() ? value : null)
+              }
+              ariaLabel={t("quickCreate.projectPlaceholder")}
+            />
+            <TagRowEditor
+              tags={meta.tags}
+              onAdd={(tag) => {
+                const next = meta.tags.includes(tag)
+                  ? meta.tags
+                  : [...meta.tags, tag];
+                setField("meta.tags", next);
+              }}
+              onRemove={(tag) =>
+                setField(
+                  "meta.tags",
+                  meta.tags.filter((t) => t !== tag),
+                )
+              }
+              t={t}
+            />
+            <MemoRowEditor
+              expanded={memoExpanded || meta.memo.trim().length > 0}
+              value={meta.memo}
+              onChange={(value) => {
+                setField("meta.memo", value);
+                if (value.trim().length === 0) setMemoExpanded(false);
+              }}
+              onExpand={() => setMemoExpanded(true)}
+              t={t}
             />
           </FormPanel>
         </div>
+
         <div className="border-t border-border bg-surface-0 p-section shrink-0">
           <Button
             type="button"
@@ -702,186 +686,81 @@ export function QuickTileCreate() {
           ) : null}
         </div>
       </section>
-
-      <section className={subPanelClass("recurrence")} data-testid="quick-tile-recurrence-subpanel">
-        <QuickTileRecurrenceSubPanel
-          onBack={() => setActivePanel("base")}
-          onClose={() => setActivePanel("base")}
-          t={t}
-          locale={locale}
-          objectiveMode={objectiveMode}
-          setObjectiveMode={setObjectiveMode}
-          isRecurring={isRecurring}
-          showFocusUntilEnd={showFocusUntilEnd}
-          recurrenceFrequency={recurrenceFrequency}
-          setRecurrenceFrequency={setRecurrenceFrequency}
-          recurrenceIntervalInput={recurrenceIntervalInput}
-          setRecurrenceIntervalInput={setRecurrenceIntervalInput}
-          recurrenceWeekdays={recurrenceWeekdays}
-          setRecurrenceWeekdays={setRecurrenceWeekdays}
-          recurrenceUseStartAt={recurrenceUseStartAt}
-          setRecurrenceUseStartAt={setRecurrenceUseStartAt}
-          recurrenceUseEndAt={recurrenceUseEndAt}
-          setRecurrenceUseEndAt={setRecurrenceUseEndAt}
-          recurrenceStartTimeInput={recurrenceStartTimeInput}
-          setRecurrenceStartTimeInput={setRecurrenceStartTimeInput}
-          recurrenceEndTimeInput={recurrenceEndTimeInput}
-          setRecurrenceEndTimeInput={setRecurrenceEndTimeInput}
-          recurrenceValidFromEnabled={recurrenceValidFromEnabled}
-          setRecurrenceValidFromEnabled={setRecurrenceValidFromEnabled}
-          recurrenceValidToEnabled={recurrenceValidToEnabled}
-          setRecurrenceValidToEnabled={setRecurrenceValidToEnabled}
-          recurrenceValidFromDateInput={recurrenceValidFromDateInput}
-          setRecurrenceValidFromDateInput={setRecurrenceValidFromDateInput}
-          recurrenceValidToDateInput={recurrenceValidToDateInput}
-          setRecurrenceValidToDateInput={setRecurrenceValidToDateInput}
-        />
-      </section>
-
-      <section className={subPanelClass("interrupt")} data-testid="quick-tile-interrupt-subpanel">
-        <QuickTileInterruptSubPanel
-          onBack={() => setActivePanel("base")}
-          onClose={() => setActivePanel("base")}
-          t={t}
-          locale={locale}
-          interruptPenalty={interruptPenalty}
-          setInterruptPenalty={setInterruptPenalty}
-          resumePenalty={resumePenalty}
-          setResumePenalty={setResumePenalty}
-          externalInterruptOnly={externalInterruptOnly}
-          setExternalInterruptOnly={setExternalInterruptOnly}
-        />
-      </section>
-
-      <section className={subPanelClass("automation")} data-testid="quick-tile-automation-subpanel">
-        <QuickTileAutomationSubPanel
-          onBack={() => setActivePanel("base")}
-          onClose={() => setActivePanel("base")}
-          t={t}
-          locale={locale}
-          promptOnStart={promptOnStart}
-          setPromptOnStart={setPromptOnStart}
-          promptOnEnd={promptOnEnd}
-          setPromptOnEnd={setPromptOnEnd}
-          autoStartAllowed={autoStartAllowed}
-          setAutoStartAllowed={setAutoStartAllowed}
-          autoEndAllowed={autoEndAllowed}
-          setAutoEndAllowed={setAutoEndAllowed}
-          timezone={timezone}
-          setTimezone={setTimezone}
-        />
-      </section>
-
-      <section className={subPanelClass("meta")} data-testid="quick-tile-meta-subpanel">
-        <QuickTileMetaSubPanel
-          onBack={() => setActivePanel("base")}
-          onClose={() => setActivePanel("base")}
-          t={t}
-          locale={locale}
-          timedLabelDraft={timedLabelDraft}
-          setTimedLabelDraft={setTimedLabelDraft}
-          timedLabels={timedLabels}
-          setTimedLabels={setTimedLabels}
-        />
-      </section>
     </>
   );
 }
 
-// --- inline row subcomponents ------------------------------------------
+// ---------- section / row primitives ----------
 
-function DurationRow({
-  hours,
-  minutes,
-  hoursUnit,
-  minutesUnit,
-  ariaLabel,
-  ariaDescribedBy,
-  invalid,
-  onHoursChange,
-  onMinutesChange,
+function SectionHeader({
+  icon: Icon,
+  title,
 }: {
-  hours: string;
-  minutes: string;
-  hoursUnit: string;
-  minutesUnit: string;
-  ariaLabel?: string;
-  ariaDescribedBy?: string;
-  invalid?: boolean;
-  onHoursChange: (value: string) => void;
-  onMinutesChange: (value: string) => void;
+  icon: typeof AlertCircle;
+  title: string;
 }) {
-  const duration = (() => {
-    const h = parseNonNegativeInt(hours) ?? 0;
-    const m = parseNonNegativeInt(minutes) ?? 0;
-    return formatHHMM(h, m);
-  })();
   return (
-    <FormRow icon={<Clock size={20} />}>
-      <div className="flex items-center gap-2 text-sm">
-        <input
-          type="text"
-          inputMode="numeric"
-          aria-label={ariaLabel ?? `${hoursUnit} / ${minutesUnit}`}
-          aria-invalid={invalid ? "true" : undefined}
-          aria-describedby={ariaDescribedBy}
-          value={duration}
-          onChange={(e) => {
-            const parsed = parseHHMM(e.target.value);
-            if (!parsed) {
-              onHoursChange("0");
-              onMinutesChange("0");
-              return;
-            }
-            onHoursChange(String(parsed.hours));
-            onMinutesChange(String(parsed.minutes));
-          }}
-          className="w-20 bg-transparent text-sm text-foreground outline-none"
-        />
-        <span className="text-foreground-muted">{hoursUnit}</span>
-        <span className="text-foreground-muted">/</span>
-        <span className="text-foreground-muted">{minutesUnit}</span>
+    <div
+      className="flex items-center gap-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted"
+      data-testid="section-header"
+    >
+      <Icon size={14} aria-hidden="true" />
+      <span>{title}</span>
+    </div>
+  );
+}
+
+function StubRow({
+  icon: Icon,
+  title,
+  count,
+  badge,
+}: {
+  icon: typeof AlertCircle;
+  title: string;
+  count: number;
+  badge: string;
+}) {
+  return (
+    <FormRow icon={<Icon size={20} />}>
+      <div className="flex w-full items-center justify-between text-sm">
+        <span className="text-foreground-muted">{title}</span>
+        <span className="flex items-center gap-2 text-xs text-foreground-muted">
+          <span>{count}</span>
+          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] uppercase tracking-wide">
+            {badge}
+          </span>
+        </span>
       </div>
     </FormRow>
   );
 }
 
-function ScheduleRow(props: {
+function ScheduleRow({
+  scheduleOpen,
+  onToggleSchedule,
+  spanStart,
+  spanEnd,
+  onStartChange,
+  onEndChange,
+  locale,
+  t,
+}: {
   scheduleOpen: boolean;
   onToggleSchedule: () => void;
-  scheduleSummary: string;
-  scheduleTitle: string;
-  startDateInput: string;
-  startTimeInput: string;
-  endDateInput: string;
-  endTimeInput: string;
-  onStartDateChange: (value: string) => void;
-  onStartTimeChange: (value: string) => void;
-  onEndDateChange: (value: string) => void;
-  onEndTimeChange: (value: string) => void;
-  startAriaLabel: string;
-  startTimeAriaLabel: string;
-  endDateAriaLabel: string;
-  endTimeAriaLabel: string;
+  spanStart: string;
+  spanEnd: string;
+  onStartChange: (value: string) => void;
+  onEndChange: (value: string) => void;
+  locale: "ja" | "en";
+  t: (key: string) => string;
 }) {
-  const {
-    scheduleOpen,
-    onToggleSchedule,
-    scheduleSummary,
-    scheduleTitle,
-    startDateInput,
-    startTimeInput,
-    endDateInput,
-    endTimeInput,
-    onStartDateChange,
-    onStartTimeChange,
-    onEndDateChange,
-    onEndTimeChange,
-    startAriaLabel,
-    startTimeAriaLabel,
-    endDateAriaLabel,
-    endTimeAriaLabel,
-  } = props;
+  const summary = (() => {
+    if (spanStart && spanEnd) return `${spanStart} → ${spanEnd}`;
+    if (spanStart) return `${t("quickCreate.startAt")} ${spanStart}`;
+    if (spanEnd) return `${t("quickCreate.endAt")} ${spanEnd}`;
+    return t("quickCreate.scheduleSummaryAnytime");
+  })();
   return (
     <>
       <FormRow
@@ -889,7 +768,10 @@ function ScheduleRow(props: {
         trailing={
           <ChevronDown
             size={16}
-            className={`text-foreground-muted transition-transform ${scheduleOpen ? "rotate-180" : ""}`}
+            className={cn(
+              "text-foreground-muted transition-transform",
+              scheduleOpen ? "rotate-180" : "",
+            )}
             aria-hidden="true"
           />
         }
@@ -898,42 +780,26 @@ function ScheduleRow(props: {
           type="button"
           onClick={onToggleSchedule}
           aria-expanded={scheduleOpen}
-          aria-label={scheduleTitle}
+          aria-label={t("quickCreate.scheduleTitle")}
           className="flex w-full items-center text-left text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
-          {scheduleSummary}
+          {summary}
         </button>
       </FormRow>
       {scheduleOpen ? (
         <div className="ml-[32px] grid grid-cols-2 gap-2">
           <input
-            type="date"
-            aria-label={startAriaLabel}
-            value={startDateInput}
-            onChange={(e) => onStartDateChange(e.target.value)}
+            type="datetime-local"
+            aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "日時" : "datetime"})`}
+            value={isoToLocalDateTime(spanStart)}
+            onChange={(e) => onStartChange(e.target.value)}
             className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
           <input
-            type="time"
-            aria-label={startTimeAriaLabel}
-            step={60}
-            value={startTimeInput}
-            onChange={(e) => onStartTimeChange(e.target.value)}
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <input
-            type="date"
-            aria-label={endDateAriaLabel}
-            value={endDateInput}
-            onChange={(e) => onEndDateChange(e.target.value)}
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <input
-            type="time"
-            aria-label={endTimeAriaLabel}
-            step={60}
-            value={endTimeInput}
-            onChange={(e) => onEndTimeChange(e.target.value)}
+            type="datetime-local"
+            aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "日時" : "datetime"})`}
+            value={isoToLocalDateTime(spanEnd)}
+            onChange={(e) => onEndChange(e.target.value)}
             className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
         </div>
@@ -942,166 +808,145 @@ function ScheduleRow(props: {
   );
 }
 
-function ProjectRow(props: {
-  icon: typeof FolderOpen;
-  resolvedProject: string;
-  projectDraft: string;
-  onProjectDraftChange: (value: string) => void;
-  onCommitProject: () => void;
-  isProjectInputFocused: boolean;
-  onProjectFocus: () => void;
-  onProjectBlur: () => void;
-  projectSuggestions: string[];
-  onPickSuggestion: (project: string) => void;
-  ariaLabel: string;
-  placeholder: string;
-  createNewLabel: string;
+function DurationRangeRow({
+  minMs,
+  maxMs,
+  onMinChange,
+  onMaxChange,
+  t,
+}: {
+  minMs: number | null;
+  maxMs: number | null;
+  onMinChange: (value: number | null) => void;
+  onMaxChange: (value: number | null) => void;
+  t: (key: string) => string;
 }) {
-  const {
-    icon: Icon,
-    resolvedProject,
-    projectDraft,
-    onProjectDraftChange,
-    onCommitProject,
-    isProjectInputFocused,
-    onProjectFocus,
-    onProjectBlur,
-    projectSuggestions,
-    onPickSuggestion,
-    ariaLabel,
-    placeholder,
-    createNewLabel,
-  } = props;
+  return (
+    <FormRow icon={<Clock size={20} />}>
+      <div className="flex w-full items-center gap-3 text-sm">
+        <label className="flex items-center gap-1.5">
+          <span className="text-foreground-muted">{t("quickCreate.minMsLabel")}</span>
+          <input
+            type="number"
+            min={0}
+            step={60000}
+            aria-label={t("quickCreate.minMsLabel")}
+            value={minMs ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              onMinChange(v === "" ? null : Number(v));
+            }}
+            className="w-24 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </label>
+        <span className="text-foreground-muted">–</span>
+        <label className="flex items-center gap-1.5">
+          <span className="text-foreground-muted">{t("quickCreate.maxMsLabel")}</span>
+          <input
+            type="number"
+            min={0}
+            step={60000}
+            aria-label={t("quickCreate.maxMsLabel")}
+            value={maxMs ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              onMaxChange(v === "" ? null : Number(v));
+            }}
+            className="w-24 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </label>
+      </div>
+    </FormRow>
+  );
+}
+
+function RecurringLifeEditor({
+  activeStart,
+  activeEnd,
+  state,
+  onActiveStartChange,
+  onActiveEndChange,
+  onStateChange,
+  t,
+}: {
+  activeStart: string;
+  activeEnd: string;
+  state: RecurringStateValue;
+  onActiveStartChange: (value: string) => void;
+  onActiveEndChange: (value: string) => void;
+  onStateChange: (value: RecurringStateValue) => void;
+  t: (key: string) => string;
+}) {
   return (
     <>
-      {resolvedProject ? (
-        <div className="ml-[32px]">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-            <Tag className="h-3 w-3" aria-hidden="true" />
-            {resolvedProject}
-          </span>
-        </div>
-      ) : null}
-      <FormRow icon={<Icon size={20} />}>
-        <div className="relative">
+      <FormRow icon={<Calendar size={20} />}>
+        <div className="grid w-full grid-cols-2 gap-2">
           <input
-            value={projectDraft}
-            onChange={(e) => onProjectDraftChange(e.target.value)}
-            onFocus={onProjectFocus}
-            onBlur={onProjectBlur}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              e.preventDefault();
-              onCommitProject();
-            }}
-            aria-label={ariaLabel}
-            placeholder={placeholder}
-            className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+            type="date"
+            aria-label={t("quickCreate.recurringActiveStart")}
+            value={activeStart ? activeStart.slice(0, 10) : ""}
+            onChange={(e) => onActiveStartChange(localDateToIsoDate(e.target.value).slice(0, 10))}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
-          {isProjectInputFocused ? (
-            <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-              {projectSuggestions.length > 0 ? (
-                projectSuggestions.map((project) => (
-                  <button
-                    key={project}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      onPickSuggestion(project);
-                    }}
-                    className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                  >
-                    {project}
-                  </button>
-                ))
-              ) : (
-                <div className="px-2 py-1.5 text-xs text-foreground-muted">{createNewLabel}</div>
-              )}
-            </div>
-          ) : null}
+          <input
+            type="date"
+            aria-label={t("quickCreate.recurringActiveEnd")}
+            value={activeEnd ? activeEnd.slice(0, 10) : ""}
+            onChange={(e) => onActiveEndChange(localDateToIsoDate(e.target.value).slice(0, 10))}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
         </div>
       </FormRow>
+      <RowSegmented
+        icon={Repeat}
+        options={RECURRING_STATE_OPTIONS.map((opt) => ({
+          value: String(opt.value),
+          label: t(opt.label),
+        }))}
+        value={String(state)}
+        onChange={(value) => onStateChange(Number(value) as RecurringStateValue)}
+      />
     </>
   );
 }
 
-function TagRow(props: {
-  icon: typeof Tag;
-  selectedTags: string[];
-  tagDraft: string;
-  onTagDraftChange: (value: string) => void;
-  onAddTag: () => void;
-  onRemoveTag: (tag: string) => void;
-  isTagInputFocused: boolean;
-  onTagFocus: () => void;
-  onTagBlur: () => void;
-  tagSuggestions: string[];
-  onPickSuggestion: (tag: string) => void;
-  ariaLabel: string;
-  placeholder: string;
-  createNewLabel: string;
-  removeTagLabel: string;
+function TagRowEditor({
+  tags,
+  onAdd,
+  onRemove,
+  t,
+}: {
+  tags: string[];
+  onAdd: (tag: string) => void;
+  onRemove: (tag: string) => void;
+  t: (key: string) => string;
 }) {
-  const {
-    selectedTags,
-    tagDraft,
-    onTagDraftChange,
-    onAddTag,
-    onRemoveTag,
-    isTagInputFocused,
-    onTagFocus,
-    onTagBlur,
-    tagSuggestions,
-    onPickSuggestion,
-    ariaLabel,
-    placeholder,
-    createNewLabel,
-    removeTagLabel,
-  } = props;
+  const [draft, setDraft] = useState("");
   return (
     <>
       <FormRow icon={<Plus size={20} />}>
-        <div className="relative">
+        <div className="flex w-full items-center gap-2">
           <input
-            value={tagDraft}
-            onChange={(e) => onTagDraftChange(e.target.value)}
-            onFocus={onTagFocus}
-            onBlur={onTagBlur}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key !== "Enter") return;
               e.preventDefault();
-              onAddTag();
+              const next = draft.trim().replace(/\s+/g, " ");
+              if (next) {
+                onAdd(next);
+                setDraft("");
+              }
             }}
-            aria-label={ariaLabel}
-            placeholder={placeholder}
+            aria-label={t("quickCreate.tagsPlaceholder")}
+            placeholder={t("quickCreate.tagsPlaceholder")}
             className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
           />
-          {isTagInputFocused ? (
-            <div className="absolute z-20 mt-1 max-h-40 w-full overflow-auto rounded-lg bg-surface-elevated p-1 shadow-md border border-border">
-              {tagSuggestions.length > 0 ? (
-                tagSuggestions.map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      onPickSuggestion(tag);
-                    }}
-                    className="w-full rounded-md px-2 py-1.5 text-left text-xs text-foreground hover:bg-surface-1 transition-colors"
-                  >
-                    {tag}
-                  </button>
-                ))
-              ) : (
-                <div className="px-2 py-1.5 text-xs text-foreground-muted">{createNewLabel}</div>
-              )}
-            </div>
-          ) : null}
         </div>
       </FormRow>
-      {selectedTags.length > 0 ? (
+      {tags.length > 0 ? (
         <div className="ml-[32px] flex flex-wrap gap-1">
-          {selectedTags.map((tag) => (
+          {tags.map((tag) => (
             <span
               key={tag}
               className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
@@ -1109,8 +954,8 @@ function TagRow(props: {
               <span>#{tag}</span>
               <button
                 type="button"
-                onClick={() => onRemoveTag(tag)}
-                aria-label={`${removeTagLabel} ${tag}`}
+                onClick={() => onRemove(tag)}
+                aria-label={`${t("quickCreate.removeTag")} ${tag}`}
                 className="leading-none"
               >
                 &times;
@@ -1123,23 +968,27 @@ function TagRow(props: {
   );
 }
 
-function MemoRow(props: {
+function MemoRowEditor({
+  expanded,
+  value,
+  onChange,
+  onExpand,
+  t,
+}: {
   expanded: boolean;
-  memoInput: string;
-  onMemoChange: (value: string) => void;
+  value: string;
+  onChange: (value: string) => void;
   onExpand: () => void;
-  placeholder: string;
-  memoAddLabel: string;
+  t: (key: string) => string;
 }) {
-  const { expanded, memoInput, onMemoChange, onExpand, placeholder, memoAddLabel } = props;
   if (expanded) {
     return (
       <FormRow icon={<MessageSquare size={20} />}>
         <Textarea
-          value={memoInput}
-          onChange={(e) => onMemoChange(e.target.value)}
-          placeholder={placeholder}
-          aria-label={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={t("quickCreate.memoPlaceholder")}
+          aria-label={t("quickCreate.memoPlaceholder")}
           rows={3}
           className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
         />
@@ -1151,29 +1000,486 @@ function MemoRow(props: {
       <button
         type="button"
         onClick={onExpand}
-        aria-label={placeholder}
+        aria-label={t("quickCreate.memoPlaceholder")}
         className="flex w-full items-center text-left text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
       >
-        {memoAddLabel}
+        {t("quickCreate.memoAdd")}
       </button>
     </FormRow>
   );
 }
 
-// --- small helpers (preserved from original) ---------------------------
-function formatHHMM(hours: number, minutes: number): string {
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-}
-function parseHHMM(raw: string): { hours: number; minutes: number } | null {
-  const match = /^(\d{1,2}):(\d{1,2})$/.exec(raw.trim());
-  if (!match) return null;
-  const hours = Number.parseInt(match[1] ?? "", 10);
-  const minutes = Number.parseInt(match[2] ?? "", 10);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return null;
-  if (minutes >= 60) return null;
-  return { hours, minutes };
+// ---------- window / frame rule editors ----------
+
+function WindowRow({
+  window,
+  index,
+  onUpdate,
+  onRemove,
+  t,
+  locale,
+}: {
+  window: Window;
+  index: number;
+  onUpdate: (index: number, updater: (current: Window) => Window) => void;
+  onRemove: (index: number) => void;
+  t: (key: string) => string;
+  locale: "ja" | "en";
+}) {
+  const referenceKind = window.kind === 1 || window.kind === 2 || window.kind === 3;
+  return (
+    <div
+      data-testid={`window-row-${index}`}
+      className="ml-[32px] space-y-2 border-l-2 border-surface-2 pl-3"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-foreground-muted">
+          {t("quickCreate.windowsTitle")} #{index + 1}
+        </span>
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          aria-label={t("quickCreate.windowRemove")}
+          className="text-foreground-muted hover:text-danger focus:outline-hidden"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <RowSegmented
+        icon={Calendar}
+        options={WINDOW_KIND_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: t(opt.label),
+        }))}
+        value={String(window.kind)}
+        onChange={(value) =>
+          onUpdate(index, (w) => ({ ...w, kind: Number(value) }))
+        }
+      />
+      <FormRow icon={<Calendar size={20} />}>
+        <div className="grid w-full grid-cols-2 gap-2">
+          <input
+            type="datetime-local"
+            aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "日時" : "datetime"})`}
+            value={isoToLocalDateTime(window.bounds.start)}
+            onChange={(e) =>
+              onUpdate(index, (w) => ({
+                ...w,
+                bounds: {
+                  ...w.bounds,
+                  start: localDateTimeToIso(e.target.value) ?? "",
+                },
+              }))
+            }
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+          <input
+            type="datetime-local"
+            aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "日時" : "datetime"})`}
+            value={isoToLocalDateTime(window.bounds.end)}
+            onChange={(e) =>
+              onUpdate(index, (w) => ({
+                ...w,
+                bounds: {
+                  ...w.bounds,
+                  end: localDateTimeToIso(e.target.value) ?? "",
+                },
+              }))
+            }
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </div>
+      </FormRow>
+      {referenceKind ? (
+        <RowInput
+          icon={Type}
+          placeholder={t("quickCreate.windowReferenceIdLabel")}
+          value={window.referenceId ?? ""}
+          onChange={(value) =>
+            onUpdate(index, (w) => ({
+              ...w,
+              referenceId: value.trim() ? value : null,
+            }))
+          }
+          ariaLabel={t("quickCreate.windowReferenceIdLabel")}
+        />
+      ) : null}
+    </div>
+  );
 }
 
-// Note: parseTimeToMinutes, parseDateTimeParts, parseBoundedDurationMinutes,
-// and formatDateShort are imported from "./build-command" so the build-command
-// module remains the single source of truth for these helpers.
+function FrameRulesList({
+  rules,
+  onAdd,
+  onRemove,
+  onUpdate,
+  t,
+}: {
+  rules: FrameRule[];
+  onAdd: () => void;
+  onRemove: (index: number) => void;
+  onUpdate: (
+    index: number,
+    updater: (current: FrameRule) => FrameRule,
+  ) => void;
+  t: (key: string) => string;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="ml-[32px] text-xs text-foreground-muted">
+        {t("quickCreate.frameRulesTitle")} ({rules.length})
+      </div>
+      {rules.map((r, i) => (
+        <FrameRuleRow
+          key={r.id}
+          rule={r}
+          index={i}
+          onUpdate={onUpdate}
+          onRemove={onRemove}
+          t={t}
+        />
+      ))}
+      <button
+        type="button"
+        onClick={onAdd}
+        aria-label={t("quickCreate.frameRulesAdd")}
+        className="ml-[32px] flex items-center gap-1.5 text-sm text-primary hover:underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <Plus size={14} aria-hidden="true" />
+        <span>{t("quickCreate.frameRulesAdd")}</span>
+      </button>
+    </div>
+  );
+}
+
+function FrameRuleRow({
+  rule,
+  index,
+  onUpdate,
+  onRemove,
+  t,
+}: {
+  rule: FrameRule;
+  index: number;
+  onUpdate: (
+    index: number,
+    updater: (current: FrameRule) => FrameRule,
+  ) => void;
+  onRemove: (index: number) => void;
+  t: (key: string) => string;
+}) {
+  const generatorKind = rule.generator.kind;
+  const value = rule.generator.value;
+  return (
+    <div
+      data-testid={`frame-rule-row-${index}`}
+      className="ml-[32px] space-y-2 border-l-2 border-surface-2 pl-3"
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-foreground-muted">
+          {t("quickCreate.frameRulesTitle")} #{index + 1}
+        </span>
+        <button
+          type="button"
+          onClick={() => onRemove(index)}
+          aria-label={t("quickCreate.frameRuleRemove")}
+          className="text-foreground-muted hover:text-danger focus:outline-hidden"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <RowSegmented
+        icon={Repeat}
+        options={FRAME_GENERATOR_KIND_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: t(opt.label),
+        }))}
+        value={generatorKind}
+        onChange={(value) => {
+          const next = value as FrameGeneratorKind;
+          if (next === generatorKind) return;
+          onUpdate(index, (r) => ({
+            ...r,
+            generator: defaultFrameGenerator(next),
+          }));
+        }}
+      />
+      {renderGeneratorFields({
+        kind: generatorKind,
+        value,
+        onChange: (next) =>
+          onUpdate(index, (r) => ({ ...r, generator: next })),
+        t,
+      })}
+    </div>
+  );
+}
+
+function renderGeneratorFields({
+  kind,
+  value,
+  onChange,
+  t,
+}: {
+  kind: FrameGeneratorKind;
+  value: FrameGenerator["value"];
+  onChange: (next: FrameGenerator) => void;
+  t: (key: string) => string;
+}) {
+  switch (kind) {
+    case "step": {
+      const stepValue = value as StepGenerator;
+      return (
+        <>
+          <FormRow icon={<Clock size={20} />}>
+            <div className="flex w-full items-center gap-2 text-sm">
+              <label className="flex items-center gap-1.5">
+                <span className="text-foreground-muted">
+                  {t("quickCreate.frameRuleStepMsLabel")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step={60000}
+                  aria-label={t("quickCreate.frameRuleStepMsLabel")}
+                  value={stepValue.step}
+                  onChange={(e) =>
+                    onChange({
+                      kind: "step",
+                      value: {
+                        ...stepValue,
+                        step: Number(e.target.value) || 0,
+                      },
+                    })
+                  }
+                  className="w-28 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </label>
+            </div>
+          </FormRow>
+          <FormRow icon={<Calendar size={20} />}>
+            <div className="grid w-full grid-cols-2 gap-2">
+              <input
+                type="datetime-local"
+                aria-label={`${t("quickCreate.frameRuleBoundsLabel")} ${t("quickCreate.startAt")}`}
+                value={
+                  stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.start) : ""
+                }
+                onChange={(e) =>
+                  onChange({
+                    kind: "step",
+                    value: {
+                      ...stepValue,
+                      bounds: stepValue.bounds
+                        ? {
+                            ...stepValue.bounds,
+                            start: localDateTimeToIso(e.target.value) ?? "",
+                          }
+                        : {
+                            start: localDateTimeToIso(e.target.value) ?? "",
+                            end: "",
+                          },
+                    },
+                  })
+                }
+                className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <input
+                type="datetime-local"
+                aria-label={`${t("quickCreate.frameRuleBoundsLabel")} ${t("quickCreate.endAt")}`}
+                value={
+                  stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.end) : ""
+                }
+                onChange={(e) =>
+                  onChange({
+                    kind: "step",
+                    value: {
+                      ...stepValue,
+                      bounds: stepValue.bounds
+                        ? {
+                            ...stepValue.bounds,
+                            end: localDateTimeToIso(e.target.value) ?? "",
+                          }
+                        : {
+                            start: "",
+                            end: localDateTimeToIso(e.target.value) ?? "",
+                          },
+                    },
+                  })
+                }
+                className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+          </FormRow>
+        </>
+      );
+    }
+    case "reference": {
+      const refValue = value as ReferenceGenerator;
+      return (
+        <>
+          <RowInput
+            icon={Type}
+            placeholder={t("quickCreate.frameRuleReferenceIdLabel")}
+            value={refValue.referenceId}
+            onChange={(next) =>
+              onChange({
+                kind: "reference",
+                value: { ...refValue, referenceId: next },
+              })
+            }
+            ariaLabel={t("quickCreate.frameRuleReferenceIdLabel")}
+          />
+          <RowSegmented
+            icon={Repeat}
+            options={REFERENCE_ALIGN_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: t(opt.label),
+            }))}
+            value={String(refValue.align)}
+            onChange={(next) =>
+              onChange({
+                kind: "reference",
+                value: { ...refValue, align: Number(next) },
+              })
+            }
+          />
+        </>
+      );
+    }
+    case "calendar": {
+      const calValue = value as CalendarGenerator;
+      return (
+        <>
+          <RowSegmented
+            icon={Calendar}
+            options={CALENDAR_UNIT_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: t(opt.label),
+            }))}
+            value={String(calValue.unit)}
+            onChange={(next) =>
+              onChange({
+                kind: "calendar",
+                value: { ...calValue, unit: Number(next) },
+              })
+            }
+          />
+          <FormRow icon={<Calendar size={20} />}>
+            <div className="flex w-full items-center gap-2 text-sm">
+              <label className="flex items-center gap-1.5">
+                <span className="text-foreground-muted">
+                  {t("quickCreate.frameRuleWeekdayMaskLabel")}
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  max={127}
+                  step={1}
+                  aria-label={t("quickCreate.frameRuleWeekdayMaskLabel")}
+                  value={calValue.weekdayMask ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const next = raw === "" ? null : Number(raw);
+                    onChange({
+                      kind: "calendar",
+                      value: { ...calValue, weekdayMask: next },
+                    });
+                  }}
+                  className="w-20 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </label>
+            </div>
+          </FormRow>
+          <RowSegmented
+            icon={Calendar}
+            options={HOLIDAY_KIND_OPTIONS.map((opt) => ({
+              value: opt.value,
+              label: t(opt.label),
+            }))}
+            value={String(calValue.holidayKind)}
+            onChange={(next) =>
+              onChange({
+                kind: "calendar",
+                value: { ...calValue, holidayKind: Number(next) },
+              })
+            }
+          />
+        </>
+      );
+    }
+    case "transform": {
+      const trValue = value as TransformGenerator;
+      return (
+        <>
+          <RowInput
+            icon={Type}
+            placeholder={t("quickCreate.frameRuleSourceFrameIdLabel")}
+            value={trValue.sourceFrameId}
+            onChange={(next) =>
+              onChange({
+                kind: "transform",
+                value: { ...trValue, sourceFrameId: next },
+              })
+            }
+            ariaLabel={t("quickCreate.frameRuleSourceFrameIdLabel")}
+          />
+          <FormRow icon={<Clock size={20} />}>
+            <div className="flex w-full items-center gap-2 text-sm">
+              <label className="flex items-center gap-1.5">
+                <span className="text-foreground-muted">
+                  {t("quickCreate.frameRuleShiftLabel")}
+                </span>
+                <input
+                  type="number"
+                  step={60000}
+                  aria-label={t("quickCreate.frameRuleShiftLabel")}
+                  value={trValue.shift ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onChange({
+                      kind: "transform",
+                      value: {
+                        ...trValue,
+                        shift: raw === "" ? null : Number(raw),
+                      },
+                    });
+                  }}
+                  className="w-28 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </label>
+              <label className="flex items-center gap-1.5">
+                <span className="text-foreground-muted">
+                  {t("quickCreate.frameRuleScaleLabel")}
+                </span>
+                <input
+                  type="number"
+                  step={0.1}
+                  aria-label={t("quickCreate.frameRuleScaleLabel")}
+                  value={trValue.scale ?? ""}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    onChange({
+                      kind: "transform",
+                      value: {
+                        ...trValue,
+                        scale: raw === "" ? null : Number(raw),
+                      },
+                    });
+                  }}
+                  className="w-20 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </label>
+            </div>
+          </FormRow>
+        </>
+      );
+    }
+  }
+}
+
+// Re-export ConditionKind so future Condition-tree editor (Phase B) has a
+// single import path; tree is currently a placeholder ALL-node, but the
+// constant is referenced from `submit.ts` already and tree placeholders
+// must import from this module to avoid circular imports.
+export { ConditionKind };

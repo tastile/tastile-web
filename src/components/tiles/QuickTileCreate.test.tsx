@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/i18n/use-translation", () => ({
@@ -14,19 +14,15 @@ vi.mock("@/lib/hooks/use-media-query", () => ({
 	useIsDesktop: () => false,
 }));
 
-const executeMock = vi.fn().mockResolvedValue(undefined);
-const stateMock = { tiles: new Map() };
-
-vi.mock("@/lib/hooks/execution-engine-context", () => ({
-	useExecutionEngineContext: () => ({
-		execute: executeMock,
-		state: stateMock,
-		loading: false,
-	}),
+vi.mock("@/lib/daemon/id-token-client", () => ({
+	getIdTokenClient: vi.fn().mockResolvedValue("test-token"),
 }));
 
-vi.mock("@/lib/daemon/id-token-client", () => ({
-	getSessionClient: vi.fn().mockResolvedValue({ sub: "user-1" }),
+const submitMock = vi.fn().mockResolvedValue({ ok: true, tileId: "tile-uuidv7" });
+
+vi.mock("@/lib/api/v1/submit", () => ({
+	makeV1Client: () => ({ baseUrl: "", getIdToken: () => Promise.resolve("test-token") }),
+	submitCreateTileV1: (options: { client: unknown }) => submitMock(options),
 }));
 
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
@@ -41,9 +37,10 @@ function closePanel() {
 }
 
 beforeEach(() => {
-	executeMock.mockClear();
-	executeMock.mockResolvedValue(undefined);
-	stateMock.tiles = new Map();
+	submitMock.mockClear();
+	submitMock.mockResolvedValue({ ok: true, tileId: "tile-uuidv7" });
+	// Reset the store to defaults before each test.
+	useQuickCreateStore.setState(useQuickCreateStore.getInitialState());
 	openPanel();
 });
 
@@ -51,603 +48,488 @@ afterEach(() => {
 	closePanel();
 });
 
-describe("QuickTileCreate — no kind discriminator", () => {
-	it("does not ask 'what kind of tile is this?' (no work/break/label buttons)", () => {
+describe("QuickTileCreate — visibility", () => {
+	it("does not render when the store is closed", () => {
+		closePanel();
 		render(<QuickTileCreate />);
-
-		// Workspace memory forbids kind enums in UI; the panel must not
-		// ask the user to classify the tile as work / break / label.
-		expect(screen.queryByRole("button", { name: "quickCreate.kindTask" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "quickCreate.kindBreak" })).toBeNull();
-		expect(screen.queryByRole("button", { name: "quickCreate.kindLabel" })).toBeNull();
+		expect(screen.queryByRole("textbox", { name: /titlePlaceholder/ })).toBeNull();
 	});
 
-	it("does not render the split/keep work buttons (no 'is this a break?' discriminator)", () => {
+	it("renders all 7 section headers when open", () => {
 		render(<QuickTileCreate />);
-
-		// Schedule is now inlined in the base panel — no sub-panel to open.
-		expect(
-			screen.queryByRole("button", { name: "quickCreate.splitAllow" }),
-		).toBeNull();
-		expect(
-			screen.queryByRole("button", { name: "quickCreate.splitKeep" }),
-		).toBeNull();
+		// §1 Identity, §2 Plan, §3 Time, §4 Windows, §6 Advanced, §7 Meta
+		// §5 Recurring only appears when kind=RECURRING
+		const headers = screen.getAllByTestId("section-header");
+		const titles = headers.map((h) => h.textContent ?? "");
+		expect(titles.some((t) => t.includes("§1 Identity"))).toBe(true);
+		expect(titles.some((t) => t.includes("§2 Plan"))).toBe(true);
+		expect(titles.some((t) => t.includes("§3 Time"))).toBe(true);
+		expect(titles.some((t) => t.includes("§4 Windows"))).toBe(true);
+		expect(titles.some((t) => t.includes("§6 Advanced"))).toBe(true);
+		expect(titles.some((t) => t.includes("§7 Meta"))).toBe(true);
 	});
 });
 
-describe("QuickTileCreate — accessibility", () => {
-	it("title input shows placeholder and no section heading", () => {
+describe("QuickTileCreate — §1 Identity", () => {
+	it("title input is required and reads/writes via the store", () => {
 		render(<QuickTileCreate />);
+		const title = screen.getByRole("textbox", { name: /titlePlaceholder/ });
+		expect(title.getAttribute("aria-required")).toBe("true");
+		fireEvent.change(title, { target: { value: "Read a book" } });
+		expect(useQuickCreateStore.getState().identity.title).toBe("Read a book");
+	});
 
+	it("description textarea reads/writes via identity.description", () => {
+		render(<QuickTileCreate />);
+		const desc = screen.getByRole("textbox", {
+			name: /descriptionPlaceholder/,
+		});
+		fireEvent.change(desc, { target: { value: "A long-form note" } });
+		expect(useQuickCreateStore.getState().identity.description).toBe(
+			"A long-form note",
+		);
+		// Empty input clears to null
+		fireEvent.change(desc, { target: { value: "   " } });
+		expect(useQuickCreateStore.getState().identity.description).toBeNull();
+	});
+
+	it("visual color picker writes to identity.visual.color", () => {
+		render(<QuickTileCreate />);
+		const color = screen.getByLabelText(/visualColorLabel/) as HTMLInputElement;
+		fireEvent.change(color, { target: { value: "#ff8800" } });
+		expect(useQuickCreateStore.getState().identity.visual.color).toBe(
+			"#ff8800",
+		);
+	});
+
+	it("visual icon input writes to identity.visual.icon", () => {
+		render(<QuickTileCreate />);
+		const icon = screen.getByRole("textbox", { name: /visualIconLabel/ });
+		fireEvent.change(icon, { target: { value: "book-open" } });
+		expect(useQuickCreateStore.getState().identity.visual.icon).toBe(
+			"book-open",
+		);
+	});
+
+	it("kind selector offers RECURRING / PLACEMENT / EXECUTION", () => {
+		render(<QuickTileCreate />);
 		expect(
-			screen.getByRole("textbox", { name: /quickCreate\.titlePlaceholder/ }),
+			screen.getByRole("radio", { name: /kindRecurring/ }),
 		).toBeTruthy();
-		expect(screen.queryByRole("heading", { name: /quickCreate\.titleTitle/ })).toBeNull();
+		expect(
+			screen.getByRole("radio", { name: /kindPlacement/ }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("radio", { name: /kindExecution/ }),
+		).toBeTruthy();
 	});
 
-	it("title input has aria-required='true' and an accessible name", () => {
+	it("does not expose the v7 work/break/label kind buttons", () => {
 		render(<QuickTileCreate />);
-
-		const titleInput = screen.getByRole("textbox", {
-			name: /quickCreate\.titlePlaceholder/,
-		});
-		expect(titleInput).toBeTruthy();
-		expect(titleInput.getAttribute("aria-required")).toBe("true");
+		expect(screen.queryByRole("button", { name: /kindTask/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: /kindBreak/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: /kindLabel/ })).toBeNull();
 	});
 
-	it("duration is a pill with a leading icon (no 'Estimated duration' heading)", () => {
+	it("default kind is PLACEMENT (v1 numeric 1)", () => {
 		render(<QuickTileCreate />);
+		const placement = screen.getByRole("radio", { name: /kindPlacement/ });
+		expect(placement.getAttribute("aria-checked")).toBe("true");
+	});
+});
 
-		expect(screen.queryByRole("heading", { name: /quickCreate\.workTargetTitle/ })).toBeNull();
-		// DurationInput is reachable by its static aria-label (the field's purpose,
-		// not the current value — avoids re-announcing the value on every keystroke).
-		const duration = screen.getByRole("textbox", { name: /durationAriaLabel/ });
-		expect(duration).toBeTruthy();
+describe("QuickTileCreate — §2 Plan", () => {
+	it("role selector offers EXECUTABLE / LABEL", () => {
+		render(<QuickTileCreate />);
+		expect(
+			screen.getByRole("radio", { name: /roleExecutable/ }),
+		).toBeTruthy();
+		expect(
+			screen.getByRole("radio", { name: /roleLabel/ }),
+		).toBeTruthy();
 	});
 
-	it("all visible date and time inputs have accessible names", () => {
+	it("selecting LABEL sets plan.role=1 and meta.isLabelOnly=true", () => {
 		render(<QuickTileCreate />);
-
-		// Schedule is now a single inline pill — click it to expand
-		// the date+time inputs in place.
-		const pill = screen.getByRole("button", { name: /quickCreate\.scheduleTitle/ });
-		fireEvent.click(pill);
-
-		const dateInputs = screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/);
-		const timeInputs = screen.getAllByDisplayValue(/\d{2}:\d{2}/);
-		expect(dateInputs.length).toBeGreaterThan(0);
-		expect(timeInputs.length).toBeGreaterThan(0);
-
-		for (const input of [...dateInputs, ...timeInputs]) {
-			// Either the input has a label (htmlFor) or aria-label.
-			const labelled =
-				input.hasAttribute("aria-label") ||
-				input.hasAttribute("aria-labelledby") ||
-				(input.id && document.querySelector(`label[for="${input.id}"]`) !== null);
-			expect(labelled, `input ${input.outerHTML} has no accessible name`).toBe(true);
-		}
+		fireEvent.click(screen.getByRole("radio", { name: /roleLabel/ }));
+		const state = useQuickCreateStore.getState();
+		expect(state.plan.role).toBe(1);
+		expect(state.meta.isLabelOnly).toBe(true);
 	});
 
-	it("error message announces via role='alert'", async () => {
+	it("completion / references / planning / metrics / decisions are stub rows with counts", () => {
 		render(<QuickTileCreate />);
-
-		// The submit button stays enabled even when the form is invalid;
-		// clicking it surfaces a validation error in a role=alert region.
-		const titleInput = screen.getByRole("textbox", {
-			name: /quickCreate\.titlePlaceholder/,
-		});
-		// Force the title empty (overriding the auto-suggested value).
-		fireEvent.change(titleInput, { target: { value: "" } });
-
-		const submitButton = screen.getByRole("button", { name: "quickCreate.commit" });
-		fireEvent.click(submitButton);
-
-		await waitFor(() => {
-			const alert = screen.queryByRole("alert");
-			expect(alert).toBeTruthy();
-		});
+		expect(screen.getByText(/completionTitle/)).toBeTruthy();
+		expect(screen.getByText(/referencesTitle/)).toBeTruthy();
+		expect(screen.getByText(/planningTitle/)).toBeTruthy();
+		expect(screen.getByText(/metricsTitle/)).toBeTruthy();
+		expect(screen.getByText(/decisionsTitle/)).toBeTruthy();
 	});
+});
 
-	it("date/time is a single inline row that expands on pill click", () => {
+describe("QuickTileCreate — §3 Time", () => {
+	it("schedule is a single inline pill that expands on click", () => {
 		render(<QuickTileCreate />);
-
-		expect(screen.queryByRole("heading", { name: /quickCreate\.scheduleTitle/ })).toBeNull();
-		// The schedule pill is a button with aria-expanded
-		const pill = screen.getByRole("button", { name: /quickCreate\.scheduleTitle/ });
+		const pill = screen.getByRole("button", { name: /scheduleTitle/ });
 		expect(pill.getAttribute("aria-expanded")).toBe("false");
 		fireEvent.click(pill);
 		expect(pill.getAttribute("aria-expanded")).toBe("true");
-		// After click, date+time inputs are revealed inline
-		expect(screen.getAllByDisplayValue(/\d{4}-\d{2}-\d{2}/).length).toBeGreaterThan(0);
+		// After expansion, datetime-local inputs are visible
+		expect(screen.getAllByLabelText(/startAt/).length).toBeGreaterThan(0);
+		expect(screen.getAllByLabelText(/endAt/).length).toBeGreaterThan(0);
 	});
 
-	it("sub-panel navigation buttons are localized via t()", () => {
+	it("duration min/max inputs write to the store as number | null", () => {
 		render(<QuickTileCreate />);
-
-		// Schedule was promoted to the base panel — only 4 sub-panel
-		// entries remain (Recurrence / Interrupt / Automation / Timed labels).
-		expect(
-			screen.getByRole("button", { name: /quickCreate\.recurrenceNavTitle/ }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: /quickCreate\.metaNavTitle/ }),
-		).toBeTruthy();
-		// Schedule nav button must NOT exist (it's inlined in base panel).
-		expect(
-			screen.queryByRole("button", { name: /quickCreate\.scheduleNavTitle/ }),
-		).toBeNull();
-	});
-
-	it("sub-panel nav buttons have a leading lucide icon (before the title text)", () => {
-		render(<QuickTileCreate />);
-		const buttons = [
-			screen.getByRole("button", { name: /quickCreate\.recurrenceNavTitle/ }),
-			screen.getByRole("button", { name: /quickCreate\.interruptNavTitle/ }),
-			screen.getByRole("button", { name: /quickCreate\.automationNavTitle/ }),
-			screen.getByRole("button", { name: /quickCreate\.metaNavTitle/ }),
-		];
-		for (const btn of buttons) {
-			// RowSubPanel renders the icon as a sibling (FormRow icon column),
-			// not inside the button. Walk up to the FormRow container so we can
-			// assert the icon appears before the title text within the same row.
-			const row = btn.closest('[data-testid="form-row"]');
-			expect(row, `button ${btn.textContent} is not inside a FormRow`).toBeTruthy();
-			const allSvgs = row!.querySelectorAll("svg");
-			const titleSpan = btn.querySelector("span");
-			expect(allSvgs.length, `row ${btn.textContent} has no svg`).toBeGreaterThan(0);
-			// The first svg must appear before the title span in DOM order (leading, not trailing)
-			const pos = allSvgs[0].compareDocumentPosition(titleSpan!);
-			expect(
-				pos & Node.DOCUMENT_POSITION_FOLLOWING,
-				`row ${btn.textContent} first svg is not leading the title`,
-			).toBeTruthy();
-		}
-	});
-
-	it("base panel exposes interrupt rules and automation nav entries", () => {
-		render(<QuickTileCreate />);
-
-		// Two additional sub-panels must appear in the nav list (4 total).
-		expect(
-			screen.getByRole("button", { name: /quickCreate\.interruptNavTitle/ }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("button", { name: /quickCreate\.automationNavTitle/ }),
-		).toBeTruthy();
-	});
-
-	it("base panel exposes a DoneRule choice row", () => {
-		render(<QuickTileCreate />);
-
-		// The completion trigger is always required (not a sub-panel).
-		// RowSegmented primitive renders role="radiogroup" + role="radio" children.
-		expect(
-			screen.getByRole("radio", { name: "quickCreate.doneRuleTimeReached" }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("radio", { name: "quickCreate.doneRuleIntervalEnd" }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("radio", { name: "quickCreate.doneRuleManual" }),
-		).toBeTruthy();
-	});
-
-	it("DoneRule row has no section heading; 3 options remain", () => {
-		render(<QuickTileCreate />);
-		expect(screen.queryByRole("heading", { name: /quickCreate\.doneRuleTitle/ })).toBeNull();
-		expect(screen.getByRole("radio", { name: /quickCreate\.doneRuleManual/ })).toBeTruthy();
-		expect(screen.getByRole("radio", { name: /quickCreate\.doneRuleTimeReached/ })).toBeTruthy();
-		expect(screen.getByRole("radio", { name: /quickCreate\.doneRuleIntervalEnd/ })).toBeTruthy();
-	});
-
-	it("base panel exposes a schedule pill + period label", () => {
-		render(<QuickTileCreate />);
-
-		// Schedule is a single inline pill that expands to show the
-		// date+time inputs (no separate Start/End toggle buttons).
-		expect(
-			screen.getByRole("button", { name: /quickCreate\.scheduleTitle/ }),
-		).toBeTruthy();
-		expect(
-			screen.queryByRole("button", { name: "quickCreate.startAt" }),
-		).toBeNull();
-		expect(
-			screen.queryByRole("button", { name: "quickCreate.endAt" }),
-		).toBeNull();
-		// RowToggle primitive renders role="switch".
-		expect(
-			screen.getByRole("switch", { name: /quickCreate\.labelOnly/ }),
-		).toBeTruthy();
-	});
-
-	it("base panel exposes Project + Tag + Memo inputs", () => {
-		render(<QuickTileCreate />);
-
-		// Project / Tag were promoted from the meta sub-panel to the base
-		// panel — they must be reachable without opening a sub-panel.
-		expect(
-			screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ }),
-		).toBeTruthy();
-		expect(
-			screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ }),
-		).toBeTruthy();
-		// Memo is collapsed by default — only the "Add a note" placeholder
-		// button is visible until the user clicks it.
-		expect(
-			screen.getByRole("button", { name: /quickCreate\.memoPlaceholder/ }),
-		).toBeTruthy();
-	});
-
-	it("memo is collapsed by default; clicking 'Add note' reveals a textarea", () => {
-		render(<QuickTileCreate />);
-		// When empty, only an "Add note" placeholder button is visible, not a textarea
-		expect(
-			screen.queryByRole("textbox", { name: /quickCreate\.memoPlaceholder/ }),
-		).toBeNull();
-		// Click the placeholder to expand
-		const addNote = screen.getByRole("button", { name: /quickCreate\.memoPlaceholder/ });
-		fireEvent.click(addNote);
-		expect(
-			screen.getByRole("textbox", { name: /quickCreate\.memoPlaceholder/ }),
-		).toBeTruthy();
-	});
-
-	it("project input has leading icon and no section heading", () => {
-		render(<QuickTileCreate />);
-		expect(screen.queryByRole("heading", { name: /quickCreate\.metaTitle/ })).toBeNull();
-		// Project input still has a recognizable aria-label
-		expect(
-			screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ }),
-		).toBeTruthy();
-	});
-
-	it("period label is a toggle switch with no section heading", () => {
-		render(<QuickTileCreate />);
-		expect(screen.queryByRole("heading", { name: /quickCreate\.labelOnlyTitle/ })).toBeNull();
-		// RowToggle primitive renders role="switch", reachable by its accessible name.
-		expect(screen.getByRole("switch", { name: /quickCreate\.labelOnly/ })).toBeTruthy();
-	});
-
-	it("tag input is icon-driven and addable via Enter", () => {
-		render(<QuickTileCreate />);
-		const tagInput = screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ });
-		fireEvent.change(tagInput, { target: { value: "important" } });
-		fireEvent.keyDown(tagInput, { key: "Enter" });
-		// Chip is rendered with the tag
-		expect(screen.getByText("#important")).toBeTruthy();
+		const min = screen.getByRole("spinbutton", { name: /minMsLabel/ });
+		const max = screen.getByRole("spinbutton", { name: /maxMsLabel/ });
+		fireEvent.change(min, { target: { value: "1500000" } });
+		fireEvent.change(max, { target: { value: "3600000" } });
+		const state = useQuickCreateStore.getState();
+		expect(state.time.durationMinMax.minMs).toBe(1500000);
+		expect(state.time.durationMinMax.maxMs).toBe(3600000);
 	});
 });
 
-describe("QuickTileCreate — interruption & automation layers", () => {
-	it("interrupt rules sub-panel sets interruptPenalty / resumePenalty / externalInterruptOnly", async () => {
+describe("QuickTileCreate — §4 Windows", () => {
+	it("renders an Add button when the section is empty", () => {
 		render(<QuickTileCreate />);
-
-		// Open the Interrupt rules sub-panel.
-		fireEvent.click(
-			screen.getByRole("button", { name: /quickCreate\.interruptNavTitle/ }),
-		);
-
-		// Set both penalties to 5 and enable external-interrupts-only.
-		const penalty5 = screen.getAllByRole("radio", { name: "5" });
-		fireEvent.click(penalty5[0]);
-		fireEvent.click(penalty5[1]);
-		fireEvent.click(
-			screen.getByRole("switch", {
-				name: /quickCreate\.externalInterruptOnlyTitle/,
-			}),
-		);
-
-		// Submit with the auto-suggested title.
-		fireEvent.click(screen.getByRole("button", { name: "quickCreate.commit" }));
-
-		await waitFor(() => expect(executeMock).toHaveBeenCalled());
-		const [command] = executeMock.mock.calls[0];
-		expect(command.tile.interruption.interruptPenalty).toBe(5);
-		expect(command.tile.interruption.resumePenalty).toBe(5);
-		expect(command.tile.interruption.externalInterruptOnly).toBe(true);
-		// breakSplitsWork must remain the default and NOT be exposed in UI.
-		expect(command.tile.interruption.breakSplitsWork).toBe(true);
+		expect(
+			screen.getByRole("button", { name: /windowsAdd/ }),
+		).toBeTruthy();
+		expect(screen.queryByTestId(/^window-row-/)).toBeNull();
 	});
 
-	it("automation sub-panel toggles all four booleans + timezone", async () => {
+	it("Add creates a CALENDAR Window with empty bounds", () => {
+		render(<QuickTileCreate />);
+		fireEvent.click(screen.getByRole("button", { name: /windowsAdd/ }));
+		const state = useQuickCreateStore.getState();
+		expect(state.windows.length).toBe(1);
+		const w = state.windows[0]!;
+		expect(w.kind).toBe(0); // CALENDAR
+		expect(w.bounds.start).toBe("");
+		expect(w.bounds.end).toBe("");
+		expect(w.referenceId).toBeNull();
+		expect(w.id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(screen.getByTestId("window-row-0")).toBeTruthy();
+	});
+
+	it("kind picker updates Window.kind (0..3) and reveals referenceId input for non-CALENDAR", () => {
+		useQuickCreateStore.setState({
+			windows: [
+				{
+					id: "w-1",
+					owner: "self",
+					kind: 0,
+					bounds: { start: "", end: "" },
+					rules: [],
+					referenceId: null,
+				},
+			],
+		});
+		render(<QuickTileCreate />);
+		// Switch to LABEL_SPAN (1)
+		fireEvent.click(screen.getByRole("radio", { name: /windowKindLabelSpan/ }));
+		const state = useQuickCreateStore.getState();
+		expect(state.windows[0]!.kind).toBe(1);
+		// referenceId input is now visible
+		const refInput = screen.getByRole("textbox", {
+			name: /windowReferenceIdLabel/,
+		});
+		fireEvent.change(refInput, { target: { value: "ref-uuid" } });
+		expect(useQuickCreateStore.getState().windows[0]!.referenceId).toBe(
+			"ref-uuid",
+		);
+	});
+
+	it("Remove deletes a Window by index", () => {
+		useQuickCreateStore.setState({
+			windows: [
+				{
+					id: "w-1",
+					owner: "self",
+					kind: 0,
+					bounds: { start: "", end: "" },
+					rules: [],
+					referenceId: null,
+				},
+				{
+					id: "w-2",
+					owner: "self",
+					kind: 0,
+					bounds: { start: "", end: "" },
+					rules: [],
+					referenceId: null,
+				},
+			],
+		});
+		render(<QuickTileCreate />);
+		expect(screen.getByTestId("window-row-0")).toBeTruthy();
+		expect(screen.getByTestId("window-row-1")).toBeTruthy();
+		fireEvent.click(screen.getAllByLabelText(/windowRemove/)[0]!);
+		const state = useQuickCreateStore.getState();
+		expect(state.windows.length).toBe(1);
+		expect(state.windows[0]!.id).toBe("w-2");
+	});
+});
+
+describe("QuickTileCreate — §5 Recurring (conditional)", () => {
+	it("is hidden when kind = PLACEMENT (default)", () => {
+		render(<QuickTileCreate />);
+		const headers = screen.getAllByTestId("section-header");
+		const titles = headers.map((h) => h.textContent ?? "");
+		expect(titles.some((t) => t.includes("§5 Recurring"))).toBe(false);
+	});
+
+	it("appears when kind is switched to RECURRING", () => {
+		render(<QuickTileCreate />);
+		fireEvent.click(screen.getByRole("radio", { name: /kindRecurring/ }));
+		const headers = screen.getAllByTestId("section-header");
+		const titles = headers.map((h) => h.textContent ?? "");
+		expect(titles.some((t) => t.includes("§5 Recurring"))).toBe(true);
+		// active start/end date inputs visible
+		expect(screen.getByLabelText(/recurringActiveStart/)).toBeTruthy();
+		expect(screen.getByLabelText(/recurringActiveEnd/)).toBeTruthy();
+	});
+
+	it("renders an Add frame rule button when there are no rules", () => {
+		useQuickCreateStore.setState({
+			identity: {
+				...useQuickCreateStore.getState().identity,
+				kind: 0, // RECURRING
+			},
+		});
+		render(<QuickTileCreate />);
+		expect(
+			screen.getByRole("button", { name: /frameRulesAdd/ }),
+		).toBeTruthy();
+		expect(screen.queryByTestId(/^frame-rule-row-/)).toBeNull();
+	});
+
+	it("Add creates a Step FrameRule with default values", () => {
+		useQuickCreateStore.setState({
+			identity: {
+				...useQuickCreateStore.getState().identity,
+				kind: 0, // RECURRING
+			},
+		});
+		render(<QuickTileCreate />);
+		fireEvent.click(screen.getByRole("button", { name: /frameRulesAdd/ }));
+		const state = useQuickCreateStore.getState();
+		expect(state.recurring.frameRules.length).toBe(1);
+		const rule = state.recurring.frameRules[0]!;
+		expect(rule.id).toMatch(/^[0-9a-f-]{36}$/);
+		expect(rule.generator.kind).toBe("step");
+		if (rule.generator.kind === "step") {
+			expect(rule.generator.value.step).toBe(0);
+		}
+		expect(screen.getByTestId("frame-rule-row-0")).toBeTruthy();
+	});
+
+	it("kind picker switches generator.kind and resets value to new defaults", () => {
+		useQuickCreateStore.setState({
+			identity: {
+				...useQuickCreateStore.getState().identity,
+				kind: 0, // RECURRING
+			},
+			recurring: {
+				...useQuickCreateStore.getState().recurring,
+				frameRules: [
+					{
+						id: "fr-1",
+						generator: {
+							kind: "step",
+							value: { step: 5000, origin: null, bounds: null },
+						},
+						active: null,
+					},
+				],
+			},
+		});
+		render(<QuickTileCreate />);
+		// Switch to Calendar
+		fireEvent.click(
+			screen.getByRole("radio", { name: /frameRuleKindCalendar/ }),
+		);
+		const rule = useQuickCreateStore.getState().recurring.frameRules[0]!;
+		expect(rule.generator.kind).toBe("calendar");
+		if (rule.generator.kind === "calendar") {
+			expect(rule.generator.value.unit).toBe(0);
+			expect(rule.generator.value.holidayKind).toBe(2);
+		}
+		// And back to Reference
+		fireEvent.click(
+			screen.getByRole("radio", { name: /frameRuleKindReference/ }),
+		);
+		const refRule = useQuickCreateStore.getState().recurring.frameRules[0]!;
+		expect(refRule.generator.kind).toBe("reference");
+		if (refRule.generator.kind === "reference") {
+			expect(refRule.generator.value.align).toBe(0);
+		}
+	});
+
+	it("Remove deletes a FrameRule by index", () => {
+		useQuickCreateStore.setState({
+			identity: {
+				...useQuickCreateStore.getState().identity,
+				kind: 0, // RECURRING
+			},
+			recurring: {
+				...useQuickCreateStore.getState().recurring,
+				frameRules: [
+					{
+						id: "fr-1",
+						generator: {
+							kind: "step",
+							value: { step: 0, origin: null, bounds: null },
+						},
+						active: null,
+					},
+					{
+						id: "fr-2",
+						generator: {
+							kind: "reference",
+							value: { referenceId: "ref-x", align: 0 },
+						},
+						active: null,
+					},
+				],
+			},
+		});
+		render(<QuickTileCreate />);
+		expect(screen.getByTestId("frame-rule-row-0")).toBeTruthy();
+		expect(screen.getByTestId("frame-rule-row-1")).toBeTruthy();
+		fireEvent.click(screen.getAllByLabelText(/frameRuleRemove/)[0]!);
+		const state = useQuickCreateStore.getState();
+		expect(state.recurring.frameRules.length).toBe(1);
+		expect(state.recurring.frameRules[0]!.id).toBe("fr-2");
+	});
+});
+
+describe("QuickTileCreate — §7 Meta", () => {
+	it("project input writes to meta.project", () => {
+		render(<QuickTileCreate />);
+		const project = screen.getByRole("textbox", {
+			name: /projectPlaceholder/,
+		});
+		fireEvent.change(project, { target: { value: "Atlas" } });
+		expect(useQuickCreateStore.getState().meta.project).toBe("Atlas");
+	});
+
+	it("tag input adds a chip on Enter", () => {
+		render(<QuickTileCreate />);
+		const tagInput = screen.getByRole("textbox", { name: /tagsPlaceholder/ });
+		fireEvent.change(tagInput, { target: { value: "focus" } });
+		fireEvent.keyDown(tagInput, { key: "Enter" });
+		expect(screen.getByText("#focus")).toBeTruthy();
+		expect(useQuickCreateStore.getState().meta.tags).toContain("focus");
+	});
+
+	it("memo is collapsed by default and expands on click", () => {
+		render(<QuickTileCreate />);
+		expect(
+			screen.queryByRole("textbox", { name: /memoPlaceholder/ }),
+		).toBeNull();
+		fireEvent.click(screen.getByRole("button", { name: /memoPlaceholder/ }));
+		expect(
+			screen.getByRole("textbox", { name: /memoPlaceholder/ }),
+		).toBeTruthy();
+	});
+});
+
+describe("QuickTileCreate — submit", () => {
+	it("fires submitCreateTileV1 with the v1 client on valid submit", async () => {
 		render(<QuickTileCreate />);
 
-		// Open the Automation sub-panel.
-		fireEvent.click(
-			screen.getByRole("button", { name: /quickCreate\.automationNavTitle/ }),
-		);
-
-		// Toggle promptOnStart, autoStartAllowed, autoEndAllowed on.
-		// promptOnEnd is on by default per Tile.create — leave it.
-		fireEvent.click(
-			screen.getByRole("switch", { name: /quickCreate\.promptOnStartTitle/ }),
-		);
-		fireEvent.click(
-			screen.getByRole("switch", { name: /quickCreate\.autoStartAllowedTitle/ }),
-		);
-		fireEvent.click(
-			screen.getByRole("switch", { name: /quickCreate\.autoEndAllowedTitle/ }),
-		);
-
-		// Pick Asia/Tokyo from the timezone select.
 		fireEvent.change(
-			screen.getByRole("combobox", { name: /quickCreate\.timezoneTitle/ }),
-			{ target: { value: "Asia/Tokyo" } },
+			screen.getByRole("textbox", { name: /titlePlaceholder/ }),
+			{ target: { value: "Smoke test" } },
 		);
+		fireEvent.click(screen.getByRole("button", { name: /commit/ }));
 
-		// Submit.
-		fireEvent.click(screen.getByRole("button", { name: "quickCreate.commit" }));
-
-		await waitFor(() => expect(executeMock).toHaveBeenCalled());
-		const [command] = executeMock.mock.calls[0];
-		expect(command.tile.automation.promptOnStart).toBe(true);
-		expect(command.tile.automation.promptOnEnd).toBe(true);
-		expect(command.tile.automation.autoStartAllowed).toBe(true);
-		expect(command.tile.automation.autoEndAllowed).toBe(true);
-		expect(command.tile.temporal.tz).toBe("Asia/Tokyo");
+		await waitFor(() => expect(submitMock).toHaveBeenCalled());
+		const arg = submitMock.mock.calls[0]?.[0];
+		expect(arg).toBeDefined();
+		expect(arg.client).toBeDefined();
+		expect(typeof arg.client.getIdToken).toBe("function");
 	});
 
-	it("tz defaults to null (device timezone) when not changed", async () => {
+	it("surfaces a role=alert when the title is empty", async () => {
 		render(<QuickTileCreate />);
-
-		fireEvent.click(screen.getByRole("button", { name: "quickCreate.commit" }));
-
-		await waitFor(() => expect(executeMock).toHaveBeenCalled());
-		const [command] = executeMock.mock.calls[0];
-		expect(command.tile.temporal.tz).toBeNull();
-	});
-
-	it("doneRule choice row drives tile.objective.doneRule", async () => {
-		render(<QuickTileCreate />);
-
-		// Pick "When target work reached" (RowSegmented renders role="radio").
-		fireEvent.click(
-			screen.getByRole("radio", { name: "quickCreate.doneRuleTimeReached" }),
+		// Title is empty by default — auto-suggestion would have populated it,
+		// but in this test the store is reset and the suggestion runs only on
+		// mount. Clear the title (if any) and force an empty state.
+		fireEvent.change(
+			screen.getByRole("textbox", { name: /titlePlaceholder/ }),
+			{ target: { value: "" } },
 		);
-
-		fireEvent.click(screen.getByRole("button", { name: "quickCreate.commit" }));
-
-		await waitFor(() => expect(executeMock).toHaveBeenCalled());
-		const [command] = executeMock.mock.calls[0];
-		expect(command.tile.objective.doneRule).toBe("time_reached");
+		fireEvent.click(screen.getByRole("button", { name: /commit/ }));
+		await waitFor(() => {
+			expect(screen.queryByRole("alert")).toBeTruthy();
+		});
+		// submit must NOT have been called when the form is invalid
+		expect(submitMock).not.toHaveBeenCalled();
 	});
-});
 
-describe("QuickTileCreate — timed labels", () => {
-	it("Meta sub-panel adds a timed label to annotation.timedLabels", async () => {
+	it("does not call submit when store-side validation fails (e.g. span inverted)", async () => {
+		useQuickCreateStore.setState({
+			time: {
+				span: { start: "2026-12-01T00:00:00.000Z", end: "2026-06-01T00:00:00.000Z" },
+				durationMinMax: { minMs: null, maxMs: null },
+			},
+			identity: { ...useQuickCreateStore.getState().identity, title: "Inverted" },
+		});
 		render(<QuickTileCreate />);
+		fireEvent.click(screen.getByRole("button", { name: /commit/ }));
+		await waitFor(() => {
+			expect(screen.queryByRole("alert")).toBeTruthy();
+		});
+		expect(submitMock).not.toHaveBeenCalled();
+	});
 
-		// Open the Meta (Project & metadata) sub-panel.
-		fireEvent.click(
-			screen.getByRole("button", { name: /quickCreate\.metaNavTitle/ }),
+	it("does not show any sub-panel navigation buttons", () => {
+		render(<QuickTileCreate />);
+		// v1 構造エディタ has no sub-panel nav. The old v7 sub-panel titles
+		// must not appear.
+		expect(
+			screen.queryByRole("button", { name: /recurrenceNavTitle/ }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /interruptNavTitle/ }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /automationNavTitle/ }),
+		).toBeNull();
+		expect(
+			screen.queryByRole("button", { name: /metaNavTitle/ }),
+		).toBeNull();
+	});
+
+	it("does not expose v7 doneRule / interrupt / automation switches", () => {
+		render(<QuickTileCreate />);
+		expect(screen.queryByRole("radio", { name: /doneRuleManual/ })).toBeNull();
+		expect(screen.queryByRole("radio", { name: /doneRuleTimeReached/ })).toBeNull();
+		expect(screen.queryByRole("radio", { name: /doneRuleIntervalEnd/ })).toBeNull();
+		expect(
+			screen.queryByRole("switch", { name: /externalInterruptOnlyTitle/ }),
+		).toBeNull();
+		expect(screen.queryByRole("switch", { name: /promptOnStartTitle/ })).toBeNull();
+		expect(screen.queryByRole("switch", { name: /autoStartAllowedTitle/ })).toBeNull();
+	});
+
+	it("closes the panel and resets the store on successful submit", async () => {
+		render(<QuickTileCreate />);
+		fireEvent.change(
+			screen.getByRole("textbox", { name: /titlePlaceholder/ }),
+			{ target: { value: "Done" } },
 		);
-
-		// Fill the label input.
-		const labelInput = screen.getByRole("textbox", {
-			name: /quickCreate\.timedLabelsLabel/,
-		});
-		fireEvent.change(labelInput, { target: { value: "vacation" } });
-
-		// Click Add.
-		fireEvent.click(
-			screen.getByRole("button", { name: "quickCreate.timedLabelsAdd" }),
-		);
-
-		// Submit.
-		fireEvent.click(screen.getByRole("button", { name: "quickCreate.commit" }));
-
-		await waitFor(() => expect(executeMock).toHaveBeenCalled());
-		const [command] = executeMock.mock.calls[0];
-		expect(command.tile.annotation.timedLabels).toEqual([
-			{ label: "vacation", startAt: null, endAt: null },
-		]);
-	});
-});
-
-describe("QuickTileCreate — submit semantics", () => {
-	it("submits a task tile with targetWorkMin, never targetRestMin", async () => {
-		render(<QuickTileCreate />);
-
-		// Fill the title so the form can submit.
-		const titleInput = screen.getByRole("textbox", { name: /quickCreate\.titlePlaceholder/ });
-		fireEvent.change(titleInput, { target: { value: "Write report" } });
-
-		// Submit.
-		const submitButton = screen.getByRole("button", { name: "quickCreate.commit" });
-		fireEvent.click(submitButton);
-
+		fireEvent.click(screen.getByRole("button", { name: /commit/ }));
+		await waitFor(() => expect(submitMock).toHaveBeenCalled());
+		// reset() copies the default state and re-sets isOpen to its current
+		// value; close() then sets isOpen to false.
 		await waitFor(() => {
-			expect(executeMock).toHaveBeenCalled();
+			expect(useQuickCreateStore.getState().isOpen).toBe(false);
 		});
-
-		const [command] = executeMock.mock.calls[0];
-		expect(command.type).toBe("create_tile");
-		const tile = command.tile;
-		// Tile must be classified by its condition vector, not by kind.
-		// The duration field always represents target work; the engine
-		// owns break placement via the recurrence generator.
-		expect(tile.objective.targetRestMin).toBeNull();
-		// targetWorkMin should be a positive number (default 25 min from the panel).
-		expect(tile.objective.targetWorkMin).toBeGreaterThan(0);
-		// No semantic role of 'break'.
-		expect(tile.annotation.semanticRole).not.toBe("break");
-	});
-
-	it("label-only toggle hides the duration field and sets objectiveMode = label_only", async () => {
-		render(<QuickTileCreate />);
-
-		// The label-only toggle is now inlined in the base panel — no
-		// sub-panel to open. The toggle uses the RowToggle primitive
-		// which renders role="switch".
-		const labelToggle = screen.getByRole("switch", {
-			name: /quickCreate\.labelOnly/,
-		});
-		expect(labelToggle).toBeTruthy();
-		fireEvent.click(labelToggle);
-
-		// Fill the title so the form can submit.
-		const titleInput = screen.getByRole("textbox", {
-			name: /quickCreate\.titlePlaceholder/,
-		});
-		fireEvent.change(titleInput, { target: { value: "Vacation" } });
-
-		// Submit.
-		const submitButton = screen.getByRole("button", { name: "quickCreate.commit" });
-		fireEvent.click(submitButton);
-
-		await waitFor(() => {
-			expect(executeMock).toHaveBeenCalled();
-		});
-
-		const [command] = executeMock.mock.calls[0];
-		const tile = command.tile;
-		expect(tile.objective.objectiveMode).toBe("label_only");
-		// No work target, no rest target for a period label.
-		expect(tile.objective.targetWorkMin).toBeNull();
-		expect(tile.objective.targetRestMin).toBeNull();
-	});
-
-	it("base panel is fully self-sufficient — no sub-panel needed for the common case", async () => {
-		render(<QuickTileCreate />);
-
-		// Fill title (icon-driven input, no sub-panel)
-		fireEvent.change(screen.getByRole("textbox", { name: /quickCreate\.titlePlaceholder/ }), {
-			target: { value: "Smoke test" },
-		});
-
-		// Add a project (icon-driven input with autocomplete, no sub-panel)
-		const projectInput = screen.getByRole("textbox", { name: /quickCreate\.projectPlaceholder/ });
-		fireEvent.change(projectInput, { target: { value: "TestProject" } });
-		fireEvent.keyDown(projectInput, { key: "Enter" });
-
-		// Add a tag (icon-driven chip input, no sub-panel)
-		const tagInput = screen.getByRole("textbox", { name: /quickCreate\.tagsPlaceholder/ });
-		fireEvent.change(tagInput, { target: { value: "smoke" } });
-		fireEvent.keyDown(tagInput, { key: "Enter" });
-
-		// Submit without opening any sub-panel
-		fireEvent.click(screen.getByRole("button", { name: /quickCreate\.commit/ }));
-
-		await waitFor(() => expect(executeMock).toHaveBeenCalled());
-		const [command] = executeMock.mock.calls[0];
-		expect(command.type).toBe("create_tile");
-		// Title lands in core.title
-		expect(command.tile.core.title).toBe("Smoke test");
-		// Project and tag are merged into annotation.labels
-		// (project is "project:<name>" prefixed, tags are bare strings)
-		expect(command.tile.annotation.labels).toContain("project:TestProject");
-		expect(command.tile.annotation.labels).toContain("smoke");
-	});
-});
-
-describe("QuickTileCreate — sub-panel dismissal via base panel click", () => {
-	// Sub-panels render at z-[57]; the base panel is z-[56]. Sub-panels
-	// remain in the DOM but become inactive via class `pointer-events-none
-	// translate-x-full` (desktop) / `translate-y-full` (mobile bottom sheet).
-	// An off-screen element is still queryable by getByRole, so we assert
-	// on the sub-panel's class to verify state transitions.
-	function getSubPanelByZ(container: HTMLElement, markerText: string) {
-		const sections = container.querySelectorAll("section");
-		for (const sec of Array.from(sections)) {
-			if (sec.className.includes("z-[57]") && sec.textContent?.includes(markerText)) {
-				return sec;
-			}
-		}
-		return null;
-	}
-	function isSubPanelActive(sub: Element | null) {
-		if (!sub) return false;
-		const cls = sub.className;
-		// Active = translate offset is "0" AND pointer-events-none is NOT present.
-		// Inactive = translate-x-full OR translate-y-full, with pointer-events-none.
-		const hasTranslateZero = /\btranslate-x-0\b|\btranslate-y-0\b/.test(cls);
-		const isOffscreen = /\btranslate-x-full\b|\btranslate-y-full\b/.test(cls);
-		const hasPointerEventsNone = cls.includes("pointer-events-none");
-		return hasTranslateZero && !isOffscreen && !hasPointerEventsNone;
-	}
-
-	it("clicking on the base panel area dismisses an open sub-panel", async () => {
-		const { container } = render(<QuickTileCreate />);
-		// Open the Recurrence sub-panel
-		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
-		});
-		// Click on a base-panel element (the title input) — this should close the sub-panel
-		const title = screen.getByRole("textbox", { name: /titlePlaceholder/ });
-		fireEvent.click(title);
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
-		});
-	});
-
-	it("clicking a different sub-panel nav button switches to that sub-panel", async () => {
-		const { container } = render(<QuickTileCreate />);
-		// Open Recurrence
-		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
-		});
-		// Click Interrupt — should switch (stopPropagation prevents dismiss)
-		fireEvent.click(screen.getByRole("button", { name: /interruptNavTitle/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.interruptPenaltyTitle"))).toBe(true);
-		});
-		// And Recurrence should now be inactive
-		expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
-	});
-
-	it("clicking inside a sub-panel does not dismiss it", async () => {
-		const { container } = render(<QuickTileCreate />);
-		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
-		});
-		// Click an in-sub-panel control (objectiveFinish radio). The sub-panel
-		// is a SIBLING of the base panel section, so this click does NOT bubble
-		// to the base panel onClick handler.
-		fireEvent.click(screen.getByRole("radio", { name: /objectiveFinish/ }));
-		// Sub-panel should still be open
-		expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
-	});
-
-	it("sub-panel X button dismisses only the sub-panel, not the create panel", async () => {
-		const { container } = render(<QuickTileCreate />);
-		// Open Recurrence
-		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
-		});
-		// Click the X (Close panel) on the sub-panel header — should only
-		// dismiss the sub-panel; the create panel itself stays mounted.
-		const subPanel = screen.getByTestId("quick-tile-recurrence-subpanel");
-		fireEvent.click(within(subPanel).getByRole("button", { name: /Close panel|パネルを閉じる/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
-		});
-		// The create panel should still be present (the base nav buttons are
-		// still in the accessibility tree).
-		expect(screen.getByRole("button", { name: /recurrenceNavTitle/ })).toBeTruthy();
-	});
-
-	it("backdrop click peels one layer at a time: sub-panel first, then create panel", async () => {
-		const { container } = render(<QuickTileCreate />);
-		// Open Recurrence sub-panel
-		fireEvent.click(screen.getByRole("button", { name: /recurrenceNavTitle/ }));
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(true);
-		});
-		// First backdrop click — dismisses the sub-panel only; the create panel
-		// remains mounted.
-		fireEvent.click(container.querySelector('[aria-hidden="true"]') as Element);
-		await waitFor(() => {
-			expect(isSubPanelActive(getSubPanelByZ(container, "quickCreate.recurrenceNavTitle"))).toBe(false);
-		});
-		expect(screen.getByRole("button", { name: /recurrenceNavTitle/ })).toBeTruthy();
-		// Second backdrop click — now the create panel itself unmounts.
-		fireEvent.click(container.querySelector('[aria-hidden="true"]') as Element);
-		await waitFor(() => {
-			expect(screen.queryByRole("button", { name: /recurrenceNavTitle/ })).toBeNull();
-		});
+		expect(useQuickCreateStore.getState().identity.title).toBe("");
 	});
 });
