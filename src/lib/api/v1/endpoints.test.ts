@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { postV1Command, getV1Read, type V1Client } from "./endpoints";
+import { postCommand, getRead, type ApiClient } from "./endpoints";
 import { ApiErrorKind } from "@/lib/domain/v1/constants";
 
 const mockFetch = vi.fn();
@@ -19,7 +19,7 @@ const errResponse = (status: number, body: unknown) =>
     json: async () => body,
   }) as unknown as Response;
 
-const baseClient = (): V1Client => ({
+const baseClient = (): ApiClient => ({
   baseUrl: "https://api.example.com",
   getIdToken: async () => "tok",
 });
@@ -33,7 +33,7 @@ const emptyEnvelope = {
   payload: {},
 };
 
-describe("postV1Command", () => {
+describe("postCommand", () => {
   beforeEach(() => mockFetch.mockReset());
 
   it("POSTs to baseUrl+path with v1 envelope and Bearer token", async () => {
@@ -48,7 +48,7 @@ describe("postV1Command", () => {
       }),
     );
     const client = baseClient();
-    const res = await postV1Command(client, "/v1/tiles", {
+    const res = await postCommand(client, "/v1/tiles", {
       expectedRevision: null,
       idempotencyKey: "k1",
       occurredAt: "t1",
@@ -82,7 +82,7 @@ describe("postV1Command", () => {
         pending: [{ kind: 0, target: null, notBefore: null }],
       }),
     );
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.status).toBe(200);
@@ -94,7 +94,7 @@ describe("postV1Command", () => {
 
   it("returns RETRYABLE ApiError when 2xx body is missing commandId", async () => {
     mockFetch.mockResolvedValueOnce(okResponse({ acceptedAt: "t1" }));
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
@@ -104,7 +104,7 @@ describe("postV1Command", () => {
 
   it("returns RETRYABLE ApiError when 2xx body is missing acceptedAt", async () => {
     mockFetch.mockResolvedValueOnce(okResponse({ commandId: "c1" }));
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
@@ -113,11 +113,11 @@ describe("postV1Command", () => {
   });
 
   it("returns {ok:false,error:ApiError} when id token is missing (FORBIDDEN)", async () => {
-    const client: V1Client = {
+    const client: ApiClient = {
       baseUrl: "https://api.example.com",
       getIdToken: async () => null,
     };
-    const res = await postV1Command(client, "/v1/x", emptyEnvelope);
+    const res = await postCommand(client, "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.FORBIDDEN);
@@ -139,7 +139,7 @@ describe("postV1Command", () => {
         ],
       }),
     );
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.VALIDATION);
@@ -158,7 +158,7 @@ describe("postV1Command", () => {
         violations: [],
       }),
     );
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
@@ -168,7 +168,7 @@ describe("postV1Command", () => {
 
   it("returns network ApiError (RETRYABLE) when fetch throws", async () => {
     mockFetch.mockRejectedValueOnce(new Error("socket reset"));
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
@@ -186,7 +186,7 @@ describe("postV1Command", () => {
         throw new Error("invalid json");
       },
     } as unknown as Response);
-    const res = await postV1Command(baseClient(), "/v1/x", emptyEnvelope);
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
@@ -195,13 +195,13 @@ describe("postV1Command", () => {
   });
 });
 
-describe("getV1Read", () => {
+describe("getRead", () => {
   beforeEach(() => mockFetch.mockReset());
 
   it("GETs baseUrl+path with Bearer token", async () => {
     mockFetch.mockResolvedValueOnce(okResponse({ id: "r1" }));
     const client = baseClient();
-    const res = await getV1Read<{ id: string }>(client, "/v1/tiles/r1");
+    const res = await getRead<{ id: string }>(client, "/v1/tiles/r1");
     expect(res.ok).toBe(true);
     if (res.ok) {
       expect(res.data.id).toBe("r1");
@@ -221,7 +221,7 @@ describe("getV1Read", () => {
         violations: [],
       }),
     );
-    const res = await getV1Read(baseClient(), "/v1/tiles/missing");
+    const res = await getRead(baseClient(), "/v1/tiles/missing");
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.NOT_FOUND);
@@ -230,11 +230,11 @@ describe("getV1Read", () => {
   });
 
   it("returns FORBIDDEN ApiError when id token is missing", async () => {
-    const client: V1Client = {
+    const client: ApiClient = {
       baseUrl: "https://api.example.com",
       getIdToken: async () => null,
     };
-    const res = await getV1Read(client, "/v1/x");
+    const res = await getRead(client, "/v1/x");
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.FORBIDDEN);
@@ -244,7 +244,7 @@ describe("getV1Read", () => {
 
   it("returns RETRYABLE ApiError when fetch throws", async () => {
     mockFetch.mockRejectedValueOnce(new Error("offline"));
-    const res = await getV1Read(baseClient(), "/v1/x");
+    const res = await getRead(baseClient(), "/v1/x");
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);

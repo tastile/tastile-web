@@ -53,7 +53,7 @@ import {
   RowSegmented,
   RowToggle,
 } from "@/components/ui/form";
-import { makeV1Client, submitCreateTileV1 } from "@/lib/api/v1/submit";
+import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
 import {
   ConditionKind,
   HolidayKind,
@@ -309,10 +309,10 @@ export function QuickTileCreate() {
     }
     if (!canSubmit) return;
 
-    const v1Client = makeV1Client();
+    const client = makeClient();
     setSubmitting(true);
     try {
-      const result = await submitCreateTileV1({ client: v1Client });
+      const result = await submitCreateTile({ client });
       if (!result.ok) {
         throw new Error(
           `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,

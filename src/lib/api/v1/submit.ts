@@ -1,9 +1,9 @@
 /**
- * submitCreateTileV1 — v1 API submit for QuickTileCreate.
+ * submitCreateTile — v1 API submit for QuickTileCreate.
  *
  * Bridges the existing v7-shaped form state to the v1 envelope sequence
- * produced by `buildCreateTileCommandV1`, then POSTs each envelope via
- * `postV1Command`. The result is propagated back to the UI as
+ * produced by `buildCreateTileCommand`, then POSTs each envelope via
+ * `postCommand`. The result is propagated back to the UI as
  * `{ ok: true, tileId }` or `{ ok: false, error }`.
  *
  * Lives at the seam between QuickTileCreate (still on v7 form state) and
@@ -20,9 +20,9 @@ import {
   TileKind,
 } from "@/lib/domain/v1/constants";
 import {
-  postV1Command,
+  postCommand,
   type Result,
-  type V1Client,
+  type ApiClient,
 } from "./endpoints";
 import { uuidv7, type ApiError } from "@/lib/domain/v1/envelope";
 
@@ -34,7 +34,7 @@ import { uuidv7, type ApiError } from "@/lib/domain/v1/envelope";
  */
 const E2E_DEV_TOKEN = "e2e-bypass-token";
 import {
-  buildCreateTileCommandV1,
+  buildCreateTileCommand,
   substituteTileId,
   type BuiltEnvelope,
   type QuickCreateSnapshot,
@@ -51,20 +51,20 @@ export type SubmitV1Failure = { ok: false; error: ApiError };
 export type SubmitV1Result = SubmitV1Success | SubmitV1Failure;
 
 export interface SubmitV1Options {
-  client: V1Client;
+  client: ApiClient;
   formState: QuickCreateFormState;
   /** Numeric effective duration in minutes; `null` for label-only / recurring. */
   effectiveDurationMin: number | null;
 }
 
 /**
- * Construct a V1Client for the web app.
+ * Construct an ApiClient for the web app.
  *
  * Honors `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` for local development: when set,
  * `getIdToken` returns the dev token instead of calling Cognito. The v1
  * daemon must be configured to accept the token (out of scope here).
  */
-export function makeV1Client(): V1Client {
+export function makeClient(): ApiClient {
   const e2eBypass = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
   return {
     baseUrl: process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "",
@@ -81,7 +81,7 @@ export function makeV1Client(): V1Client {
  * The form keeps v7-shaped inputs (useStartAt + startDateInput/...) for
  * backward compatibility with the rest of QuickTileCreate. This adapter
  * is the single point that translates those inputs into the v1 snapshot
- * shape consumed by `buildCreateTileCommandV1`.
+ * shape consumed by `buildCreateTileCommand`.
  */
 function formStateToSnapshot(
   formState: QuickCreateFormState,
@@ -198,13 +198,13 @@ function formStateToSnapshot(
  * 4. Abort the sequence on the first failure; the resulting ApiError is
  *    surfaced for structured error rendering (8-way ApiErrorKind).
  */
-export async function submitCreateTileV1(
+export async function submitCreateTile(
   options: SubmitV1Options,
 ): Promise<SubmitV1Result> {
   const { client, formState, effectiveDurationMin } = options;
   const snapshot = formStateToSnapshot(formState, effectiveDurationMin);
   const idempotencyKey = uuidv7();
-  const envelopes = buildCreateTileCommandV1(snapshot, idempotencyKey);
+  const envelopes = buildCreateTileCommand(snapshot, idempotencyKey);
 
   const first = envelopes[0];
   if (!first) {
@@ -219,7 +219,7 @@ export async function submitCreateTileV1(
     };
   }
 
-  const createResult = await postV1Command(client, first.path, first.request);
+  const createResult = await postCommand(client, first.path, first.request);
   if (!createResult.ok) {
     return { ok: false, error: createResult.error };
   }
@@ -244,7 +244,7 @@ export async function submitCreateTileV1(
   );
 
   for (const envelope of remaining) {
-    const step = await postV1Command(client, envelope.path, envelope.request);
+    const step = await postCommand(client, envelope.path, envelope.request);
     if (!step.ok) {
       return { ok: false, error: step.error };
     }

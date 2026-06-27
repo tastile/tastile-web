@@ -1,5 +1,5 @@
 /**
- * Tests for buildCreateTileCommandV1 / substituteTileId (Task 4).
+ * Tests for buildCreateTileCommand / substituteTileId (Task 4).
  *
  * Test fixtures use the snapshot shape documented in the v1 tile-creation UI
  * plan (see `docs/superpowers/plans/2026-06-26-tile-creation-ui-v1.md`,
@@ -11,7 +11,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
-  buildCreateTileCommandV1,
+  buildCreateTileCommand,
   substituteTileId,
 } from "./build-command";
 import { TileKind, PlanRole } from "@/lib/domain/v1/constants";
@@ -106,9 +106,9 @@ function labelSnapshot() {
   };
 }
 
-describe("buildCreateTileCommandV1 — RECURRING", () => {
+describe("buildCreateTileCommand — RECURRING", () => {
   it("returns 4 envelopes: createTile, setPlan, appendFrames, appendRules", () => {
-    const envelopes = buildCreateTileCommandV1(
+    const envelopes = buildCreateTileCommand(
       recurringSnapshot(),
       "key-uuidv7",
     );
@@ -126,9 +126,9 @@ describe("buildCreateTileCommandV1 — RECURRING", () => {
   });
 });
 
-describe("buildCreateTileCommandV1 — PLACEMENT", () => {
+describe("buildCreateTileCommand — PLACEMENT", () => {
   it("returns 2 envelopes (no frames/rules)", () => {
-    const envelopes = buildCreateTileCommandV1(placementSnapshot(), "k1") as Array<{
+    const envelopes = buildCreateTileCommand(placementSnapshot(), "k1") as Array<{
       path: string;
     }>;
 
@@ -137,9 +137,9 @@ describe("buildCreateTileCommandV1 — PLACEMENT", () => {
   });
 });
 
-describe("buildCreateTileCommandV1 — LABEL", () => {
+describe("buildCreateTileCommand — LABEL", () => {
   it("PLACEMENT + role=1 + isLabelOnly=true", () => {
-    const envelopes = buildCreateTileCommandV1(labelSnapshot(), "k1") as Array<{
+    const envelopes = buildCreateTileCommand(labelSnapshot(), "k1") as Array<{
       payload: { role: number; completion: unknown };
     }>;
 
@@ -153,9 +153,9 @@ describe("buildCreateTileCommandV1 — LABEL", () => {
   });
 });
 
-describe("buildCreateTileCommandV1 — idempotencyKey propagation", () => {
+describe("buildCreateTileCommand — idempotencyKey propagation", () => {
   it("all envelopes share the same key", () => {
-    const envelopes = buildCreateTileCommandV1(
+    const envelopes = buildCreateTileCommand(
       recurringSnapshot(),
       "shared-key",
     );
@@ -165,7 +165,7 @@ describe("buildCreateTileCommandV1 — idempotencyKey propagation", () => {
 
 describe("substituteTileId", () => {
   it("replaces {tileId} placeholder in every path", () => {
-    const envelopes = buildCreateTileCommandV1(recurringSnapshot(), "k");
+    const envelopes = buildCreateTileCommand(recurringSnapshot(), "k");
     const replaced = substituteTileId(envelopes, "tile-123");
     expect(replaced[0].path).toBe("/v1/tiles");
     expect(replaced[1].path).toBe("/v1/tiles/tile-123/plan");
@@ -174,7 +174,7 @@ describe("substituteTileId", () => {
   });
 
   it("does not mutate the original envelopes", () => {
-    const envelopes = buildCreateTileCommandV1(recurringSnapshot(), "k");
+    const envelopes = buildCreateTileCommand(recurringSnapshot(), "k");
     substituteTileId(envelopes, "tile-123");
     expect(envelopes[1].path).toBe("/v1/tiles/{tileId}/plan");
   });

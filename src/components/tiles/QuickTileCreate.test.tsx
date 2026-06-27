@@ -21,8 +21,8 @@ vi.mock("@/lib/daemon/id-token-client", () => ({
 const submitMock = vi.fn().mockResolvedValue({ ok: true, tileId: "tile-uuidv7" });
 
 vi.mock("@/lib/api/v1/submit", () => ({
-	makeV1Client: () => ({ baseUrl: "", getIdToken: () => Promise.resolve("test-token") }),
-	submitCreateTileV1: (options: { client: unknown }) => submitMock(options),
+	makeClient: () => ({ baseUrl: "", getIdToken: () => Promise.resolve("test-token") }),
+	submitCreateTile: (options: { client: unknown }) => submitMock(options),
 }));
 
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
@@ -438,7 +438,7 @@ describe("QuickTileCreate — §7 Meta", () => {
 });
 
 describe("QuickTileCreate — submit", () => {
-	it("fires submitCreateTileV1 with the v1 client on valid submit", async () => {
+	it("fires submitCreateTile with the v1 client on valid submit", async () => {
 		render(<QuickTileCreate />);
 
 		fireEvent.change(

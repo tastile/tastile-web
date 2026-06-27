@@ -1,5 +1,5 @@
 /**
- * buildCreateTileCommandV1 — pure builder for the tile-creation envelope
+ * buildCreateTileCommand — pure builder for the tile-creation envelope
  * sequence.
  *
  * The submit flow (Task 5) calls this with the current snapshot, then
@@ -16,7 +16,7 @@
  * For PLACEMENT only steps 0–1 are emitted.
  *
  * Pure: no React, no side effects, no network. The caller wires the result
- * to `postV1Command` and calls `substituteTileId` once the new tile id is
+ * to `postCommand` and calls `substituteTileId` once the new tile id is
  * known.
  *
  * The legacy `buildCreateTileCommand` / `QuickCreateFormState` exports
@@ -111,7 +111,7 @@ const V1_PATH = {
 
 // ---------- builder ----------
 
-export function buildCreateTileCommandV1(
+export function buildCreateTileCommand(
   state: QuickCreateSnapshot,
   idempotencyKey: string,
   occurredAt: string = nowIso(),

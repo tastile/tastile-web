@@ -19,7 +19,7 @@ import type {
 } from "@/lib/domain/v1/envelope";
 import { ApiErrorKind } from "@/lib/domain/v1/constants";
 
-export interface V1Client {
+export interface ApiClient {
   baseUrl: string;
   getIdToken: () => Promise<string | null>;
 }
@@ -100,8 +100,8 @@ function validateCommandResponse(raw: unknown): ApiError | null {
   return null;
 }
 
-export async function postV1Command<TReq>(
-  client: V1Client,
+export async function postCommand<TReq>(
+  client: ApiClient,
   path: string,
   envelope: CommandRequest<TReq>,
 ): Promise<Result<CommandResponse>> {
@@ -143,8 +143,8 @@ export async function postV1Command<TReq>(
   return { ok: true, data: raw as CommandResponse, status: res.status };
 }
 
-export async function getV1Read<T>(
-  client: V1Client,
+export async function getRead<T>(
+  client: ApiClient,
   path: string,
 ): Promise<Result<T>> {
   const token = await client.getIdToken();
