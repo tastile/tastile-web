@@ -26,7 +26,7 @@ describe("useQuickCreateStore", () => {
       expect(s.windows).toEqual([]);
       expect(s.recurring.life.active).toEqual({ startDate: "", endDate: "" });
       expect(s.recurring.life.state).toBe(RecurringState.ACTIVE);
-      expect(s.recurring.frames).toEqual([]);
+      expect(s.recurring.frameRules).toEqual([]);
       expect(s.recurring.rules).toEqual([]);
       expect(s.advanced.changeSets).toEqual([]);
       expect(s.advanced.rules).toEqual([]);

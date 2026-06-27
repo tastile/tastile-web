@@ -12,8 +12,11 @@ import { create } from "zustand";
 import {
   PlanRole,
   RecurringState,
+  TileKind,
   type PlanRoleValue,
+  type TileKindValue,
 } from "@/lib/domain/v1/constants";
+import type { FrameRule } from "@/lib/domain/v1/tile";
 import type { Plan } from "@/lib/domain/v1/tile";
 import type { Window, Span, DurationRange } from "@/lib/domain/v1/window";
 import type { Recurring } from "@/lib/domain/v1/tile";
@@ -21,6 +24,7 @@ import type { Recurring } from "@/lib/domain/v1/tile";
 // ---------- slice types ----------
 
 export interface TileIdentitySlice {
+  kind: TileKindValue;
   title: string;
   description: string | null;
   externalId: string | null;
@@ -32,8 +36,10 @@ export interface TimeSlice {
   durationMinMax: DurationRange;
 }
 
-export interface RecurringSlice extends Pick<Recurring, "frames" | "rules"> {
+export interface RecurringSlice {
   life: Recurring["life"];
+  frameRules: FrameRule[];
+  rules: Recurring["rules"];
 }
 
 export interface AdvancedSlice {
@@ -103,6 +109,7 @@ function defaultPlan(): Plan {
 
 function defaultIdentity(): TileIdentitySlice {
   return {
+    kind: TileKind.PLACEMENT,
     title: "",
     description: null,
     externalId: null,
@@ -129,7 +136,7 @@ function defaultRecurring(): RecurringSlice {
         actor: { id: "self", kind: 0, ownerId: null },
       },
     },
-    frames: [],
+    frameRules: [],
     rules: [],
   };
 }
