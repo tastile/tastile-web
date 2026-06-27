@@ -43,7 +43,7 @@ import {
   Type,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import {
@@ -210,6 +210,15 @@ export function QuickTileCreate() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
+
+  // externalId is null on SSR/first render to keep hydration stable.
+  // uuidv7() uses Date.now() which differs between server and client.
+  // Mint a fresh one after mount.
+  useEffect(() => {
+    if (identity.externalId === null) {
+      setField("identity.externalId", uuidv7());
+    }
+  }, [identity.externalId, setField]);
 
   if (!isOpen) return null;
 

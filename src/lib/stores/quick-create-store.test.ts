@@ -12,9 +12,7 @@ describe("useQuickCreateStore", () => {
       const s = useQuickCreateStore.getState();
       expect(s.identity.title).toBe("");
       expect(s.identity.description).toBeNull();
-      expect(s.identity.externalId).toMatch(
-        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-      );
+      expect(s.identity.externalId).toBeNull();
       expect(s.identity.visual.color).toBe("");
       expect(s.identity.visual.icon).toBe("");
       expect(s.plan.role).toBe(PlanRole.EXECUTABLE);

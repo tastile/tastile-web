@@ -15,7 +15,6 @@ import {
   TileKind,
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
-import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { FrameRule } from "@/lib/domain/v1/tile";
 import type { Plan } from "@/lib/domain/v1/tile";
 import type { Window, Span, DurationRange } from "@/lib/domain/v1/window";
@@ -110,7 +109,11 @@ function defaultIdentity(): TileIdentitySlice {
     kind: TileKind.PLACEMENT,
     title: "",
     description: null,
-    externalId: uuidv7(),
+    // externalId is generated on the client after mount (uuidv7() uses
+    // Date.now(), which would diverge between SSR and client and break
+    // hydration). The UI also regenerates it on demand via the
+    // "再生成" button.
+    externalId: null,
     visual: { color: "", icon: "" },
   };
 }
