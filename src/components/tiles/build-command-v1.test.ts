@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCreateTileCommandV1,
   substituteTileId,
-} from "./build-command";
+} from "./build-command-v1";
 import { TileKind, PlanRole } from "@/lib/domain/v1/constants";
 
 function recurringSnapshot() {
@@ -114,16 +114,12 @@ describe("buildCreateTileCommandV1 — RECURRING", () => {
     );
 
     expect(envelopes).toHaveLength(4);
-    const [create, plan, frames] = envelopes as [
-      { payload: { kind: number } },
-      { payload: { role: number } },
-      { payload: unknown[] },
-    ];
+    const [create, plan, frames] = envelopes;
     expect(create.path).toBe("/v1/tiles");
-    expect(create.payload.kind).toBe(0);
+    expect((create.payload as { kind: number }).kind).toBe(0);
     expect(create.idempotencyKey).toBe("key-uuidv7");
     expect(plan.path).toBe("/v1/tiles/{tileId}/plan");
-    expect(plan.payload.role).toBe(0);
+    expect((plan.payload as { role: number }).role).toBe(0);
     expect(frames.path).toBe("/v1/recurrings/{tileId}/frames");
     expect(frames.payload).toHaveLength(1);
     expect(envelopes[3].path).toBe("/v1/recurrings/{tileId}/rules");
