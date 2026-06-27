@@ -23,7 +23,7 @@ import {
   postV1Command,
   type Result,
   type V1Client,
-} from "@/lib/api/v1-endpoints";
+} from "./endpoints";
 import { uuidv7, type ApiError } from "@/lib/domain/v1/envelope";
 
 /**
@@ -38,13 +38,13 @@ import {
   substituteTileId,
   type BuiltEnvelope,
   type QuickCreateSnapshot,
-} from "./build-command-v1";
+} from "./build-command";
 import { getIdTokenClient } from "@/lib/daemon/id-token-client";
 import {
   parseDateTimeParts,
   parseDurationToMinutes,
   type QuickCreateFormState,
-} from "./build-command";
+} from "@/components/tiles/build-command";
 
 export type SubmitV1Success = { ok: true; tileId: string };
 export type SubmitV1Failure = { ok: false; error: ApiError };

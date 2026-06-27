@@ -95,9 +95,9 @@ export interface BuiltEnvelope<T> {
 const TILE_ID_PLACEHOLDER = "{tileId}";
 
 /**
- * v1 command endpoint paths. Local to this builder — `v1-endpoints.ts`
+ * v1 command endpoint paths. Local to this builder — `endpoints.ts`
  * (the HTTP client) does not export a path table, and these strings
- * intentionally match the style already used by `v1-endpoints.test.ts`
+ * intentionally match the style already used by `endpoints.test.ts`
  * (`/v1/tiles`, `/v1/tiles/{id}/…`).
  */
 const V1_PATH = {

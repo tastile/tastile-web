@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildCreateTileCommandV1,
   substituteTileId,
-} from "./build-command-v1";
+} from "./build-command";
 import { TileKind, PlanRole } from "@/lib/domain/v1/constants";
 
 function recurringSnapshot() {

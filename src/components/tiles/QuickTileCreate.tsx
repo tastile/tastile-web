@@ -54,7 +54,7 @@ import {
   type QuickCreateFormState,
   type RecurrenceFrequency,
 } from "./build-command";
-import { submitCreateTileV1, makeV1Client } from "./submit-v1";
+import { submitCreateTileV1, makeV1Client } from "@/lib/api/v1/submit";
 import { QuickTileAutomationSubPanel } from "./sub-panels/QuickTileAutomationSubPanel";
 import { QuickTileInterruptSubPanel } from "./sub-panels/QuickTileInterruptSubPanel";
 import { QuickTileMetaSubPanel } from "./sub-panels/QuickTileMetaSubPanel";

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { postV1Command, getV1Read, type V1Client } from "./v1-endpoints";
+import { postV1Command, getV1Read, type V1Client } from "./endpoints";
 import { ApiErrorKind } from "@/lib/domain/v1/constants";
 
 const mockFetch = vi.fn();
