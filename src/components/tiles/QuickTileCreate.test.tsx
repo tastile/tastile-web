@@ -111,7 +111,7 @@ describe("QuickTileCreate — §1 Identity", () => {
 		);
 	});
 
-	it("kind selector offers RECURRING / PLACEMENT / EXECUTION", () => {
+	it("kind selector offers RECURRING / PLACEMENT (no EXECUTION — created by starting a Placement, not user-selectable)", () => {
 		render(<QuickTileCreate />);
 		expect(
 			screen.getByRole("radio", { name: /kindRecurring/ }),
@@ -119,9 +119,29 @@ describe("QuickTileCreate — §1 Identity", () => {
 		expect(
 			screen.getByRole("radio", { name: /kindPlacement/ }),
 		).toBeTruthy();
+		expect(screen.queryByRole("radio", { name: /kindExecution/ })).toBeNull();
+	});
+
+	it("external ID auto-generates a UUIDv7 on open and shows it read-only", () => {
+		render(<QuickTileCreate />);
+		const id = useQuickCreateStore.getState().identity.externalId;
+		expect(id).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+		);
 		expect(
-			screen.getByRole("radio", { name: /kindExecution/ }),
-		).toBeTruthy();
+			screen.getByLabelText(/externalIdLabel/).textContent,
+		).toContain(id);
+	});
+
+	it("external ID regenerate button mints a new UUIDv7", () => {
+		render(<QuickTileCreate />);
+		const before = useQuickCreateStore.getState().identity.externalId;
+		fireEvent.click(screen.getByRole("button", { name: /externalIdRegenerate/ }));
+		const after = useQuickCreateStore.getState().identity.externalId;
+		expect(after).not.toBe(before);
+		expect(after).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+		);
 	});
 
 	it("does not expose the v7 work/break/label kind buttons", () => {
@@ -149,12 +169,12 @@ describe("QuickTileCreate — §2 Plan", () => {
 		).toBeTruthy();
 	});
 
-	it("selecting LABEL sets plan.role=1 and meta.isLabelOnly=true", () => {
+	it("selecting LABEL sets plan.role=1 (only — no isLabelOnly mirror per v1/10 §1-2)", () => {
 		render(<QuickTileCreate />);
 		fireEvent.click(screen.getByRole("radio", { name: /roleLabel/ }));
 		const state = useQuickCreateStore.getState();
 		expect(state.plan.role).toBe(1);
-		expect(state.meta.isLabelOnly).toBe(true);
+		expect("isLabelOnly" in state.meta).toBe(false);
 	});
 
 	it("completion / references / planning / metrics / decisions are stub rows with counts", () => {

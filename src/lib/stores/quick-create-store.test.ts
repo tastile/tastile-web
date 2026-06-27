@@ -12,7 +12,9 @@ describe("useQuickCreateStore", () => {
       const s = useQuickCreateStore.getState();
       expect(s.identity.title).toBe("");
       expect(s.identity.description).toBeNull();
-      expect(s.identity.externalId).toBeNull();
+      expect(s.identity.externalId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
       expect(s.identity.visual.color).toBe("");
       expect(s.identity.visual.icon).toBe("");
       expect(s.plan.role).toBe(PlanRole.EXECUTABLE);
@@ -33,7 +35,6 @@ describe("useQuickCreateStore", () => {
       expect(s.meta.project).toBeNull();
       expect(s.meta.tags).toEqual([]);
       expect(s.meta.memo).toBe("");
-      expect(s.meta.isLabelOnly).toBe(false);
     });
   });
 
@@ -81,35 +82,16 @@ describe("useQuickCreateStore", () => {
     });
   });
 
-  describe("setLabelOnly", () => {
-    it("flips role to LABEL", () => {
-      useQuickCreateStore.getState().setLabelOnly(true);
-      expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.LABEL);
-    });
-
-    it("flips role back to EXECUTABLE", () => {
-      useQuickCreateStore.getState().setLabelOnly(true);
-      useQuickCreateStore.getState().setLabelOnly(false);
-      expect(useQuickCreateStore.getState().plan.role).toBe(PlanRole.EXECUTABLE);
-    });
-
-    it("sets meta.isLabelOnly mirror", () => {
-      useQuickCreateStore.getState().setLabelOnly(true);
-      expect(useQuickCreateStore.getState().meta.isLabelOnly).toBe(true);
-    });
-  });
-
   describe("reset", () => {
     it("clears all field state back to defaults", () => {
       const s = useQuickCreateStore.getState();
       s.setField("identity.title", "leak");
       s.setField("meta.memo", "leak");
-      s.setLabelOnly(true);
+      s.setField("plan.role", PlanRole.LABEL);
       s.reset();
       const r = useQuickCreateStore.getState();
       expect(r.identity.title).toBe("");
       expect(r.meta.memo).toBe("");
-      expect(r.meta.isLabelOnly).toBe(false);
       expect(r.plan.role).toBe(PlanRole.EXECUTABLE);
     });
 

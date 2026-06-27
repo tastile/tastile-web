@@ -13,9 +13,9 @@ import {
   PlanRole,
   RecurringState,
   TileKind,
-  type PlanRoleValue,
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
+import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { FrameRule } from "@/lib/domain/v1/tile";
 import type { Plan } from "@/lib/domain/v1/tile";
 import type { Window, Span, DurationRange } from "@/lib/domain/v1/window";
@@ -51,7 +51,6 @@ export interface MetaSlice {
   project: string | null;
   tags: string[];
   memo: string;
-  isLabelOnly: boolean;
 }
 
 // ---------- store ----------
@@ -75,7 +74,6 @@ export interface QuickCreateState {
   meta: MetaSlice;
 
   setField: (path: string, value: unknown) => void;
-  setLabelOnly: (isLabelOnly: boolean) => void;
   reset: () => void;
 }
 
@@ -112,7 +110,7 @@ function defaultIdentity(): TileIdentitySlice {
     kind: TileKind.PLACEMENT,
     title: "",
     description: null,
-    externalId: null,
+    externalId: uuidv7(),
     visual: { color: "", icon: "" },
   };
 }
@@ -150,7 +148,6 @@ function defaultMeta(): MetaSlice {
     project: null,
     tags: [],
     memo: "",
-    isLabelOnly: false,
   };
 }
 
@@ -216,14 +213,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   close: () => set({ isOpen: false }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
-  setLabelOnly: (isLabelOnly) =>
-    set((state) => ({
-      plan: {
-        ...state.plan,
-        role: (isLabelOnly ? PlanRole.LABEL : PlanRole.EXECUTABLE) as PlanRoleValue,
-      },
-      meta: { ...state.meta, isLabelOnly },
-    })),
   reset: () =>
     set((state) => ({
       ...buildDefaultQuickCreateState(),

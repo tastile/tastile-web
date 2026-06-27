@@ -257,3 +257,59 @@ stubs (Phase B/C で本実装に置換される):
 - `Window.rules: WindowRule[]` の中身エディタ → Phase B/C 待ち
 - `FrameRule.active: ConditionNode|null` の中身エディタ → Phase B 待ち
 - `Plan.completion.*` / `Plan.references[]` / `Plan.metrics[]` / `Plan.decisions[]` / `Planning.*` / `Advanced.*` → 同上
+
+---
+
+## UX 修正 (2026-06-27 v3) — ユーザー指摘 3 件
+
+ユーザー指摘「タイル種類でExecutionを選択できるのがおかしい / External IDがテキスト入力なのがおかしい / ラベルの選択が2重で、しかも作成ボタン近くに無いのがおかしい」への対応。
+
+### 1. TileKind.EXECUTION を kind picker から除外
+
+v1/02 §Tile は EXECUTION を **数値定数 2** として定義するが、`v1/10` §6 + `v1/HARNESS.md` §1-1 を読むと「Execution は **Placement だけから作成**」が鉄則。EXECUTION Tile をユーザーが手で作成することは想定外。`TILE_KIND_OPTIONS` から除外、TileKind.EXECUTION 定数自体は数値定数モジュールに **保持** (server 側で Placement 開始時に生成するため、constant は参照される)。
+
+該当テスト更新: 「kind selector offers RECURRING / PLACEMENT」+「EXECUTION ラジオが存在しないこと」を追加確認。
+
+### 2. External ID: テキスト入力 → UUIDv7 自動生成 + 再生成ボタン
+
+`v1/02` §Tile:「externalId 外部システムID(別システム連携時のみ。null 許容)」。v1 は UUIDv7 ポリシー (v1/10 §1) なので、外部 ID も UUIDv7 で発行するのが自然。
+
+実装:
+- `defaultIdentity().externalId = uuidv7()` で起動時に自動生成
+- §1 Identity に **読み取り専用 span (font-mono)** + RefreshCw アイコン付き **「再生成」ボタン**
+- ボタン押下で `setField("identity.externalId", uuidv7())` で新しい UUIDv7 を発行
+
+該当テスト追加: 「auto-generates UUIDv7」+「regenerate button mints a new UUIDv7」2 件。
+
+### 3. ラベル選択: 2重制御を 1 本化、Submit ボタン直前へ移動
+
+`v1/HARNESS.md` §1-2 を読むと: 「`isLabelOnly` のようなフラグは **存在しない**。`role` のみ」。 v1 では PlanRole (EXECUTABLE | LABEL) が **唯一のラベル制御**。`meta.isLabelOnly` は v7 語彙の混入。
+
+実装:
+- `meta.isLabelOnly` と `setLabelOnly` action を **完全削除** (v1/10 不変条件への違反を解消)
+- §2 Plan にあった `RowSegmented` (EXECUTABLE / LABEL) と `RowToggle` (labelOnly) の **重複 2 制御** を 1 本化
+- `Plan.role` の segmented control を **Submit ボタン直前の固定バー** に移動
+- 「役割を最後に確認 → ボタン押下」の自然なフローに
+
+該当テスト更新: 「selecting LABEL sets plan.role=1」+「meta に isLabelOnly が存在しない」。
+
+### 影響範囲 (この v3 UX 修正のみ)
+
+| Path | 変更 |
+| --- | --- |
+| `src/components/tiles/QuickTileCreate.tsx` | TILE_KIND_OPTIONS から EXECUTION 削除、External ID を FormRow (read-only span + 再生成ボタン) に置換、Plan role を §2 Plan から Submit 直前へ移動 |
+| `src/components/tiles/QuickTileCreate.test.tsx` | kind / externalId / role テスト更新 + 2 件追加 (外部 ID 自動生成 / 再生成) |
+| `src/lib/stores/quick-create-store.ts` | `meta.isLabelOnly` と `setLabelOnly` action を削除、`defaultIdentity.externalId = uuidv7()` で初期化 |
+| `src/lib/stores/quick-create-store.test.ts` | isLabelOnly / setLabelOnly describe block 削除、externalId UUIDv7 形式を検証 |
+| `src/lib/i18n/translations.ts` | `kindExecution` 削除、`externalIdLabel` / `externalIdRegenerate` / `roleLegend` を追加 |
+
+### 検証 (2026-06-27)
+
+- `bunx tsc --noEmit`: クリーン (※ ただし QuickTileCreate.tsx:313 の submit 引数不一致は Phase 7 follow-up の pre-existing 残存)
+- `bunx eslint` クリーン
+- `bunx vitest run` → **282 passed (282)**
+
+### 引き続き pre-existing
+
+- `src/components/tiles/QuickTileCreate.tsx:313` の `submitCreateTile({ client })` 引数不一致 → `submit.ts` の `formStateToSnapshot` 経由を store 直読みに書き換える Phase 7 で解消予定
+- `src/components/tiles/build-command.ts` (v7 形 QuickCreateFormState) は Phase 8 削除予定、本 v3 では未着手

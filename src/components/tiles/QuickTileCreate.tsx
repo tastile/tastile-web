@@ -36,6 +36,7 @@ import {
   MessageSquare,
   Palette,
   Plus,
+  RefreshCw,
   Repeat,
   Settings2,
   Tag,
@@ -51,7 +52,6 @@ import {
   FormRow,
   RowInput,
   RowSegmented,
-  RowToggle,
 } from "@/components/ui/form";
 import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
 import {
@@ -84,7 +84,6 @@ import { cn } from "@/lib/utils/cn";
 const TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> = [
   { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
   { value: TileKind.PLACEMENT, label: "quickCreate.kindPlacement" },
-  { value: TileKind.EXECUTION, label: "quickCreate.kindExecution" },
 ];
 
 const PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
@@ -194,7 +193,6 @@ export function QuickTileCreate() {
   const close = useQuickCreateStore((s) => s.close);
   const reset = useQuickCreateStore((s) => s.reset);
   const setField = useQuickCreateStore((s) => s.setField);
-  const setLabelOnly = useQuickCreateStore((s) => s.setLabelOnly);
 
   const identity = useQuickCreateStore((s) => s.identity);
   const plan = useQuickCreateStore((s) => s.plan);
@@ -224,7 +222,7 @@ export function QuickTileCreate() {
   const spanOrderValid =
     !spanHasStart || !spanHasEnd || time.span.end > time.span.start;
   const durationValid =
-    meta.isLabelOnly ||
+    plan.role === PlanRole.LABEL ||
     time.durationMinMax.minMs === null ||
     time.durationMinMax.maxMs === null ||
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
@@ -442,39 +440,31 @@ export function QuickTileCreate() {
                 </label>
               </div>
             </FormRow>
-            <RowInput
-              icon={Type}
-              placeholder={t("quickCreate.externalIdPlaceholder")}
-              value={identity.externalId ?? ""}
-              onChange={(value) =>
-                setField("identity.externalId", value.trim() ? value : null)
-              }
-              ariaLabel={t("quickCreate.externalIdPlaceholder")}
-            />
+            <FormRow icon={<Type size={20} />}>
+              <div className="flex w-full items-center gap-2">
+                <span
+                  className="flex-1 truncate font-mono text-xs text-foreground-muted"
+                  aria-label={t("quickCreate.externalIdLabel")}
+                  title={identity.externalId ?? ""}
+                >
+                  {identity.externalId ?? ""}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setField("identity.externalId", uuidv7())}
+                  aria-label={t("quickCreate.externalIdRegenerate")}
+                  className="flex items-center gap-1 text-xs text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <RefreshCw size={12} aria-hidden="true" />
+                  <span>{t("quickCreate.externalIdRegenerate")}</span>
+                </button>
+              </div>
+            </FormRow>
 
             <FormDivider />
 
             {/* §2 Plan */}
             <SectionHeader icon={ListChecks} title="§2 Plan" />
-            <RowSegmented
-              icon={CheckCircle2}
-              options={PLAN_ROLE_OPTIONS.map((opt) => ({
-                value: String(opt.value),
-                label: t(opt.label),
-              }))}
-              value={String(plan.role)}
-              onChange={(value) => {
-                const next = Number(value) as PlanRoleValue;
-                setField("plan.role", next);
-                setLabelOnly(next === PlanRole.LABEL);
-              }}
-            />
-            <RowToggle
-              icon={Tag}
-              placeholder={t("quickCreate.labelOnly")}
-              checked={meta.isLabelOnly}
-              onChange={setLabelOnly}
-            />
             <StubRow
               icon={ListChecks}
               title={t("quickCreate.completionTitle")}
@@ -662,7 +652,24 @@ export function QuickTileCreate() {
           </FormPanel>
         </div>
 
-        <div className="border-t border-border bg-surface-0 p-section shrink-0">
+        <div className="border-t border-border bg-surface-0 p-section shrink-0 space-y-3">
+          <fieldset>
+            <legend className="mb-1.5 text-xs font-medium text-foreground-muted">
+              {t("quickCreate.roleLegend")}
+            </legend>
+            <RowSegmented
+              icon={Tag}
+              options={PLAN_ROLE_OPTIONS.map((opt) => ({
+                value: String(opt.value),
+                label: t(opt.label),
+              }))}
+              value={String(plan.role)}
+              onChange={(value) => {
+                const next = Number(value) as PlanRoleValue;
+                setField("plan.role", next);
+              }}
+            />
+          </fieldset>
           <Button
             type="button"
             variant="primary"
