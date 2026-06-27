@@ -311,5 +311,11 @@ v1/02 §Tile は EXECUTION を **数値定数 2** として定義するが、`v1
 
 ### 引き続き pre-existing
 
-- `src/components/tiles/QuickTileCreate.tsx:313` の `submitCreateTile({ client })` 引数不一致 → `submit.ts` の `formStateToSnapshot` 経由を store 直読みに書き換える Phase 7 で解消予定
-- `src/components/tiles/build-command.ts` (v7 形 QuickCreateFormState) は Phase 8 削除予定、本 v3 では未着手
+- `src/components/tiles/QuickTileCreate.tsx` の `submitCreateTile({ client })` 引数不一致 → `submit.ts` の `formStateToSnapshot` 経由を store 直読みに書き換える Phase 7 で解消予定
+- `src/components/tiles/build-command.ts` (v7 形 QuickCreateFormState) は Phase 8 削除予定
+
+## Phase 8 完了 (2026-06-27 v4) — 旧 v7 SubPanel 4 ファイル + SubPanelHeader 削除
+
+- 削除: `src/components/tiles/sub-panels/QuickTile{Automation,Interrupt,Meta,Recurrence}SubPanel.tsx` + `SubPanelHeader.tsx` (計 5 ファイル / 585 行)
+- コミット: `6ce82d0` `chore(v1): delete obsolete v7 SubPanel files (Phase 8)`
+- 検証: `bun run typecheck` クリーン / `bun run lint` クリーン / `bun run test:unit` → 282 passed (282) / chrome-devtools で QuickTileCreate が全 7 セクション表示確認
