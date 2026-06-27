@@ -37,9 +37,6 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import {
-  Actor,
-  buildCreateTileCommand,
-  type CreateTileCommand,
   deriveProjectAndTags,
   equalsIgnoreCase,
   formatDateShort,
@@ -57,6 +54,7 @@ import {
   type QuickCreateFormState,
   type RecurrenceFrequency,
 } from "./build-command";
+import { submitCreateTileV1, makeV1Client } from "./submit-v1";
 import { QuickTileAutomationSubPanel } from "./sub-panels/QuickTileAutomationSubPanel";
 import { QuickTileInterruptSubPanel } from "./sub-panels/QuickTileInterruptSubPanel";
 import { QuickTileMetaSubPanel } from "./sub-panels/QuickTileMetaSubPanel";
@@ -74,7 +72,7 @@ export function QuickTileCreate() {
   const { isOpen, close } = useQuickCreateStore();
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
-  const { state, execute } = useExecutionEngineContext();
+  const { state } = useExecutionEngineContext();
 
   const [activePanel, setActivePanel] = useState<ActivePanel>("base");
 
@@ -338,19 +336,20 @@ export function QuickTileCreate() {
       timezone,
       timedLabels,
     };
-    const command: CreateTileCommand = buildCreateTileCommand({
-      state: formState,
-      effectiveDurationMin,
-      locale,
-    });
+    const v1Client = makeV1Client();
 
     setSubmitting(true);
     try {
-      const e2eBypassAuth = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
-      const userId = e2eBypassAuth ? "e2e-user" : (await getSessionClient())?.sub;
-      if (!userId) throw new Error(t("quickCreate.authRequired"));
-
-      await execute(command, Actor.human(userId));
+      const result = await submitCreateTileV1({
+        client: v1Client,
+        formState,
+        effectiveDurationMin,
+      });
+      if (!result.ok) {
+        throw new Error(
+          `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
+        );
+      }
 
       // Reset form
       setTitle("");
