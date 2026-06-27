@@ -6,9 +6,12 @@
  * `postCommand`. The result is propagated back to the UI as
  * `{ ok: true, tileId }` or `{ ok: false, error }`.
  *
- * Lives at the seam between QuickTileCreate (still on v7 form state) and
- * the v1 API client. Phase D will replace this with a direct read from
- * `useQuickCreateStore`.
+ * Lives at the seam between QuickTileCreate and the v1 API client.
+ * When the caller does not pass a `formState`/`effectiveDurationMin`
+ * (the common case once QuickTileCreate migrated onto the v1 store),
+ * the snapshot is derived directly from `useQuickCreateStore`. The
+ * v7-shaped `formState` path is retained for callers still using the
+ * legacy form-state interface.
  *
  * Pure aside from the network calls — no React, no state mutation.
  */
@@ -25,6 +28,10 @@ import {
   type ApiClient,
 } from "./endpoints";
 import { uuidv7, type ApiError } from "@/lib/domain/v1/envelope";
+import {
+  useQuickCreateStore,
+  type QuickCreateState,
+} from "@/lib/stores/quick-create-store";
 
 /**
  * Dev / E2E bypass token. Returned by `getIdToken` when
@@ -52,9 +59,13 @@ export type SubmitV1Result = SubmitV1Success | SubmitV1Failure;
 
 export interface SubmitV1Options {
   client: ApiClient;
-  formState: QuickCreateFormState;
+  /**
+   * Optional legacy v7-shaped form state. When omitted, the snapshot is
+   * derived from `useQuickCreateStore` directly.
+   */
+  formState?: QuickCreateFormState;
   /** Numeric effective duration in minutes; `null` for label-only / recurring. */
-  effectiveDurationMin: number | null;
+  effectiveDurationMin?: number | null;
 }
 
 /**
@@ -188,9 +199,81 @@ function formStateToSnapshot(
 }
 
 /**
+ * Build a v1 snapshot directly from the live `useQuickCreateStore` state.
+ *
+ * The store holds the same fields as the snapshot, but in milliseconds
+ * (`minMs`/`maxMs`) and with the v1 domain's slice shape (identity,
+ * plan, time, windows, recurring, advanced, meta). This adapter is the
+ * "Phase D" replacement for `formStateToSnapshot` — it lets callers
+ * submit without first flattening the store into the legacy v7-shaped
+ * `QuickCreateFormState`.
+ */
+function storeToSnapshot(state: QuickCreateState): QuickCreateSnapshot {
+  const { identity, plan, time, recurring, advanced, meta } = state;
+  const isLabelOnly = plan.role === PlanRole.LABEL;
+
+  const minMin = time.durationMinMax.minMs === null
+    ? null
+    : Math.round(time.durationMinMax.minMs / 60000);
+  const maxMin = time.durationMinMax.maxMs === null
+    ? null
+    : Math.round(time.durationMinMax.maxMs / 60000);
+
+  return {
+    identity: {
+      title: identity.title.trim(),
+      kind: identity.kind,
+      externalId: { value: identity.externalId },
+      visual: {
+        color: identity.visual.color,
+        icon: identity.visual.icon,
+      },
+    },
+    plan: {
+      role: plan.role,
+      references: plan.references,
+      completion: plan.completion,
+      planning: plan.planning,
+      metrics: plan.metrics,
+    },
+    time: {
+      span: {
+        start: time.span.start,
+        end: time.span.end === "" ? null : time.span.end,
+        offsetMin: 0,
+      },
+      durationMinMax: { min: minMin, max: maxMin },
+    },
+    windows: state.windows,
+    recurring: {
+      life: {
+        state: recurring.life.state,
+        activeStart: recurring.life.active.startDate === ""
+          ? null
+          : recurring.life.active.startDate,
+        activeEnd: recurring.life.active.endDate === ""
+          ? null
+          : recurring.life.active.endDate,
+      },
+      // Frame and rule sequences are out of scope for the v1-first
+      // submit cut — see formStateToSnapshot comment.
+      frameRules: [],
+      recurringRules: [],
+    },
+    advanced,
+    meta: {
+      project: meta.project,
+      tags: meta.tags,
+      memo: meta.memo,
+      isLabelOnly,
+    },
+  };
+}
+
+/**
  * Submit a new tile to the v1 API.
  *
- * 1. Convert form state → v1 snapshot.
+ * 1. Convert form state (or live store) → v1 snapshot.
  * 2. Build the envelope sequence (CREATE_TILE, SET_PLAN, optionally
  *    APPEND_FRAMES + APPEND_RULES).
  * 3. POST CREATE_TILE; on success, substitute the returned tileId into
@@ -201,8 +284,10 @@ function formStateToSnapshot(
 export async function submitCreateTile(
   options: SubmitV1Options,
 ): Promise<SubmitV1Result> {
-  const { client, formState, effectiveDurationMin } = options;
-  const snapshot = formStateToSnapshot(formState, effectiveDurationMin);
+  const { client } = options;
+  const snapshot = options.formState !== undefined
+    ? formStateToSnapshot(options.formState, options.effectiveDurationMin ?? null)
+    : storeToSnapshot(useQuickCreateStore.getState());
   const idempotencyKey = uuidv7();
   const envelopes = buildCreateTileCommand(snapshot, idempotencyKey);
 
