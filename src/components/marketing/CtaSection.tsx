@@ -74,7 +74,7 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
 
         {/* Footer micro-info. */}
         <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-surface-2 pt-6 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle">
-          <span className={display}>{isJa ? "無料 / 無料枠30タイル" : "Free / 30 tiles"}</span>
+          <span className={display}>{isJa ? "無料 / 無料枠あり" : "Free / Free tier"}</span>
           <span className={`${mono} text-foreground-muted`}>·</span>
           <span className={display}>{isJa ? "いつでも解約可能" : "Cancel anytime"}</span>
           <span className={`${mono} text-foreground-muted`}>·</span>

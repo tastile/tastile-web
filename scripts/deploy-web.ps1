@@ -47,18 +47,21 @@ New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
 
 Copy-Item -Recurse -Force ".next/standalone/*" $stageDir
 Copy-Item -Recurse -Force ".next/static" (Join-Path $stageDir ".next/static")
-Copy-Item -Recurse -Force "public" (Join-Path $stageDir "public")
+$publicTarget = Join-Path $stageDir "public"
+New-Item -ItemType Directory -Force -Path $publicTarget | Out-Null
+Copy-Item -Recurse -Force "public/*" $publicTarget
 
 # 3. Zip it
 Write-Host ""
 Write-Host "== 3) Zip =="
 $zipPath = Join-Path $buildDir $zipName
-$compress = Start-Process -FilePath "powershell" -ArgumentList @(
-    "-NoProfile", "-Command",
-    "Compress-Archive -Path '$stageDir/*' -DestinationPath '$zipPath' -CompressionLevel Optimal"
+$compress = Start-Process -FilePath "tar.exe" -ArgumentList @(
+    "-a", "-c", "-f", $zipPath,
+    "-C", $stageDir,
+    "."
 ) -NoNewWindow -Wait -PassThru
 if ($compress.ExitCode -ne 0) {
-    throw "Compress-Archive failed (exit=$($compress.ExitCode))"
+    throw "tar zip failed (exit=$($compress.ExitCode))"
 }
 $zipSize = (Get-Item $zipPath).Length
 Write-Host "  Built: $zipPath ($([math]::Round($zipSize/1MB, 1)) MB)"

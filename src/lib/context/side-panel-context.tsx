@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 // ─────────────────────────────────────────────
 // Types
@@ -24,10 +33,11 @@ const SidePanelContext = createContext<SidePanelContextValue>({
 export function SidePanelProvider({ children }: { children: ReactNode }) {
   const [content, setContent] = useState<ReactNode | null>(null);
   const register = useCallback((node: ReactNode | null) => setContent(node), []);
+  // Memoize the context value so consumers don't re-render on every
+  // SidePanelProvider render — only when `content` actually changes.
+  const value = useMemo(() => ({ content, register }), [content, register]);
 
-  return (
-    <SidePanelContext.Provider value={{ content, register }}>{children}</SidePanelContext.Provider>
-  );
+  return <SidePanelContext.Provider value={value}>{children}</SidePanelContext.Provider>;
 }
 
 // ─────────────────────────────────────────────
@@ -42,11 +52,20 @@ export function SidePanelProvider({ children }: { children: ReactNode }) {
  */
 export function useSidePanel(content: ReactNode) {
   const { register } = useContext(SidePanelContext);
-
+  // Capture the first-render content; subsequent renders (which would
+  // produce a new React element identity from inline JSX) must not re-trigger
+  // register, otherwise the provider's setContent would cascade and re-render
+  // every consumer of useSidePanelContent.
+  const initialContent = useRef(content);
+  // Track the latest content so unmount cleanup uses the freshest reference.
+  const latestContent = useRef(content);
   useEffect(() => {
-    register(content);
+    latestContent.current = content;
+  });
+  useEffect(() => {
+    register(initialContent.current);
     return () => register(null);
-  }, [register, content]);
+  }, [register]);
 }
 
 // ─────────────────────────────────────────────

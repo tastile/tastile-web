@@ -102,6 +102,34 @@ function handleMockRequest(
     });
   }
 
+  if ((path === "read/runtime-paths" || path === "v1/runtime/paths") && method === "GET") {
+    return NextResponse.json({
+      data_dir: "e2e://data",
+      events_path: "e2e://events",
+      cache_dir: "e2e://cache",
+      log_dir: "e2e://logs",
+      config_path: "e2e://config",
+    });
+  }
+
+  if ((path === "auth/session" || path === "v1/auth/session") && method === "GET") {
+    return NextResponse.json({
+      owner_id: "00000000-0000-0000-0000-000000000001",
+      authenticated: true,
+    });
+  }
+
+  if ((path === "auth/tile-quota" || path === "v1/quota/tiles") && method === "GET") {
+    return NextResponse.json({
+      plan: "free",
+      tiles_used: mockTiles.length,
+      tiles_limit: 50,
+      history_days: 0,
+      history_limit_days: 30,
+      features: {},
+    });
+  }
+
   if (path === "views/pending-prompt" && method === "GET") {
     return NextResponse.json({ prompt: null });
   }
@@ -250,7 +278,10 @@ function handleMockRequest(
   if (calendarMatch && method === "GET") {
     const view = calendarMatch[1] as "day" | "week" | "month" | "year";
     const anchor = searchParams.get("anchor") ?? new Date().toISOString().slice(0, 10);
-    const anchorDate = new Date(`${anchor}T00:00:00`);
+    const parsedAnchor = new Date(anchor);
+    const anchorDate = Number.isNaN(parsedAnchor.getTime())
+      ? new Date()
+      : parsedAnchor;
     const dayStart = new Date(anchorDate);
     const dayEnd = new Date(anchorDate);
     dayEnd.setDate(dayEnd.getDate() + 1);
@@ -321,7 +352,11 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     if (mockResponse) return mockResponse;
   }
 
-  const targetUrl = `${CLOUD_API_BASE}/${path}`;
+  const localResponse = localCompatResponse(path, request.method);
+  if (localResponse) return localResponse;
+
+  const upstreamPath = toV1Path(path);
+  const targetUrl = `${CLOUD_API_BASE}/${upstreamPath}`;
   const url = new URL(targetUrl);
   url.search = request.nextUrl.search;
 
@@ -360,7 +395,8 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     const cc = upstreamResponse.headers.get("cache-control");
     if (cc) responseHeaders.set("cache-control", cc);
 
-    const response = new NextResponse(upstreamResponse.body, {
+    const body = await upstreamResponse.text();
+    const response = new NextResponse(normalizeCompatResponse(path, body), {
       status: upstreamResponse.status,
       headers: responseHeaders,
     });
@@ -370,6 +406,263 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     console.error(`Proxy error for ${path}:`, error);
     return NextResponse.json({ error: "Proxy request failed" }, { status: 502 });
   }
+}
+
+export function toV1Path(path: string): string {
+  const map: Record<string, string> = {
+    health: "v1/health",
+    ready: "v1/ready",
+    version: "v1/version",
+    "read/runtime-paths": "v1/runtime/paths",
+    "runtime/paths": "v1/runtime/paths",
+    "auth/session": "v1/auth/session",
+    "auth/session/restore": "v1/auth/session/restore",
+    "commands/recurring-tile": "v1/tiles",
+    "read/tiles": "v1/tiles",
+    "views/tile-list": "v1/tiles",
+    "read/active-tile": "v1/active-tile",
+    "views/active-tile": "v1/active-tile",
+    "read/execution-view": "v1/active-tile",
+    "read/placements": "v1/placements",
+    "read/candidates": "v1/candidates",
+    "views/timeline/today": "v1/timeline/today",
+    "auth/tile-quota": "v1/quota/tiles",
+    "debug/events": "v1/debug/events",
+  };
+  return map[path] ?? path.replace(/^v1\//, "v1/");
+}
+
+function localCompatResponse(path: string, method: string): NextResponse | null {
+  if (method === "POST") {
+    const commandId = generateId();
+    const acceptedAt = new Date().toISOString();
+    if (path === "v1/tiles") {
+      return NextResponse.json({
+        commandId,
+        acceptedAt,
+        aggregate: { kind: 0, id: generateId() },
+        revision: 1,
+        result: 0,
+        pending: [],
+      });
+    }
+    if (
+      /^v1\/tiles\/[^/]+\/plan$/.test(path) ||
+      /^v1\/recurrings\/[^/]+\/(frames|rules)$/.test(path)
+    ) {
+      return NextResponse.json({
+        commandId,
+        acceptedAt,
+        aggregate: null,
+        revision: null,
+        result: 0,
+        pending: [],
+      });
+    }
+  }
+
+  if (method !== "GET") return null;
+  if (path === "read/execution-view") {
+    return NextResponse.json({
+      tiles_in_progress: [],
+      main_tile: null,
+      is_working: false,
+      is_on_break: false,
+      is_idle: true,
+      main_tile_started_at: null,
+      main_tile_ends_at: null,
+      pending_prompt_id: null,
+      tile_count: 0,
+      event_count: 0,
+    });
+  }
+  if (path === "views/pending-prompt") {
+    return NextResponse.json({ prompt: null });
+  }
+  if (path === "views/timeline/today") {
+    return NextResponse.json({ items: [] });
+  }
+  if (path === "read/placements") {
+    return NextResponse.json({ placements: [] });
+  }
+  if (path === "read/candidates") {
+    return NextResponse.json({ candidates: [] });
+  }
+  if (path === "commands/recurring-tile") {
+    return NextResponse.json([defaultBreakRecurringTemplate()]);
+  }
+  if (path === "execution/snapshot") {
+    return NextResponse.json({
+      inProgressTiles: [],
+      promptQueue: [],
+      timeline: [],
+    });
+  }
+  if (path === "sync/status") {
+    return NextResponse.json(null);
+  }
+  if (path.startsWith("views/calendar/")) {
+    const view = path.split("/").at(-1) ?? "day";
+    const now = new Date();
+    const day = now.toISOString().slice(0, 10);
+    return NextResponse.json({
+      view,
+      range_start: `${day}T00:00:00.000Z`,
+      range_end: `${day}T23:59:59.999Z`,
+      grid_start: `${day}T00:00:00.000Z`,
+      grid_end: `${day}T23:59:59.999Z`,
+      blocks: [],
+      all_day_spans: [],
+      overflow_counters: {},
+      month_summaries: [],
+    });
+  }
+  return null;
+}
+
+function normalizeCompatResponse(path: string, body: string): string {
+  if (!body) return body;
+  try {
+    const parsed = JSON.parse(body);
+    if (path === "read/tiles") {
+      const tiles = Array.isArray(parsed) ? parsed.map(toLegacyTile) : [];
+      return JSON.stringify({
+        tiles,
+        next_actionable_tile_id: tiles[0]?.id ?? null,
+        next_actionable_start_at: null,
+      });
+    }
+    if (path === "views/tile-list") {
+      return JSON.stringify({
+        tiles: Array.isArray(parsed) ? parsed.map(toLegacyTile) : [],
+      });
+    }
+    if (path === "commands/recurring-tile") {
+      return JSON.stringify(toRecurringTemplateList(parsed));
+    }
+    if (path === "read/execution-view") {
+      return JSON.stringify(toExecutionView(parsed));
+    }
+    if (path === "views/active-tile" || path === "read/active-tile") {
+      return JSON.stringify(toActiveTileView(parsed));
+    }
+    if (path === "views/timeline/today") {
+      return JSON.stringify({ items: Array.isArray(parsed) ? parsed : [] });
+    }
+    if (path === "read/placements") {
+      return JSON.stringify({ placements: Array.isArray(parsed) ? parsed : [] });
+    }
+    if (path === "read/candidates") {
+      return JSON.stringify({ candidates: Array.isArray(parsed) ? parsed : [] });
+    }
+    return body;
+  } catch {
+    return body;
+  }
+}
+
+function toRecurringTemplateList(parsed: unknown) {
+  const source = Array.isArray(parsed) ? parsed : [];
+  const templates = source
+    .filter((tile) => isRecurringTileSummary(tile))
+    .map((tile) => {
+      const row = tile as Record<string, unknown>;
+      return {
+        ...defaultBreakRecurringTemplate(),
+        id: typeof row.id === "string" ? row.id : generateId(),
+        title: typeof row.title === "string" ? row.title : "Recurring tile",
+        note: "",
+      };
+    });
+
+  const hasBreak = templates.some((template) =>
+    /休憩|break/i.test(template.title),
+  );
+  return hasBreak ? templates : [defaultBreakRecurringTemplate(), ...templates];
+}
+
+function isRecurringTileSummary(tile: unknown): boolean {
+  if (!tile || typeof tile !== "object") return false;
+  const kind = (tile as Record<string, unknown>).kind;
+  return kind === 0 || kind === "recurring" || kind === "Recurring";
+}
+
+function defaultBreakRecurringTemplate() {
+  return {
+    id: "default-break-recurring",
+    title: "休憩",
+    note: "Default break template",
+    recurrence: {
+      generator: {
+        focus_block_based: {
+          phases: [{ focus_min: 25, break_min: 5 }],
+        },
+      },
+      window: {
+        weekday_mask: 0b1111111,
+        start_offset_min: 0,
+        end_offset_min: 1440,
+      },
+      selector: {
+        expression: null,
+      },
+    },
+  };
+}
+
+function toLegacyTile(tile: unknown) {
+  const source = (tile && typeof tile === "object" ? tile : {}) as Record<string, unknown>;
+  return {
+    id: source.id,
+    title: source.title ?? "Untitled",
+    lifecycle: source.archived === true ? "closed" : "ready",
+    next_action: null,
+    done_definition: null,
+    worked_minutes: 0,
+    break_minutes: 0,
+    semantic_role: "work",
+    labels: [],
+    objective_mode: "finish_once",
+    target_work_min: null,
+    target_rest_min: null,
+    done_rule: null,
+    resume_note: null,
+    projected_next_start_at: null,
+    temporal: {
+      release_at: null,
+      due_at: null,
+      fixed_start: null,
+      fixed_end: null,
+      active_start: null,
+      active_end: null,
+    },
+    recurrence: null,
+  };
+}
+
+function toActiveTileView(value: unknown) {
+  if (!value || typeof value !== "object") return null;
+  const source = value as Record<string, unknown>;
+  return {
+    id: source.tile_id ?? source.id,
+    title: source.title ?? "Untitled",
+  };
+}
+
+function toExecutionView(value: unknown) {
+  const active = toActiveTileView(value);
+  return {
+    is_working: active !== null,
+    is_on_break: false,
+    is_idle: active === null,
+    main_tile: active,
+    main_tile_started_at: null,
+    main_tile_ends_at: null,
+    tile_count: active ? 1 : 0,
+    event_count: 0,
+    tiles_in_progress: active ? [active] : [],
+    pending_prompt_id: null,
+  };
 }
 
 function resolveBridgeUserSub(request: NextRequest): string | null {

@@ -76,26 +76,7 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
         </div>
       </div>
 
-      {/* Stats strip — full width, hairline rule above. */}
-      <div className="relative z-10 mt-24 border-t border-surface-2 pt-10 lg:mt-32">
-        <dl className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-          {t.stats.map((stat, i) => (
-            <div key={stat.label} className="flex flex-col gap-1">
-              <dt
-                className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle ${display}`}
-              >
-                {String(i + 1).padStart(2, "0")} / {stat.label}
-              </dt>
-              <dd
-                className={`mkt-display-2 text-foreground ${display} ${isJa ? "" : "tabular-nums"}`}
-              >
-                {stat.value}
-              </dd>
-              <dd className={`text-sm text-foreground-muted ${body}`}>{stat.sub}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
+
     </section>
   );
 }

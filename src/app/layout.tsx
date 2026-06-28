@@ -9,7 +9,7 @@ const geistSans = { variable: "font-sans" };
 const geistMono = { variable: "font-mono" };
 const outfit = { variable: "font-sans" };
 const inter = { variable: "font-sans" };
-const zenKaku = { variable: "font-sans" };
+const zenKaku = { variable: "font-zen-kaku" };
 
 export const metadata: Metadata = {
   title: "Tastile — Execution Control",
@@ -38,6 +38,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+          rel="stylesheet"
+        />
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init runs synchronously before paint */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

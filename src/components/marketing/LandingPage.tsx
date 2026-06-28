@@ -16,7 +16,6 @@ export type Dict = {
     sub: string;
     context: string;
     pierceText: string;
-    stats: Array<{ value: string; label: string; sub: string }>;
     ctaPrimary: string;
     ctaSecondary: string;
     ctaPrimaryHref: string;
@@ -38,8 +37,7 @@ export type Dict = {
     title: string;
     intro: string;
     lead: string;
-    rows: Array<{ numeral: string; name: string; lede: string; body: string; example: string }>;
-    overflow: { name: string; lede: string; body: string; example: string };
+      rows: Array<{ numeral: string; name: string; lede: string; body: string; example: string }>;
   };
   lifecycle: {
     eyebrow: string;
@@ -117,11 +115,6 @@ export const landingDict: Record<Lang, Dict> = {
       context:
         "カレンダー、時計、タスク管理を一つの実行エンジンに統合。あなたが何をすべきかを、あなたに代わってTastileが決定します。",
       pierceText: "実行",
-      stats: [
-        { value: "4.2h", label: "集中時間", sub: "1日あたり" },
-        { value: "0", label: "下した決定", sub: "あなたによるもの" },
-        { value: "94%", label: "完了率", sub: "完了したタイル" },
-      ],
       ctaPrimary: "はじめる",
       ctaSecondary: "ダウンロード",
       ctaPrimaryHref: "/login",
@@ -206,12 +199,6 @@ export const landingDict: Record<Lang, Dict> = {
             "45分の予定が55分かかる → 残り5分は12:00の空き枠に自動で組み込み。履歴にも残る。",
         },
       ],
-      overflow: {
-        name: "オーバーフロー",
-        lede: "あふれた分は次のスロットへ",
-        body: "予定より時間がかかった場合、タイルが自身のオーバーフロー動作を判断します。たとえ45分のタスクに55分かかったとしても、データが失われることはありません。タスクはその状態を保持したまま、次に利用可能なスロットへ移動します。",
-        example: "45分の予定が55分かかる → 残り5分は12:00の空き枠に自動で組み込み。履歴にも残る。",
-      },
     },
     lifecycle: {
       eyebrow: "常時まわり続ける",
@@ -320,7 +307,7 @@ export const landingDict: Record<Lang, Dict> = {
       eyebrow: "料金",
       title: ["無料で、始める。", "必要になったら、Proへ。"],
       intro:
-        "主要機能はそのまま無料。Proは無制限タイル・2年分の履歴・デスクトップ同期。アップグレードもダウングレードもいつでも。",
+        "主要機能はそのまま無料。Proはタイル無制限・デスクトップ同期。アップグレードもダウングレードもいつでも。",
       monthly: "月額",
       yearly: "年額",
       yearlyNote: "2か月分お得",
@@ -330,9 +317,9 @@ export const landingDict: Record<Lang, Dict> = {
         tagline: "個人利用と試用に。",
         cta: "無料で始める",
         features: [
-          { title: "30タイルまで", detail: "典型的な1日分のタスクは余裕で収まる。" },
-          { title: "分単位スケジュール", detail: "6軸の自動配置。場所を条件に含められる。" },
-          { title: "30日分の履歴", detail: "実行パターンを振り返る。" },
+          { title: "配置タイル500", detail: "1日のスケジュールを余裕でカバー。" },
+          { title: "定期タイル30", detail: "繰り返しタスクを登録して自動配置。" },
+          { title: "実行タイル10", detail: "同時進行できるタスクの上限。" },
           { title: "Webアプリ", detail: "ブラウザとPWAで動作。ログインだけで使える。" },
         ],
         footnote: "クレジットカード不要。制限を超えたら、Proへの案内が出る。",
@@ -344,8 +331,8 @@ export const landingDict: Record<Lang, Dict> = {
         cta: "Proにする",
         features: [
           { title: "タイル完全無制限", detail: "上限なし。大量に積んでもエンジンが捌く。" },
-          { title: "2年分の履歴", detail: "年間トレンドと曜日パターンを可視化。" },
           { title: "デスクトップ同期", detail: "Windows/Mac/iOSで同じ状態を共有。" },
+          { title: "履歴無制限", detail: "全履歴を保存。長期の実行パターンを可視化。" },
           { title: "優先サポート", detail: "問い合わせに48時間以内に返信。" },
         ],
         footnote: "年額なら月額2か月分お得。いつでも解約できる。",
@@ -394,7 +381,7 @@ export const landingDict: Record<Lang, Dict> = {
       pierceText: "走らせる",
       title: ["管理するのを、やめる。", "走らせる。"],
       note: "Tastileは、まず無料で。Webアプリ単体でも、デスクトップと組み合わせても、どちらでも。",
-      promise: ["クレジットカード不要", "30タイルまでずっと無料", "いつでもProに切り替え"],
+      promise: ["クレジットカード不要", "無料枠で十分使える", "いつでもProに切り替え"],
       ctaPrimary: "始める",
       ctaSecondary: "ダウンロード",
     },
@@ -407,11 +394,6 @@ export const landingDict: Record<Lang, Dict> = {
       context:
         "An execution engine that unifies calendar, clock, and tasks into one surface. Tastile makes the 'what should I do next?' decision for you.",
       pierceText: "EXECUTE",
-      stats: [
-        { value: "4.2h", label: "Focus time", sub: "per day" },
-        { value: "0", label: "Decisions", sub: "you made" },
-        { value: "94%", label: "Done rate", sub: "yesterday's tiles" },
-      ],
       ctaPrimary: "Get started",
       ctaSecondary: "Download",
       ctaPrimaryHref: "/login",
@@ -504,13 +486,6 @@ export const landingDict: Record<Lang, Dict> = {
             "45m slot runs to 55m → the leftover 5m slots into 12:00 automatically. The history keeps the record.",
         },
       ],
-      overflow: {
-        name: "Overflow",
-        lede: "The remainder rolls into the next open slot",
-        body: "What happens when a tile runs past its time is decided by the tile itself. A 45-minute slot that takes 55 still keeps the leftover 5 and folds it forward. Nothing is dropped, every tile stays in a state.",
-        example:
-          "45m slot runs to 55m → the leftover 5m slots into 12:00 automatically. The history keeps the record.",
-      },
     },
     lifecycle: {
       eyebrow: "Always running",
@@ -619,7 +594,7 @@ export const landingDict: Record<Lang, Dict> = {
       eyebrow: "Pricing",
       title: ["Start free.", "Upgrade when you outgrow it."],
       intro:
-        "Core features stay free. Pro adds unlimited tiles, two-year history, and desktop sync. Upgrade or downgrade anytime.",
+        "Core features stay free. Pro adds unlimited tiles and desktop sync. Upgrade or downgrade anytime.",
       monthly: "Monthly",
       yearly: "Yearly",
       yearlyNote: "Two months free",
@@ -629,9 +604,9 @@ export const landingDict: Record<Lang, Dict> = {
         tagline: "For trying it out.",
         cta: "Get started",
         features: [
-          { title: "Up to 30 tiles", detail: "A typical day's worth of work, with headroom." },
-          { title: "Minute-level schedule", detail: "Six-axis placement, place-aware, automatic." },
-          { title: "30-day history", detail: "Look back at execution patterns." },
+          { title: "500 placed tiles", detail: "Covers a full day's schedule with room to spare." },
+          { title: "30 recurring tiles", detail: "Register repeating tasks for automatic placement." },
+          { title: "10 active tiles", detail: "Maximum number of tasks running at the same time." },
           { title: "Web app", detail: "Browser and PWA. Log in and go." },
         ],
         footnote: "No credit card. When you hit a limit, we point you at Pro.",
@@ -643,11 +618,8 @@ export const landingDict: Record<Lang, Dict> = {
         cta: "Upgrade to Pro",
         features: [
           { title: "Unlimited tiles", detail: "No cap. The engine handles volume." },
-          {
-            title: "Two-year history",
-            detail: "Year-over-year trends, weekday patterns, visible.",
-          },
           { title: "Desktop sync", detail: "Windows, Mac, iOS in lock-step with the web app." },
+          { title: "Unlimited history", detail: "All history saved. Long-term execution patterns visible." },
           { title: "Priority support", detail: "Reply within 48 hours, business days." },
         ],
         footnote: "Yearly saves two months. Cancel anytime.",
@@ -696,7 +668,7 @@ export const landingDict: Record<Lang, Dict> = {
       pierceText: "RUN",
       title: ["Stop managing.", "Start running."],
       note: "Free to start. Web app on its own, or paired with the desktop client.",
-      promise: ["No credit card", "30 tiles free, forever", "Upgrade or cancel anytime"],
+      promise: ["No credit card", "Free tier is enough to get started", "Upgrade or cancel anytime"],
       ctaPrimary: "Get started",
       ctaSecondary: "Download",
     },

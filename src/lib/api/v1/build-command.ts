@@ -9,11 +9,10 @@
  *
  * Revision ladder for RECURRING:
  *   0  → CREATE_TILE  (no expected revision; aggregate is created)
- *   1  → SET_PLAN
- *   2  → APPEND_FRAMES
- *   3  → APPEND_RULES
  *
- * For PLACEMENT only steps 0–1 are emitted.
+ * CREATE_TILE also seeds the initial plan in tastile-core v1. Follow-up
+ * plan/frame/rule editing is handled by dedicated edit flows once those
+ * commands are wired end-to-end.
  *
  * Pure: no React, no side effects, no network. The caller wires the result
  * to `postCommand` and calls `substituteTileId` once the new tile id is
@@ -25,7 +24,6 @@
  * migrated to the v1 store + snapshot shape in Task 6 / Task 9.
  */
 
-import { TileKind } from "@/lib/domain/v1/constants";
 import { nowIso, type CommandRequest } from "@/lib/domain/v1/envelope";
 
 // ---------- input snapshot ----------
@@ -40,6 +38,7 @@ import { nowIso, type CommandRequest } from "@/lib/domain/v1/envelope";
 export interface QuickCreateSnapshot {
   identity: {
     title: string;
+    description: string | null;
     kind: number;
     externalId: { value: string | null };
     visual: { color: string; icon: string };
@@ -90,8 +89,6 @@ export interface BuiltEnvelope<T> {
 
 // ---------- path constants ----------
 
-// All v1 command paths use `{tileId}` as a placeholder for the runtime
-// tile ID. Keep this in lockstep with the V1_PATH builders and substituteTileId.
 const TILE_ID_PLACEHOLDER = "{tileId}";
 
 /**
@@ -102,11 +99,6 @@ const TILE_ID_PLACEHOLDER = "{tileId}";
  */
 const V1_PATH = {
   createTile: "/v1/tiles",
-  setPlan: (tileIdPath: string): string => `/v1/tiles/${tileIdPath}/plan`,
-  appendFrames: (tileIdPath: string): string =>
-    `/v1/recurrings/${tileIdPath}/frames`,
-  appendRules: (tileIdPath: string): string =>
-    `/v1/recurrings/${tileIdPath}/rules`,
 } as const;
 
 // ---------- builder ----------
@@ -117,16 +109,16 @@ export function buildCreateTileCommand(
   occurredAt: string = nowIso(),
 ): BuiltEnvelope<unknown>[] {
   const envelopes: BuiltEnvelope<unknown>[] = [];
-  // `TILE_ID_PLACEHOLDER` is substituted by `substituteTileId` after
-  // CREATE_TILE returns the new aggregate id.
-  const tileIdPath = TILE_ID_PLACEHOLDER;
 
   // 1. CREATE_TILE — no expected revision; the server creates the aggregate.
   const createPayload = {
     kind: state.identity.kind,
     title: state.identity.title,
-    visual: state.identity.visual,
-    externalId: state.identity.externalId.value,
+    description: state.identity.description,
+    color: state.identity.visual.color || null,
+    icon: state.identity.visual.icon || null,
+    external_id: state.identity.externalId.value,
+    plan_role: state.plan.role,
   };
   envelopes.push({
     path: V1_PATH.createTile,
@@ -139,53 +131,6 @@ export function buildCreateTileCommand(
       payload: createPayload,
     },
   });
-
-  // 2. SET_PLAN — revision becomes 1 after CREATE_TILE.
-  const planPayload = {
-    role: state.plan.role,
-    references: state.plan.references,
-    completion: state.plan.completion,
-    planning: state.plan.planning,
-    metrics: state.plan.metrics,
-  };
-  envelopes.push({
-    path: V1_PATH.setPlan(tileIdPath),
-    idempotencyKey,
-    payload: planPayload,
-    request: {
-      expectedRevision: 1,
-      idempotencyKey,
-      occurredAt,
-      payload: planPayload,
-    },
-  });
-
-  // 3. RECURRING extras — frames and rules are emitted unconditionally so
-  // the revision ladder is predictable even when the lists are empty.
-  if (state.identity.kind === TileKind.RECURRING) {
-    envelopes.push({
-      path: V1_PATH.appendFrames(tileIdPath),
-      idempotencyKey,
-      payload: state.recurring.frameRules,
-      request: {
-        expectedRevision: 2,
-        idempotencyKey,
-        occurredAt,
-        payload: state.recurring.frameRules,
-      },
-    });
-    envelopes.push({
-      path: V1_PATH.appendRules(tileIdPath),
-      idempotencyKey,
-      payload: state.recurring.recurringRules,
-      request: {
-        expectedRevision: 3,
-        idempotencyKey,
-        occurredAt,
-        payload: state.recurring.recurringRules,
-      },
-    });
-  }
 
   return envelopes;
 }

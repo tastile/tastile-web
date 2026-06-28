@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -17,12 +17,14 @@ export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
   const { locale, setLocale } = useLocaleStore();
   const { t } = useTranslation();
-  const [securityLock, setSecurityLock] = useState(() =>
-    typeof window !== "undefined" ? getSecurityLockEnabled(localStorage) : true,
-  );
-  const [securityLockMinutes, setSecurityLockMinutes] = useState(() =>
-    typeof window !== "undefined" ? getSecurityLockTimeoutMinutes(localStorage) : 10,
-  );
+  // SSR-safe defaults so server and first client render agree;
+  // localStorage is read once after mount.
+  const [securityLock, setSecurityLock] = useState(true);
+  const [securityLockMinutes, setSecurityLockMinutes] = useState(10);
+  useEffect(() => {
+    setSecurityLock(getSecurityLockEnabled(localStorage));
+    setSecurityLockMinutes(getSecurityLockTimeoutMinutes(localStorage));
+  }, []);
 
   useSidePanel(<PreferencesSidePanel />);
 

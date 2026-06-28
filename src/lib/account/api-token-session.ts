@@ -12,10 +12,10 @@ const TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const bootstrapLocks = new Map<string, Promise<string | null>>();
 
 type CreatedApiToken = {
-  token_id: string;
-  name: string;
+  id: string;
+  label: string;
   revoked_at: string | null;
-  access_token: string;
+  token: string;
 };
 
 export async function getApiTokenFromCookies(): Promise<string | null> {
@@ -65,20 +65,20 @@ async function createDefaultApiTokenForUser(
     "x-tastile-web-bridge-secret": bridgeSecret,
     "x-tastile-web-session-user": userSub,
   };
-  const createResponse = await fetch(`${coreUrl()}/auth/api-tokens`, {
+  const createResponse = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
       ...headers,
       "content-type": "application/json",
     },
-    body: JSON.stringify({ name: SESSION_TOKEN_NAME }),
+    body: JSON.stringify({ label: SESSION_TOKEN_NAME }),
     cache: "no-store",
   });
   if (!createResponse.ok) return null;
 
   const created = (await createResponse.json()) as CreatedApiToken;
-  setApiTokenCookie(created.access_token, response);
-  return created.access_token;
+  setApiTokenCookie(created.token, response);
+  return created.token;
 }
 
 export function setApiTokenCookie(token: string, response?: NextResponse): void {

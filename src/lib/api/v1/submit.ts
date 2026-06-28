@@ -77,13 +77,29 @@ export interface SubmitV1Options {
  */
 export function makeClient(): ApiClient {
   const e2eBypass = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
+  const rawBaseUrl = process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "";
+  const useProxyBridge = shouldUseProxyBridge(rawBaseUrl);
   return {
-    baseUrl: process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "",
+    baseUrl: useProxyBridge ? "/api/proxy" : rawBaseUrl,
+    useProxyBridge,
     getIdToken: async () => {
       if (e2eBypass) return E2E_DEV_TOKEN;
       return getIdTokenClient();
     },
   };
+}
+
+function shouldUseProxyBridge(value: string): boolean {
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    return true;
+  }
+  if (value === "") return false;
+  try {
+    const url = new URL(value);
+    return !(url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "10.0.2.2");
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -153,6 +169,7 @@ function formStateToSnapshot(
   return {
     identity: {
       title: formState.title.trim(),
+      description: null,
       kind,
       externalId: { value: null },
       visual: { color: "", icon: "" },
@@ -222,6 +239,7 @@ function storeToSnapshot(state: QuickCreateState): QuickCreateSnapshot {
   return {
     identity: {
       title: identity.title.trim(),
+      description: identity.description,
       kind: identity.kind,
       externalId: { value: identity.externalId },
       visual: {

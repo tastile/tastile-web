@@ -166,7 +166,7 @@ export function buildDefaultQuickCreateState(): Pick<
   | "meta"
 > {
   return {
-    isOpen: true,
+    isOpen: false,
     identity: defaultIdentity(),
     plan: defaultPlan(),
     time: defaultTime(),

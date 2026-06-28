@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 const cookieStore: Record<string, { value: string }> = {};
 let mockUserSub: string | null = "user-sub-1";
+const originalFetch = globalThis.fetch;
 
 vi.mock("next/headers", () => ({
 	cookies: vi.fn(async () => ({
@@ -39,14 +40,14 @@ describe("api-token-session bootstrap", () => {
 	});
 
 	afterEach(() => {
-		vi.unstubAllGlobals();
+		globalThis.fetch = originalFetch;
 		vi.restoreAllMocks();
 	});
 
 	it("returns the existing cookie without making any request", async () => {
 		cookieStore[COOKIE_API_TOKEN] = { value: "tst_existing" };
 		const fetchMock = vi.fn();
-		vi.stubGlobal("fetch", fetchMock);
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		expect(await getApiTokenFromCookies()).toBe("tst_existing");
 		expect(fetchMock).not.toHaveBeenCalled();
@@ -57,13 +58,13 @@ describe("api-token-session bootstrap", () => {
 			.fn()
 			.mockResolvedValueOnce(
 				jsonResponse({
-					token_id: "tok-1",
-					name: "Web session",
+					id: "tok-1",
+					label: "Web session",
 					revoked_at: null,
-					access_token: "tst_newtoken",
+					token: "tst_newtoken",
 				}),
 			);
-		vi.stubGlobal("fetch", fetchMock);
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const res = NextResponse.json({});
 		const token = await ensureDefaultApiToken(res);
@@ -73,14 +74,14 @@ describe("api-token-session bootstrap", () => {
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		expect(url).toBe("http://core.local:3140/auth/api-tokens");
+		expect(url).toBe("http://core.local:3140/v1/api-tokens");
 		expect(init.method).toBe("POST");
 		expect(init.headers).toMatchObject({
 			"x-tastile-web-bridge-secret": "test-bridge-secret",
 			"x-tastile-web-session-user": "user-sub-1",
 			"content-type": "application/json",
 		});
-		expect(JSON.parse(String(init.body))).toEqual({ name: "Web session" });
+		expect(JSON.parse(String(init.body))).toEqual({ label: "Web session" });
 	});
 
 	it("registers a new token even when the server already has an active session token (recovery)", async () => {
@@ -92,13 +93,13 @@ describe("api-token-session bootstrap", () => {
 			.fn()
 			.mockResolvedValueOnce(
 				jsonResponse({
-					token_id: "tok-old",
-					name: "Web session",
+					id: "tok-old",
+					label: "Web session",
 					revoked_at: null,
-					access_token: "tst_recovered",
+					token: "tst_recovered",
 				}),
 			);
-		vi.stubGlobal("fetch", fetchMock);
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const res = NextResponse.json({});
 		const token = await ensureDefaultApiToken(res);
@@ -116,26 +117,26 @@ describe("api-token-session bootstrap", () => {
 			.fn()
 			.mockResolvedValueOnce(
 				jsonResponse({
-					token_id: "tok-1",
-					name: "Web session",
+					id: "tok-1",
+					label: "Web session",
 					revoked_at: null,
-					access_token: "tst_x",
+					token: "tst_x",
 				}),
 			);
-		vi.stubGlobal("fetch", fetchMock);
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		await ensureDefaultApiTokenForUser("user-sub-1", NextResponse.json({}));
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		expect(url).toBe("http://core.local:3140/auth/api-tokens");
+		expect(url).toBe("http://core.local:3140/v1/api-tokens");
 		expect(init.method).toBe("POST");
 	});
 
 	it("returns null and skips fetch when there is no user sub", async () => {
 		mockUserSub = null;
 		const fetchMock = vi.fn();
-		vi.stubGlobal("fetch", fetchMock);
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const token = await ensureDefaultApiTokenForUser(null, NextResponse.json({}));
 
@@ -146,7 +147,7 @@ describe("api-token-session bootstrap", () => {
 	it("returns null and skips fetch when the bridge secret is missing", async () => {
 		delete process.env.TASTILE_WEB_BRIDGE_SECRET;
 		const fetchMock = vi.fn();
-		vi.stubGlobal("fetch", fetchMock);
+		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const token = await ensureDefaultApiTokenForUser("user-sub-1", NextResponse.json({}));
 

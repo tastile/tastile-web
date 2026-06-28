@@ -64,9 +64,9 @@ describe("postCommand", () => {
       "application/json",
     );
     expect(JSON.parse(init.body as string)).toEqual({
-      expectedRevision: null,
-      idempotencyKey: "k1",
-      occurredAt: "t1",
+      expected_revision: null,
+      idempotency_key: "k1",
+      occurred_at: "t1",
       payload: { kind: 0 },
     });
   });
@@ -89,6 +89,26 @@ describe("postCommand", () => {
       expect(res.data.commandId).toBe("c2");
       expect(res.data.revision).toBe(5);
       expect(res.data.aggregate?.id).toBe("agg");
+    }
+  });
+
+  it("normalizes snake_case command responses from tastile-core", async () => {
+    mockFetch.mockResolvedValueOnce(
+      okResponse({
+        command_id: "c3",
+        accepted_at: "t3",
+        aggregate: { kind: 0, id: "agg" },
+        revision: 1,
+        result: 0,
+        pending: [{ kind: 0, target: null, not_before: "later" }],
+      }),
+    );
+    const res = await postCommand(baseClient(), "/v1/x", emptyEnvelope);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.commandId).toBe("c3");
+      expect(res.data.acceptedAt).toBe("t3");
+      expect(res.data.pending[0].notBefore).toBe("later");
     }
   });
 
@@ -128,12 +148,33 @@ describe("postCommand", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it("POSTs without a browser Authorization header when proxy bridge is enabled", async () => {
+    mockFetch.mockResolvedValueOnce(
+      okResponse({
+        commandId: "c1",
+        acceptedAt: "t1",
+        aggregate: null,
+        revision: null,
+        result: 0,
+        pending: [],
+      }),
+    );
+    const res = await postCommand(
+      { baseUrl: "/api/proxy", getIdToken: async () => null, useProxyBridge: true },
+      "/v1/tiles",
+      emptyEnvelope,
+    );
+    expect(res.ok).toBe(true);
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
+  });
+
   it("returns ApiError with parsed violations on non-2xx", async () => {
     mockFetch.mockResolvedValueOnce(
       errResponse(422, {
         kind: ApiErrorKind.VALIDATION,
         message: "bad payload",
-        currentRevision: 3,
+        current_revision: 3,
         violations: [
           { kind: 0, message: "x", currentRevision: null },
         ],
@@ -240,6 +281,17 @@ describe("getRead", () => {
       expect(res.error.kind).toBe(ApiErrorKind.FORBIDDEN);
     }
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("GETs without a browser Authorization header when proxy bridge is enabled", async () => {
+    mockFetch.mockResolvedValueOnce(okResponse({ id: "r1" }));
+    const res = await getRead<{ id: string }>(
+      { baseUrl: "/api/proxy", getIdToken: async () => null, useProxyBridge: true },
+      "/v1/tiles/r1",
+    );
+    expect(res.ok).toBe(true);
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 
   it("returns RETRYABLE ApiError when fetch throws", async () => {

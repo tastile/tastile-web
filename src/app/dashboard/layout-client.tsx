@@ -1,6 +1,7 @@
 "use client";
 
 import { PanelLeftDashed } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
@@ -29,7 +30,9 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
+  const closeQuickCreate = useQuickCreateStore((s) => s.close);
   const sidePanelContent = useSidePanelContent();
+  const pathname = usePathname();
   const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -48,6 +51,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [openQuickCreate]);
+
+  useEffect(() => {
+    closeQuickCreate();
+  }, [closeQuickCreate, pathname]);
 
   return (
     <div className="flex h-screen flex-col bg-background">

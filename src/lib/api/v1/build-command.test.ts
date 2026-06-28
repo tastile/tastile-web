@@ -20,6 +20,7 @@ function recurringSnapshot() {
   return {
     identity: {
       title: "毎週の英語",
+      description: "英語の復習",
       kind: TileKind.RECURRING,
       externalId: { value: null },
       visual: { color: "#5E6AD2", icon: "sun" },
@@ -50,6 +51,7 @@ function placementSnapshot() {
   return {
     identity: {
       title: "今日の数学",
+      description: null,
       kind: TileKind.PLACEMENT,
       externalId: { value: null },
       visual: { color: "#5E6AD2", icon: "sun" },
@@ -80,6 +82,7 @@ function labelSnapshot() {
   return {
     identity: {
       title: "学期中",
+      description: null,
       kind: TileKind.PLACEMENT,
       externalId: { value: null },
       visual: { color: "#999", icon: "tag" },
@@ -107,49 +110,47 @@ function labelSnapshot() {
 }
 
 describe("buildCreateTileCommand — RECURRING", () => {
-  it("returns 4 envelopes: createTile, setPlan, appendFrames, appendRules", () => {
+  it("returns a real tastile-core createTile envelope", () => {
     const envelopes = buildCreateTileCommand(
       recurringSnapshot(),
       "key-uuidv7",
     );
 
-    expect(envelopes).toHaveLength(4);
-    const [create, plan, frames] = envelopes;
+    expect(envelopes).toHaveLength(1);
+    const [create] = envelopes;
     expect(create.path).toBe("/v1/tiles");
-    expect((create.payload as { kind: number }).kind).toBe(0);
+    expect(create.payload).toEqual({
+      kind: TileKind.RECURRING,
+      title: "毎週の英語",
+      description: "英語の復習",
+      color: "#5E6AD2",
+      icon: "sun",
+      external_id: null,
+      plan_role: PlanRole.EXECUTABLE,
+    });
     expect(create.idempotencyKey).toBe("key-uuidv7");
-    expect(plan.path).toBe("/v1/tiles/{tileId}/plan");
-    expect((plan.payload as { role: number }).role).toBe(0);
-    expect(frames.path).toBe("/v1/recurrings/{tileId}/frames");
-    expect(frames.payload).toHaveLength(1);
-    expect(envelopes[3].path).toBe("/v1/recurrings/{tileId}/rules");
   });
 });
 
 describe("buildCreateTileCommand — PLACEMENT", () => {
-  it("returns 2 envelopes (no frames/rules)", () => {
+  it("returns only the create envelope", () => {
     const envelopes = buildCreateTileCommand(placementSnapshot(), "k1") as Array<{
       path: string;
     }>;
 
-    expect(envelopes).toHaveLength(2);
-    expect(envelopes[1].path).toBe("/v1/tiles/{tileId}/plan");
+    expect(envelopes).toHaveLength(1);
+    expect(envelopes[0].path).toBe("/v1/tiles");
   });
 });
 
 describe("buildCreateTileCommand — LABEL", () => {
-  it("PLACEMENT + role=1 + isLabelOnly=true", () => {
+  it("PLACEMENT + plan_role=1 + isLabelOnly=true", () => {
     const envelopes = buildCreateTileCommand(labelSnapshot(), "k1") as Array<{
-      payload: { role: number; completion: unknown };
+      payload: { plan_role: number };
     }>;
 
-    expect(envelopes).toHaveLength(2);
-    expect(envelopes[1].payload.role).toBe(1);
-    expect(envelopes[1].payload.completion).toEqual({
-      root: { kind: 0, children: [] },
-      timeRequirements: [],
-      tasks: [],
-    });
+    expect(envelopes).toHaveLength(1);
+    expect(envelopes[0].payload.plan_role).toBe(1);
   });
 });
 
@@ -168,14 +169,11 @@ describe("substituteTileId", () => {
     const envelopes = buildCreateTileCommand(recurringSnapshot(), "k");
     const replaced = substituteTileId(envelopes, "tile-123");
     expect(replaced[0].path).toBe("/v1/tiles");
-    expect(replaced[1].path).toBe("/v1/tiles/tile-123/plan");
-    expect(replaced[2].path).toBe("/v1/recurrings/tile-123/frames");
-    expect(replaced[3].path).toBe("/v1/recurrings/tile-123/rules");
   });
 
   it("does not mutate the original envelopes", () => {
     const envelopes = buildCreateTileCommand(recurringSnapshot(), "k");
     substituteTileId(envelopes, "tile-123");
-    expect(envelopes[1].path).toBe("/v1/tiles/{tileId}/plan");
+    expect(envelopes[0].path).toBe("/v1/tiles");
   });
 });

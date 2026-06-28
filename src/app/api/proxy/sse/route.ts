@@ -6,10 +6,6 @@ import {
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
-const CLOUD_API_BASE =
-  process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-  process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-  "https://api.tastile.app";
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
 
 export async function GET(request: NextRequest) {
@@ -31,60 +27,40 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const upstreamUrl = `${CLOUD_API_BASE}/read/events/state`;
-
-  const headers: Record<string, string> = {};
   const apiToken = getApiTokenFromRequest(request);
-  let bootstrappedApiToken: string | null = null;
-  if (apiToken) {
-    headers.authorization = `Bearer ${apiToken}`;
-  } else {
+  if (!apiToken) {
     const userSub = resolveBridgeUserSub(request);
-    bootstrappedApiToken = await ensureDefaultApiTokenForUser(userSub);
-    if (bootstrappedApiToken) headers.authorization = `Bearer ${bootstrappedApiToken}`;
+    await ensureDefaultApiTokenForUser(userSub);
   }
 
-  try {
-    const upstreamResponse = await fetch(upstreamUrl, { method: "GET", headers });
+  return syntheticConnectedStream();
+}
 
-    if (!upstreamResponse.ok) {
-      return new Response(`Upstream error: ${upstreamResponse.status}`, {
-        status: upstreamResponse.status,
-      });
-    }
+function syntheticConnectedStream() {
+  let heartbeat: ReturnType<typeof setInterval> | null = null;
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(
+        encoder.encode('event: connected\ndata: {"event_id":"state-connected","payload":null}\n\n'),
+      );
+      heartbeat = setInterval(() => {
+        controller.enqueue(encoder.encode(": keepalive\n\n"));
+      }, 25_000);
+    },
+    cancel() {
+      if (heartbeat) clearInterval(heartbeat);
+    },
+  });
 
-    const reader = upstreamResponse.body?.getReader();
-    if (!reader) {
-      return new Response("No body", { status: 502 });
-    }
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
-        } catch {
-          // Connection closed
-        } finally {
-          controller.close();
-        }
-      },
-    });
-
-    return new Response(stream, {
-      headers: {
-        "content-type": "text/event-stream",
-        "cache-control": "no-cache",
-        connection: "keep-alive",
-      },
-    });
-  } catch (error) {
-    console.error("SSE proxy error:", error);
-    return new Response("SSE proxy failed", { status: 502 });
-  }
+  return new Response(stream, {
+    headers: {
+      "content-type": "text/event-stream",
+      "cache-control": "no-cache",
+      connection: "keep-alive",
+      "x-accel-buffering": "no",
+    },
+  });
 }
 
 function resolveBridgeUserSub(request: NextRequest): string | null {

@@ -542,9 +542,11 @@ export class CoreClient {
         path = path.replace(`{${k}}`, encodeURIComponent(v));
       }
     }
-    let rawUrl = this.baseUrl + path;
-    if (rawUrl.startsWith("/") && typeof window !== "undefined") {
-      rawUrl = window.location.origin + rawUrl;
+    const requestPath = this.useProxyBridge ? path : toV1CorePath(path);
+    let rawUrl = this.baseUrl + requestPath;
+    if (rawUrl.startsWith("/")) {
+      const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost";
+      rawUrl = origin + rawUrl;
     }
     const url = new URL(rawUrl);
     if (options.query) {
@@ -621,16 +623,50 @@ function classifyStatus(status: number): ApiErrorKind {
   return "server";
 }
 
+function toV1CorePath(path: string): string {
+  const map: Record<string, string> = {
+    "/health": "/v1/health",
+    "/ready": "/v1/ready",
+    "/version": "/v1/version",
+    "/read/runtime-paths": "/v1/runtime/paths",
+    "/auth/session": "/v1/auth/session",
+    "/auth/session/restore": "/v1/auth/session/restore",
+    "/auth/tile-quota": "/v1/quota/tiles",
+    "/read/tiles": "/v1/tiles",
+    "/views/tile-list": "/v1/tiles",
+    "/read/active-tile": "/v1/active-tile",
+    "/views/active-tile": "/v1/active-tile",
+    "/read/execution-view": "/v1/active-tile",
+    "/read/placements": "/v1/placements",
+    "/read/candidates": "/v1/candidates",
+    "/views/timeline/today": "/v1/timeline/today",
+    "/views/calendar/day": "/v1/calendar/day",
+    "/views/calendar/week": "/v1/calendar/week",
+    "/views/calendar/month": "/v1/calendar/month",
+    "/views/calendar/year": "/v1/calendar/year",
+    "/views/pending-prompt": "/v1/prompts/pending",
+    "/prompts/current": "/v1/prompts/pending",
+    "/debug/events": "/v1/debug/events",
+  };
+  return map[path] ?? path;
+}
+
 // ============================================================================
 // Singleton — lazily instantiated; null until first use.
 // ============================================================================
 
 let _client: CoreClient | null = null;
 
-function isLocalUrl(url: string): boolean {
+function shouldUseProxyBridge(url: string): boolean {
+  if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") {
+    return true;
+  }
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    return true;
+  }
   try {
     const parsed = new URL(url);
-    return (
+    return !(
       parsed.hostname === "127.0.0.1" ||
       parsed.hostname === "localhost" ||
       parsed.hostname === "10.0.2.2"
@@ -646,7 +682,7 @@ export function getCoreClient(): CoreClient {
     process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
     process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
     "http://127.0.0.1:3140";
-  const usesCloudProxy = !isLocalUrl(rawBaseUrl);
+  const usesCloudProxy = shouldUseProxyBridge(rawBaseUrl);
   const baseUrl = usesCloudProxy ? "/api/proxy" : rawBaseUrl;
   _client = new CoreClient({
     baseUrl,

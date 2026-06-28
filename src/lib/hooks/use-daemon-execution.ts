@@ -67,7 +67,7 @@ export function useDaemonExecution() {
       DEFAULT_DAEMON_BASE_URL,
     [],
   );
-  const usesCloudCoreApi = useMemo(() => !isLocalDaemonUrl(rawBaseUrl), [rawBaseUrl]);
+  const usesCloudCoreApi = useMemo(() => shouldUseProxyBridge(rawBaseUrl), [rawBaseUrl]);
   const baseUrl = useMemo(
     () => (usesCloudCoreApi ? "/api/proxy" : rawBaseUrl),
     [rawBaseUrl, usesCloudCoreApi],
@@ -82,6 +82,7 @@ export function useDaemonExecution() {
   const e2eBypassAuth = useMemo(() => process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1", []);
 
   const restoreDaemonSession = useCallback(async (): Promise<boolean> => {
+    if (usesCloudCoreApi) return true;
     const client = clientRef.current;
     if (!client) return false;
     // Force-refresh so we never replay a stale id_token that the daemon will
@@ -96,7 +97,7 @@ export function useDaemonExecution() {
       expiresAt: new Date(session.exp * 1000).toISOString(),
     });
     return true;
-  }, []);
+  }, [usesCloudCoreApi]);
 
   const refreshSnapshot = useCallback(async () => {
     const client = clientRef.current;
@@ -164,7 +165,7 @@ export function useDaemonExecution() {
           getAccessToken,
           fetchImpl: globalThis.fetch.bind(globalThis),
         });
-        if (session) {
+        if (session && !usesCloudCoreApi) {
           await clientRef.current.restoreSession({
             userId: session.sub,
             email: "",
@@ -281,10 +282,13 @@ export function useDaemonExecution() {
   return { state, loading, execute };
 }
 
-function isLocalDaemonUrl(value: string): boolean {
+function shouldUseProxyBridge(value: string): boolean {
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    return true;
+  }
   try {
     const url = new URL(value);
-    return (
+    return !(
       url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "10.0.2.2"
     );
   } catch {
@@ -857,17 +861,10 @@ async function safeRead<T>(run: () => Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-// Compare the previous projected AppState to the new one and surface
-// browser notifications for transitions the user actually cares about. The
-// in-app prompt card already covers the "you need to act" case; this is for
-// when the dashboard is in a background tab.
+// Compare the previous projected AppState to the new one and surface browser
+// notifications for execution transitions. Tags keep repeated refreshes from
+// producing duplicate browser notifications.
 function emitNotificationsForStateChange(prev: AppState, next: AppState): void {
-  if (typeof document !== "undefined" && document.visibilityState === "visible") {
-    // Skip notifications when the user is looking at the dashboard — the
-    // internal prompt / active-tile card is already drawing their attention.
-    return;
-  }
-
   const prevActive = prev.execution.activeTileId;
   const nextActive = next.execution.activeTileId;
   const prevPhase = prev.execution.phaseKind;

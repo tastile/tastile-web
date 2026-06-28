@@ -88,34 +88,6 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
           ))}
         </div>
 
-        {/* Overflow — full-width emphasized band (not a card). */}
-        <div className="mt-20 grid gap-6 border-t border-surface-2 pt-12 lg:grid-cols-[6rem_1fr_1.4fr] lg:gap-12">
-          <div className="flex items-start gap-3">
-            <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>07</span>
-            <span className={`${mono} hidden h-px flex-1 translate-y-3 bg-primary/40 lg:block`} />
-          </div>
-          <div>
-            <h3
-              className={`text-2xl font-semibold leading-tight tracking-[-0.02em] text-foreground lg:text-3xl ${display}`}
-            >
-              {t.overflow.name}
-            </h3>
-            <p className={`mt-2 text-base font-medium text-primary ${display}`}>
-              {t.overflow.lede}
-            </p>
-          </div>
-          <div>
-            <p className={`text-base leading-relaxed text-foreground-muted ${body}`}>
-              {t.overflow.body}
-            </p>
-            <div className={`mt-4 border-l-2 border-primary pl-4 ${body}`}>
-              <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
-                {isJa ? "例 / example" : "Example"}
-              </p>
-              <p className="mt-1 text-sm leading-relaxed text-foreground">{t.overflow.example}</p>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

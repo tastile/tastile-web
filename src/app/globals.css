@@ -170,8 +170,10 @@
   --font-jp:
     "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
     sans-serif;
+  --font-zen-kaku:
+    "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
   --font-jp-heading:
-    "YakuHanJP", "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
+    "Zen Kaku Gothic New", "YakuHanJP", "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
 
 /* ============================================

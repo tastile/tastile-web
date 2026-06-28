@@ -25,19 +25,19 @@ async function proxyToken(id: string, init: { method: string; body?: string }) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
-  const response = await fetch(`${coreUrl()}/auth/api-tokens/${encodeURIComponent(id)}`, {
+  const response = await fetch(`${coreUrl()}/v1/api-tokens/${encodeURIComponent(id)}`, {
     method: init.method,
     headers: {
       "x-tastile-web-bridge-secret": bridgeSecret,
       "x-tastile-web-session-user": userSub,
       ...(init.body ? { "content-type": "application/json" } : {}),
     },
-    body: init.body,
+    body: init.body ? normalizeRequestBody(init.body) : undefined,
     cache: "no-store",
   });
 
   const text = await response.text();
-  const forwarded = new NextResponse(text, {
+  const forwarded = new NextResponse(normalizeResponseText(text), {
     status: response.status,
     headers: { "content-type": response.headers.get("content-type") ?? "application/json" },
   });
@@ -45,4 +45,38 @@ async function proxyToken(id: string, init: { method: string; body?: string }) {
     forwarded.cookies.set(cookie);
   }
   return forwarded;
+}
+
+function normalizeRequestBody(body: string) {
+  try {
+    const parsed = JSON.parse(body) as { name?: unknown; label?: unknown };
+    if (typeof parsed.name === "string" && typeof parsed.label !== "string") {
+      parsed.label = parsed.name;
+      delete parsed.name;
+    }
+    return JSON.stringify(parsed);
+  } catch {
+    return body;
+  }
+}
+
+function normalizeResponseText(text: string) {
+  try {
+    return JSON.stringify(toWebToken(JSON.parse(text)));
+  } catch {
+    return text;
+  }
+}
+
+function toWebToken(token: unknown) {
+  if (!token || typeof token !== "object") return token;
+  const source = token as Record<string, unknown>;
+  return {
+    ...source,
+    token_id: source.token_id ?? source.id,
+    name: source.name ?? source.label,
+    token_prefix: source.token_prefix ?? source.prefix,
+    access_token: source.access_token ?? source.token,
+    last_used_path: source.last_used_path ?? null,
+  };
 }

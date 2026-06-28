@@ -77,7 +77,7 @@ export default function RuntimePage() {
             <Pill variant="default">{version?.ok ? `v${version.data.version}` : "—"}</Pill>
             <Pill variant="default">
               <Network className="h-3 w-3" />
-              http://127.0.0.1:3140
+              {coreBaseUrl()}
             </Pill>
           </>
         }
@@ -197,7 +197,7 @@ export default function RuntimePage() {
         <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
           <EnvRow
             label="Base URL"
-            value={process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:3140"}
+            value={coreBaseUrl()}
           />
           <EnvRow label="Auth" value="Cognito JWT · Bearer" />
           <EnvRow label="Token source" value="window.__tastileIdToken" />
@@ -304,4 +304,12 @@ function formatUptime(sec: number): string {
   if (d > 0) return `${d}d ${h}h ${m}m`;
   if (h > 0) return `${h}h ${m}m`;
   return `${m}m`;
+}
+
+function coreBaseUrl(): string {
+  return (
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
+    "http://127.0.0.1:3140"
+  );
 }

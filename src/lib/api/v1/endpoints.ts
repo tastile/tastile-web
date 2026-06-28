@@ -22,6 +22,7 @@ import { ApiErrorKind } from "@/lib/domain/v1/constants";
 export interface ApiClient {
   baseUrl: string;
   getIdToken: () => Promise<string | null>;
+  useProxyBridge?: boolean;
 }
 
 export type Result<T> =
@@ -68,16 +69,49 @@ function toApiError(raw: unknown, fallbackMessage: string): ApiError {
   if (raw && typeof raw === "object") {
     const r = raw as Record<string, unknown>;
     if (typeof r.kind === "number" && VALID_API_ERROR_KINDS.has(r.kind)) {
+      const currentRevision = r.currentRevision ?? r.current_revision;
       return {
         kind: r.kind,
         message: typeof r.message === "string" ? r.message : fallbackMessage,
         currentRevision:
-          typeof r.currentRevision === "number" ? r.currentRevision : null,
+          typeof currentRevision === "number" ? currentRevision : null,
         violations: Array.isArray(r.violations) ? r.violations : [],
       };
     }
   }
   return networkError(fallbackMessage);
+}
+
+function toWireCommandRequest<TReq>(
+  envelope: CommandRequest<TReq>,
+): Record<string, unknown> {
+  return {
+    expected_revision: envelope.expectedRevision,
+    idempotency_key: envelope.idempotencyKey,
+    occurred_at: envelope.occurredAt,
+    payload: envelope.payload,
+  };
+}
+
+function fromWireCommandResponse(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const r = raw as Record<string, unknown>;
+  const pending = Array.isArray(r.pending)
+    ? r.pending.map((item) => {
+        if (!item || typeof item !== "object") return item;
+        const p = item as Record<string, unknown>;
+        return {
+          ...p,
+          notBefore: p.notBefore ?? p.not_before ?? null,
+        };
+      })
+    : r.pending;
+  return {
+    ...r,
+    commandId: r.commandId ?? r.command_id,
+    acceptedAt: r.acceptedAt ?? r.accepted_at,
+    pending,
+  };
 }
 
 /**
@@ -105,20 +139,22 @@ export async function postCommand<TReq>(
   path: string,
   envelope: CommandRequest<TReq>,
 ): Promise<Result<CommandResponse>> {
-  const token = await client.getIdToken();
-  if (!token) {
+  const token = client.useProxyBridge ? null : await client.getIdToken();
+  if (!client.useProxyBridge && !token) {
     return { ok: false, error: FORBIDDEN_NO_TOKEN };
   }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   let res: Response;
   try {
     res = await fetch(`${client.baseUrl}${path}`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(envelope),
+      headers,
+      body: JSON.stringify(toWireCommandRequest(envelope)),
     });
   } catch (err) {
     return {
@@ -135,7 +171,7 @@ export async function postCommand<TReq>(
     };
   }
 
-  const raw = await parseJson(res);
+  const raw = fromWireCommandResponse(await parseJson(res));
   const shapeError = validateCommandResponse(raw);
   if (shapeError) {
     return { ok: false, error: shapeError };
@@ -147,18 +183,19 @@ export async function getRead<T>(
   client: ApiClient,
   path: string,
 ): Promise<Result<T>> {
-  const token = await client.getIdToken();
-  if (!token) {
+  const token = client.useProxyBridge ? null : await client.getIdToken();
+  if (!client.useProxyBridge && !token) {
     return { ok: false, error: FORBIDDEN_NO_TOKEN };
   }
+
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   let res: Response;
   try {
     res = await fetch(`${client.baseUrl}${path}`, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
     });
   } catch (err) {
     return {
