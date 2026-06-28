@@ -78,30 +78,6 @@ function handleMockRequest(
   body: unknown,
   searchParams: URLSearchParams,
 ): NextResponse | null {
-  if (path === "read/tiles" && method === "GET") {
-    return NextResponse.json({
-      tiles: mockTiles,
-      next_actionable_tile_id: mockTiles.length > 0 ? mockTiles[0].id : null,
-      next_actionable_start_at: null,
-    });
-  }
-
-  if (path === "read/execution-view" && method === "GET") {
-    const mainTile = mockTiles.length > 0 ? mockTiles[0] : null;
-    return NextResponse.json({
-      tiles_in_progress: [],
-      main_tile: mainTile,
-      is_working: false,
-      is_on_break: false,
-      is_idle: true,
-      main_tile_started_at: null,
-      main_tile_ends_at: null,
-      pending_prompt_id: null,
-      tile_count: mockTiles.length,
-      event_count: 0,
-    });
-  }
-
   if ((path === "read/runtime-paths" || path === "v1/runtime/paths") && method === "GET") {
     return NextResponse.json({
       data_dir: "e2e://data",
@@ -328,10 +304,6 @@ function handleMockRequest(
     });
   }
 
-  if (path === "views/tile-list" && method === "GET") {
-    return NextResponse.json({ tiles: mockTiles });
-  }
-
   return null;
 }
 
@@ -341,7 +313,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   if (isE2EBypass) {
     const body =
       request.method !== "GET" && request.method !== "HEAD"
-        ? await request.json().catch(() => ({}))
+        ? await request.clone().json().catch(() => ({}))
         : null;
     const mockResponse = handleMockRequest(
       path,
@@ -377,6 +349,11 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   if (contentType) {
     headers.set("content-type", contentType);
   }
+  if (isE2EBypass && isLocalCoreUrl(CLOUD_API_BASE)) {
+    const ownerId = "00000000-0000-0000-0000-000000000001";
+    headers.set("x-owner-id", ownerId);
+    headers.set("x-actor-id", ownerId);
+  }
 
   const init: RequestInit = {
     method: request.method,
@@ -408,6 +385,19 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   }
 }
 
+function isLocalCoreUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.hostname === "127.0.0.1" ||
+      url.hostname === "localhost" ||
+      url.hostname === "10.0.2.2"
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function toV1Path(path: string): string {
   const map: Record<string, string> = {
     health: "v1/health",
@@ -433,60 +423,12 @@ export function toV1Path(path: string): string {
 }
 
 function localCompatResponse(path: string, method: string): NextResponse | null {
-  if (method === "POST") {
-    const commandId = generateId();
-    const acceptedAt = new Date().toISOString();
-    if (path === "v1/tiles") {
-      return NextResponse.json({
-        commandId,
-        acceptedAt,
-        aggregate: { kind: 0, id: generateId() },
-        revision: 1,
-        result: 0,
-        pending: [],
-      });
-    }
-    if (
-      /^v1\/tiles\/[^/]+\/plan$/.test(path) ||
-      /^v1\/recurrings\/[^/]+\/(frames|rules)$/.test(path)
-    ) {
-      return NextResponse.json({
-        commandId,
-        acceptedAt,
-        aggregate: null,
-        revision: null,
-        result: 0,
-        pending: [],
-      });
-    }
-  }
-
   if (method !== "GET") return null;
-  if (path === "read/execution-view") {
-    return NextResponse.json({
-      tiles_in_progress: [],
-      main_tile: null,
-      is_working: false,
-      is_on_break: false,
-      is_idle: true,
-      main_tile_started_at: null,
-      main_tile_ends_at: null,
-      pending_prompt_id: null,
-      tile_count: 0,
-      event_count: 0,
-    });
-  }
   if (path === "views/pending-prompt") {
     return NextResponse.json({ prompt: null });
   }
   if (path === "views/timeline/today") {
     return NextResponse.json({ items: [] });
-  }
-  if (path === "read/placements") {
-    return NextResponse.json({ placements: [] });
-  }
-  if (path === "read/candidates") {
-    return NextResponse.json({ candidates: [] });
   }
   if (path === "commands/recurring-tile") {
     return NextResponse.json([defaultBreakRecurringTemplate()]);
@@ -614,6 +556,7 @@ function toLegacyTile(tile: unknown) {
   const source = (tile && typeof tile === "object" ? tile : {}) as Record<string, unknown>;
   return {
     id: source.id,
+    plan_id: source.plan_id ?? source.planId ?? null,
     title: source.title ?? "Untitled",
     lifecycle: source.archived === true ? "closed" : "ready",
     next_action: null,
@@ -646,6 +589,8 @@ function toActiveTileView(value: unknown) {
   return {
     id: source.tile_id ?? source.id,
     title: source.title ?? "Untitled",
+    started_at: source.span_start ?? source.spanStart ?? null,
+    ends_at: source.span_end ?? source.spanEnd ?? null,
   };
 }
 
@@ -656,8 +601,8 @@ function toExecutionView(value: unknown) {
     is_on_break: false,
     is_idle: active === null,
     main_tile: active,
-    main_tile_started_at: null,
-    main_tile_ends_at: null,
+    main_tile_started_at: active?.started_at ?? null,
+    main_tile_ends_at: active?.ends_at ?? null,
     tile_count: active ? 1 : 0,
     event_count: 0,
     tiles_in_progress: active ? [active] : [],

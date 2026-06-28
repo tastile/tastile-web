@@ -1,8 +1,14 @@
 "use client";
 
-import { Loader2, X } from "lucide-react";
+import { Calendar, FileText, FolderOpen, Loader2, Tag, X } from "lucide-react";
 import { useCallback, useState } from "react";
-import { getCoreClient } from "@/lib/api/endpoints";
+import type { ReactNode } from "react";
+import { makeClient } from "@/lib/api/v1/submit";
+import {
+  archiveTileCommand,
+  createTileCommand,
+  updateTileCommand,
+} from "@/lib/api/v1/tile-commands";
 import { useTileEditStore } from "@/lib/stores/tile-edit-store";
 
 function toIsoDatetimeLocal(iso: string): string {
@@ -12,11 +18,6 @@ function toIsoDatetimeLocal(iso: string): string {
   // Format as YYYY-MM-DDTHH:mm for <input type="datetime-local">
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function toIsoString(datetimeLocal: string): string {
-  if (!datetimeLocal) return "";
-  return new Date(datetimeLocal).toISOString();
 }
 
 function TileEditPanelInner() {
@@ -36,43 +37,12 @@ function TileEditPanelInner() {
     setError(null);
 
     try {
-      const client = getCoreClient();
+      const client = makeClient();
 
       if (mode === "create") {
-        const res = await client.call<{ ok: boolean; tile_id?: string }>("createTile", {
-          body: {
-            title: title.trim(),
-            temporal: {
-              fixed_start: toIsoString(startAt) || null,
-              fixed_end: toIsoString(endAt) || null,
-            },
-            annotation: {
-              semantic_role: "work",
-              labels,
-              timed_labels: [],
-              generated_by_recalc: false,
-            },
-            objective: {
-              objective_mode: "finish_once",
-              target_work_min: null,
-              target_rest_min: null,
-              done_rule: "manual",
-              recurrence: null,
-            },
-            interruption: {
-              interrupt_penalty: 5,
-              resume_penalty: 1,
-              break_splits_work: true,
-              external_interrupt_only: false,
-            },
-            automation: {
-              prompt_on_start: false,
-              prompt_on_end: false,
-              auto_start_allowed: false,
-              auto_end_allowed: false,
-            },
-            conflict_resolution: "manual_adjust",
-          },
+        const res = await createTileCommand({
+          client,
+          title,
         });
         if (!res.ok) {
           setError(res.error.message);
@@ -80,29 +50,15 @@ function TileEditPanelInner() {
           return;
         }
       } else {
-        // edit mode
-        const res = await client.call<{ ok: boolean }>("updateTile", {
-          body: {
-            tile_id: draft?.tileId,
-            title: title.trim(),
-            temporal: {
-              fixed_start: toIsoString(startAt) || null,
-              fixed_end: toIsoString(endAt) || null,
-            },
-            annotation: {
-              semantic_role: "work",
-              labels,
-              timed_labels: [],
-              generated_by_recalc: false,
-            },
-            objective: {
-              objective_mode: "finish_once",
-              target_work_min: null,
-              target_rest_min: null,
-              done_rule: null,
-              recurrence: null,
-            },
-          },
+        if (!draft?.tileId) {
+          setError("tile id is missing");
+          setSaving(false);
+          return;
+        }
+        const res = await updateTileCommand({
+          client,
+          tileId: draft.tileId,
+          title,
         });
         if (!res.ok) {
           setError(res.error.message);
@@ -116,16 +72,18 @@ function TileEditPanelInner() {
       return;
     }
 
+    window.dispatchEvent(new CustomEvent("tastile:tiles-changed"));
     close();
-  }, [title, startAt, endAt, labels, mode, draft, close]);
+  }, [title, mode, draft, close]);
 
   const handleDelete = useCallback(async () => {
     if (!draft?.tileId || mode !== "edit") return;
     setSaving(true);
     setError(null);
     try {
-      const res = await getCoreClient().call<{ ok: boolean }>("deleteTile", {
-        body: { tile_id: draft.tileId },
+      const res = await archiveTileCommand({
+        client: makeClient(),
+        tileId: draft.tileId,
       });
       if (!res.ok) {
         setError(res.error.message);
@@ -137,6 +95,7 @@ function TileEditPanelInner() {
       setSaving(false);
       return;
     }
+    window.dispatchEvent(new CustomEvent("tastile:tiles-changed"));
     close();
   }, [draft, mode, close]);
 
@@ -163,6 +122,7 @@ function TileEditPanelInner() {
         </div>
 
         <div className="flex flex-col gap-4 p-4">
+          <PanelSection icon={<FileText className="h-4 w-4" />} title="Identity" />
           <div>
             <label
               htmlFor="tile-edit-title"
@@ -180,6 +140,7 @@ function TileEditPanelInner() {
             />
           </div>
 
+          <PanelSection icon={<Calendar className="h-4 w-4" />} title="Time" />
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
@@ -213,6 +174,7 @@ function TileEditPanelInner() {
             </div>
           </div>
 
+          <PanelSection icon={<FolderOpen className="h-4 w-4" />} title="Meta" />
           <div>
             <label
               htmlFor="tile-edit-labels"
@@ -237,14 +199,11 @@ function TileEditPanelInner() {
             />
           </div>
 
-          <div className="rounded-lg bg-surface-2 p-3 text-[10px] text-foreground-subtle">
-            ▸ Repeat — coming soon
-          </div>
-          <div className="rounded-lg bg-surface-2 p-3 text-[10px] text-foreground-subtle">
-            ▸ Conditions — coming soon
-          </div>
-          <div className="rounded-lg bg-surface-2 p-3 text-[10px] text-foreground-subtle">
-            ▸ Notes — coming soon
+          <PanelSection icon={<Tag className="h-4 w-4" />} title="Details" />
+          <div className="rounded-md border border-border bg-surface-0 px-3 py-2 text-xs text-foreground-subtle">
+            {mode === "edit"
+              ? "This panel edits the same identity, time, and meta fields used at creation."
+              : "Defaults are ready; title is the only required field."}
           </div>
 
           {error && (
@@ -286,6 +245,15 @@ function TileEditPanelInner() {
         </div>
       </div>
     </>
+  );
+}
+
+function PanelSection({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="flex items-center gap-2 border-b border-border pb-1 pt-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+      {icon}
+      <span>{title}</span>
+    </div>
   );
 }
 

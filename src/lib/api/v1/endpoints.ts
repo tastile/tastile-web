@@ -134,8 +134,9 @@ function validateCommandResponse(raw: unknown): ApiError | null {
   return null;
 }
 
-export async function postCommand<TReq>(
+export async function sendCommand<TReq>(
   client: ApiClient,
+  method: "POST" | "DELETE",
   path: string,
   envelope: CommandRequest<TReq>,
 ): Promise<Result<CommandResponse>> {
@@ -152,7 +153,7 @@ export async function postCommand<TReq>(
   let res: Response;
   try {
     res = await fetch(`${client.baseUrl}${path}`, {
-      method: "POST",
+      method,
       headers,
       body: JSON.stringify(toWireCommandRequest(envelope)),
     });
@@ -177,6 +178,14 @@ export async function postCommand<TReq>(
     return { ok: false, error: shapeError };
   }
   return { ok: true, data: raw as CommandResponse, status: res.status };
+}
+
+export function postCommand<TReq>(
+  client: ApiClient,
+  path: string,
+  envelope: CommandRequest<TReq>,
+): Promise<Result<CommandResponse>> {
+  return sendCommand(client, "POST", path, envelope);
 }
 
 export async function getRead<T>(

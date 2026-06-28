@@ -78,7 +78,7 @@ export interface SubmitV1Options {
 export function makeClient(): ApiClient {
   const e2eBypass = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
   const rawBaseUrl = process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "";
-  const useProxyBridge = shouldUseProxyBridge(rawBaseUrl);
+  const useProxyBridge = e2eBypass || shouldUseProxyBridge(rawBaseUrl);
   return {
     baseUrl: useProxyBridge ? "/api/proxy" : rawBaseUrl,
     useProxyBridge,

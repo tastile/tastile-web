@@ -13,8 +13,8 @@ describe("useQuickCreateStore", () => {
       expect(s.identity.title).toBe("");
       expect(s.identity.description).toBeNull();
       expect(s.identity.externalId).toBeNull();
-      expect(s.identity.visual.color).toBe("");
-      expect(s.identity.visual.icon).toBe("");
+      expect(s.identity.visual.color).toBe("#3b82f6");
+      expect(s.identity.visual.icon).toBe("check-circle");
       expect(s.plan.role).toBe(PlanRole.EXECUTABLE);
       expect(s.plan.references).toEqual([]);
       expect(s.plan.completion).toBeDefined();
@@ -22,7 +22,7 @@ describe("useQuickCreateStore", () => {
       expect(s.plan.metrics).toEqual([]);
       expect(s.plan.decisions).toEqual([]);
       expect(s.time.span).toEqual({ start: "", end: "" });
-      expect(s.time.durationMinMax).toEqual({ minMs: null, maxMs: null });
+      expect(s.time.durationMinMax).toEqual({ minMs: 1500000, maxMs: 1500000 });
       expect(s.windows).toEqual([]);
       expect(s.recurring.life.active).toEqual({ startDate: "", endDate: "" });
       expect(s.recurring.life.state).toBe(RecurringState.ACTIVE);

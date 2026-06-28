@@ -36,6 +36,10 @@ function closePanel() {
 	useQuickCreateStore.setState({ isOpen: false });
 }
 
+function openDetails() {
+	fireEvent.click(screen.getByRole("button", { name: /詳細設定/ }));
+}
+
 beforeEach(() => {
 	submitMock.mockClear();
 	submitMock.mockResolvedValue({ ok: true, tileId: "tile-uuidv7" });
@@ -55,18 +59,15 @@ describe("QuickTileCreate — visibility", () => {
 		expect(screen.queryByRole("textbox", { name: /titlePlaceholder/ })).toBeNull();
 	});
 
-	it("renders all 7 section headers when open", () => {
+	it("renders the practical create sections by default", () => {
 		render(<QuickTileCreate />);
-		// §1 Identity, §2 Plan, §3 Time, §4 Windows, §6 Advanced, §7 Meta
-		// §5 Recurring only appears when kind=RECURRING
 		const headers = screen.getAllByTestId("section-header");
 		const titles = headers.map((h) => h.textContent ?? "");
-		expect(titles.some((t) => t.includes("§1 Identity"))).toBe(true);
-		expect(titles.some((t) => t.includes("§2 Plan"))).toBe(true);
-		expect(titles.some((t) => t.includes("§3 Time"))).toBe(true);
-		expect(titles.some((t) => t.includes("§4 Windows"))).toBe(true);
-		expect(titles.some((t) => t.includes("§6 Advanced"))).toBe(true);
-		expect(titles.some((t) => t.includes("§7 Meta"))).toBe(true);
+		expect(titles.some((t) => t.includes("Identity"))).toBe(true);
+		expect(titles.some((t) => t.includes("Time"))).toBe(true);
+		expect(titles.some((t) => t.includes("Meta"))).toBe(true);
+		expect(titles.some((t) => t.includes("§2 Plan"))).toBe(false);
+		expect(titles.some((t) => t.includes("§6 Advanced"))).toBe(false);
 	});
 });
 
@@ -177,13 +178,13 @@ describe("QuickTileCreate — §2 Plan", () => {
 		expect("isLabelOnly" in state.meta).toBe(false);
 	});
 
-	it("completion / references / planning / metrics / decisions are stub rows with counts", () => {
+	it("does not expose incomplete plan stub rows in the create flow", () => {
 		render(<QuickTileCreate />);
-		expect(screen.getByText(/completionTitle/)).toBeTruthy();
-		expect(screen.getByText(/referencesTitle/)).toBeTruthy();
-		expect(screen.getByText(/planningTitle/)).toBeTruthy();
-		expect(screen.getByText(/metricsTitle/)).toBeTruthy();
-		expect(screen.getByText(/decisionsTitle/)).toBeTruthy();
+		expect(screen.queryByText(/completionTitle/)).toBeNull();
+		expect(screen.queryByText(/referencesTitle/)).toBeNull();
+		expect(screen.queryByText(/planningTitle/)).toBeNull();
+		expect(screen.queryByText(/metricsTitle/)).toBeNull();
+		expect(screen.queryByText(/decisionsTitle/)).toBeNull();
 	});
 });
 
@@ -214,6 +215,7 @@ describe("QuickTileCreate — §3 Time", () => {
 describe("QuickTileCreate — §4 Windows", () => {
 	it("renders an Add button when the section is empty", () => {
 		render(<QuickTileCreate />);
+		openDetails();
 		expect(
 			screen.getByRole("button", { name: /windowsAdd/ }),
 		).toBeTruthy();
@@ -222,6 +224,7 @@ describe("QuickTileCreate — §4 Windows", () => {
 
 	it("Add creates a CALENDAR Window with empty bounds", () => {
 		render(<QuickTileCreate />);
+		openDetails();
 		fireEvent.click(screen.getByRole("button", { name: /windowsAdd/ }));
 		const state = useQuickCreateStore.getState();
 		expect(state.windows.length).toBe(1);
@@ -248,6 +251,7 @@ describe("QuickTileCreate — §4 Windows", () => {
 			],
 		});
 		render(<QuickTileCreate />);
+		openDetails();
 		// Switch to LABEL_SPAN (1)
 		fireEvent.click(screen.getByRole("radio", { name: /windowKindLabelSpan/ }));
 		const state = useQuickCreateStore.getState();
@@ -284,6 +288,7 @@ describe("QuickTileCreate — §4 Windows", () => {
 			],
 		});
 		render(<QuickTileCreate />);
+		openDetails();
 		expect(screen.getByTestId("window-row-0")).toBeTruthy();
 		expect(screen.getByTestId("window-row-1")).toBeTruthy();
 		fireEvent.click(screen.getAllByLabelText(/windowRemove/)[0]!);
@@ -304,9 +309,10 @@ describe("QuickTileCreate — §5 Recurring (conditional)", () => {
 	it("appears when kind is switched to RECURRING", () => {
 		render(<QuickTileCreate />);
 		fireEvent.click(screen.getByRole("radio", { name: /kindRecurring/ }));
+		openDetails();
 		const headers = screen.getAllByTestId("section-header");
 		const titles = headers.map((h) => h.textContent ?? "");
-		expect(titles.some((t) => t.includes("§5 Recurring"))).toBe(true);
+		expect(titles.some((t) => t.includes("Recurring"))).toBe(true);
 		// active start/end date inputs visible
 		expect(screen.getByLabelText(/recurringActiveStart/)).toBeTruthy();
 		expect(screen.getByLabelText(/recurringActiveEnd/)).toBeTruthy();
@@ -320,6 +326,7 @@ describe("QuickTileCreate — §5 Recurring (conditional)", () => {
 			},
 		});
 		render(<QuickTileCreate />);
+		openDetails();
 		expect(
 			screen.getByRole("button", { name: /frameRulesAdd/ }),
 		).toBeTruthy();
@@ -334,6 +341,7 @@ describe("QuickTileCreate — §5 Recurring (conditional)", () => {
 			},
 		});
 		render(<QuickTileCreate />);
+		openDetails();
 		fireEvent.click(screen.getByRole("button", { name: /frameRulesAdd/ }));
 		const state = useQuickCreateStore.getState();
 		expect(state.recurring.frameRules.length).toBe(1);
@@ -367,6 +375,7 @@ describe("QuickTileCreate — §5 Recurring (conditional)", () => {
 			},
 		});
 		render(<QuickTileCreate />);
+		openDetails();
 		// Switch to Calendar
 		fireEvent.click(
 			screen.getByRole("radio", { name: /frameRuleKindCalendar/ }),
@@ -417,6 +426,7 @@ describe("QuickTileCreate — §5 Recurring (conditional)", () => {
 			},
 		});
 		render(<QuickTileCreate />);
+		openDetails();
 		expect(screen.getByTestId("frame-rule-row-0")).toBeTruthy();
 		expect(screen.getByTestId("frame-rule-row-1")).toBeTruthy();
 		fireEvent.click(screen.getAllByLabelText(/frameRuleRemove/)[0]!);

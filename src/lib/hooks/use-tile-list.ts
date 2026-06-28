@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 
 /**
@@ -9,6 +9,7 @@ import { getCoreClient } from "@/lib/api/endpoints";
  */
 export interface TileListView {
   id: string;
+  plan_id: string | null;
   title: string;
   lifecycle: "ready" | "started" | "done" | "closed";
   next_action: string | null;
@@ -66,48 +67,41 @@ export function useTileList(args: UseTileListArgs = {}) {
     error: null,
   });
   const mountedRef = useRef(true);
+  const requestIdRef = useRef(0);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    let cancelled = false;
-
-    async function fetch_() {
-      const res = await getCoreClient().call<{
-        tiles: TileListView[];
-        next_actionable_tile_id?: string | null;
-        next_actionable_start_at?: string | null;
-      }>("getTiles", {
-        query: {
-          view_mode: args.viewMode,
-          lifecycle: args.lifecycle,
-          limit: args.limit,
-          search: args.search,
-          exclude_future: args.excludeFuture,
-          range: args.range,
-          granularity: args.granularity,
-        },
-      });
-      if (cancelled || !mountedRef.current) return;
-      if (res.ok) {
-        setState({
-          tiles: res.data.tiles ?? [],
-          nextActionableTileId: res.data.next_actionable_tile_id ?? null,
-          nextActionableStartAt: res.data.next_actionable_start_at ?? null,
-          loading: false,
-          error: null,
-        });
-      } else {
-        setState((prev) => ({ ...prev, loading: false, error: new Error(res.error.message) }));
-      }
+  const fetchTiles = useCallback(async (showLoading: boolean) => {
+    const requestId = ++requestIdRef.current;
+    if (showLoading) {
+      setState((prev) => ({ ...prev, loading: true, error: null }));
     }
 
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    void fetch_();
-
-    return () => {
-      cancelled = true;
-      mountedRef.current = false;
-    };
+    const res = await getCoreClient().call<{
+      tiles: TileListView[];
+      next_actionable_tile_id?: string | null;
+      next_actionable_start_at?: string | null;
+    }>("getTiles", {
+      query: {
+        view_mode: args.viewMode,
+        lifecycle: args.lifecycle,
+        limit: args.limit,
+        search: args.search,
+        exclude_future: args.excludeFuture,
+        range: args.range,
+        granularity: args.granularity,
+      },
+    });
+    if (!mountedRef.current || requestId !== requestIdRef.current) return;
+    if (res.ok) {
+      setState({
+        tiles: res.data.tiles ?? [],
+        nextActionableTileId: res.data.next_actionable_tile_id ?? null,
+        nextActionableStartAt: res.data.next_actionable_start_at ?? null,
+        loading: false,
+        error: null,
+      });
+    } else {
+      setState((prev) => ({ ...prev, loading: false, error: new Error(res.error.message) }));
+    }
   }, [
     args.search,
     args.range,
@@ -118,5 +112,22 @@ export function useTileList(args: UseTileListArgs = {}) {
     args.excludeFuture,
   ]);
 
-  return state;
+  useEffect(() => {
+    mountedRef.current = true;
+    void fetchTiles(true);
+
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [fetchTiles]);
+
+  useEffect(() => {
+    const refresh = () => {
+      void fetchTiles(false);
+    };
+    window.addEventListener("tastile:tiles-changed", refresh);
+    return () => window.removeEventListener("tastile:tiles-changed", refresh);
+  }, [fetchTiles]);
+
+  return { ...state, refresh: () => fetchTiles(false) };
 }

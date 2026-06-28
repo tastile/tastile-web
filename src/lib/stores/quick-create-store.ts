@@ -114,14 +114,14 @@ function defaultIdentity(): TileIdentitySlice {
     // hydration). The UI also regenerates it on demand via the
     // "再生成" button.
     externalId: null,
-    visual: { color: "", icon: "" },
+    visual: { color: "#3b82f6", icon: "check-circle" },
   };
 }
 
 function defaultTime(): TimeSlice {
   return {
     span: { start: "", end: "" },
-    durationMinMax: { minMs: null, maxMs: null },
+    durationMinMax: { minMs: 25 * 60_000, maxMs: 25 * 60_000 },
   };
 }
 

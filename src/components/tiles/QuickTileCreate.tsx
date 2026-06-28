@@ -206,6 +206,7 @@ export function QuickTileCreate() {
   const { t, locale } = useTranslation();
 
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -327,6 +328,7 @@ export function QuickTileCreate() {
       }
       reset();
       setScheduleOpen(false);
+      setDetailsOpen(false);
       setMemoExpanded(false);
       close();
     } catch (err) {
@@ -375,7 +377,7 @@ export function QuickTileCreate() {
         <div className="flex-1 overflow-y-auto">
           <FormPanel>
             {/* §1 Identity */}
-            <SectionHeader icon={Type} title="§1 Identity (Tile.Base)" />
+            <SectionHeader icon={Type} title="Identity" />
             <RowInput
               icon={FileText}
               placeholder={t("quickCreate.titlePlaceholder")}
@@ -472,47 +474,8 @@ export function QuickTileCreate() {
 
             <FormDivider />
 
-            {/* §2 Plan */}
-            <SectionHeader icon={ListChecks} title="§2 Plan" />
-            <StubRow
-              icon={ListChecks}
-              title={t("quickCreate.completionTitle")}
-              count={plan.completion.root.children.length}
-              badge="Phase B"
-            />
-            <StubRow
-              icon={ListChecks}
-              title={t("quickCreate.referencesTitle")}
-              count={plan.references.length}
-              badge="Phase B"
-            />
-            <StubRow
-              icon={ListChecks}
-              title={t("quickCreate.planningTitle")}
-              count={
-                plan.planning.placementRules.length +
-                plan.planning.nestingRules.length +
-                plan.planning.flows.length
-              }
-              badge="Phase C"
-            />
-            <StubRow
-              icon={ListChecks}
-              title={t("quickCreate.metricsTitle")}
-              count={plan.metrics.length}
-              badge="Phase C"
-            />
-            <StubRow
-              icon={ListChecks}
-              title={t("quickCreate.decisionsTitle")}
-              count={plan.decisions.length}
-              badge="Phase D"
-            />
-
-            <FormDivider />
-
             {/* §3 Time */}
-            <SectionHeader icon={Clock} title="§3 Time (Span + Range)" />
+            <SectionHeader icon={Clock} title="Time" />
             <ScheduleRow
               scheduleOpen={scheduleOpen}
               onToggleSchedule={() => setScheduleOpen((prev) => !prev)}
@@ -543,86 +506,78 @@ export function QuickTileCreate() {
 
             <FormDivider />
 
-            {/* §4 Windows */}
-            <SectionHeader icon={Calendar} title="§4 Windows" />
-            {windows.map((w, i) => (
-              <WindowRow
-                key={w.id}
-                window={w}
-                index={i}
-                onUpdate={updateWindow}
-                onRemove={removeWindow}
-                t={t}
-                locale={locale}
-              />
-            ))}
             <button
               type="button"
-              onClick={addWindow}
-              aria-label={t("quickCreate.windowsAdd")}
-              className="ml-[32px] flex items-center gap-1.5 text-sm text-primary hover:underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              onClick={() => setDetailsOpen((prev) => !prev)}
+              aria-expanded={detailsOpen}
+              className="flex w-full items-center justify-between rounded-md px-1 py-2 text-sm font-medium text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
-              <Plus size={14} aria-hidden="true" />
-              <span>{t("quickCreate.windowsAdd")}</span>
+              <span>{locale === "ja" ? "詳細設定" : "Details"}</span>
+              <ChevronDown
+                size={16}
+                aria-hidden="true"
+                className={cn("transition-transform", detailsOpen && "rotate-180")}
+              />
             </button>
 
-            {/* §5 Recurring — only when kind=RECURRING */}
-            {kindIsRecurring ? (
+            {detailsOpen ? (
               <>
-                <FormDivider />
-                <SectionHeader icon={Repeat} title="§5 Recurring" />
-                <RecurringLifeEditor
-                  activeStart={recurring.life.active.startDate}
-                  activeEnd={recurring.life.active.endDate}
-                  state={recurring.life.state}
-                  onActiveStartChange={(value) =>
-                    setField("recurring.life.active.startDate", value)
-                  }
-                  onActiveEndChange={(value) =>
-                    setField("recurring.life.active.endDate", value)
-                  }
-                  onStateChange={(value) =>
-                    setField("recurring.life.state", value)
-                  }
-                  t={t}
-                />
-                <FrameRulesList
-                  rules={recurring.frameRules}
-                  onAdd={addFrameRule}
-                  onRemove={removeFrameRule}
-                  onUpdate={updateFrameRule}
-                  t={t}
-                />
-                <StubRow
-                  icon={Repeat}
-                  title={t("quickCreate.recurringRulesTitle")}
-                  count={recurring.rules.length}
-                  badge="Phase D"
-                />
+                <SectionHeader icon={Calendar} title="Windows" />
+                {windows.map((w, i) => (
+                  <WindowRow
+                    key={w.id}
+                    window={w}
+                    index={i}
+                    onUpdate={updateWindow}
+                    onRemove={removeWindow}
+                    t={t}
+                    locale={locale}
+                  />
+                ))}
+                <button
+                  type="button"
+                  onClick={addWindow}
+                  aria-label={t("quickCreate.windowsAdd")}
+                  className="ml-[32px] flex items-center gap-1.5 text-sm text-primary hover:underline focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Plus size={14} aria-hidden="true" />
+                  <span>{t("quickCreate.windowsAdd")}</span>
+                </button>
+
+                {kindIsRecurring ? (
+                  <>
+                    <SectionHeader icon={Repeat} title="Recurring" />
+                    <RecurringLifeEditor
+                      activeStart={recurring.life.active.startDate}
+                      activeEnd={recurring.life.active.endDate}
+                      state={recurring.life.state}
+                      onActiveStartChange={(value) =>
+                        setField("recurring.life.active.startDate", value)
+                      }
+                      onActiveEndChange={(value) =>
+                        setField("recurring.life.active.endDate", value)
+                      }
+                      onStateChange={(value) =>
+                        setField("recurring.life.state", value)
+                      }
+                      t={t}
+                    />
+                    <FrameRulesList
+                      rules={recurring.frameRules}
+                      onAdd={addFrameRule}
+                      onRemove={removeFrameRule}
+                      onUpdate={updateFrameRule}
+                      t={t}
+                    />
+                  </>
+                ) : null}
               </>
             ) : null}
 
             <FormDivider />
 
-            {/* §6 Advanced */}
-            <SectionHeader icon={Settings2} title="§6 Advanced (ChangeSet)" />
-            <StubRow
-              icon={Settings2}
-              title={t("quickCreate.changeSetsTitle")}
-              count={advanced.changeSets.length}
-              badge="Phase D"
-            />
-            <StubRow
-              icon={Settings2}
-              title={t("quickCreate.changeRulesTitle")}
-              count={advanced.rules.length}
-              badge="Phase D"
-            />
-
-            <FormDivider />
-
             {/* §7 Meta */}
-            <SectionHeader icon={FolderOpen} title="§7 Meta" />
+            <SectionHeader icon={FolderOpen} title="Meta" />
             <RowInput
               icon={FolderOpen}
               placeholder={t("quickCreate.projectPlaceholder")}
