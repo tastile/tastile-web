@@ -1,18 +1,15 @@
 "use client";
-import { useRouter, usePathname } from "next/navigation";
 import { useLocaleStore } from "@/lib/stores/locale-store";
 
 export function LanguageToggle() {
   const { locale, setLocale } = useLocaleStore();
-  const router = useRouter();
-  const pathname = usePathname();
 
   const toggle = () => {
     const next = locale === "ja" ? "en" : "ja";
     setLocale(next);
     const params = new URLSearchParams(window.location.search);
     params.set("lang", next);
-    router.push(`${pathname}?${params.toString()}`);
+    window.location.search = params.toString();
   };
 
   return (
