@@ -54,13 +54,23 @@ export interface MetaSlice {
 
 // ---------- store ----------
 
+export interface OpenOptions {
+  defaultStart?: string;
+  defaultEnd?: string;
+}
+
 export interface QuickCreateState {
   // Backwards-compat open/close surface retained so existing consumers
   // (QuickTileCreate, layout clients, ActivityBar, etc.) keep compiling.
   // The new model is live editing: panel renders unconditionally and the
   // store is the single source of truth for all field state.
   isOpen: boolean;
+  // `open` is the no-args entry — passes the raw event through to React's
+  // MouseEventHandler when wired to `onClick` directly.
   open: () => void;
+  // `openAt` accepts optional time defaults (used by calendar empty-cell
+  // clicks that want to pre-fill the TimeSlice).
+  openAt: (opts?: OpenOptions) => void;
   close: () => void;
   toggle: () => void;
 
@@ -121,7 +131,7 @@ function defaultIdentity(): TileIdentitySlice {
 function defaultTime(): TimeSlice {
   return {
     span: { start: "", end: "" },
-    durationMinMax: { minMs: 25 * 60_000, maxMs: 25 * 60_000 },
+    durationMinMax: { minMs: 60 * 60_000, maxMs: 60 * 60_000 },
   };
 }
 
@@ -213,6 +223,22 @@ function setDeepPath(
 export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   ...buildDefaultQuickCreateState(),
   open: () => set({ isOpen: true }),
+  openAt: (opts) =>
+    set((state) => {
+      // If the caller passes defaultStart/defaultEnd (e.g. clicking an
+      // empty calendar cell), pre-fill the TimeSlice so the form opens
+      // on those values. Without defaults, leave the existing span alone
+      // — users may be continuing to fill out an in-progress draft.
+      const next: Partial<typeof state.time.span> = {};
+      if (opts?.defaultStart) next.start = opts.defaultStart;
+      if (opts?.defaultEnd) next.end = opts.defaultEnd;
+      return next.start || next.end
+        ? {
+            isOpen: true,
+            time: { ...state.time, span: { ...state.time.span, ...next } },
+          }
+        : { isOpen: true };
+    }),
   close: () => set({ isOpen: false }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
