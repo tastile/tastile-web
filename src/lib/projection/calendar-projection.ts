@@ -1,27 +1,18 @@
-import type {
-  CalendarBlockView,
-  CalendarProjectionView,
-} from "@/lib/hooks/use-calendar-projection";
+import type { TimelineProjection } from "./timeline-to-blocks";
 
-export function blocksForDate(
-  projection: CalendarProjectionView,
-  dateStr: string,
-): CalendarBlockView[] {
-  return projection.blocks.filter((b) => {
-    const start = b.start_at.slice(0, 10);
-    const end = b.end_at.slice(0, 10);
-    return start <= dateStr && end >= dateStr;
+export function blocksForDate(p: TimelineProjection, dateStr: string) {
+  return p.blocks.filter((b) => {
+    const s = b.start_at.slice(0, 10);
+    const e = b.end_at.slice(0, 10);
+    return s <= dateStr && e >= dateStr;
   });
 }
 
-export function allDayBlocksFor(
-  projection: CalendarProjectionView,
-  dateStr: string,
-): CalendarBlockView[] {
-  return projection.all_day_spans.filter((b) => {
-    const start = b.start_at.slice(0, 10);
-    const end = b.end_at.slice(0, 10);
-    return start <= dateStr && end >= dateStr;
+export function allDayBlocksFor(p: TimelineProjection, dateStr: string) {
+  return p.allDaySpans.filter((b) => {
+    const s = b.start_at.slice(0, 10);
+    const e = b.end_at.slice(0, 10);
+    return s <= dateStr && e >= dateStr;
   });
 }
 
