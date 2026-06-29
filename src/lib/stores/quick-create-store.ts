@@ -99,6 +99,15 @@ export interface QuickCreateState {
   loadFromEvent: (
     event: import("@/lib/domain/calendar").CalendarEvent,
   ) => void;
+  /**
+   * Hydrate the form from an existing recurring Tile so the panel can be
+   * reused for editing. Fetches the full v7 Tile via getTile(id), maps
+   * the relevant condition layers (core → identity, temporal → time,
+   * annotation → meta, objective.recurrence → recurrence) into the
+   * store, then sets mode="edit" with editingId=tileId. Returns the
+   * fetched Tile on success or null on error.
+   */
+  loadFromRecurringTile: (tileId: string) => Promise<unknown | null>;
   reset: () => void;
 }
 
@@ -372,4 +381,57 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         memo: event.memo ?? "",
       },
     })),
+  loadFromRecurringTile: async (tileId: string) => {
+    try {
+      // Lazy import: endpoints.ts is on the consumer side of this store
+      // (it imports submit.ts → quick-create-store), so a top-level
+      // static import here would create a circular dependency.
+      const { getCoreClient } = await import("@/lib/api/endpoints");
+      const res = await getCoreClient().call<unknown>("getTile", {
+        pathParams: { id: tileId },
+      });
+      if (!res.ok || !res.data) return null;
+      const tile = res.data as {
+        core?: { title?: string; description?: string | null };
+        temporal?: { releaseAt?: string | null; dueAt?: string | null };
+        objective?: { recurrence?: unknown };
+        annotation?: {
+          labels?: string[];
+          project?: string | null;
+          memo?: string | null;
+        };
+      };
+      set({
+        mode: "edit" as const,
+        editingId: tileId,
+        isOpen: true,
+        identity: {
+          kind: TileKind.RECURRING,
+          title: tile.core?.title ?? "",
+          description: tile.core?.description ?? null,
+          externalId: null,
+          visual: { color: "#5e6ad2", icon: "Repeat" },
+        },
+        time: {
+          span: {
+            start: tile.temporal?.releaseAt ?? "",
+            end: tile.temporal?.dueAt ?? "",
+          },
+          durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
+        },
+        meta: {
+          project: tile.annotation?.project ?? null,
+          tags: Array.isArray(tile.annotation?.labels)
+            ? (tile.annotation!.labels as string[])
+            : [],
+          memo: tile.annotation?.memo ?? "",
+        },
+        recurrence:
+          (tile.objective?.recurrence as never) ?? null,
+      });
+      return tile;
+    } catch {
+      return null;
+    }
+  },
 }));
