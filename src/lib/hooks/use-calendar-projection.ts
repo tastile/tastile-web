@@ -29,7 +29,16 @@ export function resolveWindowForView(
   anchor: string,
   tzOffsetMinutes: number,
 ): { start: string; end: string } {
-  const [y, m, d] = anchor.split("-").map(Number);
+  const parts = anchor.split("-").map(Number);
+  const [y, m, d] = parts;
+  if (
+    parts.length !== 3 ||
+    !Number.isInteger(y) || y < 1970 || y > 9999 ||
+    !Number.isInteger(m) || m < 1 || m > 12 ||
+    !Number.isInteger(d) || d < 1 || d > 31
+  ) {
+    throw new RangeError(`resolveWindowForView: invalid anchor '${anchor}' (expected YYYY-MM-DD)`);
+  }
   const startUtcMs = Date.UTC(y, m - 1, d, 0, 0, 0) - tzOffsetMinutes * 60_000;
   const start = new Date(startUtcMs);
   const end = new Date(startUtcMs);
@@ -53,10 +62,17 @@ export function useCalendarProjection(args: UseCalendarProjectionArgs) {
           : args.view === "week" ? "getCalendarWeek"
           : args.view === "month" ? "getCalendarMonth"
           : "getCalendarYear";
-      const { start, end } = resolveWindowForView(args.view, args.anchor, args.tzOffset);
-      const res = await getCoreClient().call<TimelineItem[]>(endpointKey, {
-        query: { start, end },
-      });
+      let res;
+      try {
+        const { start, end } = resolveWindowForView(args.view, args.anchor, args.tzOffset);
+        res = await getCoreClient().call<TimelineItem[]>(endpointKey, {
+          query: { start, end },
+        });
+      } catch (err) {
+        if (cancelled) return;
+        setState({ projection: null, loading: false, error: err instanceof Error ? err : new Error(String(err)) });
+        return;
+      }
       if (cancelled) return;
       setState(
         res.ok
