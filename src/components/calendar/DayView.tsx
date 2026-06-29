@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useCalendarProjection } from "@/lib/hooks/use-calendar-projection";
 import {
-  EVENT_COLOR_HEX,
-  type CalendarEvent,
-} from "@/lib/domain/calendar";
+  allDayBlocksFor,
+  blocksForDate,
+  hourSlotsForDay,
+} from "@/lib/projection/calendar-projection";
 import { getCurrentTimeIndicatorPosition } from "@/lib/projection/current-time-indicator";
-import { cn } from "@/lib/utils/cn";
+import { useReferenceOverlayStore } from "@/lib/stores/reference-overlay-store";
+import { useTileEditStore } from "@/lib/stores/tile-edit-store";
 import { AllDayLane } from "./AllDayLane";
 import { TileBlock } from "./TileBlock";
 
@@ -15,34 +18,10 @@ function formatHour(slot: Date): string {
   return `${h.toString().padStart(2, "0")}:00`;
 }
 
-function hourSlotsForDay(dateStr: string, tzOffsetMinutes: number): Date[] {
-  const parts = dateStr.split("-").map(Number);
-  const [y, m, d] = parts;
-  const slots: Date[] = [];
-  for (let h = 0; h < 24; h += 1) {
-    const utcMs = Date.UTC(y, m - 1, d, h, 0, 0) - tzOffsetMinutes * 60_000;
-    slots.push(new Date(utcMs));
-  }
-  return slots;
-}
-
-export interface DayViewProps {
-  anchor: string;
-  tzOffset: number;
-  events: CalendarEvent[];
-  loading: boolean;
-  onCreateAtTime: (startIso: string, endIso: string) => void;
-  onEventClick: (event: CalendarEvent) => void;
-}
-
-export function DayView({
-  anchor,
-  tzOffset,
-  events,
-  loading,
-  onCreateAtTime,
-  onEventClick,
-}: DayViewProps) {
+export function DayView({ anchor, tzOffset }: { anchor: string; tzOffset: number }) {
+  const { projection, loading, error } = useCalendarProjection({ view: "day", anchor, tzOffset });
+  const enabled = useReferenceOverlayStore((s) => s.enabled);
+  const openEdit = useTileEditStore((s) => s.openEdit);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
@@ -50,7 +29,16 @@ export function DayView({
     return () => window.clearInterval(id);
   }, []);
 
-  if (loading) {
+  if (error) {
+    return (
+      <div className="flex h-64 flex-col items-center justify-center gap-2 text-xs">
+        <span className="text-danger">Failed to load calendar</span>
+        <span className="text-foreground-subtle">{error.message}</span>
+      </div>
+    );
+  }
+
+  if (loading || !projection) {
     return (
       <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">
         Loading…
@@ -59,78 +47,54 @@ export function DayView({
   }
 
   const slots = hourSlotsForDay(anchor, tzOffset);
-  const dayBlocks = events.filter((e) => {
-    const s = e.start.slice(0, 10);
-    const ed = e.end.slice(0, 10);
-    return s <= anchor && ed >= anchor && !e.allDay;
-  });
-  const allDay = events.filter((e) => e.allDay);
+  const dayBlocks = blocksForDate(projection, anchor);
+  const allDay = allDayBlocksFor(projection, anchor);
+
   const currentTime = getCurrentTimeIndicatorPosition(nowMs, tzOffset);
   const nowSlotIndex = Math.floor(currentTime.minutesFromMidnight / 60);
   const nowTopOffset = currentTime.minutesFromMidnight % 60;
 
-  function handleHourClick(hour: number) {
-    const y = Number(anchor.slice(0, 4));
-    const m = Number(anchor.slice(5, 7));
-    const d = Number(anchor.slice(8, 10));
-    const start = new Date(Date.UTC(y, m - 1, d, hour, 0, 0)).toISOString();
-    const end = new Date(Date.UTC(y, m - 1, d, hour + 1, 0, 0)).toISOString();
-    onCreateAtTime(start, end);
-  }
-
   return (
     <div className="relative">
-      <AllDayLane events={allDay} onClick={onEventClick} />
+      <AllDayLane spans={allDay} />
       <div className="flex pb-16">
         <div className="flex w-16 shrink-0 flex-col border-r border-border bg-surface-0">
-          {slots.map((slot) => (
-            <button
-              key={slot.getUTCHours()}
-              type="button"
-              data-testid={`day-hour-${slot.getUTCHours().toString().padStart(2, "0")}`}
-              onClick={() => handleHourClick(slot.getUTCHours())}
-              className="flex h-[90px] items-start justify-end pr-2 pt-1 text-[10px] text-foreground-subtle hover:bg-surface-1"
-            >
-              {formatHour(slot)}
-            </button>
+          {slots.map((slot, i) => (
+            <div key={i} className="flex h-[90px] items-start justify-end pr-2 pt-1">
+              <span className="text-[10px] text-foreground-subtle">{formatHour(slot)}</span>
+            </div>
           ))}
         </div>
-        <div className="relative flex-1 bg-[length:100%_90px]">
-          {slots.map((slot) => {
+        <div className="relative flex-1 bg-[url('/grid.svg')] bg-[length:100%_90px]">
+          {slots.map((slot, i) => {
             const h = slot.getUTCHours();
-            const blocks = dayBlocks.filter(
-              (b) => new Date(b.start).getUTCHours() === h,
-            );
+            const blocks = dayBlocks.filter((b) => new Date(b.start_at).getUTCHours() === h);
             return (
-              <div
-                key={h}
-                className="relative h-[90px] border-b border-border/50 bg-surface-0"
-              >
-                {blocks.map((block) => {
-                  const start = new Date(block.start);
-                  const end = new Date(block.end);
-                  const minutes = Math.max(
-                    5,
-                    Math.round((end.getTime() - start.getTime()) / 60_000),
-                  );
+              <div key={i} className="relative h-[90px] border-b border-border/50 bg-surface-0">
+                {blocks.map((block, bi) => {
+                  const isDimmed = enabled.length > 0 && !enabled.includes(block.source_label);
                   return (
                     <div
-                      key={block.id}
+                      key={`${block.tile_id}-${bi}`}
                       className="absolute left-1 right-1"
-                      style={{ top: `${start.getUTCMinutes() * 1.5}px` }}
+                      style={{
+                        top: `${new Date(block.start_at).getUTCMinutes() * 1.5}px`,
+                      }}
                     >
                       <TileBlock
-                        block={{
-                          tile_id: block.id,
-                          title: block.title,
-                          start_at: block.start,
-                          end_at: block.end,
-                          source_label: block.title,
-                          editable: true,
-                          color: EVENT_COLOR_HEX[block.color] ?? EVENT_COLOR_HEX.blue,
-                          minutes,
+                        block={block}
+                        onClick={() => {
+                          if (block.tile_id) {
+                            openEdit(
+                              block.tile_id,
+                              block.title,
+                              block.start_at,
+                              block.end_at || "",
+                              [],
+                            );
+                          }
                         }}
-                        onClick={() => onEventClick(block)}
+                        dimmed={isDimmed}
                       />
                     </div>
                   );
