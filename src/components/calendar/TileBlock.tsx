@@ -24,7 +24,10 @@ export function TileBlock({
     <button
       type="button"
       data-tile-block="true"
-      onClick={onClick}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
       disabled={notEditable}
       style={{
         // @ts-expect-error CSS custom property
