@@ -62,4 +62,38 @@ describe("timelineResponseToBlocks", () => {
     expect(r.blocks[0]?.is_active).toBe(false);
     expect(r.blocks[0]?.ownership).toBe("synthetic");
   });
+
+  it("marks closed state (ResolutionState.CLOSED) as is_active false with tastile_owned ownership", () => {
+    const r = timelineResponseToBlocks([item({
+      resolution: {
+        state: ResolutionState.CLOSED,
+        resolved_at: "2026-06-29T07:00:00Z",
+        resolution_hash: "h",
+        violations: [],
+      },
+    })]);
+    expect(r.blocks[0]?.is_active).toBe(false);
+    expect(r.blocks[0]?.ownership).toBe("tastile_owned");
+  });
+
+  it("places multi-day executable (EXECUTABLE) placement in allDaySpans with work semantic_role", () => {
+    const r = timelineResponseToBlocks([
+      item({
+        role: PlanRole.EXECUTABLE,
+        span: { start: "2026-06-29T20:00:00Z", end: "2026-06-30T02:00:00Z" },
+      }),
+    ]);
+    expect(r.allDaySpans).toHaveLength(1);
+    expect(r.blocks).toHaveLength(0);
+    expect(r.allDaySpans[0]?.semantic_role).toBe("work");
+  });
+
+  it("marks EXECUTABLE blocks editable and LABEL spans not editable", () => {
+    const r = timelineResponseToBlocks([
+      item({ placement_id: "exec", role: PlanRole.EXECUTABLE }),
+      item({ placement_id: "label", role: PlanRole.LABEL }),
+    ]);
+    expect(r.blocks[0]?.editable).toBe(true);
+    expect(r.allDaySpans[0]?.editable).toBe(false);
+  });
 });
