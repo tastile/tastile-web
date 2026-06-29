@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-06-30 timeline relative display modes
+
+- Add 3 display modes to Day/Week/Month views: `scope` (default, current behavior), `around` (centered on today), `future` (from today onward). List view unchanged.
+- Mode choice persisted in URL as `?mode=around` / `?mode=future`. Default `scope` omitted from URL.
+- Prev/Next buttons disabled in `around` and `future`; only "Today" remains. Title shows "Today · ±Nh/d" (around) or "From now · Nh/d" (future).
+- MiniCalendar side-panel highlight uses today alone for `around`, today → range-end for `future`.
+- Full design in `docs/plans/2026-06-30-timeline-relative-display.md`.
+
 ## 2026-04-06 linear redesign baseline
 
 - Adopt `docs/awesome-design-md/design-md/linear.app/DESIGN.md` as the visual source of truth for tastile-web
@@ -93,3 +101,10 @@
 - Raise web minimum block height to `44px` and add readable `px/min` amplification capped at `1.35x` base to preserve short-block legibility without over-zooming
 - Preserve daemon duration hints in timeline snapshots (`durationMin`) so Execute timeline rendering can reflect real planned duration even when `endAt` is absent
 - When daemon timeline omits `duration_min`, derive `durationMin` from tile objective (`targetWorkMin` / `targetRestMin`) before rendering so all blocks do not collapse to uniform fallback height
+
+## 2026-06-30 — Recurring tile edit unification discovery
+
+- `updateTileCommand` (`src/lib/api/v1/tile-commands.ts:98-118`) does NOT accept `recurrence`: `UpdateTileCommandOptions` (lines 33-39) only carries `title`, `description`, `color`, `icon`, `externalId`, and payload builder only sets those plus `tile_id`. Task 3 must extend this builder to include `recurrence` before the unified-edit refactor can proceed.
+- `getTile` endpoint (`src/lib/api/endpoints.ts:317-324`): `GET /read/tile/{id}` returning the full v7 `Tile` from `src/lib/domain/tile.ts` (which has `recurrence: RecurrenceModel | null` at line 71).
+- `updateTile` endpoint (`src/lib/api/endpoints.ts:203-210`): `POST /commands/tile/update` with v7 envelope shape.
+- Data path is viable once `updateTileCommand` is extended: `getTile` provides the snapshot, QuickTileCreate's unified edit form collects changes, and the extended `updateTileCommand` carries `recurrence` through to the backend.
