@@ -42,6 +42,7 @@ import {
 const E2E_DEV_TOKEN = "e2e-bypass-token";
 import {
   buildCreateTileCommand,
+  buildUpdateTileCommand,
   substituteTileId,
   type BuiltEnvelope,
   type QuickCreateSnapshot,
@@ -212,6 +213,7 @@ function formStateToSnapshot(
       memo: formState.memoInput.trim(),
       isLabelOnly: formState.isLabelOnly,
     },
+    recurrence: null,
   };
 }
 
@@ -285,6 +287,10 @@ function storeToSnapshot(state: QuickCreateState): QuickCreateSnapshot {
       memo: meta.memo,
       isLabelOnly,
     },
+    // CREATE_TILE ignores this; UPDATE_TILE carries it on the wire so
+    // QuickTileCreate can round-trip a recurring tile without losing
+    // the recurrence model. `null` for placement / label tiles.
+    recurrence: state.recurrence,
   };
 }
 
@@ -353,6 +359,66 @@ export async function submitCreateTile(
     }
   }
 
+  return { ok: true, tileId };
+}
+
+export interface SubmitUpdateTileOptions {
+  client: ApiClient;
+  tileId: string;
+}
+
+/**
+ * Submit a full UPDATE_TILE to the v1 API.
+ *
+ * Mirrors `submitCreateTile`: read the live store, build the envelope
+ * via `buildUpdateTileCommand`, POST it. Unlike CREATE, UPDATE returns
+ * just `{ ok }` — there is no new tileId to substitute into follow-up
+ * envelopes, and the recurring-tile engine on the server replaces the
+ * aggregate in place.
+ *
+ * The payload carries the full envelope (all 7 condition layers plus
+ * `recurrence` and meta) so QuickTileCreate can round-trip a recurring
+ * tile without losing the recurrence model. `expectedRevision` is
+ * intentionally `null` for now — see the comment on
+ * `buildUpdateTileCommand` for the future revision-tracking pass.
+ */
+export async function submitUpdateTile(
+  options: SubmitUpdateTileOptions,
+): Promise<SubmitV1Result> {
+  const { client, tileId } = options;
+  if (!tileId) {
+    return {
+      ok: false,
+      error: {
+        kind: 0, // VALIDATION — empty tileId is a client bug.
+        message: "tileId is required",
+        currentRevision: null,
+        violations: [],
+      },
+    };
+  }
+
+  const snapshot = storeToSnapshot(useQuickCreateStore.getState());
+  const idempotencyKey = uuidv7();
+  const envelopes = buildUpdateTileCommand(tileId, snapshot, idempotencyKey);
+
+  const first = envelopes[0];
+  if (!first) {
+    return {
+      ok: false,
+      error: {
+        kind: 7, // RETRYABLE — empty envelope list is a client bug.
+        message: "no envelopes to submit",
+        currentRevision: null,
+        violations: [],
+      },
+    };
+  }
+
+  const result = await postCommand(client, first.path, first.request);
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
   return { ok: true, tileId };
 }
 
