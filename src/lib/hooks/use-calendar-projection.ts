@@ -1,35 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
+import type { TimelineItem } from "@/lib/domain/v1/timeline-item";
+import {
+  timelineResponseToBlocks,
+  type CalendarBlockView,
+  type TimelineProjection,
+} from "@/lib/projection/timeline-to-blocks";
 
+export type { CalendarBlockView } from "@/lib/projection/timeline-to-blocks";
 export type CalendarView = "day" | "week" | "month" | "year";
-
-export interface CalendarBlockView {
-  tile_id: string | null;
-  title: string;
-  kind: "work" | "break" | "label" | "scheduled";
-  is_active: boolean;
-  start_at: string;
-  end_at: string;
-  semantic_role: "work" | "break" | "label";
-  all_day: boolean;
-  ownership: "tastile_owned" | "remote_owned" | "synthetic";
-  editable: boolean;
-  source_label: string;
-}
-
-export interface CalendarProjectionView {
-  view: CalendarView;
-  range_start: string;
-  range_end: string;
-  grid_start: string;
-  grid_end: string;
-  blocks: CalendarBlockView[];
-  all_day_spans: CalendarBlockView[];
-  overflow_counters: Record<string, number>;
-  month_summaries: unknown[];
-}
 
 export interface UseCalendarProjectionArgs {
   view: CalendarView;
@@ -38,47 +19,55 @@ export interface UseCalendarProjectionArgs {
 }
 
 interface HookState {
-  projection: CalendarProjectionView | null;
+  projection: TimelineProjection | null;
   loading: boolean;
   error: Error | null;
 }
 
+export function resolveWindowForView(
+  view: CalendarView,
+  anchor: string,
+  tzOffsetMinutes: number,
+): { start: string; end: string } {
+  const [y, m, d] = anchor.split("-").map(Number);
+  const startUtcMs = Date.UTC(y, m - 1, d, 0, 0, 0) - tzOffsetMinutes * 60_000;
+  const start = new Date(startUtcMs);
+  const end = new Date(startUtcMs);
+  switch (view) {
+    case "day": end.setUTCDate(end.getUTCDate() + 1); break;
+    case "week": end.setUTCDate(end.getUTCDate() + 7); break;
+    case "month": end.setUTCMonth(end.getUTCMonth() + 1); break;
+    case "year": end.setUTCFullYear(end.getUTCFullYear() + 1); break;
+  }
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
 export function useCalendarProjection(args: UseCalendarProjectionArgs) {
   const [state, setState] = useState<HookState>({ projection: null, loading: true, error: null });
-  const mountedRef = useRef(true);
 
   useEffect(() => {
-    mountedRef.current = true;
     let cancelled = false;
-
     async function fetch_() {
-      const anchorRfc = args.anchor.includes("T") ? args.anchor : `${args.anchor}T00:00:00Z`;
-      const res = await getCoreClient().call<CalendarProjectionView>(
-        args.view === "day"
-          ? "getCalendarDay"
-          : args.view === "week"
-            ? "getCalendarWeek"
-            : args.view === "month"
-              ? "getCalendarMonth"
-              : "getCalendarYear",
-        { query: { anchor: anchorRfc, tz_offset: args.tzOffset * 60 } },
-      );
-      if (cancelled || !mountedRef.current) return;
+      const endpointKey =
+        args.view === "day" ? "getCalendarDay"
+          : args.view === "week" ? "getCalendarWeek"
+          : args.view === "month" ? "getCalendarMonth"
+          : "getCalendarYear";
+      const { start, end } = resolveWindowForView(args.view, args.anchor, args.tzOffset);
+      const res = await getCoreClient().call<TimelineItem[]>(endpointKey, {
+        query: { start, end },
+      });
+      if (cancelled) return;
       setState(
         res.ok
-          ? { projection: res.data, loading: false, error: null }
+          ? { projection: timelineResponseToBlocks(res.data), loading: false, error: null }
           : { projection: null, loading: false, error: new Error(res.error.message) },
       );
     }
-
     setState((prev) => ({ ...prev, loading: true, error: null }));
     void fetch_();
-
-    return () => {
-      cancelled = true;
-      mountedRef.current = false;
-    };
-  }, [args.anchor.includes, args.tzOffset, args.view, args.anchor]);
+    return () => { cancelled = true; };
+  }, [args.view, args.anchor, args.tzOffset]);
 
   return state;
 }
