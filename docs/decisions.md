@@ -108,3 +108,4 @@
 - `getTile` endpoint (`src/lib/api/endpoints.ts:317-324`): `GET /read/tile/{id}` returning the full v7 `Tile` from `src/lib/domain/tile.ts` (which has `recurrence: RecurrenceModel | null` at line 71).
 - `updateTile` endpoint (`src/lib/api/endpoints.ts:203-210`): `POST /commands/tile/update` with v7 envelope shape.
 - Data path is viable once `updateTileCommand` is extended: `getTile` provides the snapshot, QuickTileCreate's unified edit form collects changes, and the extended `updateTileCommand` carries `recurrence` through to the backend.
+- Path divergence note: `endpoints.ts:203-210` advertises `POST /commands/tile/update` but `updateTileCommand` in `tile-commands.ts:115` actually calls `POST /v1/tiles/{tileId}/update`. Task 3 must confirm which path the backend serves before extending the builder.
