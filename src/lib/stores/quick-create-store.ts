@@ -17,8 +17,10 @@ import {
 } from "@/lib/domain/v1/constants";
 import type { FrameRule } from "@/lib/domain/v1/tile";
 import type { Plan } from "@/lib/domain/v1/tile";
+import type { TimeRequirement, TaskDefinition } from "@/lib/domain/v1/completion";
 import type { Window, Span, DurationRange } from "@/lib/domain/v1/window";
 import type { Recurring } from "@/lib/domain/v1/tile";
+import type { RecurrenceModel } from "@/lib/domain/tile";
 
 // ---------- slice types ----------
 
@@ -54,13 +56,25 @@ export interface MetaSlice {
 
 // ---------- store ----------
 
+export type QuickCreateMode = "create" | "edit";
+
 export interface QuickCreateState {
   // Backwards-compat open/close surface retained so existing consumers
   // (QuickTileCreate, layout clients, ActivityBar, etc.) keep compiling.
   // The new model is live editing: panel renders unconditionally and the
   // store is the single source of truth for all field state.
   isOpen: boolean;
+  mode: QuickCreateMode;
+  editingId: string | null;
+  /**
+   * When opening create, the panel uses this as the initial allDay
+   * toggle. The slot-click flow sets this to false so the user sees
+   * the slot time; the sidebar + button leaves it at true.
+   */
+  initialAllDay: boolean;
   open: () => void;
+  openCreate: (options?: { initialAllDay?: boolean }) => void;
+  openEdit: (eventId: string) => void;
   close: () => void;
   toggle: () => void;
 
@@ -69,20 +83,81 @@ export interface QuickCreateState {
   time: TimeSlice;
   windows: Window[];
   recurring: RecurringSlice;
+  recurrence: RecurrenceModel | null;
   advanced: AdvancedSlice;
   meta: MetaSlice;
 
   setField: (path: string, value: unknown) => void;
+  /**
+   * Hydrate the form from an existing CalendarEvent so the panel can
+   * be reused for editing. Title, description, span, duration, project,
+   * tags, and memo are mapped. Fields that are immutable post-create
+   * (kind, plan.role, windows, frame rules) are intentionally not
+   * mutated — the editor surfaces in `QuickTileCreate` hide those
+   * rows in edit mode.
+   */
+  loadFromEvent: (
+    event: import("@/lib/domain/calendar").CalendarEvent,
+  ) => void;
   reset: () => void;
 }
 
 // ---------- defaults ----------
 
 function defaultConditionRoot(): Plan["completion"]["root"] {
-  // A placeholder ALL node. Editors replace this; tests only assert the
-  // shape exists, not its semantic correctness.
-  // TODO: validate before submit — `kind` should be a ConditionKindValue.
-  return { kind: 0, children: [], term: null };
+  // Root is an ALL aggregator. We pre-seed it with a single TaskTerm pointing at
+  // the default task seeded by defaultPlan(), so the completion condition is
+  // non-vacuous on first paint. Editors can replace or extend this freely.
+  const defaultTaskId = "task_default";
+  return {
+    kind: 0, // ALL
+    children: [
+      {
+        kind: 3, // TERM
+        children: [],
+        term: { kind: "task", value: { taskId: defaultTaskId, state: 2 } }, // COMPLETED
+      },
+    ],
+    term: null,
+  };
+}
+
+function defaultTimeRequirement(): TimeRequirement {
+  // Sensible work-window default: placement's total active duration
+  // must fall within 30–90 minutes. Editors expose scope / aggregate
+  // for finer control; the id is regenerated on every fresh form
+  // mount so persisted forms never collide.
+  return {
+    id: "tr_" + Math.random().toString(36).slice(2, 9),
+    observation: {
+      scope: 1, // PLACEMENT
+      source: 0, // ACTIVE_SEGMENT
+      aggregate: 0, // TOTAL_DURATION
+      quantifier: 0, // ALL
+    },
+    required: {
+      minMs: 30 * 60_000,
+      maxMs: 90 * 60_000,
+    },
+    preferred: null,
+  };
+}
+
+function defaultTask(): TaskDefinition {
+  // Stable id so the TaskTerm seeded in defaultConditionRoot() references the
+  // first task by name. Subsequent added tasks still use random ids.
+  const id = "task_default";
+  return {
+    id,
+    content: { title: "作業完了", note: null },
+    show: null,
+    complete: {
+      kind: 3, // TERM
+      children: [],
+      term: { kind: "task", value: { taskId: id, state: 2 } }, // COMPLETED
+    },
+    order: [],
+  };
 }
 
 function defaultPlan(): Plan {
@@ -91,8 +166,8 @@ function defaultPlan(): Plan {
     references: [],
     completion: {
       root: defaultConditionRoot(),
-      timeRequirements: [],
-      tasks: [],
+      timeRequirements: [defaultTimeRequirement()],
+      tasks: [defaultTask()],
     },
     planning: {
       placementRules: [],
@@ -119,9 +194,22 @@ function defaultIdentity(): TileIdentitySlice {
 }
 
 function defaultTime(): TimeSlice {
+  // Default to the next half-hour, 30 minutes long. Round up to the
+  // nearest 30-minute boundary so the start always aligns with what
+  // a Google Calendar picker would suggest.
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const rounded = new Date(now);
+  if (minutes < 30) {
+    rounded.setMinutes(30, 0, 0);
+  } else {
+    rounded.setHours(now.getHours() + 1, 0, 0, 0);
+  }
+  const start = rounded.toISOString();
+  const end = new Date(rounded.getTime() + 30 * 60_000).toISOString();
   return {
-    span: { start: "", end: "" },
-    durationMinMax: { minMs: 25 * 60_000, maxMs: 25 * 60_000 },
+    span: { start, end },
+    durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
   };
 }
 
@@ -142,6 +230,25 @@ function defaultRecurring(): RecurringSlice {
   };
 }
 
+function defaultRecurrenceModel(): RecurrenceModel {
+  return {
+    generator: {
+      kind: "time_based",
+      step_min: 1440,
+      anchor_epoch_min: null,
+    },
+    window: {
+      weekday_mask: 0b0011111, // Mon–Fri
+      start_offset_min: 9 * 60,
+      end_offset_min: 18 * 60,
+      exclusions: [],
+    },
+    selector: {
+      expression: null,
+    },
+  };
+}
+
 function defaultAdvanced(): AdvancedSlice {
   return { changeSets: [], rules: [] };
 }
@@ -157,21 +264,29 @@ function defaultMeta(): MetaSlice {
 export function buildDefaultQuickCreateState(): Pick<
   QuickCreateState,
   | "isOpen"
+  | "mode"
+  | "editingId"
+  | "initialAllDay"
   | "identity"
   | "plan"
   | "time"
   | "windows"
   | "recurring"
+  | "recurrence"
   | "advanced"
   | "meta"
 > {
   return {
     isOpen: false,
+    mode: "create",
+    editingId: null,
+    initialAllDay: true,
     identity: defaultIdentity(),
     plan: defaultPlan(),
     time: defaultTime(),
     windows: [],
     recurring: defaultRecurring(),
+    recurrence: null,
     advanced: defaultAdvanced(),
     meta: defaultMeta(),
   };
@@ -213,7 +328,16 @@ function setDeepPath(
 export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   ...buildDefaultQuickCreateState(),
   open: () => set({ isOpen: true }),
-  close: () => set({ isOpen: false }),
+  openCreate: (options?: { initialAllDay?: boolean }) =>
+    set((state) => ({
+      isOpen: true,
+      mode: "create" as const,
+      editingId: null,
+      initialAllDay: options?.initialAllDay ?? state.initialAllDay,
+    })),
+  openEdit: (eventId: string) =>
+    set({ isOpen: true, mode: "edit", editingId: eventId }),
+  close: () => set({ isOpen: false, mode: "create", editingId: null }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
   reset: () =>
@@ -222,5 +346,30 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       // Preserve the current open/close state — `reset` only clears form
       // fields, it does not dismiss the panel.
       isOpen: state.isOpen,
+    })),
+  loadFromEvent: (event) =>
+    set(() => ({
+      identity: {
+        kind: TileKind.PLACEMENT,
+        title: event.title,
+        description: event.description ?? null,
+        externalId: null,
+        visual: {
+          color: event.color,
+          icon: event.icon ?? "check-circle",
+        },
+      },
+      time: {
+        span: { start: event.start, end: event.end },
+        durationMinMax: {
+          minMs: 30 * 60_000,
+          maxMs: 30 * 60_000,
+        },
+      },
+      meta: {
+        project: event.project ?? null,
+        tags: Array.isArray(event.tags) ? event.tags : [],
+        memo: event.memo ?? "",
+      },
     })),
 }));
