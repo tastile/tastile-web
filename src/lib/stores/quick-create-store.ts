@@ -392,14 +392,10 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       });
       if (!res.ok || !res.data) return null;
       const tile = res.data as {
-        core?: { title?: string; description?: string | null };
+        core?: { title?: string };
         temporal?: { releaseAt?: string | null; dueAt?: string | null };
+        annotation?: { labels?: string[] };
         objective?: { recurrence?: unknown };
-        annotation?: {
-          labels?: string[];
-          project?: string | null;
-          memo?: string | null;
-        };
       };
       set({
         mode: "edit" as const,
@@ -408,7 +404,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         identity: {
           kind: TileKind.RECURRING,
           title: tile.core?.title ?? "",
-          description: tile.core?.description ?? null,
+          description: null,
           externalId: null,
           visual: { color: "#5e6ad2", icon: "Repeat" },
         },
@@ -420,11 +416,9 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
           durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
         },
         meta: {
-          project: tile.annotation?.project ?? null,
-          tags: Array.isArray(tile.annotation?.labels)
-            ? (tile.annotation!.labels as string[])
-            : [],
-          memo: tile.annotation?.memo ?? "",
+          project: null,
+          tags: [],
+          memo: "",
         },
         recurrence:
           (tile.objective?.recurrence as never) ?? null,
