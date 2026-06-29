@@ -1,7 +1,15 @@
 /**
- * v1 TimelineItem — tastile-core/v1/domain/src/read.rs §TimelineItem
+ * v1 TimelineItem — tastile-core/crates/v1/domain/src/read.rs §TimelineItem
  * Response of /v1/calendar/{day,week,month} (which forwards to /v1/timeline).
  */
+
+import type {
+  ApiErrorKindValue,
+  PlacementSourceValue,
+  PlanRoleValue,
+  ResolutionStateValue,
+} from "./constants";
+import type { Span } from "./window";
 
 export interface TimelineItemContent {
   title: string;
@@ -15,19 +23,24 @@ export interface TimelineItemVisual {
 
 export interface TimelineItemInside {
   parent: string;
+  /** ScopeKind numeric value (no exported alias in constants.ts as of v1). */
   scope: number;
 }
 
 export interface TimelineItemSource {
-  kind: number;
+  kind: PlacementSourceValue;
   detail: string | null;
 }
 
 export interface TimelineItemResolution {
-  state: number;
+  state: ResolutionStateValue;
   resolved_at: string;
   resolution_hash: string;
-  violations: Array<{ kind: number; message: string; current_revision: number | null }>;
+  violations: Array<{
+    kind: ApiErrorKindValue;
+    message: string;
+    current_revision: number | null;
+  }>;
 }
 
 export interface TimelineItem {
@@ -35,8 +48,8 @@ export interface TimelineItem {
   revision: number;
   content: TimelineItemContent;
   visual: TimelineItemVisual;
-  role: number;
-  span: { start: string; end: string };
+  role: PlanRoleValue;
+  span: Span;
   inside: TimelineItemInside | null;
   source: TimelineItemSource;
   resolution: TimelineItemResolution;
