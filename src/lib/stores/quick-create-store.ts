@@ -9,18 +9,11 @@
  */
 
 import { create } from "zustand";
-import {
-  PlanRole,
-  RecurringState,
-  TileKind,
-  type TileKindValue,
-} from "@/lib/domain/v1/constants";
-import type { FrameRule } from "@/lib/domain/v1/tile";
-import type { Plan } from "@/lib/domain/v1/tile";
-import type { TimeRequirement, TaskDefinition } from "@/lib/domain/v1/completion";
-import type { Window, Span, DurationRange } from "@/lib/domain/v1/window";
-import type { Recurring } from "@/lib/domain/v1/tile";
 import type { RecurrenceModel } from "@/lib/domain/tile";
+import type { TaskDefinition, TimeRequirement } from "@/lib/domain/v1/completion";
+import { PlanRole, RecurringState, TileKind, type TileKindValue } from "@/lib/domain/v1/constants";
+import type { FrameRule, Plan, Recurring } from "@/lib/domain/v1/tile";
+import type { DurationRange, Span, Window } from "@/lib/domain/v1/window";
 
 // ---------- slice types ----------
 
@@ -67,6 +60,14 @@ export interface QuickCreateState {
   mode: QuickCreateMode;
   editingId: string | null;
   /**
+   * Non-null when `loadFromRecurringTile` could not fetch the tile (e.g.
+   * the recurring-tile GET returned 404 because the template does not
+   * exist in the backing store). The panel surfaces this as a banner so
+   * the user sees why hydration failed instead of a silent no-op. Cleared
+   * on the next successful load.
+   */
+  loadError: string | null;
+  /**
    * When opening create, the panel uses this as the initial allDay
    * toggle. The slot-click flow sets this to false so the user sees
    * the slot time; the sidebar + button leaves it at true.
@@ -96,16 +97,17 @@ export interface QuickCreateState {
    * mutated — the editor surfaces in `QuickTileCreate` hide those
    * rows in edit mode.
    */
-  loadFromEvent: (
-    event: import("@/lib/domain/calendar").CalendarEvent,
-  ) => void;
+  loadFromEvent: (event: import("@/lib/domain/calendar").CalendarEvent) => void;
   /**
    * Hydrate the form from an existing recurring Tile so the panel can be
-   * reused for editing. Fetches the full v7 Tile via getTile(id), maps
-   * the relevant condition layers (core → identity, temporal → time,
-   * annotation → meta, objective.recurrence → recurrence) into the
-   * store, then sets mode="edit" with editingId=tileId. Returns the
-   * fetched Tile on success or null on error.
+   * reused for editing. Opens the panel FIRST (mode="edit", editingId=tileId,
+   * loadError=null) so the user always sees visual feedback, then fetches
+   * the full v7 Tile via getTile(id) and maps the relevant condition
+   * layers (core → identity, temporal → time, annotation → meta,
+   * objective.recurrence → recurrence) into the store. On fetch failure,
+   * surfaces a `loadError` string the panel renders as a banner so the
+   * user understands why the form is empty; edits still save against the
+   * given tileId. Returns the fetched Tile on success or null on error.
    */
   loadFromRecurringTile: (tileId: string) => Promise<unknown | null>;
   reset: () => void;
@@ -137,7 +139,7 @@ function defaultTimeRequirement(): TimeRequirement {
   // for finer control; the id is regenerated on every fresh form
   // mount so persisted forms never collide.
   return {
-    id: "tr_" + Math.random().toString(36).slice(2, 9),
+    id: `tr_${Math.random().toString(36).slice(2, 9)}`,
     observation: {
       scope: 1, // PLACEMENT
       source: 0, // ACTIVE_SEGMENT
@@ -275,6 +277,7 @@ export function buildDefaultQuickCreateState(): Pick<
   | "isOpen"
   | "mode"
   | "editingId"
+  | "loadError"
   | "initialAllDay"
   | "identity"
   | "plan"
@@ -289,6 +292,7 @@ export function buildDefaultQuickCreateState(): Pick<
     isOpen: false,
     mode: "create",
     editingId: null,
+    loadError: null,
     initialAllDay: true,
     identity: defaultIdentity(),
     plan: defaultPlan(),
@@ -303,11 +307,7 @@ export function buildDefaultQuickCreateState(): Pick<
 
 // ---------- path setter ----------
 
-function setDeepPath(
-  state: QuickCreateState,
-  path: string,
-  value: unknown,
-): QuickCreateState {
+function setDeepPath(state: QuickCreateState, path: string, value: unknown): QuickCreateState {
   // NOTE: if an intermediate segment is null/undefined or a non-object
   // primitive, the original state is returned unchanged. Callers must
   // initialise nested objects explicitly (e.g. via `buildDefaultQuickCreateState`)
@@ -324,11 +324,7 @@ function setDeepPath(
   if (next === null || next === undefined || typeof next !== "object") {
     return state;
   }
-  const updated = setDeepPath(
-    next as QuickCreateState,
-    rest.join("."),
-    value,
-  );
+  const updated = setDeepPath(next as QuickCreateState, rest.join("."), value);
   return { ...state, [head]: updated } as QuickCreateState;
 }
 
@@ -344,9 +340,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       editingId: null,
       initialAllDay: options?.initialAllDay ?? state.initialAllDay,
     })),
-  openEdit: (eventId: string) =>
-    set({ isOpen: true, mode: "edit", editingId: eventId }),
-  close: () => set({ isOpen: false, mode: "create", editingId: null }),
+  openEdit: (eventId: string) => set({ isOpen: true, mode: "edit", editingId: eventId }),
+  close: () => set({ isOpen: false, mode: "create", editingId: null, loadError: null }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
   reset: () =>
@@ -382,6 +377,29 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       },
     })),
   loadFromRecurringTile: async (tileId: string) => {
+    // Open the panel FIRST so the user always sees visual feedback —
+    // a silent no-op when the GET fails is the worst UX for an edit
+    // flow. We seed defaults, mark the panel as editing this id, and
+    // clear any previous load error. The actual hydration happens after.
+    set({
+      isOpen: true,
+      mode: "edit" as const,
+      editingId: tileId,
+      loadError: null,
+      // Default to RECURRING (kind=0) so the radio lands on 定期 even
+      // when the GET fails — the caller knows this is a recurring tile
+      // (ScheduleMain passes template.id from the Recurring Templates
+      // list). Hydration below may override based on the fetched tile.
+      identity: {
+        ...defaultIdentity(),
+        kind: TileKind.RECURRING,
+        visual: { color: "#5e6ad2", icon: "Repeat" },
+      },
+      time: defaultTime(),
+      meta: defaultMeta(),
+      recurrence: null,
+    });
+
     try {
       // Lazy import: endpoints.ts is on the consumer side of this store
       // (it imports submit.ts → quick-create-store), so a top-level
@@ -390,45 +408,59 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       const res = await getCoreClient().call<unknown>("getTile", {
         pathParams: { id: tileId },
       });
-      if (!res.ok || !res.data) return null;
+      if (!res.ok || !res.data) {
+        const detail = !res.ok
+          ? `status=${res.error.kind} ${res.error.message ?? ""}`.trim()
+          : "empty response";
+        set({
+          loadError: `Failed to load recurring tile ${tileId} (${detail}). The panel is open in edit mode with default values; edits will be saved to ${tileId}.`,
+        });
+        return null;
+      }
+      // The v1 endpoint `GET /v1/tiles/{id}` returns a flat `TileView`
+      // (v1-domain read view). Fields are snake_case in JSON. The labels
+      // / span / recurrence edits are NOT supported yet because the v1
+      // backend does not expose an aggregate-detail endpoint; populate
+      // only what the read API actually returns.
       const tile = res.data as {
-        core?: { title?: string };
-        temporal?: { releaseAt?: string | null; dueAt?: string | null };
-        annotation?: { labels?: string[] };
-        objective?: { recurrence?: unknown };
+        id: string;
+        kind: 0 | 1 | 2;
+        title: string;
+        description: string | null;
+        color: string | null;
+        icon: string | null;
+        external_id: string | null;
+        plan_id: string | null;
       };
+      const incomingKind =
+        tile.kind === TileKind.PLACEMENT || tile.kind === TileKind.EXECUTION
+          ? tile.kind
+          : TileKind.RECURRING;
       set({
-        mode: "edit" as const,
-        editingId: tileId,
-        isOpen: true,
         identity: {
-          kind: TileKind.RECURRING,
-          title: tile.core?.title ?? "",
-          description: null,
-          externalId: null,
-          visual: { color: "#5e6ad2", icon: "Repeat" },
-        },
-        time: {
-          span: {
-            start: tile.temporal?.releaseAt ?? "",
-            end: tile.temporal?.dueAt ?? "",
+          kind: incomingKind,
+          title: tile.title ?? "",
+          description: tile.description ?? null,
+          externalId: tile.external_id ?? null,
+          visual: {
+            color: tile.color ?? "#5e6ad2",
+            icon: tile.icon ?? (incomingKind === TileKind.RECURRING ? "Repeat" : "check-circle"),
           },
-          durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
         },
+        // TODO: restore when /v1/tiles/{id}/detail returns labels + recurrence.
         meta: {
-          // TODO: v7 Annotation does not currently expose `project` / `memo`
-          // fields; project and memo remain cleared until those layers exist.
           project: null,
-          tags: Array.isArray(tile.annotation?.labels)
-            ? (tile.annotation!.labels as string[])
-            : [],
+          tags: [],
           memo: "",
         },
-        recurrence:
-          (tile.objective?.recurrence as RecurrenceModel | undefined) ?? null,
+        recurrence: null,
       });
       return tile;
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      set({
+        loadError: `Failed to load recurring tile ${tileId}: ${msg}. The panel is open in edit mode with default values.`,
+      });
       return null;
     }
   },

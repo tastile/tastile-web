@@ -648,7 +648,13 @@ function toV1CorePath(path: string): string {
     "/prompts/current": "/v1/prompts/pending",
     "/debug/events": "/v1/debug/events",
   };
-  return map[path] ?? path;
+  if (map[path]) return map[path];
+  // Parameterized paths: {id} is a UUIDv7, preserved verbatim.
+  return path
+    .replace(/^\/read\/tile\/([^/]+)$/, "/v1/tiles/$1")
+    .replace(/^\/read\/tile\/([^/]+)\/editable$/, "/v1/tiles/$1/editable")
+    .replace(/^\/read\/placement\/([^/]+)$/, "/v1/placements/$1")
+    .replace(/^\/read\/execution\/([^/]+)$/, "/v1/executions/$1");
 }
 
 // ============================================================================

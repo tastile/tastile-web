@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server";
+﻿import { type NextRequest, NextResponse } from "next/server";
 import {
   ensureDefaultApiTokenForUser,
   getApiTokenFromRequest,
@@ -7,10 +7,7 @@ import {
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
-const CLOUD_API_BASE =
-  process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-  process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-  "https://api.tastile.app";
+const CLOUD_API_BASE = "http://localhost:31400";
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
 
 interface MockTile {
@@ -255,9 +252,7 @@ function handleMockRequest(
     const view = calendarMatch[1] as "day" | "week" | "month" | "year";
     const anchor = searchParams.get("anchor") ?? new Date().toISOString().slice(0, 10);
     const parsedAnchor = new Date(anchor);
-    const anchorDate = Number.isNaN(parsedAnchor.getTime())
-      ? new Date()
-      : parsedAnchor;
+    const anchorDate = Number.isNaN(parsedAnchor.getTime()) ? new Date() : parsedAnchor;
     const dayStart = new Date(anchorDate);
     const dayEnd = new Date(anchorDate);
     dayEnd.setDate(dayEnd.getDate() + 1);
@@ -313,7 +308,10 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   if (isE2EBypass) {
     const body =
       request.method !== "GET" && request.method !== "HEAD"
-        ? await request.clone().json().catch(() => ({}))
+        ? await request
+            .clone()
+            .json()
+            .catch(() => ({}))
         : null;
     const mockResponse = handleMockRequest(
       path,
@@ -389,9 +387,7 @@ function isLocalCoreUrl(value: string): boolean {
   try {
     const url = new URL(value);
     return (
-      url.hostname === "127.0.0.1" ||
-      url.hostname === "localhost" ||
-      url.hostname === "10.0.2.2"
+      url.hostname === "127.0.0.1" || url.hostname === "localhost" || url.hostname === "10.0.2.2"
     );
   } catch {
     return false;
@@ -419,7 +415,15 @@ export function toV1Path(path: string): string {
     "auth/tile-quota": "v1/quota/tiles",
     "debug/events": "v1/debug/events",
   };
-  return map[path] ?? path.replace(/^v1\//, "v1/");
+  if (map[path]) return map[path];
+  // Parameterized paths: {id} is a UUIDv7, preserved verbatim.
+  const rewritten = path
+    .replace(/^read\/tile\/([^/]+)$/, "v1/tiles/$1")
+    .replace(/^read\/tile\/([^/]+)\/editable$/, "v1/tiles/$1/editable")
+    .replace(/^read\/placement\/([^/]+)$/, "v1/placements/$1")
+    .replace(/^read\/execution\/([^/]+)$/, "v1/executions/$1");
+  if (rewritten !== path) return rewritten;
+  return path.replace(/^v1\//, "v1/");
 }
 
 function localCompatResponse(path: string, method: string): NextResponse | null {
@@ -517,9 +521,7 @@ function toRecurringTemplateList(parsed: unknown) {
       };
     });
 
-  const hasBreak = templates.some((template) =>
-    /休憩|break/i.test(template.title),
-  );
+  const hasBreak = templates.some((template) => /休憩|break/i.test(template.title));
   return hasBreak ? templates : [defaultBreakRecurringTemplate(), ...templates];
 }
 
