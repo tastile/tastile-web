@@ -472,6 +472,40 @@ export const ENDPOINTS = {
     auth: true,
     keywords: ["debug", "events", "log"],
   } as EndpointMeta,
+
+  // Access (projects/workspaces)
+  listMyWorkspaces: {
+    method: "GET",
+    path: "/access/subjects?kind=1",
+    tag: "Read",
+    summary: "List workspaces owned by me",
+    auth: true,
+    keywords: ["workspaces", "projects", "list"],
+  } as EndpointMeta,
+  createWorkspace: {
+    method: "POST",
+    path: "/access/workspaces",
+    tag: "Commands",
+    summary: "Create workspace",
+    auth: true,
+    keywords: ["workspace", "project", "create"],
+  } as EndpointMeta,
+  updateSubject: {
+    method: "PATCH",
+    path: "/access/subjects/{id}",
+    tag: "Commands",
+    summary: "Update workspace",
+    auth: true,
+    keywords: ["workspace", "update"],
+  } as EndpointMeta,
+  deleteSubject: {
+    method: "DELETE",
+    path: "/access/subjects/{id}",
+    tag: "Commands",
+    summary: "Delete workspace",
+    auth: true,
+    keywords: ["workspace", "delete"],
+  } as EndpointMeta,
 } as const;
 
 export type EndpointKey = keyof typeof ENDPOINTS;
@@ -647,6 +681,9 @@ function toV1CorePath(path: string): string {
     "/views/pending-prompt": "/v1/prompts/pending",
     "/prompts/current": "/v1/prompts/pending",
     "/debug/events": "/v1/debug/events",
+    "/access/subjects": "/v1/access/subjects",
+    "/access/workspaces": "/v1/access/workspaces",
+    "/access/subjects/{id}": "/v1/access/subjects/{id}",
   };
   if (map[path]) return map[path];
   // Parameterized paths: {id} is a UUIDv7, preserved verbatim.

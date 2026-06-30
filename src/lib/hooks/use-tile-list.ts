@@ -48,6 +48,7 @@ export interface UseTileListArgs {
   excludeFuture?: boolean;
   range?: string;
   granularity?: string;
+  ownerIds?: string[];
 }
 
 interface HookState {
@@ -69,48 +70,53 @@ export function useTileList(args: UseTileListArgs = {}) {
   const mountedRef = useRef(true);
   const requestIdRef = useRef(0);
 
-  const fetchTiles = useCallback(async (showLoading: boolean) => {
-    const requestId = ++requestIdRef.current;
-    if (showLoading) {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
-    }
+  const fetchTiles = useCallback(
+    async (showLoading: boolean) => {
+      const requestId = ++requestIdRef.current;
+      if (showLoading) {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+      }
 
-    const res = await getCoreClient().call<{
-      tiles: TileListView[];
-      next_actionable_tile_id?: string | null;
-      next_actionable_start_at?: string | null;
-    }>("getTiles", {
-      query: {
-        view_mode: args.viewMode,
-        lifecycle: args.lifecycle,
-        limit: args.limit,
-        search: args.search,
-        exclude_future: args.excludeFuture,
-        range: args.range,
-        granularity: args.granularity,
-      },
-    });
-    if (!mountedRef.current || requestId !== requestIdRef.current) return;
-    if (res.ok) {
-      setState({
-        tiles: res.data.tiles ?? [],
-        nextActionableTileId: res.data.next_actionable_tile_id ?? null,
-        nextActionableStartAt: res.data.next_actionable_start_at ?? null,
-        loading: false,
-        error: null,
+      const res = await getCoreClient().call<{
+        tiles: TileListView[];
+        next_actionable_tile_id?: string | null;
+        next_actionable_start_at?: string | null;
+      }>("getTiles", {
+        query: {
+          view_mode: args.viewMode,
+          lifecycle: args.lifecycle,
+          limit: args.limit,
+          search: args.search,
+          exclude_future: args.excludeFuture,
+          range: args.range,
+          granularity: args.granularity,
+          owner_ids: args.ownerIds?.length ? args.ownerIds.join(",") : undefined,
+        },
       });
-    } else {
-      setState((prev) => ({ ...prev, loading: false, error: new Error(res.error.message) }));
-    }
-  }, [
-    args.search,
-    args.range,
-    args.granularity,
-    args.viewMode,
-    args.limit,
-    args.lifecycle,
-    args.excludeFuture,
-  ]);
+      if (!mountedRef.current || requestId !== requestIdRef.current) return;
+      if (res.ok) {
+        setState({
+          tiles: res.data.tiles ?? [],
+          nextActionableTileId: res.data.next_actionable_tile_id ?? null,
+          nextActionableStartAt: res.data.next_actionable_start_at ?? null,
+          loading: false,
+          error: null,
+        });
+      } else {
+        setState((prev) => ({ ...prev, loading: false, error: new Error(res.error.message) }));
+      }
+    },
+    [
+      args.search,
+      args.range,
+      args.granularity,
+      args.viewMode,
+      args.limit,
+      args.lifecycle,
+      args.excludeFuture,
+      args.ownerIds?.join(","),
+    ],
+  );
 
   useEffect(() => {
     mountedRef.current = true;
