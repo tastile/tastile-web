@@ -279,6 +279,8 @@ export function QuickTileCreate() {
   const close = useQuickCreateStore((s) => s.close);
   const reset = useQuickCreateStore((s) => s.reset);
   const setField = useQuickCreateStore((s) => s.setField);
+  const mode = useQuickCreateStore((s) => s.mode);
+  const editingId = useQuickCreateStore((s) => s.editingId);
 
   const identity = useQuickCreateStore((s) => s.identity);
   const plan = useQuickCreateStore((s) => s.plan);
@@ -300,6 +302,7 @@ export function QuickTileCreate() {
   const [tagSuggest, setTagSuggest] = useState(false);
   const projects = useProjectsStore((s) => s.projects);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
+  const [tagInputDraft, setTagInputDraft] = useState("");
   const [memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -556,7 +559,7 @@ export function QuickTileCreate() {
 
   // --- submit ---------------------------------------------------------------
 
-  async function handleCreate() {
+  async function handleSubmit() {
     setError(null);
     setInvalidField(null);
     if (!titleOk) {
@@ -573,11 +576,33 @@ export function QuickTileCreate() {
     const client = makeClient();
     setSubmitting(true);
     try {
-      const result = await submitCreateTile({ client });
-      if (!result.ok) {
-        throw new Error(
-          `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
-        );
+      if (mode === "edit" && editingId) {
+        const patchRes = await fetch(`/api/events/${editingId}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            title: identity.title,
+            description: identity.description,
+            start: time.span.start,
+            end: time.span.end,
+            allDay,
+            color: identity.visual.color,
+            project: meta.project,
+            tags: meta.tags,
+            memo: meta.memo,
+          }),
+        });
+        if (!patchRes.ok) {
+          const body = await patchRes.text();
+          throw new Error(`${t("quickCreate.updateError")} (status:${patchRes.status}) ${body}`);
+        }
+      } else {
+        const result = await submitCreateTile({ client });
+        if (!result.ok) {
+          throw new Error(
+            `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
+          );
+        }
       }
       reset();
       setAllDay(true);
@@ -591,7 +616,29 @@ export function QuickTileCreate() {
     }
   }
 
-  // --- panel container ------------------------------------------------------
+  async function handleDelete() {
+    if (mode !== "edit" || !editingId) return;
+    const confirmed = typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
+    if (!confirmed) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/events/${editingId}`, { method: "DELETE" });
+      if (!res.ok && res.status !== 204) {
+        const body = await res.text();
+        throw new Error(`${t("quickCreate.deleteError")} (status:${res.status}) ${body}`);
+      }
+      reset();
+      setAllDay(true);
+      setActivePanel("base");
+      setMemoExpanded(false);
+      close();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("quickCreate.deleteError"));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   const panelClass = isDesktop
     ? cn(
@@ -1051,7 +1098,7 @@ export function QuickTileCreate() {
                 <ChevronRight size={14} aria-hidden="true" />
               </button>
             </div>
-            <div className="relative">
+            <div className="relative" data-testid="project-suggest-row" data-open={String(projectSuggest)}>
             <FormRow icon={null}>
               <input
                 type="text"
@@ -1106,7 +1153,7 @@ export function QuickTileCreate() {
               </ul>
             ) : null}
           </div>
-            <div className="relative">
+            <div className="relative" data-testid="tag-suggest-row" data-open={String(tagSuggest)}>
             <FormRow icon={null}>
               <div className="flex w-full flex-wrap items-center gap-1.5">
                 {meta.tags.map((tag) => (
@@ -1136,10 +1183,10 @@ export function QuickTileCreate() {
                   placeholder={t("quickCreate.tagsPlaceholder")}
                   aria-label={t("quickCreate.tagsPlaceholder")}
                   className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-                  onFocus={(e) => { e.currentTarget.dataset.draft = e.currentTarget.value; setTagSuggest(true); }}
+                  onFocus={(e) => { setTagInputDraft(e.currentTarget.value); setTagSuggest(true); }}
                   onBlur={() => setTimeout(() => setTagSuggest(false), 150)}
                   onChange={(e) => {
-                    e.currentTarget.dataset.draft = e.target.value;
+                    setTagInputDraft(e.target.value);
                     setTagSuggest(true);
                   }}
                   onKeyDown={(e) => {
@@ -1150,14 +1197,14 @@ export function QuickTileCreate() {
                       if (meta.tags.includes(v)) return;
                       setField("meta.tags", [...meta.tags, v]);
                       e.currentTarget.value = "";
-                      e.currentTarget.dataset.draft = "";
+                      setTagInputDraft("");
                     }
                   }}
                 />
               </div>
             </FormRow>
             {tagSuggest ? (() => {
-              const draft = (tagInputRef.current?.dataset.draft ?? "").trim();
+              const draft = tagInputDraft.trim();
               const known = Array.from(new Set(Object.values(projects).flatMap((p) => p.labelFilter))).filter((t) => !meta.tags.includes(t) && (!draft || t.toLowerCase().includes(draft.toLowerCase())));
               if (known.length === 0 && !draft) {
                 return (
@@ -1167,7 +1214,8 @@ export function QuickTileCreate() {
                         type="button"
                         onMouseDown={(ev) => {
                           ev.preventDefault();
-                          if (tagInputRef.current) { tagInputRef.current.value = ""; tagInputRef.current.dataset.draft = ""; }
+                          if (tagInputRef.current) { tagInputRef.current.value = ""; }
+                          setTagInputDraft("");
                           setTagSuggest(false);
                         }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
@@ -1188,7 +1236,8 @@ export function QuickTileCreate() {
                         onMouseDown={(ev) => {
                           ev.preventDefault();
                           setField("meta.tags", [...meta.tags, tag]);
-                          if (tagInputRef.current) { tagInputRef.current.value = ""; tagInputRef.current.dataset.draft = ""; }
+                          if (tagInputRef.current) { tagInputRef.current.value = ""; }
+                          setTagInputDraft("");
                           setTagSuggest(false);
                         }}
                         className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-2 focus:outline-hidden"
@@ -1205,7 +1254,8 @@ export function QuickTileCreate() {
                         onMouseDown={(ev) => {
                           ev.preventDefault();
                           setField("meta.tags", [...meta.tags, draft]);
-                          if (tagInputRef.current) { tagInputRef.current.value = ""; tagInputRef.current.dataset.draft = ""; }
+                          if (tagInputRef.current) { tagInputRef.current.value = ""; }
+                          setTagInputDraft("");
                           setTagSuggest(false);
                         }}
                         className="flex w-full items-center gap-2 border-t border-border px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
@@ -1234,23 +1284,51 @@ export function QuickTileCreate() {
               )
             }
           />
-          <Button
-            type="button"
-            variant="primary"
-            size="large"
-            block
-            data-testid="quick-create-submit"
-            onClick={handleCreate}
-            loading={submitting}
-            disabled={submitting || !canSubmit || !titleOk || !spanOrderValid}
-            className="h-10"
-          >
-            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
-          </Button>
+          {mode === "edit" ? (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="danger"
+                size="large"
+                data-testid="quick-create-delete"
+                onClick={handleDelete}
+                disabled={submitting}
+                className="h-10"
+                iconLeft={<Trash2 size={14} aria-hidden="true" />}
+              >
+                {t("quickCreate.delete")}
+              </Button>
+              <Button
+                type="button"
+                variant="primary"
+                size="large"
+                block
+                data-testid="quick-create-submit"
+                onClick={handleSubmit}
+                loading={submitting}
+                disabled={submitting || !canSubmit || !titleOk || !spanOrderValid}
+                className="h-10"
+              >
+                {submitting ? t("quickCreate.saving") : t("quickCreate.save")}
+              </Button>
+            </div>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              size="large"
+              block
+              data-testid="quick-create-submit"
+              onClick={handleSubmit}
+              loading={submitting}
+              disabled={submitting || !canSubmit || !titleOk || !spanOrderValid}
+              className="h-10"
+            >
+              {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
+            </Button>
+          )}
           {error ? (
             <p
-              id="quick-create-error"
-              role="alert"
               className="mt-2 text-center text-xs text-danger"
             >
               {error}
@@ -3680,4 +3758,3 @@ function renderGeneratorFields({
 // single import path; tree is currently a placeholder ALL-node, but the
 // constant is referenced from `submit.ts` already and tree placeholders
 // must import from this module to avoid circular imports.
-export { ConditionKind };
