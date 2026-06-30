@@ -70,6 +70,7 @@ export function useTileList(args: UseTileListArgs = {}) {
   const mountedRef = useRef(true);
   const requestIdRef = useRef(0);
 
+  const ownerIdsKey = args.ownerIds?.join(",") ?? "";
   const fetchTiles = useCallback(
     async (showLoading: boolean) => {
       const requestId = ++requestIdRef.current;
@@ -90,7 +91,7 @@ export function useTileList(args: UseTileListArgs = {}) {
           exclude_future: args.excludeFuture,
           range: args.range,
           granularity: args.granularity,
-          owner_ids: args.ownerIds?.length ? args.ownerIds.join(",") : undefined,
+          owner_ids: ownerIdsKey || undefined,
         },
       });
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
@@ -114,7 +115,7 @@ export function useTileList(args: UseTileListArgs = {}) {
       args.limit,
       args.lifecycle,
       args.excludeFuture,
-      args.ownerIds?.join(","),
+      ownerIdsKey,
     ],
   );
 

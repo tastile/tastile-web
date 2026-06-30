@@ -39,25 +39,10 @@ export default function CalendarViewPage() {
 
   // anchor: カレンダーの選択日 (YYYY-MM-DD)
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
-  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set());
-
-  function toggleType(type: string) {
-    setVisibleTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
-  }
 
   // サイドパネルを登録
   useSidePanel(
-    <CalendarSidePanel
-      anchor={anchor}
-      onSelectDate={setAnchor}
-      visibleTypes={visibleTypes}
-      onToggleType={toggleType}
-    />,
+    <CalendarSidePanel anchor={anchor} view={view} onSelectDate={setAnchor} />,
   );
 
   const [data, setData] = useState<Result<unknown> | null>(null);

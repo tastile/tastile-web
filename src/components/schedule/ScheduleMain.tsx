@@ -3,13 +3,11 @@
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { RecurringTileConfigDialog } from "@/components/tiles/dialogs/RecurringTileConfigDialog";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useCandidates, usePlacements } from "@/lib/hooks/use-placements";
 import { useRecurringTemplates } from "@/lib/hooks/use-recurring-templates";
 import { useTileList } from "@/lib/hooks/use-tile-list";
-import { useDialogStore } from "@/lib/stores/dialog-store";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
@@ -17,7 +15,11 @@ import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 export function ScheduleMain() {
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "recurring";
-  const { openRecurringDialog } = useDialogStore();
+  const ownerIdsFromUrl = useMemo(() => {
+    const raw = searchParams.get("projects");
+    if (!raw) return undefined;
+    return raw.split(",").filter(Boolean);
+  }, [searchParams]);
   const recurring = useRecurringTemplates();
   const placementsState = usePlacements();
   const candidatesState = useCandidates();
@@ -27,6 +29,7 @@ export function ScheduleMain() {
     limit: view === "recurring" ? undefined : 500,
     range: "7d",
     granularity: "no_breaks,min_0m",
+    ownerIds: ownerIdsFromUrl,
   });
 
   const filteredTiles = useMemo(() => {
@@ -257,7 +260,6 @@ export function ScheduleMain() {
           </div>
         )}
       </div>
-      <RecurringTileConfigDialog />
     </PageContainer>
   );
 }
