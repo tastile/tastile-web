@@ -10,6 +10,7 @@ import { useCandidates, usePlacements } from "@/lib/hooks/use-placements";
 import { useRecurringTemplates } from "@/lib/hooks/use-recurring-templates";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useDialogStore } from "@/lib/stores/dialog-store";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 
@@ -200,7 +201,10 @@ export function ScheduleMain() {
               <button
                 key={template.id}
                 type="button"
-                onClick={() => openRecurringDialog(template.id)}
+                onClick={() => {
+                  const { loadFromRecurringTile } = useQuickCreateStore.getState();
+                  void loadFromRecurringTile(template.id);
+                }}
                 className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
               >
                 <div className="flex items-center justify-between gap-3">
