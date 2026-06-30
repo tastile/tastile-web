@@ -239,7 +239,7 @@ function defaultRecurring(): RecurringSlice {
   };
 }
 
-function defaultRecurrenceModel(): RecurrenceModel {
+export function defaultRecurrenceModel(): RecurrenceModel {
   return {
     generator: {
       kind: "time_based",
@@ -416,12 +416,16 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
           durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
         },
         meta: {
+          // TODO: v7 Annotation does not currently expose `project` / `memo`
+          // fields; project and memo remain cleared until those layers exist.
           project: null,
-          tags: [],
+          tags: Array.isArray(tile.annotation?.labels)
+            ? (tile.annotation!.labels as string[])
+            : [],
           memo: "",
         },
         recurrence:
-          (tile.objective?.recurrence as never) ?? null,
+          (tile.objective?.recurrence as RecurrenceModel | undefined) ?? null,
       });
       return tile;
     } catch {
