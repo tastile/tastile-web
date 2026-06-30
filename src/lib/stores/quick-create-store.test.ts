@@ -21,8 +21,16 @@ describe("useQuickCreateStore", () => {
       expect(s.plan.planning.placementRules).toEqual([]);
       expect(s.plan.metrics).toEqual([]);
       expect(s.plan.decisions).toEqual([]);
-      expect(s.time.span).toEqual({ start: "", end: "" });
-      expect(s.time.durationMinMax).toEqual({ minMs: 1500000, maxMs: 1500000 });
+      // defaultTime now seeds the next upcoming half-hour, so we
+      // assert on shape rather than specific timestamps.
+      expect(typeof s.time.span.start).toBe("string");
+      expect(s.time.span.start).not.toBe("");
+      expect(typeof s.time.span.end).toBe("string");
+      expect(s.time.span.end).not.toBe("");
+      expect(new Date(s.time.span.end).getTime()).toBeGreaterThan(
+        new Date(s.time.span.start).getTime(),
+      );
+      expect(s.time.durationMinMax).toEqual({ minMs: 1800000, maxMs: 5400000 });
       expect(s.windows).toEqual([]);
       expect(s.recurring.life.active).toEqual({ startDate: "", endDate: "" });
       expect(s.recurring.life.state).toBe(RecurringState.ACTIVE);
@@ -30,7 +38,7 @@ describe("useQuickCreateStore", () => {
       expect(s.recurring.rules).toEqual([]);
       expect(s.advanced.changeSets).toEqual([]);
       expect(s.advanced.rules).toEqual([]);
-      expect(s.meta.project).toBeNull();
+      expect(s.meta.ownerSubjectId).toBeNull();
       expect(s.meta.tags).toEqual([]);
       expect(s.meta.memo).toBe("");
     });

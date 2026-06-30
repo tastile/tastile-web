@@ -25,44 +25,38 @@
 "use client";
 
 import {
-  AlertCircle,
+  type AlertCircle,
+  BarChart3,
+  Bell,
   Calendar,
   CheckCircle2,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock,
+  Coffee,
   FileText,
+  Flame,
   FolderOpen,
+  GitBranch,
+  Heart,
+  Inbox,
+  Layers,
+  Link2,
   ListChecks,
   MessageSquare,
   Palette,
   Plus,
-  RefreshCw,
   Repeat,
+  Settings2,
+  Star,
   Tag,
+  Trash2,
   Type,
   X,
-  Flame,
-  Inbox,
-  Bell,
-  Coffee,
-  Heart,
-  Star,
-  Activity,
-  BookOpen,
-  Link2,
-  Target,
-  Layers,
-  BarChart3,
-  GitBranch,
-  Settings2,
-  Trash2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
-import { Textarea } from "@/components/ui/Input";
 import {
   FormDivider,
   FormPanel,
@@ -72,36 +66,34 @@ import {
   RowSubPanel,
   RowToggle,
 } from "@/components/ui/form";
-import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
+import { Textarea } from "@/components/ui/Input";
+import type { RecurrenceModel } from "@/lib/domain/tile";
+import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 import {
   ConditionKind,
   HolidayKind,
   PlanRole,
-  RecurringState,
-  TileKind,
   type PlanRoleValue,
+  RecurringState,
   type RecurringStateValue,
+  TileKind,
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
-import type { Window } from "@/lib/domain/v1/window";
-import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
+import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type {
-  FrameRule,
-  FrameGenerator,
   CalendarGenerator,
+  FrameGenerator,
+  FrameRule,
   ReferenceGenerator,
   StepGenerator,
   TransformGenerator,
 } from "@/lib/domain/v1/tile";
-import { uuidv7 } from "@/lib/domain/v1/envelope";
-import type { RecurrenceModel } from "@/lib/domain/tile";
-import {
-  defaultRecurrenceModel,
-  useQuickCreateStore,
-} from "@/lib/stores/quick-create-store";
-import { useProjectsStore } from "@/lib/stores/projects-store";
+import type { Window } from "@/lib/domain/v1/window";
+import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
+import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { defaultRecurrenceModel, useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 const PRESET_COLORS = [
@@ -143,7 +135,7 @@ const TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> 
   { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
 ];
 
-const PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
+const _PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
   { value: PlanRole.EXECUTABLE, label: "quickCreate.roleExecutable" },
   { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
 ];
@@ -189,14 +181,53 @@ function isoToLocalDate(iso: string | null | undefined): string {
   return iso.slice(0, 10);
 }
 
-function formatDisplayDate(iso: string | null | undefined, allDay: boolean, locale: "ja" | "en"): string {
+function hexToEventColorName(hex: string | null | undefined): string | null {
+  if (!hex) return null;
+  const m = hex.toLowerCase().match(/^#([0-9a-f]{6})$/);
+  if (!m) return null;
+  const v = m[1];
+  const map: Record<string, string> = {
+    "3b82f6": "blue",
+    "22c55e": "green",
+    a855f7: "purple",
+    f97316: "orange",
+    ec4899: "pink",
+    "06b6d4": "cyan",
+    eab308: "yellow",
+    ef4444: "red",
+    "14b8a6": "teal",
+    "6366f1": "indigo",
+    "84cc16": "lime",
+    "6b7280": "gray",
+  };
+  return map[v] ?? null;
+}
+
+function formatDisplayDate(
+  iso: string | null | undefined,
+  allDay: boolean,
+  locale: "ja" | "en",
+): string {
   if (!iso) return locale === "ja" ? "未設定" : "Not set";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return locale === "ja" ? "未設定" : "Not set";
 
   const weekdaysJa = ["日", "月", "火", "水", "木", "金", "土"];
   const weekdaysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthsEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthsEn = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   const month = date.getMonth() + 1;
   const day = date.getDate();
@@ -281,6 +312,7 @@ export function QuickTileCreate() {
   const setField = useQuickCreateStore((s) => s.setField);
   const mode = useQuickCreateStore((s) => s.mode);
   const editingId = useQuickCreateStore((s) => s.editingId);
+  const loadError = useQuickCreateStore((s) => s.loadError);
 
   const identity = useQuickCreateStore((s) => s.identity);
   const plan = useQuickCreateStore((s) => s.plan);
@@ -288,7 +320,7 @@ export function QuickTileCreate() {
   const windows = useQuickCreateStore((s) => s.windows);
   const recurring = useQuickCreateStore((s) => s.recurring);
   const recurrence = useQuickCreateStore((s) => s.recurrence);
-  const advanced = useQuickCreateStore((s) => s.advanced);
+  const _advanced = useQuickCreateStore((s) => s.advanced);
   const meta = useQuickCreateStore((s) => s.meta);
 
   const isDesktop = useIsDesktop();
@@ -296,17 +328,68 @@ export function QuickTileCreate() {
 
   const [allDay, setAllDay] = useState(true);
   const [visualOpen, setVisualOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<"base" | "time" | "recurring" | "references" | "completion" | "planning" | "metrics" | "decisions" | "recurringRules" | "meta">("base");
-  const [recurringTab, setRecurringTab] = useState<"lifecycle" | "generator" | "window">("lifecycle");
-  const [projectSuggest, setProjectSuggest] = useState(false);
+  const [activePanel, setActivePanel] = useState<
+    "base" | "time" | "recurring" | "references" | "completion" | "meta"
+  >("base");
+  const [recurringTab, setRecurringTab] = useState<"lifecycle" | "generator" | "window">(
+    "lifecycle",
+  );
   const [tagSuggest, setTagSuggest] = useState(false);
-  const projects = useProjectsStore((s) => s.projects);
+  const [recentTags, setRecentTags] = useState<string[]>([]);
+  const projects = useProjects();
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const [tagInputDraft, setTagInputDraft] = useState("");
-  const [memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
+  const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
+  // Pull real-world tag candidates from existing tiles so the suggest
+  // popovers have something to show without seeding a local store.
+  useEffect(() => {
+    let alive = true;
+    // Pull recent tag candidates from the same /api/events/occurrences
+    // stream the day view already uses. We hit /v1/events via the BFF (the
+    // raw /v1/tiles projection doesn't carry labels).
+    const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const end = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    fetch(
+      `/api/events/occurrences?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&min_minutes=0&include_recurring=true`,
+      { cache: "no-store" },
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!alive || !data) return;
+        const labels = new Set<string>();
+        for (const occ of (
+          data as {
+            occurrences?: Array<{ tags?: string[] }>;
+          }
+        ).occurrences ?? []) {
+          for (const l of occ.tags ?? []) if (l) labels.add(l);
+        }
+        setRecentTags(Array.from(labels).sort());
+      })
+      .catch(() => {
+        /* ignore: suggestions are best-effort */
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
+  // Context-sensitive heading: pick from {mode, kind, role}. The store's
+  // `identity.kind` defaults to PLACEMENT for create flows, so we resolve
+  // RECURRING first (it's the most specific), then label-only placements,
+  // then regular placements (executable tasks).
+  const headingLabel = (() => {
+    const isEdit = mode === "edit";
+    if (identity.kind === TileKind.RECURRING) {
+      return t(isEdit ? "quickCreate.titleEditRecurring" : "quickCreate.titleCreateRecurring");
+    }
+    if (plan.role === PlanRole.LABEL) {
+      return t(isEdit ? "quickCreate.titleEditLabel" : "quickCreate.titleCreateLabel");
+    }
+    return t(isEdit ? "quickCreate.titleEditTask" : "quickCreate.titleCreateTask");
+  })();
   // Drive the open/close animation independently of the store so the panel
   // can slide out before it is unmounted.
   const [mounted, setMounted] = useState(isOpen);
@@ -370,34 +453,33 @@ export function QuickTileCreate() {
 
   const titleOk = identity.title.trim().length > 0;
   const kindIsRecurring = identity.kind === TileKind.RECURRING;
-  const timeSummary = (() => {
+  const _timeSummary = (() => {
     const fmt = (iso: string) => {
       if (!iso) return null;
       const d = new Date(iso);
       if (Number.isNaN(d.getTime())) return null;
       return d.toLocaleString(locale, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
     const start = fmt(time.span.start);
     const end = fmt(time.span.end);
     const dur =
       time.durationMinMax.minMs !== null
-        ? Math.round(time.durationMinMax.minMs / 60000) + t('quickCreate.minutesUnit')
+        ? Math.round(time.durationMinMax.minMs / 60000) + t("quickCreate.minutesUnit")
         : null;
-    if (allDay) return t('quickCreate.allDay') + (dur ? ' ' + dur : '');
-    if (start && end) return start + ' → ' + end;
+    if (allDay) return t("quickCreate.allDay") + (dur ? ` ${dur}` : "");
+    if (start && end) return `${start} → ${end}`;
     if (start) return start;
     if (dur) return dur;
-    return '';
+    return "";
   })();
   const spanHasStart = !!time.span.start;
   const spanHasEnd = !!time.span.end;
-  const spanOrderValid =
-    !spanHasStart || !spanHasEnd || time.span.end > time.span.start;
+  const spanOrderValid = !spanHasStart || !spanHasEnd || time.span.end > time.span.start;
   const durationValid =
     plan.role === PlanRole.LABEL ||
     time.durationMinMax.minMs === null ||
@@ -419,34 +501,45 @@ export function QuickTileCreate() {
   const completionRootLabel = (() => {
     if (!completionRootNode) return t("quickCreate.completionNoRoot");
     switch (completionRootNode.kind) {
-      case ConditionKind.ALL: return t("quickCreate.completionAll");
-      case ConditionKind.ANY: return t("quickCreate.completionAny");
-      case ConditionKind.NOT: return t("quickCreate.completionNot");
-      case ConditionKind.TERM: return t("quickCreate.completionTerm");
-      default: return t("quickCreate.completionNoRoot");
+      case ConditionKind.ALL:
+        return t("quickCreate.completionAll");
+      case ConditionKind.ANY:
+        return t("quickCreate.completionAny");
+      case ConditionKind.NOT:
+        return t("quickCreate.completionNot");
+      case ConditionKind.TERM:
+        return t("quickCreate.completionTerm");
+      default:
+        return t("quickCreate.completionNoRoot");
     }
   })();
-  const completionRootCount = countConditionChildren(completionRootNode);
-  const completionTermSummary = (() => {
+  const _completionRootCount = countConditionChildren(completionRootNode);
+  const _completionTermSummary = (() => {
     if (!completionRootNode) return "";
     const labels: string[] = [];
     const visit = (n: ConditionNode) => {
       if (n.kind === ConditionKind.TERM && n.term) {
         const k = n.term.kind;
-        const kindLabel = t("quickCreate.term" + k.charAt(0).toUpperCase() + k.slice(1));
+        const kindLabel = t(`quickCreate.term${k.charAt(0).toUpperCase()}${k.slice(1)}`);
         let stateLabel = "";
         switch (k) {
           case "task": {
             const v = n.term.value as { taskId: string; state: number };
-            const stateKey = ["taskStateVisible", "taskStateMarked", "taskStateCompleted", "taskStateNotCompleted"][v.state] ?? "";
-            const base = stateKey ? t("quickCreate." + stateKey) : "";
+            const stateKey =
+              [
+                "taskStateVisible",
+                "taskStateMarked",
+                "taskStateCompleted",
+                "taskStateNotCompleted",
+              ][v.state] ?? "";
+            const base = stateKey ? t(`quickCreate.${stateKey}`) : "";
             stateLabel = v.taskId ? base + (base ? " " : "") + v.taskId.slice(0, 6) : base;
             break;
           }
           case "life": {
             const v = n.term.value as { state: number };
             const stateKey = ["lifeStateReady", "lifeStateStarted", "lifeStateDone"][v.state] ?? "";
-            stateLabel = stateKey ? t("quickCreate." + stateKey) : "";
+            stateLabel = stateKey ? t(`quickCreate.${stateKey}`) : "";
             break;
           }
           case "requirement": {
@@ -462,7 +555,9 @@ export function QuickTileCreate() {
             break;
           case "calendar": {
             const v = n.term.value as { timeStart?: string; timeEnd?: string };
-            stateLabel = v.timeStart ? v.timeStart.slice(0, 5) + "~" + (v.timeEnd ? v.timeEnd.slice(0, 5) : "") : t("quickCreate.calendarAnyTime");
+            stateLabel = v.timeStart
+              ? `${v.timeStart.slice(0, 5)}~${v.timeEnd ? v.timeEnd.slice(0, 5) : ""}`
+              : t("quickCreate.calendarAnyTime");
             break;
           }
           case "gap":
@@ -471,8 +566,12 @@ export function QuickTileCreate() {
           case "moment": {
             const v = n.term.value as { target?: { kind?: string; id?: string } };
             if (v.target?.kind) {
-              const kindLabel = t("quickCreate.referenceKind" + v.target.kind.charAt(0).toUpperCase() + v.target.kind.slice(1));
-              stateLabel = kindLabel + (v.target.id ? " " + v.target.id.slice(0, 6) : "");
+              const kindLabel = t(
+                "quickCreate.referenceKind" +
+                  v.target.kind.charAt(0).toUpperCase() +
+                  v.target.kind.slice(1),
+              );
+              stateLabel = kindLabel + (v.target.id ? ` ${v.target.id.slice(0, 6)}` : "");
             } else {
               stateLabel = t("quickCreate.momentAnyPoint");
             }
@@ -518,10 +617,7 @@ export function QuickTileCreate() {
     );
   }
 
-  function updateWindow(
-    index: number,
-    updater: (current: Window) => Window,
-  ) {
+  function updateWindow(index: number, updater: (current: Window) => Window) {
     setField(
       "windows",
       windows.map((w, i) => (i === index ? updater(w) : w)),
@@ -547,10 +643,7 @@ export function QuickTileCreate() {
     );
   }
 
-  function updateFrameRule(
-    index: number,
-    updater: (current: FrameRule) => FrameRule,
-  ) {
+  function updateFrameRule(index: number, updater: (current: FrameRule) => FrameRule) {
     setField(
       "recurring.frameRules",
       recurring.frameRules.map((r, i) => (i === index ? updater(r) : r)),
@@ -573,41 +666,104 @@ export function QuickTileCreate() {
     }
     if (!canSubmit) return;
 
-    const client = makeClient();
     setSubmitting(true);
     try {
       if (mode === "edit" && editingId) {
-        const patchRes = await fetch(`/api/events/${editingId}`, {
+        // BFF PATCH keeps the v1_event row + allDay in sync with the
+        // panel. v1 UPDATE_TILE would not preserve allDay at the
+        // placement level.
+        const startIso = time.span.start;
+        let endIso = time.span.end;
+        if (allDay && startIso) {
+          const startDate = new Date(startIso);
+          const dayStart = new Date(startDate);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
+          if (!endIso || new Date(endIso) <= startDate) {
+            endIso = dayEnd.toISOString();
+          }
+        }
+        const patchBody = {
+          title: identity.title,
+          description: identity.description ?? null,
+          location: null,
+          start: startIso,
+          end: endIso,
+          allDay,
+          color: hexToEventColorName(identity.visual.color) || "blue",
+          recurrence: { frequency: "none" },
+          attendees: [],
+          icon: identity.visual.icon || null,
+          project: meta.ownerSubjectId
+            ? (projects.workspaces.find((w) => w.id === meta.ownerSubjectId)?.display_name ??
+              null)
+            : null,
+          owner_subject_id: meta.ownerSubjectId ?? null,
+          tags: meta.tags ?? [],
+          memo: meta.memo || null,
+        };
+        const res = await fetch(`/api/events/${editingId}`, {
           method: "PATCH",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            title: identity.title,
-            description: identity.description,
-            start: time.span.start,
-            end: time.span.end,
-            allDay,
-            color: identity.visual.color,
-            project: meta.project,
-            tags: meta.tags,
-            memo: meta.memo,
-          }),
+          body: JSON.stringify(patchBody),
         });
-        if (!patchRes.ok) {
-          const body = await patchRes.text();
-          throw new Error(`${t("quickCreate.updateError")} (status:${patchRes.status}) ${body}`);
+        if (!res.ok) {
+          const detail = await res.json().catch(() => null);
+          const message = detail?.error ?? `HTTP ${res.status}`;
+          throw new Error(`${t("quickCreate.updateError")} (api:bff) ${message}`);
         }
       } else {
-        const result = await submitCreateTile({ client });
-        if (!result.ok) {
-          throw new Error(
-            `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
-          );
+        // BFF path preserves allDay (v1 tile path has no allDay field).
+        // For all-day tiles we expand the span to a full day so the
+        // server stores inclusive start / exclusive end at day boundaries.
+        const startIso = time.span.start;
+        let endIso = time.span.end;
+        if (allDay && startIso) {
+          const startDate = new Date(startIso);
+          const dayStart = new Date(startDate);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
+          if (!endIso || new Date(endIso) <= startDate) {
+            endIso = dayEnd.toISOString();
+          }
+        }
+        const eventBody = {
+          title: identity.title,
+          description: identity.description ?? null,
+          location: null,
+          start: startIso,
+          end: endIso,
+          allDay,
+          color: hexToEventColorName(identity.visual.color) || "blue",
+          recurrence: { frequency: "none" },
+          attendees: [],
+          icon: identity.visual.icon || null,
+          project: meta.ownerSubjectId
+            ? (projects.workspaces.find((w) => w.id === meta.ownerSubjectId)?.display_name ??
+              null)
+            : null,
+          owner_subject_id: meta.ownerSubjectId ?? null,
+          tags: meta.tags ?? [],
+          memo: meta.memo || null,
+        };
+        const res = await fetch("/api/events", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(eventBody),
+        });
+        if (!res.ok) {
+          const detail = await res.json().catch(() => null);
+          const message = detail?.error ?? `HTTP ${res.status}`;
+          throw new Error(`${t("quickCreate.createError")} (api:bff) ${message}`);
         }
       }
       reset();
       setAllDay(true);
       setActivePanel("base");
       setMemoExpanded(false);
+      notifyEventsChanged();
       close();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("quickCreate.createError"));
@@ -618,7 +774,8 @@ export function QuickTileCreate() {
 
   async function handleDelete() {
     if (mode !== "edit" || !editingId) return;
-    const confirmed = typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
+    const confirmed =
+      typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
     if (!confirmed) return;
     setSubmitting(true);
     setError(null);
@@ -632,6 +789,7 @@ export function QuickTileCreate() {
       setAllDay(true);
       setActivePanel("base");
       setMemoExpanded(false);
+      notifyEventsChanged();
       close();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("quickCreate.deleteError"));
@@ -662,7 +820,7 @@ export function QuickTileCreate() {
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
 
-  const subPanelClass = (panel: "time" | "recurring" | "references" | "completion" | "planning" | "metrics" | "decisions" | "recurringRules" | "meta") =>
+  const subPanelClass = (panel: "time" | "recurring" | "references" | "completion" | "meta") =>
     isDesktop
       ? cn(
           "fixed inset-y-0 right-0 z-[57]",
@@ -692,11 +850,9 @@ export function QuickTileCreate() {
         }}
         aria-hidden
       />
-      <section className={panelClass} aria-label={t("quickCreate.title")}>
+      <section className={panelClass} aria-label={headingLabel}>
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
-          <h2 className="text-base font-semibold text-foreground">
-            {t("quickCreate.title")}
-          </h2>
+          <h2 className="text-base font-semibold text-foreground">{headingLabel}</h2>
           <button
             type="button"
             onClick={close}
@@ -751,7 +907,9 @@ export function QuickTileCreate() {
                                 onClick={() => setField("identity.visual.color", c)}
                                 className={cn(
                                   "h-5 w-5 rounded-full border transition-transform hover:scale-110 focus:outline-hidden",
-                                  isSelected ? "border-foreground scale-110 ring-2 ring-primary/20" : "border-black/10"
+                                  isSelected
+                                    ? "border-foreground scale-110 ring-2 ring-primary/20"
+                                    : "border-black/10",
                                 )}
                                 style={{ backgroundColor: c }}
                                 aria-label={c}
@@ -789,7 +947,7 @@ export function QuickTileCreate() {
                                   "flex h-8 w-8 items-center justify-center rounded-md border transition-all hover:bg-surface-2",
                                   isSelected
                                     ? "border-primary bg-primary/10 text-primary"
-                                    : "border-border/40 text-foreground-muted"
+                                    : "border-border/40 text-foreground-muted",
                                 )}
                                 title={name}
                                 aria-label={name}
@@ -825,10 +983,7 @@ export function QuickTileCreate() {
               <Textarea
                 value={identity.description ?? ""}
                 onChange={(e) =>
-                  setField(
-                    "identity.description",
-                    e.target.value.trim() ? e.target.value : null,
-                  )
+                  setField("identity.description", e.target.value.trim() ? e.target.value : null)
                 }
                 placeholder={t("quickCreate.descriptionPlaceholder")}
                 aria-label={t("quickCreate.descriptionPlaceholder")}
@@ -878,12 +1033,13 @@ export function QuickTileCreate() {
               locale={locale}
               t={t}
             />
-            <DurationRow
-              minMs={time.durationMinMax.minMs}
-              maxMs={time.durationMinMax.maxMs}
-              onChange={(value) => setField("time.durationMinMax.minMs", value)}
-              t={t}
-            />
+            {!allDay ? (
+              <DurationRow
+                minMs={time.durationMinMax.minMs}
+                onChange={(value) => setField("time.durationMinMax.minMs", value)}
+                t={t}
+              />
+            ) : null}
 
             {kindIsRecurring ? (
               <>
@@ -891,11 +1047,7 @@ export function QuickTileCreate() {
                 <RowSubPanel
                   icon={Repeat}
                   name={t("quickCreate.recurrenceNavTitle")}
-                  value={
-                    recurring.frameRules.length > 0
-                      ? String(recurring.frameRules.length)
-                      : ""
-                  }
+                  value={recurring.frameRules.length > 0 ? String(recurring.frameRules.length) : ""}
                   onClick={() => setActivePanel("recurring")}
                 />
               </>
@@ -910,12 +1062,19 @@ export function QuickTileCreate() {
               onClick={() => setActivePanel("references")}
             />
             <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-              {plan.references[0] ? (t("quickCreate.referenceKindLabel") + ": " + t("quickCreate.referenceKind" + (["moment", "calendar", "frame", "tag", "project", "fact"][plan.references[0].target.kind] ?? "moment"))) : t("quickCreate.referenceEmptyHint")}
+              {plan.references[0]
+                ? t("quickCreate.referenceKindLabel") +
+                  ": " +
+                  t(
+                    "quickCreate.referenceKind" +
+                      (["moment", "calendar", "frame", "tag", "project", "fact"][
+                        plan.references[0].target.kind
+                      ] ?? "moment"),
+                  )
+                : t("quickCreate.referenceEmptyHint")}
             </div>
 
-            <div
-              className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted pt-2"
-            >
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted pt-2">
               <ListChecks size={14} aria-hidden="true" />
               <span>{t("quickCreate.completionNavTitle")}</span>
               <button
@@ -928,16 +1087,26 @@ export function QuickTileCreate() {
               </button>
             </div>
             <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-              {t("quickCreate.completionRootKindLabel") + ": " + completionRootLabel + " " + t("quickCreate.rootWithChildrenHint")}
+              {t("quickCreate.completionRootKindLabel") +
+                ": " +
+                completionRootLabel +
+                " " +
+                t("quickCreate.rootWithChildrenHint")}
             </div>
             <div className="space-y-2">
-              {plan.completion.timeRequirements.length === 0 && plan.completion.tasks.length === 0 ? (
+              {plan.completion.timeRequirements.length === 0 &&
+              plan.completion.tasks.length === 0 ? (
                 <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
               ) : null}
               {plan.completion.timeRequirements.map((tr, i) => (
-                <div key={tr.id} className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1">
+                <div
+                  key={tr.id}
+                  className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] text-foreground-muted">timeRequirement</span>
+                    <span className="font-mono text-[10px] text-foreground-muted">
+                      timeRequirement
+                    </span>
                     <Button
                       type="button"
                       size="icon-xs"
@@ -960,7 +1129,13 @@ export function QuickTileCreate() {
                         value={tr.observation.scope}
                         onChange={(e) => {
                           const next = plan.completion.timeRequirements.slice();
-                          next[i] = { ...tr, observation: { ...tr.observation, scope: Number(e.target.value) as never } };
+                          next[i] = {
+                            ...tr,
+                            observation: {
+                              ...tr.observation,
+                              scope: Number(e.target.value) as never,
+                            },
+                          };
                           setField("plan.completion.timeRequirements", next);
                         }}
                         className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
@@ -970,11 +1145,21 @@ export function QuickTileCreate() {
                       <span className="block text-foreground-muted">min</span>
                       <input
                         type="number"
-                        value={tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)}
+                        value={
+                          tr.required.minMs === null
+                            ? ""
+                            : Math.round((tr.required.minMs ?? 0) / 60000)
+                        }
                         onChange={(e) => {
                           const next = plan.completion.timeRequirements.slice();
                           const v = e.target.value;
-                          next[i] = { ...tr, required: { ...tr.required, minMs: v === "" ? null : Number(v) * 60000 } };
+                          next[i] = {
+                            ...tr,
+                            required: {
+                              ...tr.required,
+                              minMs: v === "" ? null : Number(v) * 60000,
+                            },
+                          };
                           setField("plan.completion.timeRequirements", next);
                         }}
                         className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
@@ -984,7 +1169,10 @@ export function QuickTileCreate() {
                 </div>
               ))}
               {plan.completion.tasks.map((tk, i) => (
-                <div key={tk.id} className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1">
+                <div
+                  key={tk.id}
+                  className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1"
+                >
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-[10px] text-foreground-muted">task</span>
                     <Button
@@ -1008,7 +1196,10 @@ export function QuickTileCreate() {
                       value={tk.content?.title ?? ""}
                       onChange={(e) => {
                         const next = plan.completion.tasks.slice();
-                        next[i] = { ...tk, content: { title: e.target.value, note: tk.content?.note ?? null } };
+                        next[i] = {
+                          ...tk,
+                          content: { title: e.target.value, note: tk.content?.note ?? null },
+                        };
                         setField("plan.completion.tasks", next);
                       }}
                       className="w-full rounded-md bg-surface-2 px-2 py-1 text-left outline-none focus:ring-2 focus:ring-primary/40"
@@ -1026,7 +1217,11 @@ export function QuickTileCreate() {
                   onClick={() => {
                     setField("plan.completion.timeRequirements", [
                       ...plan.completion.timeRequirements,
-                      { id: "tr_" + Math.random().toString(36).slice(2, 9), observation: { scope: 0 as never }, required: { minMs: 60 * 60000 } },
+                      {
+                        id: `tr_${Math.random().toString(36).slice(2, 9)}`,
+                        observation: { scope: 0 as never },
+                        required: { minMs: 60 * 60000 },
+                      },
                     ]);
                   }}
                 >
@@ -1041,7 +1236,18 @@ export function QuickTileCreate() {
                   onClick={() => {
                     setField("plan.completion.tasks", [
                       ...plan.completion.tasks,
-                      { id: "tk_" + Math.random().toString(36).slice(2, 9), content: { title: "", note: null }, show: null, complete: { id: "c_" + Math.random().toString(36).slice(2, 9), kind: 0, children: [], term: null }, order: [] },
+                      {
+                        id: `tk_${Math.random().toString(36).slice(2, 9)}`,
+                        content: { title: "", note: null },
+                        show: null,
+                        complete: {
+                          id: `c_${Math.random().toString(36).slice(2, 9)}`,
+                          kind: 0,
+                          children: [],
+                          term: null,
+                        },
+                        order: [],
+                      },
                     ]);
                   }}
                 >
@@ -1098,190 +1304,169 @@ export function QuickTileCreate() {
                 <ChevronRight size={14} aria-hidden="true" />
               </button>
             </div>
-            <div className="relative" data-testid="project-suggest-row" data-open={String(projectSuggest)}>
             <FormRow icon={null}>
-              <input
-                type="text"
-                value={meta.project ?? ""}
+              <select
+                value={meta.ownerSubjectId ?? ""}
                 onChange={(e) => {
-                  setField("meta.project", e.target.value.trim() ? e.target.value : null);
-                  setProjectSuggest(true);
+                  const v = e.target.value;
+                  setField("meta.ownerSubjectId", v ? v : null);
                 }}
-                onFocus={() => setProjectSuggest(true)}
-                onBlur={() => setTimeout(() => setProjectSuggest(false), 150)}
-                placeholder={t("quickCreate.projectPlaceholder")}
                 aria-label={t("quickCreate.projectPlaceholder")}
-                className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-              />
-            </FormRow>
-            {projectSuggest ? (
-              <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-surface-1 py-1 shadow-lg">
-                {Object.values(projects)
-                  .filter((p) => !meta.project || p.name.toLowerCase().includes(meta.project.toLowerCase()))
-                  .slice(0, 8)
-                  .map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          setField("meta.project", p.name);
-                          setProjectSuggest(false);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-2 focus:outline-hidden"
-                      >
-                        <FolderOpen size={12} aria-hidden="true" />
-                        <span className="truncate">{p.name}</span>
-                      </button>
-                    </li>
-                  ))}
-                <li>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      const v = (meta.project ?? "").trim();
-                      if (v) setField("meta.project", v);
-                      setProjectSuggest(false);
-                    }}
-                    className="flex w-full items-center gap-2 border-t border-border px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
-                  >
-                    <Plus size={12} aria-hidden="true" />
-                    <span className="truncate">{((meta.project ?? "").trim() || t("quickCreate.projectCreateNew"))}</span>
-                  </button>
-                </li>
-              </ul>
-            ) : null}
-          </div>
-            <div className="relative" data-testid="tag-suggest-row" data-open={String(tagSuggest)}>
-            <FormRow icon={null}>
-              <div className="flex w-full flex-wrap items-center gap-1.5">
-                {meta.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                  >
-                    <span>#{tag}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setField(
-                          "meta.tags",
-                          meta.tags.filter((x) => x !== tag),
-                        )
-                      }
-                      aria-label={t("quickCreate.removeItem")}
-                      className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <X size={10} aria-hidden="true" />
-                    </button>
-                  </span>
+                data-testid="owner-select"
+                className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
+              >
+                <option value="">Personal (default)</option>
+                {projects.workspaces.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.display_name}
+                  </option>
                 ))}
-                <input
-                  ref={tagInputRef}
-                  type="text"
-                  placeholder={t("quickCreate.tagsPlaceholder")}
-                  aria-label={t("quickCreate.tagsPlaceholder")}
-                  className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-                  onFocus={(e) => { setTagInputDraft(e.currentTarget.value); setTagSuggest(true); }}
-                  onBlur={() => setTimeout(() => setTagSuggest(false), 150)}
-                  onChange={(e) => {
-                    setTagInputDraft(e.target.value);
-                    setTagSuggest(true);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === ",") {
-                      e.preventDefault();
-                      const v = (e.currentTarget.value || "").trim();
-                      if (!v) return;
-                      if (meta.tags.includes(v)) return;
-                      setField("meta.tags", [...meta.tags, v]);
-                      e.currentTarget.value = "";
-                      setTagInputDraft("");
-                    }
-                  }}
-                />
-              </div>
+              </select>
             </FormRow>
-            {tagSuggest ? (() => {
-              const draft = tagInputDraft.trim();
-              const known = Array.from(new Set(Object.values(projects).flatMap((p) => p.labelFilter))).filter((t) => !meta.tags.includes(t) && (!draft || t.toLowerCase().includes(draft.toLowerCase())));
-              if (known.length === 0 && !draft) {
-                return (
-                  <ul className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-border bg-surface-1 py-1 shadow-lg">
-                    <li>
+            <div className="relative" data-testid="tag-suggest-row" data-open={String(tagSuggest)}>
+              <FormRow icon={null}>
+                <div className="flex w-full flex-wrap items-center gap-1.5">
+                  {meta.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
+                    >
+                      <span>#{tag}</span>
                       <button
                         type="button"
-                        onMouseDown={(ev) => {
-                          ev.preventDefault();
-                          if (tagInputRef.current) { tagInputRef.current.value = ""; }
-                          setTagInputDraft("");
-                          setTagSuggest(false);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
+                        onClick={() =>
+                          setField(
+                            "meta.tags",
+                            meta.tags.filter((x) => x !== tag),
+                          )
+                        }
+                        aria-label={t("quickCreate.removeItem")}
+                        className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                       >
-                        <Plus size={12} aria-hidden="true" />
-                        <span className="truncate">{t("quickCreate.tagCreateHint") ?? "タグ名を入力して Enter"}</span>
+                        <X size={10} aria-hidden="true" />
                       </button>
-                    </li>
-                  </ul>
-                );
-              }
-              return (
-                <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-surface-1 py-1 shadow-lg">
-                  {known.slice(0, 8).map((tag) => (
-                    <li key={tag}>
-                      <button
-                        type="button"
-                        onMouseDown={(ev) => {
-                          ev.preventDefault();
-                          setField("meta.tags", [...meta.tags, tag]);
-                          if (tagInputRef.current) { tagInputRef.current.value = ""; }
-                          setTagInputDraft("");
-                          setTagSuggest(false);
-                        }}
-                        className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-2 focus:outline-hidden"
-                      >
-                        <Tag size={12} aria-hidden="true" />
-                        <span className="truncate">#{tag}</span>
-                      </button>
-                    </li>
+                    </span>
                   ))}
-                  {draft ? (
-                    <li>
-                      <button
-                        type="button"
-                        onMouseDown={(ev) => {
-                          ev.preventDefault();
-                          setField("meta.tags", [...meta.tags, draft]);
-                          if (tagInputRef.current) { tagInputRef.current.value = ""; }
-                          setTagInputDraft("");
-                          setTagSuggest(false);
-                        }}
-                        className="flex w-full items-center gap-2 border-t border-border px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
-                      >
-                        <Plus size={12} aria-hidden="true" />
-                        <span className="truncate">#{draft}</span>
-                      </button>
-                    </li>
-                  ) : null}
-                </ul>
-              );
-            })() : null}
-          </div>
+                  <input
+                    ref={tagInputRef}
+                    type="text"
+                    placeholder={t("quickCreate.tagsPlaceholder")}
+                    aria-label={t("quickCreate.tagsPlaceholder")}
+                    className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+                    onFocus={(e) => {
+                      setTagInputDraft(e.currentTarget.value);
+                      setTagSuggest(true);
+                    }}
+                    onBlur={() => setTimeout(() => setTagSuggest(false), 150)}
+                    onChange={(e) => {
+                      setTagInputDraft(e.target.value);
+                      setTagSuggest(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === ",") {
+                        e.preventDefault();
+                        const v = (e.currentTarget.value || "").trim();
+                        if (!v) return;
+                        if (meta.tags.includes(v)) return;
+                        setField("meta.tags", [...meta.tags, v]);
+                        e.currentTarget.value = "";
+                        setTagInputDraft("");
+                      }
+                    }}
+                  />
+                </div>
+              </FormRow>
+              {tagSuggest
+                ? (() => {
+                    const draft = tagInputDraft.trim();
+                    const source = recentTags;
+                    const known = source.filter(
+                      (tg) =>
+                        !meta.tags.includes(tg) &&
+                        (!draft || tg.toLowerCase().includes(draft.toLowerCase())),
+                    );
+                    if (known.length === 0 && !draft) {
+                      return (
+                        <ul className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-border bg-surface-1 py-1 shadow-lg">
+                          <li>
+                            <button
+                              type="button"
+                              onMouseDown={(ev) => {
+                                ev.preventDefault();
+                                if (tagInputRef.current) {
+                                  tagInputRef.current.value = "";
+                                }
+                                setTagInputDraft("");
+                                setTagSuggest(false);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
+                            >
+                              <Plus size={12} aria-hidden="true" />
+                              <span className="truncate">
+                                {t("quickCreate.tagCreateHint") ?? "タグ名を入力して Enter"}
+                              </span>
+                            </button>
+                          </li>
+                        </ul>
+                      );
+                    }
+                    return (
+                      <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-surface-1 py-1 shadow-lg">
+                        {known.slice(0, 8).map((tag) => (
+                          <li key={tag}>
+                            <button
+                              type="button"
+                              onMouseDown={(ev) => {
+                                ev.preventDefault();
+                                setField("meta.tags", [...meta.tags, tag]);
+                                if (tagInputRef.current) {
+                                  tagInputRef.current.value = "";
+                                }
+                                setTagInputDraft("");
+                                setTagSuggest(false);
+                              }}
+                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-2 focus:outline-hidden"
+                            >
+                              <Tag size={12} aria-hidden="true" />
+                              <span className="truncate">#{tag}</span>
+                            </button>
+                          </li>
+                        ))}
+                        {draft ? (
+                          <li>
+                            <button
+                              type="button"
+                              onMouseDown={(ev) => {
+                                ev.preventDefault();
+                                setField("meta.tags", [...meta.tags, draft]);
+                                if (tagInputRef.current) {
+                                  tagInputRef.current.value = "";
+                                }
+                                setTagInputDraft("");
+                                setTagSuggest(false);
+                              }}
+                              className="flex w-full items-center gap-2 border-t border-border px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
+                            >
+                              <Plus size={12} aria-hidden="true" />
+                              <span className="truncate">#{draft}</span>
+                            </button>
+                          </li>
+                        ) : null}
+                      </ul>
+                    );
+                  })()
+                : null}
+            </div>
           </FormPanel>
         </div>
 
         <div className="border-t border-border bg-surface-0 p-section shrink-0 space-y-3">
-<RowToggle
+          <RowToggle
             icon={Tag}
             placeholder={t("quickCreate.labelOnly")}
             checked={plan.role === PlanRole.LABEL}
             onChange={(checked) =>
-              setField(
-                "plan.role",
-                checked ? PlanRole.LABEL : PlanRole.EXECUTABLE,
-              )
+              setField("plan.role", checked ? PlanRole.LABEL : PlanRole.EXECUTABLE)
             }
           />
           {mode === "edit" ? (
@@ -1327,112 +1512,291 @@ export function QuickTileCreate() {
               {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
             </Button>
           )}
-          {error ? (
+          {error ? <p className="mt-2 text-center text-xs text-danger">{error}</p> : null}
+          {loadError ? (
             <p
-              className="mt-2 text-center text-xs text-danger"
+              role="alert"
+              data-testid="quick-create-load-error"
+              className="mt-2 text-center text-xs text-warning"
             >
-              {error}
+              {loadError}
             </p>
           ) : null}
         </div>
       </section>
 
-        <section className={subPanelClass("time")} aria-hidden={activePanel !== "time"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
+      <section className={subPanelClass("time")} aria-hidden={activePanel !== "time"}>
+        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.back")}
+            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            <span>{t("quickCreate.back")}</span>
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.cancel")}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <FormPanel>
+          <SectionHeader icon={Clock} title={t("quickCreate.timeNavTitle")} />
+          <RowToggle
+            icon={Calendar}
+            placeholder={t("quickCreate.allDay")}
+            checked={allDay}
+            onChange={setAllDay}
+          />
+          <ScheduleRow
+            allDay={allDay}
+            spanStart={time.span.start}
+            spanEnd={time.span.end}
+            onStartChange={(value) => setField("time.span.start", value)}
+            onEndChange={(value) => setField("time.span.end", value)}
+            locale={locale}
+            t={t}
+          />
+          <FormDivider />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
+                {t("quickCreate.minMsLabel")}
+              </span>
+              <input
+                type="number"
+                min={0}
+                step={5}
+                aria-label={t("quickCreate.minMsLabel")}
+                value={
+                  time.durationMinMax.minMs !== null
+                    ? Math.round(time.durationMinMax.minMs / 60000)
+                    : ""
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setField("time.durationMinMax.minMs", v === "" ? null : Number(v) * 60000);
+                }}
+                className="w-full rounded-md bg-surface-2 px-3 py-2 text-right text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
+                {t("quickCreate.maxMsLabel")}
+              </span>
+              <input
+                type="number"
+                min={0}
+                step={5}
+                aria-label={t("quickCreate.maxMsLabel")}
+                value={
+                  time.durationMinMax.maxMs !== null
+                    ? Math.round(time.durationMinMax.maxMs / 60000)
+                    : ""
+                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setField("time.durationMinMax.maxMs", v === "" ? null : Number(v) * 60000);
+                }}
+                className="w-full rounded-md bg-surface-2 px-3 py-2 text-right text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
           </div>
-          <FormPanel>
-            <SectionHeader icon={Clock} title={t("quickCreate.timeNavTitle")} />
-            <RowToggle
-              icon={Calendar}
-              placeholder={t("quickCreate.allDay")}
-              checked={allDay}
-              onChange={setAllDay}
-            />
-            <ScheduleRow
-              allDay={allDay}
-              spanStart={time.span.start}
-              spanEnd={time.span.end}
-              onStartChange={(value) => setField("time.span.start", value)}
-              onEndChange={(value) => setField("time.span.end", value)}
+          <p className="mt-1 text-[10px] text-foreground-muted">{t("quickCreate.minutesUnit")}</p>
+          <FormDivider />
+          <SectionHeader icon={Calendar} title={t("quickCreate.windowsNavTitle")} />
+          {windows.map((w, i) => (
+            <WindowRow
+              key={w.id}
+              window={w}
+              index={i}
+              onUpdate={updateWindow}
+              onRemove={removeWindow}
+              t={t}
               locale={locale}
+            />
+          ))}
+          <Button
+            type="button"
+            size="small"
+            variant="default"
+            rounded
+            iconLeft={<Plus size={12} aria-hidden="true" />}
+            onClick={addWindow}
+          >
+            {t("quickCreate.windowsAdd")}
+          </Button>
+        </FormPanel>
+      </section>
+
+      <section className={subPanelClass("recurring")} aria-hidden={activePanel !== "recurring"}>
+        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.back")}
+            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            <span>{t("quickCreate.back")}</span>
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.cancel")}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <FormPanel>
+          <SectionHeader icon={Repeat} title={t("quickCreate.recurrenceNavTitle")} />
+          <div
+            role="tablist"
+            aria-label={t("quickCreate.recurrenceNavTitle")}
+            className="flex border-b border-border"
+          >
+            {(
+              [
+                { id: "lifecycle", labelKey: "recurringTabLifecycle" },
+                { id: "generator", labelKey: "recurringTabGenerator" },
+                { id: "window", labelKey: "recurringTabWindow" },
+              ] as const
+            ).map((tab) => {
+              const active = recurringTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setRecurringTab(tab.id)}
+                  className={cn(
+                    "flex-1 px-2 py-1.5 text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                    active
+                      ? "bg-primary text-primary-fg"
+                      : "text-foreground-muted hover:bg-surface-2",
+                  )}
+                >
+                  {t(`quickCreate.${tab.labelKey}`)}
+                </button>
+              );
+            })}
+          </div>
+          {recurringTab === "lifecycle" ? (
+            <>
+              <RecurringLifeEditor
+                activeStart={recurring.life.active.startDate}
+                activeEnd={recurring.life.active.endDate}
+                state={recurring.life.state}
+                onActiveStartChange={(value) => setField("recurring.life.active.startDate", value)}
+                onActiveEndChange={(value) => setField("recurring.life.active.endDate", value)}
+                onStateChange={(value) => setField("recurring.life.state", value)}
+                t={t}
+              />
+              <FrameRulesList
+                rules={recurring.frameRules}
+                onAdd={addFrameRule}
+                onRemove={removeFrameRule}
+                onUpdate={updateFrameRule}
+                t={t}
+              />
+            </>
+          ) : null}
+          {recurringTab === "generator" ? (
+            <GeneratorEditor
+              recurrence={recurrence}
+              onChange={(next) => setField("recurrence", next)}
               t={t}
             />
-            <FormDivider />
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-                  {t("quickCreate.minMsLabel")}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={5}
-                  aria-label={t("quickCreate.minMsLabel")}
-                  value={time.durationMinMax.minMs !== null ? Math.round(time.durationMinMax.minMs / 60000) : ""}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setField(
-                      "time.durationMinMax.minMs",
-                      v === "" ? null : Number(v) * 60000,
-                    );
+          ) : null}
+          {recurringTab === "window" ? (
+            <WindowEditor
+              recurrence={recurrence}
+              onChange={(next) => setField("recurrence", next)}
+              t={t}
+              locale={locale}
+            />
+          ) : null}
+        </FormPanel>
+      </section>
+
+      <section className={subPanelClass("references")} aria-hidden={activePanel !== "references"}>
+        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.back")}
+            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            <span>{t("quickCreate.back")}</span>
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.cancel")}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <FormPanel>
+          <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
+          <div className="space-y-2">
+            {plan.references.length === 0 ? (
+              <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
+            ) : null}
+            {plan.references.map((ref, i) => (
+              <div key={i} className="space-y-1 rounded-md border border-border bg-surface-0 p-2">
+                <label className="block space-y-1 text-xs">
+                  <span className="block text-foreground-muted">id</span>
+                  <input
+                    type="text"
+                    value={ref.id}
+                    onChange={(e) => {
+                      const next = plan.references.slice();
+                      next[i] = { ...ref, id: e.target.value };
+                      setField("plan.references", next);
+                    }}
+                    className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+                <label className="block space-y-1 text-xs">
+                  <span className="block text-foreground-muted">target.kind</span>
+                  <input
+                    type="number"
+                    value={ref.target.kind}
+                    onChange={(e) => {
+                      const next = plan.references.slice();
+                      next[i] = { ...ref, target: { ...ref.target, kind: Number(e.target.value) } };
+                      setField("plan.references", next);
+                    }}
+                    className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </label>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  icon={<Trash2 size={14} aria-hidden="true" />}
+                  onClick={() => {
+                    const next = plan.references.slice();
+                    next.splice(i, 1);
+                    setField("plan.references", next);
                   }}
-                  className="w-full rounded-md bg-surface-2 px-3 py-2 text-right text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
+                  aria-label={t("quickCreate.removeItem")}
+                  className="text-foreground-muted hover:text-danger"
                 />
               </div>
-              <div className="space-y-1">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-                  {t("quickCreate.maxMsLabel")}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={5}
-                  aria-label={t("quickCreate.maxMsLabel")}
-                  value={time.durationMinMax.maxMs !== null ? Math.round(time.durationMinMax.maxMs / 60000) : ""}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setField(
-                      "time.durationMinMax.maxMs",
-                      v === "" ? null : Number(v) * 60000,
-                    );
-                  }}
-                  className="w-full rounded-md bg-surface-2 px-3 py-2 text-right text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </div>
-            </div>
-            <p className="mt-1 text-[10px] text-foreground-muted">
-              {t("quickCreate.minutesUnit")}
-            </p>
-            <FormDivider />
-            <SectionHeader icon={Calendar} title={t("quickCreate.windowsNavTitle")} />
-            {windows.map((w, i) => (
-              <WindowRow
-                key={w.id}
-                window={w}
-                index={i}
-                onUpdate={updateWindow}
-                onRemove={removeWindow}
-                t={t}
-                locale={locale}
-              />
             ))}
             <Button
               type="button"
@@ -1440,573 +1804,244 @@ export function QuickTileCreate() {
               variant="default"
               rounded
               iconLeft={<Plus size={12} aria-hidden="true" />}
-              onClick={addWindow}
+              onClick={() => {
+                setField("plan.references", [
+                  ...plan.references,
+                  {
+                    id: "",
+                    target: { kind: 0, contextKind: null, referenceId: null, conditionId: null },
+                    pick: { kind: 0, momentId: null },
+                  },
+                ]);
+              }}
             >
-              {t("quickCreate.windowsAdd")}
+              {t("quickCreate.addReference")}
             </Button>
-          </FormPanel>
-        </section>
-
-        <section className={subPanelClass("recurring")} aria-hidden={activePanel !== "recurring"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
           </div>
-          <FormPanel>
-            <SectionHeader icon={Repeat} title={t("quickCreate.recurrenceNavTitle")} />
-            <div
-              role="tablist"
-              aria-label={t("quickCreate.recurrenceNavTitle")}
-              className="flex border-b border-border"
-            >
-              {(
-                [
-                  { id: "lifecycle", labelKey: "recurringTabLifecycle" },
-                  { id: "generator", labelKey: "recurringTabGenerator" },
-                  { id: "window", labelKey: "recurringTabWindow" },
-                ] as const
-              ).map((tab) => {
-                const active = recurringTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setRecurringTab(tab.id)}
-                    className={cn(
-                      "flex-1 px-2 py-1.5 text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-                      active
-                        ? "bg-primary text-primary-fg"
-                        : "text-foreground-muted hover:bg-surface-2",
-                    )}
-                  >
-                    {t(`quickCreate.${tab.labelKey}`)}
-                  </button>
-                );
-              })}
-            </div>
-            {recurringTab === "lifecycle" ? (
-              <>
-                <RecurringLifeEditor
-                  activeStart={recurring.life.active.startDate}
-                  activeEnd={recurring.life.active.endDate}
-                  state={recurring.life.state}
-                  onActiveStartChange={(value) =>
-                    setField("recurring.life.active.startDate", value)
-                  }
-                  onActiveEndChange={(value) =>
-                    setField("recurring.life.active.endDate", value)
-                  }
-                  onStateChange={(value) =>
-                    setField("recurring.life.state", value)
-                  }
-                  t={t}
-                />
-                <FrameRulesList
-                  rules={recurring.frameRules}
-                  onAdd={addFrameRule}
-                  onRemove={removeFrameRule}
-                  onUpdate={updateFrameRule}
-                  t={t}
-                />
-              </>
-            ) : null}
-            {recurringTab === "generator" ? (
-              <GeneratorEditor
-                recurrence={recurrence}
-                onChange={(next) => setField("recurrence", next)}
-                t={t}
-              />
-            ) : null}
-            {recurringTab === "window" ? (
-              <WindowEditor
-                recurrence={recurrence}
-                onChange={(next) => setField("recurrence", next)}
-                t={t}
-                locale={locale}
-              />
-            ) : null}
-          </FormPanel>
-        </section>
+        </FormPanel>
+      </section>
 
-        <section className={subPanelClass("references")} aria-hidden={activePanel !== "references"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
+      <section className={subPanelClass("completion")} aria-hidden={activePanel !== "completion"}>
+        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.back")}
+            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            <span>{t("quickCreate.back")}</span>
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.cancel")}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <FormPanel>
+          <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
+          <div className="flex flex-col gap-1">
+            <ConditionEditor
+              node={plan.completion.root}
+              onChange={(next) => setField("plan.completion.root", next)}
+              t={t}
+            />
           </div>
-          <FormPanel>
-            <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
-            <div className="space-y-2">
-              {plan.references.length === 0 ? (
-                <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-              ) : null}
-              {plan.references.map((ref, i) => (
-                <div key={i} className="space-y-1 rounded-md border border-border bg-surface-0 p-2">
-                  <label className="block space-y-1 text-xs">
-                    <span className="block text-foreground-muted">id</span>
-                    <input
-                      type="text"
-                      value={ref.id}
-                      onChange={(e) => {
-                        const next = plan.references.slice();
-                        next[i] = { ...ref, id: e.target.value };
-                        setField("plan.references", next);
-                      }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </label>
-                  <label className="block space-y-1 text-xs">
-                    <span className="block text-foreground-muted">target.kind</span>
+          <FormDivider />
+          <SectionHeader icon={ListChecks} title={t("quickCreate.timeRequirements")} />
+          <div className="space-y-2">
+            {plan.completion.timeRequirements.length === 0 ? (
+              <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
+            ) : null}
+            {plan.completion.timeRequirements.map((tr, i) => (
+              <div
+                key={tr.id}
+                className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1"
+              >
+                <p className="font-mono text-[10px] text-foreground-muted">{tr.id}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="space-y-1">
+                    <span className="block text-foreground-muted">scope</span>
                     <input
                       type="number"
-                      value={ref.target.kind}
+                      value={tr.observation.scope}
                       onChange={(e) => {
-                        const next = plan.references.slice();
-                        next[i] = { ...ref, target: { ...ref.target, kind: Number(e.target.value) } };
-                        setField("plan.references", next);
+                        const next = plan.completion.timeRequirements.slice();
+                        next[i] = {
+                          ...tr,
+                          observation: {
+                            ...tr.observation,
+                            scope: Number(e.target.value) as never,
+                          },
+                        };
+                        setField("plan.completion.timeRequirements", next);
                       }}
                       className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
                     />
                   </label>
-                  <Button
-                    type="button"
-                    size="icon-xs"
-                    variant="ghost"
-                    icon={<Trash2 size={14} aria-hidden="true" />}
-                    onClick={() => {
-                      const next = plan.references.slice();
-                      next.splice(i, 1);
-                      setField("plan.references", next);
-                    }}
-                    aria-label={t("quickCreate.removeItem")}
-                    className="text-foreground-muted hover:text-danger"
-                  />
-                </div>
-              ))}
-              <Button
-                type="button"
-                size="small"
-                variant="default"
-                rounded
-                iconLeft={<Plus size={12} aria-hidden="true" />}
-                onClick={() => {
-                  setField("plan.references", [
-                    ...plan.references,
-                    { id: "", target: { kind: 0, contextKind: null, referenceId: null, conditionId: null }, pick: { kind: 0, momentId: null } },
-                  ]);
-                }}
-              >
-                {t("quickCreate.addReference")}
-              </Button>
-            </div>
-          </FormPanel>
-        </section>
-
-        <section className={subPanelClass("completion")} aria-hidden={activePanel !== "completion"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-          <FormPanel>
-            <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
-            <div className="flex flex-col gap-1">
-              <ConditionEditor
-                node={plan.completion.root}
-                onChange={(next) => setField("plan.completion.root", next)}
-                t={t}
-              />
-            </div>
-            <FormDivider />
-            <SectionHeader icon={ListChecks} title={t("quickCreate.timeRequirements")} />
-            <div className="space-y-2">
-              {plan.completion.timeRequirements.length === 0 ? (
-                <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-              ) : null}
-              {plan.completion.timeRequirements.map((tr, i) => (
-                <div key={tr.id} className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1">
-                  <p className="font-mono text-[10px] text-foreground-muted">{tr.id}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="space-y-1">
-                      <span className="block text-foreground-muted">scope</span>
-                      <input
-                        type="number"
-                        value={tr.observation.scope}
-                        onChange={(e) => {
-                          const next = plan.completion.timeRequirements.slice();
-                          next[i] = {
-                            ...tr,
-                            observation: { ...tr.observation, scope: Number(e.target.value) as never },
-                          };
-                          setField("plan.completion.timeRequirements", next);
-                        }}
-                        className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="block text-foreground-muted">min</span>
-                      <input
-                        type="number"
-                        value={tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)}
-                        onChange={(e) => {
-                          const next = plan.completion.timeRequirements.slice();
-                          const v = e.target.value;
-                          next[i] = {
-                            ...tr,
-                            required: {
-                              ...tr.required,
-                              minMs: v === "" ? null : Number(v) * 60000,
-                            },
-                          };
-                          setField("plan.completion.timeRequirements", next);
-                        }}
-                        className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                    </label>
-                  </div>
-                  <Button
-                    type="button"
-                    size="icon-xs"
-                    variant="ghost"
-                    icon={<Trash2 size={14} aria-hidden="true" />}
-                    onClick={() => {
-                      const next = plan.completion.timeRequirements.slice();
-                      next.splice(i, 1);
-                      setField("plan.completion.timeRequirements", next);
-                    }}
-                    aria-label={t("quickCreate.removeItem")}
-                    className="text-foreground-muted hover:text-danger"
-                  />
-                </div>
-              ))}
-              <Button
-                type="button"
-                size="small"
-                variant="default"
-                rounded
-                iconLeft={<Plus size={12} aria-hidden="true" />}
-                onClick={() => {
-                  setField("plan.metrics", [
-                    ...plan.metrics,
-                    { id: "m_" + Math.random().toString(36).slice(2, 9), output: 0, expression: { kind: "literal", value: 0 }, limit: null },
-                  ]);
-                }}
-              >
-                {t("quickCreate.addMetric")}
-              </Button>
-            </div>
-          </FormPanel>
-        </section>
-
-        <section className={subPanelClass("decisions")} aria-hidden={activePanel !== "decisions"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-          <FormPanel>
-            <SectionHeader icon={GitBranch} title={t("quickCreate.decisionsNavTitle")} />
-            <div className="space-y-2">
-              {plan.decisions.length === 0 ? (
-                <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-              ) : null}
-              {plan.decisions.map((d, i) => (
-                <div key={d.id} className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1">
-                  <p className="font-mono text-[10px] text-foreground-muted">{d.id}</p>
-                  <label className="block space-y-1">
-                    <span className="block text-foreground-muted">prompt</span>
-                    <input
-                      type="text"
-                      value={d.prompt}
-                      onChange={(e) => {
-                        const next = plan.decisions.slice();
-                        next[i] = { ...d, prompt: e.target.value };
-                        setField("plan.decisions", next);
-                      }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </label>
-                  <Button
-                    type="button"
-                    size="icon-xs"
-                    variant="ghost"
-                    icon={<Trash2 size={14} aria-hidden="true" />}
-                    onClick={() => {
-                      const next = plan.decisions.slice();
-                      next.splice(i, 1);
-                      setField("plan.decisions", next);
-                    }}
-                    aria-label={t("quickCreate.removeItem")}
-                    className="text-foreground-muted hover:text-danger"
-                  />
-                </div>
-              ))}
-              <Button
-                type="button"
-                size="small"
-                variant="default"
-                rounded
-                iconLeft={<Plus size={12} aria-hidden="true" />}
-                onClick={() => {
-                  setField("plan.decisions", [
-                    ...plan.decisions,
-                    { id: "d_" + Math.random().toString(36).slice(2, 9), kind: 0, when: null, prompt: "", options: [] },
-                  ]);
-                }}
-              >
-                {t("quickCreate.addDecision")}
-              </Button>
-            </div>
-          </FormPanel>
-        </section>
-
-        <section className={subPanelClass("recurringRules")} aria-hidden={activePanel !== "recurringRules"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-          <FormPanel>
-            <SectionHeader icon={Settings2} title={t("quickCreate.recurringRulesNavTitle")} />
-            <div className="space-y-2">
-              {recurring.rules.length === 0 ? (
-                <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-              ) : null}
-              {recurring.rules.map((rule, i) => (
-                <div key={rule.id} className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-2">
-                  <p className="font-mono text-[10px] text-foreground-muted">{rule.id}</p>
-                  <label className="block space-y-1">
-                    <span className="block text-foreground-muted">when (rank)</span>
+                  <label className="space-y-1">
+                    <span className="block text-foreground-muted">min</span>
                     <input
                       type="number"
-                      value={rule.rank}
-                      onChange={(e) => {
-                        const next = recurring.rules.slice();
-                        next[i] = { ...rule, rank: Number(e.target.value) };
-                        setField("recurring.rules", next);
-                      }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </label>
-                  {rule.when ? (
-                    <ConditionEditor
-                      node={rule.when}
-                      onChange={(next) => {
-                        const rulesNext = recurring.rules.slice();
-                        rulesNext[i] = { ...rule, when: next };
-                        setField("recurring.rules", rulesNext);
-                      }}
-                      t={t}
-                    />
-                  ) : null}
-                  <Button
-                    type="button"
-                    size="icon-xs"
-                    variant="ghost"
-                    icon={<Trash2 size={14} aria-hidden="true" />}
-                    onClick={() => {
-                      const next = recurring.rules.slice();
-                      next.splice(i, 1);
-                      setField("recurring.rules", next);
-                    }}
-                    aria-label={t("quickCreate.removeItem")}
-                    className="text-foreground-muted hover:text-danger"
-                  />
-                </div>
-              ))}
-              <Button
-                type="button"
-                size="small"
-                variant="default"
-                rounded
-                iconLeft={<Plus size={12} aria-hidden="true" />}
-                onClick={() => {
-                  setField("recurring.rules", [
-                    ...recurring.rules,
-                    {
-                      id: "rr_" + Math.random().toString(36).slice(2, 9),
-                      when: null,
-                      rank: 0,
-                      outputs: [],
-                    },
-                  ]);
-                }}
-              >
-                {t("quickCreate.addRecurringRule")}
-              </Button>
-            </div>
-          </FormPanel>
-        </section>
-
-        <section className={subPanelClass("meta")} aria-hidden={activePanel !== "meta"}>
-          <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.back")}
-              className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ChevronLeft size={16} aria-hidden="true" />
-              <span>{t("quickCreate.back")}</span>
-            </button>
-            <div className="flex-1" />
-            <button
-              type="button"
-              onClick={() => setActivePanel("base")}
-              aria-label={t("quickCreate.cancel")}
-              className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <X size={16} aria-hidden="true" />
-            </button>
-          </div>
-          <FormPanel>
-            <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
-            <FormRow icon={null}>
-              <input
-                type="text"
-                value={meta.project ?? ""}
-                onChange={(e) =>
-                  setField(
-                    "meta.project",
-                    e.target.value.trim() ? e.target.value : null,
-                  )
-                }
-                placeholder={t("quickCreate.projectPlaceholder")}
-                aria-label={t("quickCreate.projectPlaceholder")}
-                className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-              />
-            </FormRow>
-            <FormRow icon={null}>
-              <div className="flex w-full flex-wrap items-center gap-1.5">
-                {meta.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                  >
-                    <span>#{tag}</span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setField(
-                          "meta.tags",
-                          meta.tags.filter((x) => x !== tag),
-                        )
+                      value={
+                        tr.required.minMs === null
+                          ? ""
+                          : Math.round((tr.required.minMs ?? 0) / 60000)
                       }
-                      aria-label={t("quickCreate.removeItem")}
-                      className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <X size={10} aria-hidden="true" />
-                    </button>
-                  </span>
-                ))}
-                <input
-                  type="text"
-                  placeholder={t("quickCreate.tagsPlaceholder")}
-                  aria-label={t("quickCreate.tagsPlaceholder")}
-                  className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === ",") {
-                      e.preventDefault();
-                      const v = (e.currentTarget.value || "").trim();
-                      if (!v) return;
-                      if (meta.tags.includes(v)) return;
-                      setField("meta.tags", [...meta.tags, v]);
-                      e.currentTarget.value = "";
-                    }
+                      onChange={(e) => {
+                        const next = plan.completion.timeRequirements.slice();
+                        const v = e.target.value;
+                        next[i] = {
+                          ...tr,
+                          required: {
+                            ...tr.required,
+                            minMs: v === "" ? null : Number(v) * 60000,
+                          },
+                        };
+                        setField("plan.completion.timeRequirements", next);
+                      }}
+                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </label>
+                </div>
+                <Button
+                  type="button"
+                  size="icon-xs"
+                  variant="ghost"
+                  icon={<Trash2 size={14} aria-hidden="true" />}
+                  onClick={() => {
+                    const next = plan.completion.timeRequirements.slice();
+                    next.splice(i, 1);
+                    setField("plan.completion.timeRequirements", next);
                   }}
+                  aria-label={t("quickCreate.removeItem")}
+                  className="text-foreground-muted hover:text-danger"
                 />
               </div>
-            </FormRow>
-            <FormRow icon={null}>
-              <Textarea
-                value={meta.memo}
-                onChange={(e) => setField("meta.memo", e.target.value)}
-                placeholder={t("quickCreate.memoPlaceholder")}
-                aria-label={t("quickCreate.memoPlaceholder")}
-                rows={6}
-                className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
+            ))}
+            <Button
+              type="button"
+              size="small"
+              variant="default"
+              rounded
+              iconLeft={<Plus size={12} aria-hidden="true" />}
+              onClick={() => {
+                setField("plan.metrics", [
+                  ...plan.metrics,
+                  {
+                    id: `m_${Math.random().toString(36).slice(2, 9)}`,
+                    output: 0,
+                    expression: { kind: "literal", value: 0 },
+                    limit: null,
+                  },
+                ]);
+              }}
+            >
+              {t("quickCreate.addMetric")}
+            </Button>
+          </div>
+        </FormPanel>
+      </section>
+
+      <section className={subPanelClass("meta")} aria-hidden={activePanel !== "meta"}>
+        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.back")}
+            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft size={16} aria-hidden="true" />
+            <span>{t("quickCreate.back")}</span>
+          </button>
+          <div className="flex-1" />
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            aria-label={t("quickCreate.cancel")}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+        <FormPanel>
+          <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
+          <FormRow icon={null}>
+            <select
+              value={meta.ownerSubjectId ?? ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                setField("meta.ownerSubjectId", v ? v : null);
+              }}
+              aria-label={t("quickCreate.projectPlaceholder")}
+              data-testid="owner-select-detail"
+              className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
+            >
+              <option value="">Personal (default)</option>
+              {projects.workspaces.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.display_name}
+                </option>
+              ))}
+            </select>
+          </FormRow>
+          <FormRow icon={null}>
+            <div className="flex w-full flex-wrap items-center gap-1.5">
+              {meta.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
+                >
+                  <span>#{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setField(
+                        "meta.tags",
+                        meta.tags.filter((x) => x !== tag),
+                      )
+                    }
+                    aria-label={t("quickCreate.removeItem")}
+                    className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <X size={10} aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+              <input
+                type="text"
+                placeholder={t("quickCreate.tagsPlaceholder")}
+                aria-label={t("quickCreate.tagsPlaceholder")}
+                className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === ",") {
+                    e.preventDefault();
+                    const v = (e.currentTarget.value || "").trim();
+                    if (!v) return;
+                    if (meta.tags.includes(v)) return;
+                    setField("meta.tags", [...meta.tags, v]);
+                    e.currentTarget.value = "";
+                  }
+                }}
               />
-            </FormRow>
-          </FormPanel>
-        </section>
+            </div>
+          </FormRow>
+          <FormRow icon={null}>
+            <Textarea
+              value={meta.memo}
+              onChange={(e) => setField("meta.memo", e.target.value)}
+              placeholder={t("quickCreate.memoPlaceholder")}
+              aria-label={t("quickCreate.memoPlaceholder")}
+              rows={6}
+              className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
+            />
+          </FormRow>
+        </FormPanel>
+      </section>
     </>
   );
 }
@@ -2059,13 +2094,7 @@ function TermKindSegmented({
     { value: "life", label: t("quickCreate.termLife") },
   ];
   return (
-    <RowSegmented
-      icon={ListChecks}
-      options={options}
-      value={value}
-      onChange={onChange}
-      compact
-    />
+    <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />
   );
 }
 
@@ -2192,7 +2221,15 @@ function updateValue(term: Term, key: string, value: unknown): Term {
   return { ...term, value: { ...term.value, [key]: value } } as Term;
 }
 
-function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) => void; t: (k: string) => string }) {
+function TermFields({
+  term,
+  onChange,
+  t,
+}: {
+  term: Term;
+  onChange: (next: Term) => void;
+  t: (k: string) => string;
+}) {
   switch (term.kind) {
     case "calendar":
       return (
@@ -2205,9 +2242,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
               type="number"
               value={term.value.weekdayMask}
               onChange={(e) =>
-                onChange(
-                  updateCalendar(term, "weekdayMask", Number(e.target.value)),
-                )
+                onChange(updateCalendar(term, "weekdayMask", Number(e.target.value)))
               }
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
@@ -2219,11 +2254,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="number"
               value={term.value.offsetMin}
-              onChange={(e) =>
-                onChange(
-                  updateCalendar(term, "offsetMin", Number(e.target.value)),
-                )
-              }
+              onChange={(e) => onChange(updateCalendar(term, "offsetMin", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2236,30 +2267,20 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
               value={term.value.timeStart ?? ""}
               onChange={(e) =>
                 onChange(
-                  updateCalendar(
-                    term,
-                    "timeStart",
-                    e.target.value === "" ? null : e.target.value,
-                  ),
+                  updateCalendar(term, "timeStart", e.target.value === "" ? null : e.target.value),
                 )
               }
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.calendarTimeEnd")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.calendarTimeEnd")}</span>
             <input
               type="time"
               value={term.value.timeEnd ?? ""}
               onChange={(e) =>
                 onChange(
-                  updateCalendar(
-                    term,
-                    "timeEnd",
-                    e.target.value === "" ? null : e.target.value,
-                  ),
+                  updateCalendar(term, "timeEnd", e.target.value === "" ? null : e.target.value),
                 )
               }
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
@@ -2279,26 +2300,18 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
               value={term.value.referenceId ?? ""}
               onChange={(e) =>
                 onChange(
-                  updateMoment(
-                    term,
-                    "referenceId",
-                    e.target.value === "" ? null : e.target.value,
-                  ),
+                  updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value),
                 )
               }
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.momentOffsetMs")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.momentOffsetMs")}</span>
             <input
               type="number"
               value={term.value.offsetMs}
-              onChange={(e) =>
-                onChange(updateMoment(term, "offsetMs", Number(e.target.value)))
-              }
+              onChange={(e) => onChange(updateMoment(term, "offsetMs", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2314,24 +2327,16 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="text"
               value={term.value.referenceId}
-              onChange={(e) =>
-                onChange(updateRelation(term, "referenceId", e.target.value))
-              }
+              onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.relationKind")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.relationKind")}</span>
             <input
               type="number"
               value={term.value.relation}
-              onChange={(e) =>
-                onChange(
-                  updateRelation(term, "relation", Number(e.target.value)),
-                )
-              }
+              onChange={(e) => onChange(updateRelation(term, "relation", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2342,11 +2347,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="number"
               value={term.value.windowKind}
-              onChange={(e) =>
-                onChange(
-                  updateRelation(term, "windowKind", Number(e.target.value)),
-                )
-              }
+              onChange={(e) => onChange(updateRelation(term, "windowKind", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2356,9 +2357,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.taskId")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.taskId")}</span>
             <input
               type="text"
               value={term.value.taskId}
@@ -2367,15 +2366,11 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.taskState")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.taskState")}</span>
             <input
               type="number"
               value={term.value.state}
-              onChange={(e) =>
-                onChange(updateTask(term, "state", Number(e.target.value)))
-              }
+              onChange={(e) => onChange(updateTask(term, "state", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2385,32 +2380,20 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.requirementId")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.requirementId")}</span>
             <input
               type="text"
               value={term.value.requirementId}
-              onChange={(e) =>
-                onChange(
-                  updateRequirement(term, "requirementId", e.target.value),
-                )
-              }
+              onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.requirementState")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.requirementState")}</span>
             <input
               type="number"
               value={term.value.state}
-              onChange={(e) =>
-                onChange(
-                  updateRequirement(term, "state", Number(e.target.value)),
-                )
-              }
+              onChange={(e) => onChange(updateRequirement(term, "state", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2421,11 +2404,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
     case "feedback": {
       const v = term.value as unknown as { op: number; value: unknown; [k: string]: unknown };
       const idKey =
-        term.kind === "fact"
-          ? "factId"
-          : term.kind === "metric"
-            ? "metricId"
-            : "feedbackTxnId";
+        term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label className="space-y-1">
@@ -2433,9 +2412,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="text"
               value={String(v[idKey] ?? "")}
-              onChange={(e) =>
-                onChange(updateValue(term, idKey, e.target.value))
-              }
+              onChange={(e) => onChange(updateValue(term, idKey, e.target.value))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2444,9 +2421,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="number"
               value={v.op}
-              onChange={(e) =>
-                onChange(updateValue(term, "op", Number(e.target.value)))
-              }
+              onChange={(e) => onChange(updateValue(term, "op", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2463,11 +2438,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
                 }
                 const num = Number(raw);
                 onChange(
-                  updateValue(
-                    term,
-                    "value",
-                    Number.isFinite(num) && raw.trim() !== "" ? num : raw,
-                  ),
+                  updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw),
                 );
               }}
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
@@ -2484,9 +2455,7 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="text"
               value={term.value.target}
-              onChange={(e) =>
-                onChange(updateLife(term, "target", e.target.value))
-              }
+              onChange={(e) => onChange(updateLife(term, "target", e.target.value))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
@@ -2495,20 +2464,14 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
             <input
               type="number"
               value={term.value.state}
-              onChange={(e) =>
-                onChange(updateLife(term, "state", Number(e.target.value)))
-              }
+              onChange={(e) => onChange(updateLife(term, "state", Number(e.target.value)))}
               className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
             />
           </label>
         </div>
       );
     case "gap":
-      return (
-        <p className="text-xs text-foreground-muted">
-          {t("quickCreate.gapPlaceholder")}
-        </p>
-      );
+      return <p className="text-xs text-foreground-muted">{t("quickCreate.gapPlaceholder")}</p>;
     default:
       return null;
   }
@@ -2535,9 +2498,17 @@ function ConditionEditor({
         onChange={(kind) => {
           if (kind === ConditionKind.TERM) {
             const currentTerm = node.term ?? defaultTerm("calendar");
-            onChange({ kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue, children: [], term: currentTerm });
+            onChange({
+              kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue,
+              children: [],
+              term: currentTerm,
+            });
           } else {
-            onChange({ kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue, children: node.children, term: null });
+            onChange({
+              kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue,
+              children: node.children,
+              term: null,
+            });
           }
         }}
         t={t}
@@ -2625,15 +2596,7 @@ function ConditionEditor({
   );
 }
 
-
-
-function FullFieldList({
-  data,
-  emptyLabel,
-}: {
-  data: unknown;
-  emptyLabel: string;
-}) {
+function _FullFieldList({ data, emptyLabel }: { data: unknown; emptyLabel: string }) {
   // v1 full-parameter dump. The structured editors will replace this
   // incrementally, but every sub-panel must show the underlying data
   // so no v1 field is hidden.
@@ -2654,9 +2617,7 @@ function FullFieldList({
       Object.keys(data as object).length === 0);
   return (
     <div className="space-y-2">
-      {isEmpty ? (
-        <p className="text-xs text-foreground-muted">{emptyLabel}</p>
-      ) : null}
+      {isEmpty ? <p className="text-xs text-foreground-muted">{emptyLabel}</p> : null}
       <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-surface-2 p-3 text-[11px] leading-snug text-foreground-muted">
         {serialized}
       </pre>
@@ -2664,13 +2625,7 @@ function FullFieldList({
   );
 }
 
-function SectionHeader({
-  icon: Icon,
-  title,
-}: {
-  icon: typeof AlertCircle;
-  title: string;
-}) {
+function SectionHeader({ icon: Icon, title }: { icon: typeof AlertCircle; title: string }) {
   return (
     <div
       className="flex items-center gap-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted"
@@ -2682,7 +2637,7 @@ function SectionHeader({
   );
 }
 
-function StubRow({
+function _StubRow({
   icon: Icon,
   title,
   count,
@@ -2729,64 +2684,60 @@ function ScheduleRow({
   const endInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <>
-      <div className="grid grid-cols-2 gap-2">
-        {/* 開始日時選択ボタン */}
-        <div className="space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-            {t("quickCreate.startAt")}
-          </span>
-          <button
-            type="button"
-            onClick={() => startInputRef.current?.showPicker()}
-            className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            {formatDisplayDate(spanStart, allDay, locale)}
-          </button>
-          <input
-            ref={startInputRef}
-            type={allDay ? "date" : "datetime-local"}
-            aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? (allDay ? "日付" : "日時") : (allDay ? "date" : "datetime")})`}
-            value={allDay ? isoToLocalDate(spanStart) : isoToLocalDateTime(spanStart)}
-            onChange={(e) => onStartChange(e.target.value)}
-            className="sr-only"
-          />
-        </div>
-
-        {/* 終了日時選択ボタン */}
-        <div className="space-y-1">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-            {t("quickCreate.endAt")}
-          </span>
-          <button
-            type="button"
-            onClick={() => endInputRef.current?.showPicker()}
-            className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            {formatDisplayDate(spanEnd, allDay, locale)}
-          </button>
-          <input
-            ref={endInputRef}
-            type={allDay ? "date" : "datetime-local"}
-            aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? (allDay ? "日付" : "日時") : (allDay ? "date" : "datetime")})`}
-            value={allDay ? isoToLocalDate(spanEnd) : isoToLocalDateTime(spanEnd)}
-            onChange={(e) => onEndChange(e.target.value)}
-            className="sr-only"
-          />
-        </div>
+    <div className="grid grid-cols-2 gap-2">
+      {/* 開始日時選択ボタン */}
+      <div className="space-y-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
+          {t("quickCreate.startAt")}
+        </span>
+        <button
+          type="button"
+          onClick={() => startInputRef.current?.showPicker()}
+          className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {formatDisplayDate(spanStart, allDay, locale)}
+        </button>
+        <input
+          ref={startInputRef}
+          type={allDay ? "date" : "datetime-local"}
+          aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? (allDay ? "日付" : "日時") : allDay ? "date" : "datetime"})`}
+          value={allDay ? isoToLocalDate(spanStart) : isoToLocalDateTime(spanStart)}
+          onChange={(e) => onStartChange(e.target.value)}
+          className="sr-only"
+        />
       </div>
-    </>
+
+      {/* 終了日時選択ボタン */}
+      <div className="space-y-1">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
+          {t("quickCreate.endAt")}
+        </span>
+        <button
+          type="button"
+          onClick={() => endInputRef.current?.showPicker()}
+          className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {formatDisplayDate(spanEnd, allDay, locale)}
+        </button>
+        <input
+          ref={endInputRef}
+          type={allDay ? "date" : "datetime-local"}
+          aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? (allDay ? "日付" : "日時") : allDay ? "date" : "datetime"})`}
+          value={allDay ? isoToLocalDate(spanEnd) : isoToLocalDateTime(spanEnd)}
+          onChange={(e) => onEndChange(e.target.value)}
+          className="sr-only"
+        />
+      </div>
+    </div>
   );
 }
 
 function DurationRow({
   minMs,
-  maxMs,
   onChange,
   t,
 }: {
   minMs: number | null;
-  maxMs: number | null;
   onChange: (value: number | null) => void;
   t: (key: string) => string;
 }) {
@@ -2879,9 +2830,7 @@ function GeneratorEditor({
         <FormRow icon={<Clock size={20} />}>
           <div className="flex w-full items-center gap-2 text-sm">
             <label className="flex flex-1 items-center gap-1.5">
-              <span className="text-foreground-muted">
-                {t("quickCreate.stepMin")}
-              </span>
+              <span className="text-foreground-muted">{t("quickCreate.stepMin")}</span>
               <input
                 type="number"
                 min={1}
@@ -2911,9 +2860,7 @@ function GeneratorEditor({
               className="space-y-1 border-l-2 border-surface-2 pl-3"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs text-foreground-muted">
-                  #{index + 1}
-                </span>
+                <span className="text-xs text-foreground-muted">#{index + 1}</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -2933,9 +2880,7 @@ function GeneratorEditor({
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <label className="flex items-center gap-1.5">
-                  <span className="text-foreground-muted">
-                    {t("quickCreate.focusMin")}
-                  </span>
+                  <span className="text-foreground-muted">{t("quickCreate.focusMin")}</span>
                   <input
                     type="number"
                     min={1}
@@ -2948,9 +2893,7 @@ function GeneratorEditor({
                         return {
                           ...current,
                           phases: current.phases.map((p, i) =>
-                            i === index
-                              ? { ...p, focus_min: Number(e.target.value) || 1 }
-                              : p,
+                            i === index ? { ...p, focus_min: Number(e.target.value) || 1 } : p,
                           ),
                         };
                       })
@@ -2959,9 +2902,7 @@ function GeneratorEditor({
                   />
                 </label>
                 <label className="flex items-center gap-1.5">
-                  <span className="text-foreground-muted">
-                    {t("quickCreate.breakMin")}
-                  </span>
+                  <span className="text-foreground-muted">{t("quickCreate.breakMin")}</span>
                   <input
                     type="number"
                     min={0}
@@ -2974,9 +2915,7 @@ function GeneratorEditor({
                         return {
                           ...current,
                           phases: current.phases.map((p, i) =>
-                            i === index
-                              ? { ...p, break_min: Number(e.target.value) || 0 }
-                              : p,
+                            i === index ? { ...p, break_min: Number(e.target.value) || 0 } : p,
                           ),
                         };
                       })
@@ -2998,10 +2937,7 @@ function GeneratorEditor({
                 if (current.kind !== "focus_block_based") return current;
                 return {
                   ...current,
-                  phases: [
-                    ...current.phases,
-                    { focus_min: 25, break_min: 5 },
-                  ],
+                  phases: [...current.phases, { focus_min: 25, break_min: 5 }],
                 };
               })
             }
@@ -3077,9 +3013,7 @@ function WindowEditor({
               type="button"
               role="switch"
               aria-checked={active}
-              aria-label={
-                locale === "ja" ? `曜日 ${label}` : `Weekday ${label}`
-              }
+              aria-label={locale === "ja" ? `曜日 ${label}` : `Weekday ${label}`}
               onClick={() => toggleDay(bit)}
               className={cn(
                 "flex h-8 w-9 items-center justify-center rounded-md border text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
@@ -3095,9 +3029,7 @@ function WindowEditor({
       </div>
       <div className="grid grid-cols-2 gap-2">
         <label className="block space-y-1 text-xs">
-          <span className="block text-foreground-muted">
-            {t("quickCreate.windowStartAt")}
-          </span>
+          <span className="block text-foreground-muted">{t("quickCreate.windowStartAt")}</span>
           <input
             type="time"
             aria-label={t("quickCreate.windowStartAt")}
@@ -3112,9 +3044,7 @@ function WindowEditor({
           />
         </label>
         <label className="block space-y-1 text-xs">
-          <span className="block text-foreground-muted">
-            {t("quickCreate.windowEndAt")}
-          </span>
+          <span className="block text-foreground-muted">{t("quickCreate.windowEndAt")}</span>
           <input
             type="time"
             aria-label={t("quickCreate.windowEndAt")}
@@ -3183,107 +3113,6 @@ function RecurringLifeEditor({
   );
 }
 
-function TagRowEditor({
-  tags,
-  onAdd,
-  onRemove,
-  t,
-}: {
-  tags: string[];
-  onAdd: (tag: string) => void;
-  onRemove: (tag: string) => void;
-  t: (key: string) => string;
-}) {
-  const [draft, setDraft] = useState("");
-  return (
-    <>
-      <FormRow icon={<Plus size={20} />}>
-        <div className="flex w-full items-center gap-2">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              e.preventDefault();
-              const next = draft.trim().replace(/\s+/g, " ");
-              if (next) {
-                onAdd(next);
-                setDraft("");
-              }
-            }}
-            aria-label={t("quickCreate.tagsPlaceholder")}
-            placeholder={t("quickCreate.tagsPlaceholder")}
-            className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-          />
-        </div>
-      </FormRow>
-      {tags.length > 0 ? (
-        <div className="flex flex-wrap gap-1">
-          {tags.map((tag) => (
-            <span
-              key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
-            >
-              <span>#{tag}</span>
-              <button
-                type="button"
-                onClick={() => onRemove(tag)}
-                aria-label={`${t("quickCreate.removeTag")} ${tag}`}
-                className="flex h-4 w-4 items-center justify-center rounded-full text-primary/70 hover:bg-primary/20 hover:text-primary focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <X size={10} aria-hidden="true" />
-              </button>
-            </span>
-          ))}
-        </div>
-      ) : null}
-    </>
-  );
-}
-
-function MemoRowEditor({
-  expanded,
-  value,
-  onChange,
-  onExpand,
-  t,
-}: {
-  expanded: boolean;
-  value: string;
-  onChange: (value: string) => void;
-  onExpand: () => void;
-  t: (key: string) => string;
-}) {
-  if (expanded) {
-    return (
-      <FormRow icon={<MessageSquare size={20} />}>
-        <Textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={t("quickCreate.memoPlaceholder")}
-          aria-label={t("quickCreate.memoPlaceholder")}
-          rows={3}
-          className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
-        />
-      </FormRow>
-    );
-  }
-  return (
-    <FormRow icon={<MessageSquare size={20} />}>
-      <Button
-        type="button"
-        size="small"
-        variant="default"
-        rounded
-        iconLeft={<Plus size={12} aria-hidden="true" />}
-        onClick={onExpand}
-      >
-        {t("quickCreate.memoAdd")}
-      </Button>
-    </FormRow>
-  );
-}
-
 // ---------- window / frame rule editors ----------
 
 function WindowRow({
@@ -3303,10 +3132,7 @@ function WindowRow({
 }) {
   const referenceKind = window.kind === 1 || window.kind === 2 || window.kind === 3;
   return (
-    <div
-      data-testid={`window-row-${index}`}
-      className="space-y-2 border-l-2 border-surface-2 pl-3"
-    >
+    <div data-testid={`window-row-${index}`} className="space-y-2 border-l-2 border-surface-2 pl-3">
       <div className="flex items-center justify-between">
         <span className="text-xs text-foreground-muted">
           {t("quickCreate.windowsTitle")} #{index + 1}
@@ -3327,9 +3153,7 @@ function WindowRow({
           label: t(opt.label),
         }))}
         value={String(window.kind)}
-        onChange={(value) =>
-          onUpdate(index, (w) => ({ ...w, kind: Number(value) }))
-        }
+        onChange={(value) => onUpdate(index, (w) => ({ ...w, kind: Number(value) }))}
       />
       <FormRow icon={<Calendar size={20} />}>
         <div className="grid w-full grid-cols-2 gap-2">
@@ -3393,10 +3217,7 @@ function FrameRulesList({
   rules: FrameRule[];
   onAdd: () => void;
   onRemove: (index: number) => void;
-  onUpdate: (
-    index: number,
-    updater: (current: FrameRule) => FrameRule,
-  ) => void;
+  onUpdate: (index: number, updater: (current: FrameRule) => FrameRule) => void;
   t: (key: string) => string;
 }) {
   return (
@@ -3405,14 +3226,7 @@ function FrameRulesList({
         {t("quickCreate.frameRulesTitle")} ({rules.length})
       </div>
       {rules.map((r, i) => (
-        <FrameRuleRow
-          key={r.id}
-          rule={r}
-          index={i}
-          onUpdate={onUpdate}
-          onRemove={onRemove}
-          t={t}
-        />
+        <FrameRuleRow key={r.id} rule={r} index={i} onUpdate={onUpdate} onRemove={onRemove} t={t} />
       ))}
       <Button
         type="button"
@@ -3437,10 +3251,7 @@ function FrameRuleRow({
 }: {
   rule: FrameRule;
   index: number;
-  onUpdate: (
-    index: number,
-    updater: (current: FrameRule) => FrameRule,
-  ) => void;
+  onUpdate: (index: number, updater: (current: FrameRule) => FrameRule) => void;
   onRemove: (index: number) => void;
   t: (key: string) => string;
 }) {
@@ -3483,8 +3294,7 @@ function FrameRuleRow({
       {renderGeneratorFields({
         kind: generatorKind,
         value,
-        onChange: (next) =>
-          onUpdate(index, (r) => ({ ...r, generator: next })),
+        onChange: (next) => onUpdate(index, (r) => ({ ...r, generator: next })),
         t,
       })}
     </div>
@@ -3538,9 +3348,7 @@ function renderGeneratorFields({
               <input
                 type="datetime-local"
                 aria-label={`${t("quickCreate.frameRuleBoundsLabel")} ${t("quickCreate.startAt")}`}
-                value={
-                  stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.start) : ""
-                }
+                value={stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.start) : ""}
                 onChange={(e) =>
                   onChange({
                     kind: "step",
@@ -3563,9 +3371,7 @@ function renderGeneratorFields({
               <input
                 type="datetime-local"
                 aria-label={`${t("quickCreate.frameRuleBoundsLabel")} ${t("quickCreate.endAt")}`}
-                value={
-                  stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.end) : ""
-                }
+                value={stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.end) : ""}
                 onChange={(e) =>
                   onChange({
                     kind: "step",

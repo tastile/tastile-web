@@ -1,26 +1,8 @@
-import {
-  PlanRole,
-  PlacementSource,
-  TileKind,
-} from "@/lib/domain/v1/constants";
-import {
-  nowIso,
-  uuidv7,
-  type ApiError,
-  type CommandRequest,
-} from "@/lib/domain/v1/envelope";
-import {
-  sendCommand,
-  type ApiClient,
-  type Result,
-} from "./endpoints";
+import { PlacementSource, PlanRole, TileKind } from "@/lib/domain/v1/constants";
+import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/lib/domain/v1/envelope";
+import { type ApiClient, type Result, sendCommand } from "./endpoints";
 
 type CommandResult = Result<import("@/lib/domain/v1/envelope").CommandResponse>;
-
-export interface TileCommandOptions {
-  client: ApiClient;
-  tileId: string;
-}
 
 export interface CreateTileCommandOptions {
   client: ApiClient;
@@ -28,21 +10,23 @@ export interface CreateTileCommandOptions {
   description?: string | null;
   color?: string | null;
   icon?: string | null;
+  ownerSubjectId?: string | null;
 }
 
-export interface UpdateTileCommandOptions extends TileCommandOptions {
+export interface UpdateTileCommandOptions {
+  client: ApiClient;
+  tileId: string;
   title?: string;
   description?: string | null;
   color?: string | null;
   icon?: string | null;
   externalId?: string | null;
+  ownerSubjectId?: string | null;
 }
 
-export interface DeferTileCommandOptions extends TileCommandOptions {
-  deferredUntil: string;
-}
-
-export interface StartTileCommandOptions extends TileCommandOptions {
+export interface StartTileCommandOptions {
+  client: ApiClient;
+  tileId: string;
   planId: string;
   start: string;
   end: string;
@@ -51,12 +35,6 @@ export interface StartTileCommandOptions extends TileCommandOptions {
 export type StartTileExecutionResult =
   | { ok: true; placementId: string; executionId: string | null }
   | { ok: false; error: ApiError };
-
-const TileLifecycleState = {
-  ACTIVE: 0,
-  DEFERRED: 1,
-  COMPLETED: 2,
-} as const;
 
 function envelope<T>(payload: T): CommandRequest<T> {
   return {
@@ -79,25 +57,27 @@ function emptyTitleError(): { ok: false; error: ApiError } {
   };
 }
 
-export async function createTileCommand(
-  options: CreateTileCommandOptions,
-): Promise<CommandResult> {
+export async function createTileCommand(options: CreateTileCommandOptions): Promise<CommandResult> {
   const title = options.title.trim();
   if (!title) return emptyTitleError();
-  return sendCommand(options.client, "POST", "/v1/tiles", envelope({
-    kind: TileKind.PLACEMENT,
-    title,
-    description: options.description ?? null,
-    color: options.color ?? "#3b82f6",
-    icon: options.icon ?? "check-circle",
-    external_id: null,
-    plan_role: PlanRole.EXECUTABLE,
-  }));
+  return sendCommand(
+    options.client,
+    "POST",
+    "/v1/tiles",
+    envelope({
+      kind: TileKind.PLACEMENT,
+      title,
+      description: options.description ?? null,
+      color: options.color ?? "#3b82f6",
+      icon: options.icon ?? "check-circle",
+      external_id: null,
+      plan_role: PlanRole.EXECUTABLE,
+      owner_subject_id: options.ownerSubjectId ?? null,
+    }),
+  );
 }
 
-export async function updateTileCommand(
-  options: UpdateTileCommandOptions,
-): Promise<CommandResult> {
+export async function updateTileCommand(options: UpdateTileCommandOptions): Promise<CommandResult> {
   const payload: Record<string, unknown> = { tile_id: options.tileId };
   if (options.title !== undefined) {
     const title = options.title.trim();
@@ -108,6 +88,9 @@ export async function updateTileCommand(
   if (options.color !== undefined) payload.color = options.color;
   if (options.icon !== undefined) payload.icon = options.icon;
   if (options.externalId !== undefined) payload.external_id = options.externalId;
+  if (options.ownerSubjectId !== undefined) {
+    payload.owner_subject_id = options.ownerSubjectId;
+  }
 
   return sendCommand(
     options.client,
@@ -117,82 +100,7 @@ export async function updateTileCommand(
   );
 }
 
-export function archiveTileCommand(
-  options: TileCommandOptions,
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "DELETE",
-    `/v1/tiles/${options.tileId}`,
-    envelope({ tile_id: options.tileId }),
-  );
-}
-
-export function completeTileCommand(
-  options: TileCommandOptions,
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/tiles/${options.tileId}/complete`,
-    envelope({
-      tile_id: options.tileId,
-      state: TileLifecycleState.COMPLETED,
-      deferred_until: null,
-      completed_at: nowIso(),
-      bump_extend: false,
-    }),
-  );
-}
-
-export function deferTileCommand(
-  options: DeferTileCommandOptions,
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/tiles/${options.tileId}/defer`,
-    envelope({
-      tile_id: options.tileId,
-      state: TileLifecycleState.DEFERRED,
-      deferred_until: options.deferredUntil,
-      completed_at: null,
-      bump_extend: false,
-    }),
-  );
-}
-
-export function extendTilePhaseCommand(
-  options: TileCommandOptions,
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/tiles/${options.tileId}/extend-phase`,
-    envelope({
-      tile_id: options.tileId,
-      state: TileLifecycleState.ACTIVE,
-      deferred_until: null,
-      completed_at: null,
-      bump_extend: true,
-    }),
-  );
-}
-
-export function attachMemoCommand(
-  options: TileCommandOptions & { body: string },
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/tiles/${options.tileId}/memos`,
-    envelope({ tile_id: options.tileId, body: options.body }),
-  );
-}
-
-export function startTileCommand(
-  options: StartTileCommandOptions,
-): Promise<CommandResult> {
+export function startTileCommand(options: StartTileCommandOptions): Promise<CommandResult> {
   const sourceRef = {
     created: null,
     recurring: null,
@@ -219,9 +127,10 @@ export function startTileCommand(
   );
 }
 
-export function startExecutionCommand(
-  options: { client: ApiClient; placementId: string },
-): Promise<CommandResult> {
+export function startExecutionCommand(options: {
+  client: ApiClient;
+  placementId: string;
+}): Promise<CommandResult> {
   return sendCommand(
     options.client,
     "POST",

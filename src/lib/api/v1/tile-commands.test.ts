@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ApiClient } from "./endpoints";
 import {
-  archiveTileCommand,
   createTileCommand,
   startTileExecutionCommand,
   updateTileCommand,
@@ -51,7 +50,23 @@ describe("tile v1 commands", () => {
       color: "#3b82f6",
       icon: "check-circle",
       plan_role: 0,
+      owner_subject_id: null,
     });
+  });
+
+  it("includes owner_subject_id in payload when provided", async () => {
+    mockFetch.mockResolvedValueOnce(okResponse(commandResponse));
+
+    const res = await createTileCommand({
+      client,
+      title: "In workspace",
+      ownerSubjectId: "ws-uuid-1234",
+    });
+
+    expect(res.ok).toBe(true);
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const body = JSON.parse(init.body as string);
+    expect(body.payload.owner_subject_id).toBe("ws-uuid-1234");
   });
 
   it("updates tile identity through POST /v1/tiles/{id}/update", async () => {
@@ -73,16 +88,18 @@ describe("tile v1 commands", () => {
     });
   });
 
-  it("archives tiles through DELETE /v1/tiles/{id}", async () => {
+  it("includes owner_subject_id in update payload when provided", async () => {
     mockFetch.mockResolvedValueOnce(okResponse(commandResponse));
 
-    const res = await archiveTileCommand({ client, tileId: "tile-1" });
+    const res = await updateTileCommand({
+      client,
+      tileId: "tile-1",
+      ownerSubjectId: "ws-uuid-1234",
+    });
 
     expect(res.ok).toBe(true);
-    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/proxy/v1/tiles/tile-1");
-    expect(init.method).toBe("DELETE");
-    expect(JSON.parse(init.body as string).payload).toEqual({ tile_id: "tile-1" });
+    const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(init.body as string).payload.owner_subject_id).toBe("ws-uuid-1234");
   });
 
   it("starts a tile by creating a placement and then starting execution", async () => {

@@ -42,7 +42,7 @@ export interface AdvancedSlice {
 }
 
 export interface MetaSlice {
-  project: string | null;
+  ownerSubjectId: string | null;
   tags: string[];
   memo: string;
 }
@@ -266,7 +266,7 @@ function defaultAdvanced(): AdvancedSlice {
 
 function defaultMeta(): MetaSlice {
   return {
-    project: null,
+    ownerSubjectId: null,
     tags: [],
     memo: "",
   };
@@ -371,7 +371,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         },
       },
       meta: {
-        project: event.project ?? null,
+        ownerSubjectId: null,
         tags: Array.isArray(event.tags) ? event.tags : [],
         memo: event.memo ?? "",
       },
@@ -449,7 +449,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         },
         // TODO: restore when /v1/tiles/{id}/detail returns labels + recurrence.
         meta: {
-          project: null,
+          ownerSubjectId: null,
           tags: [],
           memo: "",
         },
