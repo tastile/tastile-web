@@ -37,7 +37,7 @@ export type Dict = {
     title: string;
     intro: string;
     lead: string;
-      rows: Array<{ numeral: string; name: string; lede: string; body: string; example: string }>;
+    rows: Array<{ numeral: string; name: string; lede: string; body: string; example: string }>;
   };
   lifecycle: {
     eyebrow: string;
@@ -605,7 +605,10 @@ export const landingDict: Record<Lang, Dict> = {
         cta: "Get started",
         features: [
           { title: "500 placed tiles", detail: "Covers a full day's schedule with room to spare." },
-          { title: "30 recurring tiles", detail: "Register repeating tasks for automatic placement." },
+          {
+            title: "30 recurring tiles",
+            detail: "Register repeating tasks for automatic placement.",
+          },
           { title: "10 active tiles", detail: "Maximum number of tasks running at the same time." },
           { title: "Web app", detail: "Browser and PWA. Log in and go." },
         ],
@@ -619,7 +622,10 @@ export const landingDict: Record<Lang, Dict> = {
         features: [
           { title: "Unlimited tiles", detail: "No cap. The engine handles volume." },
           { title: "Desktop sync", detail: "Windows, Mac, iOS in lock-step with the web app." },
-          { title: "Unlimited history", detail: "All history saved. Long-term execution patterns visible." },
+          {
+            title: "Unlimited history",
+            detail: "All history saved. Long-term execution patterns visible.",
+          },
           { title: "Priority support", detail: "Reply within 48 hours, business days." },
         ],
         footnote: "Yearly saves two months. Cancel anytime.",
@@ -668,7 +674,11 @@ export const landingDict: Record<Lang, Dict> = {
       pierceText: "RUN",
       title: ["Stop managing.", "Start running."],
       note: "Free to start. Web app on its own, or paired with the desktop client.",
-      promise: ["No credit card", "Free tier is enough to get started", "Upgrade or cancel anytime"],
+      promise: [
+        "No credit card",
+        "Free tier is enough to get started",
+        "Upgrade or cancel anytime",
+      ],
       ctaPrimary: "Get started",
       ctaSecondary: "Download",
     },

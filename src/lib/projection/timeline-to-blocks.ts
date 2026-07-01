@@ -1,5 +1,5 @@
-import type { TimelineItem } from "@/lib/domain/v1/timeline-item";
 import { PlanRole, ResolutionState } from "@/lib/domain/v1/constants";
+import type { TimelineItem } from "@/lib/domain/v1/timeline-item";
 
 export type CalendarBlockKind = "work" | "break" | "label" | "scheduled";
 export type SemanticRole = "work" | "break" | "label";
@@ -35,15 +35,19 @@ function isAllDay(item: TimelineItem): boolean {
 
 function roleToKind(role: number): CalendarBlockKind {
   switch (role) {
-    case PlanRole.LABEL: return "label";
-    default: return "work";
+    case PlanRole.LABEL:
+      return "label";
+    default:
+      return "work";
   }
 }
 
 function roleToSemantic(role: number): SemanticRole {
   switch (role) {
-    case PlanRole.LABEL: return "label";
-    default: return "work";
+    case PlanRole.LABEL:
+      return "label";
+    default:
+      return "work";
   }
 }
 

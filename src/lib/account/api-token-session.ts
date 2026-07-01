@@ -24,15 +24,12 @@ export async function getApiTokenFromCookies(): Promise<string | null> {
 }
 
 export function getApiTokenFromRequest(request: NextRequest): string | null {
+  const auth = request.headers.get("authorization");
+  if (auth) {
+    const m = /^Bearer\s+(\S+)$/i.exec(auth);
+    if (m) return m[1];
+  }
   return request.cookies.get(COOKIE_API_TOKEN)?.value ?? null;
-}
-
-export async function ensureDefaultApiToken(response?: NextResponse): Promise<string | null> {
-  const existing = await getApiTokenFromCookies();
-  if (existing) return existing;
-
-  const userSub = await getAccountUserSub();
-  return ensureDefaultApiTokenForUser(userSub, response);
 }
 
 export async function ensureDefaultApiTokenForUser(

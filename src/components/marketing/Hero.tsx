@@ -75,8 +75,6 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
           </div>
         </div>
       </div>
-
-
     </section>
   );
 }

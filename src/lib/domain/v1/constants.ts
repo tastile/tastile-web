@@ -42,13 +42,11 @@ export const ExecutionState = {
   FINISHED_NORMAL: 2,
   FINISHED_VOID: 3,
 } as const;
-export type ExecutionStateValue = (typeof ExecutionState)[keyof typeof ExecutionState];
 
 export const ExecutionSegmentKind = {
   ACTIVE: 0,
   PAUSED: 1,
 } as const;
-export type ExecutionSegmentKindValue = (typeof ExecutionSegmentKind)[keyof typeof ExecutionSegmentKind];
 
 export const ChangeLayer = {
   RECURRING: 0,
@@ -125,7 +123,6 @@ export const CommandResult = {
   ALREADY_APPLIED: 1,
   ACCEPTED: 2,
 } as const;
-export type CommandResultValue = (typeof CommandResult)[keyof typeof CommandResult];
 
 export const ApiErrorKind = {
   VALIDATION: 0,

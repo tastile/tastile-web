@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { coreUrl, ensureDefaultApiToken, setApiTokenCookie } from "@/lib/account/api-token-session";
+import {
+  coreUrl,
+  ensureDefaultApiTokenForUser,
+  setApiTokenCookie,
+} from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
 
 export async function GET() {
@@ -12,12 +16,12 @@ export async function POST(request: Request) {
 
 async function proxyTokens(init?: { method?: string; body?: string }) {
   const shell = NextResponse.json({});
-  await ensureDefaultApiToken(shell);
   const userSub = await getAccountUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!userSub || !bridgeSecret) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
+  await ensureDefaultApiTokenForUser(userSub, shell);
 
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: init?.method ?? "GET",

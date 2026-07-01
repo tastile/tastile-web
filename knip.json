@@ -18,15 +18,12 @@
     "src/hooks/useScrollProgress.ts",
     "src/lib/animate.ts",
     "src/lib/hooks/use-sse-sync.ts",
-    "src/lib/utils/tile-formatters.ts"
+    "src/lib/utils/tile-formatters.ts",
+    "src/components/calendar/TileBlock.tsx",
+    "src/lib/domain/v1/execution.ts",
+    "src/lib/hooks/use-calendar-projection.ts",
+    "src/lib/projection/calendar-projection.ts"
   ],
-  "ignoreDependencies": [
-    "tailwindcss",
-    "@radix-ui/react-select",
-    "@radix-ui/react-separator",
-    "@radix-ui/react-slot",
-    "@radix-ui/react-tabs",
-    "@radix-ui/react-tooltip"
-  ],
+  "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true
 }

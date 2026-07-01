@@ -11,16 +11,22 @@ interface MiniCalendarProps {
   selected?: string;
   /** 日付クリック時コールバック */
   onSelect?: (date: string) => void;
+  /** 表示中の範囲 (YYYY-MM-DD) を薄い背景で網掛け */
+  highlight?: readonly string[];
+  /** true にするとクリックを無効化し、視覚的にもロック表示 */
+  disabled?: boolean;
 }
 
 function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-export function MiniCalendar({ selected, onSelect }: MiniCalendarProps) {
+export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCalendarProps) {
   const today = toDateStr(new Date());
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
+  // Set lookup for O(1) contains; built once per render.
+  const highlightSet = highlight ? new Set(highlight) : null;
 
   // 月の最初の日
   const firstDay = new Date(viewYear, viewMonth, 1);
@@ -95,21 +101,30 @@ export function MiniCalendar({ selected, onSelect }: MiniCalendarProps) {
           const isCurrentMonth = d.getMonth() === viewMonth;
           const isToday = str === today;
           const isSelected = str === selected;
+          // Show range band on out-of-month days too, so a week that
+          // crosses a month boundary still reads as one connected range.
+          const isHighlighted = highlightSet?.has(str) ?? false;
 
           return (
             <button
               key={str}
               type="button"
-              onClick={() => onSelect?.(str)}
+              onClick={disabled ? undefined : () => onSelect?.(str)}
+              disabled={disabled}
               className={cn(
                 "flex h-6 w-full items-center justify-center rounded text-[11px] tabular-nums transition-colors",
-                !isCurrentMonth && "text-foreground-lighter",
+                !isCurrentMonth && !isHighlighted && "text-foreground-lighter",
                 isCurrentMonth &&
                   !isToday &&
                   !isSelected &&
+                  !isHighlighted &&
                   "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+                isHighlighted &&
+                  !isSelected &&
+                  "bg-surface-3 font-medium text-foreground hover:bg-surface-3/80",
                 isToday && !isSelected && "font-semibold text-primary",
                 isSelected && "bg-primary text-primary-fg font-semibold",
+                disabled && "cursor-not-allowed opacity-60 hover:bg-transparent",
               )}
               aria-label={str}
               aria-pressed={isSelected}

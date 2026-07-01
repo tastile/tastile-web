@@ -21,7 +21,13 @@ export const useThemeStore = create<ThemeStore>()(
     {
       name: "tastile-theme",
       onRehydrateStorage: () => (state) => {
-        if (state) {
+        // Only apply the rehydrated theme when storage actually held a value.
+        // On first visit localStorage is empty, so Zustand falls back to the
+        // default `{ theme: "light" }` and passes that here. Calling
+        // `applyTheme` in that case would clobber the system-preference theme
+        // already applied by the inline theme-script (e.g. a dark-mode user
+        // would suddenly see the light theme the moment the store hydrates).
+        if (state && state.theme !== "light") {
           applyTheme(state.theme);
         }
       },

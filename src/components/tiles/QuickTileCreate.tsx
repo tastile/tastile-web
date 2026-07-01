@@ -67,6 +67,14 @@ import {
   RowToggle,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
+import { makeClient } from "@/lib/api/v1/submit";
+import {
+  closePlacementCommand,
+  createManualPlacementCommand,
+  createRecurringCommand,
+  updatePlacementSpanCommand,
+  updateTileCommand,
+} from "@/lib/api/v1/tile-commands";
 import type { RecurrenceModel } from "@/lib/domain/tile";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 import {
@@ -90,6 +98,7 @@ import type {
 } from "@/lib/domain/v1/tile";
 import type { Window } from "@/lib/domain/v1/window";
 import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
+import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -312,6 +321,7 @@ export function QuickTileCreate() {
   const setField = useQuickCreateStore((s) => s.setField);
   const mode = useQuickCreateStore((s) => s.mode);
   const editingId = useQuickCreateStore((s) => s.editingId);
+  const editingTileId = useQuickCreateStore((s) => s.editingTileId);
   const loadError = useQuickCreateStore((s) => s.loadError);
 
   const identity = useQuickCreateStore((s) => s.identity);
@@ -335,8 +345,16 @@ export function QuickTileCreate() {
     "lifecycle",
   );
   const [tagSuggest, setTagSuggest] = useState(false);
+  const [projectSuggest, setProjectSuggest] = useState(false);
   const [recentTags, setRecentTags] = useState<string[]>([]);
   const projects = useProjects();
+  const actorSubjectId = useCurrentActorSubjectId();
+  // The workspace list lives in ProjectsSidePanel's own useProjects
+  // instance; refreshing here on mount lets the create panel pick up
+  // workspaces created in another tab / sibling component.
+  useEffect(() => {
+    void projects.refresh();
+  }, []);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const [tagInputDraft, setTagInputDraft] = useState("");
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
@@ -345,27 +363,18 @@ export function QuickTileCreate() {
   // popovers have something to show without seeding a local store.
   useEffect(() => {
     let alive = true;
-    // Pull recent tag candidates from the same /api/events/occurrences
-    // stream the day view already uses. We hit /v1/events via the BFF (the
-    // raw /v1/tiles projection doesn't carry labels).
-    const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const end = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    fetch(
-      `/api/events/occurrences?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&min_minutes=0&include_recurring=true`,
-      { cache: "no-store" },
-    )
+    // Pull recent tag candidates from the v1 labels endpoint
+    // (GET /v1/labels returns the deduped TIME_WINDOW annotation
+    // labels owned by the actor; v0 /api/events/occurrences is gone).
+    const owner = actorSubjectId ?? "";
+    fetch(`/api/proxy/v1/labels?owner_ids=${encodeURIComponent(owner)}&limit=200`, {
+      cache: "no-store",
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!alive || !data) return;
-        const labels = new Set<string>();
-        for (const occ of (
-          data as {
-            occurrences?: Array<{ tags?: string[] }>;
-          }
-        ).occurrences ?? []) {
-          for (const l of occ.tags ?? []) if (l) labels.add(l);
-        }
-        setRecentTags(Array.from(labels).sort());
+        const list = Array.isArray(data) ? (data as string[]) : [];
+        setRecentTags(list.slice().sort());
       })
       .catch(() => {
         /* ignore: suggestions are best-effort */
@@ -668,97 +677,194 @@ export function QuickTileCreate() {
 
     setSubmitting(true);
     try {
-      if (mode === "edit" && editingId) {
-        // BFF PATCH keeps the v1_event row + allDay in sync with the
-        // panel. v1 UPDATE_TILE would not preserve allDay at the
-        // placement level.
-        const startIso = time.span.start;
-        let endIso = time.span.end;
-        if (allDay && startIso) {
-          const startDate = new Date(startIso);
-          const dayStart = new Date(startDate);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) {
-            endIso = dayEnd.toISOString();
-          }
-        }
-        const patchBody = {
-          title: identity.title,
-          description: identity.description ?? null,
-          location: null,
-          start: startIso,
-          end: endIso,
-          allDay,
-          color: hexToEventColorName(identity.visual.color) || "blue",
-          recurrence: { frequency: "none" },
-          attendees: [],
-          icon: identity.visual.icon || null,
-          project: meta.ownerSubjectId
-            ? (projects.workspaces.find((w) => w.id === meta.ownerSubjectId)?.display_name ??
-              null)
-            : null,
-          owner_subject_id: meta.ownerSubjectId ?? null,
-          tags: meta.tags ?? [],
-          memo: meta.memo || null,
+      if (mode === "edit" && editingId && identity.kind === TileKind.RECURRING) {
+        // Recurring tile edit: routed through the v1 UPDATE_TILE
+        // command.  This path is taken when the panel was opened by
+        // loadFromRecurringTile (e.g. clicking a placement sourced
+        // from a Recurring tile in the day view).  v1 spec §02 says
+        // the recurring tile is the source of truth, so the update
+        // hits POST /v1/tiles/{id}/update and propagates to every
+        // placement on the next /v1/timeline read.
+        const tileBody = {
+          idempotency_key: crypto.randomUUID(),
+          payload: {
+            tile_id: editingId,
+            title: identity.title,
+            description: identity.description ?? null,
+            color: identity.visual.color ?? null,
+            icon: identity.visual.icon ?? null,
+          },
         };
-        const res = await fetch(`/api/events/${editingId}`, {
-          method: "PATCH",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(patchBody),
-        });
-        if (!res.ok) {
-          const detail = await res.json().catch(() => null);
-          const message = detail?.error ?? `HTTP ${res.status}`;
-          throw new Error(`${t("quickCreate.updateError")} (api:bff) ${message}`);
-        }
-      } else {
-        // BFF path preserves allDay (v1 tile path has no allDay field).
-        // For all-day tiles we expand the span to a full day so the
-        // server stores inclusive start / exclusive end at day boundaries.
-        const startIso = time.span.start;
-        let endIso = time.span.end;
-        if (allDay && startIso) {
-          const startDate = new Date(startIso);
-          const dayStart = new Date(startDate);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) {
-            endIso = dayEnd.toISOString();
-          }
-        }
-        const eventBody = {
-          title: identity.title,
-          description: identity.description ?? null,
-          location: null,
-          start: startIso,
-          end: endIso,
-          allDay,
-          color: hexToEventColorName(identity.visual.color) || "blue",
-          recurrence: { frequency: "none" },
-          attendees: [],
-          icon: identity.visual.icon || null,
-          project: meta.ownerSubjectId
-            ? (projects.workspaces.find((w) => w.id === meta.ownerSubjectId)?.display_name ??
-              null)
-            : null,
-          owner_subject_id: meta.ownerSubjectId ?? null,
-          tags: meta.tags ?? [],
-          memo: meta.memo || null,
-        };
-        const res = await fetch("/api/events", {
+        const res = await fetch(`/api/proxy/v1/tiles/${editingId}/update`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(eventBody),
+          body: JSON.stringify(tileBody),
         });
         if (!res.ok) {
           const detail = await res.json().catch(() => null);
           const message = detail?.error ?? `HTTP ${res.status}`;
-          throw new Error(`${t("quickCreate.createError")} (api:bff) ${message}`);
+          throw new Error(`${t("quickCreate.updateError")} (api:v1) ${message}`);
+        }
+      } else if (mode === "edit" && editingId) {
+        // v1 placement update:
+        //   - Update tile fields (title/desc/color/icon) via
+        //     POST /v1/tiles/{tileId}/update.
+        //   - Update the placement baseline span via
+        //     POST /v1/placements/{placementId}/changes (PLACEMENT layer,
+        //     group=5, part=0/1, kind=SET).
+        const startIso = time.span.start;
+        let endIso = time.span.end;
+        if (allDay && startIso) {
+          const startDate = new Date(startIso);
+          const dayStart = new Date(startDate);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
+          if (!endIso || new Date(endIso) <= startDate) {
+            endIso = dayEnd.toISOString();
+          }
+        }
+        if (!startIso || !endIso) {
+          throw new Error(`${t("quickCreate.updateError")} (api:v1) start/end required`);
+        }
+        const tileUpdateRes = await updateTileCommand({
+          client: makeClient(),
+          tileId: editingTileId ?? editingId,
+          title: identity.title,
+          description: identity.description ?? null,
+          color: identity.visual.color ?? null,
+          icon: identity.visual.icon ?? null,
+        });
+        if (!tileUpdateRes.ok) {
+          throw new Error(
+            `${t("quickCreate.updateError")} (api:v1 stage:tile) ${tileUpdateRes.error.message}`,
+          );
+        }
+        if (!actorSubjectId) {
+          throw new Error("actorSubjectId required");
+        }
+        const spanRes = await updatePlacementSpanCommand({
+          client: makeClient(),
+          placementId: editingId,
+          start: startIso,
+          end: endIso,
+          ownerSubjectId: actorSubjectId,
+          actorSubjectId: actorSubjectId,
+        });
+        if (!spanRes.ok) {
+          throw new Error(
+            `${t("quickCreate.updateError")} (api:v1 stage:span) ${spanRes.error.message}`,
+          );
+        }
+      } else if (identity.kind === TileKind.RECURRING) {
+        // v1 periodic-tile -> placement-tile complete processing.
+        // Bypasses the v7-shaped BFF: we POST /v1/tiles (kind=0),
+        // POST /v1/recurring/{id}/frame-rules, then POST .../materialize.
+        const startIso = time.span.start;
+        let endIso = time.span.end;
+        if (allDay && startIso) {
+          const startDate = new Date(startIso);
+          const dayStart = new Date(startDate);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
+          if (!endIso || new Date(endIso) <= startDate) {
+            endIso = dayEnd.toISOString();
+          }
+        }
+        if (!startIso || !endIso) {
+          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
+        }
+        // Build a v1 RecurrencePattern + timeOfDay from the store's
+        // recurrence.window when the user picked a weekly recurrence.
+        // store weekday_mask bits are Sun-first (bit 0=Sun); v1 wants
+        // Mon-first (bit 0=Mon..6=Sun) so re-pack the bitmask before
+        // handing it to the command helper.
+        const windowMask = recurrence?.window?.weekday_mask ?? 0;
+        const weeklyV1Mask = (() => {
+          let v1 = 0;
+          // store bit i (i=0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat) -> v1 bit (i+6)%7
+          for (let i = 0; i < 7; i++) {
+            if ((windowMask & (1 << i)) !== 0) {
+              const v1Bit = (i + 6) % 7;
+              v1 |= 1 << v1Bit;
+            }
+          }
+          return v1;
+        })();
+        const timeOfDay = (() => {
+          const w = recurrence?.window;
+          if (!w) return undefined;
+          const toHHMM = (mins: number) => {
+            const clamped = ((Math.floor(mins) % 1440) + 1440) % 1440;
+            const h = Math.floor(clamped / 60);
+            const m = clamped % 60;
+            return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+          };
+          const start = toHHMM(w.start_offset_min);
+          const end = toHHMM(w.end_offset_min);
+          if (start === end) return undefined; // all-day: use legacy path
+          return { start, end };
+        })();
+        const recurrencePattern =
+          weeklyV1Mask !== 0 ? ({ kind: "weekly", weekdays: weeklyV1Mask } as const) : undefined;
+        const recurringRes = await createRecurringCommand({
+          client: makeClient(),
+          title: identity.title,
+          description: identity.description ?? null,
+          color: identity.visual.color,
+          icon: identity.visual.icon,
+          start: startIso,
+          end: endIso,
+          stepMs: 86_400_000,
+          planRole: plan.role,
+          pattern: recurrencePattern,
+          timeOfDay,
+          occurrences: 14,
+        });
+        if (!recurringRes.ok) {
+          throw new Error(
+            `${t("quickCreate.createError")} (api:v1 stage:${recurringRes.stage}) ${recurringRes.error.message}`,
+          );
+        }
+      } else {
+        // v1 manual placement create: createTile (kind=PLACEMENT),
+        // then createPlacement (Manual source).  The createManualPlacementCommand
+        // helper handles the auto plan_id lookup.  For all-day tiles we
+        // expand the span to a full day so the server stores inclusive
+        // start / exclusive end at day boundaries.
+        const startIso = time.span.start;
+        let endIso = time.span.end;
+        if (allDay && startIso) {
+          const startDate = new Date(startIso);
+          const dayStart = new Date(startDate);
+          dayStart.setHours(0, 0, 0, 0);
+          const dayEnd = new Date(dayStart);
+          dayEnd.setDate(dayEnd.getDate() + 1);
+          if (!endIso || new Date(endIso) <= startDate) {
+            endIso = dayEnd.toISOString();
+          }
+        }
+        if (!startIso || !endIso) {
+          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
+        }
+        const res = await createManualPlacementCommand({
+          client: makeClient(),
+          title: identity.title,
+          description: identity.description ?? null,
+          color: identity.visual.color ?? null,
+          icon: identity.visual.icon ?? null,
+          start: startIso,
+          end: endIso,
+          planRole: plan.role,
+        });
+        if (!res.ok) {
+          throw new Error(
+            `${t("quickCreate.createError")} (api:v1 stage:${res.stage}) ${res.error.message}`,
+          );
         }
       }
+
       reset();
       setAllDay(true);
       setActivePanel("base");
@@ -780,10 +886,10 @@ export function QuickTileCreate() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/events/${editingId}`, { method: "DELETE" });
-      if (!res.ok && res.status !== 204) {
-        const body = await res.text();
-        throw new Error(`${t("quickCreate.deleteError")} (status:${res.status}) ${body}`);
+      // v1 placement soft-close: POST /v1/placements/{id}/close.
+      const res = await closePlacementCommand({ client: makeClient(), placementId: editingId });
+      if (!res.ok) {
+        throw new Error(`${t("quickCreate.deleteError")} (api:v1) ${res.error.message}`);
       }
       reset();
       setAllDay(true);
@@ -996,6 +1102,7 @@ export function QuickTileCreate() {
 
             <RowSegmented
               icon={CheckCircle2}
+              data-testid="quick-create-tile-kind"
               options={TILE_KIND_OPTIONS.map((opt) => ({
                 value: String(opt.value),
                 label: t(opt.label),
@@ -1304,25 +1411,33 @@ export function QuickTileCreate() {
                 <ChevronRight size={14} aria-hidden="true" />
               </button>
             </div>
-            <FormRow icon={null}>
-              <select
-                value={meta.ownerSubjectId ?? ""}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setField("meta.ownerSubjectId", v ? v : null);
-                }}
-                aria-label={t("quickCreate.projectPlaceholder")}
-                data-testid="owner-select"
-                className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
-              >
-                <option value="">Personal (default)</option>
-                {projects.workspaces.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.display_name}
-                  </option>
-                ))}
-              </select>
-            </FormRow>
+            <div
+              className="relative"
+              data-testid="project-suggest-row"
+              data-open={String(projectSuggest)}
+            >
+              <FormRow icon={null}>
+                <select
+                  value={meta.ownerSubjectId ?? ""}
+                  onFocus={() => setProjectSuggest(true)}
+                  onBlur={() => setTimeout(() => setProjectSuggest(false), 150)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setField("meta.ownerSubjectId", v ? v : null);
+                  }}
+                  aria-label={t("quickCreate.projectPlaceholder")}
+                  data-testid="owner-select"
+                  className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
+                >
+                  <option value="">Personal (default)</option>
+                  {projects.workspaces.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      {w.display_name}
+                    </option>
+                  ))}
+                </select>
+              </FormRow>
+            </div>
             <div className="relative" data-testid="tag-suggest-row" data-open={String(tagSuggest)}>
               <FormRow icon={null}>
                 <div className="flex w-full flex-wrap items-center gap-1.5">
@@ -1461,14 +1576,16 @@ export function QuickTileCreate() {
         </div>
 
         <div className="border-t border-border bg-surface-0 p-section shrink-0 space-y-3">
-          <RowToggle
-            icon={Tag}
-            placeholder={t("quickCreate.labelOnly")}
-            checked={plan.role === PlanRole.LABEL}
-            onChange={(checked) =>
-              setField("plan.role", checked ? PlanRole.LABEL : PlanRole.EXECUTABLE)
-            }
-          />
+          <div data-testid="quick-create-plan-role">
+            <RowToggle
+              icon={Tag}
+              placeholder={t("quickCreate.labelOnly")}
+              checked={plan.role === PlanRole.LABEL}
+              onChange={(checked) =>
+                setField("plan.role", checked ? PlanRole.LABEL : PlanRole.EXECUTABLE)
+              }
+            />
+          </div>
           {mode === "edit" ? (
             <div className="flex items-center gap-2">
               <Button
@@ -2751,6 +2868,7 @@ function DurationRow({
           min={0}
           step={5}
           aria-label={t("quickCreate.durationAriaLabel")}
+          data-testid="duration-base-input"
           value={valueMin}
           onChange={(e) => {
             const v = e.target.value;
@@ -3101,6 +3219,7 @@ function RecurringLifeEditor({
         </div>
       </FormRow>
       <RowSegmented
+        data-testid="quick-create-recurring-state"
         icon={Repeat}
         options={RECURRING_STATE_OPTIONS.map((opt) => ({
           value: String(opt.value),

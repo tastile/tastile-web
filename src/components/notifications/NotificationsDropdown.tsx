@@ -25,9 +25,10 @@ export function NotificationsDropdown({ open, onClose }: { open: boolean; onClos
       const tile = state.tiles.get(state.execution.activeTileId);
       items.push({
         id: `active:${state.execution.activeTileId.toString()}`,
-        message: state.execution.phaseKind === "break"
-          ? "休憩フェーズが実行中です"
-          : `${tile?.core.title ?? "タイル"}を実行中です`,
+        message:
+          state.execution.phaseKind === "break"
+            ? "休憩フェーズが実行中です"
+            : `${tile?.core.title ?? "タイル"}を実行中です`,
         timestamp: state.execution.phaseStartedAt ?? new Date(),
       });
     }

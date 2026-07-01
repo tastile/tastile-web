@@ -5,47 +5,14 @@
  * Interfaces only. No business logic.
  */
 
-import type {
-  PlanRoleValue,
-  RecurringStateValue,
-  TileKindValue,
-} from "./constants";
-import type { ConditionNode } from "./condition";
-import type { Completion } from "./completion";
-import type { ChangeRule } from "./change-set";
-import type { Reference } from "./reference";
-import type { Metric } from "./metric";
 import type { Stamp } from "./actor";
-import type { Window, Moment, DateRange, DurationRange } from "./window";
-
-// ---------- Tile.Base ----------
-
-export interface TileContent {
-  title: string;
-  description: string | null;
-}
-
-export interface TileVisual {
-  color: string;
-  icon: string;
-}
-
-export interface TileAudit {
-  createdAt: string;
-  updatedAt: string;
-  archivedAt: string | null;
-}
-
-export interface Tile {
-  id: string;
-  kind: TileKindValue;
-  owner: string;
-  externalId: string | null;
-  revision: number;
-  content: TileContent;
-  visual: TileVisual;
-  audit: TileAudit;
-}
+import type { ChangeRule } from "./change-set";
+import type { Completion } from "./completion";
+import type { ConditionNode } from "./condition";
+import type { PlanRoleValue, RecurringStateValue } from "./constants";
+import type { Metric } from "./metric";
+import type { Reference } from "./reference";
+import type { DateRange, DurationRange, Moment, Window } from "./window";
 
 // ---------- Planning (rules & flows) ----------
 

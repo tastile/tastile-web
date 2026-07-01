@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
 interface FormRowProps {
+  "data-testid"?: string;
   icon: ReactNode;
   children: ReactNode;
   trailing?: ReactNode;
@@ -9,10 +10,17 @@ interface FormRowProps {
   tight?: boolean;
 }
 
-export function FormRow({ icon, children, trailing, className, tight = false }: FormRowProps) {
+export function FormRow({
+  icon,
+  children,
+  trailing,
+  className,
+  tight = false,
+  "data-testid": dataTestid,
+}: FormRowProps) {
   return (
     <div
-      data-testid="form-row"
+      data-testid={dataTestid ?? "form-row"}
       className={cn(
         "grid grid-cols-[20px_1fr_auto] items-center gap-3",
         tight ? "min-h-row-tight" : "min-h-row",

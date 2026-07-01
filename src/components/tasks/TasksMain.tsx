@@ -9,7 +9,7 @@ import { makeClient } from "@/lib/api/v1/submit";
 import { startTileExecutionCommand } from "@/lib/api/v1/tile-commands";
 import type { TileId } from "@/lib/domain/ids";
 import { useTileList } from "@/lib/hooks/use-tile-list";
-import { useTileEditStore } from "@/lib/stores/tile-edit-store";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 
 export function TasksMain() {
@@ -17,7 +17,7 @@ export function TasksMain() {
   const search = searchParams.get("q") ?? "";
   const range = searchParams.get("range") ?? "7d"; // デフォルト7日
   const granularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
-  const openEdit = useTileEditStore((s) => s.openEdit);
+  const openEdit = useQuickCreateStore((s) => s.loadFromRecurringTile);
   const [startingTileId, setStartingTileId] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
 
@@ -62,37 +62,40 @@ export function TasksMain() {
     return parts.length > 0 ? parts.join(" • ") : "All Tasks";
   }, [range, granularity, search]);
 
-  const handleStart = useCallback(async (tileId: TileId) => {
-    const id = tileId.toString();
-    const item = tiles.find((tile) => tile.id === id);
-    if (!item?.plan_id) {
-      setStartError("This tile has no plan_id; start command cannot be sent.");
-      return;
-    }
+  const handleStart = useCallback(
+    async (tileId: TileId) => {
+      const id = tileId.toString();
+      const item = tiles.find((tile) => tile.id === id);
+      if (!item?.plan_id) {
+        setStartError("This tile has no plan_id; start command cannot be sent.");
+        return;
+      }
 
-    const start = new Date();
-    const end = new Date(start.getTime() + resolveStartDurationMs(item));
-    setStartingTileId(id);
-    setStartError(null);
+      const start = new Date();
+      const end = new Date(start.getTime() + resolveStartDurationMs(item));
+      setStartingTileId(id);
+      setStartError(null);
 
-    const result = await startTileExecutionCommand({
-      client: makeClient(),
-      tileId: id,
-      planId: item.plan_id,
-      start: start.toISOString(),
-      end: end.toISOString(),
-    });
+      const result = await startTileExecutionCommand({
+        client: makeClient(),
+        tileId: id,
+        planId: item.plan_id,
+        start: start.toISOString(),
+        end: end.toISOString(),
+      });
 
-    setStartingTileId(null);
-    if (!result.ok) {
-      setStartError(result.error.message);
-      return;
-    }
+      setStartingTileId(null);
+      if (!result.ok) {
+        setStartError(result.error.message);
+        return;
+      }
 
-    window.dispatchEvent(new CustomEvent("tastile:tiles-changed"));
-    window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
-    await refresh();
-  }, [tiles, refresh]);
+      window.dispatchEvent(new CustomEvent("tastile:tiles-changed"));
+      window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
+      await refresh();
+    },
+    [tiles, refresh],
+  );
 
   return (
     <PageContainer>
@@ -135,15 +138,13 @@ export function TasksMain() {
                   key={t.id}
                   tile={tile}
                   onStart={startingTileId === t.id ? undefined : handleStart}
-                  onEdit={(tileId) =>
-                    openEdit(
-                      tileId.toString(),
-                      tile.core.title,
-                      "",
-                      "",
-                      t.labels,
-                    )
-                  }
+                  onEdit={(tileId) => {
+                    // The QuickCreate store opens the panel first (in edit
+                    // mode with the given tileId), then fetches the full
+                    // Tile via getTile(id) and hydrates title/labels. Any
+                    // fetch error is surfaced as a banner inside the panel.
+                    void openEdit(tileId.toString());
+                  }}
                 />
               );
             })}
@@ -154,7 +155,10 @@ export function TasksMain() {
   );
 }
 
-function resolveStartDurationMs(item: { target_work_min: number | null; target_rest_min: number | null }): number {
+function resolveStartDurationMs(item: {
+  target_work_min: number | null;
+  target_rest_min: number | null;
+}): number {
   const minutes = item.target_work_min ?? item.target_rest_min ?? 25;
   return Math.max(1, minutes) * 60_000;
 }

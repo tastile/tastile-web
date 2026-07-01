@@ -21,6 +21,7 @@
 
 # production
 /build
+/dist/
 
 # misc
 .DS_Store
@@ -53,3 +54,6 @@ tastile-web-*.zip
 ssh-err.txt
 ssh-out.txt
 .vscode/
+
+# local event store
+/.tastile-data/

@@ -4,13 +4,13 @@
  * Interfaces only. No business logic.
  */
 
+import type { ConditionNode } from "./condition";
 import type {
   ChangeKindValue,
   ChangeLayerValue,
   ChangeSourceValue,
   MergeModeValue,
 } from "./constants";
-import type { ConditionNode } from "./condition";
 
 // ---------- Key (numeric 3-element structure) ----------
 
@@ -88,11 +88,6 @@ export interface FrameRef {
   rangeStart: string;
 }
 
-export interface ProposalKey {
-  producerId: string;
-  localId: string;
-}
-
 export interface Change {
   id: string;
   key: Key;
@@ -112,13 +107,5 @@ export interface ChangeRule {
   rank: number;
   /** Per-Key merge mode for this rule's output. */
   merge: MergeModeValue;
-  changes: Change[];
-}
-
-// ---------- ChangeSet ----------
-
-export interface ChangeSet {
-  id: string;
-  aggregateId: string;
   changes: Change[];
 }

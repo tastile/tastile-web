@@ -195,10 +195,7 @@ export default function RuntimePage() {
           description="What the web client talks to. Override with NEXT_PUBLIC_TASTILE_CORE_URL."
         />
         <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-          <EnvRow
-            label="Base URL"
-            value={coreBaseUrl()}
-          />
+          <EnvRow label="Base URL" value={coreBaseUrl()} />
           <EnvRow label="Auth" value="Cognito JWT · Bearer" />
           <EnvRow label="Token source" value="window.__tastileIdToken" />
           <EnvRow label="Spec" value="OpenAPI 3.0.3 · 45 endpoints" />

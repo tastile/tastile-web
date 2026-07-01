@@ -1,14 +1,19 @@
 ﻿import { type NextRequest, NextResponse } from "next/server";
-import {
-  ensureDefaultApiTokenForUser,
-  getApiTokenFromRequest,
-  setApiTokenCookie,
-} from "@/lib/account/api-token-session";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
-const CLOUD_API_BASE = "http://localhost:31400";
+const CLOUD_API_BASE = (() => {
+  if (process.env.CLOUD_API_BASE) return process.env.CLOUD_API_BASE;
+  if (process.env.E2E_BYPASS_AUTH === "1") return "http://localhost:31400";
+  throw new Error("CLOUD_API_BASE is not set");
+})();
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
+
+// In E2E bypass mode the proxy does not validate JWTs, so it pins the
+// dev actor to a fixed UUID. The v1 backend auto-creates a USER-kind
+// v1_subject row with this same UUID on first workspace creation, so
+// it doubles as the actor's own subject id for "Personal" ownership.
+const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 
 interface MockTile {
   id: string;
@@ -87,7 +92,7 @@ function handleMockRequest(
 
   if ((path === "auth/session" || path === "v1/auth/session") && method === "GET") {
     return NextResponse.json({
-      owner_id: "00000000-0000-0000-0000-000000000001",
+      owner_id: DEV_ACTOR_SUBJECT_ID,
       authenticated: true,
     });
   }
@@ -322,8 +327,10 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     if (mockResponse) return mockResponse;
   }
 
-  const localResponse = localCompatResponse(path, request.method);
-  if (localResponse) return localResponse;
+  if (isE2EBypass) {
+    const localResponse = localCompatResponse(path, request.method);
+    if (localResponse) return localResponse;
+  }
 
   const upstreamPath = toV1Path(path);
   const targetUrl = `${CLOUD_API_BASE}/${upstreamPath}`;
@@ -331,26 +338,35 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   url.search = request.nextUrl.search;
 
   const headers = new Headers();
-  const apiToken = getApiTokenFromRequest(request);
-  const authHeader = request.headers.get("authorization");
-  let bootstrappedApiToken: string | null = null;
-  if (apiToken) {
-    headers.set("authorization", `Bearer ${apiToken}`);
-  } else if (authHeader) {
-    headers.set("authorization", authHeader);
+  // The v1 API does not validate Cognito id_tokens. It accepts the
+  // long-lived v1_api_token (Bearer) or the web-bridge headers that
+  // identify the calling user from the per-request cookies. The browser
+  // session has a short-lived id_token that we cannot forward usefully,
+  // so we always forward via the bridge: the cookie's user sub is the
+  // authoritative identity, the secret gates the trust boundary.
+  const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
+  const bridgeUserSub = resolveBridgeUserSub(request);
+  if (isE2EBypass && isLocalCoreUrl(CLOUD_API_BASE)) {
+    // E2E bypass: pin the dev actor and forward to the local v1 API
+    // directly. The bridge-secret check is for production deploys.
+    headers.set("x-owner-id", DEV_ACTOR_SUBJECT_ID);
+    headers.set("x-actor-id", DEV_ACTOR_SUBJECT_ID);
   } else {
-    const userSub = resolveBridgeUserSub(request);
-    bootstrappedApiToken = await ensureDefaultApiTokenForUser(userSub);
-    if (bootstrappedApiToken) headers.set("authorization", `Bearer ${bootstrappedApiToken}`);
+    if (!bridgeSecret) {
+      return NextResponse.json(
+        { error: "web bridge is not configured on the server" },
+        { status: 500 },
+      );
+    }
+    if (!bridgeUserSub) {
+      return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
+    }
+    headers.set("x-tastile-web-bridge-secret", bridgeSecret);
+    headers.set("x-tastile-web-session-user", bridgeUserSub);
   }
   const contentType = request.headers.get("content-type");
   if (contentType) {
     headers.set("content-type", contentType);
-  }
-  if (isE2EBypass && isLocalCoreUrl(CLOUD_API_BASE)) {
-    const ownerId = "00000000-0000-0000-0000-000000000001";
-    headers.set("x-owner-id", ownerId);
-    headers.set("x-actor-id", ownerId);
   }
 
   const init: RequestInit = {
@@ -375,7 +391,6 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       status: upstreamResponse.status,
       headers: responseHeaders,
     });
-    if (bootstrappedApiToken) setApiTokenCookie(bootstrappedApiToken, response);
     return response;
   } catch (error) {
     console.error(`Proxy error for ${path}:`, error);
@@ -414,6 +429,18 @@ export function toV1Path(path: string): string {
     "views/timeline/today": "v1/timeline/today",
     "auth/tile-quota": "v1/quota/tiles",
     "debug/events": "v1/debug/events",
+    "access/subjects": "v1/access/subjects",
+    "access/workspaces": "v1/access/workspaces",
+    "access/subjects/by-external": "v1/access/subjects/by-external",
+    "access/capabilities": "v1/access/capabilities",
+    "access/offers": "v1/access/offers",
+    "access/requests": "v1/access/requests",
+    "access/grants": "v1/access/grants",
+    "access/notifications": "v1/access/notifications",
+    "views/calendar/day": "v1/calendar/day",
+    "views/calendar/week": "v1/calendar/week",
+    "views/calendar/month": "v1/calendar/month",
+    "views/calendar/year": "v1/calendar/year",
   };
   if (map[path]) return map[path];
   // Parameterized paths: {id} is a UUIDv7, preserved verbatim.
@@ -421,7 +448,15 @@ export function toV1Path(path: string): string {
     .replace(/^read\/tile\/([^/]+)$/, "v1/tiles/$1")
     .replace(/^read\/tile\/([^/]+)\/editable$/, "v1/tiles/$1/editable")
     .replace(/^read\/placement\/([^/]+)$/, "v1/placements/$1")
-    .replace(/^read\/execution\/([^/]+)$/, "v1/executions/$1");
+    .replace(/^read\/execution\/([^/]+)$/, "v1/executions/$1")
+    .replace(/^access\/subjects\/([^/]+)$/, "v1/access/subjects/$1")
+    .replace(/^access\/grants\/([^/]+)$/, "v1/access/grants/$1")
+    .replace(
+      /^access\/grants\/([^/]+)\/(accept|decline|approve|deny|revoke|withdraw|audit)$/,
+      "v1/access/grants/$1/$2",
+    )
+    .replace(/^access\/notifications\/([^/]+)\/read$/, "v1/access/notifications/$1/read")
+    .replace(/^access\/notifications\/read-all$/, "v1/access/notifications/read-all");
   if (rewritten !== path) return rewritten;
   return path.replace(/^v1\//, "v1/");
 }

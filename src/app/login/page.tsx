@@ -3,7 +3,10 @@ import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TastileLogo } from "@/components/TastileLogo";
-import { getConfiguredCognitoIdentityProviders } from "@/lib/cognito/login-url";
+import {
+  getConfiguredCognitoIdentityProviders,
+  parseCognitoPlatform,
+} from "@/lib/cognito/login-url";
 
 const ERROR_MESSAGES: Record<string, string> = {
   no_session: "サインインが必要です。",
@@ -25,6 +28,7 @@ export default async function LoginPage({
     redirect_uri?: string;
     state?: string;
     code_challenge?: string;
+    platform?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -35,12 +39,16 @@ export default async function LoginPage({
   const configuredProviders = getConfiguredCognitoIdentityProviders();
   const googleEnabled = configuredProviders.has("Google");
   const appleEnabled = configuredProviders.has("SignInWithApple");
+  const platform = parseCognitoPlatform(
+    typeof params?.platform === "string" ? params.platform : null,
+  );
   const desktopQuery = new URLSearchParams();
   if (typeof params?.redirect_uri === "string")
     desktopQuery.set("redirect_uri", params.redirect_uri);
   if (typeof params?.state === "string") desktopQuery.set("state", params.state);
   if (typeof params?.code_challenge === "string")
     desktopQuery.set("code_challenge", params.code_challenge);
+  if (platform !== "web") desktopQuery.set("platform", platform);
   const desktopSuffix = desktopQuery.size > 0 ? `&${desktopQuery.toString()}` : "";
   const desktopPageSuffix = desktopQuery.size > 0 ? `?${desktopQuery.toString()}` : "";
 

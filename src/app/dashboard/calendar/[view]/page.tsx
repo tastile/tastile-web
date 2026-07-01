@@ -41,9 +41,7 @@ export default function CalendarViewPage() {
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
 
   // サイドパネルを登録
-  useSidePanel(
-    <CalendarSidePanel anchor={anchor} view={view} onSelectDate={setAnchor} />,
-  );
+  useSidePanel(<CalendarSidePanel anchor={anchor} view={view} onSelectDate={setAnchor} />);
 
   const [data, setData] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(false);

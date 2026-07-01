@@ -1,18 +1,23 @@
 "use client";
-
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
+import { type DisplayMode, getModeRange, todayLocalIso } from "@/lib/calendar/layout";
 import { useSidePanel } from "@/lib/context/side-panel-context";
+import type { CalendarEvent } from "@/lib/domain/calendar";
+import { useEvents, type UseEventsRange } from "@/lib/hooks/calendar/use-events";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import { DayView } from "./DayView";
+import { EventListView } from "./EventListView";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 
-export type CalendarView = "day" | "week" | "month" | "year";
+export type CalendarView = "day" | "week" | "month" | "list";
 
-const VALID_VIEWS: CalendarView[] = ["day", "week", "month", "year"];
+const VALID_VIEWS: CalendarView[] = ["day", "week", "month", "list"];
+const VALID_MODES: DisplayMode[] = ["scope", "around", "future"];
 
 function localIsoDate(now = new Date()): string {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
@@ -20,11 +25,9 @@ function localIsoDate(now = new Date()): string {
 
 function shiftDate(dateStr: string, view: CalendarView, delta: -1 | 1): string {
   const d = new Date(`${dateStr}T00:00:00Z`);
-  void d.getTime();
-  if (view === "day") d.setUTCDate(d.getUTCDate() + delta);
+  if (view === "day" || view === "list") d.setUTCDate(d.getUTCDate() + delta);
   else if (view === "week") d.setUTCDate(d.getUTCDate() + delta * 7);
-  else if (view === "month") d.setUTCMonth(d.getUTCMonth() + delta);
-  else d.setUTCFullYear(d.getUTCFullYear() + delta);
+  else d.setUTCMonth(d.getUTCMonth() + delta);
   return d.toISOString().slice(0, 10);
 }
 
@@ -49,7 +52,11 @@ function formatAnchor(view: CalendarView, anchor: string): string {
   if (view === "month") {
     return d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
   }
-  return d.getUTCFullYear().toString();
+  return "All events";
+}
+
+function pad(n: number): string {
+  return n.toString().padStart(2, "0");
 }
 
 function parseView(param: string | null, defaultView: CalendarView = "day"): CalendarView {
@@ -59,13 +66,36 @@ function parseView(param: string | null, defaultView: CalendarView = "day"): Cal
   return defaultView;
 }
 
+function parseMode(param: string | null): DisplayMode {
+  if (param && VALID_MODES.includes(param as DisplayMode)) {
+    return param as DisplayMode;
+  }
+  return "scope";
+}
+
+/** Map (view, mode) → title prefix shown next to the date range. */
+function modeLabel(view: CalendarView, mode: DisplayMode): string | null {
+  if (mode === "scope") return null;
+  if (mode === "around") {
+    if (view === "day") return "Today · ±12h";
+    if (view === "week") return "Today · ±3d";
+    return "Today · ±15d";
+  }
+  // future
+  if (view === "day") return "From now · 24h";
+  if (view === "week") return "From now · 7d";
+  return "From now · 31d";
+}
+
 export function CalendarMain({ initialView = "day" }: { initialView?: CalendarView }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
   const urlView = parseView(searchParams.get("view"), initialView);
+  const urlMode = parseMode(searchParams.get("mode"));
   const [view, setViewState] = useState<CalendarView>(urlView);
+  const [mode, setModeState] = useState<DisplayMode>(urlMode);
   const [anchor, setAnchor] = useState(() => localIsoDate());
   const [tzOffset, setTzOffset] = useState(0);
 
@@ -73,86 +103,254 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
     setTzOffset(new Date().getTimezoneOffset() * -1);
   }, []);
 
-  const [visibleTypes, setVisibleTypes] = useState<Set<string>>(new Set());
-
-  function toggleType(type: string) {
-    setVisibleTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) next.delete(type);
-      else next.add(type);
-      return next;
-    });
-  }
-
+  // Side panel: anchor/view/mode を実時間で反映 (MiniCalendar の網掛け含む)。
+  // mode は around/future のとき「always today」なので highlight の挙動も変わる。
   useSidePanel(
-    <CalendarSidePanel
-      anchor={anchor}
-      onSelectDate={setAnchor}
-      visibleTypes={visibleTypes}
-      onToggleType={toggleType}
-    />,
+    <CalendarSidePanel anchor={anchor} view={view} mode={mode} onSelectDate={setAnchor} />,
   );
 
-  const setView = (v: CalendarView) => {
-    setViewState(v);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("view", v);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  };
+  // Effective anchor for date math — in around/future modes the anchor
+  // is always today, regardless of what the user has previously selected.
+  const effectiveAnchor = mode === "scope" ? anchor : todayLocalIso(tzOffset);
+
+  // The occurrences API expects RFC3339; expand the (mode, view) window
+  // into explicit [start, end] datetimes.
+  // The list view pulls a fixed wide window (today - 30d / +90d) so
+  // the entire list is in one capability-aware /v1/timeline call.
+  const listRange = useMemo((): UseEventsRange => {
+    const nowMs = Date.now() - tzOffset * 60_000;
+    return {
+      start: new Date(nowMs - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      end: new Date(nowMs + 90 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+  }, [tzOffset]);
+
+  const range = useMemo(() => {
+    if (view === "list") return listRange;
+    return getModeRange(view, mode, effectiveAnchor, tzOffset);
+  }, [view, mode, effectiveAnchor, tzOffset, listRange]);
+
+  const { events, loading, error } = useEvents(range);
+
+  // Sync the URL whenever view or mode changes. We keep `mode` in the
+  // URL only when it's not the default so existing URLs stay clean.
+  const syncUrl = useCallback(
+    (next: { view?: CalendarView; mode?: DisplayMode }) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (next.view) params.set("view", next.view);
+      if (next.mode !== undefined) {
+        if (next.mode === "scope") params.delete("mode");
+        else params.set("mode", next.mode);
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams],
+  );
+
+  const setView = useCallback(
+    (v: CalendarView) => {
+      setViewState(v);
+      syncUrl({ view: v });
+    },
+    [syncUrl],
+  );
+
+  const setMode = useCallback(
+    (m: DisplayMode) => {
+      setModeState(m);
+      // around/future pins the visible window to "now"; reset anchor
+      // so prev/next (when mode reverts to scope) starts fresh.
+      if (m !== "scope") setAnchor(localIsoDate());
+      syncUrl({ mode: m });
+    },
+    [syncUrl],
+  );
+
+  const navDisabled = mode !== "scope";
+
+  // Open the side panel pre-populated with a new tile at the clicked slot.
+  const handleCreateAtSlot = useCallback((slotAnchor: string, hour: number) => {
+    const start = `${slotAnchor}T${pad(hour)}:00:00.000Z`;
+    const endHour = Math.min(23, hour + 1);
+    const end = `${slotAnchor}T${pad(endHour)}:00:00.000Z`;
+    useQuickCreateStore.getState().reset();
+    useQuickCreateStore.getState().setField("time.span.start", start);
+    useQuickCreateStore.getState().setField("time.span.end", end);
+    useQuickCreateStore.getState().setField("identity.title", "");
+    useQuickCreateStore.getState().setField("identity.description", null);
+    useQuickCreateStore.getState().setField("meta.project", null);
+    useQuickCreateStore.getState().setField("meta.tags", []);
+    useQuickCreateStore.getState().setField("meta.memo", "");
+    useQuickCreateStore.getState().openCreate({ initialAllDay: false });
+  }, []);
+
+  // Open the side panel hydrated from the clicked occurrence for editing.
+  // Strip any occurrence cursor suffix (":<cursor>") from the id so the
+  // edit submit hits the source event via PATCH /api/events/{id}.
+  //
+  // Recurring-sourced placements (source.kind === 1) carry the parent
+  // tile id in `event.tileId`.  v1 spec §02 says the recurring tile is
+  // the source of truth, so editing such a placement should re-route
+  // through `loadFromRecurringTile` which calls
+  // GET /v1/tiles/{id} and submits via POST /v1/tiles/{id}/update.
+  // Without this, PATCH /api/events/{id} 404s because that endpoint
+  // only knows v1_event rows, not v1_placement rows.
+  const handleEditEvent = useCallback((event: CalendarEvent) => {
+    const colon = event.id.indexOf(":");
+    const sourceId = colon > 0 ? event.id.slice(0, colon) : event.id;
+    if (event.source?.kind === 1 && event.tileId) {
+      void useQuickCreateStore.getState().loadFromRecurringTile(event.tileId);
+      return;
+    }
+    useQuickCreateStore.getState().loadFromEvent({ ...event, id: sourceId });
+    useQuickCreateStore.getState().openEdit(sourceId, event.tileId ?? null);
+  }, []);
+
+  const visibleEvents = events;
+
+  const titlePrefix = modeLabel(view, mode);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-12 items-center gap-3 px-4 shrink-0">
+    <div className="flex h-full flex-col" data-testid="calendar-main">
+      <div className="flex h-12 items-center gap-2 px-4 shrink-0">
         <button
           type="button"
           onClick={() => setAnchor((a) => shiftDate(a, view, -1))}
           aria-label="Previous"
-          className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+          aria-disabled={navDisabled}
+          disabled={navDisabled}
+          title={navDisabled ? "Always anchored at today" : undefined}
+          data-testid="cal-prev"
+          className={cn(
+            "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+            navDisabled &&
+              "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
+          )}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <h2 className="font-mono text-sm text-foreground">{formatAnchor(view, anchor)}</h2>
+        <h2 className="font-mono text-sm text-foreground" data-testid="cal-title">
+          {titlePrefix ? (
+            <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+              {titlePrefix}
+            </span>
+          ) : null}
+          {formatAnchor(view, effectiveAnchor)}
+        </h2>
         <button
           type="button"
           onClick={() => setAnchor((a) => shiftDate(a, view, 1))}
           aria-label="Next"
-          className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+          aria-disabled={navDisabled}
+          disabled={navDisabled}
+          title={navDisabled ? "Always anchored at today" : undefined}
+          data-testid="cal-next"
+          className={cn(
+            "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+            navDisabled &&
+              "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
+          )}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
         <button
           type="button"
-          onClick={() => setAnchor(localIsoDate())}
+          onClick={() => {
+            setMode("scope");
+            setAnchor(localIsoDate());
+          }}
+          data-testid="cal-today"
           className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
         >
           Today
         </button>
-        <div className="ml-auto flex gap-0.5 rounded-md bg-surface-1 p-0.5">
-          {(["day", "week", "month", "year"] as const).map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => setView(v)}
-              className={cn(
-                "rounded px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
-                view === v
-                  ? "bg-surface-2 text-foreground"
-                  : "text-foreground-subtle hover:text-foreground",
-              )}
-            >
-              {v}
-            </button>
-          ))}
+        <div className="ml-auto flex items-center gap-2">
+          <div
+            className="flex gap-0.5 rounded-md bg-surface-1 p-0.5"
+            data-testid="cal-mode-switcher"
+          >
+            {VALID_MODES.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                data-testid={`cal-mode-${m}`}
+                className={cn(
+                  "rounded px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
+                  mode === m
+                    ? "bg-surface-2 text-foreground"
+                    : "text-foreground-subtle hover:text-foreground",
+                )}
+              >
+                {m === "scope" ? "Scope" : m === "around" ? "Around" : "Future"}
+              </button>
+            ))}
+          </div>
+          <div
+            className="flex gap-0.5 rounded-md bg-surface-1 p-0.5"
+            data-testid="cal-view-switcher"
+          >
+            {(["day", "week", "month", "list"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                data-testid={`cal-view-${v}`}
+                className={cn(
+                  "rounded px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
+                  view === v
+                    ? "bg-surface-2 text-foreground"
+                    : "text-foreground-subtle hover:text-foreground",
+                )}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-        {view === "day" ? <DayView anchor={anchor} tzOffset={tzOffset} /> : null}
-        {view === "week" ? <WeekView anchor={anchor} tzOffset={tzOffset} /> : null}
-        {view === "month" ? <MonthView anchor={anchor} tzOffset={tzOffset} /> : null}
-        {view === "year" ? (
-          <div className="py-8 text-center text-xs text-foreground-subtle">
-            Year view — coming soon
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
+        {error ? (
+          <div
+            data-testid="cal-error"
+            className="rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger"
+          >
+            {error.message}
           </div>
+        ) : null}
+        {view === "day" ? (
+          <DayView
+            anchor={effectiveAnchor}
+            mode={mode}
+            tzOffset={tzOffset}
+            events={visibleEvents}
+            loading={loading}
+            onCreateAtSlot={handleCreateAtSlot}
+            onEditEvent={handleEditEvent}
+          />
+        ) : null}
+        {view === "week" ? (
+          <WeekView
+            anchor={effectiveAnchor}
+            mode={mode}
+            tzOffset={tzOffset}
+            events={visibleEvents}
+            loading={loading}
+            onCreateAtSlot={handleCreateAtSlot}
+            onEditEvent={handleEditEvent}
+          />
+        ) : null}
+        {view === "month" ? (
+          <MonthView
+            anchor={effectiveAnchor}
+            mode={mode}
+            tzOffset={tzOffset}
+            events={visibleEvents}
+            loading={loading}
+          />
+        ) : null}
+        {view === "list" ? (
+          <EventListView events={visibleEvents} loading={loading} error={error} />
         ) : null}
       </div>
     </div>

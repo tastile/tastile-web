@@ -17,7 +17,6 @@ vi.mock("@/lib/cognito/account-session", () => ({
 
 const { COOKIE_API_TOKEN } = await import("@/lib/cognito/cookies");
 const {
-	ensureDefaultApiToken,
 	ensureDefaultApiTokenForUser,
 	getApiTokenFromCookies,
 } = await import("./api-token-session");
@@ -67,7 +66,7 @@ describe("api-token-session bootstrap", () => {
 		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const res = NextResponse.json({});
-		const token = await ensureDefaultApiToken(res);
+		const token = await ensureDefaultApiTokenForUser("user-sub-1", res);
 
 		expect(token).toBe("tst_newtoken");
 		expect(res.cookies.get(COOKIE_API_TOKEN)?.value).toBe("tst_newtoken");
@@ -102,7 +101,7 @@ describe("api-token-session bootstrap", () => {
 		globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 		const res = NextResponse.json({});
-		const token = await ensureDefaultApiToken(res);
+		const token = await ensureDefaultApiTokenForUser("user-sub-1", res);
 
 		expect(token).toBe("tst_recovered");
 		expect(res.cookies.get(COOKIE_API_TOKEN)?.value).toBe("tst_recovered");

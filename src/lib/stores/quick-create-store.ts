@@ -60,6 +60,13 @@ export interface QuickCreateState {
   mode: QuickCreateMode;
   editingId: string | null;
   /**
+   * The v1 tile id backing the placement currently being edited.
+   * Required because /v1/tiles/{id}/update mutates the tile while
+   * /v1/placements/{id}/changes mutates the placement; both must run
+   * when the user edits a placement.
+   */
+  editingTileId: string | null;
+  /**
    * Non-null when `loadFromRecurringTile` could not fetch the tile (e.g.
    * the recurring-tile GET returned 404 because the template does not
    * exist in the backing store). The panel surfaces this as a banner so
@@ -75,7 +82,7 @@ export interface QuickCreateState {
   initialAllDay: boolean;
   open: () => void;
   openCreate: (options?: { initialAllDay?: boolean }) => void;
-  openEdit: (eventId: string) => void;
+  openEdit: (eventId: string, tileId?: string | null) => void;
   close: () => void;
   toggle: () => void;
 
@@ -277,6 +284,7 @@ export function buildDefaultQuickCreateState(): Pick<
   | "isOpen"
   | "mode"
   | "editingId"
+  | "editingTileId"
   | "loadError"
   | "initialAllDay"
   | "identity"
@@ -292,6 +300,7 @@ export function buildDefaultQuickCreateState(): Pick<
     isOpen: false,
     mode: "create",
     editingId: null,
+    editingTileId: null,
     loadError: null,
     initialAllDay: true,
     identity: defaultIdentity(),
@@ -340,8 +349,10 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       editingId: null,
       initialAllDay: options?.initialAllDay ?? state.initialAllDay,
     })),
-  openEdit: (eventId: string) => set({ isOpen: true, mode: "edit", editingId: eventId }),
-  close: () => set({ isOpen: false, mode: "create", editingId: null, loadError: null }),
+  openEdit: (eventId: string, tileId?: string | null) =>
+    set({ isOpen: true, mode: "edit", editingId: eventId, editingTileId: tileId ?? null }),
+  close: () =>
+    set({ isOpen: false, mode: "create", editingId: null, editingTileId: null, loadError: null }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
   reset: () =>
@@ -353,6 +364,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
     })),
   loadFromEvent: (event) =>
     set(() => ({
+      editingId: event.id,
+      editingTileId: event.tileId ?? null,
       identity: {
         kind: TileKind.PLACEMENT,
         title: event.title,
@@ -385,6 +398,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       isOpen: true,
       mode: "edit" as const,
       editingId: tileId,
+      editingTileId: tileId,
       loadError: null,
       // Default to RECURRING (kind=0) so the radio lands on 定期 even
       // when the GET fails — the caller knows this is a recurring tile

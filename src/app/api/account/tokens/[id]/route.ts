@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { coreUrl, ensureDefaultApiToken } from "@/lib/account/api-token-session";
+import { coreUrl, ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
 
 type Context = {
@@ -18,12 +18,12 @@ export async function DELETE(_request: Request, context: Context) {
 
 async function proxyToken(id: string, init: { method: string; body?: string }) {
   const shell = NextResponse.json({});
-  await ensureDefaultApiToken(shell);
   const userSub = await getAccountUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!userSub || !bridgeSecret) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
+  await ensureDefaultApiTokenForUser(userSub, shell);
 
   const response = await fetch(`${coreUrl()}/v1/api-tokens/${encodeURIComponent(id)}`, {
     method: init.method,

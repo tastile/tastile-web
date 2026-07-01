@@ -4,12 +4,9 @@
  * Interfaces only. No business logic.
  */
 
-import type {
-  ExecutionSegmentKindValue,
-  ExecutionStateValue,
-} from "./constants";
 import type { VersionRef } from "./change-set";
-import type { EffectivePlacementRef, ResolutionInfo } from "./placement";
+import type { ExecutionSegmentKind, ExecutionState, ResolutionState } from "./constants";
+import type { ResolutionViolation } from "./placement";
 
 // ---------- ExecutionSegment (child table) ----------
 
@@ -17,7 +14,7 @@ export interface ExecutionSegment {
   id: string;
   executionId: string;
   /** ACTIVE=0 | PAUSED=1 (ExecutionSegmentKind) */
-  kind: ExecutionSegmentKindValue;
+  kind: (typeof ExecutionSegmentKind)[keyof typeof ExecutionSegmentKind];
   startAt: string;
   endAt: string | null;
   revision: number;
@@ -28,6 +25,12 @@ export interface ExecutionSegment {
 export interface BasisValue {
   key: string;
   value: unknown;
+}
+
+export interface EffectivePlacementRef {
+  placementId: string;
+  revision: number;
+  resolutionHash: string;
 }
 
 export interface ExecutionBasis {
@@ -80,7 +83,7 @@ export interface Execution {
   sourcePlacement: VersionRef;
   basis: ExecutionBasis;
   /** ACTIVE=0 | PAUSED=1 | FINISHED_NORMAL=2 | FINISHED_VOID=3 (ExecutionState) */
-  state: ExecutionStateValue;
+  state: (typeof ExecutionState)[keyof typeof ExecutionState];
   segments: ExecutionSegment[];
   taskRuns: TaskRun[];
   facts: Fact[];
@@ -89,6 +92,14 @@ export interface Execution {
 }
 
 // ---------- Effective view (derived) ----------
+
+export interface ResolutionInfo {
+  /** OPEN=0 | CLOSED=1 | BLOCKED=2 (ResolutionState) */
+  state: (typeof ResolutionState)[keyof typeof ResolutionState];
+  resolvedAt: string;
+  resolutionHash: string;
+  violations: ResolutionViolation[];
+}
 
 export interface EffectiveExecution {
   execution: Execution;

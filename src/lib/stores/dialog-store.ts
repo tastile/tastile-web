@@ -15,12 +15,6 @@ interface DialogState {
   closeDeferDialog: () => void;
   openDeleteDialog: (tile: Tile) => void;
   closeDeleteDialog: () => void;
-  recurringDialog: {
-    open: boolean;
-    tileId: string | null;
-  };
-  openRecurringDialog: (tileId: string) => void;
-  closeRecurringDialog: () => void;
 }
 
 export const useDialogStore = create<DialogState>((set) => ({
@@ -62,17 +56,5 @@ export const useDialogStore = create<DialogState>((set) => ({
         open: false,
         tile: null,
       },
-    }),
-  recurringDialog: {
-    open: false,
-    tileId: null,
-  },
-  openRecurringDialog: (tileId: string) =>
-    set({
-      recurringDialog: { open: true, tileId },
-    }),
-  closeRecurringDialog: () =>
-    set({
-      recurringDialog: { open: false, tileId: null },
     }),
 }));

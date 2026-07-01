@@ -12,12 +12,8 @@
  * call so silent renewals are honored.
  */
 
-import type {
-  ApiError,
-  CommandRequest,
-  CommandResponse,
-} from "@/lib/domain/v1/envelope";
 import { ApiErrorKind } from "@/lib/domain/v1/constants";
+import type { ApiError, CommandRequest, CommandResponse } from "@/lib/domain/v1/envelope";
 
 export interface ApiClient {
   baseUrl: string;
@@ -25,9 +21,7 @@ export interface ApiClient {
   useProxyBridge?: boolean;
 }
 
-export type Result<T> =
-  | { ok: true; data: T; status: number }
-  | { ok: false; error: ApiError };
+export type Result<T> = { ok: true; data: T; status: number } | { ok: false; error: ApiError };
 
 const FORBIDDEN_NO_TOKEN: ApiError = {
   kind: ApiErrorKind.FORBIDDEN,
@@ -73,8 +67,7 @@ function toApiError(raw: unknown, fallbackMessage: string): ApiError {
       return {
         kind: r.kind,
         message: typeof r.message === "string" ? r.message : fallbackMessage,
-        currentRevision:
-          typeof currentRevision === "number" ? currentRevision : null,
+        currentRevision: typeof currentRevision === "number" ? currentRevision : null,
         violations: Array.isArray(r.violations) ? r.violations : [],
       };
     }
@@ -82,9 +75,7 @@ function toApiError(raw: unknown, fallbackMessage: string): ApiError {
   return networkError(fallbackMessage);
 }
 
-function toWireCommandRequest<TReq>(
-  envelope: CommandRequest<TReq>,
-): Record<string, unknown> {
+function toWireCommandRequest<TReq>(envelope: CommandRequest<TReq>): Record<string, unknown> {
   return {
     expected_revision: envelope.expectedRevision,
     idempotency_key: envelope.idempotencyKey,
@@ -188,10 +179,7 @@ export function postCommand<TReq>(
   return sendCommand(client, "POST", path, envelope);
 }
 
-export async function getRead<T>(
-  client: ApiClient,
-  path: string,
-): Promise<Result<T>> {
+export async function getRead<T>(client: ApiClient, path: string): Promise<Result<T>> {
   const token = client.useProxyBridge ? null : await client.getIdToken();
   if (!client.useProxyBridge && !token) {
     return { ok: false, error: FORBIDDEN_NO_TOKEN };

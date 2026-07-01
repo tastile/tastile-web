@@ -10,6 +10,7 @@ interface RowToggleProps {
   checked: boolean;
   onChange: (checked: boolean) => void;
   className?: string;
+  "data-testid"?: string;
 }
 
 export function RowToggle({
@@ -18,9 +19,10 @@ export function RowToggle({
   checked,
   onChange,
   className,
+  "data-testid": dataTestid,
 }: RowToggleProps) {
   return (
-    <FormRow icon={<Icon size={20} />} className={className}>
+    <FormRow icon={<Icon size={20} />} className={className} data-testid={dataTestid}>
       <button
         type="button"
         role="switch"

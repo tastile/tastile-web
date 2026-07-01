@@ -4,14 +4,14 @@
  * Interfaces only. No business logic.
  */
 
+import type { ConditionNode } from "./condition";
 import type {
+  TaskOrderRelationValue,
   TimeAggregateValue,
   TimeQuantifierValue,
   TimeScopeValue,
   TimeSourceValue,
-  TaskOrderRelationValue,
 } from "./constants";
-import type { ConditionNode } from "./condition";
 
 // ---------- TimeObservation ----------
 
@@ -62,20 +62,6 @@ export interface TaskDefinition {
   show: ConditionNode | null;
   complete: ConditionNode;
   order: TaskOrderRule[];
-}
-
-// ---------- CompletionResult (derived; not authoritative) ----------
-
-export interface CompletionTermResult {
-  termId: string;
-  met: boolean;
-  evaluatedAt: string;
-}
-
-export interface CompletionResult {
-  met: boolean;
-  evaluatedAt: string;
-  terms: CompletionTermResult[];
 }
 
 // ---------- Completion (root + elements) ----------

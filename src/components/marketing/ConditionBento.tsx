@@ -87,7 +87,6 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
             </article>
           ))}
         </div>
-
       </div>
     </section>
   );

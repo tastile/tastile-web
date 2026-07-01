@@ -9,7 +9,6 @@ import { SecurityLockGate } from "@/components/security/SecurityLockGate";
 import { ActivityBar } from "@/components/shell/ActivityBar";
 import { FloatingHeader } from "@/components/shell/FloatingHeader";
 import { SideToolPanel } from "@/components/shell/SideToolPanel";
-import { TileEditPanel } from "@/components/tile/TileEditPanel";
 import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
@@ -32,7 +31,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
   const closeQuickCreate = useQuickCreateStore((s) => s.close);
   const sidePanelContent = useSidePanelContent();
-  const pathname = usePathname();
+  const _pathname = usePathname();
   const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -54,7 +53,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     closeQuickCreate();
-  }, [closeQuickCreate, pathname]);
+  }, [closeQuickCreate]);
 
   return (
     <div className="flex h-screen flex-col bg-background">
@@ -77,7 +76,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       {/* グローバルオーバーレイ */}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <NotificationsDropdown open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
-      <TileEditPanel />
       {/* QuickTileCreate: デスクトップ=右スライド / モバイル=下スライドアップ */}
       <QuickTileCreate />
 

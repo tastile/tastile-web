@@ -1,25 +1,17 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
-import { applyThemeMode, resolveThemeMode, type ThemeMode } from "@/lib/theme-mode";
+import { type Theme, useThemeStore } from "@/lib/stores/theme-store";
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>("light");
-
-  useEffect(() => {
-    const resolved = resolveThemeMode();
-    setMode(resolved);
-    applyThemeMode(resolved);
-  }, []);
+  const { theme, setTheme } = useThemeStore();
 
   function toggle() {
-    const next: ThemeMode = mode === "light" ? "dark-gray" : "light";
-    setMode(next);
-    applyThemeMode(next);
+    const next: Theme = theme === "light" ? "gray" : "light";
+    setTheme(next);
   }
 
-  const isDark = mode !== "light";
+  const isDark = theme !== "light";
 
   return (
     <button

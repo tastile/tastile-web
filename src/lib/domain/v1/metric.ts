@@ -44,7 +44,12 @@ export interface ScalarChoose {
   fallback: ScalarExpression;
 }
 
-export type ScalarExpression = ScalarLiteral | ScalarRead | ScalarAggregate | ScalarOperate | ScalarChoose;
+export type ScalarExpression =
+  | ScalarLiteral
+  | ScalarRead
+  | ScalarAggregate
+  | ScalarOperate
+  | ScalarChoose;
 
 export interface ScalarValueRange {
   min: ScalarValue | null;

@@ -1,7 +1,9 @@
 "use client";
 
+import { Languages, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
+import { FormPanel, RowSegmented } from "@/components/ui/form";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
@@ -46,43 +48,34 @@ export default function GeneralPage() {
       {/* Theme Settings */}
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.theme")}</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          <ThemeButton
-            active={theme === "light"}
-            onClick={() => setTheme("light")}
-            label={t("settings.themeLight")}
-            description="White background"
+        <FormPanel>
+          <RowSegmented
+            icon={Palette}
+            value={theme}
+            onChange={setTheme}
+            options={[
+              { value: "light", label: t("settings.themeLight") },
+              { value: "gray", label: t("settings.themeGray") },
+              { value: "dark", label: t("settings.themeDark") },
+            ]}
           />
-          <ThemeButton
-            active={theme === "gray"}
-            onClick={() => setTheme("gray")}
-            label={t("settings.themeGray")}
-            description="Gray background"
-          />
-          <ThemeButton
-            active={theme === "dark"}
-            onClick={() => setTheme("dark")}
-            label={t("settings.themeDark")}
-            description="Dark background"
-          />
-        </div>
+        </FormPanel>
       </section>
 
       {/* Language Settings */}
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.language")}</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <LanguageButton
-            active={locale === "ja"}
-            onClick={() => setLocale("ja")}
-            label={t("settings.languageJa")}
+        <FormPanel>
+          <RowSegmented
+            icon={Languages}
+            value={locale}
+            onChange={setLocale}
+            options={[
+              { value: "ja", label: t("settings.languageJa") },
+              { value: "en", label: t("settings.languageEn") },
+            ]}
           />
-          <LanguageButton
-            active={locale === "en"}
-            onClick={() => setLocale("en")}
-            label={t("settings.languageEn")}
-          />
-        </div>
+        </FormPanel>
       </section>
 
       <section className="mt-8">
@@ -128,51 +121,5 @@ export default function GeneralPage() {
         </div>
       </section>
     </div>
-  );
-}
-
-interface ThemeButtonProps {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  description: string;
-}
-
-function ThemeButton({ active, onClick, label, description }: ThemeButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-md border p-4 text-left transition-colors ${
-        active
-          ? "border-primary bg-surface-0 ring-1 ring-primary"
-          : "border-border bg-surface-0 hover:border-foreground-muted"
-      }`}
-    >
-      <p className="text-sm font-medium text-foreground">{label}</p>
-      <p className="mt-1 text-xs text-foreground-muted">{description}</p>
-    </button>
-  );
-}
-
-interface LanguageButtonProps {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-}
-
-function LanguageButton({ active, onClick, label }: LanguageButtonProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-md border p-4 text-left transition-colors ${
-        active
-          ? "border-primary bg-surface-0 ring-1 ring-primary"
-          : "border-border bg-surface-0 hover:border-foreground-muted"
-      }`}
-    >
-      <p className="text-sm font-medium text-foreground">{label}</p>
-    </button>
   );
 }

@@ -3,8 +3,10 @@ import { COOKIE_OAUTH_NEXT, COOKIE_OAUTH_STATE, COOKIE_PKCE_VERIFIER } from "@/l
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import {
   buildCognitoAuthorizeUrl,
+  defaultRedirectUriForPlatform,
   isConfiguredCognitoIdentityProvider,
   parseCognitoIdentityProvider,
+  parseCognitoPlatform,
   safeNextPath,
   safeOAuthRedirectUri,
   safePkceValue,
@@ -18,6 +20,7 @@ export async function GET(request: NextRequest) {
   if (!env) {
     return NextResponse.redirect(`${origin}/login?error=cognito_not_configured`);
   }
+  const platform = parseCognitoPlatform(request.nextUrl.searchParams.get("platform"));
   const providerParam = request.nextUrl.searchParams.get("provider");
   const provider = parseCognitoIdentityProvider(providerParam);
   if (providerParam && !provider) {
@@ -27,14 +30,14 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=provider_not_configured`);
   }
   const next = safeNextPath(request.nextUrl.searchParams.get("next"));
+  const defaultRedirect = defaultRedirectUriForPlatform(platform, env.callbackUrl);
   const redirectUri = safeOAuthRedirectUri(
     request.nextUrl.searchParams.get("redirect_uri"),
-    env.callbackUrl,
+    defaultRedirect,
   );
   const externalCodeChallenge = safePkceValue(request.nextUrl.searchParams.get("code_challenge"));
   const externalState = safePkceValue(request.nextUrl.searchParams.get("state"));
-  const usesExternalPkce =
-    redirectUri !== env.callbackUrl && !!externalCodeChallenge && !!externalState;
+  const usesExternalPkce = !!externalCodeChallenge && !!externalState;
   const { codeVerifier, codeChallenge } = usesExternalPkce
     ? { codeVerifier: "", codeChallenge: externalCodeChallenge }
     : await generatePkcePair();

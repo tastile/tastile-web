@@ -1,0 +1,36 @@
+import { test, expect } from '@playwright/test';
+import { v1CreatePlacement, truncateV1 } from './helpers/v1';
+
+function todayUtc(): string {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tokyo' });
+}
+
+test.describe('quick tile — recommend popover uses real tile data', () => {
+  test.beforeEach(async () => {
+    await truncateV1();
+  });
+
+  test('tag suggest popover shows tags from a previously created event', async ({ page }) => {
+    const day = todayUtc();
+    const tag = 'reco-' + Date.now();
+    const title = 'tile-with-tag-' + Date.now();
+
+    await v1CreatePlacement(page, {
+      title,
+      start: day + 'T10:00:00.000Z',
+      end: day + 'T11:00:00.000Z',
+      labels: [tag],
+    });
+
+    await page.goto('/dashboard/calendar?view=day');
+    await page.getByTestId('sidebar-new-tile').first().click();
+
+    const tagInputByRow = page.locator('[data-testid=tag-suggest-row] input').first();
+    await tagInputByRow.focus();
+    await tagInputByRow.fill('rec');
+
+    const popover = page.locator('[data-testid=tag-suggest-row] ul').first();
+    await expect(popover).toBeVisible();
+    await expect(popover).toContainText(tag);
+  });
+});

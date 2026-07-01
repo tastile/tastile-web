@@ -10,11 +10,15 @@ interface SegmentedOption<V extends string> {
 }
 
 interface RowSegmentedProps<V extends string> {
+  "data-testid"?: string;
   icon: LucideIcon;
   options: SegmentedOption<V>[];
   value: V;
   onChange: (value: V) => void;
   className?: string;
+  // When true, buttons stay intrinsic-width and overflow-x-scroll.
+  // Default (false) makes each button grow to fill the row.
+  compact?: boolean;
 }
 
 export function RowSegmented<V extends string>({
@@ -23,10 +27,18 @@ export function RowSegmented<V extends string>({
   value,
   onChange,
   className,
+  compact = false,
+  "data-testid": dataTestid,
 }: RowSegmentedProps<V>) {
   return (
-    <FormRow icon={<Icon size={20} />} tight className={className}>
-      <div role="radiogroup" className="flex w-full rounded-md bg-surface-2 p-0.5">
+    <FormRow icon={<Icon size={20} />} tight className={className} data-testid={dataTestid}>
+      <div
+        role="radiogroup"
+        className={cn(
+          "flex w-full min-w-0 gap-1",
+          compact ? "flex-nowrap overflow-x-auto whitespace-nowrap" : "flex-wrap",
+        )}
+      >
         {options.map((opt) => {
           const active = opt.value === value;
           return (
@@ -38,10 +50,11 @@ export function RowSegmented<V extends string>({
               aria-checked={active}
               onClick={() => onChange(opt.value)}
               className={cn(
-                "flex-1 rounded-sm px-3 py-1.5 text-sm transition-colors",
+                "rounded-full border px-3 py-1.5 text-sm transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                compact ? "shrink-0 whitespace-nowrap" : "min-w-0 flex-1 truncate",
                 active
-                  ? "bg-primary text-primary-fg shadow-sm"
-                  : "text-foreground-muted hover:text-foreground",
+                  ? "bg-primary text-primary-fg border-primary shadow-sm"
+                  : "bg-surface-1 text-foreground-muted border-border hover:text-foreground",
               )}
             >
               {opt.label}

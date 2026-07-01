@@ -7,7 +7,6 @@ import {
   Layers,
   Library,
   Menu,
-  Plus,
   Repeat,
   Search,
   Settings,
@@ -26,8 +25,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/DropdownMenu";
 import { useActiveTile } from "@/lib/hooks/use-active-tile";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 interface FloatingHeaderProps {
@@ -52,8 +49,6 @@ export function FloatingHeader({
 }: FloatingHeaderProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { t } = useTranslation();
-  const openQuickCreate = useQuickCreateStore((s) => s.open);
   const { snapshot } = useActiveTile();
   const [nowMs, setNowMs] = useState(0);
 
@@ -76,7 +71,7 @@ export function FloatingHeader({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center bg-surface-0/70 backdrop-blur-md">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center bg-surface-0 border-b border-border">
         {/* 左: ロゴ */}
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link
@@ -188,19 +183,6 @@ export function FloatingHeader({
 
       <BottomSheet open={menuOpen} onOpenChange={setMenuOpen} title="Menu">
         <div className="flex flex-col gap-4">
-          {/* タスク新規作成ボタン — アクセントカラー */}
-          <button
-            type="button"
-            onClick={() => {
-              setMenuOpen(false);
-              openQuickCreate();
-            }}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-medium text-primary-fg hover:bg-primary-hover transition-colors shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span>{t("nav.new")}</span>
-          </button>
-
           {/* クイックアクション (Search / Notifications) */}
           <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
             <button

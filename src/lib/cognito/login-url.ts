@@ -4,6 +4,22 @@ export const COGNITO_IDENTITY_PROVIDERS = ["Google", "SignInWithApple"] as const
 
 export type CognitoIdentityProvider = (typeof COGNITO_IDENTITY_PROVIDERS)[number];
 
+export type CognitoPlatform = "web" | "android" | "desktop";
+
+export function parseCognitoPlatform(value: string | null | undefined): CognitoPlatform {
+  if (value === "android" || value === "desktop") return value;
+  return "web";
+}
+
+export const ALLOWED_OAUTH_REDIRECT_URIS: ReadonlySet<string> = new Set<string>([
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3000/auth/desktop/callback",
+  "https://app.tastile.app/auth/callback",
+  "https://app.tastile.app/auth/desktop/callback",
+  "tastile://auth/callback",
+  "tastile-desktop://auth/callback",
+]);
+
 export function getConfiguredCognitoIdentityProviders(): Set<CognitoIdentityProvider> {
   const raw =
     process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS ??
@@ -39,10 +55,19 @@ export function safeNextPath(value: string | null): string {
   return value;
 }
 
+export function defaultRedirectUriForPlatform(platform: CognitoPlatform, fallback: string): string {
+  if (platform === "android") return "tastile://auth/callback";
+  if (platform === "desktop") {
+    if (fallback.startsWith("http://localhost")) {
+      return "http://localhost:3000/auth/desktop/callback";
+    }
+    return "https://app.tastile.app/auth/desktop/callback";
+  }
+  return fallback;
+}
+
 export function safeOAuthRedirectUri(value: string | null, fallback: string): string {
-  if (!value) return fallback;
-  if (value === fallback) return value;
-  if (value === "tastile://auth/callback") return value;
+  if (value && ALLOWED_OAUTH_REDIRECT_URIS.has(value)) return value;
   return fallback;
 }
 

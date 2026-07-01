@@ -12,6 +12,11 @@ import type { ResolutionViolation } from "./placement";
 
 // ---------- helpers ----------
 
+/** Read a byte at a known-good index of a fixed-size Uint8Array. */
+function byteAt(buf: Uint8Array, index: number): number {
+  return buf[index] ?? 0;
+}
+
 /**
  * RFC 9562 UUIDv7 generator.
  *
@@ -41,7 +46,8 @@ export function uuidv7(): string {
     // Reseed counter from crypto to mix a fresh random low bits across ms.
     const seed = new Uint8Array(2);
     crypto.getRandomValues(seed);
-    counter = ((seed[0]! << 4) | (seed[1]! >>> 4)) & 0x0fff;
+    // Indices 0 and 1 are guaranteed by the fixed-size allocation above.
+    counter = ((byteAt(seed, 0) << 4) | (byteAt(seed, 1) >>> 4)) & 0x0fff;
   }
 
   // 8 random bytes (64 bits) for the trailing rand_b (62 bits used).
@@ -54,19 +60,19 @@ export function uuidv7(): string {
   // byte7: low 8 bits of counter.
   const byte7 = counter & 0xff;
   // byte8: variant 0b10 + top 6 bits of rand[0].
-  const byte8 = 0x80 | (rand[0]! & 0x3f);
+  const byte8 = 0x80 | (byteAt(rand, 0) & 0x3f);
   // bytes 9..15: rand[1..7].
   const bytes = new Uint8Array([
     byte6,
     byte7,
     byte8,
-    rand[1]!,
-    rand[2]!,
-    rand[3]!,
-    rand[4]!,
-    rand[5]!,
-    rand[6]!,
-    rand[7]!,
+    byteAt(rand, 1),
+    byteAt(rand, 2),
+    byteAt(rand, 3),
+    byteAt(rand, 4),
+    byteAt(rand, 5),
+    byteAt(rand, 6),
+    byteAt(rand, 7),
   ]);
 
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");

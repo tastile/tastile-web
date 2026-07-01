@@ -2,36 +2,118 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN, COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 
-// Intentionally unauthenticated: this route echoes the same httpOnly cookies
-// back to the browser. middleware.ts already gates protected paths, and same-origin
-// policy is the only intended consumer.
+// Intentionally unauthenticated: this route echoes the durable Cognito
+// session handle back to the browser. middleware.ts already gates
+// protected paths, and same-origin policy is the only intended consumer.
+//
+// Auth boundary contract (see tastile-core/crates/v1/api/src/handlers/common.rs):
+//  - The only authentication concerns are (1) Cognito login and (2) Tastile
+//    API tokens. This route must NOT return idToken / refreshToken to
+//    browser JavaScript; those are stored in httpOnly cookies and must
+//    remain httpOnly in practice.
+//  - The Tastile API token is a separate v1 concern and is NOT mintable
+//    from this session lookup. Clients that need an API token must call
+//    the dedicated /v1/api-tokens endpoint after Cognito login.
+//
+// Cognito id_token / refresh_token expire independently from the durable
+// `tastile_user_sub` cookie, so we accept the session as long as the sub
+// is present. The id_token exp is surfaced as a hint for clients that
+// still want to refresh, but a missing or malformed id_token is not an
+// error here: the bridge auth path on the daemon side ignores the
+// id_token entirely.
+//
+// We also resolve the v1 owner_id by hitting the daemon over the internal
+// bridge (x-tastile-web-bridge-secret + x-tastile-web-session-user) so that
+// `useCurrentActorSubjectId` can synchronously populate the actor on first
+// render. The daemon has no /v1/auth/session GET handler, so we read
+// `owner_id` from /v1/quota/tiles which is the cheapest endpoint that
+// echoes it back.
 //
 // node-runtime: relies on Buffer for the base64 JWT-payload decode.
 
-export async function GET() {
-  const jar = await cookies();
-  const idToken = jar.get(COOKIE_ID_TOKEN)?.value;
-  const refreshToken = jar.get(COOKIE_REFRESH_TOKEN)?.value;
-  const sub = jar.get(COOKIE_USER_SUB)?.value;
-  if (!idToken || !refreshToken || !sub) {
-    return NextResponse.json({ error: "not authenticated" }, { status: 401 });
+const CORE_BASE = process.env.TASTILE_CORE_URL ?? "http://127.0.0.1:31400";
+const BRIDGE_SECRET = process.env.TASTILE_WEB_BRIDGE_SECRET ?? "";
+
+interface QuotaResponse {
+  owner_id?: string;
+}
+
+async function resolveOwnerId(sub: string): Promise<string | null> {
+  if (!BRIDGE_SECRET) return null;
+  try {
+    const res = await fetch(`${CORE_BASE}/v1/quota/tiles`, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "x-tastile-web-bridge-secret": BRIDGE_SECRET,
+        "x-tastile-web-session-user": sub,
+      },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as QuotaResponse;
+    return typeof data.owner_id === "string" ? data.owner_id : null;
+  } catch {
+    return null;
   }
-  // Decode the JWT exp claim so the client knows when to refresh.
-  // We don't verify the signature server-side here — the cookie was set
-  // by our own /auth/callback route, and the daemon validates it on the
-  // other end. This is a passthrough.
+}
+
+/**
+ * Decoded JWT `exp` claim, best-effort.  Returns 0 when the token is
+ * missing, malformed, or has no numeric exp claim.  Mirrors the previous
+ * inline behaviour of GET to keep the public response shape stable.
+ */
+function decodeJwtExp(idToken: string | undefined): number {
+  if (!idToken) return 0;
   const parts = idToken.split(".");
-  if (parts.length !== 3) {
-    return NextResponse.json({ error: "malformed id_token" }, { status: 401 });
-  }
-  let exp: number;
+  if (parts.length !== 3) return 0;
   try {
     const payload = JSON.parse(
       Buffer.from(parts[1].replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8"),
     ) as { exp?: unknown };
-    exp = typeof payload.exp === "number" ? payload.exp : 0;
+    return typeof payload.exp === "number" ? payload.exp : 0;
   } catch {
-    return NextResponse.json({ error: "malformed id_token payload" }, { status: 401 });
+    return 0;
   }
-  return NextResponse.json({ idToken, refreshToken, sub, exp });
+}
+
+/**
+ * Public response shape for /api/auth/session.  Intentionally excludes
+ * idToken / refreshToken so httpOnly cookies cannot leak via this JSON.
+ */
+export interface SessionJson {
+  sub: string;
+  exp: number;
+  owner_id: string | null;
+}
+
+/**
+ * Pure helper that constructs the SessionJson payload from the cookies
+ * already fetched and the owner_id resolved via the daemon bridge.  Kept
+ * separate from `GET` so the response shape can be asserted without a
+ * Next.js request context.
+ */
+export function buildSessionJson(args: {
+  sub: string;
+  idToken: string | undefined;
+  ownerId: string | null;
+}): SessionJson {
+  return {
+    sub: args.sub,
+    exp: decodeJwtExp(args.idToken),
+    owner_id: args.ownerId,
+  };
+}
+
+export async function GET() {
+  const jar = await cookies();
+  const idToken = jar.get(COOKIE_ID_TOKEN)?.value;
+  // refreshToken is read from the cookie for parity / future use but MUST
+  // NEVER be returned to the browser.  See `SessionJson` above.
+  void jar.get(COOKIE_REFRESH_TOKEN)?.value;
+  const sub = jar.get(COOKIE_USER_SUB)?.value;
+  if (!sub) {
+    return NextResponse.json({ error: "not authenticated" }, { status: 401 });
+  }
+  const ownerId = await resolveOwnerId(sub);
+  return NextResponse.json(buildSessionJson({ sub, idToken, ownerId }));
 }

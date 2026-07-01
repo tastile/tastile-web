@@ -37,7 +37,13 @@ const PREF_ITEM: NavItem = { path: "/dashboard/preferences", label: "Preferences
 
 export function ActivityBar() {
   const pathname = usePathname();
-  const openQuickCreate = useQuickCreateStore((s) => s.open);
+  // The sidebar + button always opens the create flow with a timed
+  // span (the next half-hour, 30 min long). This matches the
+  // cell-click flow so the resulting tile lands in the timeline
+  // where the user can resize / drag / edit it. A separate allDay
+  // toggle inside the panel still lets the user convert to a
+  // full-day tile before committing.
+  const openQuickCreate = () => useQuickCreateStore.getState().openCreate({ initialAllDay: false });
   const { t } = useTranslation();
   const sidebarBehavior = useShellStore((s) => s.sidebarBehavior);
   const setSidebarBehavior = useShellStore((s) => s.setSidebarBehavior);
@@ -58,7 +64,7 @@ export function ActivityBar() {
         aria-label="Activity bar"
         className={cn(
           "absolute inset-y-0 left-0 flex flex-col items-stretch bg-surface-0",
-          "border-r border-border overflow-hidden",
+          "overflow-hidden",
           "transition-[width] duration-200 ease-in-out",
           expanded ? "w-48" : "w-12",
         )}
@@ -72,6 +78,7 @@ export function ActivityBar() {
             Icon={Plus}
             expanded={expanded}
             onClick={openQuickCreate}
+            data-testid="sidebar-new-tile"
             className="text-foreground hover:bg-surface-2"
           />
         </div>
@@ -209,15 +216,24 @@ interface NavButtonProps {
   expanded: boolean;
   onClick: () => void;
   className?: string;
+  "data-testid"?: string;
 }
 
-function NavButton({ label, Icon, expanded, onClick, className }: NavButtonProps) {
+function NavButton({
+  label,
+  Icon,
+  expanded,
+  onClick,
+  className,
+  "data-testid": dataTestId,
+}: NavButtonProps) {
   return (
     <div className="group/item relative">
       <button
         type="button"
         title={label}
         onClick={onClick}
+        data-testid={dataTestId}
         className={cn(
           "relative flex h-10 w-full items-center overflow-hidden rounded-md transition-colors",
           className,

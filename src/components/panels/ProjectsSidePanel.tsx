@@ -2,9 +2,9 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { createWorkspace, deleteWorkspace, useProjects } from "@/lib/hooks/use-projects";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { createWorkspace, deleteWorkspace, useProjects } from "@/lib/hooks/use-projects";
 import { cn } from "@/lib/utils/cn";
 
 export function ProjectsSidePanel() {
@@ -64,7 +64,8 @@ export function ProjectsSidePanel() {
   }
 
   async function handleDelete(id: string, displayName: string) {
-    if (typeof window !== "undefined" && !window.confirm(`Delete project "${displayName}"?`)) return;
+    if (typeof window !== "undefined" && !window.confirm(`Delete project "${displayName}"?`))
+      return;
     try {
       await deleteWorkspace(id);
       await refresh();
@@ -147,9 +148,7 @@ export function ProjectsSidePanel() {
             >
               Cancel
             </Button>
-            {createError && (
-              <span className="text-[10px] text-status-danger">{createError}</span>
-            )}
+            {createError && <span className="text-[10px] text-status-danger">{createError}</span>}
           </div>
         </form>
       ) : null}
@@ -170,7 +169,9 @@ export function ProjectsSidePanel() {
             <span className="min-w-0 flex-1 truncate">All Projects</span>
           </button>
 
-          {loading && <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">Loading…</div>}
+          {loading && (
+            <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">Loading…</div>
+          )}
           {error && (
             <div className="px-2 py-1.5 text-[10px] text-status-danger">{error.message}</div>
           )}

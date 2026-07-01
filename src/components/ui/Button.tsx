@@ -95,12 +95,16 @@ const buttonVariants = cva(
           "border-transparent",
         ].join(" "),
         danger: [
+          // Borderless on purpose: the filled danger tint already signals
+          // destructive intent, and a border stacked on a tinted background
+          // reads as a heavy outlined button. The base styles still apply a
+          // 1px border (kept transparent here so `border` utilities from
+          // className overrides still work).
           "text-foreground",
           "bg-danger/20 hover:bg-danger/30",
-          "border-danger hover:border-danger",
+          "border-transparent",
           "hover:text-foreground",
           "focus-visible:outline-danger",
-          "data-[state=open]:border-danger",
           "data-[state=open]:bg-danger/30",
           "data-[state=open]:outline-danger",
         ].join(" "),
