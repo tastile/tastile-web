@@ -447,15 +447,14 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   const upstreamPath = toV1Path(path);
   const targetUrl = `${CLOUD_API_BASE}/${upstreamPath}`;
   const url = new URL(targetUrl);
-  // /v1/timeline/today requires a `start` query param. The v1 client's
-  // getTimelineToday endpoint ships no params, so inject a UTC midnight
-  // default here so the daemon stops returning 400 on the panel's
+  // /v1/timeline/today requires both `start` and `end` query params (both
+  // DateTime<Utc>, not Option). The v1 client's getTimelineToday endpoint
+  // ships no params, so inject UTC midnight + 24h defaults here so the
+  // daemon stops returning 400 on the panel's
   // GET /api/proxy/views/timeline/today.
   const params = new URLSearchParams(request.nextUrl.search);
-  if (upstreamPath === "v1/timeline/today" && !params.has("start")) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    params.set("start", today.toISOString());
+  if (upstreamPath === "v1/timeline/today") {
+    injectTimelineTodayDefaults(params);
   }
   url.search = params.toString();
 
@@ -769,6 +768,20 @@ function toExecutionView(value: unknown) {
     tiles_in_progress: active ? [active] : [],
     pending_prompt_id: null,
   };
+}
+
+export function injectTimelineTodayDefaults(params: URLSearchParams): void {
+  if (!params.has("start")) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    params.set("start", today.toISOString());
+  }
+  if (!params.has("end")) {
+    const startIso = params.get("start")!;
+    const endDate = new Date(startIso);
+    endDate.setUTCDate(endDate.getUTCDate() + 1);
+    params.set("end", endDate.toISOString());
+  }
 }
 
 function resolveBridgeUserSub(request: NextRequest): string | null {
