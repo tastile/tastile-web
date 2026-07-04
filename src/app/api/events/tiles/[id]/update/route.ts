@@ -30,10 +30,7 @@ export async function POST(
     b.color === undefined &&
     b.icon === undefined
   ) {
-    return NextResponse.json(
-      { error: "No updatable fields supplied" },
-      { status: 422 },
-    );
+    return NextResponse.json({ error: "No updatable fields supplied" }, { status: 422 });
   }
   return upstreamUpdateTile(id, {
     title: typeof b.title === "string" ? b.title : undefined,

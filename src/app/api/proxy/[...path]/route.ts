@@ -35,6 +35,17 @@ interface MockTile {
 }
 
 const mockTiles: MockTile[] = [];
+const mockNotifications: Array<{
+  id: string;
+  recipient_subject_id: string;
+  kind: number;
+  grant_id: string | null;
+  resource_kind: number | null;
+  resource_id: string | null;
+  message: string | null;
+  created_at: string;
+  read_at: string | null;
+}> = [];
 
 function generateId(): string {
   return `mock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -72,6 +83,20 @@ function mockTileFromCreate(body: Record<string, unknown>): MockTile {
       active_end: temporal.active_end ?? temporal.activeEnd ?? null,
     },
   };
+}
+
+function pushMockNotification(message: string, resourceId: string | null = null): void {
+  mockNotifications.unshift({
+    id: generateId(),
+    recipient_subject_id: DEV_ACTOR_SUBJECT_ID,
+    kind: 4,
+    grant_id: null,
+    resource_kind: resourceId ? 1 : null,
+    resource_id: resourceId,
+    message,
+    created_at: new Date().toISOString(),
+    read_at: null,
+  });
 }
 
 function handleMockRequest(
@@ -116,36 +141,90 @@ function handleMockRequest(
     return NextResponse.json({ items: [] });
   }
 
-  if (path === "execution/snapshot" && method === "GET") {
-    return new NextResponse(null, { status: 404 });
+  if (
+    (path === "execution/snapshot" ||
+      path === "read/execution-view" ||
+      path === "views/active-tile" ||
+      path === "read/active-tile" ||
+      path === "v1/active-tile") &&
+    method === "GET"
+  ) {
+    const active = mockTiles.find((tile) => tile.lifecycle === "started");
+    if (!active) {
+      return NextResponse.json({
+        is_working: false,
+        is_on_break: false,
+        is_idle: true,
+        main_tile: null,
+        main_tile_started_at: null,
+        main_tile_ends_at: null,
+        tile_count: 0,
+        event_count: mockNotifications.length,
+        tiles_in_progress: [],
+        pending_prompt_id: null,
+      });
+    }
+    const temporal = active.temporal as Record<string, string | null> | null;
+    return NextResponse.json({
+      is_working: true,
+      is_on_break: false,
+      is_idle: false,
+      main_tile: { id: active.id, title: active.title },
+      main_tile_started_at: temporal?.active_start ?? new Date().toISOString(),
+      main_tile_ends_at: temporal?.active_end ?? null,
+      tile_count: 1,
+      event_count: mockNotifications.length,
+      tiles_in_progress: [{ id: active.id, title: active.title }],
+      pending_prompt_id: null,
+    });
   }
 
   if (path === "sync/status" && method === "GET") {
     return new NextResponse(null, { status: 404 });
   }
 
-  if (path === "commands/tile/create" && method === "POST") {
+  if ((path === "read/tiles" || path === "views/tile-list" || path === "v1/tiles") && method === "GET") {
+    return NextResponse.json(path === "read/tiles" ? { tiles: mockTiles } : mockTiles);
+  }
+
+  if ((path === "commands/tile/create" || path === "v1/tiles") && method === "POST") {
     const tile = mockTileFromCreate(body as Record<string, unknown>);
     mockTiles.push(tile);
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
       request_id: null,
+      aggregate: { id: tile.id, kind: 1 },
     });
   }
 
-  if (path === "commands/tile/start" && method === "POST") {
+  const v1StartMatch = path.match(/^v1\/tiles\/([^/]+)\/start$/);
+  if ((path === "commands/tile/start" || v1StartMatch) && method === "POST") {
     const req = body as Record<string, unknown>;
-    const tileId = req.tile_id as string;
+    const payload = (req.payload ?? req) as Record<string, unknown>;
+    const tileId = (v1StartMatch?.[1] ?? payload.tile_id ?? req.tile_id) as string;
     const tile = mockTiles.find((t) => t.id === tileId);
     if (tile) {
       tile.lifecycle = "started";
       tile.temporal = { ...tile.temporal, active_start: new Date().toISOString() };
+      pushMockNotification(`${tile.title}を実行中です`, tile.id);
     }
+    const placementId = generateId();
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
       request_id: null,
+      aggregate: { id: placementId, kind: 2 },
+    });
+  }
+
+  const v1ExecutionMatch = path.match(/^v1\/placements\/([^/]+)\/executions$/);
+  if (v1ExecutionMatch && method === "POST") {
+    return NextResponse.json({
+      accepted: true,
+      command_id: generateId(),
+      request_id: null,
+      aggregate: { id: generateId(), kind: 3 },
     });
   }
 
@@ -156,6 +235,7 @@ function handleMockRequest(
     if (tile) {
       tile.lifecycle = "done";
       tile.temporal = { ...tile.temporal, active_end: new Date().toISOString() };
+      pushMockNotification(`${tile.title}が完了しました`, tile.id);
     }
     return NextResponse.json({
       accepted: true,
@@ -209,6 +289,7 @@ function handleMockRequest(
   }
 
   if (path === "commands/prompt/request" && method === "POST") {
+    pushMockNotification("確認が必要な通知があります");
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
@@ -250,6 +331,37 @@ function handleMockRequest(
         last_synced_at: null,
       },
     });
+  }
+
+  if ((path === "access/notifications" || path === "v1/access/notifications") && method === "GET") {
+    const unreadOnly = searchParams.get("unread_only") === "true";
+    const limit = Number(searchParams.get("limit") ?? 20);
+    const items = mockNotifications
+      .filter((item) => !unreadOnly || !item.read_at)
+      .slice(0, Number.isFinite(limit) ? limit : 20);
+    return NextResponse.json({ count: items.length, items });
+  }
+
+  const readMatch = path.match(/^(?:access\/notifications|v1\/access\/notifications)\/([^/]+)\/read$/);
+  if (readMatch && method === "POST") {
+    const item = mockNotifications.find((notification) => notification.id === readMatch[1]);
+    if (item) item.read_at = new Date().toISOString();
+    return new NextResponse(null, { status: 204 });
+  }
+
+  if (
+    (path === "access/notifications/read-all" || path === "v1/access/notifications/read-all") &&
+    method === "POST"
+  ) {
+    const now = new Date().toISOString();
+    let marked = 0;
+    for (const item of mockNotifications) {
+      if (!item.read_at) {
+        item.read_at = now;
+        marked += 1;
+      }
+    }
+    return NextResponse.json({ marked_read: marked });
   }
 
   const calendarMatch = path.match(/^views\/calendar\/(day|week|month|year)$/);
@@ -335,7 +447,17 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   const upstreamPath = toV1Path(path);
   const targetUrl = `${CLOUD_API_BASE}/${upstreamPath}`;
   const url = new URL(targetUrl);
-  url.search = request.nextUrl.search;
+  // /v1/timeline/today requires a `start` query param. The v1 client's
+  // getTimelineToday endpoint ships no params, so inject a UTC midnight
+  // default here so the daemon stops returning 400 on the panel's
+  // GET /api/proxy/views/timeline/today.
+  const params = new URLSearchParams(request.nextUrl.search);
+  if (upstreamPath === "v1/timeline/today" && !params.has("start")) {
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    params.set("start", today.toISOString());
+  }
+  url.search = params.toString();
 
   const headers = new Headers();
   // The v1 API does not validate Cognito id_tokens. It accepts the
@@ -427,6 +549,8 @@ export function toV1Path(path: string): string {
     "read/placements": "v1/placements",
     "read/candidates": "v1/candidates",
     "views/timeline/today": "v1/timeline/today",
+    "views/pending-prompt": "v1/prompts/pending",
+    "prompts/current": "v1/prompts/pending",
     "auth/tile-quota": "v1/quota/tiles",
     "debug/events": "v1/debug/events",
     "access/subjects": "v1/access/subjects",

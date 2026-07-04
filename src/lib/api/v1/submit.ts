@@ -4,9 +4,15 @@
  * Honors `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` for local development: when set,
  * `getIdToken` returns the dev token instead of calling Cognito. The v1
  * daemon must be configured to accept the token (out of scope here).
+ *
+ * Browser code must NEVER receive or depend on Cognito id_token /
+ * refresh_token. When the proxy bridge is used, the v1 bearer token (or
+ * the web-bridge headers) is attached server-side from the httpOnly
+ * cookie, so the client does not need a token. The `getIdToken` hook is
+ * retained for forward-compatibility; it returns `null` (or the dev
+ * token under E2E bypass) and never reads Cognito material.
  */
 
-import { getIdTokenClient } from "@/lib/daemon/id-token-client";
 import type { ApiClient } from "./endpoints";
 
 /**
@@ -24,10 +30,7 @@ export function makeClient(): ApiClient {
   return {
     baseUrl: useProxyBridge ? "/api/proxy" : rawBaseUrl,
     useProxyBridge,
-    getIdToken: async () => {
-      if (e2eBypass) return E2E_DEV_TOKEN;
-      return getIdTokenClient();
-    },
+    getIdToken: async () => (e2eBypass ? E2E_DEV_TOKEN : null),
   };
 }
 

@@ -22,8 +22,8 @@ const OCC_BASE = "/api/events/occurrences";
  *  the hook's local state (the upstream module returns the
  *  placement_id as `event.id`).
  */
-const TILE_BASE = "/api/events/tiles";
-const PLACEMENT_BASE = "/api/events/placements";
+const _TILE_BASE = "/api/events/tiles";
+const _PLACEMENT_BASE = "/api/events/placements";
 
 export interface UseEventsRange {
   start: string;
@@ -78,31 +78,28 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     }
     // range object identity changes are reflected in the field deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring]);
+  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range]);
 
-  const create = useCallback(
-    async (input: CalendarEventInput): Promise<CalendarEvent> => {
-      const res = await fetch("/api/events", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: input.title,
-          description: input.description ?? null,
-          start: input.start,
-          end: input.end,
-          color: input.color,
-          icon: input.icon ?? null,
-        }),
-      });
-      if (!res.ok) throw new Error(`Failed to create event (${res.status})`);
-      const body = (await res.json()) as { event: CalendarEvent };
-      const event = body.event;
-      setEvents((prev) => [...prev, event]);
-      notifyEventsChanged();
-      return event;
-    },
-    [],
-  );
+  const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        title: input.title,
+        description: input.description ?? null,
+        start: input.start,
+        end: input.end,
+        color: input.color,
+        icon: input.icon ?? null,
+      }),
+    });
+    if (!res.ok) throw new Error(`Failed to create event (${res.status})`);
+    const body = (await res.json()) as { event: CalendarEvent };
+    const event = body.event;
+    setEvents((prev) => [...prev, event]);
+    notifyEventsChanged();
+    return event;
+  }, []);
 
   const update = useCallback(
     async (id: string, patch: Partial<CalendarEventInput>): Promise<CalendarEvent> => {
@@ -118,14 +115,11 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
       if (patch.description !== undefined) body.description = patch.description;
       if (patch.color !== undefined) body.color = patch.color;
       if (patch.icon !== undefined) body.icon = patch.icon;
-      const res = await fetch(
-        `/api/events/tiles/${encodeURIComponent(tileId)}/update`,
-        {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
+      const res = await fetch(`/api/events/tiles/${encodeURIComponent(tileId)}/update`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
       if (!res.ok) throw new Error(`Failed to update event (${res.status})`);
       const out = (await res.json()) as { tile: Partial<CalendarEvent> };
       const merged: CalendarEvent = current
@@ -138,22 +132,24 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     [events],
   );
 
-  const remove = useCallback(async (id: string): Promise<void> => {
-    const current = events.find((e) => e.id === id);
-    const tileId = current?.tileId;
-    if (!tileId) {
-      throw new Error("Cannot remove event: tileId is unknown for this placement");
-    }
-    const res = await fetch(
-      `/api/events/tiles/${encodeURIComponent(tileId)}`,
-      { method: "DELETE" },
-    );
-    if (!res.ok && res.status !== 204) {
-      throw new Error(`Failed to remove event (${res.status})`);
-    }
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-    notifyEventsChanged();
-  }, [events]);
+  const remove = useCallback(
+    async (id: string): Promise<void> => {
+      const current = events.find((e) => e.id === id);
+      const tileId = current?.tileId;
+      if (!tileId) {
+        throw new Error("Cannot remove event: tileId is unknown for this placement");
+      }
+      const res = await fetch(`/api/events/tiles/${encodeURIComponent(tileId)}`, {
+        method: "DELETE",
+      });
+      if (!res.ok && res.status !== 204) {
+        throw new Error(`Failed to remove event (${res.status})`);
+      }
+      setEvents((prev) => prev.filter((e) => e.id !== id));
+      notifyEventsChanged();
+    },
+    [events],
+  );
 
   useEffect(() => {
     void reload();

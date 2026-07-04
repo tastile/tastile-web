@@ -114,13 +114,19 @@ function ProjectEditForm({
 
   return (
     <section className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-border/40 bg-surface-1 p-4 md:grid-cols-3">
-      <label className="flex flex-col gap-1 text-xs">
+      <label htmlFor="project-name" className="flex flex-col gap-1 text-xs">
         <span className="font-semibold text-foreground-subtle">Name</span>
-        <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+        <Input
+          id="project-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={80}
+        />
       </label>
-      <label className="flex flex-col gap-1 text-xs">
+      <label htmlFor="project-slug" className="flex flex-col gap-1 text-xs">
         <span className="font-semibold text-foreground-subtle">Slug</span>
         <Input
+          id="project-slug"
           value={slug}
           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
           pattern="[a-z0-9-]+"
@@ -128,9 +134,10 @@ function ProjectEditForm({
           placeholder="my-project"
         />
       </label>
-      <label className="flex flex-col gap-1 text-xs">
+      <label htmlFor="project-color" className="flex flex-col gap-1 text-xs">
         <span className="font-semibold text-foreground-subtle">Color</span>
         <input
+          id="project-color"
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 
 export interface ExecutionViewSnapshot {
@@ -24,29 +24,31 @@ export function useActiveTile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
+  const fetchSnapshot = useCallback(async () => {
+    const res = await getCoreClient().call<ExecutionViewSnapshot>("getExecutionView");
+    if (!mountedRef.current) return;
+    if (res.ok) {
+      setSnapshot(res.data);
+      setError(null);
+    } else {
+      setError(new Error(res.error.message));
+    }
+    setLoading(false);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
-    let cancelled = false;
-
-    async function fetch_() {
-      const res = await getCoreClient().call<ExecutionViewSnapshot>("getExecutionView");
-      if (cancelled || !mountedRef.current) return;
-      if (res.ok) {
-        setSnapshot(res.data);
-      } else {
-        setError(new Error(res.error.message));
-      }
-      setLoading(false);
-    }
-
-    void fetch_();
+    void fetchSnapshot();
+    const interval = window.setInterval(() => void fetchSnapshot(), 15_000);
+    const onChanged = () => void fetchSnapshot();
+    window.addEventListener("tastile:execution-changed", onChanged);
 
     return () => {
-      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener("tastile:execution-changed", onChanged);
       mountedRef.current = false;
     };
-  }, []);
+  }, [fetchSnapshot]);
 
   return { snapshot, loading, error };
 }

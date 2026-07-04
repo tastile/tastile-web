@@ -76,7 +76,7 @@ export function WeekView({
       });
     }
     return m;
-  }, [events, weekDates, hourHeight]);
+  }, [events, weekDates, hourHeight, tzOffset]);
 
   if (loading) {
     return (

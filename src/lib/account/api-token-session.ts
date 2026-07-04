@@ -1,6 +1,5 @@
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
-import { getAccountUserSub } from "@/lib/cognito/account-session";
 import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
 
 const DEFAULT_CORE_URL = "http://127.0.0.1:3140";

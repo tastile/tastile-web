@@ -6,12 +6,12 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 **Before doing ANYTHING in this codebase, you MUST read:**
 
-1. **`../pomodoroom/CORE_POLICY.md`** - The philosophical foundation inherited from Pomodoroom
-2. **`../tastile_docs_bundle/tastile_docs/01_Foundation_and_Core_Principles.md`** - Tastile v1 foundation
-3. **`../tastile_docs_bundle/tastile_docs/03_Domain_Model_and_Tile_Conditions.md`** - Tile structure
-4. **`../tastile_docs_bundle/tastile_docs/04_Command_Event_and_Reducer_Model.md`** - Write model
+1. **`../tastile-root/docs/HARNESS.md`** - Tastile プロジェクト全体の方針
+2. **`../tastile-core/v1/02-core-entities.md`** - v1 ドメインモデル (Tile / Plan / Placement / Execution)
+3. **`../tastile-core/v1/10-invariants.md`** - 不変条件
+4. **`../tastile-core/v1/14-read-model-and-endpoint.md`** - API 仕様
 
-**These documents define absolute constraints that override all implementation decisions.**
+**tastile-core/v1/ が唯一の仕様正本。旧 pomodoroom/CORE_POLICY.md や tastile_docs_bundle/ は廃止済み。**
 
 ## Project Context
 
@@ -19,34 +19,33 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ### The Tastile Ecosystem
 
-Tastile v1's **primary platform is Windows PC** (not web):
-- **tastile-core** (Rust): The source of truth. Command/Event/Reducer engine, SQLite storage, local HTTP API
-- **tastile-desktop** (C#/WinUI): Primary Windows client with OS-level intervention (focus capture, fullscreen prompts, system tray)
-- **tastile-android** (Kotlin): Android companion
-- **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser using AWS Cognito auth and daemon-backed API
+バックエンドが核、フロントエンドは薄いクライアント:
+- **tastile-core** (Rust): バックエンド全体。Command/Event/Reducer engine, PostgreSQL storage, HTTP API
+- **tastile-web** (this repo): Web フロントエンド (薄いクライアント)
+- **tastile-android** (Kotlin): Android フロントエンド (薄いクライアント)
+- **tastile-desktop** (C#/WinUI): Windows フロントエンド (薄いクライアント)
 
 ### tastile-web's Role
 
-tastile-web is NOT the primary Tastile experience. It exists to:
-1. Provide access when not on the Windows PC
-2. Offer iOS PWA support (since native iOS is deferred)
-3. Handle landing pages, billing, and web-accessible dashboard
-4. Serve as a **proof that the architecture works browser-standalone**
+tastile-web は tastile-core API の薄いフロントエンド。主な機能:
+1. タスクの入出力・通知の Web UI
+2. iOS PWA サポート (ネイティブ iOS は将来対応)
+3. ランディングページ・課金・ダッシュボード
+4. API ドキュメント等の Web 公開
 
-**Critical misunderstanding to avoid:** This is not a "web app with desktop support". This is a **desktop app with web companion support**.
+**ビジネスロジックはフロントエンドに置かない。** すべて tastile-core API 経由で処理する。
 
 ## Architecture Philosophy
 
-### Core Principles (from CORE_POLICY.md and Tastile docs)
+### Core Principles
 
 1. **Execution Control, Not Task Management**
    - Tastile optimizes for execution friction reduction, not planning elegance
    - The goal: minimize "what should I do now?" decision cost
 
-2. **Condition Vectors, Not Type Enums**
-   - Tiles are NOT categorized by `kind` (e.g., "task", "break", "fixed")
-   - Instead, each Tile has 7 condition layers: `core`, `work`, `temporal`, `objective`, `interruption`, `automation`, `annotation`
-   - What looks like "types" in Pomodoroom are actually condition combinations
+2. **v1 4 Aggregate モデル**
+   - Tile / Plan / Placement / Execution の 4 集約で構成
+   - 詳細は `../tastile-core/v1/02-core-entities.md`
 
 3. **Facts, Not States**
    - Core stores **what happened** (events, timestamps), not **what status is** (running/paused/done)
@@ -58,20 +57,15 @@ tastile-web is NOT the primary Tastile experience. It exists to:
    - AI agents, automation, and humans use the **same Command surface**
    - UI is a thin presentation layer over Core
 
-### Backend: AWS (Web-Only)
+### Backend: tastile-core API
 
-- **Auth**: AWS Cognito Hosted UI (Google OAuth federated through Cognito)
-- **Database**: Daemon-backed API (local SQLite via Rust daemon)
-  - Tile definitions served through daemon `/read/tiles`
-  - Event sourcing via daemon command API
-  - User profile and settings through daemon
-- **Realtime**: Daemon SSE for live updates
-- **Edge Functions**: Stripe webhooks, integrations
-
-**Important:** Windows version uses **local SQLite** as authority. Web version uses **daemon API** as authority.
+- **Auth**: AWS Cognito Hosted UI (Google OAuth) + API トークン (Bearer)
+- **API**: tastile-core (Rust/axum, AWS 上の API サーバー) が唯一のバックエンド
+- **Database**: PostgreSQL (tastile-core 経由。Web クライアントから直接アクセスしない)
+- **Billing**: Stripe (通知機能完成後に実装)
 
 ### Frontend Stack
-- Next.js 15 (App Router) + TypeScript
+- Next.js 16 (App Router) + TypeScript
 - Tailwind CSS v4
 - Vitest for testing
 - **No global state library** - AppState derived from events
@@ -106,7 +100,7 @@ Realtime subscription → sync to other devices
 Key file structure (must be created):
 ```text
 src/lib/
-├── domain/          # Tile model (7 condition layers), Execution, Actor, IDs
+├── domain/          # v1 Tile model, Execution, Actor, IDs
 ├── core/
 │   ├── command.ts   # Command types + envelope
 │   ├── event.ts     # Event types + envelope
@@ -139,9 +133,6 @@ bun test         # Run all tests with Vitest
 bun test <file>  # Run specific test file
 ```
 
-### Daemon API
-- Web communicates with local daemon via HTTP API
-- Daemon serves tile data, handles commands, manages execution state
 
 ### Testing
 ```bash
@@ -155,19 +146,19 @@ bun test --ui                                  # Interactive UI
 
 1. **DO NOT use `_old/` directory** - Deprecated code, treat as archive
 2. **DO NOT store derived state** - No `status`, `running`, `paused` fields in Tile
-3. **DO NOT use `kind` enums** - Use condition vectors instead
+3. **DO NOT use `kind` string enums** - v1 では数値定数のみ
 4. **DO NOT mutate AppState** - Only via Events through Reducer
 5. **DO NOT create UI-specific Commands** - Commands must be domain-level (not "ClickedButton")
 6. **DO NOT give AI special backdoor APIs** - AI uses same Command surface as humans
 
-### Daemon API Schema
-- Tile data served through daemon `/read/tiles` endpoint
-- Commands executed through daemon `/commands/*` endpoints
-- Execution state derived from daemon snapshot
+### tastile-core API Schema
+- Tile data served through tastile-core `/read/tiles` endpoint
+- Commands executed through tastile-core `/commands/*` endpoints
+- Execution state derived from tastile-core snapshot
 
 ### Mock Data vs Real Data
 Current UI components use `src/lib/mock-data.ts`. When implementing features:
-1. Replace mock imports with real daemon API queries
+1. Replace mock imports with real tastile-core API queries
 2. Use `useExecutionEngine()` hook for state management
 3. Connect to actual `EventStore` and `AppState`
 
@@ -184,19 +175,19 @@ Current UI components use `src/lib/mock-data.ts`. When implementing features:
 
 ## Current Implementation Status
 
-As of 2026-03-28:
-- ✅ Daemon API integration for tile CRUD and execution state
+As of 2026-07-03:
+- ✅ tastile-core API integration for tile CRUD and execution state
 - ✅ `Tile` domain model, command/event types, validator, reducer, and `CommandHandler` are present under `src/lib/domain` and `src/lib/core`
-- ✅ `use-execution-engine.ts` delegates to the daemon-backed execution hook
+- ✅ `use-execution-engine.ts` delegates to tastile-core API
 - ✅ `/dashboard` routes consume derived execution state through the execution engine context and dashboard projection
-- ⚠️ The implementation still has architecture drift from the spec in places, especially around independent `Execution` snapshots, daemon compatibility layers, and quota/auth hardening
-- ⚠️ Some dashboard and storage behavior still depends on compatibility projections rather than a fully spec-aligned tile-truth model
+- ⚠️ The implementation still has architecture drift from v1 spec in places, especially around independent `Execution` snapshots and quota/auth hardening
+- ⚠️ Some dashboard and storage behavior still depends on compatibility projections rather than a fully v1-aligned model
 
 ### What Still Needs Work
 
 To move from "working branch" to "spec-aligned release candidate", focus on:
-1. Reducing drift between the current `Execution` snapshot model and the tile-truth model in doc 03
-2. Tightening daemon quota/auth behavior so runtime guarantees match the repo docs
+1. v1 Tile ドメインモデルの実装 - see tastile-core/v1/02-core-entities.md
+2. Tightening API quota/auth behavior so runtime guarantees match the repo docs
 3. Removing remaining compatibility shortcuts in projection and storage code
 4. Expanding tests around dashboard execution flows, prompt behavior, and migrations
 
@@ -204,20 +195,17 @@ Refer to Rust Core implementation as reference (`tastile-core/crates/`).
 
 ## Required Reading (Project Docs)
 
-These documents are THE source of truth. Read them before implementing:
+These documents are THE source of truth:
 
 ### Foundation (MUST READ)
-- `../pomodoroom/CORE_POLICY.md` - Inherited philosophy and principles
-- `../tastile_docs_bundle/tastile_docs/01_Foundation_and_Core_Principles.md` - Tastile v1 identity
-- `../tastile_docs_bundle/tastile_docs/03_Domain_Model_and_Tile_Conditions.md` - Tile structure
-- `../tastile_docs_bundle/tastile_docs/04_Command_Event_and_Reducer_Model.md` - Write model
+- `../tastile-root/docs/HARNESS.md` - プロジェクト全体方針
+- `../tastile-core/v1/02-core-entities.md` - v1 ドメインモデル
+- `../tastile-core/v1/10-invariants.md` - 不変条件
+- `../tastile-core/v1/14-read-model-and-endpoint.md` - API 仕様
 
-### Reference Architecture
-- `../docs/plans/2026-03-13-tastile-project-architecture.md` - Overall system design
-- `../tastile-core/crates/` - Rust Core reference implementation
-
-### Implementation Guides
-- Other files in `../tastile_docs_bundle/tastile_docs/` (05-20) for specific subsystems
+### Reference
+- `../tastile-core/HARNESS.md` - バックエンド詳細ハーネス
+- `../tastile-core/v1/` - v1 仕様群 (15 ファイル)
 
 ## Environment Variables
 

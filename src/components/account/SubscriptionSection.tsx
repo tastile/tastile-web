@@ -1,10 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSessionClient } from "@/lib/daemon/id-token-client";
 import { BUTTON_STYLES } from "@/lib/styles/button-styles";
 
 type Plan = "free" | "pro";
+
+/**
+ * Probe `/api/auth/session` for safe session metadata. We never read or
+ * hold Cognito tokens here — the route returns only `{sub, exp, owner_id}`.
+ */
+async function hasSafeSession(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/auth/session", { cache: "no-store" });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { sub?: unknown };
+    return typeof data.sub === "string";
+  } catch {
+    return false;
+  }
+}
 
 export function SubscriptionSection() {
   const [plan, setPlan] = useState<Plan>("free");
@@ -15,8 +29,8 @@ export function SubscriptionSection() {
     // Until then, default to "free" once we have a session; show the loader
     // briefly so the UI doesn't flash an unauthenticated state.
     void (async () => {
-      const session = await getSessionClient();
-      setPlan(session ? "free" : "free");
+      const authenticated = await hasSafeSession();
+      setPlan(authenticated ? "free" : "free");
       setLoading(false);
     })();
   }, []);

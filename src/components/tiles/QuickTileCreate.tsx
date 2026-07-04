@@ -190,7 +190,7 @@ function isoToLocalDate(iso: string | null | undefined): string {
   return iso.slice(0, 10);
 }
 
-function hexToEventColorName(hex: string | null | undefined): string | null {
+function _hexToEventColorName(hex: string | null | undefined): string | null {
   if (!hex) return null;
   const m = hex.toLowerCase().match(/^#([0-9a-f]{6})$/);
   if (!m) return null;
@@ -354,7 +354,7 @@ export function QuickTileCreate() {
   // workspaces created in another tab / sibling component.
   useEffect(() => {
     void projects.refresh();
-  }, []);
+  }, [projects.refresh]);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const [tagInputDraft, setTagInputDraft] = useState("");
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
@@ -382,7 +382,7 @@ export function QuickTileCreate() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [actorSubjectId]);
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
   // Context-sensitive heading: pick from {mode, kind, role}. The store's
@@ -799,7 +799,7 @@ export function QuickTileCreate() {
             const clamped = ((Math.floor(mins) % 1440) + 1440) % 1440;
             const h = Math.floor(clamped / 60);
             const m = clamped % 60;
-            return String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0");
+            return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
           };
           const start = toHHMM(w.start_offset_min);
           const end = toHHMM(w.end_offset_min);

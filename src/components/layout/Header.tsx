@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { AccountMenu } from "@/app/app/account-menu";
 import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
-import { getIdTokenClaims } from "@/lib/daemon/id-token-client";
 import type { ExecutionSyncStatus } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -30,20 +29,28 @@ export function Header({ executionState }: HeaderProps) {
   } | null>(null);
 
   useEffect(() => {
+    // The session route intentionally returns only safe metadata
+    // ({sub, exp, owner_id}) — no email, name, picture, or Cognito
+    // token material. We derive the avatar/display label from `owner_id`
+    // when present and from `sub` as a fallback. Anything richer (real
+    // profile fields) must come from a dedicated /v1 profile endpoint,
+    // not from decoding an id_token in the browser.
     void (async () => {
-      const claims = await getIdTokenClaims();
-      if (!claims) {
+      const session = await fetchSafeSession();
+      if (!session) {
         setAvatarUrl(null);
         setUserData(null);
         return;
       }
 
-      const fallbackName = claims.email?.split("@")[0] ?? claims.sub.slice(0, 8);
+      const fallbackName = session.owner_id
+        ? session.owner_id.slice(0, 8)
+        : session.sub.slice(0, 8);
 
-      setAvatarUrl(claims.picture ?? null);
+      setAvatarUrl(null);
       setUserData({
-        displayName: claims.name ?? fallbackName,
-        email: claims.email ?? "",
+        displayName: fallbackName,
+        email: "",
         plan: "free",
       });
     })();
@@ -112,4 +119,31 @@ export function Header({ executionState }: HeaderProps) {
       </div>
     </header>
   );
+}
+
+/**
+ * Minimal safe session shape: `{sub, exp, owner_id}`. Mirrors the public
+ * response of `/api/auth/session` and intentionally excludes any Cognito
+ * token material.
+ */
+interface SafeSession {
+  sub: string;
+  exp: number;
+  owner_id: string | null;
+}
+
+async function fetchSafeSession(): Promise<SafeSession | null> {
+  try {
+    const res = await fetch("/api/auth/session", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Partial<SafeSession>;
+    if (typeof data.sub !== "string") return null;
+    return {
+      sub: data.sub,
+      exp: typeof data.exp === "number" ? data.exp : 0,
+      owner_id: typeof data.owner_id === "string" ? data.owner_id : null,
+    };
+  } catch {
+    return null;
+  }
 }

@@ -1,11 +1,16 @@
 "use client";
 
-import { Languages, Palette } from "lucide-react";
+import { Bell, Languages, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { FormPanel, RowSegmented } from "@/components/ui/form";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import {
+  notificationsSupported,
+  requestNotificationPermissionOnce,
+  showNotification,
+} from "@/lib/notifications/browser";
 import {
   getSecurityLockEnabled,
   getSecurityLockTimeoutMinutes,
@@ -23,9 +28,17 @@ export default function GeneralPage() {
   // localStorage is read once after mount.
   const [securityLock, setSecurityLock] = useState(true);
   const [securityLockMinutes, setSecurityLockMinutes] = useState(10);
+  const [notificationPermission, setNotificationPermission] = useState<
+    NotificationPermission | "unsupported"
+  >("unsupported");
+  const [notificationStatus, setNotificationStatus] = useState("");
+  const [notificationPreview, setNotificationPreview] = useState("");
   useEffect(() => {
     setSecurityLock(getSecurityLockEnabled(localStorage));
     setSecurityLockMinutes(getSecurityLockTimeoutMinutes(localStorage));
+    setNotificationPermission(
+      notificationsSupported() ? Notification.permission : "unsupported",
+    );
   }, []);
 
   useSidePanel(<PreferencesSidePanel />);
@@ -39,6 +52,41 @@ export default function GeneralPage() {
     const normalized = Math.min(Math.max(minutes, 1), 240);
     setSecurityLockMinutes(normalized);
     setSecurityLockTimeoutMinutes(localStorage, normalized);
+  }
+
+  async function requestNotifications() {
+    const permission = await requestNotificationPermissionOnce();
+    setNotificationPermission(permission);
+    setNotificationStatus(
+      permission === "granted"
+        ? "Notifications are enabled."
+        : permission === "denied"
+          ? "Notifications are blocked by this browser."
+          : "Notification permission is still pending.",
+    );
+  }
+
+  async function simulateNotification() {
+    const preview = "This is a test notification from Tastile.";
+    setNotificationPreview(preview);
+    const permission =
+      notificationPermission === "default" ? await requestNotificationPermissionOnce() : notificationPermission;
+    setNotificationPermission(permission);
+    if (permission !== "granted") {
+      setNotificationStatus(
+        permission === "denied"
+          ? "Browser notifications are blocked. Showing a local preview instead."
+          : "This browser does not support notifications here. Showing a local preview instead.",
+      );
+      return;
+    }
+    showNotification({
+      kind: "prompt_pending",
+      title: "Tastile",
+      body: preview,
+      tag: `settings-test-${Date.now()}`,
+    });
+    setNotificationStatus("Sent a test notification.");
   }
 
   return (
@@ -76,6 +124,48 @@ export default function GeneralPage() {
             ]}
           />
         </FormPanel>
+      </section>
+
+      <section className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">Notifications</h2>
+        <div className="border border-border bg-surface-0 rounded-md p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 gap-3">
+              <Bell className="mt-0.5 h-5 w-5 shrink-0 text-foreground-muted" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Browser notifications</p>
+                <p className="mt-1 text-xs text-foreground-muted">
+                  Status: {notificationPermission}
+                </p>
+                {notificationStatus ? (
+                  <p className="mt-2 text-xs text-foreground-muted">{notificationStatus}</p>
+                ) : null}
+                {notificationPreview ? (
+                  <div className="mt-3 rounded-md border border-border bg-surface-1 px-3 py-2">
+                    <p className="text-xs font-semibold text-foreground">Tastile</p>
+                    <p className="mt-1 text-xs text-foreground-muted">{notificationPreview}</p>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <button
+                type="button"
+                onClick={requestNotifications}
+                className="rounded-lg bg-surface-3 px-3 py-2 text-sm font-semibold text-foreground"
+              >
+                Allow
+              </button>
+              <button
+                type="button"
+                onClick={simulateNotification}
+                className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-fg"
+              >
+                Test
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="mt-8">

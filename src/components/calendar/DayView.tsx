@@ -73,15 +73,15 @@ export function DayView({
 
   const allDayEvents = useMemo(
     () => events.filter((e) => e.allDay && eventSpansDay(e, effectiveDay, tzOffset)),
-    [events, effectiveDay],
+    [events, effectiveDay, tzOffset],
   );
   const timedEvents = useMemo(
     () => events.filter((e) => !e.allDay && eventSpansDay(e, effectiveDay, tzOffset)),
-    [events, effectiveDay],
+    [events, effectiveDay, tzOffset],
   );
   const layout = useMemo(
     () => layoutDayLanes(timedEvents, effectiveDay, hourHeight, tzOffset),
-    [timedEvents, effectiveDay, hourHeight],
+    [timedEvents, effectiveDay, hourHeight, tzOffset],
   );
 
   // Local date for the now-indicator check. `anchor` is a local

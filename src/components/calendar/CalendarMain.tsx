@@ -6,7 +6,7 @@ import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { type DisplayMode, getModeRange, todayLocalIso } from "@/lib/calendar/layout";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import { useEvents, type UseEventsRange } from "@/lib/hooks/calendar/use-events";
+import { type UseEventsRange, useEvents } from "@/lib/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import { DayView } from "./DayView";

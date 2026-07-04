@@ -30,10 +30,7 @@ export async function POST(req: Request): Promise<Response> {
     icon?: unknown;
   };
   if (typeof b.title !== "string" || typeof b.start !== "string" || typeof b.end !== "string") {
-    return NextResponse.json(
-      { error: "title, start, end are required" },
-      { status: 422 },
-    );
+    return NextResponse.json({ error: "title, start, end are required" }, { status: 422 });
   }
   return upstreamCreateCalendarEvent({
     title: b.title,

@@ -6,12 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Before doing ANYTHING in this codebase, you MUST read:**
 
-1. **`pomodoroom/CORE_POLICY.md`** - The philosophical foundation inherited from Pomodoroom
-2. **`tastile_docs_bundle/tastile_docs/01_Foundation_and_Core_Principles.md`** - Tastile v1 foundation
-3. **`tastile_docs_bundle/tastile_docs/03_Domain_Model_and_Tile_Conditions.md`** - Tile structure
-4. **`tastile_docs_bundle/tastile_docs/04_Command_Event_and_Reducer_Model.md`** - Write model
+1. **`../tastile-root/docs/HARNESS.md`** - Tastile プロジェクト全体の方針
+2. **`../tastile-core/v1/02-core-entities.md`** - v1 ドメインモデル (Tile / Plan / Placement / Execution)
+3. **`../tastile-core/v1/10-invariants.md`** - 不変条件
+4. **`../tastile-core/v1/14-read-model-and-endpoint.md`** - API 仕様
 
-**These documents define absolute constraints that override all implementation decisions.**
+**tastile-core/v1/ が唯一の仕様正本。旧 pomodoroom/CORE_POLICY.md や tastile_docs_bundle/ は廃止済み。**
 
 ## Project Context
 
@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### The Tastile Ecosystem
 
 Tastile v1's **primary platform is Windows PC** (not web):
-- **tastile-core** (Rust): The source of truth. Command/Event/Reducer engine, SQLite storage, local HTTP API
+- **tastile-core** (Rust): The source of truth. Command/Event/Reducer engine, PostgreSQL storage, HTTP API
 - **tastile-desktop** (C#/WinUI): Primary Windows client with OS-level intervention (focus capture, fullscreen prompts, system tray)
 - **tastile-android** (Kotlin): Android companion
 - **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser via the AWS-hosted `tastile-core` API (Cognito Hosted UI for auth)
@@ -33,20 +33,19 @@ tastile-web is NOT the primary Tastile experience. It exists to:
 3. Handle landing pages, billing, and web-accessible dashboard
 4. Serve as a **proof that the architecture works browser-standalone**
 
-**Critical misunderstanding to avoid:** This is not a "web app with desktop support". This is a **desktop app with web companion support**.
+**Critical misunderstanding to avoid:** This is not a "web app with desktop support". tastile-web is a **thin client** that consumes the tastile-core API.
 
 ## Architecture Philosophy
 
-### Core Principles (from CORE_POLICY.md and Tastile docs)
+### Core Principles
 
 1. **Execution Control, Not Task Management**
    - Tastile optimizes for execution friction reduction, not planning elegance
    - The goal: minimize "what should I do now?" decision cost
 
-2. **Condition Vectors, Not Type Enums**
-   - Tiles are NOT categorized by `kind` (e.g., "task", "break", "fixed")
-   - Instead, each Tile has 7 condition layers: `core`, `work`, `temporal`, `objective`, `interruption`, `automation`, `annotation`
-   - What looks like "types" in Pomodoroom are actually condition combinations
+2. **v1 4 Aggregate モデル**
+   - Tile / Plan / Placement / Execution の 4 集約で構成
+   - 詳細は `../tastile-core/v1/02-core-entities.md`
 
 3. **Facts, Not States**
    - Core stores **what happened** (events, timestamps), not **what status is** (running/paused/done)
@@ -68,10 +67,10 @@ tastile-web is NOT the primary Tastile experience. It exists to:
 - **Billing**: Stripe webhooks via Next.js API routes.
 - **File storage**: AWS S3 (e.g., desktop installer manifest).
 
-Tokens issued by Cognito: `id_token` (JWT, sent as `Authorization: Bearer …`) plus `refresh_token` for silent renewal. See `../tastile-desktop/CLAUDE.md` for the canonical token-handling pattern.
+Tokens issued by Cognito: `id_token` (JWT, sent as `Authorization: Bearer …`) plus `refresh_token` for silent renewal.
 
 ### Frontend Stack
-- Next.js 15 (App Router) + TypeScript
+- Next.js 16 (App Router) + TypeScript
 - Tailwind CSS v4
 - Vitest for testing
 - **No global state library** - AppState derived from events
@@ -106,7 +105,7 @@ Sync via tastile-core API (poll + SSE) → other devices
 Key file structure (must be created):
 ```
 src/lib/
-├── domain/          # Tile model (7 condition layers), Execution, Actor, IDs
+├── domain/          # v1 Tile model, Execution, Actor, IDs
 ├── core/
 │   ├── command.ts   # Command types + envelope
 │   ├── event.ts     # Event types + envelope
@@ -151,7 +150,7 @@ bun test --ui                                  # Interactive UI
 
 1. **DO NOT use `_old/` directory** - Deprecated code, treat as archive
 2. **DO NOT store derived state** - No `status`, `running`, `paused` fields in Tile
-3. **DO NOT use `kind` enums** - Use condition vectors instead
+3. **DO NOT use `kind` string enums** - v1 では数値定数のみ
 4. **DO NOT mutate AppState** - Only via Events through Reducer
 5. **DO NOT create UI-specific Commands** - Commands must be domain-level (not "ClickedButton")
 6. **DO NOT give AI special backdoor APIs** - AI uses same Command surface as humans
@@ -186,7 +185,7 @@ As of 2026-06-18:
 - ✅ `EventStore` stub for persistence (`src/lib/storage/event-store.ts`)
 - ⚠️ `use-execution-engine` hook exists BUT references non-existent imports
 - ✅ Dashboard shell UI (`/dashboard`) - **uses mock data**
-- ❌ **Domain model NOT implemented** - No Tile condition vectors
+- ❌ **Domain model NOT implemented** - v1 Tile model 未実装
 - ❌ **Command/Event/Reducer NOT implemented** - Core engine missing
 - ❌ **AppState derivation NOT implemented** - No event replay logic
 
@@ -195,7 +194,7 @@ As of 2026-06-18:
 ### What Actually Needs To Be Built
 
 To connect UI to real data, you must:
-1. Implement Tile domain model (7 condition layers) - see doc 03
+1. v1 Tile ドメインモデルの実装 - see tastile-core/v1/02-core-entities.md
 2. Implement Command types (StartTile, CompleteTile, etc.) - see doc 04
 3. Implement Event types (TileStarted, TileCompleted, etc.) - see doc 04
 4. Implement Validator (command acceptance rules)
@@ -208,20 +207,17 @@ Refer to Rust Core implementation as reference (`tastile-core/crates/`).
 
 ## Required Reading (Project Docs)
 
-These documents are THE source of truth. Read them before implementing:
+These documents are THE source of truth:
 
 ### Foundation (MUST READ)
-- `../pomodoroom/CORE_POLICY.md` - Inherited philosophy and principles
-- `../tastile_docs_bundle/tastile_docs/01_Foundation_and_Core_Principles.md` - Tastile v1 identity
-- `../tastile_docs_bundle/tastile_docs/03_Domain_Model_and_Tile_Conditions.md` - Tile structure
-- `../tastile_docs_bundle/tastile_docs/04_Command_Event_and_Reducer_Model.md` - Write model
+- `../tastile-root/docs/HARNESS.md` - プロジェクト全体方針
+- `../tastile-core/v1/02-core-entities.md` - v1 ドメインモデル
+- `../tastile-core/v1/10-invariants.md` - 不変条件
+- `../tastile-core/v1/14-read-model-and-endpoint.md` - API 仕様
 
-### Reference Architecture
-- `../docs/plans/2026-03-13-tastile-project-architecture.md` - Overall system design
-- `../tastile-core/crates/` - Rust Core reference implementation
-
-### Implementation Guides
-- Other files in `tastile_docs_bundle/tastile_docs/` (05-20) for specific subsystems
+### Reference
+- `../tastile-core/HARNESS.md` - バックエンド詳細ハーネス
+- `../tastile-core/v1/` - v1 仕様群 (15 ファイル)
 
 ## Environment Variables
 

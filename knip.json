@@ -22,7 +22,11 @@
     "src/components/calendar/TileBlock.tsx",
     "src/lib/domain/v1/execution.ts",
     "src/lib/hooks/use-calendar-projection.ts",
-    "src/lib/projection/calendar-projection.ts"
+    "src/lib/projection/calendar-projection.ts",
+    "src/lib/hooks/use-execution-engine.ts",
+    "src/lib/notifications/browser.ts",
+    "src/lib/domain/ids.ts",
+    "src/lib/domain/execution.ts"
   ],
   "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true

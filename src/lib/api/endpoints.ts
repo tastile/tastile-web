@@ -6,8 +6,15 @@
  * `Result<T, ApiError>` rather than throwing, so the UI can render
  * structured failure states (conflict, not found, unauthenticated).
  *
- * Auth: the JWT id_token is fetched from the same in-memory store
- * used elsewhere; pass it via the `tokenProvider` hook on creation.
+ * Auth: browser code must NEVER receive or depend on Cognito
+ * id_token / refresh_token. When `useProxyBridge` is true, all calls
+ * go through `/api/proxy` which attaches the v1 bearer token (or the
+ * web-bridge headers) server-side from the httpOnly cookie. When the
+ * client targets the local v1 daemon directly (e.g. E2E bypass mode)
+ * the server is configured to trust unauthenticated dev actors, so
+ * no client-side bearer token is sent. The legacy `tokenProvider`
+ * hook is retained only for forward-compatibility and always returns
+ * null in browser code.
  */
 
 export type ApiErrorKind =
@@ -730,12 +737,10 @@ export function getCoreClient(): CoreClient {
   _client = new CoreClient({
     baseUrl,
     useProxyBridge: usesCloudProxy,
-    tokenProvider: async () => {
-      if (typeof window === "undefined") return null;
-      // Lazily import the id-token client to avoid circular deps at module level.
-      const { getIdTokenClient } = await import("@/lib/daemon/id-token-client");
-      return getIdTokenClient();
-    },
+    // Browser code never holds Cognito tokens. The proxy bridge adds the
+    // v1 bearer token server-side; the local v1 daemon is reached only
+    // when `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` and trusts the dev actor.
+    tokenProvider: async () => null,
   });
   return _client;
 }

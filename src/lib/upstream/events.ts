@@ -60,9 +60,7 @@ function upstreamError(status: number, body: unknown): Response {
   });
 }
 
-async function bridgeHeaders(
-  extra?: Record<string, string>,
-): Promise<Record<string, string>> {
+async function bridgeHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
   const cookieStore = await cookies();
   const userSub = cookieStore.get(COOKIE_USER_SUB)?.value;
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
@@ -239,9 +237,7 @@ export interface CalendarEventResult {
  * Compose a calendar create call into the v1 tile + Manual-placement
  * pair.  Returns the { event } shape the rest of the web layer expects.
  */
-export async function upstreamCreateCalendarEvent(
-  input: CalendarCreateInput,
-): Promise<Response> {
+export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): Promise<Response> {
   const headers = await bridgeHeaders({ "content-type": "application/json" });
 
   const tileRes = await fetch(`${RUST_BASE}/v1/tiles`, {
@@ -258,9 +254,7 @@ export async function upstreamCreateCalendarEvent(
   });
   if (!tileRes.ok) return upstreamError(tileRes.status, await readJsonOrText(tileRes));
   const tileBody = (await readJsonOrText(tileRes)) as Record<string, unknown> | null;
-  const tileId = String(
-    (tileBody && (tileBody["tile_id"] ?? tileBody["id"])) || "",
-  );
+  const tileId = String((tileBody && (tileBody.tile_id ?? tileBody.id)) || "");
   if (!tileId) {
     return upstreamError(500, { error: "create tile returned no id" });
   }
@@ -278,12 +272,9 @@ export async function upstreamCreateCalendarEvent(
   if (!placementRes.ok) {
     return upstreamError(placementRes.status, await readJsonOrText(placementRes));
   }
-  const placementBody = (await readJsonOrText(placementRes)) as
-    | Record<string, unknown>
-    | null;
+  const placementBody = (await readJsonOrText(placementRes)) as Record<string, unknown> | null;
   const placementId = String(
-    (placementBody && (placementBody["placement_id"] ?? placementBody["id"])) ||
-      "",
+    (placementBody && (placementBody.placement_id ?? placementBody.id)) || "",
   );
   const nowIso = new Date().toISOString();
   const event: CalendarEventResult = {
@@ -323,14 +314,11 @@ export async function upstreamUpdateTile(
   },
 ): Promise<Response> {
   const headers = await bridgeHeaders({ "content-type": "application/json" });
-  const res = await fetch(
-    `${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}/update`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify(toSnake(patch)),
-    },
-  );
+  const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}/update`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(toSnake(patch)),
+  });
   if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
   const tile = await readJsonOrText(res);
   return new Response(JSON.stringify({ tile: toCamel(tile) }), {
@@ -354,13 +342,10 @@ export async function upstreamArchiveTile(tileId: string): Promise<Response> {
 /** Close a single placement without archiving its tile. */
 export async function upstreamClosePlacement(placementId: string): Promise<Response> {
   const headers = await bridgeHeaders();
-  const res = await fetch(
-    `${RUST_BASE}/v1/placements/${encodeURIComponent(placementId)}/close`,
-    {
-      method: "POST",
-      headers,
-    },
-  );
+  const res = await fetch(`${RUST_BASE}/v1/placements/${encodeURIComponent(placementId)}/close`, {
+    method: "POST",
+    headers,
+  });
   if (res.status === 204) return new Response(null, { status: 204 });
   if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
   return new Response(null, { status: 204 });

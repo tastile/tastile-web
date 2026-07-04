@@ -1,12 +1,4 @@
-import {
-  ChangeKind,
-  ChangeLayer,
-  ChangeSource,
-  PlacementSource,
-  PlanRole,
-  RecurringState,
-  TileKind,
-} from "@/lib/domain/v1/constants";
+import { PlacementSource, PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
 import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/lib/domain/v1/envelope";
 import { type ApiClient, getRead, postCommand, type Result, sendCommand } from "./endpoints";
 

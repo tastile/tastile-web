@@ -1,32 +1,14 @@
-import { idTokenProvider } from "@/lib/daemon/access-token";
-import { DaemonClient, type GoogleCalendarIntegrationSettings } from "@/lib/daemon/client";
-import { IntegrationsControls } from "./integrations-controls";
-
-const DEFAULT_DAEMON_BASE_URL = "http://127.0.0.1:3140";
-
-async function loadSettings(): Promise<{
-  settings: GoogleCalendarIntegrationSettings | null;
-  error: string | null;
-}> {
-  const baseUrl = process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? DEFAULT_DAEMON_BASE_URL;
-  try {
-    const client = new DaemonClient({
-      baseUrl,
-      getAccessToken: idTokenProvider,
-    });
-    const settings = await client.getIntegrationSettings();
-    return { settings, error: null };
-  } catch (e) {
-    return {
-      settings: null,
-      error: e instanceof Error ? e.message : "Failed to load integration settings",
-    };
-  }
-}
-
-export default async function IntegrationsPage() {
-  const { settings, error } = await loadSettings();
-
+/**
+ * Integrations dashboard page.
+ *
+ * The v1 product truth does not include Google Calendar sync — see
+ * `docs/agent-handoff/PROJECT-TRUTH.md`. The legacy `/auth/integrations/*`
+ * and `/sync/trigger` paths were removed in the v1-only migration, so the
+ * daemon-backed loader that previously lived here would only ever emit
+ * 404 / 410 responses. Render an explicit notice instead of pretending to
+ * load anything.
+ */
+export default function IntegrationsPage() {
   return (
     <div className="space-y-6 p-8">
       <div>
@@ -35,7 +17,17 @@ export default async function IntegrationsPage() {
       </div>
 
       <div className="rounded-xl bg-surface-elevated p-5">
-        <IntegrationsControls initialSettings={settings} initialError={error} />
+        <h2 className="text-lg font-semibold">Google Calendar</h2>
+        <p className="mt-2 text-sm text-foreground-muted">
+          この連携は現在の Tastile v1 スコープ外です。
+        </p>
+        <p className="mt-1 text-sm text-foreground-muted">
+          Until v2, do not expect the dashboard to load or sync any integration state. See
+          <code className="mx-1 rounded bg-surface-1 px-1.5 py-0.5 text-xs">
+            docs/agent-handoff/PROJECT-TRUTH.md
+          </code>
+          for the current scope.
+        </p>
       </div>
     </div>
   );

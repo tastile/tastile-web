@@ -2,7 +2,7 @@
 
 Browser-based companion for the Tastile execution-control system.
 
-This repository is not the primary Tastile product. The source of truth for the broader system is the Windows-first stack described in [AGENTS.md](./AGENTS.md): `tastile-core` owns the execution model, `tastile-desktop` is the main client, and `tastile-web` provides a browser/PWA companion plus web surfaces such as billing and dashboard access.
+This repository is a thin frontend client for the Tastile execution-control system. The source of truth for the broader system is `tastile-core` (backend API). `tastile-web` provides a browser/PWA interface for task I/O, notifications, and project management, plus web surfaces such as billing and dashboard access.
 
 ## Repository Goals
 
@@ -123,11 +123,11 @@ bun run test:e2e
 ## Current Constraints
 
 - Some architecture alignment work is still in progress; see `docs/plans/` for active hardening plans
-- The web app uses daemon-backed execution via the local HTTP API
+- The web app uses tastile-core API for execution
 
 ## Deployment
 
-This project is intended to deploy on Vercel or an equivalent Next.js hosting environment.
+This project is intended to deploy on AWS (Web 汎用サーバー).
 
 Minimum pre-deploy checklist:
 
