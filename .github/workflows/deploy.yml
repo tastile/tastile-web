@@ -70,6 +70,7 @@ jobs:
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
           NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google,SignInWithApple
           TASTILE_WEB_BRIDGE_SECRET=${TASTILE_WEB_BRIDGE_SECRET}
+          CLOUD_API_BASE=http://127.0.0.1:31400
           ENVEOF
 
       - name: Lint, typecheck, test, build
