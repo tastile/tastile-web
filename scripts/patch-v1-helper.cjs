@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Extend v1CreatePlacement to accept tags[] and seed v1_annotation rows
 const fs = require('node:fs');
 const path = 'C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts';

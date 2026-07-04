@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Patch QuickTileCreate.tsx to use /v1/labels for recentTags (CRLF-safe)
 const fs = require('node:fs');
 const path = 'C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\src\\components\\tiles\\QuickTileCreate.tsx';

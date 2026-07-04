@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Manual walkthrough v2: actually create a recurring tile through the UI,
 // then trigger materialize, then verify a placement shows up in the day view.
 const { chromium } = require("playwright");

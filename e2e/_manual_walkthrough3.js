@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Manual walkthrough v3: deep-inspect the quick-create panel for the
 // \u5b9a\u671f / Recurring tab.  The previous run couldn't find it.
 const { chromium } = require("playwright");

@@ -76,11 +76,17 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
   }, []);
 
   const zoomRef = useRef(zoom);
-  zoomRef.current = zoom;
   const stepRef = useRef(step);
-  stepRef.current = step;
   const clampRef = useRef({ min, max });
-  clampRef.current = { min, max };
+
+  // Keep refs in sync with the latest props/state. Doing this in an
+  // effect avoids mutating refs during render, which the React linter
+  // forbids (refs are values, not sources of truth).
+  useEffect(() => {
+    zoomRef.current = zoom;
+    stepRef.current = step;
+    clampRef.current = { min, max };
+  });
 
   const pinchRef = useRef<{
     initialDist: number;

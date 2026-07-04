@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs');
 const path = 'C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\src\\components\\tiles\\QuickTileCreate.tsx';
 const before = fs.readFileSync(path, 'utf8');

@@ -98,8 +98,14 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   const [mode, setModeState] = useState<DisplayMode>(urlMode);
   const [anchor, setAnchor] = useState(() => localIsoDate());
   const [tzOffset, setTzOffset] = useState(0);
+  // Capture Date.now() once on mount so listRange only refreshes when
+  // tzOffset changes, never during render. Held in state (not a ref)
+  // because the linter treats ref.current reads inside render as
+  // side-channel state.
+  const [nowMs, setNowMs] = useState<number>(0);
 
   useEffect(() => {
+    setNowMs(Date.now());
     setTzOffset(new Date().getTimezoneOffset() * -1);
   }, []);
 
@@ -118,12 +124,14 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   // The list view pulls a fixed wide window (today - 30d / +90d) so
   // the entire list is in one capability-aware /v1/timeline call.
   const listRange = useMemo((): UseEventsRange => {
-    const nowMs = Date.now() - tzOffset * 60_000;
+    // Before the mount effect has run, nowMs is 0 — render with a
+    // sentinel window rather than touching Date during render.
+    const adjusted = nowMs - tzOffset * 60_000;
     return {
-      start: new Date(nowMs - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      end: new Date(nowMs + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      start: new Date(adjusted - 30 * 24 * 60 * 60 * 1000).toISOString(),
+      end: new Date(adjusted + 90 * 24 * 60 * 60 * 1000).toISOString(),
     };
-  }, [tzOffset]);
+  }, [tzOffset, nowMs]);
 
   const range = useMemo(() => {
     if (view === "list") return listRange;

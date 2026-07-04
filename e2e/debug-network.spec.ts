@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 
 test.skip("debug quick tile submit with network capture", async ({ page }) => {
-  const reqs: any[] = [];
-  const resps: any[] = [];
+  const reqs: unknown[] = [];
+  const resps: unknown[] = [];
   page.on("request", (r) => {
     if (r.url().includes("/v1/tiles") || r.url().includes("/v1/placements") || r.url().includes("/api/proxy/v1/")) {
       reqs.push({ url: r.url(), method: r.method(), postData: r.postData() });

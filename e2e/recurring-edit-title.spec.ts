@@ -11,7 +11,7 @@ const ACTOR = "00000000-0000-0000-0000-000000000001";
 const PROXY = "/api/proxy";
 
 function uuidv7like(): string {
-  var h = (n: number) => Math.floor(Math.random() * Math.pow(16, n)).toString(16).padStart(n, "0");
+  const h = (n: number) => Math.floor(Math.random() * Math.pow(16, n)).toString(16).padStart(n, "0");
   return h(8) + "-" + h(4) + "-" + h(4) + "-" + h(4) + "-" + h(12);
 }
 
@@ -44,19 +44,19 @@ test.describe("v1 - recurring tile edit title", () => {
   test.beforeEach(async () => { await cleanDb(); });
 
   test("editing the title of a recurring-sourced placement updates both placement and recurring", async ({ page, request }) => {
-    var day = todayUtc();
-    var original = "Daily original " + Date.now();
-    var updated = "Daily updated " + Date.now();
+    const day = todayUtc();
+    const original = "Daily original " + Date.now();
+    const updated = "Daily updated " + Date.now();
 
-    var createRes = await postV1(request, "/v1/tiles", {
+    const createRes = await postV1(request, "/v1/tiles", {
       idempotency_key: uuidv7like(),
       payload: { kind: 0, title: original, description: null, color: "#3b82f6", icon: "check", external_id: null, plan_role: 0 },
     });
     expect(createRes.status()).toBeLessThan(300);
-    var created = await createRes.json();
-    var tileId = created.aggregate.id;
+    const created = await createRes.json();
+    const tileId = created.aggregate.id;
 
-    var ruleRes = await postV1(request, "/v1/recurring/" + tileId + "/frame-rules", {
+    const ruleRes = await postV1(request, "/v1/recurring/" + tileId + "/frame-rules", {
       idempotency_key: uuidv7like(),
       payload: {
         recurring_id: tileId,
@@ -64,27 +64,27 @@ test.describe("v1 - recurring tile edit title", () => {
       },
     });
     expect(ruleRes.status()).toBeLessThan(300);
-    var fruid = execFileSync("docker", [
+    const fruid = execFileSync("docker", [
       "exec", "-i", "tastile-core-db-1",
       "psql", "-U", "tastile", "-d", "tastile_db", "-At",
       "-c", "SELECT id FROM v1_recurring_frame_rule WHERE recurring_id = 'PLACEHOLDER' LIMIT 1;".replace("PLACEHOLDER", tileId),
     ], { encoding: "utf8" }).trim();
 
-    var matRes = await postV1(request, "/v1/recurring/" + tileId + "/frame-rules/" + fruid + "/materialize", {
+    const matRes = await postV1(request, "/v1/recurring/" + tileId + "/frame-rules/" + fruid + "/materialize", {
       idempotency_key: uuidv7like(),
       payload: { recurring_id: tileId, frame_rule_id: fruid, range_start: day + "T09:00:00.000Z", range_end: day + "T10:00:00.000Z" },
     });
     expect(matRes.status()).toBeLessThan(300);
 
     await page.goto("/dashboard/calendar?view=day&anchor=" + day);
-    var dayTile = page.locator("[data-testid^=day-event-], [data-event-id]", { hasText: original }).first();
+    const dayTile = page.locator("[data-testid^=day-event-], [data-event-id]", { hasText: original }).first();
     await expect(dayTile).toBeVisible({ timeout: 10_000 });
 
     await dayTile.click();
-    var submit = page.getByTestId("quick-create-submit");
+    const submit = page.getByTestId("quick-create-submit");
     await expect(submit).toBeVisible();
 
-    var titleInput = page.locator("input[aria-required='true']").first();
+    const titleInput = page.locator("input[aria-required='true']").first();
     await expect(titleInput).toHaveValue(original);
 
     await titleInput.fill(updated);
@@ -96,18 +96,18 @@ test.describe("v1 - recurring tile edit title", () => {
     // existing placement.  Use the placement's `tile_id` here
     // because the POST /v1/tiles response `aggregate.id` returns the
     // v1_recurring id, NOT the v1_tile id.
-    var tlRes = await getV1(request, "/v1/timeline?start=" + day + "T00:00:00Z&end=" + day + "T23:59:59Z");
+    const tlRes = await getV1(request, "/v1/timeline?start=" + day + "T00:00:00Z&end=" + day + "T23:59:59Z");
     expect(tlRes.status()).toBe(200);
-    var tl = await tlRes.json();
-    var tlMatch = (tl || []).find(function (p: { content?: { title?: string } }) { return p.content && p.content.title === updated; });
+    const tl = await tlRes.json();
+    const tlMatch = (tl || []).find(function (p: { content?: { title?: string } }) { return p.content && p.content.title === updated; });
     expect(tlMatch, "placement title should be updated in /v1/timeline").toBeTruthy();
-    var placementTileId = tlMatch.tile_id;
+    const placementTileId = tlMatch.tile_id;
     expect(placementTileId, "placement must carry tile_id from /v1/timeline").toBeTruthy();
 
     // The underlying recurring tile's title is also updated.
-    var tileRes = await getV1(request, "/v1/tiles/" + placementTileId);
+    const tileRes = await getV1(request, "/v1/tiles/" + placementTileId);
     expect(tileRes.status()).toBe(200);
-    var tile = await tileRes.json();
+    const tile = await tileRes.json();
     expect(tile.title, "recurring tile title should be updated").toBe(updated);
   });
 });

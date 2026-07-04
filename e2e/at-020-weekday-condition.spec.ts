@@ -6,7 +6,7 @@ const ACTOR = "00000000-0000-0000-0000-000000000001";
 const PROXY = "/api/proxy";
 
 function uuidv7like(): string {
-  var h = (n: number) => Math.floor(Math.random() * Math.pow(16, n)).toString(16).padStart(n, "0");
+  const h = (n: number) => Math.floor(Math.random() * Math.pow(16, n)).toString(16).padStart(n, "0");
   return h(8) + "-" + h(4) + "-" + h(4) + "-" + h(4) + "-" + h(12);
 }
 
@@ -31,7 +31,7 @@ const MASK_TUE = 0b0000010;     // Tue
 const MASK_WED = 0b0000100;     // Wed
 
 async function makeRecurring(req: APIRequestContext, title: string): Promise<string> {
-  var res = await postV1(req, "/v1/tiles", {
+  const res = await postV1(req, "/v1/tiles", {
     idempotency_key: uuidv7like(),
     payload: { kind: 0, title, description: null, color: "#3b82f6", icon: "check", external_id: null, plan_role: 0 },
   });
@@ -45,13 +45,13 @@ async function addFrameRuleWithCondition(
   weekdayMask: number,
 ): Promise<string> {
   // active condition: weekdayMask AND NOT_HOLIDAY (holiday_kind=0)
-  var cond = {
+  const cond = {
     All: [
       { Term: { Calendar: { weekday_mask: weekdayMask, time_start: null, time_end: null, holiday_kind: 2, date_range: null, offset_min: 0 } } },
       { Term: { Calendar: { weekday_mask: 0, time_start: null, time_end: null, holiday_kind: 0, date_range: null, offset_min: 0 } } },
     ],
   };
-  var ruleRes = await postV1(req, "/v1/recurring/" + recurringId + "/frame-rules", {
+  const ruleRes = await postV1(req, "/v1/recurring/" + recurringId + "/frame-rules", {
     idempotency_key: uuidv7like(),
     payload: {
       recurring_id: recurringId,
@@ -90,41 +90,41 @@ test.describe("v1 - AT-020 FrameRule.active weekday+holiday gate", () => {
   test.beforeEach(async () => { await cleanDb(); });
 
   test("Tuesday-only mask materializes nothing on Mon/Wed", async ({ request }) => {
-    var recurringId = await makeRecurring(request, "AT020-1");
-    var fruid = await addFrameRuleWithCondition(request, recurringId, MASK_TUE);
+    const recurringId = await makeRecurring(request, "AT020-1");
+    const fruid = await addFrameRuleWithCondition(request, recurringId, MASK_TUE);
     // Mon 2024-01-01: outside Tue mask.
-    var mon = "2024-01-01";
-    var monRes = await materialize(request, recurringId, fruid, mon);
+    const mon = "2024-01-01";
+    const monRes = await materialize(request, recurringId, fruid, mon);
     expect(monRes.status()).toBeLessThan(300);
     expect(placementCount()).toBe("0");
     // Tue 2024-01-02: matches.
-    var tue = "2024-01-02";
-    var tueRes = await materialize(request, recurringId, fruid, tue);
+    const tue = "2024-01-02";
+    const tueRes = await materialize(request, recurringId, fruid, tue);
     expect(tueRes.status()).toBeLessThan(300);
     expect(placementCount()).toBe("1");
     // Wed 2024-01-03: outside.
-    var wed = "2024-01-03";
-    var wedRes = await materialize(request, recurringId, fruid, wed);
+    const wed = "2024-01-03";
+    const wedRes = await materialize(request, recurringId, fruid, wed);
     expect(wedRes.status()).toBeLessThan(300);
     expect(placementCount()).toBe("1");
   });
 
   test("Mon..Fri mask skips weekend (Sat/Sun)", async ({ request }) => {
-    var recurringId = await makeRecurring(request, "AT020-2");
-    var fruid = await addFrameRuleWithCondition(request, recurringId, MASK_MON_FRI);
+    const recurringId = await makeRecurring(request, "AT020-2");
+    const fruid = await addFrameRuleWithCondition(request, recurringId, MASK_MON_FRI);
     // Mon..Fri 2024-01-01..05
-    for (var d = 1; d <= 5; d++) {
-      var day = "2024-01-" + String(d).padStart(2, "0");
-      var r = await materialize(request, recurringId, fruid, day);
+    for (let d = 1; d <= 5; d++) {
+      const day = "2024-01-" + String(d).padStart(2, "0");
+      const r = await materialize(request, recurringId, fruid, day);
       expect(r.status()).toBeLessThan(300);
     }
     expect(placementCount()).toBe("5");
     // Sat 2024-01-06 outside mask.
-    var sat = await materialize(request, recurringId, fruid, "2024-01-06");
+    const sat = await materialize(request, recurringId, fruid, "2024-01-06");
     expect(sat.status()).toBeLessThan(300);
     expect(placementCount()).toBe("5");
     // Sun 2024-01-07 outside mask.
-    var sun = await materialize(request, recurringId, fruid, "2024-01-07");
+    const sun = await materialize(request, recurringId, fruid, "2024-01-07");
     expect(sun.status()).toBeLessThan(300);
     expect(placementCount()).toBe("5");
   });

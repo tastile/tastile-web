@@ -65,7 +65,7 @@ const SidePanelRegisterContext = createContext<RegisterFn>(() => {});
 // ─────────────────────────────────────────────
 export function SidePanelProvider({ children }: { children: ReactNode }) {
   // Stable callback — never changes identity.
-  const register = useCallback<RegisterFn>(setContent, []);
+  const register = useCallback<RegisterFn>((node) => setContent(node), []);
 
   return (
     <SidePanelRegisterContext.Provider value={register}>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Interactive manual-walkthrough harness: drives a real Chromium the way
 // a human would (clicks, types, waits, watches console), captures
 // screenshots, and prints a per-step verdict.  This is NOT a pass/fail
