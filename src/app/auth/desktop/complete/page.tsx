@@ -1,5 +1,7 @@
 import { Laptop, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { SiteFooter } from "@/components/SiteFooter";
+import { SiteHeader } from "@/components/SiteHeader";
 import { TastileLogo } from "@/components/TastileLogo";
 
 export default function DesktopAuthCompletePage() {
@@ -26,14 +28,16 @@ export default function DesktopAuthCompletePage() {
 `;
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10 text-foreground">
-      <div className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-xl flex-col justify-center">
-        <div className="rounded-lg bg-surface-elevated p-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader hideAuth />
+
+      <main className="layout-shell flex flex-1 items-center justify-center py-12">
+        <div className="w-full max-w-xl rounded-lg bg-surface-elevated p-8">
           <div className="flex items-center gap-4">
-            <TastileLogo size={52} className="text-foreground" />
+            <TastileLogo size={64} className="text-foreground" />
             <div>
               <p className="text-sm font-medium text-primary">Tastile Desktop</p>
-              <h1 className="mt-1 text-3xl font-semibold">認証が完了しました</h1>
+              <h1 className="mt-1 text-3xl font-semibold text-foreground">認証が完了しました</h1>
             </div>
           </div>
 
@@ -67,9 +71,11 @@ export default function DesktopAuthCompletePage() {
             を開けます。
           </p>
         </div>
-      </div>
+      </main>
+
+      <SiteFooter />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink redirect runs only on this auth-complete page */}
       <script dangerouslySetInnerHTML={{ __html: script }} />
-    </main>
+    </div>
   );
 }

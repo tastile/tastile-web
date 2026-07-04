@@ -20,7 +20,7 @@ export default async function SignupPage({
   return (
     <AuthShell
       title="アカウントを作成"
-      subtitle="メールアドレスだけで登録します。パスワードを作らず、確認コードと passkey / email OTP を使う認証経路にします。"
+      subtitle="メールアドレスだけでアカウントを作成します。確認コードが届きます。"
       message={message}
     >
       <form action="/auth/email/signup" method="post" className="space-y-5">

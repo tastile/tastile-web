@@ -51,9 +51,22 @@ next-env.d.ts
 
 # build artifacts and debug files
 tastile-web-*.zip
+tastile-web-*.tar.gz
 ssh-err.txt
 ssh-out.txt
 .vscode/
+
+# SSM / deploy scratch
+.ssm-*.json
+.ssm-err.log
+.presign-url*
+.presigned-url*
+.deploy-staging-*/
+.next-old/
+
+# local probe / diagnostic output
+probe*.out
+probe*raw*.json
 
 # local event store
 /.tastile-data/

@@ -1,4 +1,4 @@
-import { Apple, Chrome, Fingerprint, KeyRound, Laptop, MailCheck, Smartphone } from "lucide-react";
+import { Apple, Chrome, Fingerprint, Info, KeyRound, Laptop, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -14,10 +14,10 @@ const ERROR_MESSAGES: Record<string, string> = {
   missing_code: "認証コードが見つかりませんでした。もう一度お試しください。",
   state_mismatch: "認証状態の確認に失敗しました。もう一度お試しください。",
   auth_failed: "認証に失敗しました。もう一度お試しください。",
-  cognito_not_configured: "Cognito が設定されていません。管理者にご連絡ください。",
+  cognito_not_configured: "認証サービスの設定に問題があります。管理者にご連絡ください。",
   unsupported_provider: "このログイン方法はまだ有効化されていません。",
   provider_not_configured:
-    "このログイン方法は Cognito 側の設定が未完了です。Passkey / メールで続行してください。",
+    "このログイン方法はまだ有効化されていません。Passkey / メールで続行してください。",
 };
 
 export default async function LoginPage({
@@ -56,7 +56,7 @@ export default async function LoginPage({
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader hideAuth />
 
-      <main className="layout-shell grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.05fr_0.95fr]">
+      <main className="layout-shell grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.05fr_1fr]">
         <section className="space-y-8">
           <div className="space-y-5">
             <div className="flex items-center gap-4">
@@ -69,8 +69,7 @@ export default async function LoginPage({
               </div>
             </div>
             <p className="max-w-2xl text-lg leading-8 text-foreground-muted">
-              Web、Windows、Android で同じ Cognito アカウントを使います。Passkey 対応の Hosted UI
-              で登録し、Tastile API はパスワードのみのトークンを受け付けません。
+              1 つのアカウントで Web、Windows、Android のすべてのデバイスを使えます。
             </p>
           </div>
 
@@ -93,7 +92,7 @@ export default async function LoginPage({
               <Smartphone className="h-5 w-5 text-primary" aria-hidden="true" />
               <p className="mt-3 text-sm font-medium text-foreground">Android</p>
               <p className="mt-1 text-sm text-foreground-subtle">
-                Android も同じ Hosted UI callback を使います。
+                Android でも同じアカウントで利用できます。
               </p>
             </div>
           </div>
@@ -107,7 +106,7 @@ export default async function LoginPage({
             <div>
               <h2 className="text-2xl font-semibold text-foreground">アカウント</h2>
               <p className="mt-2 text-sm leading-6 text-foreground-muted">
-                新規登録も既存ログインも Cognito の安全な画面で完了します。
+                新規登録も既存ログインも、安全な画面で完了します。
               </p>
             </div>
 
@@ -176,10 +175,10 @@ export default async function LoginPage({
 
             <div className="rounded-lg bg-surface-0 p-4">
               <div className="flex gap-3">
-                <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+                <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-foreground-muted">
-                  本番 API は password-only 認証を拒否します。登録後は Passkey を追加してから Web /
-                  Desktop / Android で利用してください。
+                  登録後は Passkey を追加してから Web /
+                  Desktop / Android で利用できます。
                 </p>
               </div>
             </div>
