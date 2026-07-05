@@ -25,3 +25,5 @@ jobs:
 
       - name: Validate repository
         run: bun run check:release
+        env:
+          CLOUD_API_BASE: http://127.0.0.1:31400
