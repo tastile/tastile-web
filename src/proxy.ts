@@ -30,7 +30,7 @@ const SECURE_COOKIE_BASE = {
   path: "/",
 };
 
-export default async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const redirectHost = resolveCanonicalHostRedirect(
     request.headers.get("host") ?? "",
     request.nextUrl.pathname,
