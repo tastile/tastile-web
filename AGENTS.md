@@ -209,7 +209,7 @@ These documents are THE source of truth:
 
 ## Environment Variables
 
-Required in `.env.local`:
+Required in `.env.dev` (development) or `.env.product` (production):
 ```dotenv
 NEXT_PUBLIC_TASTILE_CORE_URL=http://localhost:3140
 STRIPE_SECRET_KEY=
@@ -217,4 +217,4 @@ STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
-See `.env.local.example` for reference.
+See `.env.dev.example` or `.env.product.example` for reference.

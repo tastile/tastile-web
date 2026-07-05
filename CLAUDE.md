@@ -221,18 +221,18 @@ These documents are THE source of truth:
 
 ## Environment Variables
 
-Required in `.env.local`:
+Required in `.env.dev` (development) or `.env.product` (production):
 ```
 STRIPE_SECRET_KEY=
 STRIPE_WEBHOOK_SECRET=
 STRIPE_PRO_MONTHLY_PRICE_ID=
 STRIPE_PRO_YEARLY_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-NEXT_PUBLIC_APP_URL=https://tastile.app
+NEXT_PUBLIC_APP_URL=https://app.tastile.app
 TASTILE_DESKTOP_MANIFEST_URL=
 NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=
 TASTILE_DESKTOP_VERSION=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
 
-See `.env.local.example` for reference. Auth-related AWS Cognito / `tastile-core` API keys are added as the AWS integration lands; they are intentionally not listed here until the corresponding source changes are merged.
+See `.env.dev.example` or `.env.product.example` for reference. Auth-related AWS Cognito / `tastile-core` API keys are added as the AWS integration lands; they are intentionally not listed here until the corresponding source changes are merged.

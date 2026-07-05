@@ -40,7 +40,7 @@ jobs:
       - name: Install
         run: bun install
 
-      - name: Create .env.local from secrets
+      - name: Create .env.product from secrets
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
@@ -52,23 +52,28 @@ jobs:
           TASTILE_DESKTOP_VERSION: ${{ secrets.TASTILE_DESKTOP_VERSION }}
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
           TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
+          NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN: ${{ secrets.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN }}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
+          NEXT_PUBLIC_COGNITO_ISSUER: ${{ secrets.NEXT_PUBLIC_COGNITO_ISSUER }}
+          NEXT_PUBLIC_COGNITO_JWKS_URL: ${{ secrets.NEXT_PUBLIC_COGNITO_JWKS_URL }}
         run: |
-          cat > .env.local <<ENVEOF
+          cat > .env.product <<ENVEOF
           NEXT_PUBLIC_APP_URL=https://app.tastile.app
           TASTILE_DESKTOP_MANIFEST_URL=${TASTILE_DESKTOP_MANIFEST_URL}
           NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=${NEXT_PUBLIC_TASTILE_DESKTOP_VERSION}
           TASTILE_DESKTOP_VERSION=${TASTILE_DESKTOP_VERSION}
           NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID}
           NEXT_PUBLIC_DAEMON_BASE_URL=https://api.tastile.app
-          $"NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN": $"{${{ secrets.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN }}$""
-          $"NEXT_PUBLIC_COGNITO_CLIENT_ID": $"{${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}$""
-          $"NEXT_PUBLIC_COGNITO_USER_POOL_ID": $"{${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}$""
+          NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN=${NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID=${NEXT_PUBLIC_COGNITO_CLIENT_ID}
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID=${NEXT_PUBLIC_COGNITO_USER_POOL_ID}
           NEXT_PUBLIC_COGNITO_REGION=ap-northeast-1
-          $"NEXT_PUBLIC_COGNITO_ISSUER": $"{${{ secrets.NEXT_PUBLIC_COGNITO_ISSUER }}$""
-          $"NEXT_PUBLIC_COGNITO_JWKS_URL": $"{${{ secrets.NEXT_PUBLIC_COGNITO_JWKS_URL }}$""
+          NEXT_PUBLIC_COGNITO_ISSUER=${NEXT_PUBLIC_COGNITO_ISSUER}
+          NEXT_PUBLIC_COGNITO_JWKS_URL=${NEXT_PUBLIC_COGNITO_JWKS_URL}
           NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
-          NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=COGNITO,Google,SignInWithApple
+          NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=Google,SignInWithApple
           TASTILE_WEB_BRIDGE_SECRET=${TASTILE_WEB_BRIDGE_SECRET}
           CLOUD_API_BASE=http://127.0.0.1:31400
           ENVEOF
@@ -84,7 +89,7 @@ jobs:
           cp -r .next/standalone/. dist/
           cp -r .next/static        dist/.next/
           cp -r public               dist/
-          cp .env.local              dist/.env.local
+          cp .env.product            dist/.env.local
           (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
 
       - name: Upload artifact

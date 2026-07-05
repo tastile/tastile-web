@@ -45,7 +45,7 @@ e2e/            Playwright coverage
 
 ## Environment
 
-Copy `.env.local.example` to `.env.local` and fill in the required values.
+Copy `.env.dev.example` to `.env.dev` (development) or `.env.product.example` to `.env.product` (production) and fill in the required values.
 
 Core variables:
 
@@ -55,14 +55,14 @@ STRIPE_WEBHOOK_SECRET=
 STRIPE_PRO_MONTHLY_PRICE_ID=
 STRIPE_PRO_YEARLY_PRICE_ID=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-NEXT_PUBLIC_APP_URL=https://tastile.app
+NEXT_PUBLIC_APP_URL=https://app.tastile.app
 TASTILE_DESKTOP_MANIFEST_URL=
 NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=
 TASTILE_DESKTOP_VERSION=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
 
-Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.local.example`.
+Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.dev.example` and `.env.product.example`.
 
 Desktop download and versioning are resolved from the public installer manifest by default
 
