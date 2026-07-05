@@ -484,6 +484,10 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
     headers.set("x-tastile-web-session-user", bridgeUserSub);
+    const apiToken = request.cookies.get("tastile_api_token")?.value;
+    if (apiToken) {
+      headers.set("authorization", `Bearer ${apiToken}`);
+    }
   }
   const contentType = request.headers.get("content-type");
   if (contentType) {
