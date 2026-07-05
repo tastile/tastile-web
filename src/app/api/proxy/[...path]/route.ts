@@ -2,12 +2,16 @@ import { type NextRequest, NextResponse } from "next/server";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
-const CLOUD_API_BASE = (() => {
-  if (process.env.CLOUD_API_BASE) return process.env.CLOUD_API_BASE;
+function getCloudApiBase(): string {
+  const value = process.env.CLOUD_API_BASE;
+  if (value) return value;
   if (process.env.E2E_BYPASS_AUTH === "1") return "http://localhost:31400";
   throw new Error("CLOUD_API_BASE is not set");
-})();
-const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
+}
+
+function getIsE2EBypass(): boolean {
+  return process.env.E2E_BYPASS_AUTH === "1";
+}
 
 // In E2E bypass mode the proxy does not validate JWTs, so it pins the
 // dev actor to a fixed UUID. The v1 backend auto-creates a USER-kind
@@ -183,7 +187,10 @@ function handleMockRequest(
     return new NextResponse(null, { status: 404 });
   }
 
-  if ((path === "read/tiles" || path === "views/tile-list" || path === "v1/tiles") && method === "GET") {
+  if (
+    (path === "read/tiles" || path === "views/tile-list" || path === "v1/tiles") &&
+    method === "GET"
+  ) {
     return NextResponse.json(path === "read/tiles" ? { tiles: mockTiles } : mockTiles);
   }
 
@@ -342,7 +349,9 @@ function handleMockRequest(
     return NextResponse.json({ count: items.length, items });
   }
 
-  const readMatch = path.match(/^(?:access\/notifications|v1\/access\/notifications)\/([^/]+)\/read$/);
+  const readMatch = path.match(
+    /^(?:access\/notifications|v1\/access\/notifications)\/([^/]+)\/read$/,
+  );
   if (readMatch && method === "POST") {
     const item = mockNotifications.find((notification) => notification.id === readMatch[1]);
     if (item) item.read_at = new Date().toISOString();
@@ -422,7 +431,7 @@ function handleMockRequest(
 async function proxyRequest(request: NextRequest, pathSegments: string[]): Promise<NextResponse> {
   const path = pathSegments.join("/");
 
-  if (isE2EBypass) {
+  if (getIsE2EBypass()) {
     const body =
       request.method !== "GET" && request.method !== "HEAD"
         ? await request
@@ -439,13 +448,13 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     if (mockResponse) return mockResponse;
   }
 
-  if (isE2EBypass) {
+  if (getIsE2EBypass()) {
     const localResponse = localCompatResponse(path, request.method);
     if (localResponse) return localResponse;
   }
 
   const upstreamPath = toV1Path(path);
-  const targetUrl = `${CLOUD_API_BASE}/${upstreamPath}`;
+  const targetUrl = `${getCloudApiBase()}/${upstreamPath}`;
   const url = new URL(targetUrl);
   // /v1/timeline/today requires both `start` and `end` query params (both
   // DateTime<Utc>, not Option). The v1 client's getTimelineToday endpoint
@@ -467,7 +476,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   // authoritative identity, the secret gates the trust boundary.
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   const bridgeUserSub = resolveBridgeUserSub(request);
-  if (isE2EBypass && isLocalCoreUrl(CLOUD_API_BASE)) {
+  if (getIsE2EBypass() && isLocalCoreUrl(getCloudApiBase())) {
     // E2E bypass: pin the dev actor and forward to the local v1 API
     // directly. The bridge-secret check is for production deploys.
     headers.set("x-owner-id", DEV_ACTOR_SUBJECT_ID);
@@ -781,7 +790,7 @@ export function injectTimelineTodayDefaults(params: URLSearchParams): void {
     params.set("start", today.toISOString());
   }
   if (!params.has("end")) {
-    const startIso = params.get("start")!;
+    const startIso = params.get("start") ?? new Date().toISOString();
     const endDate = new Date(startIso);
     endDate.setUTCDate(endDate.getUTCDate() + 1);
     params.set("end", endDate.toISOString());

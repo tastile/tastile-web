@@ -29,6 +29,9 @@ export function SiteFooter() {
           <Link href="/terms" className="hover:text-foreground">
             {t("marketing.nav.terms")}
           </Link>
+          <Link href="/tokushoho" className="hover:text-foreground">
+            {t("marketing.nav.tokushoho")}
+          </Link>
         </nav>
         <p className="text-xs text-foreground-subtle md:text-right">
           {t("marketing.footer.copyright")}

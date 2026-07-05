@@ -7,7 +7,7 @@
  * Phase A: skeleton. Full implementation in Phase X.
  */
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Profile {
   kind: number;
@@ -20,7 +20,7 @@ interface Profile {
 }
 
 export function ProfilePanel() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, _setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,16 +35,16 @@ export function ProfilePanel() {
     <div className="profile-panel">
       <h2>Profile</h2>
       <div className="profile-field">
-        <label>Display Name</label>
-        <input type="text" defaultValue={profile.display_name} />
+        <label htmlFor="display-name">Display Name</label>
+        <input id="display-name" type="text" defaultValue={profile.display_name} />
       </div>
       <div className="profile-field">
-        <label>Bio</label>
-        <textarea defaultValue={profile.bio ?? ""} />
+        <label htmlFor="bio">Bio</label>
+        <textarea id="bio" defaultValue={profile.bio ?? ""} />
       </div>
       <div className="profile-field">
-        <label>Accent Color</label>
-        <input type="color" defaultValue={profile.accent_color ?? "#3366ff"} />
+        <label htmlFor="accent-color">Accent Color</label>
+        <input id="accent-color" type="color" defaultValue={profile.accent_color ?? "#3366ff"} />
       </div>
       {/* TODO: Avatar upload via UploadAvatar component */}
     </div>

@@ -24,9 +24,11 @@
     "src/lib/hooks/use-calendar-projection.ts",
     "src/lib/projection/calendar-projection.ts",
     "src/lib/hooks/use-execution-engine.ts",
-    "src/lib/notifications/browser.ts",
     "src/lib/domain/ids.ts",
-    "src/lib/domain/execution.ts"
+    "src/lib/domain/execution.ts",
+    "src/features/avatar/UploadAvatar.tsx",
+    "src/features/profile/ProfilePanel.tsx",
+    "src/lib/avatar/FallbackChain.ts"
   ],
   "ignoreDependencies": ["tailwindcss"],
   "ignoreExportsUsedInFile": true

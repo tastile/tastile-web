@@ -36,9 +36,7 @@ export default function GeneralPage() {
   useEffect(() => {
     setSecurityLock(getSecurityLockEnabled(localStorage));
     setSecurityLockMinutes(getSecurityLockTimeoutMinutes(localStorage));
-    setNotificationPermission(
-      notificationsSupported() ? Notification.permission : "unsupported",
-    );
+    setNotificationPermission(notificationsSupported() ? Notification.permission : "unsupported");
   }, []);
 
   useSidePanel(<PreferencesSidePanel />);
@@ -70,7 +68,9 @@ export default function GeneralPage() {
     const preview = "This is a test notification from Tastile.";
     setNotificationPreview(preview);
     const permission =
-      notificationPermission === "default" ? await requestNotificationPermissionOnce() : notificationPermission;
+      notificationPermission === "default"
+        ? await requestNotificationPermissionOnce()
+        : notificationPermission;
     setNotificationPermission(permission);
     if (permission !== "granted") {
       setNotificationStatus(

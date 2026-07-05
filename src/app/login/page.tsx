@@ -177,8 +177,7 @@ export default async function LoginPage({
               <div className="flex gap-3">
                 <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-foreground-muted">
-                  登録後は Passkey を追加してから Web /
-                  Desktop / Android で利用できます。
+                  登録後は Passkey を追加してから Web / Desktop / Android で利用できます。
                 </p>
               </div>
             </div>

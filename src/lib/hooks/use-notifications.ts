@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 import {
+  type NotificationKind,
   requestNotificationPermissionOnce,
   showNotification,
-  type NotificationKind,
 } from "@/lib/notifications/browser";
 
 export interface NotificationItem {
@@ -114,8 +114,7 @@ export function useNotifications() {
 }
 
 async function fetchAccessNotifications(): Promise<
-  | { ok: true; items: NotificationItem[] }
-  | { ok: false; error: Error }
+  { ok: true; items: NotificationItem[] } | { ok: false; error: Error }
 > {
   try {
     const res = await fetch("/api/proxy/access/notifications?limit=20", {
@@ -123,7 +122,9 @@ async function fetchAccessNotifications(): Promise<
       cache: "no-store",
     });
     if (!res.ok) return { ok: false, error: new Error(`notifications API returned ${res.status}`) };
-    const body = (await res.json()) as ListResponse<AccessNotificationWire> | AccessNotificationWire[];
+    const body = (await res.json()) as
+      | ListResponse<AccessNotificationWire>
+      | AccessNotificationWire[];
     const rows = Array.isArray(body) ? body : (body.items ?? []);
     return {
       ok: true,
@@ -159,7 +160,9 @@ function toExecutionNotification(snapshot: ExecutionSnapshot): NotificationItem 
     message: snapshot.is_on_break
       ? "休憩フェーズが実行中です"
       : `${snapshot.main_tile.title}を実行中です`,
-    timestamp: snapshot.main_tile_started_at ? parseDate(snapshot.main_tile_started_at) : new Date(),
+    timestamp: snapshot.main_tile_started_at
+      ? parseDate(snapshot.main_tile_started_at)
+      : new Date(),
     readAt: null,
     source: "execution",
   };

@@ -403,6 +403,7 @@ export const translations = {
         webApp: "Webアプリ",
         privacy: "プライバシー",
         terms: "利用規約",
+        tokushoho: "特定商取引法に基づく表記",
       },
       pricing: {
         title: "シンプルで透明な料金体系",
@@ -862,6 +863,7 @@ export const translations = {
         webApp: "Web App",
         privacy: "Privacy",
         terms: "Terms",
+        tokushoho: "Commerce Disclosure",
       },
       pricing: {
         title: "Simple, transparent pricing",
