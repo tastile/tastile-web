@@ -1,7 +1,6 @@
 const ApexHost = "tastile.app";
 const AppHost = "app.tastile.app";
 
-const PublicSitePaths = ["/", "/pricing", "/download", "/privacy", "/terms"];
 const AppSitePrefixes = ["/app", "/auth", "/dashboard", "/login"];
 const AppApiPrefixes = ["/api/account", "/api/auth", "/api/stripe"];
 
@@ -13,10 +12,6 @@ export function resolveCanonicalHostRedirect(host: string, pathname: string): st
     return AppHost;
   }
 
-  if (normalizedHost === AppHost && isPublicSitePath(normalizedPath)) {
-    return ApexHost;
-  }
-
   return null;
 }
 
@@ -26,10 +21,6 @@ function normalizePath(pathname: string): string {
   }
 
   return pathname;
-}
-
-function isPublicSitePath(pathname: string): boolean {
-  return PublicSitePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
 function isAppPath(pathname: string): boolean {

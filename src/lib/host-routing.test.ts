@@ -18,19 +18,11 @@ describe("resolveCanonicalHostRedirect", () => {
 		).toBe("app.tastile.app");
 	});
 
-	it("keeps public website routes on tastile.app", () => {
-		expect(resolveCanonicalHostRedirect("app.tastile.app", "/")).toBe(
-			"tastile.app",
-		);
-		expect(resolveCanonicalHostRedirect("app.tastile.app", "/pricing")).toBe(
-			"tastile.app",
-		);
-		expect(resolveCanonicalHostRedirect("app.tastile.app", "/download")).toBe(
-			"tastile.app",
-		);
-		expect(resolveCanonicalHostRedirect("app.tastile.app", "/privacy")).toBe(
-			"tastile.app",
-		);
+	it("keeps public website routes on app.tastile.app", () => {
+		expect(resolveCanonicalHostRedirect("app.tastile.app", "/")).toBeNull();
+		expect(resolveCanonicalHostRedirect("app.tastile.app", "/pricing")).toBeNull();
+		expect(resolveCanonicalHostRedirect("app.tastile.app", "/download")).toBeNull();
+		expect(resolveCanonicalHostRedirect("app.tastile.app", "/privacy")).toBeNull();
 	});
 
 	it("does not redirect public APIs or already canonical routes", () => {

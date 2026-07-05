@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { themeScript } from "@/lib/theme-script";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
@@ -14,7 +15,7 @@ const zenKaku = { variable: "font-zen-kaku" };
 export const metadata: Metadata = {
   title: "Tastile — Execution Control",
   description: "Stop managing tasks. Start controlling execution.",
-  metadataBase: new URL("https://tastile.app"),
+  metadataBase: new URL(getCognitoPublicOrigin()),
   manifest: "/manifest.json",
   icons: {
     icon: "/icon?v=6",
@@ -40,6 +41,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- loaded via Google Fonts CSS for full site */}
         <link
           href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
           rel="stylesheet"
