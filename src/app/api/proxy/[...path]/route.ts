@@ -1,4 +1,4 @@
-﻿import { type NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
@@ -480,7 +480,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       );
     }
     if (!bridgeUserSub) {
-      return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
+      return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 407 });
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
     headers.set("x-tastile-web-session-user", bridgeUserSub);
