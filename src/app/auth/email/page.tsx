@@ -1,4 +1,4 @@
-import { MailCheck } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { authErrorMessage } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
@@ -27,8 +27,8 @@ export default async function EmailLoginPage({
 
   return (
     <AuthShell
-      title="メールでログイン"
-      subtitle="パスワードではなく、メールに届くワンタイムコードで Tastile にログインします。"
+      title="Tastile にログイン"
+      subtitle="メールアドレスとパスワードを入力してください。2 段階認証 (TOTP) が有効化されます。"
       message={message}
     >
       <form action="/auth/email/start" method="post" className="space-y-5">
@@ -56,12 +56,27 @@ export default async function EmailLoginPage({
             placeholder="you@example.com"
           />
         </div>
+        <div>
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            パスワード
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            required
+            minLength={12}
+            className="mt-2 w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            placeholder="12 文字以上"
+          />
+        </div>
         <button
           type="submit"
           className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
-          <MailCheck className="h-4 w-4" aria-hidden="true" />
-          ログインコードを送信
+          <LogIn className="h-4 w-4" aria-hidden="true" />
+          次へ進む
         </button>
       </form>
     </AuthShell>

@@ -9,6 +9,7 @@ export default async function EmailVerifyPage({
 }: {
   searchParams: Promise<{
     email?: string;
+    mode?: string;
     error?: string;
     redirect_uri?: string;
     state?: string;
@@ -19,6 +20,7 @@ export default async function EmailVerifyPage({
   const env = tryGetCognitoEnv();
   const message = authErrorMessage(params.error ?? null);
   const email = typeof params.email === "string" ? params.email : "";
+  const mode = params.mode === "software_token_mfa" ? "software_token_mfa" : "email_otp";
   const redirectUri = safeOAuthRedirectUri(params.redirect_uri ?? null, env?.callbackUrl ?? "");
   const state = safePkceValue(params.state ?? null);
   const codeChallenge = safePkceValue(params.code_challenge ?? null);
@@ -26,12 +28,17 @@ export default async function EmailVerifyPage({
 
   return (
     <AuthShell
-      title="コードを入力"
-      subtitle="メールに届いたログインコードを入力してください。コードは短時間で期限切れになります。"
+      title={mode === "software_token_mfa" ? "認証アプリのコード" : "コードを入力"}
+      subtitle={
+        mode === "software_token_mfa"
+          ? "認証アプリに表示されている 6 桁のコードを入力してください。"
+          : "メールに届いたログインコードを入力してください。コードは短時間で期限切れになります。"
+      }
       message={message}
     >
       <form action="/auth/email/complete" method="post" className="space-y-5">
         <input type="hidden" name="email" value={email} />
+        <input type="hidden" name="mode" value={mode} />
         {isDesktop ? (
           <>
             <input type="hidden" name="redirect_uri" value={redirectUri} />
@@ -43,7 +50,7 @@ export default async function EmailVerifyPage({
         ) : null}
         <div>
           <label htmlFor="code" className="text-sm font-medium text-foreground">
-            ログインコード
+            {mode === "software_token_mfa" ? "認証アプリのコード" : "ログインコード"}
           </label>
           <input
             id="code"
@@ -51,6 +58,7 @@ export default async function EmailVerifyPage({
             inputMode="numeric"
             autoComplete="one-time-code"
             required
+            pattern="[0-9]{6}"
             className="mt-2 w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
             placeholder="123456"
           />

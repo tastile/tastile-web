@@ -18,9 +18,17 @@ export type CognitoAuthTokens = {
   expiresIn: number;
 };
 
-export type EmailOtpStartResult = {
+export type AuthChallenge =
+  | "EMAIL_OTP"
+  | "PASSWORD"
+  | "PASSWORD_SRP"
+  | "MFA_SETUP"
+  | "SOFTWARE_TOKEN_MFA"
+  | "SELECT_CHALLENGE";
+
+export type PasswordSignInResult = {
   session: string;
-  challengeName: string;
+  challengeName: AuthChallenge;
 };
 
 export type PasswordlessSignUpResult = {
@@ -28,13 +36,15 @@ export type PasswordlessSignUpResult = {
   session: string | null;
 };
 
-export async function signUpPasswordlessEmail(
+export async function signUpWithPassword(
   env: CognitoEnv,
   email: string,
+  password: string,
 ): Promise<PasswordlessSignUpResult> {
   const response = await cognitoRequest(env, "SignUp", {
     ClientId: env.clientId,
     Username: email,
+    Password: password,
     UserAttributes: [{ Name: "email", Value: email }],
   });
   return {
@@ -58,72 +68,84 @@ export async function resendConfirmationCode(env: CognitoEnv, email: string): Pr
   });
 }
 
-export async function startEmailOtpSignIn(
+export async function startPasswordSignIn(
   env: CognitoEnv,
   email: string,
-): Promise<EmailOtpStartResult> {
-  const initial = await cognitoRequest(env, "InitiateAuth", {
+  password: string,
+): Promise<PasswordSignInResult> {
+  const response = await cognitoRequest(env, "InitiateAuth", {
     AuthFlow: "USER_AUTH",
     ClientId: env.clientId,
     AuthParameters: {
       USERNAME: email,
-      PREFERRED_CHALLENGE: "EMAIL_OTP",
+      PASSWORD: password,
     },
   });
 
-  if (initial.ChallengeName === "EMAIL_OTP" && typeof initial.Session === "string") {
-    return { session: initial.Session, challengeName: "EMAIL_OTP" };
+  const cn = response.ChallengeName;
+  if (typeof cn !== "string") {
+    throw new CognitoPublicError(
+      "Cognito did not return a challenge name.",
+      "NO_CHALLENGE",
+    );
   }
-
-  if (initial.ChallengeName === "SELECT_CHALLENGE" && typeof initial.Session === "string") {
-    const selected = await cognitoRequest(env, "RespondToAuthChallenge", {
-      ClientId: env.clientId,
-      ChallengeName: "SELECT_CHALLENGE",
-      Session: initial.Session,
-      ChallengeResponses: {
-        USERNAME: email,
-        ANSWER: "EMAIL_OTP",
-      },
-    });
-    if (selected.ChallengeName === "EMAIL_OTP" && typeof selected.Session === "string") {
-      return { session: selected.Session, challengeName: "EMAIL_OTP" };
-    }
+  if (typeof response.Session !== "string") {
+    throw new CognitoPublicError(
+      `Cognito returned ${cn} without a session`,
+      "MISSING_SESSION",
+    );
   }
-
-  throw new CognitoPublicError(
-    "Email OTP sign-in is not available for this user.",
-    "EMAIL_OTP_UNAVAILABLE",
-  );
+  if (
+    cn !== "MFA_SETUP" &&
+    cn !== "SOFTWARE_TOKEN_MFA" &&
+    cn !== "PASSWORD_SRP" &&
+    cn !== "EMAIL_OTP"
+  ) {
+    throw new CognitoPublicError(
+      `Unexpected challenge: ${cn}`,
+      "UNEXPECTED_CHALLENGE",
+    );
+  }
+  return { session: response.Session, challengeName: cn as AuthChallenge };
 }
 
-export async function completeEmailOtpSignIn(
+export async function completeMfaChallenge(
   env: CognitoEnv,
   email: string,
   code: string,
   session: string,
+  challengeName: "SOFTWARE_TOKEN_MFA" | "EMAIL_OTP" = "SOFTWARE_TOKEN_MFA",
 ): Promise<CognitoAuthTokens> {
+  const challengeResponses: Record<string, string> = { USERNAME: email };
+  if (challengeName === "EMAIL_OTP") {
+    challengeResponses.EMAIL_OTP_CODE = code;
+  } else {
+    challengeResponses.SOFTWARE_TOKEN_MFA_CODE = code;
+  }
+
   const response = await cognitoRequest(env, "RespondToAuthChallenge", {
     ClientId: env.clientId,
-    ChallengeName: "EMAIL_OTP",
+    ChallengeName: challengeName,
     Session: session,
-    ChallengeResponses: {
-      USERNAME: email,
-      EMAIL_OTP_CODE: code,
-    },
+    ChallengeResponses: challengeResponses,
   });
 
   const result = response.AuthenticationResult as CognitoJson | undefined;
   const idToken = typeof result?.IdToken === "string" ? result.IdToken : "";
   const accessToken = typeof result?.AccessToken === "string" ? result.AccessToken : "";
-  const refreshToken = typeof result?.RefreshToken === "string" ? result.RefreshToken : null;
+  const refreshToken =
+    typeof result?.RefreshToken === "string" ? result.RefreshToken : null;
   const expiresIn = typeof result?.ExpiresIn === "number" ? result.ExpiresIn : 3600;
   if (!idToken || !accessToken) {
-    throw new CognitoPublicError("Cognito did not return tokens.", "TOKEN_MISSING");
+    throw new CognitoPublicError(
+      "Cognito did not return tokens after MFA challenge",
+      "TOKEN_MISSING",
+    );
   }
   return { idToken, accessToken, refreshToken, expiresIn };
 }
 
-async function cognitoRequest(
+export async function cognitoRequest(
   env: CognitoEnv,
   target: string,
   body: CognitoJson,

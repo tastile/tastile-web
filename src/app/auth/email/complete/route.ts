@@ -9,7 +9,7 @@ import {
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { normalizeCode, normalizeEmail } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
-import { completeEmailOtpSignIn } from "@/lib/cognito/public-client";
+import { completeMfaChallenge } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
   const form = await request.formData();
   const email = normalizeEmail(form.get("email"));
   const code = normalizeCode(form.get("code"));
+  const mode = form.get("mode")?.toString() === "software_token_mfa"
+    ? "SOFTWARE_TOKEN_MFA"
+    : "EMAIL_OTP";
   const redirectUri = safeOAuthRedirectUri(
     form.get("redirect_uri")?.toString() ?? null,
     env.callbackUrl,
@@ -33,7 +36,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.redirect(`${origin}/auth/email?error=missing_email${desktopQuery}`, 303);
   if (!code)
     return NextResponse.redirect(
-      `${origin}/auth/email/verify?email=${encodeURIComponent(email)}&error=missing_code${desktopQuery}`,
+      `${origin}/auth/email/verify?email=${encodeURIComponent(email)}&mode=software_token_mfa&error=missing_code${desktopQuery}`,
       303,
     );
 
@@ -48,7 +51,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const tokens = await completeEmailOtpSignIn(env, email, code, session);
+    const tokens = await completeMfaChallenge(env, email, code, session, mode);
     const claims = parseIdTokenClaims(tokens.idToken);
     const response = NextResponse.redirect(
       isDesktop
@@ -85,9 +88,10 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    console.error("Email OTP complete failed", error);
+    console.error("MFA challenge complete failed", error);
+    const errorParam = mode === "SOFTWARE_TOKEN_MFA" ? "invalid_code" : "invalid_code";
     return NextResponse.redirect(
-      `${origin}/auth/email/verify?email=${encodeURIComponent(email)}&error=invalid_code${desktopQuery}`,
+      `${origin}/auth/email/verify?email=${encodeURIComponent(email)}&mode=software_token_mfa&error=${errorParam}${desktopQuery}`,
       303,
     );
   }
