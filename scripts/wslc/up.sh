@@ -44,8 +44,9 @@ fi
 # time (Next.js standard). They come from .env.dev at build; passing them
 # here at runtime has no effect on the rendered values.
 : "${CLOUD_API_BASE:=http://tastile-v1-api:31400}"
-: "${TASTILE_WEB_BRIDGE_SECRET:?ERROR: TASTILE_WEB_BRIDGE_SECRET must be set in the shell env (see .env.dev)}"
+: "${TASTILE_WEB_BRIDGE_SECRET:=wslc-dev-bridge-secret}"
 : "${TASTILE_USE_RUST_CORE:=1}"
+: "${E2E_BYPASS_AUTH:=1}"
 
 echo "== web =="
 wslc run -d --name "$CONTAINER" --network "$NETWORK" \
@@ -53,6 +54,7 @@ wslc run -d --name "$CONTAINER" --network "$NETWORK" \
   -e "CLOUD_API_BASE=$CLOUD_API_BASE" \
   -e "TASTILE_WEB_BRIDGE_SECRET=$TASTILE_WEB_BRIDGE_SECRET" \
   -e "TASTILE_USE_RUST_CORE=$TASTILE_USE_RUST_CORE" \
+  -e "E2E_BYPASS_AUTH=$E2E_BYPASS_AUTH" \
   "$IMAGE"
 
 sleep 2

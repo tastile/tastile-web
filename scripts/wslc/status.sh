@@ -8,9 +8,10 @@ CONTAINER="tastile-web"
 IMAGE="tastile-web"
 NETWORK="tastile-net"
 
-# Container state
-if wslc list -a -q 2>/dev/null | grep -q "^$CONTAINER\$"; then
-  if wslc list -q 2>/dev/null | grep -q "^$CONTAINER\$"; then
+# Container state — wslc 2.9.3.0 quirk: `wslc list -q` emits container IDs
+# (sha256), NOT names. Parse column 2 of the table output instead.
+if wslc list -a 2>/dev/null | awk 'NR>1 {print $2}' | grep -q "^$CONTAINER\$"; then
+  if wslc list 2>/dev/null | awk 'NR>1 {print $2}' | grep -q "^$CONTAINER\$"; then
     c_state="running"
   else
     c_state="stopped"
