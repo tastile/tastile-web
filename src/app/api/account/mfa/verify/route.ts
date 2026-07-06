@@ -1,10 +1,14 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { setAuthCookies } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { finalizeMfaSetup } from "@/lib/cognito/finalize-mfa-setup";
 import { verifySoftwareToken } from "@/lib/cognito/verify-software-token";
-import { COOKIE_EMAIL_AUTH_SESSION } from "@/lib/cognito/cookies";
+import {
+  COOKIE_EMAIL_AUTH_SESSION,
+  COOKIE_EMAIL_AUTH_USERNAME,
+  setAuthCookies,
+} from "@/lib/cognito/cookies";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 export async function POST(request: Request) {
   const env = tryGetCognitoEnv();
@@ -14,9 +18,16 @@ export async function POST(request: Request) {
 
   const cookieStore = await cookies();
   const session = cookieStore.get(COOKIE_EMAIL_AUTH_SESSION)?.value;
+  const email = cookieStore.get(COOKIE_EMAIL_AUTH_USERNAME)?.value;
   if (!session) {
     return NextResponse.json(
       { error: "Missing MFA verify session. Please restart sign-in." },
+      { status: 400 },
+    );
+  }
+  if (!email) {
+    return NextResponse.json(
+      { error: "Missing MFA verify email. Please restart sign-in." },
       { status: 400 },
     );
   }
@@ -28,44 +39,33 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await verifySoftwareToken(env, session, code);
+    const verify = await verifySoftwareToken(env, session, code);
+    const tokens = await finalizeMfaSetup(env, verify.session, email);
+    const claims = parseIdTokenClaims(tokens.idToken);
 
-    if (result.challengeName === "MFA_SETUP" && result.session) {
-      const response = NextResponse.json({ challengeName: "MFA_SETUP" }, { status: 202 });
-      response.cookies.set(COOKIE_EMAIL_AUTH_SESSION, result.session, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 600,
-      });
-      return response;
-    }
-
-    if (!result.idToken || !result.accessToken) {
-      return NextResponse.json(
-        { error: "mfa_verify_no_tokens" },
-        { status: 500 },
-      );
-    }
-
-    const claims = parseIdTokenClaims(result.idToken);
     const response = NextResponse.json({
       ok: true,
-      idToken: result.idToken,
-      expiresIn: result.expiresIn,
+      idToken: tokens.idToken,
+      expiresIn: tokens.expiresIn,
     });
     await setAuthCookies(
       {
-        idToken: result.idToken,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
+        idToken: tokens.idToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         sub: claims.sub,
-        expiresIn: result.expiresIn,
+        expiresIn: tokens.expiresIn,
       },
       response,
     );
     response.cookies.set(COOKIE_EMAIL_AUTH_SESSION, "", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
+    response.cookies.set(COOKIE_EMAIL_AUTH_USERNAME, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",

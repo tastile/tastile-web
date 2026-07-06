@@ -2,12 +2,8 @@ import type { CognitoEnv } from "./env";
 import { cognitoRequest } from "./public-client";
 
 export type VerifySoftwareTokenResult = {
-  idToken: string;
-  accessToken: string;
-  refreshToken: string | null;
-  expiresIn: number;
-  challengeName?: string;
-  session?: string;
+  ok: true;
+  session: string;
 };
 
 export async function verifySoftwareToken(
@@ -21,33 +17,10 @@ export async function verifySoftwareToken(
     FriendlyDeviceName: "tastile-web",
   });
 
-  if (
-    response.ChallengeName === "MFA_SETUP" &&
-    typeof response.Session === "string"
-  ) {
-    return {
-      idToken: "",
-      accessToken: "",
-      refreshToken: null,
-      expiresIn: 0,
-      challengeName: "MFA_SETUP",
-      session: response.Session,
-    };
+  if (response.Status !== "SUCCESS") {
+    throw new Error(`VerifySoftwareToken returned Status=${response.Status as string}`);
   }
-
-  const result = response.AuthenticationResult as
-    | {
-        IdToken?: unknown;
-        AccessToken?: unknown;
-        RefreshToken?: unknown;
-        ExpiresIn?: unknown;
-      }
-    | undefined;
-
-  return {
-    idToken: typeof result?.IdToken === "string" ? result.IdToken : "",
-    accessToken: typeof result?.AccessToken === "string" ? result.AccessToken : "",
-    refreshToken: typeof result?.RefreshToken === "string" ? result.RefreshToken : null,
-    expiresIn: typeof result?.ExpiresIn === "number" ? result.ExpiresIn : 0,
-  };
+  // Cognito may rotate the session during MFA_SETUP. Use the new one if present.
+  const nextSession = typeof response.Session === "string" ? response.Session : session;
+  return { ok: true, session: nextSession };
 }
