@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getUserSubFromCookies } from "@/lib/cognito/cookies";
 import { getStripe } from "@/lib/stripe";
+import { getSubscriptionForUser } from "@/lib/billing/server";
 
 export async function POST() {
   let stripe: ReturnType<typeof getStripe>;
@@ -15,11 +16,21 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  void stripe;
-  return NextResponse.json(
-    {
-      error: "Billing portal is not available until AWS billing profile persistence is enabled",
-    },
-    { status: 501 },
-  );
+  const state = await getSubscriptionForUser(userSub);
+  if (state.status === "free") {
+    return NextResponse.json(
+      { error: "No active subscription. Visit /pricing to subscribe." },
+      { status: 404 },
+    );
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+  const returnUrl = appUrl ? `${appUrl}/dashboard/preferences/account?tab=subscription` : "/dashboard/preferences/account?tab=subscription";
+
+  const session = await stripe.billingPortal.sessions.create({
+    customer: state.customerId,
+    return_url: returnUrl,
+  });
+
+  return NextResponse.json({ url: session.url });
 }

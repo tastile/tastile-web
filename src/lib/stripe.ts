@@ -32,14 +32,16 @@ export function getPlans() {
   return {
     free: { name: "Free", priceId: null },
     pro_monthly: {
+      // display-only: matches live $4.00/month price (actual charge is via Stripe price ID)
       name: "Pro (Monthly)",
       priceId: requireEnv("STRIPE_PRO_MONTHLY_PRICE_ID"),
-      amount: 500,
+      amount: 400,
     },
     pro_yearly: {
+      // display-only: matches live $40.00/year price (actual charge is via Stripe price ID)
       name: "Pro (Yearly)",
       priceId: requireEnv("STRIPE_PRO_YEARLY_PRICE_ID"),
-      amount: 5000,
+      amount: 4000,
     },
   } as const;
 }
