@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type SetupState =
@@ -11,6 +11,20 @@ type SetupState =
   | { kind: "done" };
 
 export default function MfaSetupPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="mx-auto max-w-md p-6">
+          <p className="text-foreground-muted">読み込み中…</p>
+        </main>
+      }
+    >
+      <MfaSetupInner />
+    </Suspense>
+  );
+}
+
+function MfaSetupInner() {
   const params = useSearchParams();
   const router = useRouter();
   const email = params.get("email") ?? "";
@@ -66,12 +80,7 @@ export default function MfaSetupPage() {
         }
       }
       if (res.status === 401) {
-        const prev = state.kind === "ready" ? state : null;
-        setState({
-          kind: "error",
-          message: "コードが違います",
-          ...(prev ? { secretCode: prev.secretCode, otpauthUrl: prev.otpauthUrl } : {}),
-        } as SetupState);
+        setState({ kind: "error", message: "コードが違います" });
         return;
       }
       const json = await res.json().catch(() => ({ error: "verify_failed" }));
