@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const { chromium } = require("playwright");
-const fs = require("node:fs");
+const fs = require("node:fs"); // eslint-disable-line @typescript-eslint/no-unused-vars
 const path = require("node:path");
 const SHOT = "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\manual-shots";
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));

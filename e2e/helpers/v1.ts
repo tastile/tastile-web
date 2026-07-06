@@ -2,7 +2,7 @@
 // (/api/events) which is now 410 Gone and call the v1 endpoints
 // directly via the Next.js proxy at /api/proxy/v1/*.
 
-import { type APIRequestContext, expect, type Page } from "@playwright/test";
+import { type APIRequestContext, expect } from "@playwright/test";
 
 interface V1CommandResp { aggregate?: { id: string }; }
 export interface V1TileView { id: string; planId?: string | null; plan_id?: string | null; }
@@ -99,9 +99,7 @@ export async function v1CreatePlacement(
       const sql = "INSERT INTO v1_annotation (id, tile_id, kind, label, owner_id, revision, created_at, updated_at) VALUES ('" + annId + "'::uuid, '" + tileId + "'::uuid, 0, '" + escaped + "', '00000000-0000-0000-0000-000000000001'::uuid, 1, now(), now()) ON CONFLICT (id) DO NOTHING;";
       try {
         execFileSync("docker", ["exec", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql], { stdio: "ignore" });
-      } catch (e) {
-        // best-effort: tag-suggest popovers are non-critical
-      }
+      } catch (e) { void e; }
     }
   }
 

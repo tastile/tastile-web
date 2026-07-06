@@ -10,6 +10,8 @@ export const runtime = "nodejs";
  *  - POST /api/events/placements/{placementId}/close  to close a single occurrence
  */
 function gone(_req?: Request, _ctx?: { params: Promise<{ id: string }> }): Response {
+  void _req;
+  void _ctx;
   return NextResponse.json(
     { error: "Event CRUD moved to /api/events/tiles and /api/events/placements" },
     { status: 410 },

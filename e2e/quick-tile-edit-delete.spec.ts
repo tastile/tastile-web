@@ -11,7 +11,7 @@ function todayUtc(): string {
 
 
 
-async function deleteAllEvents(page: Page) {
+async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
   // Wipe both the calendar event table and the placement table directly
   // via docker exec, so the day view is fully empty for the next test.
   // /api/events/{id} only touches v1_event, leaving v1_placement rows

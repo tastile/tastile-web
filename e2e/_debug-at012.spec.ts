@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 const OWNER = "00000000-0000-0000-0000-000000000001";
 const ACTOR = "00000000-0000-0000-0000-000000000001";

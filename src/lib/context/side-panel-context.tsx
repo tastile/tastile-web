@@ -95,7 +95,6 @@ export function useSidePanel(content: ReactNode) {
       register(null);
       lastContentRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [register, content]);
 
   // Push content updates without re-running the mount effect.

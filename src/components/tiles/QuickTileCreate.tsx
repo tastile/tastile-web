@@ -144,6 +144,7 @@ const TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> 
   { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
   { value: PlanRole.EXECUTABLE, label: "quickCreate.roleExecutable" },
   { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
@@ -190,6 +191,7 @@ function isoToLocalDate(iso: string | null | undefined): string {
   return iso.slice(0, 10);
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _hexToEventColorName(hex: string | null | undefined): string | null {
   if (!hex) return null;
   const m = hex.toLowerCase().match(/^#([0-9a-f]{6})$/);
@@ -330,6 +332,7 @@ export function QuickTileCreate() {
   const windows = useQuickCreateStore((s) => s.windows);
   const recurring = useQuickCreateStore((s) => s.recurring);
   const recurrence = useQuickCreateStore((s) => s.recurrence);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _advanced = useQuickCreateStore((s) => s.advanced);
   const meta = useQuickCreateStore((s) => s.meta);
 
@@ -354,10 +357,10 @@ export function QuickTileCreate() {
   // workspaces created in another tab / sibling component.
   useEffect(() => {
     void projects.refresh();
-  }, [projects.refresh]);
+  }, [projects, projects.refresh]);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const [tagInputDraft, setTagInputDraft] = useState("");
-  const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
+  const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [submitting, setSubmitting] = useState(false);
   // Pull real-world tag candidates from existing tiles so the suggest
   // popovers have something to show without seeding a local store.
@@ -462,7 +465,7 @@ export function QuickTileCreate() {
 
   const titleOk = identity.title.trim().length > 0;
   const kindIsRecurring = identity.kind === TileKind.RECURRING;
-  const _timeSummary = (() => {
+  const _timeSummary = (() => { // eslint-disable-line @typescript-eslint/no-unused-vars
     const fmt = (iso: string) => {
       if (!iso) return null;
       const d = new Date(iso);
@@ -522,8 +525,8 @@ export function QuickTileCreate() {
         return t("quickCreate.completionNoRoot");
     }
   })();
-  const _completionRootCount = countConditionChildren(completionRootNode);
-  const _completionTermSummary = (() => {
+  const _completionRootCount = countConditionChildren(completionRootNode); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _completionTermSummary = (() => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (!completionRootNode) return "";
     const labels: string[] = [];
     const visit = (n: ConditionNode) => {
@@ -2713,6 +2716,7 @@ function ConditionEditor({
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _FullFieldList({ data, emptyLabel }: { data: unknown; emptyLabel: string }) {
   // v1 full-parameter dump. The structured editors will replace this
   // incrementally, but every sub-panel must show the underlying data
@@ -2754,6 +2758,7 @@ function SectionHeader({ icon: Icon, title }: { icon: typeof AlertCircle; title:
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _StubRow({
   icon: Icon,
   title,

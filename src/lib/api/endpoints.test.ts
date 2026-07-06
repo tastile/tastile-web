@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CoreClient, getCoreClient } from "./endpoints";
+import { CoreClient } from "./endpoints";
 
 function calledUrls(fetchImpl: ReturnType<typeof vi.fn>): string[] {
   return fetchImpl.mock.calls.map((call) => String(call[0]));

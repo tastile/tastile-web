@@ -31,6 +31,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
   const closeQuickCreate = useQuickCreateStore((s) => s.close);
   const sidePanelContent = useSidePanelContent();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future use
   const _pathname = usePathname();
   const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);

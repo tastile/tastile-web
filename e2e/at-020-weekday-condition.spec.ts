@@ -28,6 +28,7 @@ async function postV1(req: APIRequestContext, path: string, body: unknown) {
 // CalendarTerm weekday mask: bit0=Mon..bit6=Sun
 const MASK_MON_FRI = 0b0011111; // Mon..Fri
 const MASK_TUE = 0b0000010;     // Tue
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const MASK_WED = 0b0000100;     // Wed
 
 async function makeRecurring(req: APIRequestContext, title: string): Promise<string> {

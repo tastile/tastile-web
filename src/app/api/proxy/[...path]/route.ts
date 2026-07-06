@@ -493,6 +493,11 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
     headers.set("x-tastile-web-session-user", bridgeUserSub);
+    // v1 access/* and auth/session routes resolve the actor from
+    // x-owner-id / x-actor-id rather than the bridge headers. Without
+    // these they return 401 even when the bridge secret is valid.
+    headers.set("x-owner-id", bridgeUserSub);
+    headers.set("x-actor-id", bridgeUserSub);
     const apiToken = request.cookies.get("tastile_api_token")?.value;
     if (apiToken) {
       headers.set("authorization", `Bearer ${apiToken}`);

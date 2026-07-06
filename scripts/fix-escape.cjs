@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = 'C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts';
 const before = fs.readFileSync(path, 'utf8');
 const eol = before.includes('\r\n') ? '\r\n' : '\n';
-const nl = eol;
+const nl = eol; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 // Find the broken lines.
 const oldSnippet = '      const escaped = label.replace(/' + "'" + '/g, "' + "'" + "'" + "'" + ');';

@@ -24,7 +24,7 @@ export function RowSubPanel({
   disabled,
 }: RowSubPanelProps) {
   const isEmpty = value.trim() === "";
-  const _showEmptyLabel = isEmpty && emptyLabel;
+  const _showEmptyLabel = isEmpty && emptyLabel; // eslint-disable-line @typescript-eslint/no-unused-vars
   return (
     <FormRow
       icon={

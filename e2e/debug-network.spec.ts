@@ -11,7 +11,7 @@ test.skip("debug quick tile submit with network capture", async ({ page }) => {
   page.on("response", async (r) => {
     if (r.url().includes("/v1/tiles") || r.url().includes("/v1/placements") || r.url().includes("/api/proxy/v1/")) {
       let body = null;
-      try { body = await r.text(); } catch (e) {}
+      try { body = await r.text(); } catch (e) { void e; }
       resps.push({ url: r.url(), status: r.status(), body });
     }
   });

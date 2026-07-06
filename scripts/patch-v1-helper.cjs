@@ -42,7 +42,7 @@ if (!after2.includes(marker)) {
   process.exit(1);
 }
 
-const id = "' + 'X' + '";
+const id = "' + 'X' + '"; // eslint-disable-line @typescript-eslint/no-unused-vars
 // Build the SQL using a string concat so we never have to escape backticks/single-quotes
 // inside a single-quoted TS source file written via PowerShell.
 const replacementParts = [

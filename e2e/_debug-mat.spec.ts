@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { v1CreateWeeklyRecurring, truncateV1 } from './helpers/v1';
+import { truncateV1 } from './helpers/v1';
 
 test('debug materialize body', async ({ page }) => {
   test.setTimeout(60_000);
@@ -11,7 +11,7 @@ test('debug materialize body', async ({ page }) => {
   const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysToMon, 12, 0, 0, 0);
   const anchorStart = monday.toISOString();
   const anchorEnd = new Date(monday.getTime() + 60 * 60 * 1000).toISOString();
-  const mask = (1 << 0) | (1 << 1);
+  const mask = (1 << 0) | (1 << 1); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // First create a tile + frame-rule
   const tileRes = await page.request.post('/api/proxy/v1/tiles', {

@@ -28,11 +28,11 @@ const auth = { "content-type": "application/json", "x-owner-id": OWNER, "x-actor
 async function postV1(page: Page, path: string, body: unknown) {
   return page.request.post(`${V1_BASE}${path}`, { headers: auth, data: body });
 }
-async function getV1(page: Page, path: string) {
+async function getV1(page: Page, path: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
   return page.request.get(`${V1_BASE}${path}`, { headers: auth });
 }
 
-async function createRecurring(page: Page, title: string) {
+async function createRecurring(page: Page, title: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
   const c = await postV1(page, "/v1/tiles", {
     idempotency_key: uuidv7like(),
     payload: { kind: 0, title, description: null, color: "#0ea5e9", icon: "check", external_id: null, plan_role: 0 },
@@ -41,7 +41,7 @@ async function createRecurring(page: Page, title: string) {
   return (await c.json()) as { aggregate: { id: string } };
 }
 
-async function addStepFrameRule(page: Page, recurringId: string) {
+async function addStepFrameRule(page: Page, recurringId: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
   const r = await postV1(page, `/v1/recurring/${recurringId}/frame-rules`, {
     idempotency_key: uuidv7like(),
     payload: {
@@ -63,7 +63,7 @@ async function addStepFrameRule(page: Page, recurringId: string) {
   ).trim();
 }
 
-async function materialize(page: Page, recurringId: string, frameRuleId: string, start: string, end: string) {
+async function materialize(page: Page, recurringId: string, frameRuleId: string, start: string, end: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
   const m = await postV1(
     page,
     `/v1/recurring/${recurringId}/frame-rules/${frameRuleId}/materialize`,
@@ -75,7 +75,7 @@ async function materialize(page: Page, recurringId: string, frameRuleId: string,
   expect(m.status(), `POST materialize: ${m.status()}`).toBeLessThan(300);
 }
 
-async function placementIdForRecurring(page: Page, recurringId: string): Promise<string> {
+async function placementIdForRecurring(page: Page, recurringId: string): Promise<string> { // eslint-disable-line @typescript-eslint/no-unused-vars
   const id = execFileSync(
     "docker",
     ["exec", "-i", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
@@ -87,7 +87,7 @@ async function placementIdForRecurring(page: Page, recurringId: string): Promise
 
 // Append a Placement-layer ChangeSet that sets span_start or span_end.
 // kind: 2 = Put, layer: 1 = Placement, source: 2 = User
-async function appendChangeSet(page: Page, placementId: string, slot: 0 | 1, instant: string) {
+async function appendChangeSet(page: Page, placementId: string, slot: 0 | 1, instant: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
   const cs = await postV1(page, `/v1/placements/${placementId}/changes`, {
     idempotency_key: uuidv7like(),
     payload: {

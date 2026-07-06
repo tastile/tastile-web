@@ -71,6 +71,7 @@ function getHighlightDates(
     });
   }
   // view === "month"
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- month view start bound
   const _start = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
   const end = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0));
   const out: string[] = [];

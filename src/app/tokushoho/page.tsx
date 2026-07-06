@@ -3,8 +3,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 
 export const metadata = {
   title: "特定商取引法に基づく表記 — Tastile",
-  description:
-    "特定商取引に関する法律第11条に基づき、以下のとおり表記致します。",
+  description: "特定商取引に関する法律第11条に基づき、以下のとおり表記致します。",
 };
 
 export default function TokushohoPage() {
@@ -28,17 +27,13 @@ export default function TokushohoPage() {
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     販売事業者
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    木村 友亮（きむら ゆうすけ）
-                  </td>
+                  <td className="py-3 text-foreground-muted">木村 友亮（きむら ゆうすけ）</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     運営統括責任者
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    木村 友亮
-                  </td>
+                  <td className="py-3 text-foreground-muted">木村 友亮</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
@@ -60,9 +55,7 @@ export default function TokushohoPage() {
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     メールアドレス
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    support@tastile.app
-                  </td>
+                  <td className="py-3 text-foreground-muted">support@tastile.app</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
@@ -76,9 +69,7 @@ export default function TokushohoPage() {
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     商品代金以外の必要料金
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    なし
-                  </td>
+                  <td className="py-3 text-foreground-muted">なし</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
@@ -127,8 +118,8 @@ export default function TokushohoPage() {
                     動作環境
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    インターネット接続が必要です。推奨ブラウザ: Google Chrome、Safari、Firefox、Microsoft
-                    Edge。モバイル: 最新版の iOS / Android。
+                    インターネット接続が必要です。推奨ブラウザ: Google
+                    Chrome、Safari、Firefox、Microsoft Edge。モバイル: 最新版の iOS / Android。
                   </td>
                 </tr>
               </tbody>
