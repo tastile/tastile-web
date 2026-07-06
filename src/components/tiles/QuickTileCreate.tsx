@@ -470,31 +470,6 @@ export function QuickTileCreate() {
 
   const titleOk = identity.title.trim().length > 0;
   const kindIsRecurring = identity.kind === TileKind.RECURRING;
-  const _timeSummary = (() => {
-    // eslint-disable-line @typescript-eslint/no-unused-vars
-    const fmt = (iso: string) => {
-      if (!iso) return null;
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return null;
-      return d.toLocaleString(locale, {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    };
-    const start = fmt(time.span.start);
-    const end = fmt(time.span.end);
-    const dur =
-      time.durationMinMax.minMs !== null
-        ? Math.round(time.durationMinMax.minMs / 60000) + t("quickCreate.minutesUnit")
-        : null;
-    if (allDay) return t("quickCreate.allDay") + (dur ? ` ${dur}` : "");
-    if (start && end) return `${start} → ${end}`;
-    if (start) return start;
-    if (dur) return dur;
-    return "";
-  })();
   const spanHasStart = !!time.span.start;
   const spanHasEnd = !!time.span.end;
   const spanOrderValid = !spanHasStart || !spanHasEnd || time.span.end > time.span.start;
@@ -532,85 +507,6 @@ export function QuickTileCreate() {
     }
   })();
   const _completionRootCount = countConditionChildren(completionRootNode); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const _completionTermSummary = (() => {
-    // eslint-disable-line @typescript-eslint/no-unused-vars
-    if (!completionRootNode) return "";
-    const labels: string[] = [];
-    const visit = (n: ConditionNode) => {
-      if (n.kind === ConditionKind.TERM && n.term) {
-        const k = n.term.kind;
-        const kindLabel = t(`quickCreate.term${k.charAt(0).toUpperCase()}${k.slice(1)}`);
-        let stateLabel = "";
-        switch (k) {
-          case "task": {
-            const v = n.term.value as { taskId: string; state: number };
-            const stateKey =
-              [
-                "taskStateVisible",
-                "taskStateMarked",
-                "taskStateCompleted",
-                "taskStateNotCompleted",
-              ][v.state] ?? "";
-            const base = stateKey ? t(`quickCreate.${stateKey}`) : "";
-            stateLabel = v.taskId ? base + (base ? " " : "") + v.taskId.slice(0, 6) : base;
-            break;
-          }
-          case "life": {
-            const v = n.term.value as { state: number };
-            const stateKey = ["lifeStateReady", "lifeStateStarted", "lifeStateDone"][v.state] ?? "";
-            stateLabel = stateKey ? t(`quickCreate.${stateKey}`) : "";
-            break;
-          }
-          case "requirement": {
-            const v = n.term.value as { state: number };
-            stateLabel = v.state === 0 ? t("quickCreate.reqMet") : t("quickCreate.reqNotMet");
-            break;
-          }
-          case "metric":
-            stateLabel = t("quickCreate.metricAnyValue");
-            break;
-          case "fact":
-            stateLabel = t("quickCreate.factAnyValue");
-            break;
-          case "calendar": {
-            const v = n.term.value as { timeStart?: string; timeEnd?: string };
-            stateLabel = v.timeStart
-              ? `${v.timeStart.slice(0, 5)}~${v.timeEnd ? v.timeEnd.slice(0, 5) : ""}`
-              : t("quickCreate.calendarAnyTime");
-            break;
-          }
-          case "gap":
-            stateLabel = t("quickCreate.gapAnySize");
-            break;
-          case "moment": {
-            const v = n.term.value as { target?: { kind?: string; id?: string } };
-            if (v.target?.kind) {
-              const kindLabel = t(
-                "quickCreate.referenceKind" +
-                  v.target.kind.charAt(0).toUpperCase() +
-                  v.target.kind.slice(1),
-              );
-              stateLabel = kindLabel + (v.target.id ? ` ${v.target.id.slice(0, 6)}` : "");
-            } else {
-              stateLabel = t("quickCreate.momentAnyPoint");
-            }
-            break;
-          }
-          case "relation":
-            stateLabel = t("quickCreate.relationAnyLink");
-            break;
-          default:
-            stateLabel = "";
-        }
-        labels.push(stateLabel ? kindLabel + stateLabel : kindLabel);
-      } else {
-        for (const c of n.children) visit(c);
-      }
-    };
-    visit(completionRootNode);
-    if (labels.length === 0) return "";
-    return labels.slice(0, 3).join(" / ");
-  })();
 
   // --- windows array helpers ------------------------------------------------
   // setField doesn't traverse arrays, so each array mutation rewrites the

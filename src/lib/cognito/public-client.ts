@@ -93,13 +93,13 @@ export async function startPasswordSignIn(
         PASSWORD: password,
       },
     });
-    return pickChallenge(selected, email);
+    return pickChallenge(selected);
   }
 
-  return pickChallenge(initial, email);
+  return pickChallenge(initial);
 }
 
-function pickChallenge(response: CognitoJson, _email: string): PasswordSignInResult {
+function pickChallenge(response: CognitoJson): PasswordSignInResult {
   const cn = response.ChallengeName;
   if (typeof cn !== "string") {
     throw new CognitoPublicError("Cognito did not return a challenge name.", "NO_CHALLENGE");

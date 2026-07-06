@@ -106,7 +106,6 @@ export function useSidePanel(content: ReactNode) {
       register(null);
       lastContentRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- register is stable
   }, [register]);
 }
 
