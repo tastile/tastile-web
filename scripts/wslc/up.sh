@@ -14,7 +14,11 @@ HOST_PORT=3000
 CONTAINER_PORT=3000
 
 # Pre-check: image must exist (build first if missing).
-if ! wslc images -q 2>/dev/null | grep -q "^$IMAGE\$"; then
+# Note: wslc images -q emits IMAGE IDs (sha256), not repo names — parse the
+# table to get the REPOSITORY column instead. wslc 2.9.3.0 does not support
+# `--format '{{.Repository}}:{{.Tag}}'` (only json/table), so we awk the
+# table directly.
+if ! wslc images 2>/dev/null | awk 'NR>1 && $1 != "<none>" {print $1 ":" $2}' | grep -q "^$IMAGE:\$\|^$IMAGE:latest\$"; then
   echo "ERROR: image '$IMAGE' not found. Run scripts/wslc/build.sh first."
   exit 1
 fi
@@ -33,9 +37,22 @@ if wslc list -a -q 2>/dev/null | grep -q "^$CONTAINER\$"; then
   wslc rm "$CONTAINER" >/dev/null 2>&1 || true
 fi
 
+# Env injection. CLOUD_API_BASE points at the api by container name inside
+# the shared wslc network — no host-port mapping needed. The bridge secret
+# must be supplied by the operator; we do NOT bake it into the image.
+# NOTE: NEXT_PUBLIC_* values are baked into the SSR bundle at image build
+# time (Next.js standard). They come from .env.dev at build; passing them
+# here at runtime has no effect on the rendered values.
+: "${CLOUD_API_BASE:=http://tastile-v1-api:31400}"
+: "${TASTILE_WEB_BRIDGE_SECRET:?ERROR: TASTILE_WEB_BRIDGE_SECRET must be set in the shell env (see .env.dev)}"
+: "${TASTILE_USE_RUST_CORE:=1}"
+
 echo "== web =="
 wslc run -d --name "$CONTAINER" --network "$NETWORK" \
   -p "$HOST_PORT:$CONTAINER_PORT" \
+  -e "CLOUD_API_BASE=$CLOUD_API_BASE" \
+  -e "TASTILE_WEB_BRIDGE_SECRET=$TASTILE_WEB_BRIDGE_SECRET" \
+  -e "TASTILE_USE_RUST_CORE=$TASTILE_USE_RUST_CORE" \
   "$IMAGE"
 
 sleep 2

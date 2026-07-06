@@ -20,7 +20,9 @@ else
 fi
 
 # Image presence
-if wslc images -q 2>/dev/null | grep -q "^$IMAGE\$"; then
+# Note: wslc images -q emits IMAGE IDs (sha256), not repo names. Parse the
+# table to get the REPOSITORY column instead.
+if wslc images 2>/dev/null | awk 'NR>1 && $1 != "<none>" {print $1 ":" $2}' | grep -q "^$IMAGE:\$\|^$IMAGE:latest\$"; then
   i_state="present"
 else
   i_state="missing"
