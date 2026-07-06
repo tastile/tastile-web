@@ -21,6 +21,7 @@ const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 
 interface MockTile {
   id: string;
+  plan_id: string;
   title: string;
   lifecycle: string;
   next_action: string | null;
@@ -63,6 +64,7 @@ function mockTileFromCreate(body: Record<string, unknown>): MockTile {
   const objective = (tile.objective ?? {}) as Record<string, unknown>;
   return {
     id,
+    plan_id: generateId(),
     title: String(tile.title ?? body.title ?? "Untitled"),
     lifecycle: "ready",
     next_action: (tile.next_action as string) ?? null,
@@ -193,6 +195,30 @@ function handleMockRequest(
   ) {
     return NextResponse.json(path === "read/tiles" ? { tiles: mockTiles } : mockTiles);
   }
+  const v1TileMatch = path.match(/^v1\/tiles\/([^/]+)$/);
+  if (v1TileMatch && method === "GET") {
+    const id = v1TileMatch[1];
+    const found = mockTiles.find((t) => t.id === id);
+    if (found) return NextResponse.json(found);
+    // Synthesize a TileView for ids the mock didn't create itself
+    // (e.g. legacy seed data the panel tries to edit). The real
+    // backend rejects non-UUID ids, so the proxy must intercept.
+    return NextResponse.json({
+      ...(mockTiles[0] ?? {}),
+      id,
+      plan_id: generateId(),
+    });
+  }
+
+  if (path === "v1/placements" && method === "POST") {
+    return NextResponse.json({
+      accepted: true,
+      command_id: generateId(),
+      accepted_at: new Date().toISOString(),
+      request_id: null,
+      aggregate: { id: generateId(), kind: 2 },
+    });
+  }
 
   if ((path === "commands/tile/create" || path === "v1/tiles") && method === "POST") {
     const tile = mockTileFromCreate(body as Record<string, unknown>);
@@ -200,6 +226,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
       aggregate: { id: tile.id, kind: 1 },
     });
@@ -220,6 +247,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
       aggregate: { id: placementId, kind: 2 },
     });
@@ -230,6 +258,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
       aggregate: { id: generateId(), kind: 3 },
     });
@@ -247,6 +276,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -255,6 +285,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -267,6 +298,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -275,6 +307,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -283,6 +316,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -291,6 +325,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -300,6 +335,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -308,6 +344,7 @@ function handleMockRequest(
     return NextResponse.json({
       accepted: true,
       command_id: generateId(),
+      accepted_at: new Date().toISOString(),
       request_id: null,
     });
   }
@@ -612,6 +649,11 @@ function localCompatResponse(path: string, method: string): NextResponse | null 
   }
   if (path === "commands/recurring-tile") {
     return NextResponse.json([defaultBreakRecurringTemplate()]);
+  }
+  const recurringGetMatch = path.match(/^commands\/recurring-tile\/([^/]+)$/);
+  if (recurringGetMatch && method === "GET") {
+    const id = recurringGetMatch[1];
+    return NextResponse.json({ ...defaultBreakRecurringTemplate(), id });
   }
   if (path === "execution/snapshot") {
     return NextResponse.json({

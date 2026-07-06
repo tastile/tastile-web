@@ -70,14 +70,14 @@ export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
     <button
       type="button"
       aria-label="Close search"
-      className="fixed inset-0 z-[60] flex items-start justify-center pt-24 cursor-default bg-foreground/20 backdrop-blur-[1px]"
+      className="fixed inset-0 z-[60] flex items-start justify-center pt-24 cursor-default bg-foreground/5 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Search tiles and pages"
-        className="relative w-[600px] rounded-xl bg-surface-1 shadow-lg text-left"
+        className="relative w-[600px] rounded-xl border border-border bg-surface-elevated shadow-lg text-left"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
@@ -86,7 +86,7 @@ export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
           }
         }}
       >
-        <div className="flex items-center gap-2 border-b border-surface-2 px-4 py-3">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
           <Search className="h-4 w-4 text-foreground-subtle" />
           <input
             ref={inputRef}

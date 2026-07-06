@@ -245,18 +245,18 @@ export function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-[var(--z-command)] flex items-start justify-center pt-[10vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]"
       role="dialog"
       aria-modal
     >
       <div
-        className="absolute inset-0 bg-surface-overlay backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/5 backdrop-blur-sm"
         onClick={() => setOpen(false)}
         aria-hidden
       />
-      <div className="relative z-10 w-[min(720px,92vw)] overflow-hidden rounded-xl border border-border bg-surface-1 shadow-[var(--shadow-lg)]">
+      <div className="relative z-10 w-[min(720px,92vw)] overflow-hidden rounded-xl border border-border bg-surface-elevated shadow-lg">
         <div className="flex items-center gap-2 border-b border-border px-3">
-          <Search className="h-4 w-4 text-ink-3" />
+          <Search className="h-4 w-4 text-foreground-subtle" />
           <input
             ref={inputRef}
             value={query}
@@ -266,15 +266,15 @@ export function CommandPalette() {
             }}
             onKeyDown={onKeyDown}
             placeholder="Type a command, page, or endpoint…"
-            className="h-12 flex-1 bg-transparent text-sm text-ink-1 outline-none placeholder:text-ink-4"
+            className="h-12 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-lighter"
           />
-          <kbd className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-[10px] font-medium text-ink-3">
+          <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
             ESC
           </kbd>
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="ml-1 grid h-6 w-6 place-items-center rounded text-ink-3 hover:bg-surface-2 hover:text-ink-1"
+            className="ml-1 grid h-6 w-6 place-items-center rounded text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
             aria-label="Close"
           >
             <X className="h-3.5 w-3.5" />
@@ -282,7 +282,7 @@ export function CommandPalette() {
         </div>
         <div className="max-h-[60vh] overflow-y-auto p-1.5">
           {items.length === 0 ? (
-            <div className="px-3 py-8 text-center text-sm text-ink-4">No results</div>
+            <div className="px-3 py-8 text-center text-sm text-foreground-lighter">No results</div>
           ) : (
             <GroupedList
               items={items}
@@ -292,15 +292,15 @@ export function CommandPalette() {
             />
           )}
         </div>
-        <div className="flex items-center justify-between border-t border-border bg-surface-0 px-3 py-2 text-[10px] text-ink-4">
+        <div className="flex items-center justify-between border-t border-border bg-surface-0 px-3 py-2 text-[10px] text-foreground-lighter">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-border bg-surface-1 px-1">↑</kbd>
-              <kbd className="rounded border border-border bg-surface-1 px-1">↓</kbd>
+              <kbd className="rounded border border-border bg-surface-2 px-1">↑</kbd>
+              <kbd className="rounded border border-border bg-surface-2 px-1">↓</kbd>
               navigate
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border border-border bg-surface-1 px-1">↵</kbd>
+              <kbd className="rounded border border-border bg-surface-2 px-1">↵</kbd>
               open
             </span>
           </div>
@@ -308,7 +308,7 @@ export function CommandPalette() {
             {TAG_ORDER.slice(0, 4).map((t) => (
               <span
                 key={t}
-                className="rounded border border-border bg-surface-1 px-1.5 py-0.5 font-mono uppercase tracking-wider"
+                className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono uppercase tracking-wider"
               >
                 {t}
               </span>
@@ -345,7 +345,7 @@ function GroupedList({
     <div className="flex flex-col">
       {Object.entries(groups).map(([g, { rows }]) => (
         <div key={g} className="py-1">
-          <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-ink-4">
+          <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-lighter">
             {g}
           </div>
           <ul>
@@ -359,25 +359,27 @@ function GroupedList({
                     onClick={() => onSelect(item)}
                     className={cn(
                       "flex w-full items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors",
-                      active ? "bg-surface-2 text-ink-1" : "text-ink-2 hover:bg-surface-2",
+                      active
+                        ? "bg-surface-2 text-foreground"
+                        : "text-foreground-muted hover:bg-surface-2",
                     )}
                   >
                     <ItemIcon group={item.group} tag={item.tag} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{item.title}</span>
-                      <span className="block truncate font-mono text-[11px] text-ink-3">
+                      <span className="block truncate font-mono text-[11px] text-foreground-subtle">
                         {item.subtitle}
                       </span>
                     </span>
                     {item.tag ? (
-                      <span className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-ink-3">
+                      <span className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-foreground-subtle">
                         {item.tag}
                       </span>
                     ) : null}
                     <ArrowRight
                       className={cn(
                         "h-3.5 w-3.5 shrink-0",
-                        active ? "text-accent opacity-100" : "text-ink-4 opacity-0",
+                        active ? "text-primary opacity-100" : "text-foreground-lighter opacity-0",
                       )}
                     />
                   </button>
@@ -392,11 +394,12 @@ function GroupedList({
 }
 
 function ItemIcon({ group, tag }: { group: string; tag?: string }) {
-  if (group === "Endpoints") return <FileCode2 className="h-3.5 w-3.5 text-ink-3" />;
-  if (group === "Recent") return <Hash className="h-3.5 w-3.5 text-ink-3" />;
+  if (group === "Endpoints") return <FileCode2 className="h-3.5 w-3.5 text-foreground-subtle" />;
+  if (group === "Recent") return <Hash className="h-3.5 w-3.5 text-foreground-subtle" />;
   if (group === "Navigation") {
-    if (tag === "Read" || tag === "Views") return <Compass className="h-3.5 w-3.5 text-ink-3" />;
-    return <Layers className="h-3.5 w-3.5 text-ink-3" />;
+    if (tag === "Read" || tag === "Views")
+      return <Compass className="h-3.5 w-3.5 text-foreground-subtle" />;
+    return <Layers className="h-3.5 w-3.5 text-foreground-subtle" />;
   }
-  return <Layers className="h-3.5 w-3.5 text-ink-3" />;
+  return <Layers className="h-3.5 w-3.5 text-foreground-subtle" />;
 }

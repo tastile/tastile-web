@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
+import { getSubscriptionForUser } from "@/lib/billing/server";
 import { getUserSubFromCookies } from "@/lib/cognito/cookies";
 import { getStripe } from "@/lib/stripe";
-import { getSubscriptionForUser } from "@/lib/billing/server";
 
 export async function POST() {
   let stripe: ReturnType<typeof getStripe>;
@@ -25,7 +25,9 @@ export async function POST() {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-  const returnUrl = appUrl ? `${appUrl}/dashboard/preferences/account?tab=subscription` : "/dashboard/preferences/account?tab=subscription";
+  const returnUrl = appUrl
+    ? `${appUrl}/dashboard/preferences/account?tab=subscription`
+    : "/dashboard/preferences/account?tab=subscription";
 
   const session = await stripe.billingPortal.sessions.create({
     customer: state.customerId,

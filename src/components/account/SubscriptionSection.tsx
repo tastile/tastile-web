@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { translations } from "@/lib/i18n/translations";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useLocaleStore } from "@/lib/stores/locale-store";
-import { BUTTON_STYLES } from "@/lib/styles/button-styles";
 
 type SubscriptionState =
   | { status: "free" }
@@ -81,9 +80,9 @@ export function SubscriptionSection() {
     return (
       <div className="space-y-4">
         <div className="h-8 w-48 bg-surface-2 animate-pulse rounded" />
-        <div className="p-6 bg-surface-2 rounded-lg">
-          <div className="h-6 w-32 bg-surface-1 animate-pulse rounded mb-2" />
-          <div className="h-4 w-64 bg-surface-1 animate-pulse rounded" />
+        <div className="border border-border bg-surface-0 rounded-md p-6">
+          <div className="h-6 w-32 bg-surface-2 animate-pulse rounded mb-2" />
+          <div className="h-4 w-64 bg-surface-2 animate-pulse rounded" />
         </div>
       </div>
     );
@@ -97,7 +96,7 @@ export function SubscriptionSection() {
 
   return (
     <div className="space-y-6">
-      <div className="p-6 bg-surface-2 rounded-lg">
+      <section className="border border-border bg-surface-0 rounded-md p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-foreground">
@@ -110,11 +109,9 @@ export function SubscriptionSection() {
             </p>
           </div>
           <span
-            className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full ${isPro ? "bg-primary/10 text-primary" : "bg-surface-1 text-foreground-muted"}`}
+            className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full ${isPro ? "bg-primary/10 text-primary" : "bg-surface-2 text-foreground-muted"}`}
           >
-            {isPro
-              ? t("account.subscription.proBadge")
-              : t("account.subscription.freeBadge")}
+            {isPro ? t("account.subscription.proBadge") : t("account.subscription.freeBadge")}
           </span>
         </div>
 
@@ -134,7 +131,7 @@ export function SubscriptionSection() {
           </p>
         )}
 
-        {error && <p className="text-xs text-error mb-4">{error}</p>}
+        {error && <p className="text-xs text-danger mb-4">{error}</p>}
 
         <div className="flex gap-3">
           {isPro ? (
@@ -142,26 +139,25 @@ export function SubscriptionSection() {
               type="button"
               onClick={handleManage}
               disabled={opening}
-              className={BUTTON_STYLES.secondary}
+              className="rounded-full bg-surface-3 px-4 py-2.5 text-sm font-semibold text-foreground"
             >
-              {opening
-                ? t("account.subscription.loading")
-                : t("account.subscription.manage")}
+              {opening ? t("account.subscription.loading") : t("account.subscription.manage")}
             </button>
           ) : (
-            <a href="/pricing" className={BUTTON_STYLES.primary}>
+            <a
+              href="/pricing"
+              className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+            >
               {t("account.subscription.upgrade")}
             </a>
           )}
         </div>
-      </div>
+      </section>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 bg-surface-2 rounded-lg">
+        <section className="border border-border bg-surface-0 rounded-md p-6">
           <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-semibold text-foreground">
-              {subDict.freePlanName}
-            </h4>
+            <h4 className="text-lg font-semibold text-foreground">{subDict.freePlanName}</h4>
             {!isPro && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
                 Current
@@ -170,9 +166,7 @@ export function SubscriptionSection() {
           </div>
           <p className="text-2xl font-bold text-foreground mb-4">
             {subDict.freePlanPrice}
-            <span className="text-sm font-normal text-foreground-muted">
-              {subDict.perMonth}
-            </span>
+            <span className="text-sm font-normal text-foreground-muted">{subDict.perMonth}</span>
           </p>
           <ul className="space-y-2">
             {freeFeatures.map((feature, i) => (
@@ -182,13 +176,11 @@ export function SubscriptionSection() {
               </li>
             ))}
           </ul>
-        </div>
+        </section>
 
-        <div className="p-6 bg-surface-2 rounded-lg">
+        <section className="border border-border bg-surface-0 rounded-md p-6">
           <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-semibold text-foreground">
-              {subDict.proPlanName}
-            </h4>
+            <h4 className="text-lg font-semibold text-foreground">{subDict.proPlanName}</h4>
             {isPro && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
                 Current
@@ -199,17 +191,16 @@ export function SubscriptionSection() {
             <button
               type="button"
               onClick={() => setIntervalChoice("monthly")}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-1 text-foreground-subtle hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
             >
               {subDict.monthly}
             </button>
             <button
               type="button"
               onClick={() => setIntervalChoice("yearly")}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-1 text-foreground-subtle hover:text-foreground"}`}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
             >
-              {subDict.yearly}{" "}
-              <span className="text-success">{subDict.yearHint}</span>
+              {subDict.yearly} <span className="text-success">{subDict.yearHint}</span>
             </button>
           </div>
           <p className="text-2xl font-bold text-foreground mb-4">
@@ -228,12 +219,15 @@ export function SubscriptionSection() {
           </ul>
           {!isPro && (
             <div className="mt-4">
-              <a href="/pricing" className={`${BUTTON_STYLES.primary} w-full block text-center`}>
+              <a
+                href="/pricing"
+                className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover w-full block text-center"
+              >
                 {subDict.upgrade}
               </a>
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

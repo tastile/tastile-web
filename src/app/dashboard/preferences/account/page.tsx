@@ -6,12 +6,10 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
-import { TileStatistics } from "@/components/account/TileStatistics";
-import { UsageDashboard } from "@/components/account/UsageDashboard";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 
-export type TabId = "profile" | "subscription" | "statistics" | "usage" | "tokens";
+export type TabId = "profile" | "subscription" | "tokens";
 
 type Profile = {
   username: string;
@@ -46,9 +44,6 @@ function AccountPageInner() {
   const [verificationCode, setVerificationCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  // メモ化しないと毎レンダーで新規 JSX が作られ useSidePanel → setContent
-  // → 親再描画 → ページ再描画のループが "Maximum update depth exceeded"
-  // を起こす
   const sidePanel = useMemo(() => <PreferencesSidePanel />, []);
   useSidePanel(sidePanel);
 
@@ -127,7 +122,7 @@ function AccountPageInner() {
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
-      <h1 className="mb-6 text-2xl font-normal text-foreground">Account Settings</h1>
+      <h1 className="text-2xl font-normal text-foreground">Account Settings</h1>
 
       <div className="max-w-4xl">
         {activeTab === "profile" && (
@@ -154,13 +149,13 @@ function AccountPageInner() {
             <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <UserRound className="h-5 w-5 text-primary" aria-hidden="true" />
+                  <UserRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
                   <h3 className="font-semibold text-foreground">アカウント</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => void loadProfile()}
-                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-surface-0"
+                  className="inline-flex items-center gap-2 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-foreground"
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
                   更新
@@ -193,7 +188,7 @@ function AccountPageInner() {
 
             <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center gap-3">
-                <Mail className="h-5 w-5 text-primary" aria-hidden="true" />
+                <Mail className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
                 <h3 className="font-semibold text-foreground">登録メールアドレスの変更</h3>
               </div>
               <form onSubmit={handleEmailStart} className="grid gap-3 sm:grid-cols-[1fr_auto]">
@@ -208,13 +203,13 @@ function AccountPageInner() {
                     required
                     value={pendingEmail}
                     onChange={(event) => setPendingEmail(event.target.value)}
-                    className="w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none"
+                    className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary"
                   />
                 </label>
                 <button
-                  type="button"
+                  type="submit"
                   disabled={submitting}
-                  className="self-end rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
+                  className="self-end rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
                 >
                   変更コードを送信
                 </button>
@@ -233,13 +228,13 @@ function AccountPageInner() {
                     required
                     value={verificationCode}
                     onChange={(event) => setVerificationCode(event.target.value)}
-                    className="w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none"
+                    className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary"
                   />
                 </label>
                 <button
-                  type="button"
+                  type="submit"
                   disabled={submitting}
-                  className="self-end rounded-md px-4 py-3 text-sm font-semibold text-foreground hover:bg-surface-0 disabled:opacity-60"
+                  className="self-end rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground disabled:opacity-60"
                 >
                   コードを確認
                 </button>
@@ -248,20 +243,20 @@ function AccountPageInner() {
 
             <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center gap-3">
-                <KeyRound className="h-5 w-5 text-primary" aria-hidden="true" />
+                <KeyRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
                 <h3 className="font-semibold text-foreground">ログイン方法</h3>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/auth/cognito/login?next=/dashboard/account"
-                  className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
                 >
                   <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                   passkey / 外部ログインを追加・変更
                 </Link>
                 <Link
                   href="/auth/email"
-                  className="inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-semibold text-foreground hover:bg-surface-0"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground"
                 >
                   <Mail className="h-4 w-4" aria-hidden="true" />
                   メールOTPで再ログイン
@@ -276,22 +271,6 @@ function AccountPageInner() {
             <h2 className="text-xl font-semibold text-foreground">Subscription</h2>
             <p className="text-foreground-muted">Manage your subscription plan and billing.</p>
             <SubscriptionSection />
-          </div>
-        )}
-
-        {activeTab === "statistics" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Tile Statistics</h2>
-            <p className="text-foreground-muted">View your tile usage and completion metrics.</p>
-            <TileStatistics />
-          </div>
-        )}
-
-        {activeTab === "usage" && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Usage Dashboard</h2>
-            <p className="text-foreground-muted">Track your activity and productivity over time.</p>
-            <UsageDashboard />
           </div>
         )}
 

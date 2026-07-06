@@ -34,7 +34,7 @@ function intervalForPriceId(priceId: string | undefined): SubscriptionInterval {
 
 function escapeCustomerSearchValue(value: string): string {
   // Stripe search query: wrap value in single quotes and escape internal ones.
-  return "'"+ value.replace(/'/g, "\'") + "'";
+  return `'${value.replace(/'/g, "'")}'`;
 }
 
 async function lookupCustomerBySub(
@@ -42,16 +42,13 @@ async function lookupCustomerBySub(
   cognitoSub: string,
 ): Promise<Stripe.Customer | null> {
   const result = await stripe.customers.search({
-    query:
-      "metadata['cognito_sub']:" + escapeCustomerSearchValue(cognitoSub),
+    query: `metadata['cognito_sub']:${escapeCustomerSearchValue(cognitoSub)}`,
     limit: 1,
   });
   return result.data[0] ?? null;
 }
 
-async function fetchSubscriptionFromStripe(
-  cognitoSub: string,
-): Promise<SubscriptionState> {
+async function fetchSubscriptionFromStripe(cognitoSub: string): Promise<SubscriptionState> {
   const stripe = getStripe();
   const customer = await lookupCustomerBySub(stripe, cognitoSub);
   if (!customer) {
@@ -64,9 +61,7 @@ async function fetchSubscriptionFromStripe(
     limit: 5,
   });
 
-  const active = subs.data.find(
-    (s) => s.status === "active" || s.status === "trialing",
-  );
+  const active = subs.data.find((s) => s.status === "active" || s.status === "trialing");
   const fallback = subs.data.find(
     (s) => s.status === "past_due" || s.status === "unpaid" || s.status === "incomplete",
   );
@@ -84,9 +79,7 @@ async function fetchSubscriptionFromStripe(
   };
 }
 
-export async function getSubscriptionForUser(
-  cognitoSub: string,
-): Promise<SubscriptionState> {
+export async function getSubscriptionForUser(cognitoSub: string): Promise<SubscriptionState> {
   const hit = cache.get(cognitoSub);
   if (hit && hit.expiresAt > Date.now()) {
     return hit.state;

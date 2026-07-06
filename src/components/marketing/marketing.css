@@ -261,44 +261,6 @@
   border-bottom: 1px solid var(--surface-2);
 }
 
-.mkt-condition-row::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 0;
-  background: linear-gradient(
-    90deg,
-    color-mix(in oklch, var(--primary) 8%, transparent),
-    color-mix(in oklch, var(--primary) 2%, transparent) 60%,
-    transparent
-  );
-  transition: width 480ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.mkt-condition-row:hover::before {
-  width: 100%;
-}
-
-.mkt-condition-row:hover .mkt-row-numeral {
-  color: var(--primary);
-}
-
-/* biome-ignore lint/style/noDescendingSpecificity: defines transition only, no color conflict with the hover rule above. */
-.mkt-row-numeral {
-  transition: color 320ms ease;
-}
-
-.mkt-condition-row:hover h3 {
-  color: var(--foreground);
-}
-
-/* biome-ignore lint/style/noDescendingSpecificity: defines transition only, no color conflict with the hover rule above. */
-.mkt-condition-row h3 {
-  transition: color 320ms ease;
-}
-
 /* Pricing band (full-width, no parallel cards). */
 .mkt-price-band {
   border-top: 1px solid var(--surface-2);

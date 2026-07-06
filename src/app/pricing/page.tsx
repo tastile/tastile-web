@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -44,7 +45,7 @@ export default function PricingPage() {
 
           <div className="layout-grid-2 mt-16 gap-8 items-stretch">
             {/* Free Plan */}
-            <div className="flex flex-col rounded-xl bg-surface-elevated p-8">
+            <div className="flex flex-col rounded-xl border border-border bg-surface-elevated p-8">
               <h2 className="text-2xl font-[590] text-foreground">
                 {t("marketing.pricing.freePlan")}
               </h2>
@@ -53,21 +54,8 @@ export default function PricingPage() {
 
               <ul className="mt-8 space-y-4">
                 {dict.freeFeatures.map((f) => (
-                  <li key={f.title} className="flex items-start">
-                    <svg
-                      className="h-6 w-6 text-success mr-3 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <title>Checkmark</title>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                  <li key={f.title} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                     <div>
                       <span className="font-medium text-foreground">{f.title}</span>
                       <p className="text-sm text-foreground-muted">{f.desc}</p>
@@ -79,7 +67,7 @@ export default function PricingPage() {
               <div className="mt-auto pt-8">
                 <Link
                   href="/login"
-                  className="block w-full rounded-full bg-surface-1 px-4 py-3 text-center text-sm font-medium text-foreground hover:bg-surface-2"
+                  className="block w-full rounded-full bg-surface-2 px-4 py-3 text-center text-sm font-semibold text-foreground hover:bg-surface-3 transition-colors"
                 >
                   {t("marketing.pricing.getStarted")}
                 </Link>
@@ -87,7 +75,7 @@ export default function PricingPage() {
             </div>
 
             {/* Pro Plan */}
-            <div className="flex flex-col relative overflow-hidden rounded-xl bg-surface-elevated p-8">
+            <div className="flex flex-col relative overflow-hidden rounded-xl border border-border bg-surface-elevated p-8">
               <div className="absolute top-4 right-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-fg">
                 {t("marketing.pricing.popular")}
               </div>
@@ -125,21 +113,8 @@ export default function PricingPage() {
 
               <ul className="mt-8 space-y-4">
                 {dict.proFeatures.map((f) => (
-                  <li key={f.title} className="flex items-start">
-                    <svg
-                      className="h-6 w-6 text-success mr-3 flex-shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <title>Checkmark</title>
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
+                  <li key={f.title} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
                     <div>
                       <span className="font-medium text-foreground">{f.title}</span>
                       <p className="text-sm text-foreground-muted">{f.desc}</p>
@@ -153,7 +128,7 @@ export default function PricingPage() {
                   type="button"
                   onClick={handleUpgrade}
                   disabled={isLoading}
-                  className="block w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-medium text-primary-fg hover:bg-primary-hover disabled:opacity-50"
+                  className="block w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-50 transition-colors"
                 >
                   {isLoading ? t("marketing.pricing.loading") : t("marketing.pricing.upgrade")}
                 </button>
@@ -166,4 +141,3 @@ export default function PricingPage() {
     </div>
   );
 }
-

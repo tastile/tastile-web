@@ -165,12 +165,6 @@ export default async function LoginPage({
                 <KeyRound className="h-4 w-4" aria-hidden="true" />
                 新しいアカウントを作成
               </a>
-              <a
-                href={`/auth/signup${desktopPageSuffix}`}
-                className="flex w-full items-center justify-center gap-3 rounded-md bg-surface-0 px-4 py-3 text-sm font-medium text-foreground-muted hover:bg-surface-1 hover:text-foreground"
-              >
-                タイル管理から始める
-              </a>
             </div>
 
             <div className="rounded-lg bg-surface-0 p-4">

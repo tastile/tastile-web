@@ -1,5 +1,6 @@
 "use client";
 
+import { CreditCard, Key, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
@@ -8,19 +9,19 @@ const SECTIONS = [
   {
     label: "Project Settings",
     items: [
-      { id: "general", path: "/dashboard/preferences/general", label: "General" },
-      {
-        id: "statistics",
-        path: "/dashboard/preferences/account?tab=statistics",
-        label: "Statistics",
-      },
+      { id: "general", path: "/dashboard/preferences/general", label: "General", icon: Settings },
     ],
   },
   {
     label: "Account",
     items: [
-      { id: "profile", path: "/dashboard/preferences/account", label: "Profile" },
-      { id: "tokens", path: "/dashboard/preferences/account?tab=tokens", label: "Access Tokens" },
+      { id: "profile", path: "/dashboard/preferences/account", label: "Profile", icon: User },
+      {
+        id: "tokens",
+        path: "/dashboard/preferences/account?tab=tokens",
+        label: "Access Tokens",
+        icon: Key,
+      },
     ],
   },
   {
@@ -30,8 +31,8 @@ const SECTIONS = [
         id: "subscription",
         path: "/dashboard/preferences/account?tab=subscription",
         label: "Subscription",
+        icon: CreditCard,
       },
-      { id: "usage", path: "/dashboard/preferences/account?tab=usage", label: "Usage" },
     ],
   },
 ];
@@ -65,13 +66,14 @@ export function PreferencesSidePanel() {
                 key={tab.id}
                 href={tab.path}
                 className={cn(
-                  "flex h-8 items-center rounded-md px-2 text-sm transition-colors text-left",
+                  "flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors text-left",
                   isActive
                     ? "bg-surface-2 font-medium text-foreground"
                     : "text-foreground-subtle hover:bg-surface-1 hover:text-foreground",
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
+                <tab.icon className="h-4 w-4 shrink-0" />
                 {tab.label}
               </Link>
             );

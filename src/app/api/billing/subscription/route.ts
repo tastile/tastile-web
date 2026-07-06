@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getUserSubFromCookies } from "@/lib/cognito/cookies";
 import { getSubscriptionForUser } from "@/lib/billing/server";
+import { getUserSubFromCookies } from "@/lib/cognito/cookies";
 
 export async function GET() {
   const userSub = await getUserSubFromCookies();

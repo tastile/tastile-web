@@ -122,47 +122,47 @@ export function AccessTokenSection() {
       ) : null}
 
       {createdToken ? (
-        <section className="rounded-lg bg-success/10 p-4">
+        <section className="rounded-md bg-success/10 p-4">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h3 className="font-semibold text-foreground">新しいトークン</h3>
             <button
               type="button"
               onClick={() => void copyToken(createdToken.access_token)}
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? "コピー済み" : "コピー"}
             </button>
           </div>
-          <code className="block break-all rounded-md bg-surface-0 p-3 font-mono text-xs text-foreground">
+          <code className="block break-all rounded-md border border-border bg-surface-0 p-3 font-mono text-xs text-foreground">
             {createdToken.access_token}
           </code>
         </section>
       ) : null}
 
-      <form onSubmit={createToken} className="rounded-lg bg-surface-2 p-5">
+      <form onSubmit={createToken} className="border border-border bg-surface-0 rounded-md p-5">
         <label className="block text-sm">
           <span className="mb-2 block font-medium text-foreground">トークン名</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={80}
-            className="w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none"
+            className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary"
           />
         </label>
         <button
           type="submit"
           disabled={submitting || !name.trim()}
-          className="mt-3 inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
+          className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
           トークンを発行
         </button>
       </form>
 
-      <section className="rounded-lg bg-surface-2 p-5">
+      <section className="border border-border bg-surface-0 rounded-md p-5">
         <div className="mb-4 flex items-center gap-3">
-          <KeyRound className="h-5 w-5 text-primary" />
+          <KeyRound className="h-5 w-5 text-foreground-muted" />
           <h3 className="font-semibold text-foreground">発行済みトークン</h3>
         </div>
 
@@ -177,7 +177,10 @@ export function AccessTokenSection() {
             const revoked = Boolean(token.revoked_at);
             const editing = editingId === token.token_id;
             return (
-              <div key={token.token_id} className="rounded-md bg-surface-0 p-4">
+              <div
+                key={token.token_id}
+                className="rounded-md border border-border bg-surface-0 p-4"
+              >
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     {editing ? (
@@ -186,13 +189,13 @@ export function AccessTokenSection() {
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
                           maxLength={80}
-                          className="min-w-0 flex-1 rounded-md bg-surface-2 px-3 py-2 text-sm text-foreground outline-none"
+                          className="min-w-0 flex-1 rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                         <button
                           type="button"
                           onClick={() => void saveName(token.token_id)}
                           disabled={submitting || !editingName.trim()}
-                          className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
+                          className="rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
                         >
                           保存
                         </button>
@@ -219,7 +222,7 @@ export function AccessTokenSection() {
                         setEditingName(token.name);
                       }}
                       disabled={revoked}
-                      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-foreground hover:bg-surface-2 disabled:opacity-40"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-40"
                     >
                       <Pencil className="h-4 w-4" />
                       名前変更
@@ -228,7 +231,7 @@ export function AccessTokenSection() {
                       type="button"
                       onClick={() => void revokeToken(token.token_id)}
                       disabled={revoked || submitting}
-                      className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm text-danger hover:bg-danger/10 disabled:opacity-40"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-danger disabled:opacity-40"
                     >
                       <Trash2 className="h-4 w-4" />
                       失効

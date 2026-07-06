@@ -76,8 +76,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <ActivityBar />
         {/* SideToolPanel: 各ページが useSidePanel() で登録したコンテンツを表示 */}
         <SideToolPanel />
-        <main className="min-w-0 flex-1 overflow-hidden bg-surface-0">
-          <div className="h-full">{children}</div>
+        <main className="min-w-0 flex-1 overflow-y-auto bg-surface-0">
+          <div className="min-h-full">{children}</div>
         </main>
       </div>
 
