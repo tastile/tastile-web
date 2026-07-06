@@ -36,7 +36,6 @@ fi
 echo "== web =="
 wslc run -d --name "$CONTAINER" --network "$NETWORK" \
   -p "$HOST_PORT:$CONTAINER_PORT" \
-  --restart unless-stopped \
   "$IMAGE"
 
 sleep 2
