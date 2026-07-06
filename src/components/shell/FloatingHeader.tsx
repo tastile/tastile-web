@@ -6,10 +6,12 @@ import {
   CheckSquare,
   Layers,
   Library,
+  LogOut,
   Menu,
   Repeat,
   Search,
   Settings,
+  User,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -17,13 +19,13 @@ import { useEffect, useState } from "react";
 import { TastileLogo } from "@/components/TastileLogo";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/DropdownMenu";
+  FloatingMenu,
+  FloatingMenuContent,
+  FloatingMenuItem,
+  FloatingMenuLabel,
+  FloatingMenuSeparator,
+  FloatingMenuTrigger,
+} from "@/components/ui/floating-menu";
 import { useActiveTile } from "@/lib/hooks/use-active-tile";
 import { cn } from "@/lib/utils/cn";
 
@@ -52,14 +54,20 @@ export function FloatingHeader({
   const { snapshot } = useActiveTile();
   const [nowMs, setNowMs] = useState(0);
 
+  // Only tick once per second while the countdown is actually visible
+  // (working state with an end time). Without this guard the header
+  // re-renders every second on every page, producing sustained CPU load.
+  const ends = snapshot?.main_tile_ends_at ? new Date(snapshot.main_tile_ends_at) : null;
+  const ticking = Boolean(snapshot?.is_working && ends);
+
   useEffect(() => {
     setNowMs(Date.now());
+    if (!ticking) return;
     const id = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [ticking]);
 
   const main = snapshot?.main_tile;
-  const ends = snapshot?.main_tile_ends_at ? new Date(snapshot.main_tile_ends_at) : null;
   const remainingSec = ends ? Math.max(0, Math.round((ends.getTime() - nowMs) / 1000)) : 0;
   const mm = Math.floor(remainingSec / 60)
     .toString()
@@ -134,8 +142,8 @@ export function FloatingHeader({
             <Bell className="h-4 w-4" />
           </button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <FloatingMenu>
+            <FloatingMenuTrigger asChild>
               <button
                 type="button"
                 aria-label="User menu"
@@ -143,31 +151,42 @@ export function FloatingHeader({
               >
                 {userName.charAt(0)}
               </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 mt-1">
-              <DropdownMenuLabel className="font-normal">
+            </FloatingMenuTrigger>
+            <FloatingMenuContent align="end" className="w-56 mt-1">
+              <FloatingMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none text-foreground">{userName}</p>
                   <p className="text-xs leading-none text-foreground-muted">
                     Status: {isWorking ? "Executing" : "Idle"}
                   </p>
                 </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/preferences/account" className="w-full cursor-pointer">
+              </FloatingMenuLabel>
+              <FloatingMenuSeparator />
+              <FloatingMenuItem asChild>
+                <Link
+                  href="/dashboard/preferences/account"
+                  className="w-full cursor-pointer flex items-center gap-2"
+                >
+                  <User className="h-4 w-4 shrink-0" />
                   Account Settings
                 </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/dashboard/preferences/general" className="w-full cursor-pointer">
+              </FloatingMenuItem>
+              <FloatingMenuItem asChild>
+                <Link
+                  href="/dashboard/preferences/general"
+                  className="w-full cursor-pointer flex items-center gap-2"
+                >
+                  <Settings className="h-4 w-4 shrink-0" />
                   Preferences
                 </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">Log out</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              </FloatingMenuItem>
+              <FloatingMenuSeparator />
+              <FloatingMenuItem className="cursor-pointer flex items-center gap-2">
+                <LogOut className="h-4 w-4 shrink-0" />
+                Log out
+              </FloatingMenuItem>
+            </FloatingMenuContent>
+          </FloatingMenu>
 
           {/* モバイルメニューボタン (md未満でのみ表示、右端) */}
           <button

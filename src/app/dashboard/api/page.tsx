@@ -69,7 +69,7 @@ export default function ApiExplorerPage() {
           <>
             <Pill variant="active">
               <Database className="h-3 w-3" />
-              Live · http://127.0.0.1:3140
+              Live · http://127.0.0.1:31400
             </Pill>
             <Pill variant="default">{Object.keys(ENDPOINTS).length} endpoints</Pill>
             <Pill variant="default">{TAG_ORDER.length} tags</Pill>
@@ -502,7 +502,7 @@ function defaultBody(k: EndpointKey): string {
 }
 
 function curlCommand(method: string, path: string, body: string): string {
-  const base = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:3140";
+  const base = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:31400";
   const lines = [`curl -X ${method} '${base}${path}'`, `  -H 'accept: application/json'`];
   if (method !== "GET" && body.trim()) {
     lines.push(`  -H 'content-type: application/json'`);

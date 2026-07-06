@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
 
-const DEFAULT_CORE_URL = "http://127.0.0.1:3140";
+const DEFAULT_CORE_URL = "http://127.0.0.1:31400";
 // Name used when registering the per-login session token. The plaintext
 // `access_token` is only ever returned at this POST — afterwards the server
 // only retains its hash, so the client must keep the cookie or re-login.

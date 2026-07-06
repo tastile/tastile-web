@@ -731,7 +731,7 @@ export function getCoreClient(): CoreClient {
   const rawBaseUrl =
     process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
     process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-    "http://127.0.0.1:3140";
+    "http://127.0.0.1:31400";
   const usesCloudProxy = shouldUseProxyBridge(rawBaseUrl);
   const baseUrl = usesCloudProxy ? "/api/proxy" : rawBaseUrl;
   _client = new CoreClient({
