@@ -114,7 +114,7 @@ export default function PricingPage() {
               </div>
               <div className="mt-4 flex items-baseline">
                 <span className="text-4xl font-[590] text-foreground">
-                  {interval === "monthly" ? "$5" : "$50"}
+                  {interval === "monthly" ? "$4" : "$40"}
                 </span>
                 <span className="ml-2 text-foreground-muted">
                   {interval === "monthly"
@@ -166,3 +166,4 @@ export default function PricingPage() {
     </div>
   );
 }
+

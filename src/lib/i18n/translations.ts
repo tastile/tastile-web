@@ -392,6 +392,57 @@ export const translations = {
       duration: "所要",
     },
 
+    // Account
+    account: {
+      subscription: {
+        title: "プラン",
+        currentPlan: "現在のプラン",
+        proBadge: "Pro",
+        freeBadge: "Free",
+        proDescription: "すべての Pro 機能が使えます",
+        freeDescription: "アップグレードして高度な機能を利用",
+        upgrade: "Pro にアップグレード",
+        manage: "請求を管理",
+        monthly: "月額",
+        yearly: "年額",
+        perMonth: "/月",
+        perYear: "/年",
+        priceMonthly: "4ドル",
+        priceYearly: "40ドル",
+        yearHint: "年額は 2 ヶ月分お得",
+        statusActive: "有効",
+        statusTrialing: "トライアル中",
+        statusPastDue: "支払い遅延",
+        statusCanceled: "解約済み",
+        statusFree: "無料プラン",
+        nextBilling: "次回請求日",
+        autoRenew: "自動更新",
+        autoRenewOff: "自動更新オフ",
+        freePlanName: "Free",
+        freePlanPrice: "0ドル",
+        proPlanName: "Pro",
+        proPlanPrice: "4ドル",
+        loading: "読み込み中...",
+        error: "サブスク情報を取得できませんでした",
+        features: {
+          free: [
+            "10 タイルまで",
+            "基本的な実行制御",
+            "Web ダッシュボード",
+            "手動タイル管理",
+          ],
+          pro: [
+            "無制限のタイル",
+            "高度な自動化",
+            "Windows デスクトップクライアント",
+            "AI による提案",
+            "優先サポート",
+            "カスタム連携",
+          ],
+        },
+      },
+    },
+
     // Marketing
     marketing: {
       nav: {
@@ -850,6 +901,57 @@ export const translations = {
       startAt: "Start",
 
       duration: "Duration",
+    },
+
+    // Account
+    account: {
+      subscription: {
+        title: "Plan",
+        currentPlan: "Current Plan",
+        proBadge: "Pro",
+        freeBadge: "Free",
+        proDescription: "You have access to all Pro features",
+        freeDescription: "Upgrade to unlock advanced features",
+        upgrade: "Upgrade to Pro",
+        manage: "Manage Billing",
+        monthly: "Monthly",
+        yearly: "Yearly",
+        perMonth: "/month",
+        perYear: "/year",
+        priceMonthly: "$4",
+        priceYearly: "$40",
+        yearHint: "Save 2 months with yearly",
+        statusActive: "Active",
+        statusTrialing: "Trialing",
+        statusPastDue: "Past due",
+        statusCanceled: "Canceled",
+        statusFree: "Free plan",
+        nextBilling: "Next billing",
+        autoRenew: "Auto-renew on",
+        autoRenewOff: "Auto-renew off",
+        freePlanName: "Free",
+        freePlanPrice: "$0",
+        proPlanName: "Pro",
+        proPlanPrice: "$4",
+        loading: "Loading...",
+        error: "Could not load subscription info",
+        features: {
+          free: [
+            "Up to 10 active tiles",
+            "Basic execution control",
+            "Web dashboard access",
+            "Manual tile management",
+          ],
+          pro: [
+            "Unlimited tiles",
+            "Advanced automation",
+            "Windows desktop client",
+            "AI-powered suggestions",
+            "Priority support",
+            "Custom integrations",
+          ],
+        },
+      },
     },
 
     // Marketing

@@ -1,39 +1,81 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { translations } from "@/lib/i18n/translations";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useLocaleStore } from "@/lib/stores/locale-store";
 import { BUTTON_STYLES } from "@/lib/styles/button-styles";
 
-type Plan = "free" | "pro";
+type SubscriptionState =
+  | { status: "free" }
+  | {
+      status: "active" | "trialing" | "past_due" | "canceled" | "incomplete" | "unpaid";
+      interval: "monthly" | "yearly";
+      priceId: string;
+      customerId: string;
+      currentPeriodEnd: number;
+      cancelAtPeriodEnd: boolean;
+    };
 
-/**
- * Probe `/api/auth/session` for safe session metadata. We never read or
- * hold Cognito tokens here — the route returns only `{sub, exp, owner_id}`.
- */
-async function hasSafeSession(): Promise<boolean> {
-  try {
-    const res = await fetch("/api/auth/session", { cache: "no-store" });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { sub?: unknown };
-    return typeof data.sub === "string";
-  } catch {
-    return false;
-  }
+async function openPortal(): Promise<void> {
+  const res = await fetch("/api/stripe/portal", { method: "POST" });
+  if (!res.ok) throw new Error("Failed to open billing portal");
+  const { url } = (await res.json()) as { url?: string };
+  if (url) window.location.href = url;
+}
+
+function statusLabel(t: (k: string) => string, status: SubscriptionState["status"]): string {
+  if (status === "free") return t("account.subscription.statusFree");
+  return t(`account.subscription.status${status.charAt(0).toUpperCase()}${status.slice(1)}`);
+}
+
+function formatDate(unixSeconds: number): string {
+  return new Date(unixSeconds * 1000).toLocaleDateString();
 }
 
 export function SubscriptionSection() {
-  const [plan, setPlan] = useState<Plan>("free");
+  const { t } = useTranslation();
+  const { locale } = useLocaleStore();
+  const subDict = translations[locale].account.subscription;
+  const [state, setState] = useState<SubscriptionState | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [intervalChoice, setIntervalChoice] = useState<"monthly" | "yearly">("monthly");
+  const [opening, setOpening] = useState(false);
 
   useEffect(() => {
-    // Plan lookup lives on the daemon (billing service) and is not wired in β.
-    // Until then, default to "free" once we have a session; show the loader
-    // briefly so the UI doesn't flash an unauthenticated state.
+    let cancelled = false;
     void (async () => {
-      const authenticated = await hasSafeSession();
-      setPlan(authenticated ? "free" : "free");
-      setLoading(false);
+      try {
+        const res = await fetch("/api/billing/subscription", { cache: "no-store" });
+        if (!res.ok) {
+          if (!cancelled) setError(t("account.subscription.error"));
+          return;
+        }
+        const data = (await res.json()) as { subscription: SubscriptionState };
+        if (!cancelled) setState(data.subscription);
+      } catch {
+        if (!cancelled) setError(t("account.subscription.error"));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [t]);
+
+  const handleManage = async () => {
+    setOpening(true);
+    try {
+      await openPortal();
+    } catch (err) {
+      console.error(err);
+      setError(t("account.subscription.error"));
+    } finally {
+      setOpening(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -47,64 +89,79 @@ export function SubscriptionSection() {
     );
   }
 
-  const isPro = plan === "pro";
-
-  const features = {
-    free: [
-      "Up to 10 active tiles",
-      "Basic execution control",
-      "Web dashboard access",
-      "Manual tile management",
-    ],
-    pro: [
-      "Unlimited tiles",
-      "Advanced automation",
-      "Windows desktop client",
-      "AI-powered suggestions",
-      "Priority support",
-      "Custom integrations",
-    ],
-  };
+  const isPro = state != null && state.status !== "free";
+  const statusText = state ? statusLabel(t, state.status) : "";
+  const proInterval = state && state.status !== "free" ? state.interval : intervalChoice;
+  const freeFeatures = subDict.features.free;
+  const proFeatures = subDict.features.pro;
 
   return (
     <div className="space-y-6">
       <div className="p-6 bg-surface-2 rounded-lg">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Current Plan</h3>
+            <h3 className="text-lg font-semibold text-foreground">
+              {t("account.subscription.currentPlan")}
+            </h3>
             <p className="text-sm text-foreground-muted mt-1">
               {isPro
-                ? "You have access to all Pro features"
-                : "Upgrade to unlock advanced features"}
+                ? t("account.subscription.proDescription")
+                : t("account.subscription.freeDescription")}
             </p>
           </div>
           <span
-            className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full ${
-              isPro ? "bg-primary/10 text-primary" : "bg-surface-1 text-foreground-muted"
-            }`}
+            className={`inline-block text-sm font-semibold px-3 py-1.5 rounded-full ${isPro ? "bg-primary/10 text-primary" : "bg-surface-1 text-foreground-muted"}`}
           >
-            {isPro ? "Pro" : "Free"}
+            {isPro
+              ? t("account.subscription.proBadge")
+              : t("account.subscription.freeBadge")}
           </span>
         </div>
 
+        {state && state.status !== "free" && (
+          <p className="text-xs text-foreground-muted mb-4">
+            {statusText}
+            {" · "}
+            {state.cancelAtPeriodEnd
+              ? t("account.subscription.autoRenewOff")
+              : t("account.subscription.autoRenew")}
+            {state.currentPeriodEnd > 0 && (
+              <>
+                {" · "}
+                {t("account.subscription.nextBilling")}: {formatDate(state.currentPeriodEnd)}
+              </>
+            )}
+          </p>
+        )}
+
+        {error && <p className="text-xs text-error mb-4">{error}</p>}
+
         <div className="flex gap-3">
           {isPro ? (
-            <a href="/api/stripe/portal" className={BUTTON_STYLES.secondary}>
-              Manage Billing
-            </a>
+            <button
+              type="button"
+              onClick={handleManage}
+              disabled={opening}
+              className={BUTTON_STYLES.secondary}
+            >
+              {opening
+                ? t("account.subscription.loading")
+                : t("account.subscription.manage")}
+            </button>
           ) : (
-            <a href="/api/stripe/checkout" className={BUTTON_STYLES.primary}>
-              Upgrade to Pro
+            <a href="/pricing" className={BUTTON_STYLES.primary}>
+              {t("account.subscription.upgrade")}
             </a>
           )}
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Free Plan */}
         <div className="p-6 bg-surface-2 rounded-lg">
           <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-semibold text-foreground">Free</h4>
+            <h4 className="text-lg font-semibold text-foreground">
+              {subDict.freePlanName}
+            </h4>
             {!isPro && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
                 Current
@@ -112,11 +169,13 @@ export function SubscriptionSection() {
             )}
           </div>
           <p className="text-2xl font-bold text-foreground mb-4">
-            $0
-            <span className="text-sm font-normal text-foreground-muted">/month</span>
+            {subDict.freePlanPrice}
+            <span className="text-sm font-normal text-foreground-muted">
+              {subDict.perMonth}
+            </span>
           </p>
           <ul className="space-y-2">
-            {features.free.map((feature, i) => (
+            {freeFeatures.map((feature, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
                 <span className="text-success mt-0.5">✓</span>
                 <span>{feature}</span>
@@ -125,22 +184,42 @@ export function SubscriptionSection() {
           </ul>
         </div>
 
-        {/* Pro Plan */}
         <div className="p-6 bg-surface-2 rounded-lg">
           <div className="flex items-center gap-2 mb-4">
-            <h4 className="text-lg font-semibold text-foreground">Pro</h4>
+            <h4 className="text-lg font-semibold text-foreground">
+              {subDict.proPlanName}
+            </h4>
             {isPro && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
                 Current
               </span>
             )}
           </div>
+          <div className="flex gap-2 mb-3">
+            <button
+              type="button"
+              onClick={() => setIntervalChoice("monthly")}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-1 text-foreground-subtle hover:text-foreground"}`}
+            >
+              {subDict.monthly}
+            </button>
+            <button
+              type="button"
+              onClick={() => setIntervalChoice("yearly")}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-1 text-foreground-subtle hover:text-foreground"}`}
+            >
+              {subDict.yearly}{" "}
+              <span className="text-success">{subDict.yearHint}</span>
+            </button>
+          </div>
           <p className="text-2xl font-bold text-foreground mb-4">
-            $9
-            <span className="text-sm font-normal text-foreground-muted">/month</span>
+            {proInterval === "monthly" ? subDict.priceMonthly : subDict.priceYearly}
+            <span className="text-sm font-normal text-foreground-muted">
+              {proInterval === "monthly" ? subDict.perMonth : subDict.perYear}
+            </span>
           </p>
           <ul className="space-y-2">
-            {features.pro.map((feature, i) => (
+            {proFeatures.map((feature, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
                 <span className="text-primary mt-0.5">✓</span>
                 <span>{feature}</span>
@@ -149,11 +228,8 @@ export function SubscriptionSection() {
           </ul>
           {!isPro && (
             <div className="mt-4">
-              <a
-                href="/api/stripe/checkout"
-                className={`${BUTTON_STYLES.primary} w-full block text-center`}
-              >
-                Upgrade Now
+              <a href="/pricing" className={`${BUTTON_STYLES.primary} w-full block text-center`}>
+                {subDict.upgrade}
               </a>
             </div>
           )}
