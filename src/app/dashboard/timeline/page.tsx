@@ -1,7 +1,7 @@
 "use client";
 
 import { Calendar, ChevronRight, Coffee, ListChecks, Loader2, Timer } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TimelineSidePanel } from "@/components/panels/CalendarSidePanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -20,21 +20,30 @@ export default function TimelinePage() {
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
 
   // 日付クリック時: custom range に切り替えてその日を表示
-  function handleSelectDate(date: string) {
-    setAnchor(date);
-    setTimelineScale("custom");
-    setCustomRange(date, null);
-  }
-
-  // サイドパネルを登録
-  useSidePanel(
-    <TimelineSidePanel
-      anchor={anchor}
-      scale={timelineScale}
-      onSelectDate={handleSelectDate}
-      onScaleChange={setTimelineScale}
-    />,
+  const handleSelectDate = useCallback(
+    (date: string) => {
+      setAnchor(date);
+      setTimelineScale("custom");
+      setCustomRange(date, null);
+    },
+    [setTimelineScale, setCustomRange],
   );
+
+  // サイドパネルを登録 — content をメモ化しないと毎レンダーで新規 JSX が
+  // 作られ、useSidePanel → setContent → 親再描画 → ページ再描画のループが
+  // "Maximum update depth exceeded" を起こす
+  const sidePanel = useMemo(
+    () => (
+      <TimelineSidePanel
+        anchor={anchor}
+        scale={timelineScale}
+        onSelectDate={handleSelectDate}
+        onScaleChange={setTimelineScale}
+      />
+    ),
+    [anchor, timelineScale, setTimelineScale, handleSelectDate],
+  );
+  useSidePanel(sidePanel);
 
   useEffect(() => {
     const seed = window.setTimeout(() => setNowMs(Date.now()), 0);

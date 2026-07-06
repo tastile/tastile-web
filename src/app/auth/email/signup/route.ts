@@ -40,8 +40,7 @@ export async function POST(request: NextRequest) {
     }
     if (
       error instanceof CognitoPublicError &&
-      (error.code === "InvalidPasswordException" ||
-        error.code === "InvalidParameterException")
+      (error.code === "InvalidPasswordException" || error.code === "InvalidParameterException")
     ) {
       return NextResponse.redirect(
         `${origin}/auth/signup?email=${encodeURIComponent(email)}&error=weak_password${nativeQuery}`,

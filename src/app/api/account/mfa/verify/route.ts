@@ -1,14 +1,14 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { finalizeMfaSetup } from "@/lib/cognito/finalize-mfa-setup";
-import { verifySoftwareToken } from "@/lib/cognito/verify-software-token";
 import {
   COOKIE_EMAIL_AUTH_SESSION,
   COOKIE_EMAIL_AUTH_USERNAME,
   setAuthCookies,
 } from "@/lib/cognito/cookies";
+import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { finalizeMfaSetup } from "@/lib/cognito/finalize-mfa-setup";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { verifySoftwareToken } from "@/lib/cognito/verify-software-token";
 
 export async function POST(request: Request) {
   const env = tryGetCognitoEnv();
@@ -76,10 +76,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("VerifySoftwareToken failed", error);
     const message = error instanceof Error ? error.message : "unknown_error";
-    if (
-      message.includes("CodeMismatch") ||
-      message.includes("CodeMismatchException")
-    ) {
+    if (message.includes("CodeMismatch") || message.includes("CodeMismatchException")) {
       return NextResponse.json({ error: "code_mismatch", message }, { status: 401 });
     }
     return NextResponse.json({ error: "cognito_error", message }, { status: 500 });

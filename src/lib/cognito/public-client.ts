@@ -99,22 +99,13 @@ export async function startPasswordSignIn(
   return pickChallenge(initial, email);
 }
 
-function pickChallenge(
-  response: CognitoJson,
-  email: string,
-): PasswordSignInResult {
+function pickChallenge(response: CognitoJson, _email: string): PasswordSignInResult {
   const cn = response.ChallengeName;
   if (typeof cn !== "string") {
-    throw new CognitoPublicError(
-      "Cognito did not return a challenge name.",
-      "NO_CHALLENGE",
-    );
+    throw new CognitoPublicError("Cognito did not return a challenge name.", "NO_CHALLENGE");
   }
   if (typeof response.Session !== "string") {
-    throw new CognitoPublicError(
-      `Cognito returned ${cn} without a session`,
-      "MISSING_SESSION",
-    );
+    throw new CognitoPublicError(`Cognito returned ${cn} without a session`, "MISSING_SESSION");
   }
   if (
     cn !== "MFA_SETUP" &&
@@ -122,10 +113,7 @@ function pickChallenge(
     cn !== "PASSWORD_SRP" &&
     cn !== "EMAIL_OTP"
   ) {
-    throw new CognitoPublicError(
-      `Unexpected challenge: ${cn}`,
-      "UNEXPECTED_CHALLENGE",
-    );
+    throw new CognitoPublicError(`Unexpected challenge: ${cn}`, "UNEXPECTED_CHALLENGE");
   }
   return { session: response.Session, challengeName: cn as AuthChallenge };
 }
@@ -154,8 +142,7 @@ export async function completeMfaChallenge(
   const result = response.AuthenticationResult as CognitoJson | undefined;
   const idToken = typeof result?.IdToken === "string" ? result.IdToken : "";
   const accessToken = typeof result?.AccessToken === "string" ? result.AccessToken : "";
-  const refreshToken =
-    typeof result?.RefreshToken === "string" ? result.RefreshToken : null;
+  const refreshToken = typeof result?.RefreshToken === "string" ? result.RefreshToken : null;
   const expiresIn = typeof result?.ExpiresIn === "number" ? result.ExpiresIn : 3600;
   if (!idToken || !accessToken) {
     throw new CognitoPublicError(

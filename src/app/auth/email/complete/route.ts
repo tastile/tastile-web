@@ -21,9 +21,8 @@ export async function POST(request: NextRequest) {
   const form = await request.formData();
   const email = normalizeEmail(form.get("email"));
   const code = normalizeCode(form.get("code"));
-  const mode = form.get("mode")?.toString() === "software_token_mfa"
-    ? "SOFTWARE_TOKEN_MFA"
-    : "EMAIL_OTP";
+  const mode =
+    form.get("mode")?.toString() === "software_token_mfa" ? "SOFTWARE_TOKEN_MFA" : "EMAIL_OTP";
   const redirectUri = safeOAuthRedirectUri(
     form.get("redirect_uri")?.toString() ?? null,
     env.callbackUrl,

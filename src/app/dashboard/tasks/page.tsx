@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { TasksSidePanel } from "@/components/panels/TasksSidePanel";
 import { TasksMain } from "@/components/tasks/TasksMain";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -16,7 +16,11 @@ export default function TasksPage() {
 
 function TasksPageInner() {
   useTrackVisit("/dashboard/tasks");
-  useSidePanel(<TasksSidePanel />);
+  // メモ化しないと毎レンダーで新規 JSX が作られ useSidePanel → setContent
+  // → 親再描画 → ページ再描画のループが "Maximum update depth exceeded"
+  // を起こす
+  const sidePanel = useMemo(() => <TasksSidePanel />, []);
+  useSidePanel(sidePanel);
 
   return (
     <div className="h-full overflow-y-auto">

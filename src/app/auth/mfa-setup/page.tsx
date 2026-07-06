@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 
 type SetupState =
   | { kind: "loading" }
@@ -128,26 +128,19 @@ function MfaSetupInner() {
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">
-          2 段階認証のセットアップ
-        </h1>
+        <h1 className="text-2xl font-semibold text-foreground">2 段階認証のセットアップ</h1>
         <p className="mt-2 text-sm text-foreground-muted">
-          {email} のアカウントで認証アプリ (Google Authenticator、1Password、Authy など)
-          による TOTP 認証を有効化します。
+          {email} のアカウントで認証アプリ (Google Authenticator、1Password、Authy など) による TOTP
+          認証を有効化します。
         </p>
       </div>
       <ol className="list-decimal space-y-2 pl-5 text-sm text-foreground">
         <li>認証アプリを開きます。</li>
-        <li>
-          次のシークレットを Base32 文字列として登録するか、otpauth URL
-          を貼り付けます。
-        </li>
+        <li>次のシークレットを Base32 文字列として登録するか、otpauth URL を貼り付けます。</li>
         <li>6 桁コードを入力して「検証」を押します。</li>
       </ol>
       <div className="space-y-2 rounded-md bg-surface-0 p-4">
-        <p className="text-xs uppercase tracking-wide text-foreground-muted">
-          Secret (Base32)
-        </p>
+        <p className="text-xs uppercase tracking-wide text-foreground-muted">Secret (Base32)</p>
         <pre
           data-testid="secret"
           className="break-all rounded bg-surface-2 p-3 font-mono text-sm text-foreground"
@@ -155,9 +148,7 @@ function MfaSetupInner() {
           {state.secretCode}
         </pre>
         <p className="text-xs text-foreground-muted">otpauth URL:</p>
-        <p className="break-all font-mono text-xs text-foreground-muted">
-          {state.otpauthUrl}
-        </p>
+        <p className="break-all font-mono text-xs text-foreground-muted">{state.otpauthUrl}</p>
       </div>
       <div className="space-y-2">
         <label htmlFor="code" className="text-sm font-medium text-foreground">
@@ -166,9 +157,7 @@ function MfaSetupInner() {
         <input
           id="code"
           value={code}
-          onChange={(e) =>
-            setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))
-          }
+          onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
           inputMode="numeric"
           pattern="[0-9]{6}"
           autoComplete="one-time-code"

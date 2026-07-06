@@ -357,7 +357,12 @@ export function QuickTileCreate() {
   // workspaces created in another tab / sibling component.
   useEffect(() => {
     void projects.refresh();
-  }, [projects, projects.refresh]);
+    // `projects.refresh` is stable (useCallback([], []) inside useProjects).
+    // `projects` itself is recreated on every render, so listing it in deps
+    // would re-fire this effect every render and cause an infinite
+    // setState loop in `useProjects`. Pin to `refresh` only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects.refresh]);
   const tagInputRef = useRef<HTMLInputElement | null>(null);
   const [tagInputDraft, setTagInputDraft] = useState("");
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0); // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -465,7 +470,8 @@ export function QuickTileCreate() {
 
   const titleOk = identity.title.trim().length > 0;
   const kindIsRecurring = identity.kind === TileKind.RECURRING;
-  const _timeSummary = (() => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _timeSummary = (() => {
+    // eslint-disable-line @typescript-eslint/no-unused-vars
     const fmt = (iso: string) => {
       if (!iso) return null;
       const d = new Date(iso);
@@ -526,7 +532,8 @@ export function QuickTileCreate() {
     }
   })();
   const _completionRootCount = countConditionChildren(completionRootNode); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const _completionTermSummary = (() => { // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _completionTermSummary = (() => {
+    // eslint-disable-line @typescript-eslint/no-unused-vars
     if (!completionRootNode) return "";
     const labels: string[] = [];
     const visit = (n: ConditionNode) => {

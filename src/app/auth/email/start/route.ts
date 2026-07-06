@@ -59,10 +59,7 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    const response = NextResponse.redirect(
-      `${origin}${targetPath}?${query}${desktopQuery}`,
-      303,
-    );
+    const response = NextResponse.redirect(`${origin}${targetPath}?${query}${desktopQuery}`, 303);
     response.cookies.set(COOKIE_EMAIL_AUTH_SESSION, started.session, options);
     response.cookies.set(COOKIE_EMAIL_AUTH_USERNAME, email, options);
     return response;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useMemo } from "react";
 import { ProjectsSidePanel } from "@/components/panels/ProjectsSidePanel";
 import { ProjectsMain } from "@/components/projects/ProjectsMain";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -18,7 +18,11 @@ export default function ProjectsPage() {
 
 function ProjectsPageInner() {
   useTrackVisit("/dashboard/projects");
-  useSidePanel(<ProjectsSidePanel />);
+  // content をメモ化しないと毎レンダーで新規 JSX が作られ、useSidePanel →
+  // setContent → 親再描画 → ページ再描画のループが "Maximum update depth
+  // exceeded" を起こす
+  const sidePanel = useMemo(() => <ProjectsSidePanel />, []);
+  useSidePanel(sidePanel);
 
   return (
     <div className="h-full overflow-y-auto">

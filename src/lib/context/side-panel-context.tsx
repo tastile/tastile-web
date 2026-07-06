@@ -87,24 +87,27 @@ export function useSidePanel(content: ReactNode) {
   const register = useContext(SidePanelRegisterContext);
   const lastContentRef = useRef<ReactNode | null>(null);
 
-  // Mount / unmount lifecycle.
-  useEffect(() => {
-    lastContentRef.current = content;
-    register(content);
-    return () => {
-      register(null);
-      lastContentRef.current = null;
-    };
-  }, [register, content]);
-
-  // Push content updates without re-running the mount effect.
-  // The page tree does not subscribe to the store, so this does not
-  // cause an infinite loop.
+  // Single effect: push the latest content, and only when it actually
+  // changes by reference. Skipping register(null) on cleanup is
+  // intentional — it would fire on every render of the calling page
+  // (because the JSX argument is recreated each time) and cause a
+  // setContent storm that React then trips the "Maximum update depth
+  // exceeded" guard on. The page tree does not subscribe to the store,
+  // so updating content without a transient null is safe.
   useEffect(() => {
     if (lastContentRef.current === content) return;
     lastContentRef.current = content;
     register(content);
   }, [content, register]);
+
+  // Clear on unmount only.
+  useEffect(() => {
+    return () => {
+      register(null);
+      lastContentRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- register is stable
+  }, [register]);
 }
 
 // ─────────────────────────────────────────────

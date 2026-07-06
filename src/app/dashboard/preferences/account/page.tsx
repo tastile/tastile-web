@@ -46,7 +46,11 @@ function AccountPageInner() {
   const [verificationCode, setVerificationCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useSidePanel(<PreferencesSidePanel />);
+  // メモ化しないと毎レンダーで新規 JSX が作られ useSidePanel → setContent
+  // → 親再描画 → ページ再描画のループが "Maximum update depth exceeded"
+  // を起こす
+  const sidePanel = useMemo(() => <PreferencesSidePanel />, []);
+  useSidePanel(sidePanel);
 
   async function loadProfile() {
     setLoading(true);

@@ -30,7 +30,14 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
   const closeQuickCreate = useQuickCreateStore((s) => s.close);
-  const sidePanelContent = useSidePanelContent();
+  // NOTE: do NOT subscribe to useSidePanelContent() here — that would
+  // re-render this layout (and its children, including the page tree)
+  // every time the side-panel content changes, which combines with the
+  // page's own useSidePanel(...) push to produce a render → effect →
+  // setContent → render loop ("Maximum update depth exceeded").
+  // SideToolPanel already subscribes internally and re-renders on its
+  // own. The mobile floating button below reads its own subscription
+  // through a small dedicated component instead.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future use
   const _pathname = usePathname();
   const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
@@ -81,21 +88,38 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <QuickTileCreate />
 
       {/* モバイル用サイドパネルフローティングボタン (md未満かつコンテンツが存在する場合のみ) */}
-      {sidePanelContent && (
-        <button
-          type="button"
-          aria-label="Open side panel"
-          onClick={() => setMobileSidePanelOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-hover transition-transform active:scale-95 md:hidden animate-in fade-in zoom-in duration-200"
-        >
-          <PanelLeftDashed className="h-5 w-5" />
-        </button>
-      )}
+      <MobileSidePanelFab onClick={() => setMobileSidePanelOpen(true)} />
 
       {/* モバイル用サイドパネルドロワー */}
       <BottomSheet open={mobileSidePanelOpen} onOpenChange={setMobileSidePanelOpen} title="Details">
-        <div className="py-2">{sidePanelContent}</div>
+        <div className="py-2">
+          <MobileSidePanelContent />
+        </div>
       </BottomSheet>
     </div>
   );
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Isolated subscribers so the parent layout does NOT re-render on
+// every side-panel content change. The page pushes new content via
+// useSidePanel(); only these leaf components re-render in response.
+// ────────────────────────────────────────────────────────────────────
+function MobileSidePanelFab({ onClick }: { onClick: () => void }) {
+  const hasContent = useSidePanelContent() != null;
+  if (!hasContent) return null;
+  return (
+    <button
+      type="button"
+      aria-label="Open side panel"
+      onClick={onClick}
+      className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-hover transition-transform active:scale-95 md:hidden animate-in fade-in zoom-in duration-200"
+    >
+      <PanelLeftDashed className="h-5 w-5" />
+    </button>
+  );
+}
+
+function MobileSidePanelContent() {
+  return useSidePanelContent();
 }

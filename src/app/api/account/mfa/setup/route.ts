@@ -1,10 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { associateSoftwareToken } from "@/lib/cognito/associate-software-token";
-import {
-  COOKIE_EMAIL_AUTH_SESSION,
-  COOKIE_EMAIL_AUTH_USERNAME,
-} from "@/lib/cognito/cookies";
+import { COOKIE_EMAIL_AUTH_SESSION, COOKIE_EMAIL_AUTH_USERNAME } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 
 export async function POST() {

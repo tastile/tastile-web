@@ -29,8 +29,7 @@ export async function finalizeMfaSetup(
   const result = response.AuthenticationResult as Result | undefined;
   const idToken = typeof result?.IdToken === "string" ? result.IdToken : "";
   const accessToken = typeof result?.AccessToken === "string" ? result.AccessToken : "";
-  const refreshToken =
-    typeof result?.RefreshToken === "string" ? result.RefreshToken : null;
+  const refreshToken = typeof result?.RefreshToken === "string" ? result.RefreshToken : null;
   const expiresIn = typeof result?.ExpiresIn === "number" ? result.ExpiresIn : 3600;
   if (!idToken || !accessToken) {
     throw new Error("Cognito did not return tokens after MFA_SETUP completion");

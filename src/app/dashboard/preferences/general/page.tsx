@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, Languages, Palette } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { FormPanel, RowSegmented } from "@/components/ui/form";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -39,7 +39,11 @@ export default function GeneralPage() {
     setNotificationPermission(notificationsSupported() ? Notification.permission : "unsupported");
   }, []);
 
-  useSidePanel(<PreferencesSidePanel />);
+  // メモ化しないと毎レンダーで新規 JSX が作られ useSidePanel → setContent
+  // → 親再描画 → ページ再描画のループが "Maximum update depth exceeded"
+  // を起こす
+  const sidePanel = useMemo(() => <PreferencesSidePanel />, []);
+  useSidePanel(sidePanel);
 
   function updateSecurityLock(enabled: boolean) {
     setSecurityLock(enabled);
