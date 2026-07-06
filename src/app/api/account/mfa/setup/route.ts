@@ -43,6 +43,6 @@ export async function POST() {
   } catch (error) {
     console.error("AssociateSoftwareToken failed", error);
     const message = error instanceof Error ? error.message : "unknown_error";
-    return NextResponse.json({ error: "cognito_error", message }, { status: 502 });
+    return NextResponse.json({ error: "cognito_error", message }, { status: 500 });
   }
 }

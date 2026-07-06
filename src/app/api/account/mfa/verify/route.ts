@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     if (!result.idToken || !result.accessToken) {
       return NextResponse.json(
         { error: "mfa_verify_no_tokens" },
-        { status: 502 },
+        { status: 500 },
       );
     }
 
@@ -82,6 +82,6 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json({ error: "code_mismatch", message }, { status: 401 });
     }
-    return NextResponse.json({ error: "cognito_error", message }, { status: 502 });
+    return NextResponse.json({ error: "cognito_error", message }, { status: 500 });
   }
 }
