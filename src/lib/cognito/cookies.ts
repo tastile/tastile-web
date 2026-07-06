@@ -4,7 +4,7 @@ import type { NextResponse } from "next/server";
 export const COOKIE_ID_TOKEN = "tastile_id_token";
 export const COOKIE_ACCESS_TOKEN = "tastile_access_token";
 export const COOKIE_REFRESH_TOKEN = "tastile_refresh_token";
-export const COOKIE_USER_SUB = "tastile_user_sub";
+export const COOKIE_USER_SUB = "tastile_uid";
 export const COOKIE_API_TOKEN = "tastile_api_token";
 export const COOKIE_PKCE_VERIFIER = "tastile_pkce_verifier";
 export const COOKIE_OAUTH_STATE = "tastile_oauth_state";

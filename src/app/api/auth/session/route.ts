@@ -16,7 +16,7 @@ import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN, COOKIE_USER_SUB } from "@/lib/co
 //    the dedicated /v1/api-tokens endpoint after Cognito login.
 //
 // Cognito id_token / refresh_token expire independently from the durable
-// `tastile_user_sub` cookie, so we accept the session as long as the sub
+// `tastile_uid` cookie, so we accept the session as long as the sub
 // is present. The id_token exp is surfaced as a hint for clients that
 // still want to refresh, but a missing or malformed id_token is not an
 // error here: the bridge auth path on the daemon side ignores the
