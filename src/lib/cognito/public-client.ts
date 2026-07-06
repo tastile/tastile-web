@@ -73,7 +73,7 @@ export async function startPasswordSignIn(
   email: string,
   password: string,
 ): Promise<PasswordSignInResult> {
-  const response = await cognitoRequest(env, "InitiateAuth", {
+  const initial = await cognitoRequest(env, "InitiateAuth", {
     AuthFlow: "USER_AUTH",
     ClientId: env.clientId,
     AuthParameters: {
@@ -82,6 +82,27 @@ export async function startPasswordSignIn(
     },
   });
 
+  if (initial.ChallengeName === "SELECT_CHALLENGE" && typeof initial.Session === "string") {
+    const selected = await cognitoRequest(env, "RespondToAuthChallenge", {
+      ClientId: env.clientId,
+      ChallengeName: "SELECT_CHALLENGE",
+      Session: initial.Session,
+      ChallengeResponses: {
+        USERNAME: email,
+        ANSWER: "PASSWORD",
+        PASSWORD: password,
+      },
+    });
+    return pickChallenge(selected, email);
+  }
+
+  return pickChallenge(initial, email);
+}
+
+function pickChallenge(
+  response: CognitoJson,
+  email: string,
+): PasswordSignInResult {
   const cn = response.ChallengeName;
   if (typeof cn !== "string") {
     throw new CognitoPublicError(
