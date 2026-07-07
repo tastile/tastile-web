@@ -118,6 +118,15 @@ export interface PendingWork {
   notBefore: string | null;
 }
 
+export interface AggregateMeta {
+  tileId: string | null;
+  planId: string | null;
+  recurringId: string | null;
+  frameRuleId: string | null;
+  changesetId: string | null;
+  changeIds: string[];
+}
+
 export interface CommandResponse {
   commandId: string;
   acceptedAt: string;
@@ -126,6 +135,14 @@ export interface CommandResponse {
   /** CommandResult numeric value. See `constants.ts` `CommandResult`. */
   result: number;
   pending: PendingWork[];
+  /**
+   * Server-side id slots.  v1 servers assign UUIDv7 for
+   * tile_id / plan_id / recurring_id / frame_rule_id /
+   * changeset_id / change_ids and echo them here so the
+   * frontend can read canonical ids without an additional GET.
+   * Optional — older API versions may omit the field.
+   */
+  aggregateMeta?: AggregateMeta | null;
 }
 
 export interface ApiError {

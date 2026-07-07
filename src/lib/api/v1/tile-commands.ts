@@ -308,9 +308,10 @@ export async function createRecurringCommand(
     };
   }
 
-  // 2) Add a default Step FrameRule.
+  // 2) Add a default Step FrameRule.  Per plan §C the server assigns
+  // the frame rule id; we send a placeholder id (server overrides it
+  // at INSERT time) and read the canonical id back via aggregate_meta.
   const stepMs = options.stepMs ?? 86_400_000;
-  const frameRuleId = uuidv7();
   const ruleRes = await sendCommand(
     options.client,
     "POST",
@@ -318,7 +319,7 @@ export async function createRecurringCommand(
     envelope({
       recurring_id: tileId,
       rule: {
-        id: frameRuleId,
+        id: "00000000-0000-0000-0000-000000000000",
         active: null,
         rank: 0,
         generator: {
@@ -329,7 +330,19 @@ export async function createRecurringCommand(
   );
   if (!ruleRes.ok) return { ...ruleRes, stage: "frame_rule" };
 
-  const assignedFrameRuleId = frameRuleId;
+  const assignedFrameRuleId = ruleRes.data.aggregateMeta?.frameRuleId;
+  if (!assignedFrameRuleId) {
+    return {
+      ok: false,
+      error: {
+        kind: 7,
+        message: "add frame rule response missing aggregate_meta.frame_rule_id",
+        currentRevision: null,
+        violations: [],
+      },
+      stage: "frame_rule",
+    };
+  }
 
   // 3) Materialize occurrences.
   //
@@ -733,7 +746,8 @@ export async function createManualPlacementCommand(
   options: CreateManualPlacementOptions,
 ): Promise<CreateManualPlacementResult> {
   // 1) Create the Placement tile (kind=1).  Server also writes a v1_plan
-  //    row in the same transaction.
+  //    row in the same transaction and echoes plan_id back via
+  //    aggregate_meta.plan_id (per plan §C).  No GET-after-POST.
   const title = options.title.trim();
   if (!title) {
     return {
@@ -763,25 +777,22 @@ export async function createManualPlacementCommand(
       },
     };
   }
-
-  // 2) Read back the auto-created plan_id.
-  const tileView = await readTileCommand(options.client, tileId);
-  if (!tileView.ok) return { ...tileView, stage: "read" };
-  const planId = tileView.data.planId;
+  const planId = tileRes.data.aggregateMeta?.planId;
   if (!planId) {
     return {
       ok: false,
-      stage: "read",
+      stage: "tile",
       error: {
         kind: 7,
-        message: "tile has no plan_id (server did not auto-create v1_plan)",
+        message:
+          "create tile response missing aggregate_meta.plan_id (server did not auto-create v1_plan)",
         currentRevision: null,
         violations: [],
       },
     };
   }
 
-  // 3) Create the Placement record (Manual source).
+  // 2) Create the Placement record (Manual source).
   const placementRes = await createPlacementCommand({
     client: options.client,
     tileId,
