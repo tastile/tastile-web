@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  coreUrl,
-  ensureDefaultApiTokenForUser,
-  setApiTokenCookie,
-} from "@/lib/account/api-token-session";
+import { coreUrl } from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
 
 export async function GET() {
@@ -15,13 +11,11 @@ export async function POST(request: Request) {
 }
 
 async function proxyTokens(init?: { method?: string; body?: string }) {
-  const shell = NextResponse.json({});
   const userSub = await getAccountUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!userSub || !bridgeSecret) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
-  await ensureDefaultApiTokenForUser(userSub, shell);
 
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: init?.method ?? "GET",
@@ -34,21 +28,7 @@ async function proxyTokens(init?: { method?: string; body?: string }) {
     cache: "no-store",
   });
 
-  const createdBody =
-    init?.method === "POST" && response.ok
-      ? await response
-          .clone()
-          .json()
-          .catch(() => null)
-      : null;
-  const forwarded = await forward(response);
-  for (const cookie of shell.cookies.getAll()) {
-    forwarded.cookies.set(cookie);
-  }
-  if (createdBody && typeof (createdBody as { token?: unknown }).token === "string") {
-    setApiTokenCookie((createdBody as { token: string }).token, forwarded);
-  }
-  return forwarded;
+  return await forward(response);
 }
 
 async function forward(response: Response) {
