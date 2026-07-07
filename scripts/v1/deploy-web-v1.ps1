@@ -1,1 +1,155 @@
-# Deploys the v1 (web) Next.js standalone bundle to an EC2 host via S3 + SSM.param(    [Parameter(Mandatory=$false)][string]$Tag = "''",    [Parameter(Mandatory=$false)][string]$Region = "ap-northeast-1",    [Parameter(Mandatory=$false)][string]$InstanceId = "''",    [Parameter(Mandatory=$false)][string]$TransferBucket = "tastile-deploy",    [Parameter(Mandatory=$false)][string]$StackName = "tastile-foundation",    [Parameter(Mandatory=$false)][string]$ReleaseRoot = "/opt/tastile/web/releases",    [Parameter(Mandatory=$false)][string]$CurrentLink = "/opt/tastile/web/current",    [Parameter(Mandatory=$false)][string]$ServiceName = "tastile-web.service")Set-StrictMode -Version Latest$ErrorActionPreference = "Stop"if (-not $InstanceId) {    $cfnId = aws cloudformation describe-stacks --stack-name $StackName --region $Region --query "Stacks[0].Outputs[?OutputKey==`AppInstanceId`].OutputValue" --output text 2>$null    $cfnState = ''    if ($cfnId) {        $cfnState = aws ec2 describe-instances --region $Region --instance-ids $cfnId --query "Reservations[0].Instances[0].State.Name" --output text 2>$null    }    if ($cfnId -and ($cfnState -eq 'running' -or $cfnState -eq 'stopped')) {        $InstanceId = $cfnId    } else {        if ($cfnId) {            Write-Host ('  CFN AppInstanceId ' + $cfnId + ' is in state ''' + $cfnState + ''' -- falling back to tag lookup')        } else {            Write-Host ('  CFN AppInstanceId output missing -- falling back to tag lookup')        }        $InstanceId = aws ec2 describe-instances --region $Region --filters 'Name=tag:Name,Values=tastile-web-server' 'Name=instance-state-name,Values=running' --query 'Reservations[0].Instances[0].InstanceId' --output text 2>$null    }}if (-not $InstanceId) {    throw ('Could not resolve web server instance. Pass -InstanceId explicitly or ensure a running instance tagged Name=tastile-web-server exists in region ' + $Region + '.')}$timestamp = Get-Date -Format "yyyyMMdd-HHmm"if (-not $Tag) {    $repoRoot = (Get-Item $PSScriptRoot).Parent.Parent.FullName    Push-Location $repoRoot    try {        $Tag = (& git rev-parse --short HEAD).Trim()    } finally {        Pop-Location    }}$releaseName = "tastile-web-" + $timestamp + "-" + $Tag$zipName = $releaseName + ".zip"$buildDir = Join-Path $env:TEMP "tastile-web-build-" + $timestamp$zipPath = Join-Path $buildDir $zipNameWrite-Host "== Tastile v1 web deploy =="Write-Host ("  Release:    " + $releaseName)Write-Host ("  Region:     " + $Region)Write-Host ("  Instance:   " + $InstanceId)Write-Host ("  Bucket:     s3://" + $TransferBucket + "/web-releases/" + $zipName)# step 1 -- buildWrite-Host ""Write-Host "== 1 -- lint + typecheck + build =="foreach ($step in @("lint", "typecheck", "build")) {    Write-Host ("  -> bun run " + $step)    $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", ("bun run " + $step) -NoNewWindow -Wait -PassThru    if ($proc.ExitCode -ne 0) {        throw ("bun run " + $step + " failed (exit=" + $proc.ExitCode + ")")    }}# step 2 -- stage the standalone bundleWrite-Host ""Write-Host "== 2 -- Stage standalone bundle =="New-Item -ItemType Directory -Force -Path $buildDir | Out-Null$stageDir = Join-Path $buildDir $releaseNameNew-Item -ItemType Directory -Force -Path $stageDir | Out-NullCopy-Item -Recurse -Force ".next/standalone/*" $stageDirCopy-Item -Recurse -Force ".next/static" (Join-Path $stageDir ".next/static")$publicTarget = Join-Path $stageDir "public"New-Item -ItemType Directory -Force -Path $publicTarget | Out-NullCopy-Item -Recurse -Force "public/*" $publicTarget# step 3 -- zipWrite-Host ""Write-Host "== 3 -- Zip =="$zipPath = Join-Path $buildDir $zipName$compress = Start-Process -FilePath "tar.exe" -ArgumentList @(    "-a", "-c", "-f", $zipPath,    "-C", $stageDir,    ".") -NoNewWindow -Wait -PassThruif ($compress.ExitCode -ne 0) {    throw ("tar zip failed (exit=" + $compress.ExitCode + ")")}$zipSize = (Get-Item $zipPath).LengthWrite-Host ("  Built: " + $zipPath + " (" + [math]::Round($zipSize/1MB, 1) + " MB)")# step 4 -- upload to s3Write-Host ""Write-Host "== 4 -- aws s3 cp =="aws s3 cp $zipPath ("s3://" + $TransferBucket + "/web-releases/" + $zipName + " --region " + $Region)if ($LASTEXITCODE -ne 0) {    throw ("aws s3 cp failed (exit=" + $LASTEXITCODE + ")")}$presignedUrl = aws s3 presign ("s3://" + $TransferBucket + "/web-releases/" + $zipName + " --region " + $Region + " --expires-in 900")# step 5 -- ssm send-command to deploy on the ec2 hostWrite-Host ""Write-Host ("== 5 -- SSM deploy on " + $InstanceId + " ==")$commands = @(    'set -euo pipefail',    ('sudo mkdir -p ' + $ReleaseRoot + '/' + $releaseName + ')'),    ('curl -fsSL ' + $presignedUrl + ' -o /tmp/' + $zipName + ')'),    ('sudo unzip -q -o /tmp/' + $zipName + ' -d ' + $ReleaseRoot + '/' + $releaseName + ')'),    ('sudo ln -sfn ' + $ReleaseRoot + '/' + $releaseName + ' ' + $CurrentLink + ')'),    ('sudo systemctl restart ' + $ServiceName + ')'),    'sleep 3',    ('systemctl is-active ' + $ServiceName + ')'),    ('curl -fsS -o /dev/null -w ' + 'HTTP %HTTP_CODE% in %TIME_TOTAL%s\n' + ' http://127.0.0.1:3000/login' + ')'))$payload = @{ commands = $commands } | ConvertTo-Json -Compress$tmp = Join-Path $env:TEMP ("tastile-web-deploy-" + $timestamp + ".json")Set-Content -LiteralPath $tmp -Value $payload -Encoding ASCII$commandId = aws ssm send-command --region $Region --instance-ids $InstanceId --document-name AWS-RunShellScript --parameters ("file://" + $tmp) --query "Command.CommandId" --output textWrite-Host ("  SSM CommandId: " + $commandId)# step 6 -- wait and stream outputWrite-Host ""Write-Host "== 6 -- Wait for SSM command to complete =="$status = "Pending"$elapsed = 0while ($status -in @("Pending", "InProgress", "Delayed") -and $elapsed -lt 180) {    Start-Sleep -Seconds 5    $elapsed += 5    $invocation = aws ssm get-command-invocation --region $Region --command-id $commandId --instance-id $InstanceId --output json | ConvertFrom-Json    $status = $invocation.Status    Write-Host ("  [" + $elapsed + "s] status=" + $status)}if ($status -ne "Success") {    Write-Host ""    Write-Host "  FAILED -- streaming output:"    if ($null -ne $invocation.StandardOutputContent) { Write-Host $invocation.StandardOutputContent }    Write-Host "--- stderr ---"    if ($null -ne $invocation.StandardErrorContent) { Write-Host $invocation.StandardErrorContent }    throw ("SSM command ended in " + $status)}Write-Host ""Write-Host "  Output:"if ($null -ne $invocation.StandardOutputContent) { Write-Host $invocation.StandardOutputContent }Write-Host ""Write-Host ("== Done. Release deployed: " + $releaseName + " ==")Write-Host "  URL:        https://app.tastile.app"Write-Host ("  Release:    " + $ReleaseRoot + "/" + $releaseName)Write-Host ("  Current:    " + $CurrentLink + " -> " + $ReleaseRoot + "/" + $releaseName)
+# Deploys the v1 (web) Next.js standalone bundle to an EC2 host via S3 + SSM.
+param(
+    [Parameter(Mandatory=$false)][string]$Tag = "''",
+    [Parameter(Mandatory=$false)][string]$Region = "ap-northeast-1",
+    [Parameter(Mandatory=$false)][string]$InstanceId = "''",
+    [Parameter(Mandatory=$false)][string]$TransferBucket = "tastile-deploy",
+    [Parameter(Mandatory=$false)][string]$StackName = "tastile-foundation",
+    [Parameter(Mandatory=$false)][string]$ReleaseRoot = "/opt/tastile/web/releases",
+    [Parameter(Mandatory=$false)][string]$CurrentLink = "/opt/tastile/web/current",
+    [Parameter(Mandatory=$false)][string]$ServiceName = "tastile-web.service")
+
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
+
+if (-not $InstanceId) {
+    $cfnId = aws cloudformation describe-stacks --stack-name $StackName --region $Region --query "Stacks[0].Outputs[?OutputKey==`AppInstanceId`].OutputValue" --output text 2>$null
+    $cfnState = ''
+    if ($cfnId) {
+        $cfnState = aws ec2 describe-instances --region $Region --instance-ids $cfnId --query "Reservations[0].Instances[0].State.Name" --output text 2>$null
+    }
+    if ($cfnId -and ($cfnState -eq 'running' -or $cfnState -eq 'stopped')) {
+        $InstanceId = $cfnId
+    } else {
+        if ($cfnId) {
+            Write-Host ('  CFN AppInstanceId ' + $cfnId + ' is in state ''' + $cfnState + ''' -- falling back to tag lookup')
+        } else {
+            Write-Host ('  CFN AppInstanceId output missing -- falling back to tag lookup')
+        }
+        $InstanceId = aws ec2 describe-instances --region $Region --filters 'Name=tag:Name,Values=tastile-web-server' 'Name=instance-state-name,Values=running' --query 'Reservations[0].Instances[0].InstanceId' --output text 2>$null
+    }
+}
+if (-not $InstanceId) {
+    throw ('Could not resolve web server instance. Pass -InstanceId explicitly or ensure a running instance tagged Name=tastile-web-server exists in region ' + $Region + '.')
+}
+
+$timestamp = Get-Date -Format "yyyyMMdd-HHmm"
+if (-not $Tag) {
+    $repoRoot = (Get-Item $PSScriptRoot).Parent.Parent.FullName
+    Push-Location $repoRoot
+    try {
+        $Tag = (& git rev-parse --short HEAD).Trim()
+    } finally {
+        Pop-Location
+    }
+}
+$releaseName = "tastile-web-" + $timestamp + "-" + $Tag
+$zipName = $releaseName + ".zip"
+$buildDir = Join-Path $env:TEMP "tastile-web-build-" + $timestamp
+$zipPath = Join-Path $buildDir $zipName
+
+Write-Host "== Tastile v1 web deploy =="
+Write-Host ("  Release:    " + $releaseName)
+Write-Host ("  Region:     " + $Region)
+Write-Host ("  Instance:   " + $InstanceId)
+Write-Host ("  Bucket:     s3://" + $TransferBucket + "/web-releases/" + $zipName)
+
+# step 1 -- build
+Write-Host ""
+Write-Host "== 1 -- lint + typecheck + build =="
+foreach ($step in @("lint", "typecheck", "build")) {
+    Write-Host ("  -> bun run " + $step)
+    $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", ("bun run " + $step) -NoNewWindow -Wait -PassThru
+    if ($proc.ExitCode -ne 0) {
+        throw ("bun run " + $step + " failed (exit=" + $proc.ExitCode + ")")
+    }
+}
+
+# step 2 -- stage the standalone bundle
+Write-Host ""
+Write-Host "== 2 -- Stage standalone bundle =="
+New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
+$stageDir = Join-Path $buildDir $releaseName
+New-Item -ItemType Directory -Force -Path $stageDir | Out-Null
+
+Copy-Item -Recurse -Force ".next/standalone/*" $stageDir
+Copy-Item -Recurse -Force ".next/static" (Join-Path $stageDir ".next/static")
+$publicTarget = Join-Path $stageDir "public"
+New-Item -ItemType Directory -Force -Path $publicTarget | Out-Null
+Copy-Item -Recurse -Force "public/*" $publicTarget
+
+# step 3 -- zip
+Write-Host ""
+Write-Host "== 3 -- Zip =="
+$zipPath = Join-Path $buildDir $zipName
+$compress = Start-Process -FilePath "$env:SystemRoot\System32\tar.exe" -ArgumentList @(
+    "-a", "-c", "-f", $zipPath,
+    "-C", $stageDir,
+    "."
+) -NoNewWindow -Wait -PassThru
+if ($compress.ExitCode -ne 0) {
+    throw ("tar zip failed (exit=" + $compress.ExitCode + ")")
+}
+$zipSize = (Get-Item $zipPath).Length
+Write-Host ("  Built: " + $zipPath + " (" + [math]::Round($zipSize/1MB, 1) + " MB)")
+
+# step 4 -- upload to s3
+Write-Host ""
+Write-Host "== 4 -- aws s3 cp =="
+aws s3 cp $zipPath ("s3://" + $TransferBucket + "/web-releases/" + $zipName + " --region " + $Region)
+if ($LASTEXITCODE -ne 0) {
+    throw ("aws s3 cp failed (exit=" + $LASTEXITCODE + ")")
+}
+$presignedUrl = aws s3 presign ("s3://" + $TransferBucket + "/web-releases/" + $zipName + " --region " + $Region + " --expires-in 900")
+
+# step 5 -- ssm send-command to deploy on the ec2 host
+Write-Host ""
+Write-Host ("== 5 -- SSM deploy on " + $InstanceId + " ==")
+$commands = @(
+    'set -euo pipefail',
+    ('sudo mkdir -p ' + $ReleaseRoot + '/' + $releaseName + ')'),
+    ('curl -fsSL ' + $presignedUrl + ' -o /tmp/' + $zipName + ')'),
+    ('sudo unzip -q -o /tmp/' + $zipName + ' -d ' + $ReleaseRoot + '/' + $releaseName + ')'),
+    ('sudo ln -sfn ' + $ReleaseRoot + '/' + $releaseName + ' ' + $CurrentLink + ')'),
+    ('sudo systemctl restart ' + $ServiceName + ')'),
+    'sleep 3',
+    ('systemctl is-active ' + $ServiceName + ')'),
+    ('curl -fsS -o /dev/null -w ' + 'HTTP %HTTP_CODE% in %TIME_TOTAL%s\n' + ' http://127.0.0.1:3000/login' + ')')
+)
+$payload = @{ commands = $commands } | ConvertTo-Json -Compress
+$tmp = Join-Path $env:TEMP ("tastile-web-deploy-" + $timestamp + ".json")
+Set-Content -LiteralPath $tmp -Value $payload -Encoding ASCII
+
+$commandId = aws ssm send-command --region $Region --instance-ids $InstanceId --document-name AWS-RunShellScript --parameters ("file://" + $tmp) --query "Command.CommandId" --output text
+Write-Host ("  SSM CommandId: " + $commandId)
+
+# step 6 -- wait and stream output
+Write-Host ""
+Write-Host "== 6 -- Wait for SSM command to complete =="
+$status = "Pending"
+$elapsed = 0
+while ($status -in @("Pending", "InProgress", "Delayed") -and $elapsed -lt 180) {
+    Start-Sleep -Seconds 5
+    $elapsed += 5
+    $invocation = aws ssm get-command-invocation --region $Region --command-id $commandId --instance-id $InstanceId --output json | ConvertFrom-Json
+    $status = $invocation.Status
+    Write-Host ("  [" + $elapsed + "s] status=" + $status)
+}
+if ($status -ne "Success") {
+    Write-Host ""
+    Write-Host "  FAILED -- streaming output:"
+    if ($null -ne $invocation.StandardOutputContent) { Write-Host $invocation.StandardOutputContent }
+    Write-Host "--- stderr ---"
+    if ($null -ne $invocation.StandardErrorContent) { Write-Host $invocation.StandardErrorContent }
+    throw ("SSM command ended in " + $status)
+}
+
+Write-Host ""
+Write-Host "  Output:"
+if ($null -ne $invocation.StandardOutputContent) { Write-Host $invocation.StandardOutputContent }
+Write-Host ""
+Write-Host ("== Done. Release deployed: " + $releaseName + " ==")
+Write-Host "  URL:        https://app.tastile.app"
+Write-Host ("  Release:    " + $ReleaseRoot + "/" + $releaseName)
+Write-Host ("  Current:    " + $CurrentLink + " -> " + $ReleaseRoot + "/" + $releaseName)
+
