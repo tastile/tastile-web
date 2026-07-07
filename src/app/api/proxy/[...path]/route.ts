@@ -1,6 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { v5 as uuidv5 } from "uuid";
 import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
+
+// RFC 4122 NAMESPACE_OID (also matches the uuid crate's
+// `Uuid::NAMESPACE_OID`).  The daemon's bridge auth derives the
+// v1 owner_id as `Uuid::new_v5(NAMESPACE_OID, user_sub_bytes)`;
+// x-owner-id / x-actor-id must mirror that derivation or
+// `authorize_or_404` returns 404 for the actor that just wrote the
+// tile.
+const NS_OID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8";
+
+function bridgeActorId(userSub: string): string {
+  return uuidv5(userSub, NS_OID);
+}
 
 function getCloudApiBase(): string {
   const value = process.env.CLOUD_API_BASE;
@@ -530,11 +543,13 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
     headers.set("x-tastile-web-session-user", bridgeUserSub);
-    // v1 access/* and auth/session routes resolve the actor from
-    // x-owner-id / x-actor-id rather than the bridge headers. Without
-    // these they return 401 even when the bridge secret is valid.
-    headers.set("x-owner-id", bridgeUserSub);
-    headers.set("x-actor-id", bridgeUserSub);
+    // v1 read handlers (read_tile, list_tiles, ...) authorize via
+    // `read_actor` which only reads `x-actor-id` (not the bridge
+    // headers).  The actor must match the daemon's bridge-derived
+    // owner_id (`uuidv5(NAMESPACE_OID, user_sub)`), not the raw sub.
+    const actorId = bridgeActorId(bridgeUserSub);
+    headers.set("x-owner-id", actorId);
+    headers.set("x-actor-id", actorId);
     const apiToken = request.cookies.get("tastile_api_token")?.value;
     if (apiToken) {
       headers.set("authorization", `Bearer ${apiToken}`);
