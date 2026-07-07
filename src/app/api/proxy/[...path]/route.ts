@@ -663,12 +663,11 @@ function localCompatResponse(path: string, method: string): NextResponse | null 
     return NextResponse.json({ items: [] });
   }
   if (path === "commands/recurring-tile") {
-    return NextResponse.json([defaultBreakRecurringTemplate()]);
+    return NextResponse.json({ items: [] });
   }
   const recurringGetMatch = path.match(/^commands\/recurring-tile\/([^/]+)$/);
   if (recurringGetMatch && method === "GET") {
-    const id = recurringGetMatch[1];
-    return NextResponse.json({ ...defaultBreakRecurringTemplate(), id });
+    return new NextResponse(null, { status: 404 });
   }
   if (path === "execution/snapshot") {
     return NextResponse.json({
@@ -742,49 +741,23 @@ function normalizeCompatResponse(path: string, body: string): string {
 
 function toRecurringTemplateList(parsed: unknown) {
   const source = Array.isArray(parsed) ? parsed : [];
-  const templates = source
+  return source
     .filter((tile) => isRecurringTileSummary(tile))
     .map((tile) => {
       const row = tile as Record<string, unknown>;
       return {
-        ...defaultBreakRecurringTemplate(),
         id: typeof row.id === "string" ? row.id : generateId(),
         title: typeof row.title === "string" ? row.title : "Recurring tile",
-        note: "",
+        note: typeof row.note === "string" ? row.note : "",
+        recurrence: row.recurrence,
       };
     });
-
-  const hasBreak = templates.some((template) => /休憩|break/i.test(template.title));
-  return hasBreak ? templates : [defaultBreakRecurringTemplate(), ...templates];
 }
 
 function isRecurringTileSummary(tile: unknown): boolean {
   if (!tile || typeof tile !== "object") return false;
   const kind = (tile as Record<string, unknown>).kind;
   return kind === 0 || kind === "recurring" || kind === "Recurring";
-}
-
-function defaultBreakRecurringTemplate() {
-  return {
-    id: "default-break-recurring",
-    title: "休憩",
-    note: "Default break template",
-    recurrence: {
-      generator: {
-        focus_block_based: {
-          phases: [{ focus_min: 25, break_min: 5 }],
-        },
-      },
-      window: {
-        weekday_mask: 0b1111111,
-        start_offset_min: 0,
-        end_offset_min: 1440,
-      },
-      selector: {
-        expression: null,
-      },
-    },
-  };
 }
 
 function toLegacyTile(tile: unknown) {

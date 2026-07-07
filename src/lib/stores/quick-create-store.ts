@@ -17,11 +17,13 @@ import type { DurationRange, Span, Window } from "@/lib/domain/v1/window";
 
 /**
  * Structural shape of a starter template row's `recurrence` field as
- * emitted by the proxy's `toRecurringTemplateList` / `defaultBreakRecurringTemplate`
- * (open-struct, no `kind` discriminator on `generator`). The store only
- * round-trips this through to the form as a seed — Submit reconstructs
- * the v1 FrameRule body from form fields, so we do not constrain this
- * to the strict `RecurrenceModel` discriminated union.
+ * emitted by the proxy's `toRecurringTemplateList` (open-struct, no
+ * `kind` discriminator on `generator`). The store only round-trips
+ * this through to the form as a seed — Submit reconstructs the v1
+ * FrameRule body from form fields, so we do not constrain this to the
+ * strict `RecurrenceModel` discriminated union. The legacy v0-shape
+ * `focus_block_based` slot is left here for back-compat with any seed
+ * caller that still passes it; the proxy no longer synthesises it.
  */
 export interface RecurrenceTemplateRecurrence {
   generator: {
@@ -77,16 +79,18 @@ export type QuickCreateMode = "create" | "edit";
 /**
  * Shape of a starter Recurring template row as produced by the proxy's
  * `toRecurringTemplateList` (see `proxy/[...path]/route.ts`). The id
- * MAY be a non-UUIDv7 compat placeholder (e.g.
- * `default-break-recurring`); the panel MUST NOT use it as a server
- * round-trip target. Only the title / note / recurrence are load-bearing
- * for create-from-template flows.
+ * MUST be a server-resolvable UUIDv7 — the proxy no longer fabricates
+ * placeholder rows (the legacy `default-break-recurring` string was
+ * removed 2026-07-07). Only the title / note / recurrence are
+ * load-bearing for create-from-template flows. `recurrence` is optional
+ * because the proxy passes through whatever the v1 source provides;
+ * Submit rebuilds the FrameRule body from form fields regardless.
  */
 export interface RecurringTemplateShape {
   id: string;
   title: string;
   note: string;
-  recurrence: RecurrenceTemplateRecurrence;
+  recurrence?: RecurrenceTemplateRecurrence;
 }
 
 export interface QuickCreateState {
@@ -559,10 +563,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   },
   loadFromTemplate: (template) => {
     // Starter-template path: caller (ScheduleMain) passes a Recurring
-    // template row whose id may be a non-UUIDv7 compat placeholder. We
-    // never call /v1/tiles/{template.id}; we just seed create mode from
-    // the template's title/recurrence so Submit POSTs CREATE_TILE on a
-    // fresh server-assigned UUIDv7.
+    // template row whose id is a server-resolvable UUIDv7. We never
+    // call /v1/tiles/{template.id}; we just seed create mode from the
+    // template's title/recurrence so Submit POSTs CREATE_TILE on a
+    // fresh server-assigned UUIDv7. `template.recurrence` may be
+    // absent if the proxy source did not include it.
     set({
       isOpen: true,
       mode: "create" as const,
