@@ -270,6 +270,13 @@ export function Dropdown({
 
   const selectId = React.useId();
   const listboxId = `${selectId}-listbox`;
+  const [triggerRect, setTriggerRect] = React.useState<DOMRect | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen && triggerRef.current) {
+      setTriggerRect(triggerRef.current.getBoundingClientRect());
+    }
+  }, [isOpen]);
 
   return (
     <div className={cn("relative", className)}>
@@ -319,16 +326,21 @@ export function Dropdown({
         )}
       </button>
 
-      {isOpen && (
+      {isOpen && triggerRect && (
         <div
           ref={contentRef}
           className={cn(
-            "absolute z-50 mt-1 w-full min-w-[160px] overflow-hidden rounded-lg",
-            "border border-border bg-surface-elevated shadow-lg",
+            "fixed z-50 min-w-[160px] overflow-hidden rounded-lg",
+            "border border-border-strong/50 bg-surface-elevated shadow-lg",
             "animate-in fade-in-0 zoom-in-95",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
             contentClassName,
           )}
+          style={{
+            top: `${triggerRect.bottom + 4}px`,
+            left: `${triggerRect.left}px`,
+            width: `${triggerRect.width}px`,
+          }}
           data-state={isOpen ? "open" : "closed"}
         >
           {searchable && (

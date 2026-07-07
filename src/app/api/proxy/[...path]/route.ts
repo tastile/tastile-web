@@ -124,6 +124,14 @@ function handleMockRequest(
   body: unknown,
   searchParams: URLSearchParams,
 ): NextResponse | null {
+  if (
+    process.env.PROXY_BYPASS_V1_WRITE_MOCK === "1" &&
+    method !== "GET" &&
+    method !== "HEAD" &&
+    path.startsWith("v1/")
+  ) {
+    return null;
+  }
   if ((path === "read/runtime-paths" || path === "v1/runtime/paths") && method === "GET") {
     return NextResponse.json({
       data_dir: "e2e://data",

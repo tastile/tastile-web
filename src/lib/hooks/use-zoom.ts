@@ -67,6 +67,8 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
   const initialRef = useRef(initial ?? 56);
 
   const elRef = useRef<T | null>(null);
+  // _attachedTick is read by React to subscribe to changes; setAttachedTick is the trigger.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_attachedTick, setAttachedTick] = useState(0);
 
   const ref: RefCallback<T> = useCallback((node) => {

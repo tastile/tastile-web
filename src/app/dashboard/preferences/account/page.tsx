@@ -73,6 +73,7 @@ function AccountPageInner() {
       void loadProfile();
     }, 0);
     return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: loadProfile is called exactly once on mount
   }, []);
 
   const accountId = useMemo(() => profile?.sub ?? profile?.username ?? "-", [profile]);
