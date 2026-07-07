@@ -1,5 +1,7 @@
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
+import { v5 as uuidv5 } from "uuid";
+
 import { resolveAuthenticatedUserSub } from "./authenticated-session";
 import {
   COOKIE_ACCESS_TOKEN,
@@ -10,6 +12,14 @@ import {
 } from "./cookies";
 import { tryGetCognitoEnv } from "./env";
 import { type IdTokenClaims, parseIdTokenClaims, refreshTokens } from "./server";
+
+const NAMESPACE_OID = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+
+export async function getAccountOwnerId(): Promise<string | null> {
+  const claims = await getAccountIdTokenClaims();
+  if (!claims?.sub) return null;
+  return uuidv5(claims.sub, NAMESPACE_OID);
+}
 
 export async function getAccountAccessToken(response?: NextResponse): Promise<string | null> {
   const env = tryGetCognitoEnv();
