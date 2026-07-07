@@ -36,6 +36,11 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
     tile.temporal.releaseAt ??
     tile.work.segments.find((segment) => segment.startAt)?.startAt ??
     null;
+  // Only render "unscheduled" when the lifecycle explicitly says the tile
+  // is READY and there is no temporal anchor.  When lifecycle is STARTED,
+  // DONE, or CLOSED, the absence of a temporal anchor is a data error, not
+  // an "unscheduled" state.
+  const showUnscheduledBadge = lifecycle === "ready" && startAt === null;
   const durationText = resolveDurationText(tile, locale);
   const startText = startAt ? formatFriendlyDateTime(startAt, locale, tile.temporal.tz) : "";
 
@@ -123,15 +128,15 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
         ) : null}
 
         {/* 開始/期限日時 */}
-        {startAt ? (
-          <div className="text-right min-w-[90px] whitespace-nowrap text-[11px] text-foreground-subtle">
-            {startText}
-          </div>
-        ) : (
+        {showUnscheduledBadge ? (
           <div className="text-right min-w-[90px] text-[11px] text-foreground-lighter italic">
             {t("tiles.unscheduled")}
           </div>
-        )}
+        ) : startAt ? (
+          <div className="text-right min-w-[90px] whitespace-nowrap text-[11px] text-foreground-subtle">
+            {startText}
+          </div>
+        ) : null}
       </div>
 
       {/* アクション */}

@@ -63,4 +63,5 @@ export const TILE_STATUS_COLORS = {
   ready: "text-foreground-muted",
   started: "text-success",
   done: "text-primary",
+  closed: "text-primary",
 } as const;

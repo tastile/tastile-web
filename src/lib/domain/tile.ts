@@ -2,7 +2,7 @@ import type { SegmentId, TileId } from "./ids";
 
 export type StartSource = "manual" | "auto" | "prompt" | "system";
 export type SegmentMode = "work" | "break";
-export type TileLifecycle = "ready" | "started" | "done";
+export type TileLifecycle = "ready" | "started" | "done" | "closed";
 export type ObjectiveMode = "finish_once" | "recurring" | "maximize_within_interval" | "label_only";
 export type DoneRule = "manual" | "time_reached" | "interval_end";
 export type SemanticRole = "work" | "break" | "label";
@@ -45,6 +45,13 @@ export interface TileCore {
   doneDefinition: string | null;
   startedAt: Date | null;
   completedAt: Date | null;
+  /**
+   * Authoritative lifecycle from the v1 read model. The mapper writes this
+   * directly from the numeric code; legacy code paths (mock tiles, QuickTile)
+   * still get the derived value from `completedAt` / `startedAt` via
+   * `getTileLifecycle`.
+   */
+  lifecycle?: TileLifecycle;
 }
 
 export interface Tile {
@@ -143,6 +150,7 @@ export const Tile = {
 };
 
 export function getTileLifecycle(tile: Tile): TileLifecycle {
+  if (tile.core.lifecycle) return tile.core.lifecycle;
   if (tile.core.completedAt) return "done";
   if (tile.core.startedAt) return "started";
   return "ready";
