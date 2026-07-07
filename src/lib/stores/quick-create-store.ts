@@ -175,13 +175,13 @@ export interface QuickCreateState {
    */
   loadFromRecurringTile: (tileId: string) => Promise<unknown | null>;
   /**
-   * Hydrate the form from a starter/placeholder Recurring template row
-   * (e.g. the proxy's `default-break-recurring` compat shim). This
-   * path NEVER calls /v1/tiles/{id}; the template id may not be a real
-   * UUIDv7. The panel opens in create mode (mode="create",
-   * editingId=null, submitBlocked=false) and seeds identity from the
-   * template's title/recurrence so Submit POSTs CREATE_TILE on a fresh
-   * server-assigned UUIDv7. See plan §B refinement for the split
+   * Hydrate the form from a starter Recurring template row produced
+   * by the proxy's `toRecurringTemplateList`. This path NEVER calls
+   * /v1/tiles/{template.id}; we treat the row as a seed and let
+   * Submit POST CREATE_TILE on a fresh server-assigned UUIDv7. The
+   * panel opens in create mode (mode="create", editingId=null,
+   * submitBlocked=false) and seeds identity from the template's
+   * title/note/recurrence. See plan §B refinement for the split
    * with `loadFromRecurringTile`.
    */
   loadFromTemplate: (template: RecurringTemplateShape) => void;

@@ -205,10 +205,9 @@ export function ScheduleMain() {
                 key={template.id}
                 type="button"
                 onClick={() => {
-                  // Starter template row: the template id may be a
-                  // non-UUIDv7 compat shim (e.g. `default-break-recurring`),
-                  // so we never call GET /v1/tiles/{id}. loadFromTemplate
-                  // seeds create-mode from the template's title/recurrence
+                  // Starter template row: we never call GET
+                  // /v1/tiles/{template.id} here. loadFromTemplate seeds
+                  // create-mode from the template's title/note/recurrence
                   // and Submit POSTs CREATE_TILE on a fresh server-assigned
                   // UUIDv7. See plan
                   // docs/plans/2026-07-04-tile-panel-create-flow.md §B.

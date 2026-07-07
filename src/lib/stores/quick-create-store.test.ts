@@ -213,11 +213,12 @@ describe("useQuickCreateStore", () => {
 
   describe("loadFromTemplate (TODO#2: starter templates, no GET)", () => {
     it("at_load_from_template_seeds_create_mode_without_calling_get", () => {
-      // Starter-template path: ScheduleMain passes a RecurringTemplate
-      // proxy row produced by `toRecurringTemplateList` in proxy
-      // route.ts. loadFromTemplate never calls /v1/tiles/{id}; it
-      // seeds create mode directly from the template object so Submit
-      // goes through CREATE_TILE without GET-error surface noise.
+      // Defensive regression: loadFromTemplate must accept arbitrary
+      // string ids and a non-default recurrence shape without calling
+      // /v1/tiles/{id} and without crashing on v0-vintage fixtures.
+      // (The proxy's `defaultBreakRecurringTemplate` shim was removed
+      // 2026-07-07; the literal id is retained here only as a
+      // recognised non-UUIDv7 sentinel.)
       const template = {
         id: "default-break-recurring",
         title: "休憩",
