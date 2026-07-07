@@ -157,19 +157,20 @@ describe("tile v1 commands", () => {
   });
 
   it("createRecurringCommand sends placeholder frame rule id and reads aggregateMeta.frameRuleId", async () => {
-    // 3 round trips: 1) create recurring tile 2) add frame rule 3) materialize
+    // 2 round trips: 1) create recurring tile (with frame_rule in body,
+    //    atomically) 2) materialize.  Plan 2026-07-07-v1-recurring-atomic-frame.md
+    //    collapses the prior 3-step flow so v1/10 §4 holds.
     mockFetch
       .mockResolvedValueOnce(
         okResponse({
           ...commandResponse,
           aggregate: { kind: 0, id: "recurring-1" },
-          aggregateMeta: { tileId: "tile-1", planId: "plan-1", recurringId: "recurring-1" },
-        }),
-      )
-      .mockResolvedValueOnce(
-        okResponse({
-          ...commandResponse,
-          aggregateMeta: { frameRuleId: "frame-rule-server-1" },
+          aggregateMeta: {
+            tileId: "tile-1",
+            planId: "plan-1",
+            recurringId: "recurring-1",
+            frameRuleId: "frame-rule-server-1",
+          },
         }),
       )
       .mockResolvedValueOnce(okResponse(commandResponse));
@@ -189,14 +190,17 @@ describe("tile v1 commands", () => {
       expect(res.frameRuleId).toBe("frame-rule-server-1");
     }
 
-    // Add-frame-rule payload must use a placeholder id, not a
-    // client-generated uuidv7.
-    const [, frameRuleInit] = mockFetch.mock.calls[1] as [string, RequestInit];
-    const frameRuleBody = JSON.parse(frameRuleInit.body as string);
-    expect(frameRuleBody.payload.rule.id).toBe("00000000-0000-0000-0000-000000000000");
+    // The single POST /v1/tiles must carry frame_rule with a placeholder
+    // id, not a client-generated uuidv7.  Server assigns the canonical id.
+    const [, tileInit] = mockFetch.mock.calls[0] as [string, RequestInit];
+    const tileBody = JSON.parse(tileInit.body as string);
+    expect(tileBody.payload.kind).toBe(0); // TileKind.RECURRING
+    expect(tileBody.payload.frame_rule.id).toBe(
+      "00000000-0000-0000-0000-000000000000",
+    );
 
     // Materialize call must use the server-assigned frame rule id.
-    const [materializeUrl, materializeInit] = mockFetch.mock.calls[2] as [string, RequestInit];
+    const [materializeUrl, materializeInit] = mockFetch.mock.calls[1] as [string, RequestInit];
     expect(materializeUrl).toBe(
       "/api/proxy/v1/recurring/recurring-1/frame-rules/frame-rule-server-1/materialize",
     );

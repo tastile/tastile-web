@@ -89,7 +89,7 @@ export type CreateRecurringResult =
       frameRuleId: string;
       materializedPlacementIds: string[];
     }
-  | { ok: false; error: ApiError; stage: "tile" | "frame_rule" | "materialize" };
+  | { ok: false; error: ApiError; stage: "tile" | "materialize" };
 
 function envelope<T>(payload: T): CommandRequest<T> {
   return {
@@ -277,7 +277,14 @@ export async function createRecurringCommand(
     };
   }
 
-  // 1) Create the Recurring tile (kind=0).
+  // 1) Create the Recurring tile + first FrameRule in ONE request.
+  // Plan 2026-07-07-v1-recurring-atomic-frame.md collapses the prior
+  // 3-step flow (tile → frame-rule → materialize) so v1/10 §4 holds —
+  // a single POST /v1/tiles produces both v1_recurring AND
+  // v1_recurring_frame_rule atomically, with no orphan window.
+  // The server assigns the frame_rule_id; we send a placeholder and
+  // read the canonical id back via aggregate_meta.
+  const stepMs = options.stepMs ?? 86_400_000;
   const tileRes = await sendCommand(
     options.client,
     "POST",
@@ -291,6 +298,14 @@ export async function createRecurringCommand(
       external_id: null,
       plan_role: options.planRole ?? PlanRole.EXECUTABLE,
       owner_subject_id: null,
+      frame_rule: {
+        id: "00000000-0000-0000-0000-000000000000",
+        active: null,
+        rank: 0,
+        generator: {
+          Step: { step: stepMs, origin: null, bounds: null },
+        },
+      },
     }),
   );
   if (!tileRes.ok) return { ...tileRes, stage: "tile" };
@@ -308,43 +323,21 @@ export async function createRecurringCommand(
     };
   }
 
-  // 2) Add a default Step FrameRule.  Per plan §C the server assigns
-  // the frame rule id; we send a placeholder id (server overrides it
-  // at INSERT time) and read the canonical id back via aggregate_meta.
-  const stepMs = options.stepMs ?? 86_400_000;
-  const ruleRes = await sendCommand(
-    options.client,
-    "POST",
-    `/v1/recurring/${tileId}/frame-rules`,
-    envelope({
-      recurring_id: tileId,
-      rule: {
-        id: "00000000-0000-0000-0000-000000000000",
-        active: null,
-        rank: 0,
-        generator: {
-          Step: { step: stepMs, origin: null, bounds: null },
-        },
-      },
-    }),
-  );
-  if (!ruleRes.ok) return { ...ruleRes, stage: "frame_rule" };
-
-  const assignedFrameRuleId = ruleRes.data.aggregateMeta?.frameRuleId;
+  const assignedFrameRuleId = tileRes.data.aggregateMeta?.frameRuleId;
   if (!assignedFrameRuleId) {
     return {
       ok: false,
       error: {
         kind: 7,
-        message: "add frame rule response missing aggregate_meta.frame_rule_id",
+        message: "create tile response missing aggregate_meta.frame_rule_id",
         currentRevision: null,
         violations: [],
       },
-      stage: "frame_rule",
+      stage: "tile",
     };
   }
 
-  // 3) Materialize occurrences.
+  // 2) Materialize occurrences.
   //
   //   - When `pattern` is provided, expand the first `occurrences`
   //     matching days into one materialize call each.  Each call uses
