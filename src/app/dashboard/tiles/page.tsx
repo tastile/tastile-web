@@ -275,7 +275,10 @@ function TilesPageInner() {
                     { value: "all", label: t("dashboard.tiles.filter.range.all") },
                     { value: "today", label: t("dashboard.tiles.filter.range.today") },
                     { value: "recent", label: t("dashboard.tiles.filter.range.recent") },
-                    { value: "exclude_future", label: t("dashboard.tiles.filter.range.excludeFuture") },
+                    {
+                      value: "exclude_future",
+                      label: t("dashboard.tiles.filter.range.excludeFuture"),
+                    },
                   ]}
                   className="min-w-[140px]"
                 />

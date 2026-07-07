@@ -1,16 +1,6 @@
 import { TileId } from "@/lib/domain/ids";
-import {
-  DONE_RULE,
-  OBJECTIVE_MODE,
-  TILE_LIFECYCLE,
-} from "@/lib/domain/tile-list-view-constants";
-import type {
-  DoneRule,
-  ObjectiveMode,
-  SemanticRole,
-  Tile,
-  TileLifecycle,
-} from "@/lib/domain/tile";
+import type { DoneRule, ObjectiveMode, SemanticRole, Tile, TileLifecycle } from "@/lib/domain/tile";
+import { DONE_RULE, OBJECTIVE_MODE, TILE_LIFECYCLE } from "@/lib/domain/tile-list-view-constants";
 import type { TileListView } from "@/lib/hooks/use-tile-list";
 
 const LIFECYCLE_BY_CODE: Record<number, TileLifecycle> = {

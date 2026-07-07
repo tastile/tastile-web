@@ -14,7 +14,6 @@ export const TILE_LIFECYCLE = {
   DONE: 2,
   CLOSED: 3,
 } as const;
-export type TileLifecycle = (typeof TILE_LIFECYCLE)[keyof typeof TILE_LIFECYCLE];
 
 /** TileListView.objective_mode (numeric code). */
 export const OBJECTIVE_MODE = {
@@ -23,7 +22,6 @@ export const OBJECTIVE_MODE = {
   MAXIMIZE_WITHIN_INTERVAL: 2,
   LABEL_ONLY: 3,
 } as const;
-export type ObjectiveMode = (typeof OBJECTIVE_MODE)[keyof typeof OBJECTIVE_MODE];
 
 /** TileListView.done_rule (numeric code; null when no done-rule applies). */
 export const DONE_RULE = {
@@ -31,4 +29,3 @@ export const DONE_RULE = {
   TIME_REACHED: 1,
   INTERVAL_END: 2,
 } as const;
-export type DoneRule = (typeof DONE_RULE)[keyof typeof DONE_RULE];

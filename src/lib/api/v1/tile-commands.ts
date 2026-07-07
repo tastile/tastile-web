@@ -1,6 +1,6 @@
 import { PlacementSource, PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
 import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/lib/domain/v1/envelope";
-import { type ApiClient, getRead, postCommand, type Result, sendCommand } from "./endpoints";
+import { type ApiClient, postCommand, type Result, sendCommand } from "./endpoints";
 
 type CommandResult = Result<import("@/lib/domain/v1/envelope").CommandResponse>;
 
@@ -670,49 +670,6 @@ export function closePlacementCommand(
     `/v1/placements/${options.placementId}/close`,
     envelope({ placement_id: options.placementId }),
   );
-}
-
-// ---------- read helpers ----------
-
-export interface ReadTileResult {
-  id: string;
-  planId: string | null;
-  title: string;
-  description: string | null;
-  color: string | null;
-  icon: string | null;
-}
-
-interface TileViewWire {
-  id?: string;
-  title?: string;
-  description?: string | null;
-  color?: string | null;
-  icon?: string | null;
-  planId?: string | null;
-  plan_id?: string | null;
-}
-
-export async function readTileCommand(
-  client: ApiClient,
-  tileId: string,
-): Promise<Result<ReadTileResult>> {
-  const res = await getRead<TileViewWire>(client, `/v1/tiles/${tileId}`);
-  if (!res.ok) return res;
-  const v = res.data;
-  const planId = v.planId ?? v.plan_id ?? null;
-  return {
-    ok: true,
-    status: res.status,
-    data: {
-      id: v.id ?? tileId,
-      planId,
-      title: v.title ?? "",
-      description: v.description ?? null,
-      color: v.color ?? null,
-      icon: v.icon ?? null,
-    },
-  };
 }
 
 // ---------- end-to-end manual placement create ----------

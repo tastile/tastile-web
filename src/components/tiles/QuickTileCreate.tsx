@@ -103,7 +103,11 @@ import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { defaultRecurrenceModel, useQuickCreateStore, type RecurrenceTemplateRecurrence } from "@/lib/stores/quick-create-store";
+import {
+  defaultRecurrenceModel,
+  type RecurrenceTemplateRecurrence,
+  useQuickCreateStore,
+} from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 const PRESET_COLORS = [
