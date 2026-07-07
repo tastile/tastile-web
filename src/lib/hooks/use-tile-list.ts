@@ -4,24 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 
 /**
- * Mirrors the OpenAPI TileView schema (snake_case).
- * Both /read/tiles and /views/tile-list return this shape.
+ * Mirrors the OpenAPI TileListView schema (snake_case).
+ * `/v1/tiles` returns this shape. Field types follow the v1 contract:
+ * `lifecycle` / `objective_mode` / `done_rule` are i16 numeric codes
+ * (see `../domain/tile-list-view-constants.ts`); `semantic_role` was
+ * removed in `d8eb116` (v1/10 §9 forbids the BREAK discriminator).
  */
 export interface TileListView {
   id: string;
   plan_id: string | null;
   title: string;
-  lifecycle: "ready" | "started" | "done" | "closed";
+  lifecycle: number;
   next_action: string | null;
   done_definition: string | null;
   worked_minutes: number;
   break_minutes: number;
-  semantic_role: "work" | "break" | "label";
   labels: string[];
-  objective_mode: "finish_once" | "recurring" | "maximize_within_interval" | "label_only";
+  objective_mode: number;
   target_work_min: number | null;
   target_rest_min: number | null;
-  done_rule: "manual" | "time_reached" | "interval_end" | null;
+  done_rule: number | null;
   resume_note: string | null;
   projected_next_start_at: string | null;
   temporal: {
@@ -57,6 +59,16 @@ interface HookState {
   nextActionableStartAt: string | null;
   loading: boolean;
   error: Error | null;
+}
+
+function isTileListResponse(value: unknown): value is {
+  tiles: TileListView[];
+  next_actionable_tile_id?: string | null;
+  next_actionable_start_at?: string | null;
+} {
+  if (!value || typeof value !== "object") return false;
+  const tiles = (value as { tiles?: unknown }).tiles;
+  return Array.isArray(tiles);
 }
 
 export function useTileList(args: UseTileListArgs = {}) {
@@ -96,8 +108,18 @@ export function useTileList(args: UseTileListArgs = {}) {
       });
       if (!mountedRef.current || requestId !== requestIdRef.current) return;
       if (res.ok) {
+        if (!isTileListResponse(res.data)) {
+          setState({
+            tiles: [],
+            nextActionableTileId: null,
+            nextActionableStartAt: null,
+            loading: false,
+            error: new Error("Unexpected /v1/tiles response shape: missing tiles array"),
+          });
+          return;
+        }
         setState({
-          tiles: res.data.tiles ?? [],
+          tiles: res.data.tiles,
           nextActionableTileId: res.data.next_actionable_tile_id ?? null,
           nextActionableStartAt: res.data.next_actionable_start_at ?? null,
           loading: false,
