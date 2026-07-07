@@ -97,10 +97,24 @@ function fromWireCommandResponse(raw: unknown): unknown {
         };
       })
     : r.pending;
+  const aggregateMetaRaw = r.aggregateMeta ?? r.aggregate_meta ?? null;
+  let aggregateMeta = aggregateMetaRaw;
+  if (aggregateMetaRaw && typeof aggregateMetaRaw === "object") {
+    const am = aggregateMetaRaw as Record<string, unknown>;
+    aggregateMeta = {
+      tileId: am.tileId ?? am.tile_id ?? null,
+      planId: am.planId ?? am.plan_id ?? null,
+      recurringId: am.recurringId ?? am.recurring_id ?? null,
+      frameRuleId: am.frameRuleId ?? am.frame_rule_id ?? null,
+      changesetId: am.changesetId ?? am.changeset_id ?? null,
+      changeIds: am.changeIds ?? am.change_ids ?? [],
+    };
+  }
   return {
     ...r,
     commandId: r.commandId ?? r.command_id,
     acceptedAt: r.acceptedAt ?? r.accepted_at,
+    aggregateMeta,
     pending,
   };
 }
