@@ -98,3 +98,32 @@ describe("getCoreClient", () => {
     expect(() => mod.getCoreClient()).not.toThrow();
   });
 });
+
+describe("avatar / owner endpoints", () => {
+  it("getOwnerProfile is public and points at the v1 owner profile path", async () => {
+    const { ENDPOINTS } = await import("./endpoints");
+    expect(ENDPOINTS.getOwnerProfile.method).toBe("GET");
+    expect(ENDPOINTS.getOwnerProfile.path).toBe("/v1/owners/{kind}/{id}/profile");
+    expect(ENDPOINTS.getOwnerProfile.auth).toBe(false);
+  });
+
+  it("patchOwnerProfile requires auth", async () => {
+    const { ENDPOINTS } = await import("./endpoints");
+    expect(ENDPOINTS.patchOwnerProfile.method).toBe("PATCH");
+    expect(ENDPOINTS.patchOwnerProfile.auth).toBe(true);
+  });
+
+  it("createAvatarUpload requires auth and exposes the create path", async () => {
+    const { ENDPOINTS } = await import("./endpoints");
+    expect(ENDPOINTS.createAvatarUpload.method).toBe("POST");
+    expect(ENDPOINTS.createAvatarUpload.path).toBe("/v1/uploads/avatar");
+    expect(ENDPOINTS.createAvatarUpload.auth).toBe(true);
+  });
+
+  it("commitAvatarUpload requires auth and uses {upload_id}", async () => {
+    const { ENDPOINTS } = await import("./endpoints");
+    expect(ENDPOINTS.commitAvatarUpload.method).toBe("POST");
+    expect(ENDPOINTS.commitAvatarUpload.path).toBe("/v1/uploads/avatar/{upload_id}/commit");
+    expect(ENDPOINTS.commitAvatarUpload.auth).toBe(true);
+  });
+});

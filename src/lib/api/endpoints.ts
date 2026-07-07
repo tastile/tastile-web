@@ -513,6 +513,45 @@ export const ENDPOINTS = {
     auth: true,
     keywords: ["workspace", "delete"],
   } as EndpointMeta,
+  // Owner profile (v1/15 §4 read-model fallback chain).
+  // GET is public so the unauthenticated probe + avatar fallback
+  // chain can render avatars without a bearer token; PATCH requires
+  // the caller to own the profile (enforced server-side).
+  getOwnerProfile: {
+    method: "GET",
+    path: "/v1/owners/{kind}/{id}/profile",
+    tag: "Read",
+    summary: "Get owner profile",
+    auth: false,
+    keywords: ["owner", "profile"],
+  } as EndpointMeta,
+  patchOwnerProfile: {
+    method: "PATCH",
+    path: "/v1/owners/{kind}/{id}/profile",
+    tag: "Commands",
+    summary: "Patch owner profile",
+    auth: true,
+    keywords: ["owner", "profile", "update"],
+  } as EndpointMeta,
+  // Avatar upload (v1/15 §3).  Both steps require auth: the client
+  // must prove it owns the target owner in create, and the commit
+  // path also enforces ownership via the HMAC claim_token + session.
+  createAvatarUpload: {
+    method: "POST",
+    path: "/v1/uploads/avatar",
+    tag: "Commands",
+    summary: "Create avatar upload (presigned PUT URL + claim)",
+    auth: true,
+    keywords: ["avatar", "upload", "presign"],
+  } as EndpointMeta,
+  commitAvatarUpload: {
+    method: "POST",
+    path: "/v1/uploads/avatar/{upload_id}/commit",
+    tag: "Commands",
+    summary: "Commit avatar upload",
+    auth: true,
+    keywords: ["avatar", "upload", "commit"],
+  } as EndpointMeta,
 } as const;
 
 export type EndpointKey = keyof typeof ENDPOINTS;
