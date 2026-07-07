@@ -67,7 +67,7 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
   const initialRef = useRef(initial ?? 56);
 
   const elRef = useRef<T | null>(null);
-  const [_attachedTick, setAttachedTick] = useState(0); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [_attachedTick, setAttachedTick] = useState(0);
 
   const ref: RefCallback<T> = useCallback((node) => {
     const prev = elRef.current;

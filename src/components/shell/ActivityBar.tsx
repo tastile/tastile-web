@@ -21,19 +21,23 @@ import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
   path: string;
-  label: string;
+  labelKey: string;
   Icon: LucideIcon;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: "/dashboard/calendar", label: "Timeline", Icon: CalendarDays },
-  { path: "/dashboard/tasks", label: "Tasks", Icon: CheckSquare },
-  { path: "/dashboard/projects", label: "Projects", Icon: Layers },
-  { path: "/dashboard/schedule", label: "Schedule", Icon: Repeat },
-  { path: "/dashboard/references", label: "References", Icon: Library },
+  { path: "/dashboard/calendar", labelKey: "nav.timeline", Icon: CalendarDays },
+  { path: "/dashboard/tasks", labelKey: "nav.tasks", Icon: CheckSquare },
+  { path: "/dashboard/projects", labelKey: "nav.projects", Icon: Layers },
+  { path: "/dashboard/schedule", labelKey: "nav.schedule", Icon: Repeat },
+  { path: "/dashboard/references", labelKey: "nav.references", Icon: Library },
 ];
 
-const PREF_ITEM: NavItem = { path: "/dashboard/preferences", label: "Preferences", Icon: Settings };
+const PREF_ITEM: NavItem = {
+  path: "/dashboard/preferences",
+  labelKey: "nav.preferences",
+  Icon: Settings,
+};
 
 export function ActivityBar() {
   const pathname = usePathname();
@@ -61,7 +65,7 @@ export function ActivityBar() {
       )}
     >
       <nav
-        aria-label="Activity bar"
+        aria-label={t("shell.activityBar.ariaLabel")}
         className={cn(
           "absolute inset-y-0 left-0 flex flex-col items-stretch bg-surface-0",
           "overflow-hidden",
@@ -85,13 +89,13 @@ export function ActivityBar() {
 
         {/* ナビゲーション項目 */}
         <div className="flex flex-1 flex-col gap-0.5 px-1 pt-2 overflow-hidden">
-          {NAV_ITEMS.map(({ path, label, Icon }) => {
+          {NAV_ITEMS.map(({ path, labelKey, Icon }) => {
             const active = pathname === path || pathname.startsWith(`${path}/`);
             return (
               <NavLink
                 key={path}
                 href={path}
-                label={label}
+                label={t(labelKey)}
                 Icon={Icon}
                 active={active}
                 expanded={expanded}
@@ -101,7 +105,7 @@ export function ActivityBar() {
           <div className="mx-2 my-2 h-px bg-border shrink-0" />
           <NavLink
             href={PREF_ITEM.path}
-            label={PREF_ITEM.label}
+            label={t(PREF_ITEM.labelKey)}
             Icon={PREF_ITEM.Icon}
             active={pathname?.startsWith("/dashboard/preferences")}
             expanded={expanded}
@@ -113,7 +117,7 @@ export function ActivityBar() {
           <button
             type="button"
             onClick={() => setDropdownOpen((v) => !v)}
-            aria-label="Sidebar control"
+            aria-label={t("shell.activityBar.sidebarControl")}
             aria-haspopup="true"
             aria-expanded={dropdownOpen}
             className={cn(
@@ -134,7 +138,7 @@ export function ActivityBar() {
                   : "opacity-0 -translate-x-2 pointer-events-none",
               )}
             >
-              Sidebar
+              {t("shell.activityBar.sidebar")}
             </span>
           </button>
 
@@ -156,16 +160,16 @@ export function ActivityBar() {
                 )}
               >
                 <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-                  Sidebar control
+                  {t("shell.activityBar.sidebarControl")}
                 </div>
                 <div className="mx-2 my-1 h-px bg-border" />
                 {(
                   [
-                    { value: "open", label: "Expanded" },
-                    { value: "closed", label: "Collapsed" },
-                    { value: "expandable", label: "Expand on hover" },
-                  ] as { value: SidebarBehavior; label: string }[]
-                ).map(({ value, label }) => (
+                    { value: "open", labelKey: "shell.activityBar.expanded" },
+                    { value: "closed", labelKey: "shell.activityBar.collapsed" },
+                    { value: "expandable", labelKey: "shell.activityBar.expandOnHover" },
+                  ] as { value: SidebarBehavior; labelKey: string }[]
+                ).map(({ value, labelKey }) => (
                   <button
                     key={value}
                     role="menuitemradio"
@@ -195,7 +199,7 @@ export function ActivityBar() {
                         <span className="h-1.5 w-1.5 rounded-full bg-primary-fg" />
                       )}
                     </span>
-                    {label}
+                    {t(labelKey)}
                   </button>
                 ))}
               </div>

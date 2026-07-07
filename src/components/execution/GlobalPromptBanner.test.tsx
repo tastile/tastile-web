@@ -131,7 +131,7 @@ describe("GlobalPromptBanner", () => {
 			screen.getByRole("button", { name: "tiles.actions.defer" }),
 		);
 		expect(onAction).not.toHaveBeenCalled();
-		fireEvent.click(screen.getByRole("button", { name: "30分" }));
+		fireEvent.click(screen.getByRole("button", { name: "execution.prompt.defer30" }));
 		expect(onAction).toHaveBeenCalledWith("defer_tile", { deferMinutes: 30 });
 	});
 
@@ -382,7 +382,7 @@ describe("GlobalPromptBanner", () => {
 			screen.getByRole("button", { name: "tiles.actions.defer" }),
 		);
 		expect(executeMock).toHaveBeenCalledTimes(0);
-		fireEvent.click(screen.getByRole("button", { name: "30分" }));
+		fireEvent.click(screen.getByRole("button", { name: "execution.prompt.defer30" }));
 		await waitFor(() => expect(executeMock).toHaveBeenCalledTimes(2));
 
 		const [firstCommand] = executeMock.mock.calls[0];

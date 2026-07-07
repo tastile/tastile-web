@@ -81,6 +81,7 @@ export default function TimelinePage() {
   return (
     <PageContainer>
       <PageHeader
+        sticky
         eyebrow={<span className="font-mono text-ink-3">views · timeline</span>}
         title="Timeline"
         description="A linear view of what the engine has planned, what's running, and what's already done. Resize by horizon — day, week, month, or a custom range."

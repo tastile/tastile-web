@@ -10,6 +10,11 @@ interface PageHeaderProps {
   actions?: ReactNode;
   meta?: ReactNode;
   className?: string;
+  // Stick the header to the top of the scrolling <main> container so it
+  // stays visible while the page body scrolls underneath. The negative
+  // margin / matching padding pair lets the solid background span the
+  // full width of PageContainer (which has px-4 / sm:px-6 / lg:px-8).
+  sticky?: boolean;
 }
 
 export function PageHeader({
@@ -19,12 +24,14 @@ export function PageHeader({
   actions,
   meta,
   className,
+  sticky = false,
 }: PageHeaderProps) {
   return (
     <header
       className={cn(
         "flex flex-col gap-4 border-b border-border pb-6",
         "sm:flex-row sm:items-end sm:justify-between",
+        sticky && "sticky top-0 z-20 bg-surface-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8",
         className,
       )}
     >

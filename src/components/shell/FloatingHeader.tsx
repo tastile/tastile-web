@@ -27,6 +27,7 @@ import {
   FloatingMenuTrigger,
 } from "@/components/ui/floating-menu";
 import { useActiveTile } from "@/lib/hooks/use-active-tile";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
 interface FloatingHeaderProps {
@@ -36,12 +37,12 @@ interface FloatingHeaderProps {
 }
 
 const NAV_ITEMS = [
-  { path: "/dashboard/calendar", label: "Timeline", Icon: CalendarDays },
-  { path: "/dashboard/tasks", label: "Tasks", Icon: CheckSquare },
-  { path: "/dashboard/projects", label: "Projects", Icon: Layers },
-  { path: "/dashboard/schedule", label: "Schedule", Icon: Repeat },
-  { path: "/dashboard/references", label: "References", Icon: Library },
-  { path: "/dashboard/preferences/general", label: "Preferences", Icon: Settings },
+  { path: "/dashboard/calendar", labelKey: "nav.timeline", Icon: CalendarDays },
+  { path: "/dashboard/tasks", labelKey: "nav.tasks", Icon: CheckSquare },
+  { path: "/dashboard/projects", labelKey: "nav.projects", Icon: Layers },
+  { path: "/dashboard/schedule", labelKey: "nav.schedule", Icon: Repeat },
+  { path: "/dashboard/references", labelKey: "nav.references", Icon: Library },
+  { path: "/dashboard/preferences/general", labelKey: "nav.preferences", Icon: Settings },
 ];
 
 export function FloatingHeader({
@@ -50,6 +51,7 @@ export function FloatingHeader({
   onOpenNotifications,
 }: FloatingHeaderProps) {
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { snapshot } = useActiveTile();
   const [nowMs, setNowMs] = useState(0);
@@ -75,7 +77,7 @@ export function FloatingHeader({
   const ss = (remainingSec % 60).toString().padStart(2, "0");
 
   const isWorking = snapshot?.is_working ?? false;
-  const status = isWorking ? "EXECUTING" : "IDLE";
+  const status = isWorking ? t("shell.floatingHeader.executing") : t("shell.floatingHeader.idle");
 
   return (
     <>
@@ -84,7 +86,7 @@ export function FloatingHeader({
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link
             href="/dashboard"
-            aria-label="tastile home"
+            aria-label={t("shell.floatingHeader.homeAria")}
             className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
           >
             <TastileLogo size={20} className="text-foreground" />
@@ -113,7 +115,7 @@ export function FloatingHeader({
                       ·
                     </span>
                     <span className="tabular-nums">
-                      {mm}:{ss} left
+                      {mm}:{ss} {t("shell.floatingHeader.left")}
                     </span>
                   </>
                 ) : null}
@@ -126,7 +128,7 @@ export function FloatingHeader({
         <div className="flex items-center gap-1 pr-3">
           <button
             type="button"
-            aria-label="Open search"
+            aria-label={t("shell.floatingHeader.openSearch")}
             onClick={onOpenSearch}
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
@@ -135,7 +137,7 @@ export function FloatingHeader({
 
           <button
             type="button"
-            aria-label="Open notifications"
+            aria-label={t("shell.floatingHeader.openNotifications")}
             onClick={onOpenNotifications}
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
@@ -146,7 +148,7 @@ export function FloatingHeader({
             <FloatingMenuTrigger asChild>
               <button
                 type="button"
-                aria-label="User menu"
+                aria-label={t("shell.floatingHeader.userMenu")}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-fg hover:bg-primary-hover ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {userName.charAt(0)}
@@ -157,7 +159,10 @@ export function FloatingHeader({
                 <div className="flex flex-col space-y-1">
                   <p className="text-sm font-medium leading-none text-foreground">{userName}</p>
                   <p className="text-xs leading-none text-foreground-muted">
-                    Status: {isWorking ? "Executing" : "Idle"}
+                    {t("shell.floatingHeader.statusLabel")}:{" "}
+                    {isWorking
+                      ? t("shell.floatingHeader.statusExecuting")
+                      : t("shell.floatingHeader.statusIdle")}
                   </p>
                 </div>
               </FloatingMenuLabel>
@@ -168,7 +173,7 @@ export function FloatingHeader({
                   className="w-full cursor-pointer flex items-center gap-2"
                 >
                   <User className="h-4 w-4 shrink-0" />
-                  Account Settings
+                  {t("shell.floatingHeader.accountSettings")}
                 </Link>
               </FloatingMenuItem>
               <FloatingMenuItem asChild>
@@ -177,13 +182,13 @@ export function FloatingHeader({
                   className="w-full cursor-pointer flex items-center gap-2"
                 >
                   <Settings className="h-4 w-4 shrink-0" />
-                  Preferences
+                  {t("nav.preferences")}
                 </Link>
               </FloatingMenuItem>
               <FloatingMenuSeparator />
               <FloatingMenuItem className="cursor-pointer flex items-center gap-2">
                 <LogOut className="h-4 w-4 shrink-0" />
-                Log out
+                {t("shell.floatingHeader.logOut")}
               </FloatingMenuItem>
             </FloatingMenuContent>
           </FloatingMenu>
@@ -191,7 +196,7 @@ export function FloatingHeader({
           {/* モバイルメニューボタン (md未満でのみ表示、右端) */}
           <button
             type="button"
-            aria-label="Open navigation menu"
+            aria-label={t("shell.floatingHeader.openNavMenu")}
             onClick={() => setMenuOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground md:hidden ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
@@ -200,7 +205,11 @@ export function FloatingHeader({
         </div>
       </header>
 
-      <BottomSheet open={menuOpen} onOpenChange={setMenuOpen} title="Menu">
+      <BottomSheet
+        open={menuOpen}
+        onOpenChange={setMenuOpen}
+        title={t("shell.floatingHeader.menu")}
+      >
         <div className="flex flex-col gap-4">
           {/* クイックアクション (Search / Notifications) */}
           <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
@@ -213,7 +222,7 @@ export function FloatingHeader({
               className="flex h-10 items-center justify-center gap-2 rounded-md bg-surface-2 text-sm font-medium text-foreground-subtle hover:bg-surface-hover hover:text-foreground transition-colors"
             >
               <Search className="h-4 w-4" />
-              <span>Search</span>
+              <span>{t("shell.floatingHeader.search")}</span>
             </button>
             <button
               type="button"
@@ -224,13 +233,13 @@ export function FloatingHeader({
               className="flex h-10 items-center justify-center gap-2 rounded-md bg-surface-2 text-sm font-medium text-foreground-subtle hover:bg-surface-hover hover:text-foreground transition-colors"
             >
               <Bell className="h-4 w-4" />
-              <span>Notifications</span>
+              <span>{t("shell.floatingHeader.notifications")}</span>
             </button>
           </div>
 
           {/* ナビゲーション項目 */}
           <nav className="flex flex-col gap-1">
-            {NAV_ITEMS.map(({ path, label, Icon }) => {
+            {NAV_ITEMS.map(({ path, labelKey, Icon }) => {
               const active = pathname === path || pathname.startsWith(`${path}/`);
               return (
                 <Link
@@ -245,7 +254,7 @@ export function FloatingHeader({
                   )}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{label}</span>
+                  <span>{t(labelKey)}</span>
                 </Link>
               );
             })}

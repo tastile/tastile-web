@@ -13,6 +13,7 @@ import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,7 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
   const closeQuickCreate = useQuickCreateStore((s) => s.close);
+  const { t } = useTranslation();
   // NOTE: do NOT subscribe to useSidePanelContent() here — that would
   // re-render this layout (and its children, including the page tree)
   // every time the side-panel content changes, which combines with the
@@ -91,7 +93,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <MobileSidePanelFab onClick={() => setMobileSidePanelOpen(true)} />
 
       {/* モバイル用サイドパネルドロワー */}
-      <BottomSheet open={mobileSidePanelOpen} onOpenChange={setMobileSidePanelOpen} title="Details">
+      <BottomSheet
+        open={mobileSidePanelOpen}
+        onOpenChange={setMobileSidePanelOpen}
+        title={t("dashboard.sidePanelDetailsTitle")}
+      >
         <div className="py-2">
           <MobileSidePanelContent />
         </div>
@@ -106,12 +112,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 // useSidePanel(); only these leaf components re-render in response.
 // ────────────────────────────────────────────────────────────────────
 function MobileSidePanelFab({ onClick }: { onClick: () => void }) {
+  const { t } = useTranslation();
   const hasContent = useSidePanelContent() != null;
   if (!hasContent) return null;
   return (
     <button
       type="button"
-      aria-label="Open side panel"
+      aria-label={t("dashboard.sidePanelOpenAria")}
       onClick={onClick}
       className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-hover transition-transform active:scale-95 md:hidden animate-in fade-in zoom-in duration-200"
     >

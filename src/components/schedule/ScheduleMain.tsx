@@ -205,8 +205,15 @@ export function ScheduleMain() {
                 key={template.id}
                 type="button"
                 onClick={() => {
-                  const { loadFromRecurringTile } = useQuickCreateStore.getState();
-                  void loadFromRecurringTile(template.id);
+                  // Starter template row: the template id may be a
+                  // non-UUIDv7 compat shim (e.g. `default-break-recurring`),
+                  // so we never call GET /v1/tiles/{id}. loadFromTemplate
+                  // seeds create-mode from the template's title/recurrence
+                  // and Submit POSTs CREATE_TILE on a fresh server-assigned
+                  // UUIDv7. See plan
+                  // docs/plans/2026-07-04-tile-panel-create-flow.md §B.
+                  const { loadFromTemplate } = useQuickCreateStore.getState();
+                  loadFromTemplate(template);
                 }}
                 className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
               >

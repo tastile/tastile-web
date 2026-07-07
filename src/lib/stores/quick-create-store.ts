@@ -15,6 +15,29 @@ import { PlanRole, RecurringState, TileKind, type TileKindValue } from "@/lib/do
 import type { FrameRule, Plan, Recurring } from "@/lib/domain/v1/tile";
 import type { DurationRange, Span, Window } from "@/lib/domain/v1/window";
 
+/**
+ * Structural shape of a starter template row's `recurrence` field as
+ * emitted by the proxy's `toRecurringTemplateList` / `defaultBreakRecurringTemplate`
+ * (open-struct, no `kind` discriminator on `generator`). The store only
+ * round-trips this through to the form as a seed — Submit reconstructs
+ * the v1 FrameRule body from form fields, so we do not constrain this
+ * to the strict `RecurrenceModel` discriminated union.
+ */
+export interface RecurrenceTemplateRecurrence {
+  generator: {
+    focus_block_based?: { phases: Array<{ focus_min: number; break_min: number }> };
+    step_min?: number;
+  };
+  window: {
+    weekday_mask: number;
+    start_offset_min: number;
+    end_offset_min: number;
+  };
+  selector: {
+    expression: unknown | null;
+  };
+}
+
 // ---------- slice types ----------
 
 export interface TileIdentitySlice {
@@ -51,6 +74,21 @@ export interface MetaSlice {
 
 export type QuickCreateMode = "create" | "edit";
 
+/**
+ * Shape of a starter Recurring template row as produced by the proxy's
+ * `toRecurringTemplateList` (see `proxy/[...path]/route.ts`). The id
+ * MAY be a non-UUIDv7 compat placeholder (e.g.
+ * `default-break-recurring`); the panel MUST NOT use it as a server
+ * round-trip target. Only the title / note / recurrence are load-bearing
+ * for create-from-template flows.
+ */
+export interface RecurringTemplateShape {
+  id: string;
+  title: string;
+  note: string;
+  recurrence: RecurrenceTemplateRecurrence;
+}
+
 export interface QuickCreateState {
   // Backwards-compat open/close surface retained so existing consumers
   // (QuickTileCreate, layout clients, ActivityBar, etc.) keep compiling.
@@ -75,6 +113,17 @@ export interface QuickCreateState {
    */
   loadError: string | null;
   /**
+   * When true, QuickTileCreate's Submit is gated so the user cannot
+   * fire an UPDATE_TILE / UPDATE_PLACEMENT against a tile whose
+   * current state we could not confirm. Set by
+   * `loadFromRecurringTile` when `/v1/tiles/{id}` returns a non-OK
+   * response, because we may be looking at a stale or phantom tile
+   * and Submit must not silently PATCH a record that does not exist
+   * (see plan docs/plans/2026-07-04-tile-panel-create-flow.md §B
+   * refinement). Cleared on the next successful load or by `reset`.
+   */
+  submitBlocked: boolean;
+  /**
    * When opening create, the panel uses this as the initial allDay
    * toggle. The slot-click flow sets this to false so the user sees
    * the slot time; the sidebar + button leaves it at true.
@@ -91,7 +140,7 @@ export interface QuickCreateState {
   time: TimeSlice;
   windows: Window[];
   recurring: RecurringSlice;
-  recurrence: RecurrenceModel | null;
+  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
   advanced: AdvancedSlice;
   meta: MetaSlice;
 
@@ -107,16 +156,31 @@ export interface QuickCreateState {
   loadFromEvent: (event: import("@/lib/domain/calendar").CalendarEvent) => void;
   /**
    * Hydrate the form from an existing recurring Tile so the panel can be
-   * reused for editing. Opens the panel FIRST (mode="edit", editingId=tileId,
-   * loadError=null) so the user always sees visual feedback, then fetches
-   * the full v7 Tile via getTile(id) and maps the relevant condition
-   * layers (core → identity, temporal → time, annotation → meta,
-   * objective.recurrence → recurrence) into the store. On fetch failure,
-   * surfaces a `loadError` string the panel renders as a banner so the
-   * user understands why the form is empty; edits still save against the
-   * given tileId. Returns the fetched Tile on success or null on error.
+   * reused for editing. Opens the panel FIRST in edit mode
+   * (mode="edit", editingId=tileId, submitBlocked=false, loadError=null)
+   * so the user always sees visual feedback, then fetches the full v1
+   * Tile via getTile(id) and maps the v1 read view into the store.
+   * On success: `submitBlocked` stays false and Submit goes through
+   * UPDATE_TILE/UPDATE_PLACEMENT. On failure: `submitBlocked` is set
+   * true and `loadError` is set; the panel stays in edit mode with
+   * editingId preserved so the user sees what they intended, but
+   * QuickTileCreate gates Submit until a retry succeeds or the
+   * panel is closed (see plan
+   * docs/plans/2026-07-04-tile-panel-create-flow.md §B refinement).
+   * Returns the fetched Tile on success or null on error.
    */
   loadFromRecurringTile: (tileId: string) => Promise<unknown | null>;
+  /**
+   * Hydrate the form from a starter/placeholder Recurring template row
+   * (e.g. the proxy's `default-break-recurring` compat shim). This
+   * path NEVER calls /v1/tiles/{id}; the template id may not be a real
+   * UUIDv7. The panel opens in create mode (mode="create",
+   * editingId=null, submitBlocked=false) and seeds identity from the
+   * template's title/recurrence so Submit POSTs CREATE_TILE on a fresh
+   * server-assigned UUIDv7. See plan §B refinement for the split
+   * with `loadFromRecurringTile`.
+   */
+  loadFromTemplate: (template: RecurringTemplateShape) => void;
   reset: () => void;
 }
 
@@ -286,6 +350,7 @@ export function buildDefaultQuickCreateState(): Pick<
   | "editingId"
   | "editingTileId"
   | "loadError"
+  | "submitBlocked"
   | "initialAllDay"
   | "identity"
   | "plan"
@@ -302,6 +367,7 @@ export function buildDefaultQuickCreateState(): Pick<
     editingId: null,
     editingTileId: null,
     loadError: null,
+    submitBlocked: false,
     initialAllDay: true,
     identity: defaultIdentity(),
     plan: defaultPlan(),
@@ -390,20 +456,25 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       },
     })),
   loadFromRecurringTile: async (tileId: string) => {
-    // Open the panel FIRST so the user always sees visual feedback —
-    // a silent no-op when the GET fails is the worst UX for an edit
-    // flow. We seed defaults, mark the panel as editing this id, and
-    // clear any previous load error. The actual hydration happens after.
+    // Edit-existing path: caller has a real tileId from a placement or
+    // event (CalendarMain, TasksMain). The panel opens in edit mode
+    // immediately so the user sees visual feedback; the GET to
+    // /v1/tiles/{tileId} is advisory and hydrates the form on
+    // success. Per plan §B refinement, on failure we BLOCK Submit
+    // (submitBlocked=true) instead of silently falling back to
+    // CREATE_TILE — we cannot confirm the tile still exists, so
+    // UPDATE_TILE on a phantom id would be a silent data loss
+    // hazard. Caller retries or closes the panel.
     set({
       isOpen: true,
       mode: "edit" as const,
       editingId: tileId,
       editingTileId: tileId,
       loadError: null,
-      // Default to RECURRING (kind=0) so the radio lands on 定期 even
-      // when the GET fails — the caller knows this is a recurring tile
-      // (ScheduleMain passes template.id from the Recurring Templates
-      // list). Hydration below may override based on the fetched tile.
+      submitBlocked: false,
+      // Default to RECURRING (kind=0) so the radio lands on 定期 until
+      // hydration overrides it; the caller told us this is a recurring
+      // tile.
       identity: {
         ...defaultIdentity(),
         kind: TileKind.RECURRING,
@@ -426,8 +497,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         const detail = !res.ok
           ? `status=${res.error.kind} ${res.error.message ?? ""}`.trim()
           : "empty response";
+        // Panel stays in edit mode + editingId preserved; Submit is
+        // gated by submitBlocked until retry succeeds.
         set({
-          loadError: `Failed to load recurring tile ${tileId} (${detail}). The panel is open in edit mode with default values; edits will be saved to ${tileId}.`,
+          submitBlocked: true,
+          loadError: `Failed to load recurring tile ${tileId} (${detail}). Submit is blocked until the tile is re-fetchable; reload or close the panel.`,
         });
         return null;
       }
@@ -450,7 +524,10 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         tile.kind === TileKind.PLACEMENT || tile.kind === TileKind.EXECUTION
           ? tile.kind
           : TileKind.RECURRING;
+      // Hydration succeeded — confirm Submit is unblocked and seed the
+      // form from the fetched view.
       set({
+        submitBlocked: false,
         identity: {
           kind: incomingKind,
           title: tile.title ?? "",
@@ -472,10 +549,37 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       return tile;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
+      // Same BLOCK-save semantics as the non-OK branch above.
       set({
-        loadError: `Failed to load recurring tile ${tileId}: ${msg}. The panel is open in edit mode with default values.`,
+        submitBlocked: true,
+        loadError: `Failed to load recurring tile ${tileId}: ${msg}. Submit is blocked until the tile is re-fetchable; reload or close the panel.`,
       });
       return null;
     }
+  },
+  loadFromTemplate: (template) => {
+    // Starter-template path: caller (ScheduleMain) passes a Recurring
+    // template row whose id may be a non-UUIDv7 compat placeholder. We
+    // never call /v1/tiles/{template.id}; we just seed create mode from
+    // the template's title/recurrence so Submit POSTs CREATE_TILE on a
+    // fresh server-assigned UUIDv7.
+    set({
+      isOpen: true,
+      mode: "create" as const,
+      editingId: null,
+      editingTileId: null,
+      loadError: null,
+      submitBlocked: false,
+      identity: {
+        ...defaultIdentity(),
+        kind: TileKind.RECURRING,
+        title: template.title,
+        description: template.note?.trim() ? template.note : null,
+        visual: { color: "#5e6ad2", icon: "Repeat" },
+      },
+      time: defaultTime(),
+      meta: defaultMeta(),
+      recurrence: template.recurrence,
+    });
   },
 }));

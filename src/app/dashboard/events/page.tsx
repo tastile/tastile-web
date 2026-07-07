@@ -16,6 +16,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/Empty";
 import { Pill } from "@/components/ui/StatusDot";
@@ -141,17 +142,13 @@ export default function EventsPage() {
         </div>
         <div className="flex items-center gap-1.5">
           <Filter className="h-3.5 w-3.5 text-ink-3" />
-          <select
+          <Dropdown
             value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-9 rounded-md border border-border bg-surface-1 px-2 text-sm text-ink-1 outline-none focus:border-accent focus:ring-2 focus:ring-focus"
-          >
-            {types.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => setTypeFilter(val)}
+            size="medium"
+            items={types.map((t) => ({ value: t, label: t }))}
+            className="min-w-[120px]"
+          />
         </div>
       </div>
 

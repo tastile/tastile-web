@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Dropdown } from "@/components/ui/Dropdown";
 
 interface TimelineItem {
   id: string;
@@ -122,14 +123,16 @@ export function TimelineAxis({
       >
         {!compact ? (
           <div className="mb-2 flex items-center gap-2">
-            <select
+            <Dropdown
               value={scope}
-              onChange={(e) => setScope(e.target.value as "day" | "around-now")}
-              className="rounded-md bg-surface-0 px-2 py-1 text-xs text-foreground"
-            >
-              <option value="day">24h</option>
-              <option value="around-now">Now ±12h</option>
-            </select>
+              onChange={(val) => setScope(val as "day" | "around-now")}
+              size="tiny"
+              items={[
+                { value: "day", label: "24h" },
+                { value: "around-now", label: "Now ±12h" },
+              ]}
+              className="w-28"
+            />
             <input
               aria-label="timeline-zoom"
               type="range"

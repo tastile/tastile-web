@@ -5,6 +5,7 @@ import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { Actor } from "@/lib/domain/actor";
 import type { PhaseKind } from "@/lib/domain/execution";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 // TODO(new-shell): wire to new component
 
@@ -28,6 +29,7 @@ export function ActiveExecutionBar({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [requestPromptPending, setRequestPromptPending] = useState(false);
   const { state, execute } = useExecutionEngineContext();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -50,7 +52,9 @@ export function ActiveExecutionBar({
             <span className="text-2xl font-mono font-semibold tabular-nums text-foreground shrink-0">
               {fallbackLabel}
             </span>
-            <span className="truncate text-xs text-foreground-muted">未実行</span>
+            <span className="truncate text-xs text-foreground-muted">
+              {t("execution.notStartedLabel")}
+            </span>
           </div>
         );
       }
@@ -72,7 +76,9 @@ export function ActiveExecutionBar({
           <span className="text-2xl font-mono font-semibold tabular-nums text-foreground shrink-0">
             {runningLabel}
           </span>
-          <span className="truncate text-xs text-foreground-muted">実行中 {activeTileTitle}</span>
+          <span className="truncate text-xs text-foreground-muted">
+            {t("execution.runningLabel")} {activeTileTitle}
+          </span>
         </div>
       );
     }
@@ -80,7 +86,7 @@ export function ActiveExecutionBar({
       <div className="flex w-full min-w-0 max-w-2xl items-center gap-4 py-4">
         <TileStatusIcon lifecycle="started" size={20} className="shrink-0" />
         <span className="min-w-0 flex-1 truncate text-base font-semibold text-foreground">
-          実行中: {activeTileTitle}
+          {t("execution.runningLabel")}: {activeTileTitle}
         </span>
         <span className="text-3xl font-mono font-semibold tabular-nums text-foreground shrink-0">
           {runningLabel}
@@ -102,7 +108,9 @@ export function ActiveExecutionBar({
           <span className="text-2xl font-mono font-semibold tabular-nums text-foreground shrink-0">
             {fallbackLabel}
           </span>
-          <span className="truncate text-xs text-foreground-muted">未実行</span>
+          <span className="truncate text-xs text-foreground-muted">
+            {t("execution.notStartedLabel")}
+          </span>
         </div>
       );
     }
@@ -115,14 +123,15 @@ export function ActiveExecutionBar({
     );
   }
 
-  const phaseLabel = phaseKind === "break" ? "休憩中" : "実行中";
+  const phaseLabel =
+    phaseKind === "break" ? t("execution.breakLabel") : t("execution.runningLabel");
   const canRequestPrompt = Boolean(state.execution.activeTileId) && !state.execution.pendingPrompt;
 
   if (mode === "header-left") {
     return (
       <div className="flex min-w-0 items-center gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted shrink-0">
-          残り
+          {t("execution.remainingLabel")}
         </span>
         <span className="text-2xl font-mono font-semibold tabular-nums text-foreground shrink-0">
           {metrics.countdownLabel}

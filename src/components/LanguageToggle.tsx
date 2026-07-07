@@ -1,8 +1,10 @@
 "use client";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { useLocaleStore } from "@/lib/stores/locale-store";
 
 export function LanguageToggle() {
   const { locale, setLocale } = useLocaleStore();
+  const { t } = useTranslation();
 
   const toggle = () => {
     const next = locale === "ja" ? "en" : "ja";
@@ -17,7 +19,9 @@ export function LanguageToggle() {
       type="button"
       onClick={toggle}
       className="rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground transition-colors"
-      title={locale === "ja" ? "Switch to English" : "日本語に切替"}
+      title={
+        locale === "ja" ? t("languageToggle.switchToEnglish") : t("languageToggle.switchToJapanese")
+      }
     >
       {locale === "ja" ? "EN" : "JA"}
     </button>

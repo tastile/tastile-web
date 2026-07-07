@@ -57,6 +57,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { Dropdown } from "@/components/ui/Dropdown";
 import {
   FormDivider,
   FormPanel,
@@ -102,7 +103,7 @@ import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { defaultRecurrenceModel, useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { defaultRecurrenceModel, useQuickCreateStore, type RecurrenceTemplateRecurrence } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 const PRESET_COLORS = [
@@ -218,10 +219,11 @@ function formatDisplayDate(
   iso: string | null | undefined,
   allDay: boolean,
   locale: "ja" | "en",
+  t: (key: string) => string,
 ): string {
-  if (!iso) return locale === "ja" ? "未設定" : "Not set";
+  if (!iso) return t("tiles.notSet");
   const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return locale === "ja" ? "未設定" : "Not set";
+  if (Number.isNaN(date.getTime())) return t("tiles.notSet");
 
   const weekdaysJa = ["日", "月", "火", "水", "木", "金", "土"];
   const weekdaysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -325,6 +327,7 @@ export function QuickTileCreate() {
   const editingId = useQuickCreateStore((s) => s.editingId);
   const editingTileId = useQuickCreateStore((s) => s.editingTileId);
   const loadError = useQuickCreateStore((s) => s.loadError);
+  const submitBlocked = useQuickCreateStore((s) => s.submitBlocked);
 
   const identity = useQuickCreateStore((s) => s.identity);
   const plan = useQuickCreateStore((s) => s.plan);
@@ -478,7 +481,7 @@ export function QuickTileCreate() {
     time.durationMinMax.minMs === null ||
     time.durationMinMax.maxMs === null ||
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
-  const canSubmit = titleOk && spanOrderValid && durationValid;
+  const canSubmit = titleOk && spanOrderValid && durationValid && !submitBlocked;
 
   // --- completion root summary ----------------------------------------------
   // Recursively count child nodes so the main panel can show a compact
@@ -869,7 +872,7 @@ export function QuickTileCreate() {
             type="button"
             onClick={close}
             className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
-            aria-label={locale === "ja" ? "パネルを閉じる" : "Close panel"}
+            aria-label={t("tiles.closePanel")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -1323,25 +1326,27 @@ export function QuickTileCreate() {
               data-open={String(projectSuggest)}
             >
               <FormRow icon={null}>
-                <select
+                <Dropdown
                   value={meta.ownerSubjectId ?? ""}
-                  onFocus={() => setProjectSuggest(true)}
-                  onBlur={() => setTimeout(() => setProjectSuggest(false), 150)}
-                  onChange={(e) => {
-                    const v = e.target.value;
+                  onChange={(v) => {
                     setField("meta.ownerSubjectId", v ? v : null);
                   }}
+                  onOpenChange={(open) => {
+                    if (open) setProjectSuggest(true);
+                    else setTimeout(() => setProjectSuggest(false), 150);
+                  }}
+                  size="small"
                   aria-label={t("quickCreate.projectPlaceholder")}
                   data-testid="owner-select"
-                  className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
-                >
-                  <option value="">Personal (default)</option>
-                  {projects.workspaces.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.display_name}
-                    </option>
-                  ))}
-                </select>
+                  items={[
+                    { value: "", label: "Personal (default)" },
+                    ...projects.workspaces.map((w) => ({
+                      value: w.id,
+                      label: w.display_name,
+                    })),
+                  ]}
+                  className="w-full"
+                />
               </FormRow>
             </div>
             <div className="relative" data-testid="tag-suggest-row" data-open={String(tagSuggest)}>
@@ -1514,7 +1519,7 @@ export function QuickTileCreate() {
                 data-testid="quick-create-submit"
                 onClick={handleSubmit}
                 loading={submitting}
-                disabled={submitting || !canSubmit || !titleOk || !spanOrderValid}
+                disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
                 className="h-10"
               >
                 {submitting ? t("quickCreate.saving") : t("quickCreate.save")}
@@ -1529,7 +1534,7 @@ export function QuickTileCreate() {
               data-testid="quick-create-submit"
               onClick={handleSubmit}
               loading={submitting}
-              disabled={submitting || !canSubmit || !titleOk || !spanOrderValid}
+              disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
               className="h-10"
             >
               {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
@@ -1994,23 +1999,23 @@ export function QuickTileCreate() {
         <FormPanel>
           <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
           <FormRow icon={null}>
-            <select
+            <Dropdown
               value={meta.ownerSubjectId ?? ""}
-              onChange={(e) => {
-                const v = e.target.value;
+              onChange={(v) => {
                 setField("meta.ownerSubjectId", v ? v : null);
               }}
+              size="small"
               aria-label={t("quickCreate.projectPlaceholder")}
               data-testid="owner-select-detail"
-              className="w-full bg-transparent text-sm text-foreground focus:outline-hidden"
-            >
-              <option value="">Personal (default)</option>
-              {projects.workspaces.map((w) => (
-                <option key={w.id} value={w.id}>
-                  {w.display_name}
-                </option>
-              ))}
-            </select>
+              items={[
+                { value: "", label: "Personal (default)" },
+                ...projects.workspaces.map((w) => ({
+                  value: w.id,
+                  label: w.display_name,
+                })),
+              ]}
+              className="w-full"
+            />
           </FormRow>
           <FormRow icon={null}>
             <div className="flex w-full flex-wrap items-center gap-1.5">
@@ -2720,12 +2725,12 @@ function ScheduleRow({
           onClick={() => startInputRef.current?.showPicker()}
           className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
-          {formatDisplayDate(spanStart, allDay, locale)}
+          {formatDisplayDate(spanStart, allDay, locale, t)}
         </button>
         <input
           ref={startInputRef}
           type={allDay ? "date" : "datetime-local"}
-          aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? (allDay ? "日付" : "日時") : allDay ? "date" : "datetime"})`}
+          aria-label={`${t("quickCreate.startAt")} (${allDay ? t("tiles.inputDate") : t("tiles.inputDatetime")})`}
           value={allDay ? isoToLocalDate(spanStart) : isoToLocalDateTime(spanStart)}
           onChange={(e) => onStartChange(e.target.value)}
           className="sr-only"
@@ -2742,12 +2747,12 @@ function ScheduleRow({
           onClick={() => endInputRef.current?.showPicker()}
           className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
-          {formatDisplayDate(spanEnd, allDay, locale)}
+          {formatDisplayDate(spanEnd, allDay, locale, t)}
         </button>
         <input
           ref={endInputRef}
           type={allDay ? "date" : "datetime-local"}
-          aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? (allDay ? "日付" : "日時") : allDay ? "date" : "datetime"})`}
+          aria-label={`${t("quickCreate.endAt")} (${allDay ? t("tiles.inputDate") : t("tiles.inputDatetime")})`}
           value={allDay ? isoToLocalDate(spanEnd) : isoToLocalDateTime(spanEnd)}
           onChange={(e) => onEndChange(e.target.value)}
           className="sr-only"
@@ -2790,12 +2795,51 @@ function DurationRow({
   );
 }
 
+/**
+ * Normalize the wider `RecurrenceTemplateRecurrence` shape (open-struct,
+ * no `kind` discriminator on `generator`) into the strict
+ * `RecurrenceModel` discriminated union that the editors operate on.
+ * Called once at the top of each editor after the null check, so the
+ * internal logic can keep reading strict fields. Returns a fresh
+ * `RecurrenceModel` every time to keep the input source immutable for
+ * downstream `onChange({ ...recurrence, ... })` spreads.
+ */
+function coerceRecurrenceModel(
+  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence,
+): RecurrenceModel {
+  const window = {
+    weekday_mask: recurrence.window.weekday_mask,
+    start_offset_min: recurrence.window.start_offset_min,
+    end_offset_min: recurrence.window.end_offset_min,
+    exclusions: "exclusions" in recurrence.window ? recurrence.window.exclusions : [],
+  };
+  const g = recurrence.generator as Record<string, unknown>;
+  let generator: RecurrenceModel["generator"];
+  if (g.kind === "focus_block_based" && Array.isArray(g.phases)) {
+    generator = {
+      kind: "focus_block_based",
+      phases: g.phases as Array<{ focus_min: number; break_min: number }>,
+    };
+  } else {
+    generator = {
+      kind: "time_based",
+      step_min: typeof g.step_min === "number" ? g.step_min : 1440,
+      anchor_epoch_min: typeof g.anchor_epoch_min === "number" ? g.anchor_epoch_min : null,
+    };
+  }
+  return {
+    generator,
+    window,
+    selector: { expression: recurrence.selector.expression },
+  };
+}
+
 function GeneratorEditor({
   recurrence,
   onChange,
   t,
 }: {
-  recurrence: RecurrenceModel | null;
+  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
   onChange: (next: RecurrenceModel) => void;
   t: (key: string) => string;
 }) {
@@ -2815,11 +2859,12 @@ function GeneratorEditor({
       </FormRow>
     );
   }
-  const generator = recurrence.generator;
+  const recurrenceModel = coerceRecurrenceModel(recurrence);
+  const generator = recurrenceModel.generator;
   const updateGenerator = (
     updater: (current: RecurrenceModel["generator"]) => RecurrenceModel["generator"],
   ) => {
-    onChange({ ...recurrence, generator: updater(generator) });
+    onChange({ ...recurrenceModel, generator: updater(generator) });
   };
   return (
     <>
@@ -2982,7 +3027,7 @@ function WindowEditor({
   t,
   locale,
 }: {
-  recurrence: RecurrenceModel | null;
+  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
   onChange: (next: RecurrenceModel) => void;
   t: (key: string) => string;
   locale: "ja" | "en";
@@ -3003,11 +3048,16 @@ function WindowEditor({
       </FormRow>
     );
   }
-  const weekdayLabels = ["日", "月", "火", "水", "木", "金", "土"];
+  const weekdayLabels = Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 7 + i).toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", {
+      weekday: "short",
+    }),
+  );
+  const recurrenceModel = coerceRecurrenceModel(recurrence);
   const updateWindow = (
     updater: (current: RecurrenceModel["window"]) => RecurrenceModel["window"],
   ) => {
-    onChange({ ...recurrence, window: updater(recurrence.window) });
+    onChange({ ...recurrenceModel, window: updater(recurrenceModel.window) });
   };
   const toggleDay = (bit: number) => {
     updateWindow((current) => ({
@@ -3039,7 +3089,7 @@ function WindowEditor({
               type="button"
               role="switch"
               aria-checked={active}
-              aria-label={locale === "ja" ? `曜日 ${label}` : `Weekday ${label}`}
+              aria-label={`${t("tiles.weekdayAriaPrefix")} ${label}`}
               onClick={() => toggleDay(bit)}
               className={cn(
                 "flex h-8 w-9 items-center justify-center rounded-md border text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",

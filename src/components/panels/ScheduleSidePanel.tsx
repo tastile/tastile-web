@@ -1,13 +1,14 @@
 "use client";
 
+import { Clock, RefreshCw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useTransition } from "react";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { cn } from "@/lib/utils/cn";
 
 const SCHEDULE_VIEWS = [
-  { id: "recurring", label: "Recurring Tiles" },
-  { id: "upcoming", label: "Upcoming Deadlines" },
+  { id: "recurring", label: "Recurring Tiles", icon: RefreshCw },
+  { id: "upcoming", label: "Upcoming Deadlines", icon: Clock },
 ];
 
 export function ScheduleSidePanel() {
@@ -43,12 +44,13 @@ export function ScheduleSidePanel() {
               type="button"
               onClick={() => handleSelect(v.id)}
               className={cn(
-                "w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+                "flex h-8 items-center gap-2 rounded-md px-2 text-sm transition-colors",
                 currentView === v.id
                   ? "bg-surface-elevated font-medium text-foreground"
                   : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
               )}
             >
+              <v.icon className="h-4 w-4 shrink-0" />
               {v.label}
             </button>
           ))}

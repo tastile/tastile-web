@@ -8,6 +8,7 @@ import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 export type TabId = "profile" | "subscription" | "tokens";
 
@@ -34,6 +35,7 @@ export default function AccountPage() {
 }
 
 function AccountPageInner() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const activeTab = (searchParams.get("tab") as TabId) || "profile";
 
@@ -54,7 +56,7 @@ function AccountPageInner() {
     if (!response.ok) {
       setNotice({
         tone: "error",
-        text: "アカウント情報を読み込めませんでした。再ログインしてください。",
+        text: t("preferences.account.notice.loadFailed"),
       });
       setLoading(false);
       return;
@@ -88,13 +90,13 @@ function AccountPageInner() {
     if (!response.ok) {
       setNotice({
         tone: "error",
-        text: "メールアドレス変更コードを送信できませんでした。",
+        text: t("preferences.account.notice.emailStartFailed"),
       });
       return;
     }
     setNotice({
       tone: "success",
-      text: "新しいメールアドレスに確認コードを送信しました。",
+      text: t("preferences.account.notice.emailStartSent"),
     });
   }
 
@@ -111,27 +113,27 @@ function AccountPageInner() {
     if (!response.ok) {
       setNotice({
         tone: "error",
-        text: "確認コードを検証できませんでした。コードを確認してください。",
+        text: t("preferences.account.notice.emailVerifyFailed"),
       });
       return;
     }
     setVerificationCode("");
-    setNotice({ tone: "success", text: "メールアドレスを更新しました。" });
+    setNotice({ tone: "success", text: t("preferences.account.notice.emailUpdated") });
     await loadProfile();
   }
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
-      <h1 className="text-2xl font-normal text-foreground">Account Settings</h1>
+      <h1 className="text-2xl font-normal text-foreground">{t("preferences.account.title")}</h1>
 
       <div className="max-w-4xl">
         {activeTab === "profile" && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Profile Information</h2>
-              <p className="mt-1 text-foreground-muted">
-                メールアドレスとログイン方法を管理します。
-              </p>
+              <h2 className="text-xl font-semibold text-foreground">
+                {t("preferences.account.profileHeading")}
+              </h2>
+              <p className="mt-1 text-foreground-muted">{t("preferences.account.profileGuide")}</p>
             </div>
 
             {notice && (
@@ -150,7 +152,9 @@ function AccountPageInner() {
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <UserRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
-                  <h3 className="font-semibold text-foreground">アカウント</h3>
+                  <h3 className="font-semibold text-foreground">
+                    {t("preferences.account.accountHeading")}
+                  </h3>
                 </div>
                 <button
                   type="button"
@@ -158,26 +162,30 @@ function AccountPageInner() {
                   className="inline-flex items-center gap-2 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-foreground"
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                  更新
+                  {t("preferences.account.refresh")}
                 </button>
               </div>
 
               {loading ? (
-                <p className="text-sm text-foreground-subtle">読み込み中...</p>
+                <p className="text-sm text-foreground-subtle">{t("preferences.account.loading")}</p>
               ) : (
                 <dl className="grid gap-4 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-foreground-subtle">メールアドレス</dt>
+                    <dt className="text-foreground-subtle">{t("preferences.account.email")}</dt>
                     <dd className="mt-1 font-medium text-foreground">{profile?.email ?? "-"}</dd>
                   </div>
                   <div>
-                    <dt className="text-foreground-subtle">メール確認</dt>
+                    <dt className="text-foreground-subtle">
+                      {t("preferences.account.emailVerified")}
+                    </dt>
                     <dd className="mt-1 font-medium text-foreground">
-                      {profile?.emailVerified ? "確認済み" : "未確認"}
+                      {profile?.emailVerified
+                        ? t("preferences.account.verified")
+                        : t("preferences.account.unverified")}
                     </dd>
                   </div>
                   <div className="sm:col-span-2">
-                    <dt className="text-foreground-subtle">Account ID</dt>
+                    <dt className="text-foreground-subtle">{t("preferences.account.accountId")}</dt>
                     <dd className="mt-1 break-all font-mono text-xs text-foreground">
                       {accountId}
                     </dd>
@@ -189,12 +197,14 @@ function AccountPageInner() {
             <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center gap-3">
                 <Mail className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
-                <h3 className="font-semibold text-foreground">登録メールアドレスの変更</h3>
+                <h3 className="font-semibold text-foreground">
+                  {t("preferences.account.changeEmailHeading")}
+                </h3>
               </div>
               <form onSubmit={handleEmailStart} className="grid gap-3 sm:grid-cols-[1fr_auto]">
                 <label className="text-sm">
                   <span className="mb-2 block font-medium text-foreground">
-                    新しいメールアドレス
+                    {t("preferences.account.newEmail")}
                   </span>
                   <input
                     name="email"
@@ -211,7 +221,7 @@ function AccountPageInner() {
                   disabled={submitting}
                   className="self-end rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
                 >
-                  変更コードを送信
+                  {t("preferences.account.sendCode")}
                 </button>
               </form>
 
@@ -220,7 +230,9 @@ function AccountPageInner() {
                 className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
               >
                 <label className="text-sm">
-                  <span className="mb-2 block font-medium text-foreground">確認コード</span>
+                  <span className="mb-2 block font-medium text-foreground">
+                    {t("preferences.account.code")}
+                  </span>
                   <input
                     name="code"
                     inputMode="numeric"
@@ -236,7 +248,7 @@ function AccountPageInner() {
                   disabled={submitting}
                   className="self-end rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground disabled:opacity-60"
                 >
-                  コードを確認
+                  {t("preferences.account.verifyCode")}
                 </button>
               </form>
             </section>
@@ -244,7 +256,9 @@ function AccountPageInner() {
             <section className="border border-border bg-surface-0 rounded-md p-6">
               <div className="mb-4 flex items-center gap-3">
                 <KeyRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
-                <h3 className="font-semibold text-foreground">ログイン方法</h3>
+                <h3 className="font-semibold text-foreground">
+                  {t("preferences.account.loginMethods")}
+                </h3>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
@@ -252,14 +266,14 @@ function AccountPageInner() {
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
                 >
                   <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                  passkey / 外部ログインを追加・変更
+                  {t("preferences.account.passkey")}
                 </Link>
                 <Link
                   href="/auth/email"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground"
                 >
                   <Mail className="h-4 w-4" aria-hidden="true" />
-                  メールOTPで再ログイン
+                  {t("preferences.account.emailOtpRelogin")}
                 </Link>
               </div>
             </section>
@@ -268,8 +282,10 @@ function AccountPageInner() {
 
         {activeTab === "subscription" && (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground">Subscription</h2>
-            <p className="text-foreground-muted">Manage your subscription plan and billing.</p>
+            <h2 className="text-xl font-semibold text-foreground">
+              {t("preferences.account.subscriptionHeading")}
+            </h2>
+            <p className="text-foreground-muted">{t("preferences.account.subscriptionGuide")}</p>
             <SubscriptionSection />
           </div>
         )}

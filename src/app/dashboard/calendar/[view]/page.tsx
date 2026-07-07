@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { ENDPOINTS, type EndpointKey, getCoreClient, type Result } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
+import { useZoom } from "@/lib/hooks/use-zoom";
 import { cn } from "@/lib/utils/cn";
 
 const VIEWS = ["day", "week", "month", "year"] as const;
@@ -259,9 +260,14 @@ function SummaryCard({
 }
 
 function DayGrid({ blocks }: { blocks: CalendarBlock[] }) {
+  const { ref: gridRef, zoom: hourHeight } = useZoom<HTMLDivElement>({ initial: 56 });
   const hours = Array.from({ length: 24 }, (_, h) => h);
   return (
-    <div className="grid grid-cols-[60px_1fr]">
+    <div
+      ref={gridRef}
+      className="grid grid-cols-[60px_1fr]"
+      style={{ height: `${24 * hourHeight}px` }}
+    >
       <div className="border-b border-border bg-surface-0" />
       <div className="border-b border-border bg-surface-0 px-4 py-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
         Today
@@ -271,7 +277,10 @@ function DayGrid({ blocks }: { blocks: CalendarBlock[] }) {
           <div className="border-b border-border bg-surface-0 px-3 py-3 text-right font-mono text-[10px] text-ink-4">
             {h.toString().padStart(2, "0")}:00
           </div>
-          <div className="relative min-h-[44px] border-b border-border px-4 py-1.5">
+          <div
+            className="relative border-b border-border px-4 py-1.5"
+            style={{ height: `${hourHeight}px` }}
+          >
             {blocks
               .filter((b) => new Date(b.startAt).getHours() === h)
               .map((b, i) => (

@@ -10,10 +10,10 @@ interface GlobalPromptBannerProps {
   onDismiss?: () => void;
 }
 
-const PROMPT_TITLE: Record<PendingPrompt["kind"], string> = {
-  start_tile: "Start tile",
-  end_tile: "End tile",
-  end_break: "End break",
+const PROMPT_TITLE_KEY: Record<PendingPrompt["kind"], string> = {
+  start_tile: "execution.prompt.startTile",
+  end_tile: "execution.prompt.endTile",
+  end_break: "execution.prompt.endBreak",
 };
 
 const SEVERITY_STYLE: Record<NonNullable<PendingPrompt["severity"]>, string> = {
@@ -22,31 +22,27 @@ const SEVERITY_STYLE: Record<NonNullable<PendingPrompt["severity"]>, string> = {
   critical: "bg-danger/10",
 };
 
+const DEFER_OPTIONS: { key: string; minutes: number }[] = [
+  { key: "execution.prompt.defer30", minutes: 30 },
+  { key: "execution.prompt.defer1h", minutes: 60 },
+  { key: "execution.prompt.defer2h", minutes: 120 },
+  { key: "execution.prompt.deferTomorrow", minutes: 1440 },
+  { key: "execution.prompt.deferNextWeek", minutes: 10080 },
+];
+
 export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPromptBannerProps) {
-  const { t, locale } = useTranslation();
+  const { t } = useTranslation();
   const [deferMenuPromptId, setDeferMenuPromptId] = useState<string | null>(null);
   if (!prompt) return null;
-  const deferOptions =
-    locale === "ja"
-      ? [
-          { label: "30分", minutes: 30 },
-          { label: "1時間", minutes: 60 },
-          { label: "2時間", minutes: 120 },
-          { label: "明日", minutes: 1440 },
-          { label: "来週", minutes: 10080 },
-        ]
-      : [
-          { label: "30 min", minutes: 30 },
-          { label: "1 hour", minutes: 60 },
-          { label: "2 hours", minutes: 120 },
-          { label: "Tomorrow", minutes: 1440 },
-          { label: "Next week", minutes: 10080 },
-        ];
+  const deferOptions = DEFER_OPTIONS.map((o) => ({
+    label: t(o.key),
+    minutes: o.minutes,
+  }));
 
   const showDeferOptions = deferMenuPromptId === prompt.promptId;
   const visibleActions = prompt.actions.filter((action) => action !== "dismiss");
   const canDismiss = prompt.actions.includes("dismiss") && typeof onDismiss === "function";
-  const title = prompt.title?.trim() || PROMPT_TITLE[prompt.kind];
+  const title = prompt.title?.trim() || t(PROMPT_TITLE_KEY[prompt.kind]);
 
   return (
     <div className="fixed top-4 right-4 z-[70] w-[min(92vw,420px)]">
@@ -84,7 +80,7 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
               onClick={() => setDeferMenuPromptId(null)}
               className="mt-2 min-h-9 rounded-full bg-surface-2 px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
             >
-              {locale === "ja" ? "戻る" : "Back"}
+              {t("common.back")}
             </button>
           </div>
         ) : (

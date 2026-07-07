@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 
 type SetupState =
   | { kind: "loading" }
@@ -25,6 +26,7 @@ export default function MfaSetupPage() {
 }
 
 function MfaSetupInner() {
+  const { t } = useTranslation();
   const params = useSearchParams();
   const router = useRouter();
   const email = params.get("email") ?? "";
@@ -80,7 +82,7 @@ function MfaSetupInner() {
         }
       }
       if (res.status === 401) {
-        setState({ kind: "error", message: "コードが違います" });
+        setState({ kind: "error", message: t("auth.mfaSetup.codeMismatch") });
         return;
       }
       const json = await res.json().catch(() => ({ error: "verify_failed" }));
@@ -113,13 +115,15 @@ function MfaSetupInner() {
   if (state.kind === "error") {
     return (
       <main className="mx-auto max-w-md space-y-4 p-6">
-        <p className="text-foreground">エラー: {state.message}</p>
+        <p className="text-foreground">
+          {t("auth.mfaSetup.errorPrefix")} {state.message}
+        </p>
         <button
           type="button"
           className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
           onClick={() => router.push("/auth/email")}
         >
-          サインインをやり直す
+          {t("auth.mfaSetup.retrySignin")}
         </button>
       </main>
     );
@@ -128,31 +132,33 @@ function MfaSetupInner() {
   return (
     <main className="mx-auto max-w-md space-y-6 p-6">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">2 段階認証のセットアップ</h1>
+        <h1 className="text-2xl font-semibold text-foreground">{t("auth.mfaSetup.title")}</h1>
         <p className="mt-2 text-sm text-foreground-muted">
-          {email} のアカウントで認証アプリ (Google Authenticator、1Password、Authy など) による TOTP
-          認証を有効化します。
+          {t("auth.mfaSetup.guidePrefix")} <span className="font-mono">{email}</span>{" "}
+          {t("auth.mfaSetup.guideSuffix")}
         </p>
       </div>
       <ol className="list-decimal space-y-2 pl-5 text-sm text-foreground">
-        <li>認証アプリを開きます。</li>
-        <li>次のシークレットを Base32 文字列として登録するか、otpauth URL を貼り付けます。</li>
-        <li>6 桁コードを入力して「検証」を押します。</li>
+        <li>{t("auth.mfaSetup.step1")}</li>
+        <li>{t("auth.mfaSetup.step2")}</li>
+        <li>{t("auth.mfaSetup.step3")}</li>
       </ol>
       <div className="space-y-2 rounded-md bg-surface-0 p-4">
-        <p className="text-xs uppercase tracking-wide text-foreground-muted">Secret (Base32)</p>
+        <p className="text-xs uppercase tracking-wide text-foreground-muted">
+          {t("auth.mfaSetup.secretLabel")}
+        </p>
         <pre
           data-testid="secret"
           className="break-all rounded bg-surface-2 p-3 font-mono text-sm text-foreground"
         >
           {state.secretCode}
         </pre>
-        <p className="text-xs text-foreground-muted">otpauth URL:</p>
+        <p className="text-xs text-foreground-muted">{t("auth.mfaSetup.otpauthLabel")}</p>
         <p className="break-all font-mono text-xs text-foreground-muted">{state.otpauthUrl}</p>
       </div>
       <div className="space-y-2">
         <label htmlFor="code" className="text-sm font-medium text-foreground">
-          6 桁コード
+          {t("auth.mfaSetup.codeLabel")}
         </label>
         <input
           id="code"
@@ -171,7 +177,7 @@ function MfaSetupInner() {
         disabled={!/^[0-9]{6}$/.test(code)}
         className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-50"
       >
-        検証
+        {t("auth.mfaSetup.verify")}
       </button>
     </main>
   );

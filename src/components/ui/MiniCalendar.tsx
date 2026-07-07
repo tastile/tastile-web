@@ -2,6 +2,7 @@
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -22,6 +23,7 @@ function toDateStr(d: Date): string {
 }
 
 export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCalendarProps) {
+  const { t, locale } = useTranslation();
   const today = toDateStr(new Date());
   const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
@@ -54,10 +56,13 @@ export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCa
     } else setViewMonth((m) => m + 1);
   }
 
-  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
+  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
+    locale === "ja" ? "ja-JP" : "en-US",
+    {
+      month: "long",
+      year: "numeric",
+    },
+  );
 
   return (
     <div className="select-none px-3 py-2">
@@ -66,7 +71,7 @@ export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCa
         <button
           type="button"
           onClick={prevMonth}
-          aria-label="Previous month"
+          aria-label={t("miniCalendar.prevMonth")}
           className="rounded p-0.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
         >
           <ChevronLeft className="h-3.5 w-3.5" />
@@ -75,7 +80,7 @@ export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCa
         <button
           type="button"
           onClick={nextMonth}
-          aria-label="Next month"
+          aria-label={t("miniCalendar.nextMonth")}
           className="rounded p-0.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
         >
           <ChevronRight className="h-3.5 w-3.5" />

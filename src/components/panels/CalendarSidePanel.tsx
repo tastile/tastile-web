@@ -5,6 +5,7 @@ import { useMemo, useTransition } from "react";
 import { MiniCalendar } from "@/components/ui/MiniCalendar";
 import type { DisplayMode } from "@/lib/calendar/layout";
 import { useProjects } from "@/lib/hooks/use-projects";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
 type CalendarSidePanelView = "day" | "week" | "month" | "year" | "list";
@@ -133,6 +134,13 @@ export function TimelineSidePanel({
   onSelectDate,
   onScaleChange,
 }: TimelineSidePanelProps) {
+  const { t } = useTranslation();
+  const scaleLabels: Record<TimelineScale, string> = {
+    day: t("panels.calendar.day"),
+    week: t("panels.calendar.week"),
+    month: t("panels.calendar.month"),
+    custom: t("panels.calendar.custom"),
+  };
   return (
     <div className="flex flex-col gap-4 pt-2">
       {/* ミニカレンダー */}
@@ -150,10 +158,10 @@ export function TimelineSidePanel({
       {/* 表示スケール */}
       <div className="px-3">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-          Scale
+          {t("panels.calendar.scale")}
         </p>
         <div className="flex flex-col gap-0.5">
-          {SCALES.map(({ key, label }) => (
+          {SCALES.map(({ key }) => (
             <button
               key={key}
               type="button"
@@ -166,7 +174,7 @@ export function TimelineSidePanel({
               )}
               aria-pressed={scale === key}
             >
-              {label}
+              {scaleLabels[key]}
             </button>
           ))}
         </div>
@@ -190,6 +198,7 @@ function ProjectsCheckboxSection() {
   const router = useRouter();
   const pathname = usePathname();
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   const allIds = useMemo(() => workspaces.map((w) => w.id), [workspaces]);
   const selected = useMemo(() => {
@@ -211,7 +220,11 @@ function ProjectsCheckboxSection() {
   }
 
   if (loading) {
-    return <div className="px-3 text-[10px] text-foreground-subtle">Loading projects…</div>;
+    return (
+      <div className="px-3 text-[10px] text-foreground-subtle">
+        {t("panels.calendar.loadingProjects")}
+      </div>
+    );
   }
   if (workspaces.length === 0) return null;
 
@@ -219,7 +232,7 @@ function ProjectsCheckboxSection() {
     <div className="border-t border-border/40 px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-          Projects
+          {t("panels.calendar.projects")}
         </p>
         <span className="font-mono text-[10px] text-foreground-lighter">
           {selected.size}/{workspaces.length}

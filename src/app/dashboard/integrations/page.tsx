@@ -13,13 +13,13 @@ export default function IntegrationsPage() {
     <div className="space-y-6 p-8">
       <div>
         <h1 className="text-2xl font-[590] text-foreground">Integrations</h1>
-        <p className="mt-2 text-foreground-muted">Google Calendar の接続状態と同期を管理します</p>
+        <p className="mt-2 text-foreground-muted">Manage Google Calendar connections and sync.</p>
       </div>
 
       <div className="rounded-xl bg-surface-elevated p-5">
         <h2 className="text-lg font-semibold">Google Calendar</h2>
         <p className="mt-2 text-sm text-foreground-muted">
-          この連携は現在の Tastile v1 スコープ外です。
+          This integration is outside the current Tastile v1 scope.
         </p>
         <p className="mt-1 text-sm text-foreground-muted">
           Until v2, do not expect the dashboard to load or sync any integration state. See

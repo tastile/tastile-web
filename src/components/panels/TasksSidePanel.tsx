@@ -3,11 +3,13 @@
 import { Clock, Flame, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
 export function TasksSidePanel() {
+  const { t } = useTranslation();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -121,13 +123,13 @@ export function TasksSidePanel() {
       {/* 検索 */}
       <div className="px-3">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-          Search
+          {t("panels.tasks.search")}
         </p>
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-subtle" />
           <input
             type="text"
-            placeholder="Search tasks…"
+            placeholder={t("panels.tasks.searchPlaceholder")}
             value={search}
             onChange={(e) => applyFilters({ q: e.target.value })}
             className="h-8 w-full rounded-md border border-border bg-surface-1 pl-8 pr-3 text-xs text-foreground placeholder:text-foreground-subtle focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
@@ -141,11 +143,16 @@ export function TasksSidePanel() {
           <div className="flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5 text-foreground-subtle" />
             <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-              Time Range
+              {t("panels.tasks.timeRange")}
             </p>
           </div>
           <span className="text-[11px] font-mono font-medium text-foreground-muted">
-            {rangeVal} {rangeUnit === "d" ? "days" : rangeUnit === "w" ? "weeks" : "months"}
+            {rangeVal}{" "}
+            {rangeUnit === "d"
+              ? t("panels.tasks.days")
+              : rangeUnit === "w"
+                ? t("panels.tasks.weeks")
+                : t("panels.tasks.months")}
           </span>
         </div>
 
@@ -167,19 +174,20 @@ export function TasksSidePanel() {
               />
             </div>
             <div className="flex-1">
-              <Select
+              <Dropdown
                 value={rangeUnit}
-                onChange={(e) => {
-                  const val = e.target.value as "d" | "w" | "m";
-                  setRangeUnit(val);
-                  applyFilters({ range: { val: rangeVal, unit: val } });
+                onChange={(val) => {
+                  const unit = val as "d" | "w" | "m";
+                  setRangeUnit(unit);
+                  applyFilters({ range: { val: rangeVal, unit } });
                 }}
-                className="h-8 text-xs"
-              >
-                <option value="d">Days</option>
-                <option value="w">Weeks</option>
-                <option value="m">Months</option>
-              </Select>
+                size="small"
+                items={[
+                  { value: "d", label: t("panels.tasks.days") },
+                  { value: "w", label: t("panels.tasks.weeks") },
+                  { value: "m", label: t("panels.tasks.months") },
+                ]}
+              />
             </div>
           </div>
 
@@ -207,11 +215,11 @@ export function TasksSidePanel() {
           <div className="flex items-center gap-1.5">
             <Flame className="h-3.5 w-3.5 text-foreground-subtle" />
             <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-              Min Duration
+              {t("panels.tasks.minDuration")}
             </p>
           </div>
           <span className="text-[11px] font-mono font-medium text-foreground-muted">
-            {minDuration} min
+            {minDuration} {t("panels.tasks.minUnit")}
           </span>
         </div>
 
@@ -228,7 +236,9 @@ export function TasksSidePanel() {
                 applyFilters({ duration: { val } });
               }}
               trailing={
-                <span className="text-[10px] text-foreground-subtle select-none">minutes</span>
+                <span className="text-[10px] text-foreground-subtle select-none">
+                  {t("panels.tasks.minutes")}
+                </span>
               }
               className="h-8"
             />
@@ -257,7 +267,7 @@ export function TasksSidePanel() {
         <div className="mb-3 flex items-center gap-1.5">
           <ShieldAlert className="h-3.5 w-3.5 text-foreground-subtle" />
           <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-            Priority Filter
+            {t("panels.tasks.priorityFilter")}
           </p>
         </div>
 
@@ -265,7 +275,7 @@ export function TasksSidePanel() {
           {/* High Priority Switch */}
           <label className="flex items-center justify-between cursor-pointer group">
             <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">
-              High Priority Only
+              {t("panels.tasks.highPriorityOnly")}
             </span>
             <div className="relative">
               <input
@@ -292,7 +302,7 @@ export function TasksSidePanel() {
           {/* Exclude Low Priority Switch */}
           <label className="flex items-center justify-between cursor-pointer group">
             <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">
-              Exclude Low Priority
+              {t("panels.tasks.excludeLowPriority")}
             </span>
             <div className="relative">
               <input
@@ -326,7 +336,7 @@ export function TasksSidePanel() {
           className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded border border-border text-foreground bg-surface-2 hover:bg-surface-3 transition-all cursor-pointer shadow-xs"
         >
           <RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" />
-          Reset to Defaults
+          {t("panels.tasks.resetToDefaults")}
         </button>
       </div>
     </div>

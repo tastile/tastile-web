@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import {
   type NotificationKind,
   requestNotificationPermissionOnce,
@@ -43,11 +44,12 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const seenSystemNotifications = useRef<Set<string>>(new Set());
+  const { t } = useTranslation();
 
   const refresh = useCallback(async () => {
     const client = getCoreClient();
     const [access, execution] = await Promise.all([
-      fetchAccessNotifications(),
+      fetchAccessNotifications(t),
       client.call<ExecutionSnapshot>("getExecutionView"),
     ]);
 
@@ -67,7 +69,7 @@ export function useNotifications() {
     }
 
     if (execution.ok) {
-      const item = toExecutionNotification(execution.data);
+      const item = toExecutionNotification(execution.data, t);
       setExecutionItem(item);
       if (item) {
         const kind: NotificationKind = execution.data.pending_prompt_id
@@ -85,7 +87,7 @@ export function useNotifications() {
     }
 
     setLoading(false);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void requestNotificationPermissionOnce();
@@ -113,9 +115,9 @@ export function useNotifications() {
   return { notifications, unreadCount, loading, error, refresh };
 }
 
-async function fetchAccessNotifications(): Promise<
-  { ok: true; items: NotificationItem[] } | { ok: false; error: Error }
-> {
+async function fetchAccessNotifications(
+  t: (key: string) => string,
+): Promise<{ ok: true; items: NotificationItem[] } | { ok: false; error: Error }> {
   try {
     const res = await fetch("/api/proxy/access/notifications?limit=20", {
       headers: { accept: "application/json" },
@@ -130,7 +132,7 @@ async function fetchAccessNotifications(): Promise<
       ok: true,
       items: rows.map((row) => ({
         id: `access:${row.id}`,
-        message: row.message ?? accessNotificationMessage(row.kind),
+        message: row.message ?? accessNotificationMessage(row.kind, t),
         timestamp: parseDate(row.created_at),
         readAt: row.read_at ? parseDate(row.read_at) : null,
         source: "access",
@@ -144,11 +146,14 @@ async function fetchAccessNotifications(): Promise<
   }
 }
 
-function toExecutionNotification(snapshot: ExecutionSnapshot): NotificationItem | null {
+function toExecutionNotification(
+  snapshot: ExecutionSnapshot,
+  t: (key: string) => string,
+): NotificationItem | null {
   if (snapshot.pending_prompt_id) {
     return {
       id: `prompt:${snapshot.pending_prompt_id}`,
-      message: "確認が必要な通知があります",
+      message: t("notifications.promptPending"),
       timestamp: new Date(),
       readAt: null,
       source: "execution",
@@ -158,8 +163,8 @@ function toExecutionNotification(snapshot: ExecutionSnapshot): NotificationItem 
   return {
     id: `execution:${snapshot.main_tile.id}`,
     message: snapshot.is_on_break
-      ? "休憩フェーズが実行中です"
-      : `${snapshot.main_tile.title}を実行中です`,
+      ? t("notifications.onBreak")
+      : `${t("notifications.running")}: ${snapshot.main_tile.title}`,
     timestamp: snapshot.main_tile_started_at
       ? parseDate(snapshot.main_tile_started_at)
       : new Date(),
@@ -179,21 +184,21 @@ function parseDate(value: string): Date {
   return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
-function accessNotificationMessage(kind: number): string {
+function accessNotificationMessage(kind: number, t: (key: string) => string): string {
   switch (kind) {
     case 1:
-      return "共有オファーがあります";
+      return t("notifications.accessShareOffer");
     case 2:
-      return "アクセスリクエストがあります";
+      return t("notifications.accessRequest");
     case 3:
     case 4:
-      return "アクセス権が更新されました";
+      return t("notifications.accessUpdated");
     case 5:
     case 6:
     case 7:
     case 8:
-      return "アクセス通知があります";
+      return t("notifications.accessOther");
     default:
-      return "通知があります";
+      return t("notifications.generic");
   }
 }

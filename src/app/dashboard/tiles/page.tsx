@@ -8,6 +8,7 @@ import { LoadingCard } from "@/components/tiles/shared/LoadingCard";
 import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { TileCardExpandable } from "@/components/tiles/TileCardExpandable";
+import { Dropdown } from "@/components/ui/Dropdown";
 import { Skeleton } from "@/components/ui/Skeleton";
 import {
   buildTileChanges,
@@ -107,7 +108,7 @@ function mapListViewToTile(item: TileListView): Tile {
 function TilesPageInner() {
   const { state, loading, execute } = useExecutionEngineContext();
   const { openDeleteDialog } = useDialogStore();
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const [sectionLimitById, setSectionLimitById] = useState<Record<string, number>>({});
   const projection = useMemo(() => buildDashboardProjectionPlaceholder(state), [state]);
   const searchParams = useSearchParams();
@@ -244,7 +245,7 @@ function TilesPageInner() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-foreground">Tiles Workspace</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("dashboard.tiles.title")}</h1>
         <div className="flex items-center gap-2 rounded-lg bg-surface-1 p-1">
           {(["list", "timeline", "changes"] as const).map((tab) => (
             <button
@@ -257,7 +258,11 @@ function TilesPageInner() {
                   : "text-foreground-muted hover:bg-surface-2"
               }`}
             >
-              {tab}
+              {tab === "list"
+                ? t("dashboard.tiles.tab.list")
+                : tab === "timeline"
+                  ? t("dashboard.tiles.tab.timeline")
+                  : t("dashboard.tiles.tab.changes")}
             </button>
           ))}
         </div>
@@ -268,7 +273,7 @@ function TilesPageInner() {
           <section className="grid gap-3 lg:grid-cols-2">
             <div className="rounded-xl bg-surface-1 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                Main
+                {t("dashboard.tiles.section.main")}
               </p>
               {projection.next.main ? (
                 <DesktopStyleTileRow
@@ -277,12 +282,12 @@ function TilesPageInner() {
                   onPrompt={handlePromptSuggested}
                 />
               ) : (
-                <p className="text-sm text-foreground-muted">No active main task</p>
+                <p className="text-sm text-foreground-muted">{t("dashboard.tiles.empty.main")}</p>
               )}
             </div>
             <div className="rounded-xl bg-surface-1 p-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
-                Sub
+                {t("dashboard.tiles.section.sub")}
               </p>
               <div className="space-y-2">
                 {projection.next.quick.slice(0, 3).map((tile) => (
@@ -294,7 +299,7 @@ function TilesPageInner() {
                   />
                 ))}
                 {projection.next.quick.length === 0 ? (
-                  <p className="text-sm text-foreground-muted">No sub tasks</p>
+                  <p className="text-sm text-foreground-muted">{t("dashboard.tiles.empty.sub")}</p>
                 ) : null}
               </div>
             </div>
@@ -302,71 +307,83 @@ function TilesPageInner() {
 
           <section className="space-y-3 rounded-xl bg-surface-1 px-4 py-3">
             <div className="flex flex-wrap items-center gap-4 text-xs uppercase tracking-wider text-foreground-muted">
-              <span>Open Tiles {sectionSummary.openCount}</span>
-              <span>Estimated {sectionSummary.estimatedMinutes}m</span>
-              <span>Sections {groupedTiles.length}</span>
+              <span>
+                {t("dashboard.tiles.summary.openCount")} {sectionSummary.openCount}
+              </span>
+              <span>
+                {t("dashboard.tiles.summary.estimated")} {sectionSummary.estimatedMinutes}m
+              </span>
+              <span>
+                {t("dashboard.tiles.summary.sections")} {groupedTiles.length}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <div className="min-w-[200px] flex-1">
                 <input
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="検索..."
+                  placeholder={t("dashboard.tiles.searchPlaceholder")}
                   className="w-full rounded-md bg-surface-0 border border-border px-3 py-1.5 text-xs text-foreground placeholder:text-foreground-muted"
                 />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-semibold text-foreground-muted">
-                  範囲:
+                  {t("dashboard.tiles.filter.rangeLabel")}
                 </span>
-                <select
+                <Dropdown
                   value={filterRange}
-                  onChange={(e) =>
-                    setFilterRange(e.target.value as "all" | "today" | "recent" | "exclude_future")
+                  onChange={(val) =>
+                    setFilterRange(val as "all" | "today" | "recent" | "exclude_future")
                   }
-                  className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
-                >
-                  <option value="all">すべて</option>
-                  <option value="today">今日</option>
-                  <option value="recent">最近24h</option>
-                  <option value="exclude_future">未来を除く</option>
-                </select>
+                  size="tiny"
+                  items={[
+                    { value: "all", label: t("dashboard.tiles.filter.range.all") },
+                    { value: "today", label: t("dashboard.tiles.filter.range.today") },
+                    { value: "recent", label: t("dashboard.tiles.filter.range.recent") },
+                    { value: "exclude_future", label: t("dashboard.tiles.filter.range.excludeFuture") },
+                  ]}
+                  className="min-w-[140px]"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-semibold text-foreground-muted">
-                  粒度:
+                  {t("dashboard.tiles.filter.granularityLabel")}
                 </span>
-                <select
+                <Dropdown
                   value={filterGranularity}
-                  onChange={(e) =>
+                  onChange={(val) =>
                     setFilterGranularity(
-                      e.target.value as "all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m",
+                      val as "all" | "no_breaks" | "min_5m" | "min_15m" | "min_30m",
                     )
                   }
-                  className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
-                >
-                  <option value="all">すべて（休憩含む）</option>
-                  <option value="no_breaks">作業のみ</option>
-                  <option value="min_5m">作業 5m以上</option>
-                  <option value="min_15m">作業 15m以上</option>
-                  <option value="min_30m">作業 30m以上</option>
-                </select>
+                  size="tiny"
+                  items={[
+                    { value: "all", label: t("dashboard.tiles.filter.granularity.all") },
+                    { value: "no_breaks", label: t("dashboard.tiles.filter.granularity.noBreaks") },
+                    { value: "min_5m", label: t("dashboard.tiles.filter.granularity.min5") },
+                    { value: "min_15m", label: t("dashboard.tiles.filter.granularity.min15") },
+                    { value: "min_30m", label: t("dashboard.tiles.filter.granularity.min30") },
+                  ]}
+                  className="min-w-[140px]"
+                />
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] uppercase font-semibold text-foreground-muted">
-                  最大数:
+                  {t("dashboard.tiles.filter.limitLabel")}
                 </span>
-                <select
-                  value={filterLimit}
-                  onChange={(e) => setFilterLimit(Number(e.target.value))}
-                  className="rounded-md bg-surface-0 border border-border px-2 py-1 text-xs text-foreground"
-                >
-                  <option value="20">20件</option>
-                  <option value="50">50件</option>
-                  <option value="100">100件</option>
-                  <option value="500">500件</option>
-                  <option value="0">制限なし</option>
-                </select>
+                <Dropdown
+                  value={String(filterLimit)}
+                  onChange={(val) => setFilterLimit(Number(val))}
+                  size="tiny"
+                  items={[
+                    { value: "20", label: t("dashboard.tiles.filter.limit.20") },
+                    { value: "50", label: t("dashboard.tiles.filter.limit.50") },
+                    { value: "100", label: t("dashboard.tiles.filter.limit.100") },
+                    { value: "500", label: t("dashboard.tiles.filter.limit.500") },
+                    { value: "0", label: t("dashboard.tiles.filter.limit.unlimited") },
+                  ]}
+                  className="min-w-[100px]"
+                />
               </div>
               <div className="flex items-center gap-1 rounded-md bg-surface-0 p-1">
                 {(
@@ -445,7 +462,7 @@ function TilesPageInner() {
                 <div className="space-y-2">
                   {omittedTiles > 0 ? (
                     <p className="text-xs uppercase tracking-wider text-foreground-muted">
-                      他{omittedTiles}件 ▼
+                      {t("dashboard.tiles.omittedMore")} {omittedTiles} ▼
                     </p>
                   ) : null}
                   {visibleTiles.map((tile) => (
@@ -482,16 +499,18 @@ function TilesPageInner() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-foreground-muted">
               Timeline
             </h2>
-            <select
+            <Dropdown
               value={timelineScale}
-              onChange={(event) => setTimelineScale(event.target.value as typeof timelineScale)}
-              className="rounded-md bg-surface-elevated px-2 py-1 text-xs text-foreground"
-            >
-              <option value="day">Day</option>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
-              <option value="custom">Custom</option>
-            </select>
+              onChange={(val) => setTimelineScale(val as typeof timelineScale)}
+              size="tiny"
+              items={[
+                { value: "day", label: "Day" },
+                { value: "week", label: "Week" },
+                { value: "month", label: "Month" },
+                { value: "custom", label: "Custom" },
+              ]}
+              className="min-w-[100px]"
+            />
             {timelineScale === "custom" ? (
               <>
                 <input
