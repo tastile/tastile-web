@@ -1,10 +1,11 @@
+import { useCallback } from "react";
 import { useLocaleStore } from "../stores/locale-store";
 import { translations } from "./translations";
 
 export function useTranslation() {
   const { locale } = useLocaleStore();
 
-  const t = (key: string): string => {
+  const t = useCallback((key: string): string => {
     const keys = key.split(".");
     let value: unknown = translations[locale];
 
@@ -17,7 +18,7 @@ export function useTranslation() {
     }
 
     return typeof value === "string" ? value : key;
-  };
+  }, [locale]);
 
   return { t, locale };
 }
