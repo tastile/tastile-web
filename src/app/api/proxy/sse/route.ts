@@ -3,8 +3,7 @@ import {
   ensureDefaultApiTokenForUser,
   getApiTokenFromRequest,
 } from "@/lib/account/api-token-session";
-import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
 
@@ -29,7 +28,10 @@ export async function GET(request: NextRequest) {
 
   const apiToken = getApiTokenFromRequest(request);
   if (!apiToken) {
-    const userSub = resolveBridgeUserSub(request);
+    const userSub = await resolveAuthenticatedUserSub({ cookieStore: request.cookies });
+    if (!userSub) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     await ensureDefaultApiTokenForUser(userSub);
   }
 
@@ -61,18 +63,4 @@ function syntheticConnectedStream() {
       "x-accel-buffering": "no",
     },
   });
-}
-
-function resolveBridgeUserSub(request: NextRequest): string | null {
-  const cookieSub = request.cookies.get(COOKIE_USER_SUB)?.value;
-  if (cookieSub) return cookieSub;
-
-  const idToken = request.cookies.get("tastile_id_token")?.value;
-  if (!idToken) return null;
-
-  try {
-    return parseIdTokenClaims(idToken).sub;
-  } catch {
-    return null;
-  }
 }

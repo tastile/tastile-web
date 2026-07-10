@@ -25,7 +25,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.10
 
       - name: Resolve version
         id: version
@@ -38,20 +38,15 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Install
-        run: bun install
+        run: bun install --frozen-lockfile
 
-      - name: Create .env.product from secrets
+      - name: Create public build environment
         env:
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          STRIPE_PRO_MONTHLY_PRICE_ID: ${{ secrets.STRIPE_PRO_MONTHLY_PRICE_ID }}
-          STRIPE_PRO_YEARLY_PRICE_ID: ${{ secrets.STRIPE_PRO_YEARLY_PRICE_ID }}
           TASTILE_DESKTOP_MANIFEST_URL: ${{ secrets.TASTILE_DESKTOP_MANIFEST_URL }}
           NEXT_PUBLIC_TASTILE_DESKTOP_VERSION: ${{ secrets.NEXT_PUBLIC_TASTILE_DESKTOP_VERSION }}
           TASTILE_DESKTOP_VERSION: ${{ secrets.TASTILE_DESKTOP_VERSION }}
           NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
-          TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
           NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN: ${{ secrets.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN }}
           NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
           NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
@@ -74,7 +69,6 @@ jobs:
           NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
           NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=Google,SignInWithApple
-          TASTILE_WEB_BRIDGE_SECRET=${TASTILE_WEB_BRIDGE_SECRET}
           CLOUD_API_BASE=http://127.0.0.1:31400
           ENVEOF
 
@@ -89,8 +83,8 @@ jobs:
           cp -r .next/standalone/. dist/
           cp -r .next/static        dist/.next/
           cp -r public               dist/
-          cp .env.product            dist/.env.local
           (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
+          bun scripts/verify-web-artifact.ts "tastile-web-${{ steps.version.outputs.version }}.zip"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

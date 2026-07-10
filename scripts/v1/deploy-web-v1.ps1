@@ -96,25 +96,25 @@ Write-Host ("  Built: " + $zipPath + " (" + [math]::Round($zipSize/1MB, 1) + " M
 # step 4 -- upload to s3
 Write-Host ""
 Write-Host "== 4 -- aws s3 cp =="
-aws s3 cp $zipPath ("s3://" + $TransferBucket + "/web-releases/" + $zipName + " --region " + $Region)
+aws s3 cp $zipPath ("s3://" + $TransferBucket + "/web-releases/" + $zipName) --region $Region
 if ($LASTEXITCODE -ne 0) {
     throw ("aws s3 cp failed (exit=" + $LASTEXITCODE + ")")
 }
-$presignedUrl = aws s3 presign ("s3://" + $TransferBucket + "/web-releases/" + $zipName + " --region " + $Region + " --expires-in 900")
+$presignedUrl = aws s3 presign ("s3://" + $TransferBucket + "/web-releases/" + $zipName) --region $Region --expires-in 900
 
 # step 5 -- ssm send-command to deploy on the ec2 host
 Write-Host ""
 Write-Host ("== 5 -- SSM deploy on " + $InstanceId + " ==")
 $commands = @(
     'set -euo pipefail',
-    ('sudo mkdir -p ' + $ReleaseRoot + '/' + $releaseName + ')'),
-    ('curl -fsSL ' + $presignedUrl + ' -o /tmp/' + $zipName + ')'),
-    ('sudo unzip -q -o /tmp/' + $zipName + ' -d ' + $ReleaseRoot + '/' + $releaseName + ')'),
-    ('sudo ln -sfn ' + $ReleaseRoot + '/' + $releaseName + ' ' + $CurrentLink + ')'),
-    ('sudo systemctl restart ' + $ServiceName + ')'),
+    ('sudo mkdir -p ' + $ReleaseRoot + '/' + $releaseName),
+    ('curl -fsSL "' + $presignedUrl + '" -o /tmp/' + $zipName),
+    ('sudo unzip -q -o /tmp/' + $zipName + ' -d ' + $ReleaseRoot + '/' + $releaseName),
+    ('sudo ln -sfn ' + $ReleaseRoot + '/' + $releaseName + ' ' + $CurrentLink),
+    ('sudo systemctl restart ' + $ServiceName),
     'sleep 3',
-    ('systemctl is-active ' + $ServiceName + ')'),
-    ('curl -fsS -o /dev/null -w ' + 'HTTP %HTTP_CODE% in %TIME_TOTAL%s\n' + ' http://127.0.0.1:3000/login' + ')')
+    ('systemctl is-active ' + $ServiceName),
+    ('curl -fsS -o /dev/null -w ' + 'HTTP %HTTP_CODE% in %TIME_TOTAL%s' + ' http://127.0.0.1:3000/login')
 )
 $payload = @{ commands = $commands } | ConvertTo-Json -Compress
 $tmp = Join-Path $env:TEMP ("tastile-web-deploy-" + $timestamp + ".json")

@@ -3,18 +3,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
 process.env.NEXT_PUBLIC_APP_URL = "https://app.tastile.app";
 
-const getUserSubFromCookies = vi.fn();
+const resolveAuthenticatedUserSub = vi.fn();
 const getSubscriptionForUser = vi.fn();
 const billingPortalSessionsCreate = vi.fn();
 
-vi.mock("@/lib/cognito/cookies", () => ({ getUserSubFromCookies }));
+vi.mock("@/lib/cognito/authenticated-session", () => ({ resolveAuthenticatedUserSub }));
 vi.mock("@/lib/billing/server", () => ({ getSubscriptionForUser }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({ billingPortal: { sessions: { create: billingPortalSessionsCreate } } }),
 }));
 
 beforeEach(() => {
-  getUserSubFromCookies.mockReset();
+  resolveAuthenticatedUserSub.mockReset();
   getSubscriptionForUser.mockReset();
   billingPortalSessionsCreate.mockReset();
   vi.resetModules();
@@ -22,7 +22,7 @@ beforeEach(() => {
 
 describe("POST /api/stripe/portal", () => {
   it("returns 401 when not authenticated", async () => {
-    getUserSubFromCookies.mockResolvedValueOnce(null);
+    resolveAuthenticatedUserSub.mockResolvedValueOnce(null);
     const { POST } = await import("./route");
     const res = await POST();
     expect(res.status).toBe(401);
@@ -30,7 +30,7 @@ describe("POST /api/stripe/portal", () => {
   });
 
   it("returns 404 when user has no subscription", async () => {
-    getUserSubFromCookies.mockResolvedValueOnce("sub-1");
+    resolveAuthenticatedUserSub.mockResolvedValueOnce("sub-1");
     getSubscriptionForUser.mockResolvedValueOnce({ status: "free" });
     const { POST } = await import("./route");
     const res = await POST();
@@ -41,7 +41,7 @@ describe("POST /api/stripe/portal", () => {
   });
 
   it("creates a portal session and returns the URL", async () => {
-    getUserSubFromCookies.mockResolvedValueOnce("sub-2");
+    resolveAuthenticatedUserSub.mockResolvedValueOnce("sub-2");
     getSubscriptionForUser.mockResolvedValueOnce({
       status: "active",
       interval: "monthly",

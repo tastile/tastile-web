@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getUserSubFromCookies } from "@/lib/cognito/cookies";
+import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { getPlans, getStripe } from "@/lib/stripe";
 
 export async function POST(request: Request) {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
   }
 
-  const userSub = await getUserSubFromCookies();
+  const userSub = await resolveAuthenticatedUserSub();
   if (!userSub) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

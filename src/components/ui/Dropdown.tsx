@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils/cn";
 
 const dropdownVariants = cva(
   [
-    "relative flex w-full items-center rounded-md border bg-surface-1",
+    "relative flex w-full items-center rounded-md border border-border bg-surface-1",
     "cursor-pointer select-none",
     "transition-all duration-150",
     "focus-within:border-primary focus-within:ring-1 focus-within:ring-primary",
@@ -331,7 +331,7 @@ export function Dropdown({
           ref={contentRef}
           className={cn(
             "fixed z-50 min-w-[160px] overflow-hidden rounded-lg",
-            "border border-border-strong/50 bg-surface-elevated shadow-lg",
+            "border border-border bg-surface-elevated shadow-lg",
             "animate-in fade-in-0 zoom-in-95",
             "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
             contentClassName,

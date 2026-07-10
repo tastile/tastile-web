@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const getUserSubFromCookies = vi.fn();
+const resolveAuthenticatedUserSub = vi.fn();
 const getSubscriptionForUser = vi.fn();
 
-vi.mock("@/lib/cognito/cookies", () => ({ getUserSubFromCookies }));
+vi.mock("@/lib/cognito/authenticated-session", () => ({ resolveAuthenticatedUserSub }));
 vi.mock("@/lib/billing/server", () => ({ getSubscriptionForUser }));
 
 beforeEach(() => {
-  getUserSubFromCookies.mockReset();
+  resolveAuthenticatedUserSub.mockReset();
   getSubscriptionForUser.mockReset();
   vi.resetModules();
 });
@@ -15,7 +15,7 @@ beforeEach(() => {
 
 describe("GET /api/billing/subscription", () => {
   it("returns 401 when not authenticated", async () => {
-    getUserSubFromCookies.mockResolvedValueOnce(null);
+    resolveAuthenticatedUserSub.mockResolvedValueOnce(null);
     const { GET } = await import("./route");
     const res = await GET();
     expect(res.status).toBe(401);
@@ -25,7 +25,7 @@ describe("GET /api/billing/subscription", () => {
   });
 
   it("returns the subscription state for the authed sub", async () => {
-    getUserSubFromCookies.mockResolvedValueOnce("sub-abc");
+    resolveAuthenticatedUserSub.mockResolvedValueOnce("sub-abc");
     getSubscriptionForUser.mockResolvedValueOnce({
       status: "active",
       interval: "monthly",
@@ -50,7 +50,7 @@ describe("GET /api/billing/subscription", () => {
   });
 
   it("passes through the free state", async () => {
-    getUserSubFromCookies.mockResolvedValueOnce("sub-xyz");
+    resolveAuthenticatedUserSub.mockResolvedValueOnce("sub-xyz");
     getSubscriptionForUser.mockResolvedValueOnce({ status: "free" });
     const { GET } = await import("./route");
     const res = await GET();

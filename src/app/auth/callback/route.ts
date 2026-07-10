@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
+import { verifyCognitoAccessToken } from "@/lib/cognito/authenticated-session";
 import {
   COOKIE_OAUTH_NEXT,
   COOKIE_OAUTH_STATE,
@@ -8,7 +9,7 @@ import {
   setAuthCookies,
 } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { exchangeCodeForTokens, parseIdTokenClaims } from "@/lib/cognito/server";
+import { exchangeCodeForTokens } from "@/lib/cognito/server";
 import { callbackHtmlResponse } from "../callback-html";
 
 export async function GET(request: NextRequest) {
@@ -49,7 +50,11 @@ export async function GET(request: NextRequest) {
 
   try {
     const tokens = await exchangeCodeForTokens({ env, code, codeVerifier });
-    const claims = parseIdTokenClaims(tokens.id_token);
+    const userSub = await verifyCognitoAccessToken({
+      accessToken: tokens.access_token,
+      env,
+    });
+    if (!userSub) throw new Error("Cognito access token verification failed");
     const response = callbackHtmlResponse({
       title: "Tastile に接続しました",
       message: "認証が完了しました。実行ダッシュボードを開いています。",
@@ -61,12 +66,12 @@ export async function GET(request: NextRequest) {
         idToken: tokens.id_token,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
-        sub: claims.sub,
+        sub: userSub,
         expiresIn: tokens.expires_in,
       },
       response,
     );
-    await ensureDefaultApiTokenForUser(claims.sub, response);
+    await ensureDefaultApiTokenForUser(userSub, response);
     // Clear PKCE cookies.
     response.cookies.set(COOKIE_OAUTH_STATE, "", {
       httpOnly: true,

@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
-import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 
 // RFC 4122 NAMESPACE_OID (also matches the uuid crate's
 // `Uuid::NAMESPACE_OID`).  The daemon's bridge auth derives the
@@ -527,13 +526,12 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
 
   const headers = new Headers();
   // The v1 API does not validate Cognito id_tokens. It accepts the
-  // long-lived v1_api_token (Bearer) or the web-bridge headers that
-  // identify the calling user from the per-request cookies. The browser
-  // session has a short-lived id_token that we cannot forward usefully,
-  // so we always forward via the bridge: the cookie's user sub is the
-  // authoritative identity, the secret gates the trust boundary.
+  // long-lived v1_api_token (Bearer) or the web-bridge headers. The
+  // bridge identity is resolved from Cognito's userInfo endpoint on every
+  // request; unsigned uid cookies and decoded JWT payloads are never an
+  // identity source. The bridge secret gates the core-side trust boundary.
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  const bridgeUserSub = resolveBridgeUserSub(request);
+  const bridgeUserSub = await resolveAuthenticatedUserSub({ cookieStore: request.cookies });
   if (getIsE2EBypass() && isLocalCoreUrl(getCloudApiBase())) {
     // E2E bypass: pin the dev actor and forward to the local v1 API
     // directly. The bridge-secret check is for production deploys.
@@ -547,7 +545,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       );
     }
     if (!bridgeUserSub) {
-      return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 407 });
+      return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
     headers.set("x-tastile-web-session-user", bridgeUserSub);
@@ -840,20 +838,6 @@ export function injectTimelineTodayDefaults(params: URLSearchParams): void {
   }
 }
 
-function resolveBridgeUserSub(request: NextRequest): string | null {
-  const cookieSub = request.cookies.get(COOKIE_USER_SUB)?.value;
-  if (cookieSub) return cookieSub;
-
-  const idToken = request.cookies.get("tastile_id_token")?.value;
-  if (!idToken) return null;
-
-  try {
-    return parseIdTokenClaims(idToken).sub;
-  } catch {
-    return null;
-  }
-}
-
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
@@ -871,6 +855,14 @@ export async function POST(
 }
 
 export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> },
+) {
+  const { path } = await params;
+  return proxyRequest(request, path);
+}
+
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
 ) {

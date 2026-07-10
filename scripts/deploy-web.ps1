@@ -24,18 +24,29 @@ Write-Host "  Instance:   $InstanceId"
 Write-Host "  Bucket:     s3://$TransferBucket/web-releases/$zipName"
 
 # 1. Build
-# Use lint + typecheck + build directly. test:unit is intentionally skipped
+# Use lint + typecheck + build:prod directly. test:unit is intentionally skipped
 # because vitest's jsdom setup has pre-existing env failures (29 unrelated
 # cases: document/window undefined, vi.resetModules missing). The middleware
 # change is small and well-isolated; tests would not add a meaningful gate.
+# build:prod -> NODE_ENV=production bun --env-file=.env.product next build
+# (ensures production env is the source for `NEXT_PUBLIC_*` baked-in values).
 Write-Host ""
-Write-Host "== 1) lint + typecheck + build =="
-foreach ($step in @("lint", "typecheck", "build")) {
+Write-Host "== 1) lint + typecheck =="
+foreach ($step in @("lint", "typecheck")) {
     Write-Host "  -> bun run $step"
     $proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "bun run $step" -NoNewWindow -Wait -PassThru
     if ($proc.ExitCode -ne 0) {
         throw "bun run $step failed (exit=$($proc.ExitCode))"
     }
+}
+
+# 1.5 Build through the reusable production-environment boundary.
+Write-Host ""
+Write-Host "== 1.5) Production build =="
+Write-Host "  -> bun run build:prod"
+$proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "bun run build:prod" -NoNewWindow -Wait -PassThru
+if ($proc.ExitCode -ne 0) {
+    throw "bun run build:prod failed (exit=$($proc.ExitCode))"
 }
 
 # 2. Stage the standalone bundle
@@ -55,13 +66,17 @@ Copy-Item -Recurse -Force "public/*" $publicTarget
 Write-Host ""
 Write-Host "== 3) Zip =="
 $zipPath = Join-Path $buildDir $zipName
-$compress = Start-Process -FilePath "tar.exe" -ArgumentList @(
+$compress = Start-Process -FilePath "C:\Windows\System32\tar.exe" -ArgumentList @(
     "-a", "-c", "-f", $zipPath,
     "-C", $stageDir,
     "."
 ) -NoNewWindow -Wait -PassThru
 if ($compress.ExitCode -ne 0) {
     throw "tar zip failed (exit=$($compress.ExitCode))"
+}
+& bun scripts/verify-web-artifact.ts $zipPath
+if ($LASTEXITCODE -ne 0) {
+    throw "artifact secret verification failed (exit=$LASTEXITCODE)"
 }
 $zipSize = (Get-Item $zipPath).Length
 Write-Host "  Built: $zipPath ($([math]::Round($zipSize/1MB, 1)) MB)"

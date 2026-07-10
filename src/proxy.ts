@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import {
   COOKIE_ACCESS_TOKEN,
   COOKIE_ID_TOKEN,
@@ -7,7 +8,7 @@ import {
 } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { safeNextPath } from "@/lib/cognito/login-url";
-import { parseIdTokenClaims, refreshTokens } from "@/lib/cognito/server";
+import { refreshTokens } from "@/lib/cognito/server";
 import { resolveCanonicalHostRedirect } from "@/lib/host-routing";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/app"];
@@ -63,75 +64,43 @@ export default async function proxy(request: NextRequest) {
   // non-local and open-redirect inputs.
   const safeNext = safeNextPath(request.nextUrl.searchParams.get("next"));
 
-  const idToken = request.cookies.get(COOKIE_ID_TOKEN)?.value;
+  const accessToken = request.cookies.get(COOKIE_ACCESS_TOKEN)?.value;
   const refresh = request.cookies.get(COOKIE_REFRESH_TOKEN)?.value;
   const env = tryGetCognitoEnv();
 
-  // 1) Existing id_token still valid → either pass through (protected) or
-  //    bounce to the post-auth destination (auth page).
-  if (idToken) {
-    try {
-      const claims = parseIdTokenClaims(idToken);
-      if (claims.exp * 1000 > Date.now()) {
-        const needsUserSubCookie = request.cookies.get(COOKIE_USER_SUB)?.value !== claims.sub;
-        if (isAuthPage && isNativeAuthReturn) {
-          const res = NextResponse.next({ request });
-          if (needsUserSubCookie) {
-            res.cookies.set(COOKIE_USER_SUB, claims.sub, {
-              ...SECURE_COOKIE_BASE,
-              maxAge: REFRESH_MAX_AGE,
-            });
-          }
-          return res;
-        }
-        const res = isProtected
-          ? NextResponse.next({ request })
-          : NextResponse.redirect(new URL(safeNext, request.url));
-        if (needsUserSubCookie) {
-          res.cookies.set(COOKIE_USER_SUB, claims.sub, {
-            ...SECURE_COOKIE_BASE,
-            maxAge: REFRESH_MAX_AGE,
-          });
-        }
-        return res;
-      }
-    } catch {
-      // fall through to refresh
+  // A decoded JWT payload is never sufficient for protected navigation.
+  // Cognito userInfo verifies signature, expiry, token use, and pool before
+  // the request is allowed through or a durable uid hint is refreshed.
+  if (accessToken && env) {
+    const userSub = await verifyCognitoAccessToken({ accessToken, env });
+    if (userSub) {
+      return authenticatedNavigationResponse({
+        request,
+        isProtected,
+        isNativeAuthReturn,
+        safeNext,
+        userSub,
+      });
     }
   }
 
-  // 2) id_token expired (or malformed) but refresh_token is present. Try to
-  //    mint a new pair; on success attach the new cookies to whichever
-  //    response we end up returning.
+  // Refresh may recover an expired session, but the newly issued access
+  // token must pass the same server-side verification before access is granted.
   if (refresh && env) {
     try {
       const next = await refreshTokens({ env, refreshToken: refresh });
-      const claims = parseIdTokenClaims(next.id_token);
-      if (isAuthPage && isNativeAuthReturn) {
-        const res = NextResponse.next({ request });
-        res.cookies.set(COOKIE_ID_TOKEN, next.id_token, {
-          ...SECURE_COOKIE_BASE,
-          maxAge: next.expires_in,
-        });
-        res.cookies.set(COOKIE_ACCESS_TOKEN, next.access_token, {
-          ...SECURE_COOKIE_BASE,
-          maxAge: next.expires_in,
-        });
-        if (next.refresh_token) {
-          res.cookies.set(COOKIE_REFRESH_TOKEN, next.refresh_token, {
-            ...SECURE_COOKIE_BASE,
-            maxAge: REFRESH_MAX_AGE,
-          });
-        }
-        res.cookies.set(COOKIE_USER_SUB, claims.sub, {
-          ...SECURE_COOKIE_BASE,
-          maxAge: REFRESH_MAX_AGE,
-        });
-        return res;
-      }
-      const res = isProtected
-        ? NextResponse.next({ request })
-        : NextResponse.redirect(new URL(safeNext, request.url));
+      const userSub = await verifyCognitoAccessToken({
+        accessToken: next.access_token,
+        env,
+      });
+      if (!userSub) throw new Error("Cognito access token verification failed");
+      const res = authenticatedNavigationResponse({
+        request,
+        isProtected,
+        isNativeAuthReturn,
+        safeNext,
+        userSub,
+      });
       res.cookies.set(COOKIE_ID_TOKEN, next.id_token, {
         ...SECURE_COOKIE_BASE,
         maxAge: next.expires_in,
@@ -146,10 +115,6 @@ export default async function proxy(request: NextRequest) {
           maxAge: REFRESH_MAX_AGE,
         });
       }
-      res.cookies.set(COOKIE_USER_SUB, claims.sub, {
-        ...SECURE_COOKIE_BASE,
-        maxAge: REFRESH_MAX_AGE,
-      });
       return res;
     } catch {
       // fall through to the no-session branch
@@ -159,11 +124,32 @@ export default async function proxy(request: NextRequest) {
   // 3) No valid session.
   if (isProtected) {
     const url = new URL("/login", request.url);
-    url.searchParams.set("error", idToken ? "session_expired" : "no_session");
+    url.searchParams.set("error", accessToken || refresh ? "session_expired" : "no_session");
     return NextResponse.redirect(url);
   }
   // isAuthPage: show the login form, let the page render.
   return NextResponse.next({ request });
+}
+
+function authenticatedNavigationResponse(args: {
+  request: NextRequest;
+  isProtected: boolean;
+  isNativeAuthReturn: boolean;
+  safeNext: string;
+  userSub: string;
+}): NextResponse {
+  const response = args.isNativeAuthReturn
+    ? NextResponse.next({ request: args.request })
+    : args.isProtected
+      ? NextResponse.next({ request: args.request })
+      : NextResponse.redirect(new URL(args.safeNext, args.request.url));
+  if (args.request.cookies.get(COOKIE_USER_SUB)?.value !== args.userSub) {
+    response.cookies.set(COOKIE_USER_SUB, args.userSub, {
+      ...SECURE_COOKIE_BASE,
+      maxAge: REFRESH_MAX_AGE,
+    });
+  }
+  return response;
 }
 
 export function isNativeAuthReturnRequest(searchParams: URLSearchParams): boolean {

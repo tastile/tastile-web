@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
+import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import {
   COOKIE_EMAIL_AUTH_SESSION,
   COOKIE_EMAIL_AUTH_USERNAME,
@@ -11,7 +12,6 @@ import { normalizeCode, normalizeEmail } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { completeMfaChallenge } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 export async function POST(request: NextRequest) {
   const env = tryGetCognitoEnv();
@@ -51,7 +51,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const tokens = await completeMfaChallenge(env, email, code, session, mode);
-    const claims = parseIdTokenClaims(tokens.idToken);
+    const userSub = await verifyCognitoAccessToken({
+      accessToken: tokens.accessToken,
+      env,
+    });
+    if (!userSub) throw new Error("Cognito access token verification failed");
     const response = NextResponse.redirect(
       isDesktop
         ? buildDesktopSuccessPage(origin, redirectUri, state, tokens)
@@ -63,13 +67,13 @@ export async function POST(request: NextRequest) {
         idToken: tokens.idToken,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        sub: claims.sub,
+        sub: userSub,
         expiresIn: tokens.expiresIn,
       },
       response,
     );
     if (!isDesktop) {
-      await ensureDefaultApiTokenForUser(claims.sub, response);
+      await ensureDefaultApiTokenForUser(userSub, response);
     }
     response.cookies.set(COOKIE_EMAIL_AUTH_SESSION, "", {
       httpOnly: true,

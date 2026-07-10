@@ -1,4 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { NextRequest } from "next/server";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  delete process.env.E2E_BYPASS_AUTH;
+});
 
 describe("api proxy v1 path compatibility", () => {
   it("maps runtime and auth compatibility paths to tastile-core v1 routes", async () => {
@@ -39,4 +45,61 @@ describe("api proxy v1 path compatibility", () => {
     expect(params.get("start")).toBe("2026-06-01T00:00:00Z");
     expect(params.get("end")).toBe("2026-06-02T00:00:00Z");
   });
+
+  it.each(["GET", "POST", "PUT", "PATCH", "DELETE"])(
+    "rejects a forged uid cookie for %s requests",
+    async (method) => {
+      configureCognito();
+      process.env.TASTILE_WEB_BRIDGE_SECRET = "bridge-secret";
+      const route = await import("./[...path]/route");
+      const request = new NextRequest("https://app.tastile.app/api/proxy/v1/tiles", {
+        method,
+        headers: { cookie: "tastile_uid=victim-sub" },
+      });
+
+      const response = await route[method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE"](request, {
+        params: Promise.resolve({ path: ["v1", "tiles"] }),
+      });
+
+      expect(response.status).toBe(401);
+    },
+  );
+
+  it("forwards only the Cognito-verified sub to the bridge", async () => {
+    configureCognito();
+    process.env.TASTILE_WEB_BRIDGE_SECRET = "bridge-secret";
+    process.env.CLOUD_API_BASE = "https://core.tastile.test";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({ sub: "verified-sub" })))
+      .mockResolvedValueOnce(new Response("[]", { status: 200 }));
+    const { GET } = await import("./[...path]/route");
+    const request = new NextRequest("https://app.tastile.app/api/proxy/v1/tiles", {
+      headers: {
+        cookie:
+          "tastile_access_token=verified-token; tastile_uid=forged-sub",
+      },
+    });
+
+    const response = await GET(request, {
+      params: Promise.resolve({ path: ["v1", "tiles"] }),
+    });
+
+    expect(response.status).toBe(200);
+    const upstreamHeaders = fetchMock.mock.calls[1][1]?.headers as Headers;
+    expect(upstreamHeaders.get("x-tastile-web-session-user")).toBe("verified-sub");
+  });
 });
+
+function configureCognito() {
+  process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID = "ap-northeast-1_pool";
+  process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID = "client";
+  process.env.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN = "tastile";
+  process.env.NEXT_PUBLIC_COGNITO_ISSUER =
+    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool";
+  process.env.NEXT_PUBLIC_COGNITO_JWKS_URL =
+    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool/.well-known/jwks.json";
+  process.env.NEXT_PUBLIC_COGNITO_REGION = "ap-northeast-1";
+  process.env.NEXT_PUBLIC_COGNITO_CALLBACK_URL = "https://app.tastile.app/auth/callback";
+  process.env.NEXT_PUBLIC_COGNITO_LOGOUT_URL = "https://app.tastile.app";
+}

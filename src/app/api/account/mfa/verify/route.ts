@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import {
   COOKIE_EMAIL_AUTH_SESSION,
   COOKIE_EMAIL_AUTH_USERNAME,
@@ -7,7 +8,6 @@ import {
 } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { finalizeMfaSetup } from "@/lib/cognito/finalize-mfa-setup";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
 import { verifySoftwareToken } from "@/lib/cognito/verify-software-token";
 
 export async function POST(request: Request) {
@@ -41,7 +41,11 @@ export async function POST(request: Request) {
   try {
     const verify = await verifySoftwareToken(env, session, code);
     const tokens = await finalizeMfaSetup(env, verify.session, email);
-    const claims = parseIdTokenClaims(tokens.idToken);
+    const userSub = await verifyCognitoAccessToken({
+      accessToken: tokens.accessToken,
+      env,
+    });
+    if (!userSub) throw new Error("Cognito access token verification failed");
 
     const response = NextResponse.json({
       ok: true,
@@ -53,7 +57,7 @@ export async function POST(request: Request) {
         idToken: tokens.idToken,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
-        sub: claims.sub,
+        sub: userSub,
         expiresIn: tokens.expiresIn,
       },
       response,

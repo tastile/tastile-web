@@ -16,11 +16,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetchMock = vi.fn();
+const resolveAuthenticatedUserSub = vi.fn();
 
-// The upstream module reads `cookies()` from `next/headers` to derive
-// the bridge secret + session user.  In a vitest run there is no
-// request scope, so stub the module to an empty Map; the bridge
-// falls through to the x-owner-id / x-actor-id bootstrap headers.
+vi.mock("@/lib/cognito/authenticated-session", () => ({
+  resolveAuthenticatedUserSub,
+}));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: () => undefined }),
 }));
@@ -28,6 +28,9 @@ vi.mock("next/headers", () => ({
 beforeEach(() => {
   vi.resetModules();
   fetchMock.mockReset();
+  resolveAuthenticatedUserSub.mockReset();
+  resolveAuthenticatedUserSub.mockResolvedValue("verified-test-user");
+  vi.stubEnv("TASTILE_WEB_BRIDGE_SECRET", "bridge-secret");
   vi.stubGlobal("fetch", fetchMock);
   // Default upstream success: tile create returns {tile_id}, then
   // placement create returns {placement_id}.

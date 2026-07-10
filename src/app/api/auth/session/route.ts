@@ -1,10 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN, COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
+import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from "@/lib/cognito/cookies";
 
-// Intentionally unauthenticated: this route echoes the durable Cognito
-// session handle back to the browser. middleware.ts already gates
-// protected paths, and same-origin policy is the only intended consumer.
+// Returns session metadata only after server-side Cognito verification.
+// The response intentionally excludes every credential-bearing token.
 //
 // Auth boundary contract (see tastile-core/crates/v1/api/src/handlers/common.rs):
 //  - The only authentication concerns are (1) Cognito login and (2) Tastile
@@ -15,12 +15,9 @@ import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN, COOKIE_USER_SUB } from "@/lib/co
 //    from this session lookup. Clients that need an API token must call
 //    the dedicated /v1/api-tokens endpoint after Cognito login.
 //
-// Cognito id_token / refresh_token expire independently from the durable
-// `tastile_uid` cookie, so we accept the session as long as the sub
-// is present. The id_token exp is surfaced as a hint for clients that
-// still want to refresh, but a missing or malformed id_token is not an
-// error here: the bridge auth path on the daemon side ignores the
-// id_token entirely.
+// The Cognito access token is verified against the configured user pool's
+// userInfo endpoint before the bridge receives a user sub. The id_token exp
+// remains a display hint only and is never an authentication decision.
 //
 // We also resolve the v1 owner_id by hitting the daemon over the internal
 // bridge (x-tastile-web-bridge-secret + x-tastile-web-session-user) so that
@@ -110,7 +107,7 @@ export async function GET() {
   // refreshToken is read from the cookie for parity / future use but MUST
   // NEVER be returned to the browser.  See `SessionJson` above.
   void jar.get(COOKIE_REFRESH_TOKEN)?.value;
-  const sub = jar.get(COOKIE_USER_SUB)?.value;
+  const sub = await resolveAuthenticatedUserSub({ cookieStore: jar });
   if (!sub) {
     return NextResponse.json({ error: "not authenticated" }, { status: 401 });
   }
