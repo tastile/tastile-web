@@ -6,10 +6,9 @@
 //! snake_case <-> camelCase field conversion, and HTTP error mapping.
 
 import { cookies } from "next/headers";
-import { COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 
 const RUST_BASE = process.env.TASTILE_RUST_API_URL ?? "http://127.0.0.1:31400";
-const DEV_ACTOR_ID = "00000000-0000-0000-0000-000000000001";
 
 type AnyObj = Record<string, unknown>;
 
@@ -60,19 +59,23 @@ function upstreamError(status: number, body: unknown): Response {
   });
 }
 
-async function bridgeHeaders(extra?: Record<string, string>): Promise<Record<string, string>> {
+async function bridgeHeaders(
+  extra?: Record<string, string>,
+): Promise<Record<string, string> | null> {
   const cookieStore = await cookies();
-  const userSub = cookieStore.get(COOKIE_USER_SUB)?.value;
+  const userSub = await resolveAuthenticatedUserSub({ cookieStore });
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  const headers: Record<string, string> = { ...(extra ?? {}) };
-  if (userSub && bridgeSecret) {
-    headers["x-tastile-web-bridge-secret"] = bridgeSecret;
-    headers["x-tastile-web-session-user"] = userSub;
-  } else {
-    headers["x-owner-id"] = DEV_ACTOR_ID;
-    headers["x-actor-id"] = DEV_ACTOR_ID;
-  }
-  return headers;
+  if (!userSub || !bridgeSecret) return null;
+
+  return {
+    ...(extra ?? {}),
+    "x-tastile-web-bridge-secret": bridgeSecret,
+    "x-tastile-web-session-user": userSub,
+  };
+}
+
+function unauthenticatedUpstreamResponse(): Response {
+  return upstreamError(401, { error: "Unauthorized" });
 }
 
 const TIMELINE_ITEM_TO_EVENT: Array<{ hex: string; name: string }> = [
@@ -156,6 +159,7 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
   qs.set("start", toUtcIso(q.start));
   qs.set("end", toUtcIso(q.end));
   const headers = await bridgeHeaders();
+  if (!headers) return unauthenticatedUpstreamResponse();
   const url = `${RUST_BASE}/v1/timeline?${qs.toString()}`;
   const res = await fetch(url, { cache: "no-store", headers });
   if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
@@ -239,6 +243,7 @@ export interface CalendarEventResult {
  */
 export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): Promise<Response> {
   const headers = await bridgeHeaders({ "content-type": "application/json" });
+  if (!headers) return unauthenticatedUpstreamResponse();
 
   const tileRes = await fetch(`${RUST_BASE}/v1/tiles`, {
     method: "POST",
@@ -314,6 +319,7 @@ export async function upstreamUpdateTile(
   },
 ): Promise<Response> {
   const headers = await bridgeHeaders({ "content-type": "application/json" });
+  if (!headers) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}/update`, {
     method: "POST",
     headers,
@@ -330,6 +336,7 @@ export async function upstreamUpdateTile(
 /** Archive v1 tile (DELETE /v1/tiles/{id}) -- replaces "delete event". */
 export async function upstreamArchiveTile(tileId: string): Promise<Response> {
   const headers = await bridgeHeaders();
+  if (!headers) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}`, {
     method: "DELETE",
     headers,
@@ -342,6 +349,7 @@ export async function upstreamArchiveTile(tileId: string): Promise<Response> {
 /** Close a single placement without archiving its tile. */
 export async function upstreamClosePlacement(placementId: string): Promise<Response> {
   const headers = await bridgeHeaders();
+  if (!headers) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/placements/${encodeURIComponent(placementId)}/close`, {
     method: "POST",
     headers,

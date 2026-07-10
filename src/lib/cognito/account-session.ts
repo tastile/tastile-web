@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
+import { resolveAuthenticatedUserSub } from "./authenticated-session";
 import {
   COOKIE_ACCESS_TOKEN,
   COOKIE_ID_TOKEN,
@@ -34,8 +35,7 @@ export async function getAccountAccessToken(response?: NextResponse): Promise<st
 }
 
 export async function getAccountUserSub(): Promise<string | null> {
-  const claims = await getAccountIdTokenClaims();
-  return claims?.sub ?? null;
+  return resolveAuthenticatedUserSub();
 }
 
 export async function getAccountIdTokenClaims(): Promise<IdTokenClaims | null> {
