@@ -9,6 +9,7 @@ import { cookies } from "next/headers";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 
 const RUST_BASE = process.env.TASTILE_RUST_API_URL ?? "http://127.0.0.1:31400";
+const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 
 type AnyObj = Record<string, unknown>;
 
@@ -62,6 +63,14 @@ function upstreamError(status: number, body: unknown): Response {
 async function bridgeHeaders(
   extra?: Record<string, string>,
 ): Promise<Record<string, string> | null> {
+  if (process.env.E2E_BYPASS_AUTH === "1") {
+    return {
+      ...(extra ?? {}),
+      "x-owner-id": DEV_ACTOR_SUBJECT_ID,
+      "x-actor-id": DEV_ACTOR_SUBJECT_ID,
+    };
+  }
+
   const cookieStore = await cookies();
   const userSub = await resolveAuthenticatedUserSub({ cookieStore });
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;

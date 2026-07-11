@@ -1,19 +1,21 @@
-"use client";
-
 import Link from "next/link";
-import { LanguageToggle } from "@/components/LanguageToggle";
-import { ThemeToggle } from "@/components/NavControls";
 import { TastileLogo } from "@/components/TastileLogo";
-import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function SiteHeader({
   hideAuth,
   showFeatureLink = false,
+  translations,
 }: {
   hideAuth?: boolean;
   showFeatureLink?: boolean;
-} = {}) {
-  const { t } = useTranslation();
+  translations: {
+    features: string;
+    pricing: string;
+    download: string;
+    login: string;
+    getStarted: string;
+  };
+}) {
   return (
     <header className="sticky top-0 z-40 bg-surface-0/90 backdrop-blur-sm">
       <div className="layout-shell flex h-16 items-center justify-between">
@@ -27,36 +29,34 @@ export function SiteHeader({
               href="/#features"
               className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block"
             >
-              {t("marketing.nav.features")}
+              {translations.features}
             </Link>
           ) : null}
           <Link
             href="/pricing"
             className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block"
           >
-            {t("marketing.nav.pricing")}
+            {translations.pricing}
           </Link>
           <Link
             href="/download"
             className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block"
           >
-            {t("marketing.nav.download")}
+            {translations.download}
           </Link>
-          <ThemeToggle />
-          <LanguageToggle />
           {!hideAuth && (
             <>
               <Link
                 href="/login"
                 className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block"
               >
-                {t("marketing.nav.login")}
+                {translations.login}
               </Link>
               <Link
                 href="/login"
                 className="ml-1 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-interactive-hover"
               >
-                {t("marketing.nav.getStarted")}
+                {translations.getStarted}
               </Link>
             </>
           )}

@@ -31,7 +31,10 @@ describe("marketing page layout consistency", () => {
 		);
 		unmountDownload();
 
-		const pricingContainer = render(<PricingPage />).container;
+		const pricingUi = await PricingPage({
+			searchParams: Promise.resolve({}),
+		});
+		const pricingContainer = render(pricingUi).container;
 		expect(pricingContainer.firstElementChild?.className).toContain("flex");
 		expect(pricingContainer.firstElementChild?.className).toContain("flex-col");
 		expect(pricingContainer.querySelector("main")?.className).toContain(

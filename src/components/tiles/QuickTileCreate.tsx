@@ -346,7 +346,7 @@ export function QuickTileCreate() {
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
 
-  const [allDay, setAllDay] = useState(true);
+  const [allDay, setAllDay] = useState(false);
   const [visualOpen, setVisualOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<
     "base" | "time" | "recurring" | "references" | "completion" | "meta"
@@ -779,7 +779,7 @@ export function QuickTileCreate() {
       }
 
       reset();
-      setAllDay(true);
+      setAllDay(false);
       setActivePanel("base");
       setMemoExpanded(false);
       notifyEventsChanged();
@@ -805,7 +805,7 @@ export function QuickTileCreate() {
         throw new Error(`${t("quickCreate.deleteError")} (api:v1) ${res.error.message}`);
       }
       reset();
-      setAllDay(true);
+      setAllDay(false);
       setActivePanel("base");
       setMemoExpanded(false);
       notifyEventsChanged();

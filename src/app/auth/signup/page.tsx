@@ -3,6 +3,7 @@ import Link from "next/link";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { authErrorMessage } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
+import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { AuthShell } from "../auth-shell";
 
 export default async function SignupPage({
@@ -28,6 +29,8 @@ export default async function SignupPage({
       title="アカウントを作成"
       subtitle="メールアドレスとパスワード (12 文字以上) を設定してください。"
       message={message}
+      headerTranslations={getHeaderTranslations("ja")}
+      footerTranslations={getFooterTranslations("ja")}
     >
       <form action="/auth/email/signup" method="post" className="space-y-5">
         {isNative ? (

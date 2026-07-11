@@ -14,7 +14,7 @@ export function getStripe(): Stripe {
   }
 
   cachedStripe = new Stripe(secretKey, {
-    apiVersion: "2026-02-25.clover",
+    apiVersion: "2026-06-24.dahlia",
   });
   cachedSecretKey = secretKey;
   return cachedStripe;

@@ -209,7 +209,7 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("touchcancel", onTouchEnd);
     };
-  }, [applyAnchored]);
+  }, [applyAnchored, _attachedTick]);
 
   const reset = useCallback(() => setZoom(initialRef.current), []);
 

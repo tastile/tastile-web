@@ -8,9 +8,17 @@ vi.mock("@/components/NavControls", () => ({
 	ThemeToggle: () => <button type="button">theme</button>,
 }));
 
+const mockTranslations = {
+	features: "機能",
+	pricing: "料金",
+	download: "ダウンロード",
+	login: "ログイン",
+	getStarted: "始める",
+};
+
 describe("SiteHeader", () => {
 	it("renders shared marketing navigation links", () => {
-		render(<SiteHeader />);
+		render(<SiteHeader translations={mockTranslations} />);
 
 		expect(
 			screen.getByRole("link", { name: "料金" }).getAttribute("href"),

@@ -3,7 +3,7 @@
 import { PanelLeftDashed } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { NotificationsDropdown } from "@/components/notifications/NotificationsDropdown";
+import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { SecurityLockGate } from "@/components/security/SecurityLockGate";
 import { ActivityBar } from "@/components/shell/ActivityBar";
@@ -85,7 +85,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* グローバルオーバーレイ */}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <NotificationsDropdown open={notificationsOpen} onClose={() => setNotificationsOpen(false)} />
+      <NotificationsMenu open={notificationsOpen} onOpenChange={setNotificationsOpen} />
       {/* QuickTileCreate: デスクトップ=右スライド / モバイル=下スライドアップ */}
       <QuickTileCreate />
 

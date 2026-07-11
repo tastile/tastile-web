@@ -135,15 +135,6 @@ export function FloatingHeader({
             <Search className="h-4 w-4" />
           </button>
 
-          <button
-            type="button"
-            aria-label={t("shell.floatingHeader.openNotifications")}
-            onClick={onOpenNotifications}
-            className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-
           <FloatingMenu>
             <FloatingMenuTrigger asChild>
               <button

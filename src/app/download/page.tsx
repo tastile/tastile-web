@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
+import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { translations } from "@/lib/i18n/translations";
 import type { Locale } from "@/lib/stores/locale-store";
 
@@ -23,7 +24,7 @@ export default async function DownloadPage({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader showFeatureLink />
+      <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
       <main className="flex-1">
         <div className="layout-shell max-w-4xl py-20">
           <div>
@@ -105,7 +106,7 @@ export default async function DownloadPage({
           </div>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter translations={getFooterTranslations(lang)} />
     </div>
   );
 }

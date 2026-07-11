@@ -280,21 +280,10 @@ function defaultIdentity(): TileIdentitySlice {
 }
 
 function defaultTime(): TimeSlice {
-  // Default to the next half-hour, 30 minutes long. Round up to the
-  // nearest 30-minute boundary so the start always aligns with what
-  // a Google Calendar picker would suggest.
-  const now = new Date();
-  const minutes = now.getMinutes();
-  const rounded = new Date(now);
-  if (minutes < 30) {
-    rounded.setMinutes(30, 0, 0);
-  } else {
-    rounded.setHours(now.getHours() + 1, 0, 0, 0);
-  }
-  const start = rounded.toISOString();
-  const end = new Date(rounded.getTime() + 30 * 60_000).toISOString();
+  // A new tile is floating until the user or scheduler creates a Placement.
+  // Keep its required duration, but never fabricate a fixed span.
   return {
-    span: { start, end },
+    span: { start: "", end: "" },
     durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
   };
 }
@@ -372,7 +361,7 @@ export function buildDefaultQuickCreateState(): Pick<
     editingTileId: null,
     loadError: null,
     submitBlocked: false,
-    initialAllDay: true,
+    initialAllDay: false,
     identity: defaultIdentity(),
     plan: defaultPlan(),
     time: defaultTime(),

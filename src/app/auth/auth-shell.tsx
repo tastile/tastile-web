@@ -7,15 +7,33 @@ export function AuthShell({
   subtitle,
   message,
   children,
+  headerTranslations,
+  footerTranslations,
 }: {
   title: string;
   subtitle: string;
   message: string | null;
   children: React.ReactNode;
+  headerTranslations: {
+    features: string;
+    pricing: string;
+    download: string;
+    login: string;
+    getStarted: string;
+  };
+  footerTranslations: {
+    webApp: string;
+    download: string;
+    pricing: string;
+    privacy: string;
+    terms: string;
+    tokushoho: string;
+    copyright: string;
+  };
 }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader hideAuth />
+      <SiteHeader hideAuth translations={headerTranslations} />
 
       <main className="layout-shell grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.05fr_1fr]">
         <section className="space-y-5">
@@ -39,7 +57,7 @@ export function AuthShell({
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter translations={footerTranslations} />
     </div>
   );
 }

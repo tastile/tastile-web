@@ -1,4 +1,4 @@
-import { Apple, Chrome, Fingerprint, Info, KeyRound, Laptop, Smartphone } from "lucide-react";
+import { Apple, Fingerprint, Globe, Info, KeyRound, Laptop, Smartphone } from "lucide-react";
 import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -7,6 +7,7 @@ import {
   getConfiguredCognitoIdentityProviders,
   parseCognitoPlatform,
 } from "@/lib/cognito/login-url";
+import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 
 const ERROR_MESSAGES: Record<string, string> = {
   no_session: "サインインが必要です。",
@@ -54,7 +55,7 @@ export default async function LoginPage({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader hideAuth />
+      <SiteHeader hideAuth translations={getHeaderTranslations("ja")} />
 
       <main className="layout-shell grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.05fr_1fr]">
         <section className="space-y-8">
@@ -122,13 +123,13 @@ export default async function LoginPage({
                   href={`/auth/cognito/login?provider=Google${desktopSuffix}`}
                   className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
                 >
-                  <Chrome className="h-4 w-4" aria-hidden="true" />
+                  <Globe className="h-4 w-4" aria-hidden="true" />
                   Google で続行
                 </a>
               ) : (
                 <div className="flex w-full items-center justify-between gap-3 rounded-md bg-surface-0 px-4 py-3 text-sm text-foreground-muted">
                   <span className="inline-flex items-center gap-3">
-                    <Chrome className="h-4 w-4" aria-hidden="true" />
+                    <Globe className="h-4 w-4" aria-hidden="true" />
                     Google で続行
                   </span>
                   <span className="text-xs">設定中</span>
@@ -190,7 +191,7 @@ export default async function LoginPage({
           </div>
         </section>
       </main>
-      <SiteFooter />
+      <SiteFooter translations={getFooterTranslations("ja")} />
     </div>
   );
 }

@@ -27,6 +27,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  delete process.env.E2E_BYPASS_AUTH;
 });
 
 describe("events upstream authentication", () => {
@@ -53,6 +54,29 @@ describe("events upstream authentication", () => {
 
     expect(response.status).toBe(401);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("forwards to the local core as the dev actor when E2E auth bypass is enabled", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("[]", { status: 200 }));
+
+    const response = await upstreamListTimeline({
+      start: "2026-01-01T00:00:00Z",
+      end: "2026-01-02T00:00:00Z",
+    });
+
+    expect(response.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://127.0.0.1:31400/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z",
+      expect.objectContaining({
+        headers: {
+          "x-owner-id": "00000000-0000-0000-0000-000000000001",
+          "x-actor-id": "00000000-0000-0000-0000-000000000001",
+        },
+      }),
+    );
   });
 
   it("forwards only the Cognito-verified sub in bridge headers", async () => {

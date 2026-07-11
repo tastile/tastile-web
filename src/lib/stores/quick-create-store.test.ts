@@ -44,15 +44,10 @@ describe("useQuickCreateStore", () => {
       expect(s.plan.planning.placementRules).toEqual([]);
       expect(s.plan.metrics).toEqual([]);
       expect(s.plan.decisions).toEqual([]);
-      // defaultTime now seeds the next upcoming half-hour, so we
-      // assert on shape rather than specific timestamps.
-      expect(typeof s.time.span.start).toBe("string");
-      expect(s.time.span.start).not.toBe("");
-      expect(typeof s.time.span.end).toBe("string");
-      expect(s.time.span.end).not.toBe("");
-      expect(new Date(s.time.span.end).getTime()).toBeGreaterThan(
-        new Date(s.time.span.start).getTime(),
-      );
+      // A new tile is a floating target. The scheduler or an explicit fixed
+      // placement choice supplies a span later; creation must not fabricate it.
+      expect(s.time.span).toEqual({ start: "", end: "" });
+      expect(s.initialAllDay).toBe(false);
       expect(s.time.durationMinMax).toEqual({ minMs: 1800000, maxMs: 5400000 });
       expect(s.windows).toEqual([]);
       expect(s.recurring.life.active).toEqual({ startDate: "", endDate: "" });

@@ -108,6 +108,8 @@ function fromWireCommandResponse(raw: unknown): unknown {
       frameRuleId: am.frameRuleId ?? am.frame_rule_id ?? null,
       changesetId: am.changesetId ?? am.changeset_id ?? null,
       changeIds: am.changeIds ?? am.change_ids ?? [],
+      windowIds: am.windowIds ?? am.window_ids ?? null,
+      flowIds: am.flowIds ?? am.flow_ids ?? null,
     };
   }
   return {

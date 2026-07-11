@@ -3,6 +3,7 @@ import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TastileLogo } from "@/components/TastileLogo";
+import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 
 export default function DesktopAuthCompletePage() {
   const script = `
@@ -29,7 +30,7 @@ export default function DesktopAuthCompletePage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader hideAuth />
+      <SiteHeader hideAuth translations={getHeaderTranslations("ja")} />
 
       <main className="layout-shell flex flex-1 items-center justify-center py-12">
         <div className="w-full max-w-xl rounded-lg bg-surface-elevated p-8">
@@ -73,7 +74,7 @@ export default function DesktopAuthCompletePage() {
         </div>
       </main>
 
-      <SiteFooter />
+      <SiteFooter translations={getFooterTranslations("ja")} />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink redirect runs only on this auth-complete page */}
       <script dangerouslySetInnerHTML={{ __html: script }} />
     </div>

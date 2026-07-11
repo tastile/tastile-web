@@ -1,5 +1,6 @@
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 
 export const metadata = {
   title: "Privacy Policy — Tastile",
@@ -9,7 +10,7 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader showFeatureLink />
+      <SiteHeader showFeatureLink translations={getHeaderTranslations("ja")} />
       <main className="flex-1">
         <div className="layout-shell max-w-3xl py-12">
           <h1 className="mb-8 text-3xl font-[510] tracking-[-0.02em] text-foreground">
@@ -76,7 +77,7 @@ export default function PrivacyPage() {
           </div>
         </div>
       </main>
-      <SiteFooter />
+      <SiteFooter translations={getFooterTranslations("ja")} />
     </div>
   );
 }

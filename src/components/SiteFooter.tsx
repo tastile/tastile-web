@@ -1,11 +1,19 @@
-"use client";
-
 import Link from "next/link";
 import { TastileLogo } from "@/components/TastileLogo";
-import { useTranslation } from "@/lib/i18n/use-translation";
 
-export function SiteFooter() {
-  const { t } = useTranslation();
+export function SiteFooter({
+  translations,
+}: {
+  translations: {
+    webApp: string;
+    download: string;
+    pricing: string;
+    privacy: string;
+    terms: string;
+    tokushoho: string;
+    copyright: string;
+  };
+}) {
   return (
     <footer className="bg-surface-0 py-10">
       <div className="layout-shell grid gap-6 md:grid-cols-[auto_1fr_auto] md:items-center">
@@ -15,27 +23,25 @@ export function SiteFooter() {
         </Link>
         <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground-muted">
           <Link href="/login" className="hover:text-foreground">
-            {t("marketing.nav.webApp")}
+            {translations.webApp}
           </Link>
           <Link href="/download" className="hover:text-foreground">
-            {t("marketing.nav.download")}
+            {translations.download}
           </Link>
           <Link href="/pricing" className="hover:text-foreground">
-            {t("marketing.nav.pricing")}
+            {translations.pricing}
           </Link>
           <Link href="/privacy" className="hover:text-foreground">
-            {t("marketing.nav.privacy")}
+            {translations.privacy}
           </Link>
           <Link href="/terms" className="hover:text-foreground">
-            {t("marketing.nav.terms")}
+            {translations.terms}
           </Link>
           <Link href="/tokushoho" className="hover:text-foreground">
-            {t("marketing.nav.tokushoho")}
+            {translations.tokushoho}
           </Link>
         </nav>
-        <p className="text-xs text-foreground-subtle md:text-right">
-          {t("marketing.footer.copyright")}
-        </p>
+        <p className="text-xs text-foreground-subtle md:text-right">{translations.copyright}</p>
       </div>
     </footer>
   );
