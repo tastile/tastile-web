@@ -668,9 +668,6 @@ function localCompatResponse(path: string, method: string): NextResponse | null 
   if (path === "views/timeline/today") {
     return NextResponse.json({ items: [] });
   }
-  if (path === "commands/recurring-tile") {
-    return NextResponse.json({ items: [] });
-  }
   const recurringGetMatch = path.match(/^commands\/recurring-tile\/([^/]+)$/);
   if (recurringGetMatch && method === "GET") {
     return new NextResponse(null, { status: 404 });
@@ -747,22 +744,48 @@ function normalizeCompatResponse(path: string, body: string): string {
 
 function toRecurringTemplateList(parsed: unknown) {
   const source = Array.isArray(parsed) ? parsed : [];
+  // v1/tiles doesn't serialize `kind` on TileListView; use `recurrence`
+  // presence as the discriminator (RECURRING tiles always have a
+  // RecurrenceView, others have null).
   return source
     .filter((tile) => isRecurringTileSummary(tile))
     .map((tile) => {
       const row = tile as Record<string, unknown>;
+      const rec = (row.recurrence ?? {}) as Record<string, unknown>;
+      // Project v1 flat shape {step_min, window_start_min, window_end_min,
+      // expression} into the nested Phase A shape the schedule view
+      // expects (generator / window / selector).
       return {
         id: typeof row.id === "string" ? row.id : generateId(),
         title: typeof row.title === "string" ? row.title : "Recurring tile",
         note: typeof row.note === "string" ? row.note : "",
-        recurrence: row.recurrence,
+        recurrence: {
+          generator: {
+            step_min: typeof rec.step_min === "number" ? rec.step_min : undefined,
+          },
+          window: {
+            weekday_mask: 127,
+            start_offset_min:
+              typeof rec.window_start_min === "number" ? rec.window_start_min : 0,
+            end_offset_min:
+              typeof rec.window_end_min === "number" ? rec.window_end_min : 0,
+          },
+          selector: {
+            expression: rec.expression ?? null,
+          },
+        },
       };
     });
 }
 
 function isRecurringTileSummary(tile: unknown): boolean {
   if (!tile || typeof tile !== "object") return false;
-  const kind = (tile as Record<string, unknown>).kind;
+  // v1/tiles uses presence of `recurrence` (RecurrenceView) as the
+  // RECURRING discriminator; legacy v0 paths used `kind === 0` or
+  // string aliases. Accept all so the bridge works for both shapes.
+  const row = tile as Record<string, unknown>;
+  if (row.recurrence && typeof row.recurrence === "object") return true;
+  const kind = row.kind;
   return kind === 0 || kind === "recurring" || kind === "Recurring";
 }
 
