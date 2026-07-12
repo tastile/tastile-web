@@ -66,8 +66,12 @@ import {
   RowSegmented,
   RowSubPanel,
   RowToggle,
+  SectionHeader,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
+import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
+import { FloatingScheduleEditor } from "@/components/tiles/editor/FloatingScheduleEditor";
+import { SchedulePanel, ScheduleRow } from "@/components/tiles/editor/SchedulePanel";
 import { makeClient } from "@/lib/api/v1/submit";
 import {
   closePlacementCommand,
@@ -76,38 +80,24 @@ import {
   updatePlacementSpanCommand,
   updateTileCommand,
 } from "@/lib/api/v1/tile-commands";
-import type { RecurrenceModel } from "@/lib/domain/tile";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 import {
   ConditionKind,
   HolidayKind,
   PlanRole,
   type PlanRoleValue,
-  RecurringState,
-  type RecurringStateValue,
   TileKind,
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
-import type {
-  CalendarGenerator,
-  FrameGenerator,
-  FrameRule,
-  ReferenceGenerator,
-  StepGenerator,
-  TransformGenerator,
-} from "@/lib/domain/v1/tile";
+import type { FrameRule } from "@/lib/domain/v1/tile";
 import type { Window } from "@/lib/domain/v1/window";
 import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
 import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import {
-  defaultRecurrenceModel,
-  type RecurrenceTemplateRecurrence,
-  useQuickCreateStore,
-} from "@/lib/stores/quick-create-store";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 const PRESET_COLORS = [
@@ -155,18 +145,7 @@ const _PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }>
   { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
 ];
 
-const RECURRING_STATE_OPTIONS: ReadonlyArray<{
-  value: RecurringStateValue;
-  label: string;
-}> = [
-  { value: RecurringState.ACTIVE, label: "quickCreate.recurringStateActive" },
-  { value: RecurringState.PAUSED, label: "quickCreate.recurringStatePaused" },
-  { value: RecurringState.ENDED, label: "quickCreate.recurringStateEnded" },
-  {
-    value: RecurringState.CANCELLED,
-    label: "quickCreate.recurringStateCancelled",
-  },
-];
+// RECURRING_STATE_OPTIONS moved to components/tiles/editor/AutomationPanel.tsx (Plan #7 Phase 4).
 
 // ---------- helpers ----------
 
@@ -267,58 +246,8 @@ function normalizeHexColor(value: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000";
 }
 
-const FRAME_GENERATOR_KIND_OPTIONS = [
-  { value: "step", label: "quickCreate.frameRuleKindStep" },
-  { value: "reference", label: "quickCreate.frameRuleKindReference" },
-  { value: "calendar", label: "quickCreate.frameRuleKindCalendar" },
-  { value: "transform", label: "quickCreate.frameRuleKindTransform" },
-] as const;
-
-const CALENDAR_UNIT_OPTIONS = [
-  { value: "0", label: "quickCreate.frameRuleUnitDay" },
-  { value: "1", label: "quickCreate.frameRuleUnitWeek" },
-  { value: "2", label: "quickCreate.frameRuleUnitMonth" },
-] as const;
-
-const REFERENCE_ALIGN_OPTIONS = [
-  { value: "0", label: "quickCreate.frameRuleAlignStart" },
-  { value: "1", label: "quickCreate.frameRuleAlignEnd" },
-  { value: "2", label: "quickCreate.frameRuleAlignCenter" },
-] as const;
-
-const HOLIDAY_KIND_OPTIONS = [
-  { value: String(HolidayKind.NOT_HOLIDAY), label: "quickCreate.frameRuleHolidayNotHoliday" },
-  { value: String(HolidayKind.HOLIDAY), label: "quickCreate.frameRuleHolidayHoliday" },
-  { value: String(HolidayKind.ANY), label: "quickCreate.frameRuleHolidayAny" },
-] as const;
-
-const WINDOW_KIND_OPTIONS = [
-  { value: "0", label: "quickCreate.windowKindCalendar" },
-  { value: "1", label: "quickCreate.windowKindLabelSpan" },
-  { value: "2", label: "quickCreate.windowKindParentSpan" },
-  { value: "3", label: "quickCreate.windowKindGap" },
-] as const;
-
-type FrameGeneratorKind = FrameGenerator["kind"];
-
-function defaultFrameGenerator(kind: FrameGeneratorKind): FrameGenerator {
-  switch (kind) {
-    case "step":
-      return { kind: "step", value: { step: 0, origin: null, bounds: null } };
-    case "reference":
-      return { kind: "reference", value: { referenceId: "", align: 0 } };
-    case "calendar":
-      return {
-        kind: "calendar",
-        value: { unit: 0, weekdayMask: null, holidayKind: HolidayKind.ANY },
-      };
-    case "transform":
-      return {
-        kind: "transform",
-        value: { sourceFrameId: "", shift: null, scale: null },
-      };
-  }
-}
+// Frame-generator option constants + defaultFrameGenerator() moved to
+// components/tiles/editor/AutomationPanel.tsx (Plan #7 Phase 4).
 
 // ---------- main component ----------
 
@@ -472,6 +401,29 @@ export function QuickTileCreate() {
   }, [identity.externalId, setField]);
 
   if (!mounted) return null;
+
+  // A new executable tile without an explicit span is a flexible schedule
+  // definition.  Keep legacy placement, recurring, and edit paths below
+  // untouched; this path publishes the aggregate directly and never creates
+  // a fabricated Placement.
+  if (
+    mode === "create" &&
+    identity.kind === TileKind.PLACEMENT &&
+    plan.role === PlanRole.EXECUTABLE &&
+    !time.span.start &&
+    !time.span.end
+  ) {
+    return (
+      <FloatingScheduleEditor
+        onClose={close}
+        onSaved={() => {
+          reset();
+          notifyEventsChanged();
+          close();
+        }}
+      />
+    );
+  }
 
   // --- validity -------------------------------------------------------------
 
@@ -1579,91 +1531,18 @@ export function QuickTileCreate() {
           </button>
         </div>
         <FormPanel>
-          <SectionHeader icon={Clock} title={t("quickCreate.timeNavTitle")} />
-          <RowToggle
-            icon={Calendar}
-            placeholder={t("quickCreate.allDay")}
-            checked={allDay}
-            onChange={setAllDay}
-          />
-          <ScheduleRow
+          <SchedulePanel
             allDay={allDay}
-            spanStart={time.span.start}
-            spanEnd={time.span.end}
-            onStartChange={(value) => setField("time.span.start", value)}
-            onEndChange={(value) => setField("time.span.end", value)}
+            setAllDay={setAllDay}
+            time={time}
+            windows={windows}
+            setField={setField}
+            updateWindow={updateWindow}
+            addWindow={addWindow}
+            removeWindow={removeWindow}
             locale={locale}
             t={t}
           />
-          <FormDivider />
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-                {t("quickCreate.minMsLabel")}
-              </span>
-              <input
-                type="number"
-                min={0}
-                step={5}
-                aria-label={t("quickCreate.minMsLabel")}
-                value={
-                  time.durationMinMax.minMs !== null
-                    ? Math.round(time.durationMinMax.minMs / 60000)
-                    : ""
-                }
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setField("time.durationMinMax.minMs", v === "" ? null : Number(v) * 60000);
-                }}
-                className="w-full rounded-md bg-surface-2 px-3 py-2 text-right text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-            <div className="space-y-1">
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-                {t("quickCreate.maxMsLabel")}
-              </span>
-              <input
-                type="number"
-                min={0}
-                step={5}
-                aria-label={t("quickCreate.maxMsLabel")}
-                value={
-                  time.durationMinMax.maxMs !== null
-                    ? Math.round(time.durationMinMax.maxMs / 60000)
-                    : ""
-                }
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setField("time.durationMinMax.maxMs", v === "" ? null : Number(v) * 60000);
-                }}
-                className="w-full rounded-md bg-surface-2 px-3 py-2 text-right text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-          </div>
-          <p className="mt-1 text-[10px] text-foreground-muted">{t("quickCreate.minutesUnit")}</p>
-          <FormDivider />
-          <SectionHeader icon={Calendar} title={t("quickCreate.windowsNavTitle")} />
-          {windows.map((w, i) => (
-            <WindowRow
-              key={w.id}
-              window={w}
-              index={i}
-              onUpdate={updateWindow}
-              onRemove={removeWindow}
-              t={t}
-              locale={locale}
-            />
-          ))}
-          <Button
-            type="button"
-            size="small"
-            variant="default"
-            rounded
-            iconLeft={<Plus size={12} aria-hidden="true" />}
-            onClick={addWindow}
-          >
-            {t("quickCreate.windowsAdd")}
-          </Button>
         </FormPanel>
       </section>
 
@@ -1688,76 +1567,19 @@ export function QuickTileCreate() {
             <X size={16} aria-hidden="true" />
           </button>
         </div>
-        <FormPanel>
-          <SectionHeader icon={Repeat} title={t("quickCreate.recurrenceNavTitle")} />
-          <div
-            role="tablist"
-            aria-label={t("quickCreate.recurrenceNavTitle")}
-            className="flex border-b border-border"
-          >
-            {(
-              [
-                { id: "lifecycle", labelKey: "recurringTabLifecycle" },
-                { id: "generator", labelKey: "recurringTabGenerator" },
-                { id: "window", labelKey: "recurringTabWindow" },
-              ] as const
-            ).map((tab) => {
-              const active = recurringTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => setRecurringTab(tab.id)}
-                  className={cn(
-                    "flex-1 px-2 py-1.5 text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-                    active
-                      ? "bg-primary text-primary-fg"
-                      : "text-foreground-muted hover:bg-surface-2",
-                  )}
-                >
-                  {t(`quickCreate.${tab.labelKey}`)}
-                </button>
-              );
-            })}
-          </div>
-          {recurringTab === "lifecycle" ? (
-            <>
-              <RecurringLifeEditor
-                activeStart={recurring.life.active.startDate}
-                activeEnd={recurring.life.active.endDate}
-                state={recurring.life.state}
-                onActiveStartChange={(value) => setField("recurring.life.active.startDate", value)}
-                onActiveEndChange={(value) => setField("recurring.life.active.endDate", value)}
-                onStateChange={(value) => setField("recurring.life.state", value)}
-                t={t}
-              />
-              <FrameRulesList
-                rules={recurring.frameRules}
-                onAdd={addFrameRule}
-                onRemove={removeFrameRule}
-                onUpdate={updateFrameRule}
-                t={t}
-              />
-            </>
-          ) : null}
-          {recurringTab === "generator" ? (
-            <GeneratorEditor
-              recurrence={recurrence}
-              onChange={(next) => setField("recurrence", next)}
-              t={t}
-            />
-          ) : null}
-          {recurringTab === "window" ? (
-            <WindowEditor
-              recurrence={recurrence}
-              onChange={(next) => setField("recurrence", next)}
-              t={t}
-              locale={locale}
-            />
-          ) : null}
-        </FormPanel>
+        <AutomationPanel
+          kindIsRecurring={kindIsRecurring}
+          recurring={recurring}
+          recurrence={recurrence}
+          recurringTab={recurringTab}
+          setRecurringTab={setRecurringTab}
+          setField={setField}
+          addFrameRule={addFrameRule}
+          removeFrameRule={removeFrameRule}
+          updateFrameRule={updateFrameRule}
+          locale={locale}
+          t={t}
+        />
       </section>
 
       <section className={subPanelClass("references")} aria-hidden={activePanel !== "references"}>
@@ -2658,18 +2480,6 @@ function _FullFieldList({ data, emptyLabel }: { data: unknown; emptyLabel: strin
   );
 }
 
-function SectionHeader({ icon: Icon, title }: { icon: typeof AlertCircle; title: string }) {
-  return (
-    <div
-      className="flex items-center gap-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted"
-      data-testid="section-header"
-    >
-      <Icon size={14} aria-hidden="true" />
-      <span>{title}</span>
-    </div>
-  );
-}
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _StubRow({
   icon: Icon,
@@ -2697,74 +2507,7 @@ function _StubRow({
   );
 }
 
-function ScheduleRow({
-  allDay,
-  spanStart,
-  spanEnd,
-  onStartChange,
-  onEndChange,
-  locale,
-  t,
-}: {
-  allDay: boolean;
-  spanStart: string;
-  spanEnd: string;
-  onStartChange: (value: string) => void;
-  onEndChange: (value: string) => void;
-  locale: "ja" | "en";
-  t: (key: string) => string;
-}) {
-  const startInputRef = useRef<HTMLInputElement>(null);
-  const endInputRef = useRef<HTMLInputElement>(null);
-
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      {/* 開始日時選択ボタン */}
-      <div className="space-y-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-          {t("quickCreate.startAt")}
-        </span>
-        <button
-          type="button"
-          onClick={() => startInputRef.current?.showPicker()}
-          className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          {formatDisplayDate(spanStart, allDay, locale, t)}
-        </button>
-        <input
-          ref={startInputRef}
-          type={allDay ? "date" : "datetime-local"}
-          aria-label={`${t("quickCreate.startAt")} (${allDay ? t("tiles.inputDate") : t("tiles.inputDatetime")})`}
-          value={allDay ? isoToLocalDate(spanStart) : isoToLocalDateTime(spanStart)}
-          onChange={(e) => onStartChange(e.target.value)}
-          className="sr-only"
-        />
-      </div>
-
-      {/* 終了日時選択ボタン */}
-      <div className="space-y-1">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-          {t("quickCreate.endAt")}
-        </span>
-        <button
-          type="button"
-          onClick={() => endInputRef.current?.showPicker()}
-          className="w-full text-left rounded-md bg-surface-2 hover:bg-surface-3 transition-colors px-3 py-2 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          {formatDisplayDate(spanEnd, allDay, locale, t)}
-        </button>
-        <input
-          ref={endInputRef}
-          type={allDay ? "date" : "datetime-local"}
-          aria-label={`${t("quickCreate.endAt")} (${allDay ? t("tiles.inputDate") : t("tiles.inputDatetime")})`}
-          value={allDay ? isoToLocalDate(spanEnd) : isoToLocalDateTime(spanEnd)}
-          onChange={(e) => onEndChange(e.target.value)}
-          className="sr-only"
-        />
-      </div>
-    </div>
-  );
-}
+// ScheduleRow moved to components/tiles/editor/SchedulePanel.tsx (Plan #6 Phase 4).
 
 function DurationRow({
   minMs,
@@ -2799,848 +2542,9 @@ function DurationRow({
   );
 }
 
-/**
- * Normalize the wider `RecurrenceTemplateRecurrence` shape (open-struct,
- * no `kind` discriminator on `generator`) into the strict
- * `RecurrenceModel` discriminated union that the editors operate on.
- * Called once at the top of each editor after the null check, so the
- * internal logic can keep reading strict fields. Returns a fresh
- * `RecurrenceModel` every time to keep the input source immutable for
- * downstream `onChange({ ...recurrence, ... })` spreads.
- */
-function coerceRecurrenceModel(
-  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence,
-): RecurrenceModel {
-  const window = {
-    weekday_mask: recurrence.window.weekday_mask,
-    start_offset_min: recurrence.window.start_offset_min,
-    end_offset_min: recurrence.window.end_offset_min,
-    exclusions: "exclusions" in recurrence.window ? recurrence.window.exclusions : [],
-  };
-  const g = recurrence.generator as Record<string, unknown>;
-  let generator: RecurrenceModel["generator"];
-  if (g.kind === "focus_block_based" && Array.isArray(g.phases)) {
-    generator = {
-      kind: "focus_block_based",
-      phases: g.phases as Array<{ focus_min: number; break_min: number }>,
-    };
-  } else {
-    generator = {
-      kind: "time_based",
-      step_min: typeof g.step_min === "number" ? g.step_min : 1440,
-      anchor_epoch_min: typeof g.anchor_epoch_min === "number" ? g.anchor_epoch_min : null,
-    };
-  }
-  return {
-    generator,
-    window,
-    selector: { expression: recurrence.selector.expression },
-  };
-}
-
-function GeneratorEditor({
-  recurrence,
-  onChange,
-  t,
-}: {
-  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
-  onChange: (next: RecurrenceModel) => void;
-  t: (key: string) => string;
-}) {
-  if (recurrence === null) {
-    return (
-      <FormRow icon={<Repeat size={20} />}>
-        <Button
-          type="button"
-          size="small"
-          variant="default"
-          rounded
-          iconLeft={<Plus size={12} aria-hidden="true" />}
-          onClick={() => onChange(defaultRecurrenceModel())}
-        >
-          {t("quickCreate.recurrenceEnable")}
-        </Button>
-      </FormRow>
-    );
-  }
-  const recurrenceModel = coerceRecurrenceModel(recurrence);
-  const generator = recurrenceModel.generator;
-  const updateGenerator = (
-    updater: (current: RecurrenceModel["generator"]) => RecurrenceModel["generator"],
-  ) => {
-    onChange({ ...recurrenceModel, generator: updater(generator) });
-  };
-  return (
-    <>
-      <RowSegmented
-        icon={Repeat}
-        options={[
-          {
-            value: "time_based",
-            label: t("quickCreate.generatorTimeBased"),
-          },
-          {
-            value: "focus_block_based",
-            label: t("quickCreate.generatorFocusBlockBased"),
-          },
-        ]}
-        value={generator.kind}
-        onChange={(value) =>
-          updateGenerator(() => {
-            if (value === "time_based") {
-              return {
-                kind: "time_based",
-                step_min: 1440,
-                anchor_epoch_min: null,
-              };
-            }
-            return {
-              kind: "focus_block_based",
-              phases: [{ focus_min: 25, break_min: 5 }],
-            };
-          })
-        }
-      />
-      {generator.kind === "time_based" ? (
-        <FormRow icon={<Clock size={20} />}>
-          <div className="flex w-full items-center gap-2 text-sm">
-            <label className="flex flex-1 items-center gap-1.5">
-              <span className="text-foreground-muted">{t("quickCreate.stepMin")}</span>
-              <input
-                type="number"
-                min={1}
-                step={1}
-                aria-label={t("quickCreate.stepMin")}
-                value={generator.step_min}
-                onChange={(e) =>
-                  updateGenerator((current) => {
-                    if (current.kind !== "time_based") return current;
-                    return {
-                      ...current,
-                      step_min: Number(e.target.value) || 1,
-                    };
-                  })
-                }
-                className="w-24 rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </label>
-          </div>
-        </FormRow>
-      ) : (
-        <div className="space-y-2">
-          {generator.phases.map((phase, index) => (
-            <div
-              key={index}
-              data-testid={`generator-phase-${index}`}
-              className="space-y-1 border-l-2 border-surface-2 pl-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-foreground-muted">#{index + 1}</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    updateGenerator((current) => {
-                      if (current.kind !== "focus_block_based") return current;
-                      return {
-                        ...current,
-                        phases: current.phases.filter((_, i) => i !== index),
-                      };
-                    })
-                  }
-                  aria-label={t("quickCreate.frameRuleRemove")}
-                  className="text-foreground-muted hover:text-danger focus:outline-hidden"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <label className="flex items-center gap-1.5">
-                  <span className="text-foreground-muted">{t("quickCreate.focusMin")}</span>
-                  <input
-                    type="number"
-                    min={1}
-                    step={1}
-                    aria-label={t("quickCreate.focusMin")}
-                    value={phase.focus_min}
-                    onChange={(e) =>
-                      updateGenerator((current) => {
-                        if (current.kind !== "focus_block_based") return current;
-                        return {
-                          ...current,
-                          phases: current.phases.map((p, i) =>
-                            i === index ? { ...p, focus_min: Number(e.target.value) || 1 } : p,
-                          ),
-                        };
-                      })
-                    }
-                    className="w-20 rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </label>
-                <label className="flex items-center gap-1.5">
-                  <span className="text-foreground-muted">{t("quickCreate.breakMin")}</span>
-                  <input
-                    type="number"
-                    min={0}
-                    step={1}
-                    aria-label={t("quickCreate.breakMin")}
-                    value={phase.break_min}
-                    onChange={(e) =>
-                      updateGenerator((current) => {
-                        if (current.kind !== "focus_block_based") return current;
-                        return {
-                          ...current,
-                          phases: current.phases.map((p, i) =>
-                            i === index ? { ...p, break_min: Number(e.target.value) || 0 } : p,
-                          ),
-                        };
-                      })
-                    }
-                    className="w-20 rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </label>
-              </div>
-            </div>
-          ))}
-          <Button
-            type="button"
-            size="small"
-            variant="default"
-            rounded
-            iconLeft={<Plus size={12} aria-hidden="true" />}
-            onClick={() =>
-              updateGenerator((current) => {
-                if (current.kind !== "focus_block_based") return current;
-                return {
-                  ...current,
-                  phases: [...current.phases, { focus_min: 25, break_min: 5 }],
-                };
-              })
-            }
-          >
-            {t("quickCreate.addPhase")}
-          </Button>
-        </div>
-      )}
-    </>
-  );
-}
-
-function WindowEditor({
-  recurrence,
-  onChange,
-  t,
-  locale,
-}: {
-  recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
-  onChange: (next: RecurrenceModel) => void;
-  t: (key: string) => string;
-  locale: "ja" | "en";
-}) {
-  if (recurrence === null) {
-    return (
-      <FormRow icon={<Calendar size={20} />}>
-        <Button
-          type="button"
-          size="small"
-          variant="default"
-          rounded
-          iconLeft={<Plus size={12} aria-hidden="true" />}
-          onClick={() => onChange(defaultRecurrenceModel())}
-        >
-          {t("quickCreate.recurrenceEnable")}
-        </Button>
-      </FormRow>
-    );
-  }
-  const weekdayLabels = Array.from({ length: 7 }, (_, i) =>
-    new Date(2024, 0, 7 + i).toLocaleDateString(locale === "ja" ? "ja-JP" : "en-US", {
-      weekday: "short",
-    }),
-  );
-  const recurrenceModel = coerceRecurrenceModel(recurrence);
-  const updateWindow = (
-    updater: (current: RecurrenceModel["window"]) => RecurrenceModel["window"],
-  ) => {
-    onChange({ ...recurrenceModel, window: updater(recurrenceModel.window) });
-  };
-  const toggleDay = (bit: number) => {
-    updateWindow((current) => ({
-      ...current,
-      weekday_mask: current.weekday_mask ^ (1 << bit),
-    }));
-  };
-  const minutesToHHMM = (totalMinutes: number): string => {
-    const clamped = ((totalMinutes % 1440) + 1440) % 1440;
-    const h = Math.floor(clamped / 60);
-    const m = clamped % 60;
-    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-  };
-  const hhmmToMinutes = (value: string): number => {
-    const [hStr = "0", mStr = "0"] = value.split(":");
-    const h = Number(hStr);
-    const m = Number(mStr);
-    if (!Number.isFinite(h) || !Number.isFinite(m)) return 0;
-    return h * 60 + m;
-  };
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap gap-1">
-        {weekdayLabels.map((label, bit) => {
-          const active = (recurrence.window.weekday_mask & (1 << bit)) !== 0;
-          return (
-            <button
-              key={bit}
-              type="button"
-              role="switch"
-              aria-checked={active}
-              aria-label={`${t("tiles.weekdayAriaPrefix")} ${label}`}
-              onClick={() => toggleDay(bit)}
-              className={cn(
-                "flex h-8 w-9 items-center justify-center rounded-md border text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-                active
-                  ? "border-primary bg-primary text-primary-fg"
-                  : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2",
-              )}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="block space-y-1 text-xs">
-          <span className="block text-foreground-muted">{t("quickCreate.windowStartAt")}</span>
-          <input
-            type="time"
-            aria-label={t("quickCreate.windowStartAt")}
-            value={minutesToHHMM(recurrence.window.start_offset_min)}
-            onChange={(e) =>
-              updateWindow((current) => ({
-                ...current,
-                start_offset_min: hhmmToMinutes(e.target.value),
-              }))
-            }
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </label>
-        <label className="block space-y-1 text-xs">
-          <span className="block text-foreground-muted">{t("quickCreate.windowEndAt")}</span>
-          <input
-            type="time"
-            aria-label={t("quickCreate.windowEndAt")}
-            value={minutesToHHMM(recurrence.window.end_offset_min)}
-            onChange={(e) =>
-              updateWindow((current) => ({
-                ...current,
-                end_offset_min: hhmmToMinutes(e.target.value),
-              }))
-            }
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </label>
-      </div>
-    </div>
-  );
-}
-
-function RecurringLifeEditor({
-  activeStart,
-  activeEnd,
-  state,
-  onActiveStartChange,
-  onActiveEndChange,
-  onStateChange,
-  t,
-}: {
-  activeStart: string;
-  activeEnd: string;
-  state: RecurringStateValue;
-  onActiveStartChange: (value: string) => void;
-  onActiveEndChange: (value: string) => void;
-  onStateChange: (value: RecurringStateValue) => void;
-  t: (key: string) => string;
-}) {
-  return (
-    <>
-      <FormRow icon={<Calendar size={20} />}>
-        <div className="grid w-full grid-cols-2 gap-2">
-          <input
-            type="date"
-            aria-label={t("quickCreate.recurringActiveStart")}
-            value={activeStart ? activeStart.slice(0, 10) : ""}
-            onChange={(e) => onActiveStartChange(localDateToIsoDate(e.target.value).slice(0, 10))}
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <input
-            type="date"
-            aria-label={t("quickCreate.recurringActiveEnd")}
-            value={activeEnd ? activeEnd.slice(0, 10) : ""}
-            onChange={(e) => onActiveEndChange(localDateToIsoDate(e.target.value).slice(0, 10))}
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
-      </FormRow>
-      <RowSegmented
-        data-testid="quick-create-recurring-state"
-        icon={Repeat}
-        options={RECURRING_STATE_OPTIONS.map((opt) => ({
-          value: String(opt.value),
-          label: t(opt.label),
-        }))}
-        value={String(state)}
-        onChange={(value) => onStateChange(Number(value) as RecurringStateValue)}
-      />
-    </>
-  );
-}
-
-// ---------- window / frame rule editors ----------
-
-function WindowRow({
-  window,
-  index,
-  onUpdate,
-  onRemove,
-  t,
-  locale,
-}: {
-  window: Window;
-  index: number;
-  onUpdate: (index: number, updater: (current: Window) => Window) => void;
-  onRemove: (index: number) => void;
-  t: (key: string) => string;
-  locale: "ja" | "en";
-}) {
-  const referenceKind = window.kind === 1 || window.kind === 2 || window.kind === 3;
-  return (
-    <div data-testid={`window-row-${index}`} className="space-y-2 border-l-2 border-surface-2 pl-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-foreground-muted">
-          {t("quickCreate.windowsTitle")} #{index + 1}
-        </span>
-        <button
-          type="button"
-          onClick={() => onRemove(index)}
-          aria-label={t("quickCreate.windowRemove")}
-          className="text-foreground-muted hover:text-danger focus:outline-hidden"
-        >
-          <X size={14} />
-        </button>
-      </div>
-      <RowSegmented
-        icon={Calendar}
-        options={WINDOW_KIND_OPTIONS.map((opt) => ({
-          value: opt.value,
-          label: t(opt.label),
-        }))}
-        value={String(window.kind)}
-        onChange={(value) => onUpdate(index, (w) => ({ ...w, kind: Number(value) }))}
-      />
-      <FormRow icon={<Calendar size={20} />}>
-        <div className="grid w-full grid-cols-2 gap-2">
-          <input
-            type="datetime-local"
-            aria-label={`${t("quickCreate.startAt")} (${locale === "ja" ? "日時" : "datetime"})`}
-            value={isoToLocalDateTime(window.bounds.start)}
-            onChange={(e) =>
-              onUpdate(index, (w) => ({
-                ...w,
-                bounds: {
-                  ...w.bounds,
-                  start: localDateTimeToIso(e.target.value) ?? "",
-                },
-              }))
-            }
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-          <input
-            type="datetime-local"
-            aria-label={`${t("quickCreate.endAt")} (${locale === "ja" ? "日時" : "datetime"})`}
-            value={isoToLocalDateTime(window.bounds.end)}
-            onChange={(e) =>
-              onUpdate(index, (w) => ({
-                ...w,
-                bounds: {
-                  ...w.bounds,
-                  end: localDateTimeToIso(e.target.value) ?? "",
-                },
-              }))
-            }
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
-        </div>
-      </FormRow>
-      {referenceKind ? (
-        <RowInput
-          icon={Type}
-          placeholder={t("quickCreate.windowReferenceIdLabel")}
-          value={window.referenceId ?? ""}
-          onChange={(value) =>
-            onUpdate(index, (w) => ({
-              ...w,
-              referenceId: value.trim() ? value : null,
-            }))
-          }
-          ariaLabel={t("quickCreate.windowReferenceIdLabel")}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-function FrameRulesList({
-  rules,
-  onAdd,
-  onRemove,
-  onUpdate,
-  t,
-}: {
-  rules: FrameRule[];
-  onAdd: () => void;
-  onRemove: (index: number) => void;
-  onUpdate: (index: number, updater: (current: FrameRule) => FrameRule) => void;
-  t: (key: string) => string;
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="text-xs text-foreground-muted">
-        {t("quickCreate.frameRulesTitle")} ({rules.length})
-      </div>
-      {rules.map((r, i) => (
-        <FrameRuleRow key={r.id} rule={r} index={i} onUpdate={onUpdate} onRemove={onRemove} t={t} />
-      ))}
-      <Button
-        type="button"
-        size="small"
-        variant="default"
-        rounded
-        iconLeft={<Plus size={12} aria-hidden="true" />}
-        onClick={onAdd}
-      >
-        {t("quickCreate.frameRulesAdd")}
-      </Button>
-    </div>
-  );
-}
-
-function FrameRuleRow({
-  rule,
-  index,
-  onUpdate,
-  onRemove,
-  t,
-}: {
-  rule: FrameRule;
-  index: number;
-  onUpdate: (index: number, updater: (current: FrameRule) => FrameRule) => void;
-  onRemove: (index: number) => void;
-  t: (key: string) => string;
-}) {
-  const generatorKind = rule.generator.kind;
-  const value = rule.generator.value;
-  return (
-    <div
-      data-testid={`frame-rule-row-${index}`}
-      className="space-y-2 border-l-2 border-surface-2 pl-3"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-foreground-muted">
-          {t("quickCreate.frameRulesTitle")} #{index + 1}
-        </span>
-        <button
-          type="button"
-          onClick={() => onRemove(index)}
-          aria-label={t("quickCreate.frameRuleRemove")}
-          className="text-foreground-muted hover:text-danger focus:outline-hidden"
-        >
-          <X size={14} />
-        </button>
-      </div>
-      <RowSegmented
-        icon={Repeat}
-        options={FRAME_GENERATOR_KIND_OPTIONS.map((opt) => ({
-          value: opt.value,
-          label: t(opt.label),
-        }))}
-        value={generatorKind}
-        onChange={(value) => {
-          const next = value as FrameGeneratorKind;
-          if (next === generatorKind) return;
-          onUpdate(index, (r) => ({
-            ...r,
-            generator: defaultFrameGenerator(next),
-          }));
-        }}
-      />
-      {renderGeneratorFields({
-        kind: generatorKind,
-        value,
-        onChange: (next) => onUpdate(index, (r) => ({ ...r, generator: next })),
-        t,
-      })}
-    </div>
-  );
-}
-
-function renderGeneratorFields({
-  kind,
-  value,
-  onChange,
-  t,
-}: {
-  kind: FrameGeneratorKind;
-  value: FrameGenerator["value"];
-  onChange: (next: FrameGenerator) => void;
-  t: (key: string) => string;
-}) {
-  switch (kind) {
-    case "step": {
-      const stepValue = value as StepGenerator;
-      return (
-        <>
-          <FormRow icon={<Clock size={20} />}>
-            <div className="flex w-full items-center gap-2 text-sm">
-              <label className="flex items-center gap-1.5">
-                <span className="text-foreground-muted">
-                  {t("quickCreate.frameRuleStepMsLabel")}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  step={60000}
-                  aria-label={t("quickCreate.frameRuleStepMsLabel")}
-                  value={stepValue.step}
-                  onChange={(e) =>
-                    onChange({
-                      kind: "step",
-                      value: {
-                        ...stepValue,
-                        step: Number(e.target.value) || 0,
-                      },
-                    })
-                  }
-                  className="w-28 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-            </div>
-          </FormRow>
-          <FormRow icon={<Calendar size={20} />}>
-            <div className="grid w-full grid-cols-2 gap-2">
-              <input
-                type="datetime-local"
-                aria-label={`${t("quickCreate.frameRuleBoundsLabel")} ${t("quickCreate.startAt")}`}
-                value={stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.start) : ""}
-                onChange={(e) =>
-                  onChange({
-                    kind: "step",
-                    value: {
-                      ...stepValue,
-                      bounds: stepValue.bounds
-                        ? {
-                            ...stepValue.bounds,
-                            start: localDateTimeToIso(e.target.value) ?? "",
-                          }
-                        : {
-                            start: localDateTimeToIso(e.target.value) ?? "",
-                            end: "",
-                          },
-                    },
-                  })
-                }
-                className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
-              <input
-                type="datetime-local"
-                aria-label={`${t("quickCreate.frameRuleBoundsLabel")} ${t("quickCreate.endAt")}`}
-                value={stepValue.bounds ? isoToLocalDateTime(stepValue.bounds.end) : ""}
-                onChange={(e) =>
-                  onChange({
-                    kind: "step",
-                    value: {
-                      ...stepValue,
-                      bounds: stepValue.bounds
-                        ? {
-                            ...stepValue.bounds,
-                            end: localDateTimeToIso(e.target.value) ?? "",
-                          }
-                        : {
-                            start: "",
-                            end: localDateTimeToIso(e.target.value) ?? "",
-                          },
-                    },
-                  })
-                }
-                className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
-            </div>
-          </FormRow>
-        </>
-      );
-    }
-    case "reference": {
-      const refValue = value as ReferenceGenerator;
-      return (
-        <>
-          <RowInput
-            icon={Type}
-            placeholder={t("quickCreate.frameRuleReferenceIdLabel")}
-            value={refValue.referenceId}
-            onChange={(next) =>
-              onChange({
-                kind: "reference",
-                value: { ...refValue, referenceId: next },
-              })
-            }
-            ariaLabel={t("quickCreate.frameRuleReferenceIdLabel")}
-          />
-          <RowSegmented
-            icon={Repeat}
-            options={REFERENCE_ALIGN_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: t(opt.label),
-            }))}
-            value={String(refValue.align)}
-            onChange={(next) =>
-              onChange({
-                kind: "reference",
-                value: { ...refValue, align: Number(next) },
-              })
-            }
-          />
-        </>
-      );
-    }
-    case "calendar": {
-      const calValue = value as CalendarGenerator;
-      return (
-        <>
-          <RowSegmented
-            icon={Calendar}
-            options={CALENDAR_UNIT_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: t(opt.label),
-            }))}
-            value={String(calValue.unit)}
-            onChange={(next) =>
-              onChange({
-                kind: "calendar",
-                value: { ...calValue, unit: Number(next) },
-              })
-            }
-          />
-          <FormRow icon={<Calendar size={20} />}>
-            <div className="flex w-full items-center gap-2 text-sm">
-              <label className="flex items-center gap-1.5">
-                <span className="text-foreground-muted">
-                  {t("quickCreate.frameRuleWeekdayMaskLabel")}
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  max={127}
-                  step={1}
-                  aria-label={t("quickCreate.frameRuleWeekdayMaskLabel")}
-                  value={calValue.weekdayMask ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const next = raw === "" ? null : Number(raw);
-                    onChange({
-                      kind: "calendar",
-                      value: { ...calValue, weekdayMask: next },
-                    });
-                  }}
-                  className="w-20 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-            </div>
-          </FormRow>
-          <RowSegmented
-            icon={Calendar}
-            options={HOLIDAY_KIND_OPTIONS.map((opt) => ({
-              value: opt.value,
-              label: t(opt.label),
-            }))}
-            value={String(calValue.holidayKind)}
-            onChange={(next) =>
-              onChange({
-                kind: "calendar",
-                value: { ...calValue, holidayKind: Number(next) },
-              })
-            }
-          />
-        </>
-      );
-    }
-    case "transform": {
-      const trValue = value as TransformGenerator;
-      return (
-        <>
-          <RowInput
-            icon={Type}
-            placeholder={t("quickCreate.frameRuleSourceFrameIdLabel")}
-            value={trValue.sourceFrameId}
-            onChange={(next) =>
-              onChange({
-                kind: "transform",
-                value: { ...trValue, sourceFrameId: next },
-              })
-            }
-            ariaLabel={t("quickCreate.frameRuleSourceFrameIdLabel")}
-          />
-          <FormRow icon={<Clock size={20} />}>
-            <div className="flex w-full items-center gap-2 text-sm">
-              <label className="flex items-center gap-1.5">
-                <span className="text-foreground-muted">
-                  {t("quickCreate.frameRuleShiftLabel")}
-                </span>
-                <input
-                  type="number"
-                  step={60000}
-                  aria-label={t("quickCreate.frameRuleShiftLabel")}
-                  value={trValue.shift ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    onChange({
-                      kind: "transform",
-                      value: {
-                        ...trValue,
-                        shift: raw === "" ? null : Number(raw),
-                      },
-                    });
-                  }}
-                  className="w-28 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-              <label className="flex items-center gap-1.5">
-                <span className="text-foreground-muted">
-                  {t("quickCreate.frameRuleScaleLabel")}
-                </span>
-                <input
-                  type="number"
-                  step={0.1}
-                  aria-label={t("quickCreate.frameRuleScaleLabel")}
-                  value={trValue.scale ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    onChange({
-                      kind: "transform",
-                      value: {
-                        ...trValue,
-                        scale: raw === "" ? null : Number(raw),
-                      },
-                    });
-                  }}
-                  className="w-20 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
-                />
-              </label>
-            </div>
-          </FormRow>
-        </>
-      );
-    }
-  }
-}
-
+// coerceRecurrenceModel + GeneratorEditor + WindowEditor + RecurringLifeEditor
+// + FrameRulesList + FrameRuleRow + renderGeneratorFields moved to
+// components/tiles/editor/AutomationPanel.tsx (Plan #7 Phase 4).
 // Re-export ConditionKind so future Condition-tree editor (Phase B) has a
 // single import path; tree is currently a placeholder ALL-node, but the
 // constant is referenced from `submit.ts` already and tree placeholders
