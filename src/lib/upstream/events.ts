@@ -143,6 +143,7 @@ export interface TimelineQuery {
   end: string;
   minMinutes?: number;
   includeRecurring?: boolean;
+  ownerIds?: string[];
 }
 
 interface TimelineItemRaw {
@@ -167,6 +168,8 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
   const qs = new URLSearchParams();
   qs.set("start", toUtcIso(q.start));
   qs.set("end", toUtcIso(q.end));
+  qs.set("include_labels", "true");
+  if (q.ownerIds?.length) qs.set("owner_ids", q.ownerIds.join(","));
   const headers = await bridgeHeaders();
   if (!headers) return unauthenticatedUpstreamResponse();
   const url = `${RUST_BASE}/v1/timeline?${qs.toString()}`;
@@ -193,7 +196,10 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
       location: null,
       start,
       end,
-      allDay: false,
+      // Core PlanRole::LABEL is calendar context, never a timed task.
+      // Keep it out of the hour grid and let Day/Week/Month render it
+      // through their existing all-day lanes.
+      allDay: raw.role === 1,
       color: mapTimelineColor(raw.visual?.color),
       recurrence: { frequency: "none" },
       attendees: [],

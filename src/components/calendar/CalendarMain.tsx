@@ -98,6 +98,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   const [mode, setModeState] = useState<DisplayMode>(urlMode);
   const [anchor, setAnchor] = useState(() => localIsoDate());
   const [tzOffset, setTzOffset] = useState(0);
+  const [minDuration, setMinDuration] = useState(0);
   // Capture Date.now() once on mount so listRange only refreshes when
   // tzOffset changes, never during render. Held in state (not a ref)
   // because the linter treats ref.current reads inside render as
@@ -108,12 +109,6 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
     setNowMs(Date.now());
     setTzOffset(new Date().getTimezoneOffset() * -1);
   }, []);
-
-  // Side panel: anchor/view/mode を実時間で反映 (MiniCalendar の網掛け含む)。
-  // mode は around/future のとき「always today」なので highlight の挙動も変わる。
-  useSidePanel(
-    <CalendarSidePanel anchor={anchor} view={view} mode={mode} onSelectDate={setAnchor} />,
-  );
 
   // Effective anchor for date math — in around/future modes the anchor
   // is always today, regardless of what the user has previously selected.
@@ -138,7 +133,12 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
     return getModeRange(view, mode, effectiveAnchor, tzOffset);
   }, [view, mode, effectiveAnchor, tzOffset, listRange]);
 
-  const { events, loading, error } = useEvents(range);
+  const selectedOwnerIds = useMemo(() => {
+    const raw = searchParams.get("projects");
+    return raw === null ? undefined : raw.split(",").filter(Boolean);
+  }, [searchParams]);
+
+  const { events, loading, error } = useEvents({ ...range, minMinutes: minDuration, ownerIds: selectedOwnerIds });
 
   // Sync the URL whenever view or mode changes. We keep `mode` in the
   // URL only when it's not the default so existing URLs stay clean.
@@ -172,6 +172,20 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
       syncUrl({ mode: m });
     },
     [syncUrl],
+  );
+
+  // Side panel controls use the same URL-synchronised state transitions as
+  // the toolbar, so deep links and browser navigation remain reliable.
+  useSidePanel(
+    <CalendarSidePanel
+      anchor={anchor}
+      view={view}
+      mode={mode}
+      minDuration={minDuration}
+      onSelectDate={setAnchor}
+      onModeChange={setMode}
+      onMinDurationChange={setMinDuration}
+    />,
   );
 
   const navDisabled = mode !== "scope";

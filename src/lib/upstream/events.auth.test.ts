@@ -69,7 +69,7 @@ describe("events upstream authentication", () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:31400/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z",
+      "http://127.0.0.1:31400/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z&include_labels=true",
       expect.objectContaining({
         headers: {
           "x-owner-id": "00000000-0000-0000-0000-000000000001",
@@ -77,6 +77,27 @@ describe("events upstream authentication", () => {
         },
       }),
     );
+  });
+
+  it("maps Core LABEL timeline items to all-day calendar events", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify([{
+        placement_id: "placement-label",
+        tile_id: "tile-label",
+        role: 1,
+        content: { title: "2学期" },
+        visual: { color: "#DB2777", icon: "calendar" },
+        span: { start: "2026-06-09T15:00:00Z", end: "2026-08-10T15:00:00Z" },
+        resolution: { state: 0 },
+      }])),
+    );
+
+    const response = await upstreamListTimeline({ start: "2026-07-01", end: "2026-07-02" });
+    const body = (await response.json()) as { occurrences: Array<{ allDay: boolean; title: string }> };
+
+    expect(body.occurrences).toHaveLength(1);
+    expect(body.occurrences[0]).toMatchObject({ title: "2学期", allDay: true });
   });
 
   it("forwards only the Cognito-verified sub in bridge headers", async () => {

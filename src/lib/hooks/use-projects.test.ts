@@ -53,4 +53,19 @@ describe("useProjects", () => {
     expect(result.current.workspaces).toEqual([]);
     expect(result.current.error?.message).toBe("boom");
   });
+
+  it("orders workspaces as a parent-first tree", async () => {
+    const { orderWorkspaceTree } = await import("./use-projects");
+    const tree = orderWorkspaceTree([
+      { ...sampleWorkspace, id: "child", display_name: "Child", parent_subject_id: "parent" },
+      { ...sampleWorkspace, id: "parent", display_name: "Parent", parent_subject_id: null },
+      { ...sampleWorkspace, id: "root", display_name: "Root", parent_subject_id: null },
+    ]);
+
+    expect(tree.map(({ workspace, depth }) => [workspace.id, depth])).toEqual([
+      ["parent", 0],
+      ["child", 1],
+      ["root", 0],
+    ]);
+  });
 });

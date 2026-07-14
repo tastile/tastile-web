@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useTransition } from "react";
 import { MiniCalendar } from "@/components/ui/MiniCalendar";
 import type { DisplayMode } from "@/lib/calendar/layout";
-import { useProjects } from "@/lib/hooks/use-projects";
+import { orderWorkspaceTree, useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 type CalendarSidePanelView = "day" | "week" | "month" | "year" | "list";
@@ -19,8 +19,11 @@ interface CalendarSidePanelProps {
   view?: CalendarSidePanelView;
   /** Timeline の表示モード。網掛け範囲の調整に使う。 */
   mode?: DisplayMode;
+  minDuration?: number;
   /** 日付クリック時 */
   onSelectDate?: (date: string) => void;
+  onModeChange?: (mode: DisplayMode) => void;
+  onMinDurationChange?: (minutes: number) => void;
 }
 
 // anchor (YYYY-MM-DD) と view から、ミニカレンダーで網掛けする
@@ -83,7 +86,7 @@ function getHighlightDates(
   return out;
 }
 
-export function CalendarSidePanel({ anchor, view, mode, onSelectDate }: CalendarSidePanelProps) {
+export function CalendarSidePanel({ anchor, view, mode, minDuration = 0, onSelectDate, onModeChange, onMinDurationChange }: CalendarSidePanelProps) {
   const highlight = getHighlightDates(view, mode, anchor);
   // Around / future modes always anchor to today; the mini calendar
   // is read-only so the user can't pick a date the main view will
@@ -99,6 +102,28 @@ export function CalendarSidePanel({ anchor, view, mode, onSelectDate }: Calendar
         highlight={highlight}
         disabled={locked}
       />
+
+      <div className="mx-3 h-px bg-border" />
+
+      <section className="space-y-3 px-3">
+        <label className="block text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+          Time range
+          <select value={mode ?? "scope"} onChange={(event) => onModeChange?.(event.target.value as DisplayMode)} className="mt-1 h-8 w-full rounded border border-border bg-surface-1 px-2 text-xs text-foreground">
+            <option value="scope">Selected date</option>
+            <option value="around">Around now</option>
+            <option value="future">From now</option>
+          </select>
+        </label>
+        <label className="block text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+          Min duration
+          <select value={minDuration} onChange={(event) => onMinDurationChange?.(Number(event.target.value))} className="mt-1 h-8 w-full rounded border border-border bg-surface-1 px-2 text-xs text-foreground">
+            <option value={0}>Show all (including 5 min breaks)</option>
+            <option value={5}>5 minutes+</option>
+            <option value={15}>15 minutes+</option>
+            <option value={30}>30 minutes+</option>
+          </select>
+        </label>
+      </section>
 
       <div className="mx-3 h-px bg-border" />
 
@@ -120,6 +145,7 @@ function ProjectsCheckboxSection() {
   const [, startTransition] = useTransition();
   const { t } = useTranslation();
 
+  const orderedWorkspaces = useMemo(() => orderWorkspaceTree(workspaces), [workspaces]);
   const allIds = useMemo(() => workspaces.map((w) => w.id), [workspaces]);
   const selected = useMemo(() => {
     const raw = searchParams.get("projects");
@@ -159,10 +185,11 @@ function ProjectsCheckboxSection() {
         </span>
       </div>
       <div className="space-y-1.5">
-        {workspaces.map((w) => (
+        {orderedWorkspaces.map(({ workspace: w, depth }) => (
           <label
             key={w.id}
             className="flex cursor-pointer items-center gap-2 text-xs text-foreground-subtle hover:text-foreground"
+            style={{ paddingLeft: `${depth * 12}px` }}
           >
             <input
               type="checkbox"

@@ -21,11 +21,13 @@ export async function GET(req: Request) {
   const includeRaw = url.searchParams.get("include_recurring");
   const minMinutes = minRaw === null ? 0 : Math.max(0, Number(minRaw));
   const includeRecurring = includeRaw === null ? true : includeRaw !== "false";
+  const ownerIds = url.searchParams.get("owner_ids")?.split(",").filter(Boolean);
 
   return upstreamListTimeline({
     start,
     end,
     minMinutes,
     includeRecurring,
+    ownerIds,
   });
 }

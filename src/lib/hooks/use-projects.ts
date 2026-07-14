@@ -9,6 +9,7 @@ export interface Workspace {
   display_name: string;
   slug: string | null;
   email: string | null;
+  parent_subject_id: string | null;
   color: string | null;
   owner_user_id: string | null;
   disabled_at: string | null;
@@ -53,6 +54,7 @@ export interface CreateWorkspaceInput {
   display_name: string;
   slug?: string | null;
   color?: string | null;
+  parent_subject_id?: string | null;
 }
 
 export async function createWorkspace(input: CreateWorkspaceInput): Promise<Workspace> {
@@ -61,10 +63,42 @@ export async function createWorkspace(input: CreateWorkspaceInput): Promise<Work
       display_name: input.display_name,
       slug: input.slug ?? null,
       color: input.color ?? null,
+      parent_subject_id: input.parent_subject_id ?? null,
     },
   });
   if (!res.ok) throw new Error(res.error.message);
   return res.data;
+}
+
+export interface WorkspaceTreeEntry {
+  workspace: Workspace;
+  depth: number;
+}
+
+/** Return owned workspaces in a stable, parent-before-child presentation order. */
+export function orderWorkspaceTree(workspaces: Workspace[]): WorkspaceTreeEntry[] {
+  const byParent = new Map<string | null, Workspace[]>();
+  const ids = new Set(workspaces.map((workspace) => workspace.id));
+  for (const workspace of workspaces) {
+    const parent = workspace.parent_subject_id && ids.has(workspace.parent_subject_id)
+      ? workspace.parent_subject_id
+      : null;
+    const children = byParent.get(parent) ?? [];
+    children.push(workspace);
+    byParent.set(parent, children);
+  }
+  for (const children of byParent.values()) {
+    children.sort((left, right) => left.display_name.localeCompare(right.display_name, "ja"));
+  }
+  const result: WorkspaceTreeEntry[] = [];
+  const visit = (parent: string | null, depth: number) => {
+    for (const workspace of byParent.get(parent) ?? []) {
+      result.push({ workspace, depth });
+      visit(workspace.id, depth + 1);
+    }
+  };
+  visit(null, 0);
+  return result;
 }
 
 export interface UpdateWorkspaceInput {

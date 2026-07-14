@@ -34,6 +34,13 @@ export function MonthView({ anchor, mode, tzOffset, events }: MonthViewProps) {
     () => chunkWeeks(getMonthViewDates(mode, anchor, tzOffset)),
     [mode, anchor, tzOffset],
   );
+  const monthEvents = useMemo(() => {
+    const countByTitle = new Map<string, number>();
+    for (const event of events) {
+      if (!event.allDay) countByTitle.set(event.title, (countByTitle.get(event.title) ?? 0) + 1);
+    }
+    return events.filter((event) => event.allDay || (countByTitle.get(event.title) ?? 0) < 10);
+  }, [events]);
 
   // Frame (weekday header + month grid + date numbers) is always
   // rendered so the shell never flashes between a "Loading…" placeholder
@@ -47,7 +54,7 @@ export function MonthView({ anchor, mode, tzOffset, events }: MonthViewProps) {
       cellArea={(dateStr) => {
         const dateObj = new Date(`${dateStr}T00:00:00Z`);
         const isToday = dateStr === todayStr;
-        const dayEvents = events.filter((e) => eventSpansDay(e, dateStr, tzOffset));
+        const dayEvents = monthEvents.filter((e) => eventSpansDay(e, dateStr, tzOffset));
         const visible = dayEvents.slice(0, 3);
         const overflow = dayEvents.length - visible.length;
 
@@ -66,7 +73,7 @@ export function MonthView({ anchor, mode, tzOffset, events }: MonthViewProps) {
 
             <div className="flex-1 overflow-y-auto space-y-1 px-0.5 no-scrollbar">
               {visible.map((event) => (
-                <MonthEventTile key={event.id} event={event} />
+                <MonthEventTile key={event.id} event={event} date={dateStr} />
               ))}
               {overflow > 0 ? (
                 <div className="text-[10px] text-foreground-subtle px-1">+{overflow} more</div>

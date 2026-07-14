@@ -30,10 +30,12 @@ const _PLACEMENT_BASE = "/api/events/placements";
 export interface UseEventsRange {
   start: string;
   end: string;
-  /** Drop occurrences shorter than this many minutes (default 6: hides 5-min breaks). */
+  /** Drop occurrences shorter than this many minutes (default 0: show breaks). */
   minMinutes?: number;
   /** Whether recurring instances should be expanded (default true). */
   includeRecurring?: boolean;
+  /** Workspace owner ids selected in the calendar side panel. */
+  ownerIds?: string[];
 }
 
 export const EVENTS_CHANGED_EVENT = "tastile:events-changed";
@@ -57,14 +59,23 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
       setLoading(false);
       return;
     }
+    // An explicitly empty project selection means "show none".  It is
+    // distinct from an omitted selection, which means all workspaces.
+    if (range.ownerIds?.length === 0) {
+      setEvents([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const qs = new URLSearchParams();
       qs.set("start", range.start);
       qs.set("end", range.end);
-      qs.set("min_minutes", String(range.minMinutes ?? 6));
+      qs.set("min_minutes", String(range.minMinutes ?? 0));
       qs.set("include_recurring", String(range.includeRecurring ?? true));
+      if (range.ownerIds?.length) qs.set("owner_ids", range.ownerIds.join(","));
       const res = await fetch(`${OCC_BASE}?${qs.toString()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
       const data = (await res.json()) as
@@ -80,7 +91,7 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     }
     // range object identity changes are reflected in the field deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range]);
+  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds?.join(","), range]);
 
   const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
     const res = await fetch("/api/events", {

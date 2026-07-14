@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { createWorkspace, deleteWorkspace, useProjects } from "@/lib/hooks/use-projects";
+import { createWorkspace, deleteWorkspace, orderWorkspaceTree, useProjects } from "@/lib/hooks/use-projects";
 import { cn } from "@/lib/utils/cn";
 
 export function ProjectsSidePanel() {
@@ -20,6 +20,7 @@ export function ProjectsSidePanel() {
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [color, setColor] = useState("#6b7280");
+  const [parentId, setParentId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creatingBusy, setCreatingBusy] = useState(false);
 
@@ -36,6 +37,7 @@ export function ProjectsSidePanel() {
     setName("");
     setSlug("");
     setColor("#6b7280");
+    setParentId(null);
     setCreateError(null);
     setCreating(false);
   }
@@ -52,6 +54,7 @@ export function ProjectsSidePanel() {
         display_name: name.trim(),
         slug: slug.trim() || null,
         color,
+        parent_subject_id: parentId,
       });
       await refresh();
       handleSelect(ws.id);
@@ -130,6 +133,21 @@ export function ProjectsSidePanel() {
               data-testid="project-create-color"
             />
           </div>
+          <label className="text-[10px] text-foreground-subtle">
+            Parent project
+            <select
+              value={parentId ?? ""}
+              onChange={(event) => setParentId(event.target.value || null)}
+              className="mt-1 h-8 w-full rounded border border-border bg-surface-1 px-2 text-xs text-foreground"
+            >
+              <option value="">Top level</option>
+              {orderWorkspaceTree(workspaces).map(({ workspace, depth }) => (
+                <option key={workspace.id} value={workspace.id}>
+                  {`${"　".repeat(depth)}${workspace.display_name}`}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="flex items-center gap-1.5">
             <Button
               type="submit"
@@ -176,11 +194,12 @@ export function ProjectsSidePanel() {
             <div className="px-2 py-1.5 text-[10px] text-status-danger">{error.message}</div>
           )}
 
-          {workspaces.map((w) => (
+          {orderWorkspaceTree(workspaces).map(({ workspace: w, depth }) => (
             <div key={w.id} className="group flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => handleSelect(w.id)}
+                style={{ paddingLeft: `${0.5 + depth * 0.9}rem` }}
                 className={cn(
                   "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
                   currentOwner === w.id
