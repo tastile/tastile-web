@@ -1,3 +1,5 @@
+import { Divider } from "@mantine/core";
+
 export function FormDivider() {
-  return <hr className="my-4 border-border" />;
+  return <Divider my="md" color="var(--border)" data-testid="form-divider" />;
 }

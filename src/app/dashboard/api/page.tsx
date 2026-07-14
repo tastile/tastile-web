@@ -278,7 +278,9 @@ function EndpointDetail({
     setResponse(null);
     try {
       const client = getCoreClient();
-      const query = queryText.trim() ? (JSON.parse(queryText) as Record<string, string | number | boolean>) : undefined;
+      const query = queryText.trim()
+        ? (JSON.parse(queryText) as Record<string, string | number | boolean>)
+        : undefined;
       const body = meta.method !== "GET" && bodyText.trim() ? JSON.parse(bodyText) : undefined;
       const result = await client.call(endpointKey, { pathParams, query, body });
       setResponse(result);
@@ -347,11 +349,16 @@ function EndpointDetail({
           {placeholders.length > 0 ? (
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {placeholders.map((name) => (
-                <label key={name} className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+                <label
+                  key={name}
+                  className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
+                >
                   Path: {name}
                   <input
                     value={pathParams[name] ?? ""}
-                    onChange={(event) => setPathParams((current) => ({ ...current, [name]: event.target.value }))}
+                    onChange={(event) =>
+                      setPathParams((current) => ({ ...current, [name]: event.target.value }))
+                    }
                     placeholder={`{${name}}`}
                     className="mt-1 h-8 w-full rounded-md border border-border bg-surface-0 px-2 font-mono text-xs text-ink-1 outline-none focus:border-accent focus:ring-2 focus:ring-focus"
                   />

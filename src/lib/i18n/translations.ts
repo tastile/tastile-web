@@ -144,6 +144,7 @@ export const translations = {
       previewNoTime: "時間未指定",
       previewConditionsEmpty: "なし",
       footReady: "作成できます",
+      validationOk: "作成できます",
       footPending: "未入力の項目があります",
       kindTitle: "種類",
       kindGuide: "タスクか期間ラベルかを選択",
@@ -286,6 +287,7 @@ export const translations = {
       repeatEndNoneTitle: "終了日なし",
       repeatEndNoneSub: "必要になった時だけ終了日を追加",
       repeatEndSetTitle: "終了日あり",
+      repeatEndSetSub: "この日まで繰り返します",
       repeatEndRemove: "終了日を削除",
       whenNoneTitle: "日付・時間を指定しない",
       whenNoneSub: "完全に制限のないタイルとして作成します",
@@ -642,6 +644,15 @@ export const translations = {
         custom: "カスタム",
         projects: "プロジェクト",
         loadingProjects: "プロジェクトを読み込み中…",
+      },
+      schedule: {
+        projects: "プロジェクト",
+        loadingProjects: "プロジェクトを読み込み中…",
+      },
+      projects: {
+        projects: "プロジェクト",
+        loadingProjects: "プロジェクトを読み込み中…",
+        allProjects: "すべてのプロジェクト",
       },
     },
 
@@ -1235,6 +1246,7 @@ export const translations = {
       previewNoTime: "No time set",
       previewConditionsEmpty: "None",
       footReady: "Ready to create",
+      validationOk: "Ready to create",
       footPending: "Missing required fields",
       kindTitle: "Type",
       kindGuide: "Choose task or period label",
@@ -1377,6 +1389,7 @@ export const translations = {
       repeatEndNoneTitle: "No end date",
       repeatEndNoneSub: "Add an end date when needed",
       repeatEndSetTitle: "End date set",
+      repeatEndSetSub: "Repeats until this date",
       repeatEndRemove: "Remove end date",
       whenNoneTitle: "No date or time",
       whenNoneSub: "A tile with no scheduling constraints",
@@ -1733,6 +1746,15 @@ export const translations = {
         custom: "Custom",
         projects: "Projects",
         loadingProjects: "Loading projects…",
+      },
+      schedule: {
+        projects: "Projects",
+        loadingProjects: "Loading projects…",
+      },
+      projects: {
+        projects: "Projects",
+        loadingProjects: "Loading projects…",
+        allProjects: "All Projects",
       },
     },
 

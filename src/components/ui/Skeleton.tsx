@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils/cn";
+import { Skeleton as MantineSkeleton } from "@mantine/core";
 
 interface SkeletonProps {
   className?: string;
@@ -8,14 +8,6 @@ interface SkeletonProps {
 
 export function Skeleton({ className }: SkeletonProps) {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-      aria-label="Loading content"
-      className={cn("animate-pulse rounded-lg bg-surface-2", className)}
-    >
-      <span className="sr-only">Loading...</span>
-    </div>
+    <MantineSkeleton radius="md" height="auto" className={className} aria-label="Loading content" />
   );
 }

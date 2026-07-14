@@ -1,5 +1,10 @@
 "use client";
 
+import { NumberInput } from "@mantine/core";
+import { Timer } from "lucide-react";
+
+const MIN_MINUTES = 5;
+
 export function RequiredTimePanel({
   minutes,
   onChange,
@@ -8,23 +13,26 @@ export function RequiredTimePanel({
   onChange: (minutes: number) => void;
 }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-sm text-foreground">必要時間</span>
-      <div className="flex items-center gap-2">
-        <input
-          aria-label="必要時間（分）"
-          type="number"
-          min={5}
-          step={5}
-          value={minutes}
-          onChange={(event) => onChange(Math.max(5, Number(event.target.value) || 5))}
-          className="w-24 rounded-md bg-surface-2 px-3 py-2 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
-        />
-        <span className="text-sm text-foreground-muted">分</span>
-      </div>
+    <div className="block space-y-1">
+      <span className="flex items-center gap-1.5 text-sm text-foreground">
+        <Timer size={14} aria-hidden className="text-foreground-muted" />
+        必要時間
+      </span>
+      <NumberInput
+        aria-label="必要時間（分）"
+        min={MIN_MINUTES}
+        step={5}
+        value={minutes}
+        onChange={(value) => onChange(Math.max(MIN_MINUTES, Number(value) || MIN_MINUTES))}
+        suffix=" 分"
+        size="xs"
+        styles={{
+          input: { backgroundColor: "var(--surface-2)" },
+        }}
+      />
       <p className="text-xs text-foreground-muted">
         実際の開始・終了時刻は、空き時間からあとで決まります。
       </p>
-    </label>
+    </div>
   );
 }

@@ -80,9 +80,10 @@ export function orderWorkspaceTree(workspaces: Workspace[]): WorkspaceTreeEntry[
   const byParent = new Map<string | null, Workspace[]>();
   const ids = new Set(workspaces.map((workspace) => workspace.id));
   for (const workspace of workspaces) {
-    const parent = workspace.parent_subject_id && ids.has(workspace.parent_subject_id)
-      ? workspace.parent_subject_id
-      : null;
+    const parent =
+      workspace.parent_subject_id && ids.has(workspace.parent_subject_id)
+        ? workspace.parent_subject_id
+        : null;
     const children = byParent.get(parent) ?? [];
     children.push(workspace);
     byParent.set(parent, children);

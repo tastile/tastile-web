@@ -1,5 +1,6 @@
 "use client";
 
+import { SegmentedControl } from "@mantine/core";
 import { Calendar, CalendarDays, Coffee, Database, Loader2, PinIcon, Timer } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
@@ -122,22 +123,22 @@ export default function CalendarViewPage() {
           </>
         }
         actions={
-          <div className="flex items-center gap-1 rounded-md border border-border bg-surface-1 p-0.5">
-            {VIEWS.map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => router.push(`/dashboard/timeline/${v}`)}
-                className={cn(
-                  "h-7 rounded px-2 text-xs font-medium transition-colors",
-                  v === view ? "bg-surface-3 text-ink-1" : "text-ink-3 hover:text-ink-1",
-                )}
-                aria-pressed={v === view}
-              >
-                {v[0].toUpperCase() + v.slice(1)}
-              </button>
-            ))}
-          </div>
+          <SegmentedControl
+            size="xs"
+            radius="md"
+            withItemsBorders={false}
+            value={view}
+            onChange={(next) => router.push(`/dashboard/timeline/${next}`)}
+            data={VIEWS.map((v) => ({
+              value: v,
+              label: v[0].toUpperCase() + v.slice(1),
+            }))}
+            styles={{
+              root: { backgroundColor: "var(--surface-2)" },
+              indicator: { backgroundColor: "var(--surface-1)" },
+              label: { color: "var(--foreground)" },
+            }}
+          />
         }
       />
 

@@ -1,37 +1,36 @@
 /** @vitest-environment jsdom */
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { FormPanel } from "./FormPanel";
 
 describe("FormPanel", () => {
   it("renders children inside a padded container", () => {
-    render(
+    renderWithMantine(
       <FormPanel>
         <span>row</span>
-      </FormPanel>
+      </FormPanel>,
     );
     const root = screen.getByTestId("form-panel");
     expect(root.className).toContain("p-panel");
   });
 
-  it("applies a flex column layout with 8px gap between children", () => {
-    render(
+  it("lays out children as a column with stack spacing", () => {
+    renderWithMantine(
       <FormPanel>
         <span>one</span>
         <span>two</span>
-      </FormPanel>
+      </FormPanel>,
     );
     const root = screen.getByTestId("form-panel");
-    expect(root.className).toContain("flex");
-    expect(root.className).toContain("flex-col");
-    expect(root.className).toContain("gap-2");
+    expect(root.className).toMatch(/mantine-Stack-root/);
   });
 
   it("merges custom className with the base classes", () => {
-    render(
+    renderWithMantine(
       <FormPanel className="extra-class">
         <span>x</span>
-      </FormPanel>
+      </FormPanel>,
     );
     const root = screen.getByTestId("form-panel");
     expect(root.className).toContain("p-panel");

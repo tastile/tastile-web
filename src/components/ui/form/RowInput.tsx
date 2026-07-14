@@ -1,5 +1,6 @@
 "use client";
 
+import { TextInput } from "@mantine/core";
 import type { LucideIcon } from "lucide-react";
 import { FormRow } from "./FormRow";
 
@@ -8,7 +9,7 @@ interface RowInputProps {
   placeholder: string;
   value?: string;
   onChange?: (value: string) => void;
-  type?: "text" | "time" | "date" | "datetime-local";
+  type?: "text" | "time" | "date" | "datetime-local" | "number";
   trailing?: React.ReactNode;
   className?: string;
   ariaLabel?: string;
@@ -32,16 +33,31 @@ export function RowInput({
 }: RowInputProps) {
   return (
     <FormRow icon={<Icon size={20} />} trailing={trailing} className={className}>
-      <input
-        type={type}
+      <TextInput
         value={value ?? ""}
-        onChange={(e) => onChange?.(e.target.value)}
+        onChange={(event) => onChange?.(event.currentTarget.value)}
         placeholder={placeholder}
+        type={type}
         aria-label={ariaLabel ?? placeholder}
         aria-required={required ? "true" : undefined}
         aria-invalid={invalid ? "true" : undefined}
         aria-describedby={ariaDescribedBy}
-        className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+        required={required}
+        error={invalid}
+        size="sm"
+        variant="unstyled"
+        withAsterisk={false}
+        styles={{
+          input: {
+            backgroundColor: "transparent",
+            color: "var(--foreground)",
+            fontSize: "0.875rem",
+            lineHeight: "1.25rem",
+            padding: 0,
+            minHeight: "unset",
+            height: "unset",
+          },
+        }}
       />
     </FormRow>
   );

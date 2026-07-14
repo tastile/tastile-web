@@ -2,7 +2,7 @@
 
 import { PanelLeftDashed } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { SecurityLockGate } from "@/components/security/SecurityLockGate";
@@ -45,6 +45,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  // Bell button lives inside FloatingHeader but the notifications
+  // panel is mounted here as a sibling overlay. Without sharing the
+  // ref, NotificationsMenu's anchorRef is undefined and the panel's
+  // positioning effect bails out (data-state stays "closed" → invisible).
+  const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,6 +76,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         userName="Operator"
         onOpenSearch={() => setSearchOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
+        notificationsButtonRef={notificationsButtonRef}
       />
 
       <div className="flex min-h-0 flex-1 pt-12">
@@ -90,7 +96,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* グローバルオーバーレイ */}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <NotificationsMenu open={notificationsOpen} onOpenChange={setNotificationsOpen} />
+      <NotificationsMenu
+        open={notificationsOpen}
+        onOpenChange={setNotificationsOpen}
+        anchorRef={notificationsButtonRef}
+      />
       {/* QuickTileCreate: デスクトップ=右スライド / モバイル=下スライドアップ */}
       <QuickTileCreate />
 

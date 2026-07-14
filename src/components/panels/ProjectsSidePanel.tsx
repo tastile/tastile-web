@@ -4,7 +4,7 @@ import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
 import { getTreeExpandedState, Select, Tree, useTree } from "@mantine/core";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
@@ -203,7 +203,7 @@ export function ProjectsSidePanel() {
             )}
           >
             <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-border" />
-            <span className="min-w-0 flex-1 truncate">All Projects</span>
+            <span className="min-w-0 flex-1 truncate">{t("panels.projects.allProjects")}</span>
           </button>
 
           {loading && (
@@ -252,64 +252,67 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
   );
   const tree = useTree({ initialExpandedState: getTreeExpandedState(treeData, "*") });
 
-  function renderNode({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) {
-    const color = colorById.get(node.value) ?? undefined;
-    const isSelected = currentOwner === node.value;
-    const displayName = String(node.label ?? "");
-    return (
-      <div
-        {...elementProps}
-        className={cn(
-          "group flex items-center gap-1 rounded-md transition-colors",
-          isSelected
-            ? "bg-surface-elevated font-medium text-foreground"
-            : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-        )}
-      >
-        {hasChildren ? (
+  const renderNode = useCallback(
+    ({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
+      const color = colorById.get(node.value) ?? undefined;
+      const isSelected = currentOwner === node.value;
+      const displayName = String(node.label ?? "");
+      return (
+        <div
+          {...elementProps}
+          className={cn(
+            "group flex items-center gap-1 rounded-md transition-colors",
+            isSelected
+              ? "bg-surface-elevated font-medium text-foreground"
+              : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+          )}
+        >
+          {hasChildren ? (
+            <button
+              type="button"
+              aria-label={expanded ? "Collapse" : "Expand"}
+              onClick={() => tree.toggleExpanded(node.value)}
+              className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+            >
+              <ChevronRight
+                size={12}
+                aria-hidden
+                className={cn("transition-transform", expanded && "rotate-90")}
+              />
+            </button>
+          ) : (
+            <span aria-hidden className="h-4 w-4 shrink-0" />
+          )}
           <button
             type="button"
-            aria-label={expanded ? "Collapse" : "Expand"}
-            onClick={() => tree.toggleExpanded(node.value)}
-            className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+            onClick={() => onSelect(node.value)}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
+            data-testid={`project-select-${node.value}`}
           >
-            <ChevronRight
-              size={12}
+            <span
               aria-hidden
-              className={cn("transition-transform", expanded && "rotate-90")}
+              className="h-2.5 w-2.5 shrink-0 rounded-full"
+              style={{ backgroundColor: color ?? "#6b7280" }}
             />
+            <span className="min-w-0 flex-1 truncate">{displayName}</span>
           </button>
-        ) : (
-          <span aria-hidden className="h-4 w-4 shrink-0" />
-        )}
-        <button
-          type="button"
-          onClick={() => onSelect(node.value)}
-          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
-          data-testid={`project-select-${node.value}`}
-        >
-          <span
-            aria-hidden
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: color ?? "#6b7280" }}
-          />
-          <span className="min-w-0 flex-1 truncate">{displayName}</span>
-        </button>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete(node.value, displayName);
-          }}
-          aria-label={`Delete ${displayName}`}
-          className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
-          data-testid={`project-delete-${node.value}`}
-        >
-          ×
-        </button>
-      </div>
-    );
-  }
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(node.value, displayName);
+            }}
+            aria-label={`Delete ${displayName}`}
+            className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
+            data-testid={`project-delete-${node.value}`}
+          >
+            ×
+          </button>
+        </div>
+      );
+    },
+    [tree, colorById, currentOwner, onSelect, onDelete],
+  );
 
   return (
     <Tree

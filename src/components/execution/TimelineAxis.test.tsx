@@ -1,12 +1,13 @@
 /** @vitest-environment jsdom */
 
-import { createEvent, fireEvent, render, screen } from "@testing-library/react";
+import { createEvent, fireEvent, render, screen } from "@testing-library/react"
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { describe, expect, it, vi } from "vitest";
 import { TimelineAxis } from "./TimelineAxis";
 
 describe("TimelineAxis", () => {
 	it("renders absolute time axis and preserves order from daemon timeline", () => {
-		render(
+		renderWithMantine(
 			<TimelineAxis
 				markers={[
 					{ label: "09:00", topPx: 80 },
@@ -60,7 +61,7 @@ describe("TimelineAxis", () => {
 	});
 
 	it("zooms timeline canvas and scales block height", () => {
-		render(
+		renderWithMantine(
 			<TimelineAxis
 				markers={[{ label: "09:00", topPx: 80 }]}
 				blocks={[
@@ -93,7 +94,7 @@ describe("TimelineAxis", () => {
 	});
 
 	it("uses ctrl-wheel zoom and prevents default scroll", () => {
-		render(
+		renderWithMantine(
 			<TimelineAxis
 				markers={[{ label: "09:00", topPx: 80 }]}
 				blocks={[

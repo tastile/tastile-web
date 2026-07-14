@@ -1,12 +1,11 @@
 "use client";
 
+import { NumberInput, Slider, Switch, TextInput } from "@mantine/core";
 import { Clock, Flame, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { Input } from "@/components/ui/Input";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
 
 export function TasksSidePanel() {
   const { t } = useTranslation();
@@ -125,16 +124,15 @@ export function TasksSidePanel() {
         <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
           {t("panels.tasks.search")}
         </p>
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground-subtle" />
-          <input
-            type="text"
-            placeholder={t("panels.tasks.searchPlaceholder")}
-            value={search}
-            onChange={(e) => applyFilters({ q: e.target.value })}
-            className="h-8 w-full rounded-md border border-border bg-surface-1 pl-8 pr-3 text-xs text-foreground placeholder:text-foreground-subtle focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
+        <TextInput
+          leftSection={<Search className="h-3.5 w-3.5 text-foreground-subtle" aria-hidden />}
+          placeholder={t("panels.tasks.searchPlaceholder")}
+          value={search}
+          onChange={(event) => applyFilters({ q: event.currentTarget.value })}
+          size="xs"
+          data-testid="tasks-search"
+          aria-label={t("panels.tasks.search")}
+        />
       </div>
 
       {/* Time Range */}
@@ -160,17 +158,18 @@ export function TasksSidePanel() {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="w-20">
-              <Input
-                type="number"
-                min="1"
-                max="365"
+              <NumberInput
                 value={rangeVal}
-                onChange={(e) => {
-                  const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                min={1}
+                max={365}
+                size="xs"
+                onChange={(value) => {
+                  const val = Math.max(1, Number(value) || 1);
                   setRangeVal(val);
                   applyFilters({ range: { val, unit: rangeUnit } });
                 }}
-                className="h-8"
+                aria-label={t("panels.tasks.timeRange")}
+                data-testid="tasks-range-num"
               />
             </div>
             <div className="flex-1">
@@ -193,17 +192,17 @@ export function TasksSidePanel() {
 
           {/* カスタムスライダー */}
           <div className="flex items-center px-1">
-            <input
-              type="range"
-              min="1"
+            <Slider
+              min={1}
               max={rangeUnit === "d" ? 90 : rangeUnit === "w" ? 12 : 6}
               value={rangeVal}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setRangeVal(val);
-                applyFilters({ range: { val, unit: rangeUnit } });
+              onChange={(value) => {
+                setRangeVal(value);
+                applyFilters({ range: { val: value, unit: rangeUnit } });
               }}
-              className="w-full h-1 bg-surface-3 rounded-lg appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-110"
+              size="sm"
+              className="w-full"
+              data-testid="tasks-range-slider"
             />
           </div>
         </div>
@@ -225,38 +224,35 @@ export function TasksSidePanel() {
 
         <div className="space-y-3">
           <div>
-            <Input
-              type="number"
-              min="0"
-              max="240"
+            <NumberInput
               value={minDuration}
-              onChange={(e) => {
-                const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+              min={0}
+              max={240}
+              size="xs"
+              suffix={t("panels.tasks.minutes")}
+              onChange={(value) => {
+                const val = Math.max(0, Number(value) || 0);
                 setMinDuration(val);
                 applyFilters({ duration: { val } });
               }}
-              trailing={
-                <span className="text-[10px] text-foreground-subtle select-none">
-                  {t("panels.tasks.minutes")}
-                </span>
-              }
-              className="h-8"
+              aria-label={t("panels.tasks.minDuration")}
+              data-testid="tasks-duration-num"
             />
           </div>
 
           <div className="flex items-center px-1">
-            <input
-              type="range"
-              min="0"
-              max="120"
-              step="5"
+            <Slider
+              min={0}
+              max={120}
+              step={5}
               value={minDuration}
-              onChange={(e) => {
-                const val = parseInt(e.target.value, 10);
-                setMinDuration(val);
-                applyFilters({ duration: { val } });
+              onChange={(value) => {
+                setMinDuration(value);
+                applyFilters({ duration: { val: value } });
               }}
-              className="w-full h-1 bg-surface-3 rounded-lg appearance-none cursor-pointer accent-primary [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-3.5 [&::-webkit-slider-thumb]:w-3.5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-webkit-slider-thumb]:transition-all [&::-webkit-slider-thumb]:hover:scale-110"
+              size="sm"
+              className="w-full"
+              data-testid="tasks-duration-slider"
             />
           </div>
         </div>
@@ -272,59 +268,29 @@ export function TasksSidePanel() {
         </div>
 
         <div className="space-y-3">
-          {/* High Priority Switch */}
-          <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">
-              {t("panels.tasks.highPriorityOnly")}
-            </span>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={highPriorityOnly}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setHighPriorityOnly(checked);
-                  applyFilters({ priority: { high: checked, nolow: excludeLowPriority } });
-                }}
-                className="sr-only peer"
-              />
-              <div
-                className={cn(
-                  "w-9 h-5 rounded-full transition-colors cursor-pointer border border-transparent outline-none",
-                  "bg-surface-3 peer-checked:bg-primary",
-                  "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm",
-                  "peer-checked:after:translate-x-4",
-                )}
-              />
-            </div>
-          </label>
+          <Switch
+            label={t("panels.tasks.highPriorityOnly")}
+            checked={highPriorityOnly}
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
+              setHighPriorityOnly(checked);
+              applyFilters({ priority: { high: checked, nolow: excludeLowPriority } });
+            }}
+            size="sm"
+            data-testid="tasks-high-priority-switch"
+          />
 
-          {/* Exclude Low Priority Switch */}
-          <label className="flex items-center justify-between cursor-pointer group">
-            <span className="text-xs text-foreground-subtle group-hover:text-foreground transition-colors">
-              {t("panels.tasks.excludeLowPriority")}
-            </span>
-            <div className="relative">
-              <input
-                type="checkbox"
-                checked={excludeLowPriority}
-                onChange={(e) => {
-                  const checked = e.target.checked;
-                  setExcludeLowPriority(checked);
-                  applyFilters({ priority: { high: highPriorityOnly, nolow: checked } });
-                }}
-                className="sr-only peer"
-              />
-              <div
-                className={cn(
-                  "w-9 h-5 rounded-full transition-colors cursor-pointer border border-transparent outline-none",
-                  "bg-surface-3 peer-checked:bg-primary",
-                  "after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all after:shadow-sm",
-                  "peer-checked:after:translate-x-4",
-                )}
-              />
-            </div>
-          </label>
+          <Switch
+            label={t("panels.tasks.excludeLowPriority")}
+            checked={excludeLowPriority}
+            onChange={(event) => {
+              const checked = event.currentTarget.checked;
+              setExcludeLowPriority(checked);
+              applyFilters({ priority: { high: highPriorityOnly, nolow: checked } });
+            }}
+            size="sm"
+            data-testid="tasks-exclude-low-switch"
+          />
         </div>
       </div>
 
@@ -333,9 +299,10 @@ export function TasksSidePanel() {
         <button
           type="button"
           onClick={resetToDefaults}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold rounded border border-border text-foreground bg-surface-2 hover:bg-surface-3 transition-all cursor-pointer shadow-xs"
+          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-surface-1 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-2 transition-colors"
+          data-testid="tasks-reset-defaults"
         >
-          <RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" />
+          <RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" aria-hidden />
           {t("panels.tasks.resetToDefaults")}
         </button>
       </div>

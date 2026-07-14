@@ -717,29 +717,35 @@ GET /v1/debug/events
 
 function coreTag(path: string, method: CoreMethod): ApiTag {
   if (path.startsWith("/v1/auth") || path.startsWith("/v1/api-tokens")) return "Auth";
-  if (["/v1/health", "/v1/ready", "/v1/version", "/v1/openapi.json"].includes(path)) return "Public";
+  if (["/v1/health", "/v1/ready", "/v1/version", "/v1/openapi.json"].includes(path))
+    return "Public";
   if (path.startsWith("/v1/debug")) return "Debug";
   if (path.startsWith("/v1/prompts")) return "Prompts";
   return method === "GET" ? "Read" : "Commands";
 }
 
 function coreOperationKey(method: CoreMethod, path: string): string {
-  return `core${method[0]}${path.replace(/^\/v1\/?/, "").replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()).replace(/[^a-zA-Z0-9]/g, "")}`;
+  return `core${method[0]}${path
+    .replace(/^\/v1\/?/, "")
+    .replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase())
+    .replace(/[^a-zA-Z0-9]/g, "")}`;
 }
 
 /** Every concrete method/path pair registered by tastile-core's v1 Router. */
-export const CORE_V1_ENDPOINTS: readonly EndpointMeta[] = CORE_V1_OPERATION_DEFINITIONS.map((line) => {
-  const [method, path] = line.split(" ") as [CoreMethod, string];
-  const tag = coreTag(path, method);
-  return {
-    method,
-    path,
-    tag,
-    summary: `${method} ${path.replace("/v1/", "")}`,
-    auth: tag !== "Public" && !path.startsWith("/v1/auth/"),
-    keywords: [method.toLowerCase(), ...path.split("/").filter(Boolean).slice(1)],
-  };
-});
+export const CORE_V1_ENDPOINTS: readonly EndpointMeta[] = CORE_V1_OPERATION_DEFINITIONS.map(
+  (line) => {
+    const [method, path] = line.split(" ") as [CoreMethod, string];
+    const tag = coreTag(path, method);
+    return {
+      method,
+      path,
+      tag,
+      summary: `${method} ${path.replace("/v1/", "")}`,
+      auth: tag !== "Public" && !path.startsWith("/v1/auth/"),
+      keywords: [method.toLowerCase(), ...path.split("/").filter(Boolean).slice(1)],
+    };
+  },
+);
 
 const CORE_V1_ENDPOINT_RECORD: Record<string, EndpointMeta> = Object.fromEntries(
   CORE_V1_ENDPOINTS.map((endpoint) => [coreOperationKey(endpoint.method, endpoint.path), endpoint]),

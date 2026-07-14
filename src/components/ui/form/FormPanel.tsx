@@ -1,3 +1,4 @@
+import { Stack } from "@mantine/core";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -8,8 +9,8 @@ interface FormPanelProps {
 
 export function FormPanel({ children, className }: FormPanelProps) {
   return (
-    <div data-testid="form-panel" className={cn("p-panel flex flex-col gap-2", className)}>
+    <Stack data-testid="form-panel" gap="xs" p="md" className={cn("p-panel", className)}>
       {children}
-    </div>
+    </Stack>
   );
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useState } from "react";
 
 import { publishScheduleDefinition } from "@/lib/api/v1/schedule-definition";
@@ -49,7 +50,13 @@ export function FloatingScheduleEditor({
     <div className="fixed inset-y-0 right-0 z-[56] flex w-full max-w-lg flex-col border-l border-border bg-surface-0 shadow-lg">
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
         <h2 className="text-base font-semibold">タイルを作成</h2>
-        <button type="button" onClick={onClose} className="text-sm text-foreground-muted">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="閉じる"
+          className="flex items-center gap-1 rounded-md bg-surface-1 px-2 py-1 text-xs font-semibold text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <X size={14} aria-hidden />
           閉じる
         </button>
       </header>

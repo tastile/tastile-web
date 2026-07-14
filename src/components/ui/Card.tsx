@@ -1,5 +1,6 @@
 "use client";
 
+import { Paper } from "@mantine/core";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -11,15 +12,16 @@ interface CardProps {
 
 export function Card({ children, className, padded = true }: CardProps) {
   return (
-    <div
-      className={cn(
-        "rounded-lg border border-border bg-surface-1 shadow-xs",
-        padded ? "p-section" : "",
-        className,
-      )}
+    <Paper
+      radius="md"
+      withBorder
+      shadow="xs"
+      p={padded ? "md" : undefined}
+      bg="var(--surface-1)"
+      className={cn("border-border", className)}
     >
       {children}
-    </div>
+    </Paper>
   );
 }
 

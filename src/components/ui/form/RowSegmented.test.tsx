@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { CheckCircle2 } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { RowSegmented } from "./RowSegmented";
 
 const OPTIONS = [
@@ -10,25 +11,27 @@ const OPTIONS = [
 ];
 
 describe("RowSegmented", () => {
-  it("renders one button per option with role=radio", () => {
-    render(<RowSegmented icon={CheckCircle2} options={OPTIONS} value="a" onChange={() => {}} />);
-    const a = screen.getByRole("radio", { name: "A" });
-    const b = screen.getByRole("radio", { name: "B" });
-    expect(a).not.toBeNull();
-    expect(b).not.toBeNull();
+  it("renders one radio per option", () => {
+    renderWithMantine(
+      <RowSegmented icon={CheckCircle2} options={OPTIONS} value="a" onChange={() => {}} />,
+    );
+    expect(screen.getByRole("radio", { name: "A" })).not.toBeNull();
+    expect(screen.getByRole("radio", { name: "B" })).not.toBeNull();
   });
 
-  it("marks the active option as aria-checked", () => {
-    render(<RowSegmented icon={CheckCircle2} options={OPTIONS} value="b" onChange={() => {}} />);
-    const a = screen.getByRole("radio", { name: "A" });
-    const b = screen.getByRole("radio", { name: "B" });
-    expect(a.getAttribute("aria-checked")).toBe("false");
-    expect(b.getAttribute("aria-checked")).toBe("true");
+  it("marks the active option as the checked radio", () => {
+    renderWithMantine(
+      <RowSegmented icon={CheckCircle2} options={OPTIONS} value="b" onChange={() => {}} />,
+    );
+    expect((screen.getByRole("radio", { name: "A" }) as HTMLInputElement).checked).toBe(false);
+    expect((screen.getByRole("radio", { name: "B" }) as HTMLInputElement).checked).toBe(true);
   });
 
   it("calls onChange when an option is clicked", () => {
     const onChange = vi.fn();
-    render(<RowSegmented icon={CheckCircle2} options={OPTIONS} value="a" onChange={onChange} />);
+    renderWithMantine(
+      <RowSegmented icon={CheckCircle2} options={OPTIONS} value="a" onChange={onChange} />,
+    );
     fireEvent.click(screen.getByRole("radio", { name: "B" }));
     expect(onChange).toHaveBeenCalledWith("b");
   });

@@ -23,6 +23,7 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
+import { SegmentedControl, Select } from "@mantine/core";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 import { useMemo } from "react";
 
@@ -34,6 +35,12 @@ import type { TimeOfDayMode, WhenMode } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
+
+const SEGMENT_STYLES = {
+  root: { backgroundColor: "var(--surface-2)" },
+  indicator: { backgroundColor: "var(--surface-1)" },
+  label: { color: "var(--foreground)" },
+} as const;
 
 const WHEN_MODE_OPTIONS: ReadonlyArray<{
   id: WhenMode;
@@ -103,34 +110,17 @@ function ChoiceTabs<T extends string>({
   t,
 }: ChoiceTabsProps<T>) {
   return (
-    <div
-      role="radiogroup"
-      className="flex flex-wrap gap-1"
+    <SegmentedControl
+      fullWidth
+      size="sm"
+      radius="md"
+      withItemsBorders={false}
+      value={value}
+      onChange={(next) => onChange(next as T)}
+      data={options.map((opt) => ({ value: opt.id, label: t(opt.labelKey) }))}
+      styles={SEGMENT_STYLES}
       data-testid={`${testIdPrefix}-choice-tabs`}
-    >
-      {options.map((opt) => {
-        const active = value === opt.id;
-        return (
-          // biome-ignore lint/a11y/useSemanticElements: button-styled radio inside role="radiogroup"; WAI-ARIA radiogroup pattern with aria-checked is intentional
-          <button
-            key={opt.id}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            data-testid={`${testIdPrefix}-${opt.id}`}
-            onClick={() => onChange(opt.id)}
-            className={cn(
-              "min-h-[32px] rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-              active
-                ? "border-accent/40 bg-accent-soft text-accent-ink"
-                : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
-            )}
-          >
-            {t(opt.labelKey)}
-          </button>
-        );
-      })}
-    </div>
+    />
   );
 }
 
@@ -150,8 +140,8 @@ function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
       aria-pressed={active}
       onClick={onActivate}
       className={cn(
-        "flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-        active ? "border-accent/40 bg-accent-soft" : "border-border hover:bg-surface-1",
+        "flex w-full items-center gap-3 rounded-xl bg-surface-0 p-3 text-left transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+        active ? "bg-accent-soft" : "hover:bg-surface-1",
       )}
     >
       <span
@@ -217,70 +207,62 @@ function TimeOfDayEditor({
       {mode === "range" ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1.5">
-              <select
+            <div className="flex flex-1 items-center gap-1">
+              <Select
                 aria-label={`${t("quickCreate.timeOfDayLabel")} start hour`}
-                value={start.split(":")[0] ?? ""}
-                onChange={(e) => onStartChange(`${e.target.value}:${start.split(":")[1] ?? "00"}`)}
-                className="themed-datetime-input w-full bg-transparent text-sm font-semibold text-foreground outline-none"
+                value={start.split(":")[0] ?? null}
+                onChange={(value) => onStartChange(`${value ?? ""}:${start.split(":")[1] ?? "00"}`)}
+                data={HOURS.map((h) => ({ value: h, label: h }))}
+                placeholder="--"
+                comboboxProps={{ withinPortal: true }}
+                allowDeselect={false}
                 data-testid="time-of-day-start-hour"
-              >
-                <option value="">--</option>
-                {HOURS.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
+                className="flex-1"
+                size="xs"
+              />
               <span className="text-foreground-muted">:</span>
-              <select
+              <Select
                 aria-label={`${t("quickCreate.timeOfDayLabel")} start minute`}
-                value={start.split(":")[1] ?? ""}
-                onChange={(e) => onStartChange(`${start.split(":")[0] ?? "00"}:${e.target.value}`)}
-                className="themed-datetime-input w-full bg-transparent text-sm font-semibold text-foreground outline-none"
+                value={start.split(":")[1] ?? null}
+                onChange={(value) => onStartChange(`${start.split(":")[0] ?? "00"}:${value ?? ""}`)}
+                data={MINUTES.map((m) => ({ value: m, label: m }))}
+                placeholder="--"
+                comboboxProps={{ withinPortal: true }}
+                allowDeselect={false}
                 data-testid="time-of-day-start-minute"
-              >
-                <option value="">--</option>
-                {MINUTES.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+                className="flex-1"
+                size="xs"
+              />
             </div>
             <span aria-hidden="true" className="text-foreground-muted">
               →
             </span>
-            <div className="flex flex-1 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1.5">
-              <select
+            <div className="flex flex-1 items-center gap-1">
+              <Select
                 aria-label={`${t("quickCreate.timeOfDayLabel")} end hour`}
-                value={end.split(":")[0] ?? ""}
-                onChange={(e) => onEndChange(`${e.target.value}:${end.split(":")[1] ?? "00"}`)}
-                className="themed-datetime-input w-full bg-transparent text-sm font-semibold text-foreground outline-none"
+                value={end.split(":")[0] ?? null}
+                onChange={(value) => onEndChange(`${value ?? ""}:${end.split(":")[1] ?? "00"}`)}
+                data={HOURS.map((h) => ({ value: h, label: h }))}
+                placeholder="--"
+                comboboxProps={{ withinPortal: true }}
+                allowDeselect={false}
                 data-testid="time-of-day-end-hour"
-              >
-                <option value="">--</option>
-                {HOURS.map((h) => (
-                  <option key={h} value={h}>
-                    {h}
-                  </option>
-                ))}
-              </select>
+                className="flex-1"
+                size="xs"
+              />
               <span className="text-foreground-muted">:</span>
-              <select
+              <Select
                 aria-label={`${t("quickCreate.timeOfDayLabel")} end minute`}
-                value={end.split(":")[1] ?? ""}
-                onChange={(e) => onEndChange(`${end.split(":")[0] ?? "00"}:${e.target.value}`)}
-                className="themed-datetime-input w-full bg-transparent text-sm font-semibold text-foreground outline-none"
+                value={end.split(":")[1] ?? null}
+                onChange={(value) => onEndChange(`${end.split(":")[0] ?? "00"}:${value ?? ""}`)}
+                data={MINUTES.map((m) => ({ value: m, label: m }))}
+                placeholder="--"
+                comboboxProps={{ withinPortal: true }}
+                allowDeselect={false}
                 data-testid="time-of-day-end-minute"
-              >
-                <option value="">--</option>
-                {MINUTES.map((m) => (
-                  <option key={m} value={m}>
-                    {m}
-                  </option>
-                ))}
-              </select>
+                className="flex-1"
+                size="xs"
+              />
             </div>
           </div>
           <div className="flex flex-wrap gap-1" data-testid="time-of-day-quick-row">
@@ -290,10 +272,10 @@ function TimeOfDayEditor({
                 type="button"
                 onClick={() => onQuickPick(q.start, q.end)}
                 className={cn(
-                  "rounded-full border px-3 py-1 text-[10px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                  "rounded-full px-3 py-1 text-[10px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                   start === q.start && end === q.end
-                    ? "border-accent/40 bg-accent-soft text-accent-ink"
-                    : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
+                    ? "bg-accent-soft text-accent-ink"
+                    : "bg-surface-0 text-foreground-muted hover:bg-surface-1",
                 )}
                 data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
               >
@@ -580,7 +562,7 @@ export function SchedulePanel({
               {t("quickCreate.referenceRangeSub")}
             </div>
           </div>
-          <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-ink">
+          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-ink">
             {t("quickCreate.referenceRangeBadge")}
           </span>
         </div>

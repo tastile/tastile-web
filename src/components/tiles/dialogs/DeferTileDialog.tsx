@@ -1,7 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { DateInput, TimeInput } from "@mantine/dates";
+import { Check, X } from "lucide-react";
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useDialogStore } from "@/lib/stores/dialog-store";
 import {
@@ -89,19 +91,37 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
               {t("tiles.dialogs.nextStartAt")}
             </label>
             <div className="flex gap-2">
-              <input
+              <DateInput
                 id="defer-date"
-                type="date"
-                value={resolvedDatePart}
-                onChange={(e) => setDatePart(e.target.value)}
-                className="flex-1 rounded-lg bg-surface-1 px-3 py-2 text-sm text-foreground"
+                value={resolvedDatePart ? new Date(resolvedDatePart) : null}
+                onChange={(value) => {
+                  if (!value) {
+                    setDatePart("");
+                    return;
+                  }
+                  const date = new Date(value);
+                  if (Number.isNaN(date.getTime())) {
+                    setDatePart(value);
+                    return;
+                  }
+                  const y = date.getFullYear();
+                  const m = String(date.getMonth() + 1).padStart(2, "0");
+                  const d = String(date.getDate()).padStart(2, "0");
+                  setDatePart(`${y}-${m}-${d}`);
+                }}
+                size="sm"
+                valueFormat="YYYY-MM-DD"
+                popoverProps={{ withinPortal: true }}
+                styles={{ input: { backgroundColor: "var(--surface-1)" } }}
+                className="flex-1"
               />
-              <input
+              <TimeInput
                 id="defer-time"
-                type="time"
                 value={resolvedTimePart}
-                onChange={(e) => setTimePart(e.target.value)}
-                className="flex-1 rounded-lg bg-surface-1 px-3 py-2 text-sm text-foreground"
+                onChange={(event) => setTimePart(event.currentTarget.value)}
+                size="sm"
+                styles={{ input: { backgroundColor: "var(--surface-1)" } }}
+                className="flex-1"
               />
             </div>
           </div>
@@ -109,20 +129,22 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
 
         {/* Actions */}
         <div className="flex justify-end gap-2">
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            iconLeft={<X size={14} aria-hidden="true" />}
             onClick={handleCancel}
-            className="rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
           >
             {t("common.cancel")}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="primary"
+            iconLeft={<Check size={14} aria-hidden="true" />}
             onClick={handleConfirm}
-            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary/90"
           >
             {t("common.confirm")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

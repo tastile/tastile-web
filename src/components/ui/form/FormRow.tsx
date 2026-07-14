@@ -1,3 +1,4 @@
+import { Box, Group } from "@mantine/core";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -19,7 +20,7 @@ export function FormRow({
   "data-testid": dataTestid,
 }: FormRowProps) {
   return (
-    <div
+    <Box
       data-testid={dataTestid ?? "form-row"}
       className={cn(
         "grid grid-cols-[20px_1fr_auto] items-center gap-3",
@@ -27,9 +28,15 @@ export function FormRow({
         className,
       )}
     >
-      <div className="flex items-center justify-center text-foreground-muted">{icon}</div>
+      <Group justify="center" gap={0} wrap="nowrap" className="text-foreground-muted">
+        {icon}
+      </Group>
       <div className="min-w-0 flex items-center">{children}</div>
-      {trailing !== undefined && <div className="flex items-center justify-end">{trailing}</div>}
-    </div>
+      {trailing !== undefined && (
+        <Group justify="flex-end" gap={0} wrap="nowrap">
+          {trailing}
+        </Group>
+      )}
+    </Box>
   );
 }

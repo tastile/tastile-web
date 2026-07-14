@@ -1,11 +1,7 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Calendar } from "@mantine/dates";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
-
-const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 interface MiniCalendarProps {
   /** 選択中の日付 (YYYY-MM-DD) */
@@ -18,127 +14,37 @@ interface MiniCalendarProps {
   disabled?: boolean;
 }
 
-function toDateStr(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
-
 export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCalendarProps) {
-  const { t, locale } = useTranslation();
-  const today = toDateStr(new Date());
-  const [viewYear, setViewYear] = useState(() => new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => new Date().getMonth());
-  // Set lookup for O(1) contains; built once per render.
+  const { locale } = useTranslation();
+  const today = new Date();
   const highlightSet = highlight ? new Set(highlight) : null;
-
-  // 月の最初の日
-  const firstDay = new Date(viewYear, viewMonth, 1);
-  // グリッドの開始日（前月末を含む）
-  const startDate = new Date(firstDay);
-  startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-  const cells: Date[] = [];
-  for (let i = 0; i < 42; i++) {
-    const d = new Date(startDate);
-    d.setDate(startDate.getDate() + i);
-    cells.push(d);
-  }
-
-  function prevMonth() {
-    if (viewMonth === 0) {
-      setViewYear((y) => y - 1);
-      setViewMonth(11);
-    } else setViewMonth((m) => m - 1);
-  }
-  function nextMonth() {
-    if (viewMonth === 11) {
-      setViewYear((y) => y + 1);
-      setViewMonth(0);
-    } else setViewMonth((m) => m + 1);
-  }
-
-  const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
-    locale === "ja" ? "ja-JP" : "en-US",
-    {
-      month: "long",
-      year: "numeric",
-    },
-  );
 
   return (
     <div className="select-none px-3 py-2">
-      {/* ヘッダー */}
-      <div className="mb-2 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={prevMonth}
-          aria-label={t("miniCalendar.prevMonth")}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <span className="text-[11px] font-semibold text-foreground">{monthLabel}</span>
-        <button
-          type="button"
-          onClick={nextMonth}
-          aria-label={t("miniCalendar.nextMonth")}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* 曜日ヘッダー */}
-      <div className="mb-1 grid grid-cols-7 gap-px">
-        {WEEKDAYS.map((w) => (
-          <div
-            key={w}
-            className="text-center text-[9px] font-semibold uppercase tracking-wider text-foreground-subtle"
-          >
-            {w}
-          </div>
-        ))}
-      </div>
-
-      {/* 日付グリッド */}
-      <div className="grid grid-cols-7 gap-px">
-        {cells.map((d) => {
-          const str = toDateStr(d);
-          const isCurrentMonth = d.getMonth() === viewMonth;
-          const isToday = str === today;
-          const isSelected = str === selected;
-          // Show range band on out-of-month days too, so a week that
-          // crosses a month boundary still reads as one connected range.
+      <Calendar
+        size="xs"
+        locale={locale === "ja" ? "ja" : "en"}
+        firstDayOfWeek={0}
+        date={today}
+        level="month"
+        getDayProps={(date) => {
+          const str = date;
           const isHighlighted = highlightSet?.has(str) ?? false;
-
-          return (
-            <button
-              key={str}
-              type="button"
-              onClick={disabled ? undefined : () => onSelect?.(str)}
-              disabled={disabled}
-              className={cn(
-                "flex h-6 w-full items-center justify-center rounded text-[11px] tabular-nums transition-colors",
-                !isCurrentMonth && !isHighlighted && "text-foreground-lighter",
-                isCurrentMonth &&
-                  !isToday &&
-                  !isSelected &&
-                  !isHighlighted &&
-                  "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-                isHighlighted &&
-                  !isSelected &&
-                  "bg-surface-3 font-medium text-foreground hover:bg-surface-3/80",
-                isToday && !isSelected && "font-semibold text-primary",
-                isSelected && "bg-primary text-primary-fg font-semibold",
-                disabled && "cursor-not-allowed opacity-60 hover:bg-transparent",
-              )}
-              aria-label={str}
-              aria-pressed={isSelected}
-            >
-              {d.getDate()}
-            </button>
-          );
-        })}
-      </div>
+          const isSelected = str === selected;
+          return {
+            selected: isSelected,
+            disabled: disabled,
+            "data-highlighted": isHighlighted || undefined,
+            onClick: () => {
+              if (!disabled) onSelect?.(str);
+            },
+          };
+        }}
+        styles={{
+          calendarHeader: { display: "none" },
+          month: { padding: 0 },
+        }}
+      />
     </div>
   );
 }

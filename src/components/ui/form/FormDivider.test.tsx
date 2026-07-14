@@ -1,14 +1,14 @@
 /** @vitest-environment jsdom */
-import { render } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { FormDivider } from "./FormDivider";
 
 describe("FormDivider", () => {
-  it("renders a horizontal rule with 16px vertical margin and a border", () => {
-    const { container } = render(<FormDivider />);
-    const hr = container.querySelector("hr");
-    expect(hr).not.toBeNull();
-    expect(hr?.className).toContain("my-4");
-    expect(hr?.className).toContain("border-border");
+  it("renders a Mantine Divider", () => {
+    renderWithMantine(<FormDivider />);
+    const divider = screen.getByTestId("form-divider");
+    expect(divider).not.toBeNull();
+    expect(divider.className).toContain("mantine-Divider-root");
   });
 });

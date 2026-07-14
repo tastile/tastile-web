@@ -1,7 +1,12 @@
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
+
+import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import type { Metadata } from "next";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { themeScript } from "@/lib/theme-script";
+import { AppProviders } from "./providers";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
 
@@ -37,8 +42,9 @@ export default function RootLayout({
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" {...mantineHtmlProps}>
       <head>
+        <ColorSchemeScript defaultColorScheme="auto" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         {/* eslint-disable-next-line @next/next/no-page-custom-font -- loaded via Google Fonts CSS for full site */}
@@ -53,7 +59,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${inter.variable} ${zenKaku.variable} antialiased`}
       >
         <GoogleAnalytics measurementId={gaMeasurementId} />
-        {children}
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

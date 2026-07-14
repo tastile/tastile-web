@@ -1,11 +1,15 @@
 "use client";
 
+import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
+import { Checkbox, getTreeExpandedState, Select, Tree, useTree } from "@mantine/core";
+import { ChevronRight, Clock, Filter } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useTransition } from "react";
+import { useCallback, useMemo, useTransition } from "react";
 import { MiniCalendar } from "@/components/ui/MiniCalendar";
 import type { DisplayMode } from "@/lib/calendar/layout";
-import { orderWorkspaceTree, useProjects } from "@/lib/hooks/use-projects";
+import { useProjects, type Workspace } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils/cn";
 
 type CalendarSidePanelView = "day" | "week" | "month" | "year" | "list";
 
@@ -86,7 +90,15 @@ function getHighlightDates(
   return out;
 }
 
-export function CalendarSidePanel({ anchor, view, mode, minDuration = 0, onSelectDate, onModeChange, onMinDurationChange }: CalendarSidePanelProps) {
+export function CalendarSidePanel({
+  anchor,
+  view,
+  mode,
+  minDuration = 0,
+  onSelectDate,
+  onModeChange,
+  onMinDurationChange,
+}: CalendarSidePanelProps) {
   const highlight = getHighlightDates(view, mode, anchor);
   // Around / future modes always anchor to today; the mini calendar
   // is read-only so the user can't pick a date the main view will
@@ -106,23 +118,47 @@ export function CalendarSidePanel({ anchor, view, mode, minDuration = 0, onSelec
       <div className="mx-3 h-px bg-border" />
 
       <section className="space-y-3 px-3">
-        <label className="block text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-          Time range
-          <select value={mode ?? "scope"} onChange={(event) => onModeChange?.(event.target.value as DisplayMode)} className="mt-1 h-8 w-full rounded border border-border bg-surface-1 px-2 text-xs text-foreground">
-            <option value="scope">Selected date</option>
-            <option value="around">Around now</option>
-            <option value="future">From now</option>
-          </select>
-        </label>
-        <label className="block text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
-          Min duration
-          <select value={minDuration} onChange={(event) => onMinDurationChange?.(Number(event.target.value))} className="mt-1 h-8 w-full rounded border border-border bg-surface-1 px-2 text-xs text-foreground">
-            <option value={0}>Show all (including 5 min breaks)</option>
-            <option value={5}>5 minutes+</option>
-            <option value={15}>15 minutes+</option>
-            <option value={30}>30 minutes+</option>
-          </select>
-        </label>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+            <Clock className="h-3 w-3" aria-hidden />
+            <span>Time range</span>
+          </div>
+          <Select
+            aria-label="Time range"
+            value={mode ?? "scope"}
+            onChange={(value) => value && onModeChange?.(value as DisplayMode)}
+            data={[
+              { value: "scope", label: "Selected date" },
+              { value: "around", label: "Around now" },
+              { value: "future", label: "From now" },
+            ]}
+            size="xs"
+            allowDeselect={false}
+            comboboxProps={{ withinPortal: true }}
+            data-testid="panel-time-range"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+            <Filter className="h-3 w-3" aria-hidden />
+            <span>Min duration</span>
+          </div>
+          <Select
+            aria-label="Min duration"
+            value={String(minDuration)}
+            onChange={(value) => value && onMinDurationChange?.(Number(value))}
+            data={[
+              { value: "0", label: "Show all (including 5 min breaks)" },
+              { value: "5", label: "5 minutes+" },
+              { value: "15", label: "15 minutes+" },
+              { value: "30", label: "30 minutes+" },
+            ]}
+            size="xs"
+            allowDeselect={false}
+            comboboxProps={{ withinPortal: true }}
+            data-testid="panel-min-duration"
+          />
+        </div>
       </section>
 
       <div className="mx-3 h-px bg-border" />
@@ -134,36 +170,61 @@ export function CalendarSidePanel({ anchor, view, mode, minDuration = 0, onSelec
 }
 
 // ─────────────────────────────────────────────
-// Projects checkbox section — shared between calendar and timeline.
+// Projects tree section — Mantine Tree over the workspace hierarchy.
 // State lives in the URL (?projects=u1,u2,...). Empty/unset means "all".
+// Checking a node cascades to its whole subtree; the URL is the single
+// source of truth so checked/indeterminate are derived, not stored.
 // ─────────────────────────────────────────────
+
+/** Nested TreeNodeData built from the flat workspace list via parent links. */
+function buildProjectTree(workspaces: Workspace[]): TreeNodeData[] {
+  const byParent = new Map<string | null, Workspace[]>();
+  const ids = new Set(workspaces.map((w) => w.id));
+  for (const w of workspaces) {
+    const parent = w.parent_subject_id && ids.has(w.parent_subject_id) ? w.parent_subject_id : null;
+    const arr = byParent.get(parent) ?? [];
+    arr.push(w);
+    byParent.set(parent, arr);
+  }
+  for (const arr of byParent.values()) {
+    arr.sort((a, b) => a.display_name.localeCompare(b.display_name, "ja"));
+  }
+  const build = (parent: string | null): TreeNodeData[] =>
+    (byParent.get(parent) ?? []).map((w) => ({
+      value: w.id,
+      label: w.display_name,
+      children: build(w.id),
+    }));
+  return build(null);
+}
+
+/** id → [id, ...all descendant ids], for cascade toggling and tri-state. */
+function buildDescendantMap(workspaces: Workspace[]): Map<string, string[]> {
+  const childrenOf = new Map<string, string[]>();
+  const ids = new Set(workspaces.map((w) => w.id));
+  for (const w of workspaces) {
+    const parent = w.parent_subject_id && ids.has(w.parent_subject_id) ? w.parent_subject_id : null;
+    if (parent === null) continue;
+    const arr = childrenOf.get(parent) ?? [];
+    arr.push(w.id);
+    childrenOf.set(parent, arr);
+  }
+  const map = new Map<string, string[]>();
+  const collect = (id: string): string[] => {
+    const cached = map.get(id);
+    if (cached) return cached;
+    const acc = [id];
+    for (const child of childrenOf.get(id) ?? []) acc.push(...collect(child));
+    map.set(id, acc);
+    return acc;
+  };
+  for (const w of workspaces) collect(w.id);
+  return map;
+}
+
 function ProjectsCheckboxSection() {
   const { workspaces, loading } = useProjects();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-  const [, startTransition] = useTransition();
   const { t } = useTranslation();
-
-  const orderedWorkspaces = useMemo(() => orderWorkspaceTree(workspaces), [workspaces]);
-  const allIds = useMemo(() => workspaces.map((w) => w.id), [workspaces]);
-  const selected = useMemo(() => {
-    const raw = searchParams.get("projects");
-    if (!raw) return new Set(allIds);
-    return new Set(raw.split(",").filter(Boolean));
-  }, [searchParams, allIds]);
-
-  function toggle(id: string) {
-    const next = new Set(selected);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    const params = new URLSearchParams(searchParams.toString());
-    if (next.size === allIds.length) params.delete("projects");
-    else params.set("projects", [...next].join(","));
-    startTransition(() => {
-      router.replace(`${pathname}?${params.toString()}`);
-    });
-  }
 
   if (loading) {
     return (
@@ -173,6 +234,109 @@ function ProjectsCheckboxSection() {
     );
   }
   if (workspaces.length === 0) return null;
+
+  return <ProjectsTree workspaces={workspaces} />;
+}
+
+// Inner component so useTree() sees the loaded workspace data at mount
+// (getTreeExpandedState needs the full tree to expand everything up front).
+function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [, startTransition] = useTransition();
+  const { t } = useTranslation();
+
+  const treeData = useMemo(() => buildProjectTree(workspaces), [workspaces]);
+  const descendantMap = useMemo(() => buildDescendantMap(workspaces), [workspaces]);
+  const colorById = useMemo(
+    () => new Map(workspaces.map((w) => [w.id, w.color] as const)),
+    [workspaces],
+  );
+  const allIds = useMemo(() => workspaces.map((w) => w.id), [workspaces]);
+  const selected = useMemo(() => {
+    const raw = searchParams.get("projects");
+    if (!raw) return new Set(allIds);
+    return new Set(raw.split(",").filter(Boolean));
+  }, [searchParams, allIds]);
+
+  const tree = useTree({ initialExpandedState: getTreeExpandedState(treeData, "*") });
+
+  const commit = useCallback(
+    (next: Set<string>) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (next.size === allIds.length) params.delete("projects");
+      else params.set("projects", [...next].join(","));
+      startTransition(() => {
+        router.replace(`${pathname}?${params.toString()}`);
+      });
+    },
+    [searchParams, router, pathname, allIds],
+  );
+
+  const toggleCascade = useCallback(
+    (id: string) => {
+      const family = descendantMap.get(id) ?? [id];
+      const fullyChecked = family.every((x) => selected.has(x));
+      const next = new Set(selected);
+      if (fullyChecked) for (const x of family) next.delete(x);
+      else for (const x of family) next.add(x);
+      commit(next);
+    },
+    [selected, descendantMap, commit],
+  );
+
+  const renderNode = useCallback(
+    ({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
+      const family = descendantMap.get(node.value) ?? [node.value];
+      const selCount = family.reduce((n, x) => (selected.has(x) ? n + 1 : n), 0);
+      const checked = selCount === family.length;
+      const indeterminate = selCount > 0 && selCount < family.length;
+      const color = colorById.get(node.value) ?? undefined;
+      return (
+        <div {...elementProps} className="flex items-center gap-2 py-0.5">
+          {hasChildren ? (
+            <button
+              type="button"
+              aria-label={expanded ? "Collapse" : "Expand"}
+              onClick={() => tree.toggleExpanded(node.value)}
+              className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+            >
+              <ChevronRight
+                size={12}
+                aria-hidden
+                className={cn("transition-transform", expanded && "rotate-90")}
+              />
+            </button>
+          ) : (
+            <span aria-hidden className="h-4 w-4 shrink-0" />
+          )}
+          <Checkbox.Indicator
+            checked={checked}
+            indeterminate={indeterminate}
+            size="xs"
+            color={color}
+            onClick={() => toggleCascade(node.value)}
+            data-testid={`panel-project-${node.value}`}
+            style={{ cursor: "pointer" }}
+          />
+          <span
+            aria-hidden
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: color ?? "#6b7280" }}
+          />
+          <button
+            type="button"
+            onClick={() => toggleCascade(node.value)}
+            className="min-w-0 flex-1 truncate text-left text-xs text-foreground-subtle hover:text-foreground"
+          >
+            {node.label}
+          </button>
+        </div>
+      );
+    },
+    [tree, descendantMap, colorById, selected, toggleCascade],
+  );
 
   return (
     <div className="border-t border-border/40 px-3 pt-4">
@@ -184,29 +348,13 @@ function ProjectsCheckboxSection() {
           {selected.size}/{workspaces.length}
         </span>
       </div>
-      <div className="space-y-1.5">
-        {orderedWorkspaces.map(({ workspace: w, depth }) => (
-          <label
-            key={w.id}
-            className="flex cursor-pointer items-center gap-2 text-xs text-foreground-subtle hover:text-foreground"
-            style={{ paddingLeft: `${depth * 12}px` }}
-          >
-            <input
-              type="checkbox"
-              checked={selected.has(w.id)}
-              onChange={() => toggle(w.id)}
-              className="h-3.5 w-3.5 rounded border-border accent-primary"
-              data-testid={`panel-project-${w.id}`}
-            />
-            <span
-              aria-hidden
-              className="h-2 w-2 shrink-0 rounded-full"
-              style={{ backgroundColor: w.color ?? "#6b7280" }}
-            />
-            <span className="min-w-0 flex-1 truncate">{w.display_name}</span>
-          </label>
-        ))}
-      </div>
+      <Tree
+        data={treeData}
+        tree={tree}
+        levelOffset={20}
+        expandOnClick={false}
+        renderNode={renderNode}
+      />
     </div>
   );
 }

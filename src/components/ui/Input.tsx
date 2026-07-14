@@ -1,44 +1,19 @@
 "use client";
 
-import { cva, type VariantProps } from "class-variance-authority";
+import { Textarea, TextInput } from "@mantine/core";
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
 import { cn } from "@/lib/utils/cn";
 
-const inputVariants = cva(
-  [
-    "flex w-full rounded-md border bg-surface-1",
-    "px-3 py-2 text-sm",
-    "file:border-0 file:bg-transparent file:text-sm file:font-medium",
-    "placeholder:text-foreground-muted",
-    "read-only:text-foreground-muted",
-    "read-only:cursor-not-allowed",
-    "focus:ring-background-control focus:border-control",
-    "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control",
-    "focus-visible:ring-offset-2 focus-visible:ring-offset-foreground-muted",
-    "disabled:cursor-not-allowed disabled:text-foreground-muted",
-    "transition-colors duration-200",
-  ].join(" "),
-  {
-    variants: {
-      size: {
-        tiny: "h-6 px-2 text-xs",
-        small: "h-8 px-2.5 text-xs",
-        medium: "h-9 px-3 text-sm",
-        large: "h-10 px-3 text-sm",
-      },
-      invalid: {
-        true: "border-danger focus-visible:ring-danger",
-      },
-    },
-    defaultVariants: {
-      size: "small",
-    },
-  },
-);
+const SIZE_MAP = {
+  tiny: "xs",
+  small: "xs",
+  medium: "sm",
+  large: "md",
+} as const;
 
-export interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size">,
-    VariantProps<typeof inputVariants> {
+export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+  size?: keyof typeof SIZE_MAP;
+  invalid?: boolean;
   leading?: React.ReactNode;
   trailing?: React.ReactNode;
 }
@@ -46,85 +21,53 @@ export interface InputProps
 const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, size = "small", invalid, leading, trailing, ...props }, ref) => {
     return (
-      <div
-        className={cn(
-          "group flex w-full items-center gap-2 rounded-md border bg-surface-1",
-          "transition-colors duration-200",
-          "focus-within:border-primary focus-within:ring-1 focus-within:ring-primary",
-          invalid ? "border-danger focus-within:ring-danger" : "border-border",
-          size === "tiny" && "h-6 px-2",
-          size === "small" && "h-8 px-2.5",
-          size === "medium" && "h-9 px-3",
-          size === "large" && "h-10 px-3",
-          className,
-        )}
-      >
-        {leading ? (
-          <span
-            className="shrink-0 text-foreground-muted group-focus-within:text-foreground"
-            aria-hidden
-          >
-            {leading}
-          </span>
-        ) : null}
-        <input
-          ref={ref}
-          className={cn(
-            "min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-foreground-muted",
-            size === "tiny" && "text-xs",
-            size === "small" && "text-xs",
-            size === "medium" && "text-sm",
-            size === "large" && "text-sm",
-          )}
-          readOnly={props.readOnly}
-          disabled={props.disabled}
-          aria-invalid={invalid || undefined}
-          {...props}
-        />
-        {trailing ? (
-          <span
-            className="shrink-0 text-foreground-muted group-focus-within:text-foreground"
-            aria-hidden
-          >
-            {trailing}
-          </span>
-        ) : null}
-      </div>
+      <TextInput
+        ref={ref}
+        size={SIZE_MAP[size]}
+        error={invalid}
+        leftSection={leading}
+        rightSection={trailing}
+        className={className}
+        styles={{
+          input: {
+            backgroundColor: "var(--surface-1)",
+            color: "var(--foreground)",
+            borderColor: invalid ? "var(--danger)" : "var(--border)",
+          },
+        }}
+        {...props}
+      />
     );
   },
 );
-
 Input.displayName = "Input";
 
 interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   invalid?: boolean;
 }
 
-const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
+const TextareaBase = forwardRef<HTMLTextAreaElement, TextareaProps>(
   ({ className, invalid, ...props }, ref) => {
     return (
-      <textarea
+      <Textarea
         ref={ref}
-        className={cn(
-          "block w-full rounded-md border bg-surface-1",
-          "px-3 py-2 text-sm text-foreground outline-none",
-          "placeholder:text-foreground-muted",
-          "transition-colors duration-200",
-          "focus:border-primary focus:ring-1 focus:ring-primary",
-          invalid ? "border-danger focus:ring-danger" : "border-border",
-          "disabled:cursor-not-allowed disabled:text-foreground-muted",
-          className,
-        )}
-        disabled={props.disabled}
-        readOnly={props.readOnly}
-        aria-invalid={invalid || undefined}
+        autosize={false}
+        size="sm"
+        error={invalid}
+        className={className}
+        styles={{
+          input: {
+            backgroundColor: "var(--surface-1)",
+            color: "var(--foreground)",
+            borderColor: invalid ? "var(--danger)" : "var(--border)",
+          },
+        }}
         {...props}
       />
     );
   },
 );
-
-Textarea.displayName = "Textarea";
+TextareaBase.displayName = "Textarea";
 
 function FieldLabel({
   htmlFor,
@@ -148,4 +91,7 @@ function FieldLabel({
   );
 }
 
-export { FieldLabel, Input, inputVariants, Textarea };
+export { FieldLabel, Input, TextareaBase as Textarea };
+// Legacy alias — the previous export was named `inputVariants` (cva output).
+// No other component imports it, but keep a stub so future imports don't break.
+export const inputVariants = cn;

@@ -8,7 +8,9 @@
  *   - 曜日 (Weekday): always-visible row with bit-0 = Sunday … bit-6 = Saturday
  *     mask; when repeatMode !== "weekly" the row is shown with a "毎週の場合"
  *     hint annotation rather than hidden
- *   - 終了 (End): null-card "終了日なし" toggle; clicking reveals a date picker
+ *   - 終了 (End): explicit Switch (off = "終了日なし"; on reveals a date picker).
+ *     The earlier "終了日なし" card that *created* an end date on click was
+ *     replaced in v3.5 because the label and click outcome disagreed.
  *
  * The legacy lifecycle / generator / window 3-tab editors and FrameRulesList
  * were removed in Phase 4 #2b per the user's "v4 full compliance" choice.
@@ -18,6 +20,7 @@
  * read-only defaults.
  */
 
+import { SegmentedControl, Switch } from "@mantine/core";
 import { Calendar, Repeat } from "lucide-react";
 
 import { FormPanel } from "@/components/ui/form";
@@ -25,6 +28,12 @@ import { TileKind } from "@/lib/domain/v1/constants";
 import { cn } from "@/lib/utils/cn";
 
 import type { EditorLocale } from "./date-utils";
+
+const SEGMENT_STYLES = {
+  root: { backgroundColor: "var(--surface-2)" },
+  indicator: { backgroundColor: "var(--surface-1)" },
+  label: { color: "var(--foreground)" },
+} as const;
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention
 // that already exists in this repo).
@@ -81,11 +90,11 @@ function WeekdayRow({
             disabled={disabled}
             onClick={() => onToggle(bit)}
             className={cn(
-              "flex h-8 w-9 items-center justify-center rounded-md border text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+              "flex h-8 w-9 items-center justify-center rounded-md text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
               "disabled:cursor-not-allowed disabled:opacity-50",
               active
-                ? "border-accent/40 bg-accent-soft text-accent-ink"
-                : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2 disabled:hover:bg-surface-1",
+                ? "bg-accent-soft text-accent-ink"
+                : "bg-surface-1 text-foreground-muted hover:bg-surface-2 disabled:hover:bg-surface-1",
             )}
           >
             {label}
@@ -105,26 +114,44 @@ function EndDateToggle({
   onChange: (next: string) => void;
   t: (key: string) => string;
 }) {
-  if (endDate) {
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-surface-0 p-2.5">
+  const hasEndDate = Boolean(endDate);
+  // The previous incarnation rendered an "終了日なし" button that *created*
+  // an end date on click — the label promised nothing, the click did
+  // something. Replace the click-to-create affordance with an explicit
+  // Switch so the on/off state and the click outcome match.
+  const handleToggle = (next: boolean) => {
+    if (next) {
+      const today = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const iso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T00:00:00.000Z`;
+      onChange(iso);
+    } else {
+      onChange("");
+    }
+  };
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-0 p-2.5">
+        <div className="flex min-w-0 items-center gap-2">
           <Calendar size={16} aria-hidden="true" className="text-foreground-muted" />
           <div className="min-w-0 flex-1">
             <div className="text-xs font-semibold text-foreground">
-              {t("quickCreate.repeatEndSetTitle")}
+              {t("quickCreate.repeatEndLabel")}
             </div>
-            <div className="text-[10px] text-foreground-muted">{endDate.slice(0, 10)}</div>
+            <div className="text-[10px] text-foreground-muted">
+              {hasEndDate ? t("quickCreate.repeatEndSetSub") : t("quickCreate.repeatEndNoneSub")}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={() => onChange("")}
-            aria-label={t("quickCreate.repeatEndRemove")}
-            className="rounded-md px-2 py-1 text-[10px] font-semibold text-foreground-muted hover:bg-surface-2 hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            {t("quickCreate.repeatEndRemove")}
-          </button>
         </div>
+        <Switch
+          size="sm"
+          aria-label={t("quickCreate.repeatEndLabel")}
+          checked={hasEndDate}
+          onChange={(event) => handleToggle(event.currentTarget.checked)}
+          data-testid="recurring-end-switch"
+        />
+      </div>
+      {hasEndDate ? (
         <input
           type="date"
           aria-label={t("quickCreate.repeatEndLabel")}
@@ -132,28 +159,8 @@ function EndDateToggle({
           onChange={(e) => onChange(e.target.value)}
           className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
         />
-      </div>
-    );
-  }
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        const today = new Date();
-        const pad = (n: number) => String(n).padStart(2, "0");
-        const iso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}T00:00:00.000Z`;
-        onChange(iso);
-      }}
-      className="flex w-full items-center gap-3 rounded-lg border border-dashed border-border bg-surface-0 p-3 text-left transition-colors hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-    >
-      <span className="h-3 w-3 shrink-0 rounded-full border-2 border-foreground-muted" />
-      <div className="min-w-0 flex-1">
-        <div className="text-xs font-semibold text-foreground">
-          {t("quickCreate.repeatEndNoneTitle")}
-        </div>
-        <div className="text-[10px] text-foreground-muted">{t("quickCreate.repeatEndNoneSub")}</div>
-      </div>
-    </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -176,40 +183,25 @@ export function AutomationPanel({ recurring, setField, locale, t }: AutomationPa
         <Repeat size={14} aria-hidden="true" />
         <span>{t("quickCreate.recurrenceNavTitle")}</span>
       </div>
-      <div
-        role="radiogroup"
-        aria-label={t("quickCreate.repeatChip")}
-        className="flex flex-wrap gap-1"
+      <SegmentedControl
+        fullWidth
+        size="sm"
+        radius="md"
+        withItemsBorders={false}
+        value={recurring.repeatMode}
+        onChange={(value) => {
+          setField("recurring.repeatMode", value);
+          if (value !== "once") {
+            setField("identity.kind", TileKind.RECURRING);
+          }
+        }}
+        data={REPEAT_MODE_OPTIONS.map((opt) => ({
+          value: opt.id,
+          label: t(`quickCreate.${opt.labelKey}`),
+        }))}
+        styles={SEGMENT_STYLES}
         data-testid="recurring-mode-tabs"
-      >
-        {REPEAT_MODE_OPTIONS.map((opt) => {
-          const active = recurring.repeatMode === opt.id;
-          return (
-            // biome-ignore lint/a11y/useSemanticElements: button-styled radio inside role="radiogroup"; WAI-ARIA radiogroup pattern with aria-checked is intentional
-            <button
-              key={opt.id}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              data-testid={`recurring-mode-${opt.id}`}
-              onClick={() => {
-                setField("recurring.repeatMode", opt.id);
-                if (opt.id !== "once") {
-                  setField("identity.kind", TileKind.RECURRING);
-                }
-              }}
-              className={cn(
-                "min-h-[32px] rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-                active
-                  ? "border-accent/40 bg-accent-soft text-accent-ink"
-                  : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
-              )}
-            >
-              {t(`quickCreate.${opt.labelKey}`)}
-            </button>
-          );
-        })}
-      </div>
+      />
       <div className="space-y-1.5">
         <BuilderLabel
           title={t("quickCreate.repeatWeekdayLabel")}
