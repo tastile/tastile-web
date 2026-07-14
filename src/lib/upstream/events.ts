@@ -1,15 +1,21 @@
 //! Upstream bridge: when TASTILE_USE_RUST_CORE=1, the Next.js
 //! calendar routes forward requests to the v1 Rust API running on
-//! http://localhost:31400.  Calendar data flows through v1 tiles,
+//! http://127.0.0.1:31400.  Calendar data flows through v1 tiles,
 //! v1 placements, and /v1/timeline; the v0 /v1/events CRUD surface
 //! has been removed.  This module owns URL construction, the
-//! snake_case <-> camelCase field conversion, and HTTP error mapping.
+//! snake_case <-> camelCase field conversion, the v1 command envelope
+//! wrapping, and HTTP error mapping.
 
 import { cookies } from "next/headers";
+import { v5 as uuidv5 } from "uuid";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 
 const RUST_BASE = process.env.TASTILE_RUST_API_URL ?? "http://127.0.0.1:31400";
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
+// Resolved at call time so tests mutating process.env after module load still see the bypass branch.
+function isE2EBypass(): boolean {
+  return process.env.E2E_BYPASS_AUTH === "1";
+}
 
 type AnyObj = Record<string, unknown>;
 
@@ -18,7 +24,7 @@ function snakeKeyToCamelKey(k: string): string {
 }
 
 function camelKeyToSnakeKey(k: string): string {
-  return k.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+  return k.replace(/[A-Z]/g, (_, c) => `_${c.toLowerCase()}`);
 }
 
 function transform(obj: unknown, keyMap: (k: string) => string): unknown {
@@ -52,7 +58,9 @@ async function readJsonOrText(res: Response): Promise<unknown> {
 }
 
 function upstreamError(status: number, body: unknown): Response {
-  const detail = (body as { error?: string } | null)?.error;
+  const detail =
+    (body as { error?: string; message?: string } | null)?.error ??
+    (body as { error?: string; message?: string } | null)?.message;
   const message = detail ?? `Upstream returned ${status}`;
   return new Response(JSON.stringify({ error: message }), {
     status,
@@ -60,10 +68,41 @@ function upstreamError(status: number, body: unknown): Response {
   });
 }
 
+// v1 CommandEnvelope helpers ------------------------------------------------
+//
+// Per v1/14 §1 every Command body MUST be wrapped in
+// `{ expected_revision, idempotency_key, occurred_at, payload }`.  All
+// write paths (POST /v1/tiles, POST /v1/tiles/{id}/update, ...)
+// reject requests without `idempotency_key`.  The helpers below emit
+// UUIDv7 idempotency keys per call so retries are idempotent.
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function uuidv7(): string {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID();
+  }
+  return uuidv5(
+    String(Date.now()) + Math.random().toString(36),
+    "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+  );
+}
+
+function envelope<T>(payload: T): Record<string, unknown> {
+  return {
+    expected_revision: null,
+    idempotency_key: uuidv7(),
+    occurred_at: nowIso(),
+    payload,
+  };
+}
+
 async function bridgeHeaders(
   extra?: Record<string, string>,
 ): Promise<Record<string, string> | null> {
-  if (process.env.E2E_BYPASS_AUTH === "1") {
+  if (isE2EBypass()) {
     return {
       ...(extra ?? {}),
       "x-owner-id": DEV_ACTOR_SUBJECT_ID,
@@ -257,47 +296,78 @@ export interface CalendarEventResult {
 /**
  * Compose a calendar create call into the v1 tile + Manual-placement
  * pair.  Returns the { event } shape the rest of the web layer expects.
+ *
+ * The v1 wire envelope wraps both commands (POST /v1/tiles and
+ * POST /v1/placements) so each request carries a fresh
+ * idempotency_key, expected_revision=null, and a typed payload.
  */
 export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): Promise<Response> {
   const headers = await bridgeHeaders({ "content-type": "application/json" });
   if (!headers) return unauthenticatedUpstreamResponse();
 
+  // 1) POST /v1/tiles (kind=1 = PLACEMENT).  Server creates the tile
+  //    and an auto-created Plan row in one transaction; aggregate_meta
+  //    carries both ids back so we do not need a GET-after-POST.
   const tileRes = await fetch(`${RUST_BASE}/v1/tiles`, {
     method: "POST",
     headers,
     body: JSON.stringify(
-      toSnake({
+      envelope({
+        kind: 1, // TileKind::PLACEMENT
         title: input.title,
         description: input.description ?? null,
-        color: input.color ?? null,
-        icon: input.icon ?? null,
+        color: input.color ?? "#3b82f6",
+        icon: input.icon ?? "check-circle",
+        external_id: null,
+        plan_role: 0, // PlanRole::EXECUTABLE
       }),
     ),
   });
   if (!tileRes.ok) return upstreamError(tileRes.status, await readJsonOrText(tileRes));
   const tileBody = (await readJsonOrText(tileRes)) as Record<string, unknown> | null;
-  const tileId = String((tileBody && (tileBody.tile_id ?? tileBody.id)) || "");
+  const tileId = String((tileBody?.aggregate as { id?: string } | undefined)?.id ?? "");
+  const planId = String(
+    (tileBody?.aggregate_meta as { plan_id?: string } | undefined)?.plan_id ?? "",
+  );
   if (!tileId) {
     return upstreamError(500, { error: "create tile returned no id" });
   }
 
+  // 2) POST /v1/placements (CREATE_PLACEMENT) with source=MANUAL (3).
+  //    The PlacementBaseline carries the time span the calendar event
+  //    occupies.
   const placementRes = await fetch(`${RUST_BASE}/v1/placements`, {
     method: "POST",
     headers,
-    body: JSON.stringify({
-      tile_id: tileId,
-      span_start: toUtcIso(input.start),
-      span_end: toUtcIso(input.end),
-      source_kind: 0,
-    }),
+    body: JSON.stringify(
+      envelope({
+        tile_id: tileId,
+        plan_id: planId,
+        source: 3, // PlacementSource::MANUAL
+        source_ref: {
+          created: null,
+          recurring: null,
+          flow: null,
+          frame: null,
+          proposal: null,
+          source_text: null,
+          external_id: null,
+        },
+        baseline: {
+          span: {
+            start: toUtcIso(input.start),
+            end: toUtcIso(input.end),
+          },
+          inside: null,
+        },
+      }),
+    ),
   });
   if (!placementRes.ok) {
     return upstreamError(placementRes.status, await readJsonOrText(placementRes));
   }
   const placementBody = (await readJsonOrText(placementRes)) as Record<string, unknown> | null;
-  const placementId = String(
-    (placementBody && (placementBody.placement_id ?? placementBody.id)) || "",
-  );
+  const placementId = String((placementBody?.aggregate as { id?: string } | undefined)?.id ?? "");
   const nowIso = new Date().toISOString();
   const event: CalendarEventResult = {
     id: placementId,
@@ -340,7 +410,7 @@ export async function upstreamUpdateTile(
   const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}/update`, {
     method: "POST",
     headers,
-    body: JSON.stringify(toSnake(patch)),
+    body: JSON.stringify(envelope(toSnake({ tile_id: tileId, ...patch }))),
   });
   if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
   const tile = await readJsonOrText(res);
@@ -350,13 +420,21 @@ export async function upstreamUpdateTile(
   });
 }
 
-/** Archive v1 tile (DELETE /v1/tiles/{id}) -- replaces "delete event". */
+/** Archive v1 tile (DELETE /v1/tiles/{id}) -- replaces "delete event".
+ *
+ * The Rust DELETE handler still expects a v1 CommandEnvelope body so the
+ * server can audit the action with a server-stamped idempotency_key.
+ * Sending no body yields 415 (the axum Json extractor requires
+ * Content-Type: application/json + a parseable JSON object), so we send
+ * `{ expected_revision, idempotency_key, occurred_at, payload: { tile_id } }`.
+ */
 export async function upstreamArchiveTile(tileId: string): Promise<Response> {
-  const headers = await bridgeHeaders();
+  const headers = await bridgeHeaders({ "content-type": "application/json" });
   if (!headers) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}`, {
     method: "DELETE",
     headers,
+    body: JSON.stringify(envelope({ tile_id: tileId })),
   });
   if (res.status === 204) return new Response(null, { status: 204 });
   if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
@@ -365,11 +443,12 @@ export async function upstreamArchiveTile(tileId: string): Promise<Response> {
 
 /** Close a single placement without archiving its tile. */
 export async function upstreamClosePlacement(placementId: string): Promise<Response> {
-  const headers = await bridgeHeaders();
+  const headers = await bridgeHeaders({ "content-type": "application/json" });
   if (!headers) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/placements/${encodeURIComponent(placementId)}/close`, {
     method: "POST",
     headers,
+    body: JSON.stringify(envelope({ placement_id: placementId })),
   });
   if (res.status === 204) return new Response(null, { status: 204 });
   if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));

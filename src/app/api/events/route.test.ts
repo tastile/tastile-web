@@ -32,31 +32,70 @@ beforeEach(() => {
   resolveAuthenticatedUserSub.mockResolvedValue("verified-test-user");
   vi.stubEnv("TASTILE_WEB_BRIDGE_SECRET", "bridge-secret");
   vi.stubGlobal("fetch", fetchMock);
-  // Default upstream success: tile create returns {tile_id}, then
-  // placement create returns {placement_id}.
+  // Default upstream success: tile create returns CommandResponse with
+  // aggregate.id (the new tile) and aggregate_meta.plan_id; placement
+  // create returns CommandResponse with aggregate.id (the new placement).
   fetchMock.mockImplementation(async (input: unknown) => {
     const url = typeof input === "string" ? input : (input as { url: string }).url;
     if (url.endsWith("/v1/tiles") && !url.includes("/update")) {
       return {
         ok: true,
         status: 200,
-        text: async () => JSON.stringify({ tile_id: "tile-1" }),
-        json: async () => ({ tile_id: "tile-1" }),
+        text: async () =>
+          JSON.stringify({
+            command_id: "cmd-1",
+            accepted_at: "2026-07-01T00:00:00Z",
+            aggregate: { kind: 0, id: "tile-1" },
+            revision: 1,
+            result: 0,
+            pending: [],
+            aggregate_meta: {
+              tile_id: "tile-1",
+              plan_id: "plan-1",
+              recurring_id: null,
+              frame_rule_id: null,
+              changeset_id: null,
+              change_ids: [],
+              window_ids: [],
+              flow_ids: [],
+              source_tile_id: null,
+              occurrence_ids: [],
+              placement_ids: [],
+            },
+          }),
+        json: async () => ({ aggregate: { id: "tile-1" } }),
       } as unknown as Response;
     }
     if (url.endsWith("/v1/placements")) {
       return {
         ok: true,
         status: 200,
-        text: async () => JSON.stringify({ placement_id: "place-1" }),
-        json: async () => ({ placement_id: "place-1" }),
+        text: async () =>
+          JSON.stringify({
+            command_id: "cmd-2",
+            accepted_at: "2026-07-01T00:00:00Z",
+            aggregate: { kind: 1, id: "place-1" },
+            revision: 1,
+            result: 0,
+            pending: [],
+            aggregate_meta: { placement_ids: ["place-1"] },
+          }),
+        json: async () => ({ aggregate: { id: "place-1" } }),
       } as unknown as Response;
     }
     if (url.includes("/v1/tiles/") && url.endsWith("/update")) {
       return {
         ok: true,
         status: 200,
-        text: async () => JSON.stringify({ tile_id: "tile-1", title: "updated" }),
+        text: async () =>
+          JSON.stringify({
+            command_id: "cmd-3",
+            accepted_at: "2026-07-01T00:00:00Z",
+            aggregate: { kind: 0, id: "tile-1" },
+            revision: 2,
+            result: 0,
+            pending: [],
+          }),
         json: async () => ({ tile_id: "tile-1", title: "updated" }),
       } as unknown as Response;
     }
@@ -100,7 +139,7 @@ describe("POST /api/events", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("forwards the create as POST /v1/tiles + POST /v1/placements", async () => {
+  it("forwards the create as POST /v1/tiles + POST /v1/placements in v1 envelope", async () => {
     const { POST } = await import("./route");
     const req = new Request(local("/api/events"), {
       method: "POST",
@@ -130,24 +169,34 @@ describe("POST /api/events", () => {
 
     const tileCall = posts.find(([, init]) => {
       const body = (init as { body?: string } | undefined)?.body ?? "";
-      return body.includes("title");
+      // Tile create has kind=1 in the payload.
+      return body.includes('"kind":1');
     });
     const tileBody = JSON.parse((tileCall?.[1] as { body: string }).body);
-    expect(tileBody.title).toBe("Standup");
-    expect(tileBody.description).toBe("Daily");
-    expect(tileBody.color).toBe("blue");
-    expect(tileBody.icon).toBe("users");
+    expect(tileBody.payload.kind).toBe(1);
+    expect(tileBody.payload.title).toBe("Standup");
+    expect(tileBody.payload.description).toBe("Daily");
+    expect(tileBody.payload.color).toBe("blue");
+    expect(tileBody.payload.icon).toBe("users");
+    expect(tileBody.payload.plan_role).toBe(0);
+    expect(typeof tileBody.idempotency_key).toBe("string");
+    expect(tileBody.expected_revision).toBeNull();
 
-    const placementCall = posts.find(([, init]) =>
-      ((init as { body?: string } | undefined)?.body ?? "").includes("source_kind"),
-    );
+    const placementCall = posts.find(([, init]) => {
+      const body = (init as { body?: string } | undefined)?.body ?? "";
+      return body.includes('"tile_id"') && body.includes('"baseline"');
+    });
     const placementBody = JSON.parse(
       (placementCall?.[1] as { body: string }).body,
     );
-    expect(placementBody.tile_id).toBe("tile-1");
-    expect(placementBody.span_start).toBe("2026-07-01T09:00:00.000Z");
-    expect(placementBody.span_end).toBe("2026-07-01T09:15:00.000Z");
-    expect(placementBody.source_kind).toBe(0);
+    expect(placementBody.payload.tile_id).toBe("tile-1");
+    expect(placementBody.payload.plan_id).toBe("plan-1");
+    expect(placementBody.payload.source).toBe(3);
+    expect(placementBody.payload.baseline.span.start).toBe("2026-07-01T09:00:00.000Z");
+    expect(placementBody.payload.baseline.span.end).toBe("2026-07-01T09:15:00.000Z");
+    expect(placementBody.payload.baseline.inside).toBeNull();
+    expect(typeof placementBody.payload.source_ref).toBe("object");
+    expect(typeof placementBody.idempotency_key).toBe("string");
 
     const body = await res.json();
     expect(body.event.id).toBe("place-1");
@@ -202,7 +251,7 @@ describe("POST /api/events/tiles/[id]/update", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("forwards a title/description patch to /v1/tiles/{id}/update", async () => {
+  it("forwards a title/description patch to /v1/tiles/{id}/update in v1 envelope", async () => {
     const { POST } = await import("./tiles/[id]/update/route");
     const ctx = { params: Promise.resolve({ id: "tile-1" }) };
     const req = new Request(local("/api/events/tiles/tile-1/update"), {
@@ -225,14 +274,16 @@ describe("POST /api/events/tiles/[id]/update", () => {
     const init = call[1] as { method: string; body: string };
     expect(init.method).toBe("POST");
     const body = JSON.parse(init.body);
-    expect(body.title).toBe("Renamed");
-    expect(body.description).toBe("now with desc");
-    expect(body.color).toBe("red");
+    expect(typeof body.idempotency_key).toBe("string");
+    expect(body.expected_revision).toBeNull();
+    expect(body.payload.title).toBe("Renamed");
+    expect(body.payload.description).toBe("now with desc");
+    expect(body.payload.color).toBe("red");
   });
 });
 
 describe("DELETE /api/events/tiles/[id]", () => {
-  it("forwards to DELETE /v1/tiles/{id}", async () => {
+  it("forwards to DELETE /v1/tiles/{id} with v1 envelope body", async () => {
     const { DELETE } = await import("./tiles/[id]/route");
     const ctx = { params: Promise.resolve({ id: "tile-1" }) };
     const req = new Request(local("/api/events/tiles/tile-1"), {
@@ -247,6 +298,11 @@ describe("DELETE /api/events/tiles/[id]", () => {
       : (call[0] as { url: string }).url) as string;
     expect(calledUrl).toContain("/v1/tiles/tile-1");
     expect((call[1] as { method: string }).method).toBe("DELETE");
+    const init = call[1] as { body?: string; headers?: Record<string, string> };
+    expect(init.headers?.["content-type"]).toBe("application/json");
+    const body = JSON.parse(init.body ?? "{}");
+    expect(typeof body.idempotency_key).toBe("string");
+    expect(body.payload.tile_id).toBe("tile-1");
   });
 });
 
