@@ -79,7 +79,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         {/* SideToolPanel: 各ページが useSidePanel() で登録したコンテンツを表示 */}
         <SideToolPanel />
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface-0">
-          <div className="min-h-full">{children}</div>
+          {/* `h-full` (not `min-h-full`) so children's percentage heights
+              resolve against a definite container — without this, the
+              Month view's `flex h-full flex-col` root would size to its
+              own content and overflow <main>, leaving empty space below
+              the table. */}
+          <div className="h-full">{children}</div>
         </main>
       </div>
 
