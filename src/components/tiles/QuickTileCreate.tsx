@@ -76,7 +76,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
-import { SchedulePanel, ScheduleRow } from "@/components/tiles/editor/SchedulePanel";
+import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { makeClient } from "@/lib/api/v1/submit";
 import {
   closePlacementCommand,
@@ -834,9 +834,17 @@ export function QuickTileCreate() {
                     icon={Calendar}
                     label={t("quickCreate.timeNavTitle")}
                     chip={
-                      time.span.start || time.span.end ? (
+                      time.whenMode === "none" ? (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                          {t("quickCreate.whenNoneTitle")}
+                        </span>
+                      ) : time.whenMode === "reference" ? (
                         <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                          {allDay
+                          {t("quickCreate.referenceRangeTitle")}
+                        </span>
+                      ) : time.span.start || time.span.end ? (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                          {time.whenMode === "day"
                             ? formatDisplayDate(time.span.start, true, locale, t)
                             : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : t("quickCreate.spanUnset")} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : t("quickCreate.spanUnset")}`}
                         </span>
@@ -846,10 +854,21 @@ export function QuickTileCreate() {
                         </span>
                       )
                     }
-                    clearable={Boolean(time.span.start || time.span.end)}
+                    clearable={
+                      time.whenMode === "reference"
+                        ? Boolean(time.referenceId)
+                        : time.whenMode !== "none"
+                        ? Boolean(time.span.start || time.span.end)
+                        : false
+                    }
                     onClear={() => {
-                      setField("time.span.start", "");
-                      setField("time.span.end", "");
+                      if (time.whenMode === "reference") {
+                        setField("time.referenceId", null);
+                        setField("time.referenceLabel", "");
+                      } else {
+                        setField("time.span.start", "");
+                        setField("time.span.end", "");
+                      }
                     }}
                     onClick={() => setActivePanel("time")}
                   />
@@ -1299,8 +1318,6 @@ export function QuickTileCreate() {
         </div>
         <FormPanel>
           <SchedulePanel
-            allDay={allDay}
-            setAllDay={setAllDay}
             time={time}
             windows={windows}
             setField={setField}

@@ -50,9 +50,18 @@ export interface TileIdentitySlice {
   visual: { color: string; icon: string };
 }
 
+export type WhenMode = "none" | "day" | "range" | "reference";
+export type TimeOfDayMode = "all-day" | "range" | "unspecified";
+
 export interface TimeSlice {
   span: Span;
   durationMinMax: DurationRange;
+  whenMode: WhenMode;
+  timeOfDayMode: TimeOfDayMode;
+  timeOfDayStart: string;
+  timeOfDayEnd: string;
+  referenceId: string | null;
+  referenceLabel: string;
 }
 
 export type RepeatChoice = "once" | "daily" | "weekly" | "interval" | "condition";
@@ -290,6 +299,12 @@ function defaultTime(): TimeSlice {
   return {
     span: { start: "", end: "" },
     durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
+    whenMode: "none",
+    timeOfDayMode: "unspecified",
+    timeOfDayStart: "",
+    timeOfDayEnd: "",
+    referenceId: null,
+    referenceLabel: "",
   };
 }
 
@@ -449,6 +464,12 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
           minMs: 30 * 60_000,
           maxMs: 30 * 60_000,
         },
+        whenMode: event.start || event.end ? (event.end ? "range" : "day") : "none",
+        timeOfDayMode: "unspecified",
+        timeOfDayStart: "",
+        timeOfDayEnd: "",
+        referenceId: null,
+        referenceLabel: "",
       },
       meta: {
         ownerSubjectId: null,
