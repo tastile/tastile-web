@@ -101,7 +101,7 @@ import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { useQuickCreateStore, type RepeatChoice } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 const PRESET_COLORS = [
@@ -145,6 +145,20 @@ const _PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }>
   { value: PlanRole.EXECUTABLE, label: "quickCreate.roleExecutable" },
   { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
 ];
+
+// Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention).
+const WEEKDAY_LABELS_SHORT: Record<"ja" | "en", readonly string[]> = {
+  ja: ["日", "月", "火", "水", "木", "金", "土"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+};
+
+const REPEAT_MODE_LABEL_KEY: Record<RepeatChoice, string> = {
+  once: "quickCreate.repeatOnce",
+  daily: "quickCreate.repeatDaily",
+  weekly: "quickCreate.repeatWeekly",
+  interval: "quickCreate.repeatInterval",
+  condition: "quickCreate.repeatCondition",
+};
 
 function localDateTimeToIso(value: string): string | null {
   if (!value) return null;
@@ -871,15 +885,17 @@ export function QuickTileCreate() {
                     icon={Repeat}
                     label={t("quickCreate.repeatChip")}
                     chip={
-                      recurring.frameRules.length > 0 ? (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2.5 text-xs font-bold text-foreground">
-                          {`${recurring.frameRules.length} ルール`}
-                        </span>
-                      ) : (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
-                          {t("tiles.notSet")}
-                        </span>
-                      )
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2.5 text-xs font-bold text-foreground">
+                        <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
+                        {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
+                          <span className="text-foreground-muted">
+                            ({WEEKDAY_LABELS_SHORT[locale].filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0).join(", ")})
+                          </span>
+                        ) : null}
+                        {recurring.repeatMode !== "once" && recurring.repeatMode !== "condition" && recurring.endDate ? (
+                          <span className="text-foreground-muted">~ {recurring.endDate.slice(0, 10)}</span>
+                        ) : null}
+                      </span>
                     }
                     onClick={() => setActivePanel("recurring")}
                   />

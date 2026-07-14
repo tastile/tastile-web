@@ -55,10 +55,15 @@ export interface TimeSlice {
   durationMinMax: DurationRange;
 }
 
+export type RepeatChoice = "once" | "daily" | "weekly" | "interval" | "condition";
+
 export interface RecurringSlice {
   life: Recurring["life"];
   frameRules: FrameRule[];
   rules: Recurring["rules"];
+  repeatMode: RepeatChoice;
+  weekdayMask: number;
+  endDate: string;
 }
 
 export interface AdvancedSlice {
@@ -302,6 +307,9 @@ function defaultRecurring(): RecurringSlice {
     },
     frameRules: [],
     rules: [],
+    repeatMode: "once",
+    weekdayMask: 0b0011111, // Mon–Fri
+    endDate: "",
   };
 }
 

@@ -28,7 +28,11 @@ import type {
   TransformGenerator,
 } from "@/lib/domain/v1/tile";
 import type { RecurrenceModel } from "@/lib/domain/tile";
-import { defaultRecurrenceModel, type RecurrenceTemplateRecurrence } from "@/lib/stores/quick-create-store";
+import {
+  defaultRecurrenceModel,
+  type RecurrenceTemplateRecurrence,
+  type RepeatChoice,
+} from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 import {
@@ -75,6 +79,13 @@ const RECURRING_STATE_OPTIONS: ReadonlyArray<{
     label: "quickCreate.recurringStateCancelled",
   },
 ];
+
+// Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention
+// and WEEKDAY_LABELS_SHORT in QuickTileCreate.tsx). Indexed by EditorLocale.
+const WEEKDAY_LABELS: Record<EditorLocale, readonly string[]> = {
+  ja: ["日", "月", "火", "水", "木", "金", "土"],
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+};
 
 type FrameGeneratorKind = FrameGenerator["kind"];
 
@@ -851,6 +862,9 @@ export interface AutomationPanelProps {
       state: RecurringStateValue;
     };
     frameRules: FrameRule[];
+    repeatMode: RepeatChoice;
+    weekdayMask: number;
+    endDate: string;
   };
   recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
   recurringTab: RecurringTab;
@@ -886,6 +900,86 @@ export function AutomationPanel({
   return (
     <FormPanel>
       <SectionHeader icon={Repeat} title={t("quickCreate.recurrenceNavTitle")} />
+      <div
+        role="radiogroup"
+        aria-label={t("quickCreate.repeatChip")}
+        className="flex flex-wrap gap-1"
+        data-testid="recurring-mode-tabs"
+      >
+        {(
+          [
+            { id: "once", labelKey: "repeatOnce" },
+            { id: "daily", labelKey: "repeatDaily" },
+            { id: "weekly", labelKey: "repeatWeekly" },
+            { id: "interval", labelKey: "repeatInterval" },
+            { id: "condition", labelKey: "repeatCondition" },
+          ] as const
+        ).map((opt) => {
+          const active = recurring.repeatMode === opt.id;
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              data-testid={`recurring-mode-${opt.id}`}
+              onClick={() => setField("recurring.repeatMode", opt.id)}
+              className={cn(
+                "min-h-[32px] rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                active
+                  ? "border-accent bg-accent-soft text-accent-ink"
+                  : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
+              )}
+            >
+              {t(`quickCreate.${opt.labelKey}`)}
+            </button>
+          );
+        })}
+      </div>
+      {recurring.repeatMode === "weekly" ? (
+        <FormRow icon={<Calendar size={20} />}>
+          <div className="flex w-full flex-wrap gap-1" data-testid="recurring-weekday-row">
+            {WEEKDAY_LABELS[locale].map((label, bit) => {
+              const active = (recurring.weekdayMask & (1 << bit)) !== 0;
+              return (
+                <button
+                  key={bit}
+                  type="button"
+                  role="switch"
+                  aria-checked={active}
+                  aria-label={label}
+                  data-testid={`recurring-weekday-${bit}`}
+                  onClick={() =>
+                    setField(
+                      "recurring.weekdayMask",
+                      recurring.weekdayMask ^ (1 << bit),
+                    )
+                  }
+                  className={cn(
+                    "flex h-8 w-9 items-center justify-center rounded-md border text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                    active
+                      ? "border-primary bg-primary text-primary-fg"
+                      : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </FormRow>
+      ) : null}
+      {recurring.repeatMode !== "once" && recurring.repeatMode !== "condition" ? (
+        <FormRow icon={<Calendar size={20} />}>
+          <input
+            type="date"
+            aria-label={t("quickCreate.repeatEndDateLabel")}
+            value={recurring.endDate ? recurring.endDate.slice(0, 10) : ""}
+            onChange={(e) => setField("recurring.endDate", e.target.value)}
+            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          />
+        </FormRow>
+      ) : null}
       <div
         role="tablist"
         aria-label={t("quickCreate.recurrenceNavTitle")}
