@@ -238,7 +238,7 @@ export default function RuntimePage() {
           <EnvRow label="Base URL" value={coreBaseUrl()} />
           <EnvRow label="Auth" value="Cognito JWT · Bearer" />
           <EnvRow label="Token source" value="window.__tastileIdToken" />
-          <EnvRow label="Spec" value="OpenAPI 3.0.3 · 45 endpoints" />
+          <EnvRow label="Spec" value={`OpenAPI 3.0.3 · ${Object.keys(ENDPOINTS).length} operations`} />
         </dl>
       </Card>
     </PageContainer>

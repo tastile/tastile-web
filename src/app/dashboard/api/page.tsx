@@ -95,7 +95,7 @@ export default function ApiExplorerPage() {
       <PageHeader
         eyebrow={<span className="font-mono text-ink-3">tastile-core</span>}
         title="API explorer"
-        description="All 45 endpoints grouped by tag. Click any row to inspect the request shape and try it against your local daemon."
+        description="Every core operation grouped by tag. Inspect request inputs and run it against your connected core."
         meta={
           <>
             <Pill variant="active">
@@ -266,17 +266,21 @@ function EndpointDetail({
   const meta = ENDPOINTS[endpointKey];
   const [response, setResponse] = useState<Result<unknown> | null>(null);
   const [running, setRunning] = useState(false);
+  const [pathParams, setPathParams] = useState<Record<string, string>>({});
+  const [queryText, setQueryText] = useState("");
   const [bodyText, setBodyText] = useState<string>(
-    meta.method === "POST" ? defaultBody(endpointKey) : "",
+    meta.method === "GET" ? "" : defaultBody(endpointKey),
   );
+  const placeholders = [...meta.path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
 
   async function run() {
     setRunning(true);
     setResponse(null);
     try {
       const client = getCoreClient();
-      const body = meta.method === "POST" && bodyText.trim() ? JSON.parse(bodyText) : undefined;
-      const result = await client.call(endpointKey, { body });
+      const query = queryText.trim() ? (JSON.parse(queryText) as Record<string, string | number | boolean>) : undefined;
+      const body = meta.method !== "GET" && bodyText.trim() ? JSON.parse(bodyText) : undefined;
+      const result = await client.call(endpointKey, { pathParams, query, body });
       setResponse(result);
     } catch (e) {
       setResponse({
@@ -340,7 +344,35 @@ function EndpointDetail({
             )}
           </div>
 
-          {meta.method === "POST" ? (
+          {placeholders.length > 0 ? (
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {placeholders.map((name) => (
+                <label key={name} className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+                  Path: {name}
+                  <input
+                    value={pathParams[name] ?? ""}
+                    onChange={(event) => setPathParams((current) => ({ ...current, [name]: event.target.value }))}
+                    placeholder={`{${name}}`}
+                    className="mt-1 h-8 w-full rounded-md border border-border bg-surface-0 px-2 font-mono text-xs text-ink-1 outline-none focus:border-accent focus:ring-2 focus:ring-focus"
+                  />
+                </label>
+              ))}
+            </div>
+          ) : null}
+
+          <div className="mt-4">
+            <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+              Query parameters (optional JSON object)
+              <input
+                value={queryText}
+                onChange={(event) => setQueryText(event.target.value)}
+                placeholder='{"limit": 20}'
+                className="mt-1 h-8 w-full rounded-md border border-border bg-surface-0 px-2 font-mono text-xs text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent focus:ring-2 focus:ring-focus"
+              />
+            </label>
+          </div>
+
+          {meta.method !== "GET" ? (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">

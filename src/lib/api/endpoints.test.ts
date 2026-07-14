@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { CoreClient } from "./endpoints";
+import { CORE_V1_ENDPOINTS, CoreClient } from "./endpoints";
 
 function calledUrls(fetchImpl: ReturnType<typeof vi.fn>): string[] {
   return fetchImpl.mock.calls.map((call) => String(call[0]));
@@ -125,5 +125,37 @@ describe("avatar / owner endpoints", () => {
     expect(ENDPOINTS.commitAvatarUpload.method).toBe("POST");
     expect(ENDPOINTS.commitAvatarUpload.path).toBe("/v1/uploads/avatar/{upload_id}/commit");
     expect(ENDPOINTS.commitAvatarUpload.auth).toBe(true);
+  });
+});
+
+describe("CORE_V1_ENDPOINTS", () => {
+  it("contains the actual multi-method and lifecycle operations exposed by tastile-core", () => {
+    const operations = new Set(CORE_V1_ENDPOINTS.map(({ method, path }) => `${method} ${path}`));
+
+    expect([...operations]).toEqual(
+      expect.arrayContaining([
+        "GET /v1/tiles",
+        "POST /v1/tiles",
+        "DELETE /v1/tiles/{id}",
+        "GET /v1/events",
+        "POST /v1/events",
+        "PATCH /v1/events/{id}",
+        "DELETE /v1/events/{id}",
+        "GET /v1/recurring/{id}/exceptions",
+        "POST /v1/recurring/{id}/exceptions",
+        "DELETE /v1/recurring/{id}/exceptions/{key}",
+        "POST /v1/recurring/{id}/frame-rules/{fid}/lease",
+        "DELETE /v1/recurring/{id}/frame-rules/{fid}/lease",
+        "POST /v1/access/subjects",
+        "GET /v1/access/subjects",
+        "PATCH /v1/access/subjects/{id}",
+        "DELETE /v1/access/subjects/{id}",
+        "POST /v1/api-tokens",
+        "GET /v1/api-tokens",
+        "PATCH /v1/api-tokens/{id}",
+        "DELETE /v1/api-tokens/{id}",
+      ]),
+    );
+    expect(CORE_V1_ENDPOINTS).toHaveLength(149);
   });
 });

@@ -89,6 +89,47 @@ describe("api proxy v1 path compatibility", () => {
     const upstreamHeaders = fetchMock.mock.calls[1][1]?.headers as Headers;
     expect(upstreamHeaders.get("x-tastile-web-session-user")).toBe("verified-sub");
   });
+
+  it("forwards E2E requests to core without replacing its response", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "https://core.tastile.test";
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response("core response", {
+        status: 202,
+        headers: {
+          "cache-control": "no-store",
+          etag: '"core-etag"',
+          "x-core-request-id": "request-123",
+        },
+      }),
+    );
+    const { POST } = await import("./[...path]/route");
+    const request = new NextRequest(
+      "https://app.tastile.app/api/proxy/v1/tiles?include=placements",
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ title: "Forward me" }),
+      },
+    );
+
+    const response = await POST(request, {
+      params: Promise.resolve({ path: ["v1", "tiles"] }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://core.tastile.test/v1/tiles?include=placements",
+    );
+    const init = fetchMock.mock.calls[0][1]!;
+    expect(init.method).toBe("POST");
+    expect(await new Response(init.body).text()).toBe('{"title":"Forward me"}');
+    expect(response.status).toBe(202);
+    expect(await response.text()).toBe("core response");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("etag")).toBe('"core-etag"');
+    expect(response.headers.get("x-core-request-id")).toBe("request-123");
+  });
 });
 
 function configureCognito() {

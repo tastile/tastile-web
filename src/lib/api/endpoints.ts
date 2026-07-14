@@ -49,7 +49,7 @@ export interface EndpointMeta {
   auth: boolean;
 }
 
-export const ENDPOINTS = {
+const LEGACY_ENDPOINTS = {
   // Public
   getHealth: {
     method: "GET",
@@ -553,6 +553,201 @@ export const ENDPOINTS = {
     keywords: ["avatar", "upload", "commit"],
   } as EndpointMeta,
 } as const;
+
+type CoreMethod = EndpointMeta["method"];
+
+/**
+ * The authoritative v1 operation inventory.  Keep this in lockstep with the
+ * Router in `tastile-core/crates/v1/api/src/main.rs`; API Explorer consumes it
+ * directly, so every exposed method has a runnable catalog entry.
+ */
+const CORE_V1_OPERATION_DEFINITIONS = `
+POST /v1/tiles
+GET /v1/tiles
+GET /v1/tiles/{id}
+DELETE /v1/tiles/{id}
+GET /v1/tiles/{id}/detail
+GET /v1/tiles/{id}/editable
+POST /v1/tiles/{id}/plan
+POST /v1/tiles/{id}/update
+POST /v1/tiles/{id}/complete
+POST /v1/tiles/{id}/defer
+POST /v1/tiles/{id}/extend-phase
+POST /v1/tiles/{id}/start
+POST /v1/tiles/{id}/memos
+POST /v1/schedule-definitions
+POST /v1/placements
+GET /v1/placements
+GET /v1/placements/{id}
+POST /v1/placements/{id}/changes
+POST /v1/placements/{id}/executions
+POST /v1/placements/{id}/close
+POST /v1/placements/{id}/detach
+GET /v1/executions/{id}
+GET /v1/executions/{id}/basis
+GET /v1/executions/{id}/view
+POST /v1/executions/{id}/pause
+POST /v1/executions/{id}/resume
+POST /v1/executions/{id}/finish
+GET /v1/timeline
+GET /v1/timeline/today
+GET /v1/source-tiles
+POST /v1/source-tiles
+GET /v1/source-tiles/{id}
+PUT /v1/source-tiles/{id}
+POST /v1/source-tiles/{id}/reflow
+GET /v1/source-tiles/{id}/placements
+GET /v1/schedule-reference-catalog
+POST /v1/schedule-drafts
+GET /v1/schedule-drafts/{id}
+POST /v1/schedule-drafts/{id}/operations
+GET /v1/sync
+GET /v1/change-sets/{id}
+GET /v1/recurring/{id}
+GET /v1/recurring/{id}/rules
+POST /v1/recurring/{id}/rules
+GET /v1/recurring/{id}/frame-rules
+POST /v1/recurring/{id}/frame-rules
+PUT /v1/recurring/{id}/model
+GET /v1/recurring/{id}/exceptions
+POST /v1/recurring/{id}/exceptions
+DELETE /v1/recurring/{id}/exceptions/{key}
+GET /v1/recurring/{id}/instances
+POST /v1/recurring/{id}/frame-rules/{fid}/lease
+DELETE /v1/recurring/{id}/frame-rules/{fid}/lease
+POST /v1/recurring/{id}/frame-rules/{fid}/materialize
+GET /v1/calendar/day
+GET /v1/calendar/week
+GET /v1/calendar/month
+GET /v1/calendar/year
+GET /v1/events
+POST /v1/events
+GET /v1/events/occurrences
+GET /v1/events/{id}
+PATCH /v1/events/{id}
+DELETE /v1/events/{id}
+GET /v1/conditions/{id}
+GET /v1/plans/{id}
+GET /v1/windows/{id}
+POST /v1/windows
+POST /v1/windows/{id}/rules
+POST /v1/plans/{id}/references
+POST /v1/plans/{id}/metrics
+GET /v1/flows/{id}
+POST /v1/flows
+GET /v1/decisions/{id}
+POST /v1/decisions
+GET /v1/sessions/{id}
+POST /v1/sessions
+POST /v1/sessions/{id}/feedback
+GET /v1/sessions/{id}/deliveries
+POST /v1/sessions/{id}/deliveries
+GET /v1/work-items/{id}
+POST /v1/work-items
+GET /v1/endpoints
+POST /v1/endpoints
+DELETE /v1/endpoints/{id}
+GET /v1/deliveries/{id}
+POST /v1/deliveries/{id}/delivered
+POST /v1/deliveries/{id}/failed
+GET /v1/endpoints/{id}/deliveries
+GET /v1/access/capabilities
+GET /v1/access/subjects
+POST /v1/access/subjects
+GET /v1/access/subjects/{id}
+PATCH /v1/access/subjects/{id}
+DELETE /v1/access/subjects/{id}
+POST /v1/access/workspaces
+GET /v1/access/subjects/by-external
+POST /v1/access/offers
+POST /v1/access/requests
+GET /v1/access/grants
+GET /v1/access/grants/pending-for-me
+GET /v1/access/grants/{id}
+POST /v1/access/grants/{id}/accept
+POST /v1/access/grants/{id}/decline
+POST /v1/access/grants/{id}/approve
+POST /v1/access/grants/{id}/deny
+POST /v1/access/grants/{id}/revoke
+POST /v1/access/grants/{id}/withdraw
+GET /v1/access/grants/{id}/audit
+GET /v1/access/notifications
+POST /v1/access/notifications/read-all
+POST /v1/access/notifications/{id}/read
+GET /v1/owners/{kind}/{id}/profile
+PATCH /v1/owners/{kind}/{id}/profile
+POST /v1/uploads/avatar
+POST /v1/uploads/avatar/{upload_id}/commit
+GET /v1/scopes/{kind}/{id}/members/{actor_kind}/{actor_id}/profile
+PUT /v1/scopes/{kind}/{id}/members/{actor_kind}/{actor_id}/profile-override
+DELETE /v1/scopes/{kind}/{id}/members/{actor_kind}/{actor_id}/profile-override
+GET /v1/api-tokens
+POST /v1/api-tokens
+PATCH /v1/api-tokens/{id}
+DELETE /v1/api-tokens/{id}
+GET /v1/labels
+GET /v1/active-tile
+GET /v1/candidates
+POST /v1/prompts
+GET /v1/prompts/pending
+POST /v1/prompts/startup-recovery
+POST /v1/tick
+POST /v1/tick-at
+POST /v1/tick-range
+GET /v1/quota/tiles
+GET /v1/runtime/paths
+POST /v1/runtime/paths
+POST /v1/auth/signup
+POST /v1/auth/signin
+POST /v1/auth/signout
+GET /v1/auth/session
+POST /v1/auth/session/restore
+POST /v1/auth/oauth/start
+POST /v1/auth/oauth/exchange
+GET /v1/auth/callback
+GET /v1/auth/oauth/status
+GET /v1/health
+GET /v1/ready
+GET /v1/version
+GET /v1/openapi.json
+GET /v1/debug/events
+`
+  .trim()
+  .split("\n") as readonly `${CoreMethod} /v1${string}`[];
+
+function coreTag(path: string, method: CoreMethod): ApiTag {
+  if (path.startsWith("/v1/auth") || path.startsWith("/v1/api-tokens")) return "Auth";
+  if (["/v1/health", "/v1/ready", "/v1/version", "/v1/openapi.json"].includes(path)) return "Public";
+  if (path.startsWith("/v1/debug")) return "Debug";
+  if (path.startsWith("/v1/prompts")) return "Prompts";
+  return method === "GET" ? "Read" : "Commands";
+}
+
+function coreOperationKey(method: CoreMethod, path: string): string {
+  return `core${method[0]}${path.replace(/^\/v1\/?/, "").replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()).replace(/[^a-zA-Z0-9]/g, "")}`;
+}
+
+/** Every concrete method/path pair registered by tastile-core's v1 Router. */
+export const CORE_V1_ENDPOINTS: readonly EndpointMeta[] = CORE_V1_OPERATION_DEFINITIONS.map((line) => {
+  const [method, path] = line.split(" ") as [CoreMethod, string];
+  const tag = coreTag(path, method);
+  return {
+    method,
+    path,
+    tag,
+    summary: `${method} ${path.replace("/v1/", "")}`,
+    auth: tag !== "Public" && !path.startsWith("/v1/auth/"),
+    keywords: [method.toLowerCase(), ...path.split("/").filter(Boolean).slice(1)],
+  };
+});
+
+const CORE_V1_ENDPOINT_RECORD: Record<string, EndpointMeta> = Object.fromEntries(
+  CORE_V1_ENDPOINTS.map((endpoint) => [coreOperationKey(endpoint.method, endpoint.path), endpoint]),
+);
+
+// Keep legacy named entries available for existing dashboard callers while the
+// canonical v1 inventory powers the explorer and exposes every core route.
+export const ENDPOINTS = { ...LEGACY_ENDPOINTS, ...CORE_V1_ENDPOINT_RECORD } as const;
 
 export type EndpointKey = keyof typeof ENDPOINTS;
 
