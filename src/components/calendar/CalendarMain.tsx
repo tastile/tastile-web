@@ -1,5 +1,5 @@
 "use client";
-import { Alert } from "@mantine/core";
+import { Alert, SegmentedControl } from "@mantine/core";
 import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -139,7 +139,11 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
     return raw === null ? undefined : raw.split(",").filter(Boolean);
   }, [searchParams]);
 
-  const { events, loading, error } = useEvents({ ...range, minMinutes: minDuration, ownerIds: selectedOwnerIds });
+  const { events, loading, error } = useEvents({
+    ...range,
+    minMinutes: minDuration,
+    ownerIds: selectedOwnerIds,
+  });
 
   // Sync the URL whenever view or mode changes. We keep `mode` in the
   // URL only when it's not the default so existing URLs stay clean.
@@ -288,48 +292,42 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
           Today
         </button>
         <div className="ml-auto flex items-center gap-2">
-          <div
-            className="flex gap-0.5 rounded-md bg-surface-1 p-0.5"
+          <SegmentedControl
+            size="xs"
+            radius="md"
+            withItemsBorders={false}
+            value={mode}
+            onChange={(value) => setMode(value as DisplayMode)}
+            data={VALID_MODES.map((m) => ({
+              value: m,
+              label: m === "scope" ? "Scope" : m === "around" ? "Around" : "Future",
+              "data-testid": `cal-mode-${m}`,
+            }))}
+            styles={{
+              root: { backgroundColor: "var(--surface-1)" },
+              indicator: { backgroundColor: "var(--surface-2)" },
+              label: { color: "var(--foreground)" },
+            }}
             data-testid="cal-mode-switcher"
-          >
-            {VALID_MODES.map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setMode(m)}
-                data-testid={`cal-mode-${m}`}
-                className={cn(
-                  "rounded px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
-                  mode === m
-                    ? "bg-surface-2 text-foreground"
-                    : "text-foreground-subtle hover:text-foreground",
-                )}
-              >
-                {m === "scope" ? "Scope" : m === "around" ? "Around" : "Future"}
-              </button>
-            ))}
-          </div>
-          <div
-            className="flex gap-0.5 rounded-md bg-surface-1 p-0.5"
+          />
+          <SegmentedControl
+            size="xs"
+            radius="md"
+            withItemsBorders={false}
+            value={view}
+            onChange={(value) => setView(value as CalendarView)}
+            data={(["day", "week", "month", "list"] as const).map((v) => ({
+              value: v,
+              label: v[0].toUpperCase() + v.slice(1),
+              "data-testid": `cal-view-${v}`,
+            }))}
+            styles={{
+              root: { backgroundColor: "var(--surface-1)" },
+              indicator: { backgroundColor: "var(--surface-2)" },
+              label: { color: "var(--foreground)" },
+            }}
             data-testid="cal-view-switcher"
-          >
-            {(["day", "week", "month", "list"] as const).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                data-testid={`cal-view-${v}`}
-                className={cn(
-                  "rounded px-2 py-0.5 text-[11px] font-medium uppercase tracking-wider",
-                  view === v
-                    ? "bg-surface-2 text-foreground"
-                    : "text-foreground-subtle hover:text-foreground",
-                )}
-              >
-                {v}
-              </button>
-            ))}
-          </div>
+          />
         </div>
       </div>
       <div className="relative min-h-0 flex-1 px-4 pb-6">

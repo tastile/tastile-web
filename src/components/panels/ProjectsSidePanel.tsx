@@ -1,10 +1,20 @@
 "use client";
 
+import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
+import { getTreeExpandedState, Select, Tree, useTree } from "@mantine/core";
+import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { createWorkspace, deleteWorkspace, orderWorkspaceTree, useProjects } from "@/lib/hooks/use-projects";
+import {
+  createWorkspace,
+  deleteWorkspace,
+  orderWorkspaceTree,
+  useProjects,
+  type Workspace,
+} from "@/lib/hooks/use-projects";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
 export function ProjectsSidePanel() {
@@ -12,6 +22,7 @@ export function ProjectsSidePanel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
   const { workspaces, refresh, loading, error } = useProjects();
 
   const currentOwner = searchParams.get("owner") ?? null;
@@ -84,16 +95,17 @@ export function ProjectsSidePanel() {
     <div className="flex flex-col gap-2 pt-2">
       <div className="flex items-center justify-between px-4 pb-1 pt-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-          Projects
+          {t("panels.projects.projects")}
         </span>
         {!creating ? (
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="text-[10px] text-accent hover:underline"
+            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted hover:bg-surface-1 hover:text-foreground"
             data-testid="project-create"
           >
-            + New
+            <Plus className="h-3 w-3" aria-hidden />
+            New
           </button>
         ) : null}
       </div>
@@ -133,21 +145,28 @@ export function ProjectsSidePanel() {
               data-testid="project-create-color"
             />
           </div>
-          <label className="text-[10px] text-foreground-subtle">
-            Parent project
-            <select
-              value={parentId ?? ""}
-              onChange={(event) => setParentId(event.target.value || null)}
-              className="mt-1 h-8 w-full rounded border border-border bg-surface-1 px-2 text-xs text-foreground"
-            >
-              <option value="">Top level</option>
-              {orderWorkspaceTree(workspaces).map(({ workspace, depth }) => (
-                <option key={workspace.id} value={workspace.id}>
-                  {`${"　".repeat(depth)}${workspace.display_name}`}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            aria-label="Parent project"
+            label={
+              <span className="flex items-center gap-1 text-[10px] text-foreground-subtle">
+                <FolderPlus className="h-3 w-3" aria-hidden />
+                Parent project
+              </span>
+            }
+            value={parentId ?? null}
+            onChange={(value) => setParentId(value || null)}
+            data={[
+              { value: "", label: "Top level" },
+              ...orderWorkspaceTree(workspaces).map(({ workspace, depth }) => ({
+                value: workspace.id,
+                label: `${"　".repeat(depth)}${workspace.display_name}`,
+              })),
+            ]}
+            size="xs"
+            allowDeselect={false}
+            comboboxProps={{ withinPortal: true }}
+            data-testid="project-create-parent"
+          />
           <div className="flex items-center gap-1.5">
             <Button
               type="submit"
@@ -188,46 +207,139 @@ export function ProjectsSidePanel() {
           </button>
 
           {loading && (
-            <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">Loading…</div>
+            <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">
+              {t("panels.projects.loadingProjects")}
+            </div>
           )}
           {error && (
             <div className="px-2 py-1.5 text-[10px] text-status-danger">{error.message}</div>
           )}
 
-          {orderWorkspaceTree(workspaces).map(({ workspace: w, depth }) => (
-            <div key={w.id} className="group flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleSelect(w.id)}
-                style={{ paddingLeft: `${0.5 + depth * 0.9}rem` }}
-                className={cn(
-                  "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-                  currentOwner === w.id
-                    ? "bg-surface-elevated font-medium text-foreground"
-                    : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-                )}
-                data-testid={`project-select-${w.id}`}
-              >
-                <span
-                  aria-hidden
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: w.color ?? "#6b7280" }}
-                />
-                <span className="min-w-0 flex-1 truncate">{w.display_name}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(w.id, w.display_name)}
-                aria-label={`Delete ${w.display_name}`}
-                className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
-                data-testid={`project-delete-${w.id}`}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+          {!loading && !error && workspaces.length > 0 && (
+            <ProjectsTree
+              workspaces={workspaces}
+              currentOwner={currentOwner}
+              onSelect={handleSelect}
+              onDelete={handleDelete}
+            />
+          )}
         </div>
       </div>
     </div>
   );
+}
+
+// ─────────────────────────────────────────────
+// Projects tree — single-select Mantine Tree for owner filtering.
+// "All Projects" lives outside (mutually exclusive with owner=<id>).
+// URL ?owner=<id> is the single source of truth; the tree drives
+// selection but doesn't own it. Each node also has a hover-revealed
+// × delete button so we don't lose existing affordances.
+// ─────────────────────────────────────────────
+
+interface ProjectsTreeProps {
+  workspaces: Workspace[];
+  currentOwner: string | null;
+  onSelect: (id: string | null) => void;
+  onDelete: (id: string, displayName: string) => void;
+}
+
+function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: ProjectsTreeProps) {
+  const treeData = useMemo(() => buildProjectTree(workspaces), [workspaces]);
+  const colorById = useMemo(
+    () => new Map(workspaces.map((w) => [w.id, w.color] as const)),
+    [workspaces],
+  );
+  const tree = useTree({ initialExpandedState: getTreeExpandedState(treeData, "*") });
+
+  function renderNode({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) {
+    const color = colorById.get(node.value) ?? undefined;
+    const isSelected = currentOwner === node.value;
+    const displayName = String(node.label ?? "");
+    return (
+      <div
+        {...elementProps}
+        className={cn(
+          "group flex items-center gap-1 rounded-md transition-colors",
+          isSelected
+            ? "bg-surface-elevated font-medium text-foreground"
+            : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+        )}
+      >
+        {hasChildren ? (
+          <button
+            type="button"
+            aria-label={expanded ? "Collapse" : "Expand"}
+            onClick={() => tree.toggleExpanded(node.value)}
+            className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+          >
+            <ChevronRight
+              size={12}
+              aria-hidden
+              className={cn("transition-transform", expanded && "rotate-90")}
+            />
+          </button>
+        ) : (
+          <span aria-hidden className="h-4 w-4 shrink-0" />
+        )}
+        <button
+          type="button"
+          onClick={() => onSelect(node.value)}
+          className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
+          data-testid={`project-select-${node.value}`}
+        >
+          <span
+            aria-hidden
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: color ?? "#6b7280" }}
+          />
+          <span className="min-w-0 flex-1 truncate">{displayName}</span>
+        </button>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(node.value, displayName);
+          }}
+          aria-label={`Delete ${displayName}`}
+          className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
+          data-testid={`project-delete-${node.value}`}
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <Tree
+      data={treeData}
+      tree={tree}
+      levelOffset={20}
+      expandOnClick={false}
+      renderNode={renderNode}
+    />
+  );
+}
+
+/** Nested TreeNodeData built from the flat workspace list via parent links. */
+function buildProjectTree(workspaces: Workspace[]): TreeNodeData[] {
+  const byParent = new Map<string | null, Workspace[]>();
+  const ids = new Set(workspaces.map((w) => w.id));
+  for (const w of workspaces) {
+    const parent = w.parent_subject_id && ids.has(w.parent_subject_id) ? w.parent_subject_id : null;
+    const arr = byParent.get(parent) ?? [];
+    arr.push(w);
+    byParent.set(parent, arr);
+  }
+  for (const arr of byParent.values()) {
+    arr.sort((a, b) => a.display_name.localeCompare(b.display_name, "ja"));
+  }
+  const build = (parent: string | null): TreeNodeData[] =>
+    (byParent.get(parent) ?? []).map((w) => ({
+      value: w.id,
+      label: w.display_name,
+      children: build(w.id),
+    }));
+  return build(null);
 }

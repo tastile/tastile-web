@@ -52,7 +52,22 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
 
   const reload = useCallback(async () => {
     if (typeof window === "undefined") return;
-    if (!range) {
+    // Pull every field we read out into local consts so the body never
+    // references `range` itself. `range` is intentionally NOT in the
+    // dependency list: the caller passes `{ ...range, minMinutes,
+    // ownerIds }` as a fresh object literal on every render, so including
+    // it would produce a new `reload` closure every render and the
+    // `useEffect(..., [reload])` consumers would then refire on every
+    // render → fetch storm → render loop. The five field references
+    // below are stable: primitives are compared by value and the
+    // `ownerIds` array reference is stable across renders unless the
+    // caller actually swaps the selection.
+    const start = range?.start;
+    const end = range?.end;
+    const minMinutes = range?.minMinutes;
+    const includeRecurring = range?.includeRecurring;
+    const ownerIds = range?.ownerIds;
+    if (!start || !end) {
       // No range yet (e.g. component not mounted with a window); the
       // caller can re-invoke reload() once range is available.
       setEvents([]);
@@ -61,7 +76,7 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     }
     // An explicitly empty project selection means "show none".  It is
     // distinct from an omitted selection, which means all workspaces.
-    if (range.ownerIds?.length === 0) {
+    if (ownerIds?.length === 0) {
       setEvents([]);
       setError(null);
       setLoading(false);
@@ -71,11 +86,11 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     setError(null);
     try {
       const qs = new URLSearchParams();
-      qs.set("start", range.start);
-      qs.set("end", range.end);
-      qs.set("min_minutes", String(range.minMinutes ?? 0));
-      qs.set("include_recurring", String(range.includeRecurring ?? true));
-      if (range.ownerIds?.length) qs.set("owner_ids", range.ownerIds.join(","));
+      qs.set("start", start);
+      qs.set("end", end);
+      qs.set("min_minutes", String(minMinutes ?? 0));
+      qs.set("include_recurring", String(includeRecurring ?? true));
+      if (ownerIds?.length) qs.set("owner_ids", ownerIds.join(","));
       const res = await fetch(`${OCC_BASE}?${qs.toString()}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
       const data = (await res.json()) as
@@ -94,14 +109,7 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     } finally {
       setLoading(false);
     }
-    // Depend on the field primitives ONLY — NOT on `range` itself.
-    // The caller passes `{ ...range, minMinutes, ownerIds }` as a fresh
-    // object literal on every render, so including `range` in deps would
-    // produce a new `reload` closure every render, which the
-    // `useEffect(..., [reload])` consumers would then refire on every
-    // render → fetch storm → render loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds?.join(",")]);
+  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds]);
 
   const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
     const res = await fetch("/api/events", {
