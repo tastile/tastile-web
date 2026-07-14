@@ -3,7 +3,6 @@ export const translations = {
     // Navigation
     nav: {
       execute: "実行",
-      tiles: "タイル",
       integrations: "連携",
       settings: "設定",
       new: "新規",
@@ -11,7 +10,6 @@ export const translations = {
       tasks: "タスク",
       projects: "プロジェクト",
       schedule: "スケジュール",
-      references: "参照",
       preferences: "設定",
     },
 
@@ -106,54 +104,6 @@ export const translations = {
     dashboard: {
       sidePanelDetailsTitle: "詳細",
       sidePanelOpenAria: "サイドパネルを開く",
-      tiles: {
-        title: "タイルワークスペース",
-        tab: {
-          list: "リスト",
-          timeline: "タイムライン",
-          changes: "変更履歴",
-        },
-        section: {
-          main: "メイン",
-          sub: "サブ",
-        },
-        empty: {
-          main: "アクティブなメインタスクがありません",
-          sub: "サブタスクがありません",
-        },
-        summary: {
-          openCount: "開いているタイル",
-          estimated: "見積もり合計",
-          sections: "セクション",
-        },
-        omittedMore: "他",
-        searchPlaceholder: "検索...",
-        filter: {
-          rangeLabel: "範囲:",
-          granularityLabel: "粒度:",
-          limitLabel: "最大数:",
-          range: {
-            all: "すべて",
-            today: "今日",
-            recent: "最近24h",
-            excludeFuture: "未来を除く",
-          },
-          granularity: {
-            all: "すべて（休憩含む）",
-            noBreaks: "作業のみ",
-            min5: "作業 5m以上",
-            min15: "作業 15m以上",
-            min30: "作業 30m以上",
-          },
-          limit: {
-            "20": "20件",
-            "50": "50件",
-            "100": "100件",
-            "500": "500件",
-            unlimited: "制限なし",
-          },
-        },
-      },
     },
 
     // Timeline
@@ -1142,7 +1092,6 @@ export const translations = {
     // Navigation
     nav: {
       execute: "Execute",
-      tiles: "Tiles",
       integrations: "Integrations",
       settings: "Settings",
       new: "New",
@@ -1150,7 +1099,6 @@ export const translations = {
       tasks: "Tasks",
       projects: "Projects",
       schedule: "Schedule",
-      references: "References",
       preferences: "Preferences",
     },
 
@@ -1245,54 +1193,6 @@ export const translations = {
     dashboard: {
       sidePanelDetailsTitle: "Details",
       sidePanelOpenAria: "Open side panel",
-      tiles: {
-        title: "Tiles Workspace",
-        tab: {
-          list: "List",
-          timeline: "Timeline",
-          changes: "Changes",
-        },
-        section: {
-          main: "Main",
-          sub: "Sub",
-        },
-        empty: {
-          main: "No active main task",
-          sub: "No sub tasks",
-        },
-        summary: {
-          openCount: "Open tiles",
-          estimated: "Estimated total",
-          sections: "Sections",
-        },
-        omittedMore: "+",
-        searchPlaceholder: "Search…",
-        filter: {
-          rangeLabel: "Range:",
-          granularityLabel: "Granularity:",
-          limitLabel: "Max:",
-          range: {
-            all: "All",
-            today: "Today",
-            recent: "Last 24h",
-            excludeFuture: "Exclude future",
-          },
-          granularity: {
-            all: "All (incl. breaks)",
-            noBreaks: "Work only",
-            min5: "≥ 5m",
-            min15: "≥ 15m",
-            min30: "≥ 30m",
-          },
-          limit: {
-            "20": "20",
-            "50": "50",
-            "100": "100",
-            "500": "500",
-            unlimited: "Unlimited",
-          },
-        },
-      },
     },
 
     // Timeline

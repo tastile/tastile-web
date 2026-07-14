@@ -4,7 +4,6 @@ import {
   CalendarDays,
   CheckSquare,
   Layers,
-  Library,
   type LucideIcon,
   PanelLeftDashed,
   Plus,
@@ -26,11 +25,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { path: "/dashboard/calendar", labelKey: "nav.timeline", Icon: CalendarDays },
+  { path: "/dashboard/timeline", labelKey: "nav.timeline", Icon: CalendarDays },
   { path: "/dashboard/tasks", labelKey: "nav.tasks", Icon: CheckSquare },
   { path: "/dashboard/projects", labelKey: "nav.projects", Icon: Layers },
   { path: "/dashboard/schedule", labelKey: "nav.schedule", Icon: Repeat },
-  { path: "/dashboard/references", labelKey: "nav.references", Icon: Library },
 ];
 
 const PREF_ITEM: NavItem = {

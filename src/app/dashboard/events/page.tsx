@@ -14,6 +14,7 @@ import {
   Terminal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -21,6 +22,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { EmptyState } from "@/components/ui/Empty";
 import { Pill } from "@/components/ui/StatusDot";
 import { getCoreClient, type Result } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 
 interface DebugEvent {
   id: string;
@@ -68,6 +70,38 @@ export default function EventsPage() {
     });
     return ["All", ...Array.from(set).sort()];
   }, [list]);
+
+  const sidePanel = useMemo(
+    () => (
+      <PageSummaryPanel
+        title="Events log"
+        description="Raw fact stream. Append-only — there is no UPDATE on an event. Every state in the UI was derived from one of these."
+        sections={[
+          {
+            heading: "Counts",
+            items: [
+              { label: "Loaded", value: list.length },
+              { label: "Distinct types", value: types.length - 1 },
+              {
+                label: "Filter",
+                value: typeFilter === "All" ? "all types" : typeFilter,
+              },
+            ],
+          },
+          {
+            heading: "Related",
+            items: [
+              { label: "Timeline", value: "→", href: "/dashboard/timeline" },
+              { label: "Runtime", value: "→", href: "/dashboard/runtime" },
+              { label: "API explorer", value: "→", href: "/dashboard/api" },
+            ],
+          },
+        ]}
+      />
+    ),
+    [list.length, types.length, typeFilter],
+  );
+  useSidePanel(sidePanel);
 
   const filtered = useMemo(() => {
     return list.filter((e) => {

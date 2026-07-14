@@ -1,6 +1,6 @@
 "use client";
 
-import { List, Plug, Plus, Settings, Zap } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -14,25 +14,7 @@ export function MobileBottomTabs() {
 
   return (
     <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl bg-surface-elevated lg:hidden">
-      <MobileTabButton
-        icon={<Zap className="h-6 w-6" />}
-        label={t("nav.execute")}
-        href="/dashboard/execute"
-        active={pathname === "/dashboard/execute"}
-      />
-      <MobileTabButton
-        icon={<List className="h-6 w-6" />}
-        label={t("nav.tiles")}
-        href="/dashboard/tiles"
-        active={pathname === "/dashboard/tiles"}
-      />
       <MobileActionButton icon={<Plus className="h-6 w-6" />} label={t("nav.new")} onClick={open} />
-      <MobileTabButton
-        icon={<Plug className="h-6 w-6" />}
-        label={t("nav.integrations")}
-        href="/dashboard/integrations"
-        active={pathname === "/dashboard/integrations"}
-      />
       <MobileTabButton
         icon={<Settings className="h-6 w-6" />}
         label={t("nav.settings")}

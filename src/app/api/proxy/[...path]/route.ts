@@ -487,8 +487,9 @@ function handleMockRequest(
 
 async function proxyRequest(request: NextRequest, pathSegments: string[]): Promise<NextResponse> {
   const path = pathSegments.join("/");
+  const skipMocks = isLocalCoreUrl(getCloudApiBase());
 
-  if (getIsE2EBypass()) {
+  if (getIsE2EBypass() && !skipMocks) {
     const body =
       request.method !== "GET" && request.method !== "HEAD"
         ? await request
@@ -505,7 +506,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     if (mockResponse) return mockResponse;
   }
 
-  if (getIsE2EBypass()) {
+  if (getIsE2EBypass() && !skipMocks) {
     const localResponse = localCompatResponse(path, request.method);
     if (localResponse) return localResponse;
   }

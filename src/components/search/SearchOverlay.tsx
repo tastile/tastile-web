@@ -2,21 +2,13 @@
 
 import { Search } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { useTileList } from "@/lib/hooks/use-tile-list";
 
 const DASHBOARD_ROUTES = [
   { path: "/dashboard", label: "Dashboard" },
-  { path: "/dashboard/execute", label: "Execute" },
-  { path: "/dashboard/tiles", label: "Tiles" },
   { path: "/dashboard/timeline", label: "Timeline" },
-  { path: "/dashboard/calendar", label: "Calendar" },
-  { path: "/dashboard/history", label: "History" },
   { path: "/dashboard/events", label: "Events" },
   { path: "/dashboard/preferences", label: "Settings" },
   { path: "/dashboard/billing", label: "Billing" },
-  { path: "/dashboard/integrations", label: "Integrations" },
-  { path: "/dashboard/prompts", label: "Prompts" },
-  { path: "/dashboard/breaks", label: "Breaks" },
   { path: "/dashboard/projects", label: "Projects" },
   { path: "/dashboard/api", label: "API" },
   { path: "/dashboard/quota", label: "Quota" },
@@ -26,7 +18,6 @@ const DASHBOARD_ROUTES = [
 export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-  const { tiles } = useTileList({ search: query || undefined });
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   const filteredRoutes = DASHBOARD_ROUTES.filter((r) =>
@@ -34,18 +25,8 @@ export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
   );
 
   const results = useMemo(
-    () => [
-      ...tiles.slice(0, 5).map((t) => ({
-        type: "tile" as const,
-        id: t.id,
-        label: t.title,
-        path: "/dashboard/tiles",
-      })),
-      ...filteredRoutes
-        .slice(0, 5)
-        .map((r) => ({ type: "route" as const, id: r.path, label: r.label, path: r.path })),
-    ],
-    [tiles, filteredRoutes],
+    () => filteredRoutes.map((r) => ({ id: r.path, label: r.label, path: r.path })),
+    [filteredRoutes],
   );
 
   const handleKeyDown = useCallback(
@@ -76,7 +57,7 @@ export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Search tiles and pages"
+        aria-label="Search pages"
         className="relative w-[600px] rounded-xl border border-border bg-surface-elevated shadow-lg text-left"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => {
@@ -91,7 +72,7 @@ export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search tiles and pages…"
+            placeholder="Search pages…"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -120,11 +101,7 @@ export function SearchOverlayInner({ onClose }: { onClose: () => void }) {
                     : "text-foreground-muted hover:bg-surface-2"
                 }`}
               >
-                {r.type === "tile" ? (
-                  <span className="text-foreground-subtle">○</span>
-                ) : (
-                  <span className="text-foreground-subtle">→</span>
-                )}
+                <span className="text-foreground-subtle">→</span>
                 {r.label}
               </button>
             ))}

@@ -1,6 +1,7 @@
 import { PlacementSource, PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
 import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/lib/domain/v1/envelope";
 import { type ApiClient, postCommand, type Result, sendCommand } from "./endpoints";
+import { type StorePlanInput, toWireSetPlanBody } from "./plan-wire";
 
 type CommandResult = Result<import("@/lib/domain/v1/envelope").CommandResponse>;
 
@@ -416,6 +417,69 @@ export async function updateTileCommand(options: UpdateTileCommandOptions): Prom
   );
 }
 
+// ---------- v1 SET_PLAN (POST /v1/tiles/{tileId}/plan) ----------
+
+export interface SetPlanCommandOptions {
+  client: ApiClient;
+  tileId: string;
+  /**
+   * Loose `unknown` types at the API boundary — the converter
+   * (`toWireSetPlanBody`) requires a strict `StorePlanInput` shape and
+   * we cast at the call site because the source-of-truth is the typed
+   * QuickCreate store (`useQuickCreateStore.plan`). Keeping the public
+   * surface loose means callers can pass a `Plan` directly without an
+   * adapter layer.
+   */
+  role: number;
+  references: unknown;
+  completion: unknown;
+  planning: unknown;
+  metrics: unknown[];
+  decisions: unknown[];
+}
+
+/**
+ * v1 plan-structure command.  Tile creation is separate from plan structure
+ * (see v1/14 §2 and SetPlanPayload in `domain::command`): the first POST
+ * /v1/tiles writes the Tile row + an auto-created Plan row; subsequent edits
+ * to references / completion / planning / metrics / decisions go through
+ * POST /v1/tiles/{tileId}/plan so the wire form carries the full Plan body.
+ *
+ * The plan-shape fields are typed `unknown` at this boundary; the
+ * converter `toWireSetPlanBody` rewrites both the key naming
+ * (camelCase → snake_case) AND the Condition/Term discriminated-union
+ * shape (internally-tagged `{kind, value}` → externally-tagged
+ * `{"Variant": {...}}`) plus TaskContent (note → description) and
+ * TimeRequirement.required ({minMs, maxMs} → {min, max}) plus
+ * TimeObservation.reference (default null). See plan-wire.ts for the
+ * rewrite rules.
+ */
+export function setPlanCommand(options: SetPlanCommandOptions): Promise<CommandResult> {
+  const storePlan: StorePlanInput = {
+    role: options.role,
+    references: options.references as StorePlanInput["references"],
+    completion: options.completion as StorePlanInput["completion"],
+    planning: options.planning as StorePlanInput["planning"],
+    metrics: options.metrics,
+    decisions: options.decisions,
+  };
+  const wire = toWireSetPlanBody(storePlan);
+  return sendCommand(
+    options.client,
+    "POST",
+    `/v1/tiles/${options.tileId}/plan`,
+    envelope({
+      tile_id: options.tileId,
+      role: wire.role,
+      references: wire.references,
+      completion: wire.completion,
+      planning: wire.planning,
+      metrics: wire.metrics,
+      decisions: wire.decisions,
+    }),
+  );
+}
+
 export function startTileCommand(options: StartTileCommandOptions): Promise<CommandResult> {
   const sourceRef = {
     created: null,
@@ -519,6 +583,22 @@ const emptySourceRef = () => ({
   external_id: null,
 });
 
+// v1 Span wire expects DateTime<Utc> (chrono RFC 3339).  Accept either a
+// date-only "YYYY-MM-DD" (treated as that day at 00:00:00Z) or a full ISO
+// 8601 string; reject anything else.  Without this normalisation a date
+// like "2026-07-14" reaches the v1 server, chrono's deserialiser reads
+// past the closing quote and the JSON parser reports "premature end of
+// input" at the body boundary (HTTP 422).
+function toSpanInstant(value: string): string {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnly) return `${value}T00:00:00Z`;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error(`span instant must be a date (YYYY-MM-DD) or ISO 8601 string, got: ${value}`);
+  }
+  return parsed.toISOString();
+}
+
 /**
  * Create a Placement aggregate for an existing Placement-tile.
  * POST /v1/placements with CREATE_PLACEMENT.  Use after POST /v1/tiles
@@ -537,7 +617,10 @@ export function createPlacementCommand(
       source: PlacementSource.MANUAL,
       source_ref: emptySourceRef(),
       baseline: {
-        span: { start: options.start, end: options.end },
+        span: {
+          start: toSpanInstant(options.start),
+          end: toSpanInstant(options.end),
+        },
         inside: null,
       },
     }),

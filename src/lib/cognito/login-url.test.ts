@@ -87,8 +87,8 @@ describe("cognito login url", () => {
 	});
 
 	it("keeps callback next paths local", () => {
-		expect(safeNextPath("/dashboard/tiles?tab=list")).toBe(
-			"/dashboard/tiles?tab=list",
+		expect(safeNextPath("/dashboard/timeline?view=week")).toBe(
+			"/dashboard/timeline?view=week",
 		);
 		expect(safeNextPath("https://evil.example")).toBe("/dashboard");
 		expect(safeNextPath("//evil.example")).toBe("/dashboard");

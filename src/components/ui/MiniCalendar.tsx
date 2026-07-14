@@ -72,18 +72,18 @@ export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCa
           type="button"
           onClick={prevMonth}
           aria-label={t("miniCalendar.prevMonth")}
-          className="rounded p-0.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <ChevronLeft className="h-3.5 w-3.5" />
+          <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-[11px] font-semibold text-foreground">{monthLabel}</span>
         <button
           type="button"
           onClick={nextMonth}
           aria-label={t("miniCalendar.nextMonth")}
-          className="rounded p-0.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-4 w-4" />
         </button>
       </div>
 

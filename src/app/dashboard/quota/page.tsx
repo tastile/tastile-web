@@ -10,12 +10,14 @@ import {
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { getCoreClient, type Result } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 interface QuotaData {
@@ -31,6 +33,48 @@ export default function QuotaPage() {
   const [data, setData] = useState<Result<QuotaData> | null>(null);
   const [session, setSession] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const sidePanel = useMemo(
+    () => (
+      <PageSummaryPanel
+        title="Quota"
+        description="Plan limits and current usage. Read-only — upgrade from the pricing page when you need more headroom."
+        sections={[
+          {
+            heading: "Plan",
+            items: [
+              {
+                label: "Tier",
+                value: data?.ok ? data.data.plan ?? "free" : "—",
+              },
+              {
+                label: "Tiles",
+                value: data?.ok
+                  ? `${data.data.tiles_used ?? 0} / ${data.data.tiles_limit ?? "—"}`
+                  : "—",
+              },
+              {
+                label: "History",
+                value: data?.ok
+                  ? `${data.data.history_days ?? 0}d / ${data.data.history_limit_days ?? "—"}d`
+                  : "—",
+              },
+            ],
+          },
+          {
+            heading: "Related",
+            items: [
+              { label: "Billing", value: "→", href: "/dashboard/billing" },
+              { label: "Timeline", value: "→", href: "/dashboard/timeline" },
+              { label: "API explorer", value: "→", href: "/dashboard/api" },
+            ],
+          },
+        ]}
+      />
+    ),
+    [data],
+  );
+  useSidePanel(sidePanel);
 
   const load = useCallback(async () => {
     setLoading(true);

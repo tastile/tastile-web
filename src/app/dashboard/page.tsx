@@ -5,23 +5,17 @@ import { Suspense, useEffect } from "react";
 import { getLastVisitedPath } from "@/lib/hooks/use-track-visit";
 
 const REDIRECTABLE_PATHS = [
-  "/dashboard/references",
   "/dashboard/tasks",
   "/dashboard/projects",
   "/dashboard/schedule",
-  "/dashboard/calendar",
-  "/dashboard/tiles",
   "/dashboard/timeline",
-  "/dashboard/breaks",
   "/dashboard/events",
-  "/dashboard/prompts",
   "/dashboard/preferences/general",
   "/dashboard/preferences/account",
   "/dashboard/runtime",
   "/dashboard/api",
   "/dashboard/billing",
   "/dashboard/quota",
-  "/dashboard/integrations",
 ];
 
 export default function DashboardPage() {
@@ -42,7 +36,7 @@ function DashboardPageInner() {
     if (last && last !== "/dashboard" && REDIRECTABLE_PATHS.includes(last)) {
       router.replace(last);
     } else {
-      router.replace("/dashboard/calendar");
+      router.replace("/dashboard/timeline");
     }
   }, [router]);
 

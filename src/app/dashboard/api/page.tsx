@@ -2,6 +2,7 @@
 
 import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -15,6 +16,7 @@ import {
   type Result,
   TAG_ORDER,
 } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
@@ -30,6 +32,35 @@ export default function ApiExplorerPage() {
   const [query, setQuery] = useState("");
   const [filterTag, setFilterTag] = useState<ApiTag | "All">("All");
   const [focus, setFocus] = useState<EndpointKey | null>(null);
+
+  const sidePanel = useMemo(
+    () => (
+      <PageSummaryPanel
+        title="API explorer"
+        description="All endpoints grouped by tag. Click a row to inspect the request shape and try it against the live daemon."
+        sections={[
+          {
+            heading: "Counts",
+            items: [
+              { label: "Endpoints", value: Object.keys(ENDPOINTS).length },
+              { label: "Tags", value: TAG_ORDER.length },
+              { label: "Tag filter", value: filterTag },
+            ],
+          },
+          {
+            heading: "Related",
+            items: [
+              { label: "Runtime", value: "→", href: "/dashboard/runtime" },
+              { label: "Events log", value: "→", href: "/dashboard/events" },
+              { label: "Quota", value: "→", href: "/dashboard/quota" },
+            ],
+          },
+        ]}
+      />
+    ),
+    [filterTag],
+  );
+  useSidePanel(sidePanel);
   // Read ?focus=… and ?tag=… once on mount
   useEffect(() => {
     if (typeof window === "undefined") return;

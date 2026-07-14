@@ -1,12 +1,14 @@
 "use client";
 
 import { Activity, AlertTriangle, CheckCircle2, Loader2, Network, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Pill, StatusDot } from "@/components/ui/StatusDot";
 import { ENDPOINTS, getCoreClient, type Result } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 interface HealthData {
@@ -39,6 +41,44 @@ export default function RuntimePage() {
   const [version, setVersion] = useState<Result<VersionData> | null>(null);
   const [paths, setPaths] = useState<Result<RuntimePaths> | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const sidePanel = useMemo(
+    () => (
+      <PageSummaryPanel
+        title="Runtime"
+        description="Live health, version, and storage paths of the local tastile-core daemon. The same daemon the desktop client talks to."
+        sections={[
+          {
+            heading: "Health",
+            items: [
+              {
+                label: "Status",
+                value: health?.ok ? health.data.status : "—",
+              },
+              {
+                label: "Version",
+                value: version?.ok ? version.data.version : "—",
+              },
+              {
+                label: "API",
+                value: version?.ok ? version.data.api_version ?? "—" : "—",
+              },
+            ],
+          },
+          {
+            heading: "Related",
+            items: [
+              { label: "Events log", value: "→", href: "/dashboard/events" },
+              { label: "API explorer", value: "→", href: "/dashboard/api" },
+              { label: "Quota", value: "→", href: "/dashboard/quota" },
+            ],
+          },
+        ]}
+      />
+    ),
+    [health, version],
+  );
+  useSidePanel(sidePanel);
 
   const load = useCallback(async () => {
     setLoading(true);

@@ -48,13 +48,25 @@ interface FloatingMenuProps {
   open?: boolean;
   defaultOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
+  // External trigger element. Required when the trigger lives outside
+  // this component (e.g. a Bell button in the page header that drives
+  // a portal'd panel mounted elsewhere). When omitted, FloatingMenu
+  // falls back to an internal ref registered by FloatingMenuTrigger.
+  triggerRef?: React.RefObject<HTMLElement | null>;
 }
 
-function FloatingMenu({ children, open, defaultOpen, onOpenChange }: FloatingMenuProps) {
+function FloatingMenu({
+  children,
+  open,
+  defaultOpen,
+  onOpenChange,
+  triggerRef: externalTriggerRef,
+}: FloatingMenuProps) {
   const isControlled = open !== undefined;
   const [internalOpen, setInternalOpen] = React.useState(defaultOpen ?? false);
   const actualOpen = isControlled ? open : internalOpen;
-  const triggerRef = React.useRef<HTMLElement | null>(null);
+  const internalTriggerRef = React.useRef<HTMLElement | null>(null);
+  const triggerRef = externalTriggerRef ?? internalTriggerRef;
   const contentId = React.useId();
 
   const setOpen = React.useCallback(
@@ -67,7 +79,7 @@ function FloatingMenu({ children, open, defaultOpen, onOpenChange }: FloatingMen
 
   const value = React.useMemo<FloatingMenuContextValue>(
     () => ({ open: actualOpen, setOpen, triggerRef, contentId }),
-    [actualOpen, setOpen, contentId],
+    [actualOpen, setOpen, triggerRef, contentId],
   );
 
   return <FloatingMenuContext.Provider value={value}>{children}</FloatingMenuContext.Provider>;

@@ -5,7 +5,6 @@ import {
   CalendarDays,
   CheckSquare,
   Layers,
-  Library,
   LogOut,
   Menu,
   Repeat,
@@ -34,14 +33,16 @@ interface FloatingHeaderProps {
   userName: string;
   onOpenSearch: () => void;
   onOpenNotifications: () => void;
+  // Ref attached to the Bell button so the notifications panel
+  // (mounted elsewhere in the dashboard layout) can anchor to it.
+  notificationsButtonRef?: React.RefObject<HTMLButtonElement | null>;
 }
 
 const NAV_ITEMS = [
-  { path: "/dashboard/calendar", labelKey: "nav.timeline", Icon: CalendarDays },
+  { path: "/dashboard/timeline", labelKey: "nav.timeline", Icon: CalendarDays },
   { path: "/dashboard/tasks", labelKey: "nav.tasks", Icon: CheckSquare },
   { path: "/dashboard/projects", labelKey: "nav.projects", Icon: Layers },
   { path: "/dashboard/schedule", labelKey: "nav.schedule", Icon: Repeat },
-  { path: "/dashboard/references", labelKey: "nav.references", Icon: Library },
   { path: "/dashboard/preferences/general", labelKey: "nav.preferences", Icon: Settings },
 ];
 
@@ -49,6 +50,7 @@ export function FloatingHeader({
   userName,
   onOpenSearch,
   onOpenNotifications,
+  notificationsButtonRef,
 }: FloatingHeaderProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -133,6 +135,16 @@ export function FloatingHeader({
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
             <Search className="h-4 w-4" />
+          </button>
+
+          <button
+            ref={notificationsButtonRef}
+            type="button"
+            aria-label={t("shell.floatingHeader.openNotifications")}
+            onClick={onOpenNotifications}
+            className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+          >
+            <Bell className="h-4 w-4" />
           </button>
 
           <FloatingMenu>

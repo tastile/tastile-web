@@ -1,6 +1,39 @@
+"use client";
+
+import { useMemo } from "react";
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 
 export default function BillingPage() {
+  const sidePanel = useMemo(
+    () => (
+      <PageSummaryPanel
+        title="Billing"
+        description="Manage your subscription, payment method, and invoice history. Pro features unlock when the webhook confirms."
+        sections={[
+          {
+            heading: "Quick links",
+            items: [
+              { label: "Quota", value: "→", href: "/dashboard/quota" },
+              { label: "Account", value: "→", href: "/dashboard/preferences/account" },
+              { label: "Pricing", value: "→", href: "/pricing" },
+            ],
+          },
+          {
+            heading: "Related",
+            items: [
+              { label: "Timeline", value: "→", href: "/dashboard/timeline" },
+              { label: "API explorer", value: "→", href: "/dashboard/api" },
+            ],
+          },
+        ]}
+      />
+    ),
+    [],
+  );
+  useSidePanel(sidePanel);
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-[590] text-foreground">Billing</h1>
