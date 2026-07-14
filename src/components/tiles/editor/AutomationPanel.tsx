@@ -21,6 +21,7 @@
 import { Calendar, Repeat } from "lucide-react";
 
 import { FormPanel } from "@/components/ui/form";
+import { TileKind } from "@/lib/domain/v1/constants";
 import { cn } from "@/lib/utils/cn";
 
 import { type EditorLocale } from "./date-utils";
@@ -159,7 +160,6 @@ function EndDateToggle({
 }
 
 export interface AutomationPanelProps {
-  kindIsRecurring: boolean;
   recurring: {
     repeatMode: "once" | "daily" | "weekly" | "interval" | "condition";
     weekdayMask: number;
@@ -171,19 +171,11 @@ export interface AutomationPanelProps {
 }
 
 export function AutomationPanel({
-  kindIsRecurring,
   recurring,
   setField,
   locale,
   t,
 }: AutomationPanelProps) {
-  if (!kindIsRecurring) {
-    return (
-      <FormPanel>
-        <span className="text-xs text-foreground-muted">{t("quickCreate.phaseNotReady")}</span>
-      </FormPanel>
-    );
-  }
   const weekdayEnabled = recurring.repeatMode === "weekly";
   return (
     <FormPanel>
@@ -206,7 +198,12 @@ export function AutomationPanel({
               role="radio"
               aria-checked={active}
               data-testid={`recurring-mode-${opt.id}`}
-              onClick={() => setField("recurring.repeatMode", opt.id)}
+              onClick={() => {
+                setField("recurring.repeatMode", opt.id);
+                if (opt.id !== "once") {
+                  setField("identity.kind", TileKind.RECURRING);
+                }
+              }}
               className={cn(
                 "min-h-[32px] rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                 active

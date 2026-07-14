@@ -386,7 +386,6 @@ export function QuickTileCreate() {
 
   // --- validity ---
   const titleOk = identity.title.trim().length > 0;
-  const kindIsRecurring = identity.kind === TileKind.RECURRING;
   const spanHasStart = !!time.span.start;
   const spanHasEnd = !!time.span.end;
   const spanOrderValid = !spanHasStart || !spanHasEnd || time.span.end > time.span.start;
@@ -1397,7 +1396,6 @@ export function QuickTileCreate() {
           </div>
         </div>
         <AutomationPanel
-          kindIsRecurring={kindIsRecurring}
           recurring={recurring}
           setField={setField}
           locale={locale}
