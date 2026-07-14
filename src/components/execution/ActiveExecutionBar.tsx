@@ -31,13 +31,17 @@ export function ActiveExecutionBar({
   const { state, execute } = useExecutionEngineContext();
   const { t } = useTranslation();
 
+  // Gate the 1s tick on having an active tile title — without this guard
+  // the bar re-renders every second forever, even when the bar is
+  // showing the "not started" placeholder and `nowMs` is unused.
   useEffect(() => {
+    if (!activeTileTitle) return;
     const interval = setInterval(() => {
       setNowMs(Date.now());
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [activeTileTitle]);
 
   if (!activeTileTitle || !phaseStartedAt || !phaseEndsAt) {
     if (!activeTileTitle || (!phaseStartedAt && !phaseEndsAt)) {

@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Alert } from "@mantine/core";
+import { AlertCircle, Calendar, Clock, MapPin } from "lucide-react";
 import { useMemo, useState } from "react";
 import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
 import { cn } from "@/lib/utils/cn";
@@ -58,7 +59,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
   // list. While events are in-flight, the search input stays usable and
   // the list area shows a small spinner.
   return (
-    <div className="space-y-6" data-testid="event-list-wrapper">
+    <div className="relative space-y-6" data-testid="event-list-wrapper">
       <div className="flex items-center gap-2">
         <input
           type="search"
@@ -77,11 +78,23 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
           </span>
         ) : null}
       </div>
+      {/* Absolute overlay so the list rows below do not shift when the
+          polling error flips on/off — same fix as CalendarMain. */}
       {error ? (
-        <div className="py-12 text-center text-xs text-danger">
-          Failed to load events: {error.message}
+        <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex justify-center">
+          <Alert
+            variant="light"
+            color="red"
+            icon={<AlertCircle className="h-4 w-4" />}
+            title="Couldn’t load events"
+            data-testid="event-list-error"
+            className="pointer-events-auto w-full max-w-2xl"
+          >
+            {error.message}
+          </Alert>
         </div>
-      ) : groups.length === 0 ? (
+      ) : null}
+      {groups.length === 0 ? (
         <div
           className="flex flex-col items-center gap-2 py-16 text-center"
           data-testid="event-list"

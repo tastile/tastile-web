@@ -20,10 +20,14 @@ export function ActiveExecutionBadge() {
   }, [state.execution.phaseEndsAt, nowMs]);
   const canRequestPrompt = Boolean(state.execution.activeTileId) && !state.execution.pendingPrompt;
 
+  // Gate the 1s tick: when no active tile is mounted, the badge renders
+  // "Loading…" and the tick would only waste a re-render every second.
+  // Re-arm when an active tile appears, tear down when it disappears.
   useEffect(() => {
+    if (!activeTile) return;
     const timer = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [activeTile]);
 
   if (!activeTile) {
     return <div className="text-sm text-foreground-muted">{t("common.loading")}</div>;

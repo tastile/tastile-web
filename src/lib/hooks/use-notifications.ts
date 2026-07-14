@@ -65,7 +65,10 @@ export function useNotifications() {
         });
       }
     } else {
-      setError(access.error);
+      // Stabilize the Error reference: identical failure message must not
+      // mint a new Error object every 15s poll.
+      const msg = access.error.message;
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
     if (execution.ok) {
@@ -83,7 +86,8 @@ export function useNotifications() {
         });
       }
     } else {
-      setError(new Error(execution.error.message));
+      const msg = execution.error.message;
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
     setLoading(false);

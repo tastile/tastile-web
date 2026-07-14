@@ -31,7 +31,11 @@ export function useActiveTile() {
       setSnapshot(res.data);
       setError(null);
     } else {
-      setError(new Error(res.error.message));
+      // Keep the same Error instance when the message is unchanged so the
+      // 15s poll failure cycle doesn't create a new identity every tick
+      // and re-render every consumer (FloatingHeader, ActivityBar, …).
+      const msg = res.error.message;
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
     setLoading(false);
   }, []);

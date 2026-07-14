@@ -85,13 +85,23 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
         "events" in data ? data.events : (data as { occurrences: CalendarEvent[] }).occurrences;
       setEvents(list ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      // Stable Error reference: a poll that fails repeatedly with the same
+      // message must not create a new Error object every cycle, or
+      // consumers (CalendarMain's banner, EventListView) re-render on
+      // every tick and the calendar appears to shake.
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     } finally {
       setLoading(false);
     }
-    // range object identity changes are reflected in the field deps.
+    // Depend on the field primitives ONLY — NOT on `range` itself.
+    // The caller passes `{ ...range, minMinutes, ownerIds }` as a fresh
+    // object literal on every render, so including `range` in deps would
+    // produce a new `reload` closure every render, which the
+    // `useEffect(..., [reload])` consumers would then refire on every
+    // render → fetch storm → render loop.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds?.join(","), range]);
+  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds?.join(",")]);
 
   const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
     const res = await fetch("/api/events", {
