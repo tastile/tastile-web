@@ -521,9 +521,58 @@ export function startExecutionCommand(options: {
 
 // ---------- v1 Execution lifecycle commands ----------
 //
-// pause_execution / resume_execution / finish_execution helpers were
-// removed in the knip cleanup pass -- they were defined but never
-// imported.  Add them back here only when a caller materialises.
+// pause_execution / resume_execution take a unit payload (the path carries
+// execution_id), so the wire body is the envelope with payload=null.
+// finish_execution sends the finish kind and optional note.
+//
+// Wire mapping (verified end-to-end):
+//   kind = 0 -> state = FinishedNormal (2 in ExecutionState)
+//   kind = 1 -> state = FinishedVoid    (3 in ExecutionState)
+
+export function pauseExecutionCommand(options: {
+  client: ApiClient;
+  executionId: string;
+}): Promise<CommandResult> {
+  return sendCommand(
+    options.client,
+    "POST",
+    `/v1/executions/${options.executionId}/pause`,
+    envelope(null),
+  );
+}
+
+export function resumeExecutionCommand(options: {
+  client: ApiClient;
+  executionId: string;
+}): Promise<CommandResult> {
+  return sendCommand(
+    options.client,
+    "POST",
+    `/v1/executions/${options.executionId}/resume`,
+    envelope(null),
+  );
+}
+
+export interface FinishExecutionCommandOptions {
+  client: ApiClient;
+  executionId: string;
+  kind?: number;
+  note?: string | null;
+}
+
+export function finishExecutionCommand(
+  options: FinishExecutionCommandOptions,
+): Promise<CommandResult> {
+  return sendCommand(
+    options.client,
+    "POST",
+    `/v1/executions/${options.executionId}/finish`,
+    envelope({
+      kind: options.kind ?? 0,
+      note: options.note ?? null,
+    }),
+  );
+}
 
 export async function startTileExecutionCommand(
   options: StartTileCommandOptions,
