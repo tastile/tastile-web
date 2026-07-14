@@ -54,6 +54,15 @@ export const themeScript = `
     root.classList.remove('dark', 'theme-dark-gray', 'theme-dark-black', 'theme-light', 'theme-gray', 'theme-dark');
     if (mode === 'dark-gray') root.classList.add('dark', 'theme-dark-gray');
     if (mode === 'dark-black') root.classList.add('dark', 'theme-dark-black');
+
+    // Mirror the resolved mode onto Mantine's color-scheme attribute so its
+    // own components follow the same light/dark flip as the custom CSS.
+    // Mantine's inline script sets this from prefers-color-scheme before we
+    // run; overwriting here keeps both systems in sync on first paint and
+    // on every reload.
+    var mantineScheme = mode === 'light' ? 'light' : 'dark';
+    root.setAttribute('data-mantine-color-scheme', mantineScheme);
+    try { localStorage.setItem('mantine-color-scheme-value', mantineScheme); } catch (_e) {}
   } catch (_error) {}
 })();
 `;
