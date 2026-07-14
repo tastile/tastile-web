@@ -5,10 +5,11 @@ import {
   type DisplayMode,
   eventSpansDay,
   getMonthViewDates,
-  monthEventStyle,
 } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { cn } from "@/lib/utils/cn";
+import { MonthEventTile } from "./MonthEventTile";
+import { MonthViewFrame } from "./MonthViewFrame";
 
 function chunkWeeks(dates: string[]): string[][] {
   const weeks: string[][] = [];
@@ -16,12 +17,6 @@ function chunkWeeks(dates: string[]): string[][] {
     weeks.push(dates.slice(i, i + 7));
   }
   return weeks;
-}
-
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "";
-  return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
 }
 
 export interface MonthViewProps {
@@ -32,7 +27,7 @@ export interface MonthViewProps {
   loading: boolean;
 }
 
-export function MonthView({ anchor, mode, tzOffset, events, loading }: MonthViewProps) {
+export function MonthView({ anchor, mode, tzOffset, events }: MonthViewProps) {
   const [todayStr, setTodayStr] = useState("");
 
   useEffect(() => {
@@ -44,96 +39,46 @@ export function MonthView({ anchor, mode, tzOffset, events, loading }: MonthView
     [mode, anchor, tzOffset],
   );
 
-  if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center text-xs text-foreground-subtle">
-        Loading…
-      </div>
-    );
-  }
-  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  const d = new Date(`${anchor}T00:00:00Z`);
-  const currentMonth = d.getUTCMonth();
-
+  // Frame (weekday header + month grid + date numbers) is always
+  // rendered so the shell never flashes between a "Loading…" placeholder
+  // and the grid. While events are in-flight, the cells stay empty and
+  // tiles fill in once the fetch resolves. MonthViewFrame is memo'd
+  // so its (static) cells don't repaint when only `events` change.
   return (
-    <div className="flex flex-col h-full border border-surface-2 rounded-md overflow-clip bg-surface-0 min-h-[600px]">
-      <div className="sticky top-0 z-30 grid grid-cols-7 border-b border-surface-2 bg-surface-1">
-        {weekdays.map((day) => (
-          <div
-            key={day}
-            className="py-2 text-center text-xs font-medium text-foreground-subtle border-r border-surface-2 last:border-r-0"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
+    <MonthViewFrame
+      weeks={weeks}
+      anchor={anchor}
+      cellArea={(dateStr) => {
+        const dateObj = new Date(`${dateStr}T00:00:00Z`);
+        const isToday = dateStr === todayStr;
+        const dayEvents = events.filter((e) => eventSpansDay(e, dateStr, tzOffset));
+        const visible = dayEvents.slice(0, 3);
+        const overflow = dayEvents.length - visible.length;
 
-      <div className="flex flex-col flex-1">
-        {weeks.map((week, wIdx) => (
-          <div
-            key={wIdx}
-            className="grid grid-cols-7 flex-1 border-b border-surface-2 last:border-b-0 min-h-[120px]"
-          >
-            {week.map((dateStr) => {
-              const dateObj = new Date(`${dateStr}T00:00:00Z`);
-              const isCurrentMonth = dateObj.getUTCMonth() === currentMonth;
-              const isToday = dateStr === todayStr;
-              const dayEvents = events.filter((e) => eventSpansDay(e, dateStr, tzOffset));
-              const visible = dayEvents.slice(0, 3);
-              const overflow = dayEvents.length - visible.length;
+        return (
+          <>
+            <div className="flex justify-between items-center px-1">
+              <span
+                className={cn(
+                  "text-xs font-medium h-6 w-6 flex items-center justify-center rounded-full",
+                  isToday ? "bg-primary text-primary-fg" : "text-foreground-subtle",
+                )}
+              >
+                {dateObj.getUTCDate()}
+              </span>
+            </div>
 
-              return (
-                <div
-                  key={dateStr}
-                  data-testid={`month-day-${dateStr}`}
-                  className={cn(
-                    "p-1 border-r border-surface-2 last:border-r-0 flex flex-col gap-1 overflow-hidden",
-                    !isCurrentMonth && "bg-surface-1 opacity-50",
-                  )}
-                >
-                  <div className="flex justify-between items-center px-1">
-                    <span
-                      className={cn(
-                        "text-xs font-medium h-6 w-6 flex items-center justify-center rounded-full",
-                        isToday ? "bg-primary text-primary-fg" : "text-foreground-subtle",
-                      )}
-                    >
-                      {dateObj.getUTCDate()}
-                    </span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto space-y-1 px-0.5 no-scrollbar">
-                    {visible.map((event) => {
-                      const tile = monthEventStyle(event.color);
-                      return (
-                        <button
-                          key={event.id}
-                          type="button"
-                          data-testid={`month-event-${event.id}`}
-                          className="block w-full truncate rounded-sm px-1.5 py-0.5 text-left text-[10px] hover:brightness-95"
-                          style={{
-                            backgroundColor: tile.backgroundColor,
-                            color: tile.color,
-                          }}
-                        >
-                          {event.allDay ? "" : `${formatTime(event.start)} `}
-                          {event.title}
-                        </button>
-                      );
-                    })}
-                    {overflow > 0 ? (
-                      <div className="text-[10px] text-foreground-subtle px-1">
-                        +{overflow} more
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ))}
-      </div>
-    </div>
+            <div className="flex-1 overflow-y-auto space-y-1 px-0.5 no-scrollbar">
+              {visible.map((event) => (
+                <MonthEventTile key={event.id} event={event} />
+              ))}
+              {overflow > 0 ? (
+                <div className="text-[10px] text-foreground-subtle px-1">+{overflow} more</div>
+              ) : null}
+            </div>
+          </>
+        );
+      }}
+    />
   );
 }

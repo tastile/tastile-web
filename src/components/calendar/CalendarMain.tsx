@@ -220,7 +220,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
 
   return (
     <div className="flex h-full flex-col" data-testid="calendar-main">
-      <div className="flex h-12 items-center gap-2 px-4 shrink-0">
+      <div className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-2 bg-surface-0 px-4">
         <button
           type="button"
           onClick={() => setAnchor((a) => shiftDate(a, view, -1))}
@@ -317,7 +317,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
           </div>
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6">
+      <div className="min-h-0 flex-1 px-4 pb-6">
         {error ? (
           <div
             data-testid="cal-error"

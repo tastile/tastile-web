@@ -1,15 +1,15 @@
 "use client";
 
+import { memo } from "react";
 import { eventTileStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 
-function AllDayChip({
-  event,
-  onClick,
-}: {
+interface AllDayChipProps {
   event: CalendarEvent;
   onClick?: (event: CalendarEvent) => void;
-}) {
+}
+
+function AllDayChipImpl({ event, onClick }: AllDayChipProps) {
   const tile = eventTileStyle(event.color);
   return (
     <button
@@ -26,6 +26,8 @@ function AllDayChip({
     </button>
   );
 }
+
+const AllDayChip = memo(AllDayChipImpl);
 
 export function AllDayLane({
   events,
