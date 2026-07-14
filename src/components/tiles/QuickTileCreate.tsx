@@ -26,8 +26,9 @@
 
 import {
   type AlertCircle,
-  BarChart3,
   Bell,
+  Circle,
+  MoreHorizontal,
   Calendar,
   CheckCircle2,
   ChevronLeft,
@@ -40,13 +41,16 @@ import {
   GitBranch,
   Heart,
   Inbox,
+  Info,
   Layers,
   Link2,
   ListChecks,
   MessageSquare,
   Palette,
+  Play,
   Plus,
   Repeat,
+  SlidersHorizontal,
   Settings2,
   Star,
   Tag,
@@ -70,13 +74,13 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
-import { FloatingScheduleEditor } from "@/components/tiles/editor/FloatingScheduleEditor";
 import { SchedulePanel, ScheduleRow } from "@/components/tiles/editor/SchedulePanel";
 import { makeClient } from "@/lib/api/v1/submit";
 import {
   closePlacementCommand,
   createManualPlacementCommand,
   createRecurringCommand,
+  setPlanCommand,
   updatePlacementSpanCommand,
   updateTileCommand,
 } from "@/lib/api/v1/tile-commands";
@@ -101,16 +105,16 @@ import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 const PRESET_COLORS = [
-  "#5e6ad2", // Tastile 藍
-  "#0d8a72", // 実行中 (青緑)
-  "#c08a2b", // 待機中 (琥珀)
-  "#c34141", // 割り込み (深紅)
-  "#3b82f6", // 青
-  "#10b981", // 緑
-  "#f59e0b", // 黄
-  "#ef4444", // 赤
-  "#8b5cf6", // 紫
-  "#6b7280", // グレー
+  "#5e6ad2",
+  "#0d8a72",
+  "#c08a2b",
+  "#c34141",
+  "#3b82f6",
+  "#10b981",
+  "#f59e0b",
+  "#ef4444",
+  "#8b5cf6",
+  "#6b7280",
 ];
 
 const AVAILABLE_ICONS = [
@@ -132,22 +136,15 @@ const AVAILABLE_ICONS = [
   { name: "Star", icon: Star },
 ];
 
-// ---------- kind / role / state option sets ----------
-
 const TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> = [
   { value: TileKind.PLACEMENT, label: "quickCreate.kindPlacement" },
   { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
   { value: PlanRole.EXECUTABLE, label: "quickCreate.roleExecutable" },
   { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
 ];
-
-// RECURRING_STATE_OPTIONS moved to components/tiles/editor/AutomationPanel.tsx (Plan #7 Phase 4).
-
-// ---------- helpers ----------
 
 function localDateTimeToIso(value: string): string | null {
   if (!value) return null;
@@ -160,13 +157,11 @@ function isoToLocalDateTime(iso: string | null | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
-  // datetime-local needs "YYYY-MM-DDTHH:MM" with no timezone suffix.
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function localDateToIsoDate(value: string): string {
-  // Date inputs give "YYYY-MM-DD"; emit as ISO date (start of day UTC).
   return value ? `${value}T00:00:00.000Z` : "";
 }
 
@@ -175,7 +170,6 @@ function isoToLocalDate(iso: string | null | undefined): string {
   return iso.slice(0, 10);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function _hexToEventColorName(hex: string | null | undefined): string | null {
   if (!hex) return null;
   const m = hex.toLowerCase().match(/^#([0-9a-f]{6})$/);
@@ -210,20 +204,7 @@ function formatDisplayDate(
 
   const weekdaysJa = ["日", "月", "火", "水", "木", "金", "土"];
   const weekdaysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthsEn = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const monthsEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
   const month = date.getMonth() + 1;
   const day = date.getDate();
@@ -241,15 +222,12 @@ function formatDisplayDate(
 }
 
 function normalizeHexColor(value: string): string {
-  // <input type="color"> requires a #rrggbb value; empty / partial strings
-  // fall back to black so the picker always has a usable state.
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000";
 }
 
-// Frame-generator option constants + defaultFrameGenerator() moved to
-// components/tiles/editor/AutomationPanel.tsx (Plan #7 Phase 4).
-
-// ---------- main component ----------
+// ============================================================
+// Main component
+// ============================================================
 
 export function QuickTileCreate() {
   const isOpen = useQuickCreateStore((s) => s.isOpen);
@@ -268,7 +246,6 @@ export function QuickTileCreate() {
   const windows = useQuickCreateStore((s) => s.windows);
   const recurring = useQuickCreateStore((s) => s.recurring);
   const recurrence = useQuickCreateStore((s) => s.recurrence);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _advanced = useQuickCreateStore((s) => s.advanced);
   const meta = useQuickCreateStore((s) => s.meta);
 
@@ -278,61 +255,22 @@ export function QuickTileCreate() {
   const [allDay, setAllDay] = useState(false);
   const [visualOpen, setVisualOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<
-    "base" | "time" | "recurring" | "references" | "completion" | "meta"
+    "base" | "intent" | "time" | "duration" | "recurring" | "references" | "completion" | "meta" | "behavior"
   >("base");
   const [recurringTab, setRecurringTab] = useState<"lifecycle" | "generator" | "window">(
     "lifecycle",
   );
-  const [tagSuggest, setTagSuggest] = useState(false);
-  const [projectSuggest, setProjectSuggest] = useState(false);
-  const [recentTags, setRecentTags] = useState<string[]>([]);
   const projects = useProjects();
   const actorSubjectId = useCurrentActorSubjectId();
-  // The workspace list lives in ProjectsSidePanel's own useProjects
-  // instance; refreshing here on mount lets the create panel pick up
-  // workspaces created in another tab / sibling component.
   useEffect(() => {
     void projects.refresh();
-    // `projects.refresh` is stable (useCallback([], []) inside useProjects).
-    // `projects` itself is recreated on every render, so listing it in deps
-    // would re-fire this effect every render and cause an infinite
-    // setState loop in `useProjects`. Pin to `refresh` only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects.refresh]);
-  const tagInputRef = useRef<HTMLInputElement | null>(null);
-  const [tagInputDraft, setTagInputDraft] = useState("");
-  const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [intentPickerOpen, setIntentPickerOpen] = useState(false);
+  const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
-  // Pull real-world tag candidates from existing tiles so the suggest
-  // popovers have something to show without seeding a local store.
-  useEffect(() => {
-    let alive = true;
-    // Pull recent tag candidates from the v1 labels endpoint
-    // (GET /v1/labels returns the deduped TIME_WINDOW annotation
-    // labels owned by the actor; v0 /api/events/occurrences is gone).
-    const owner = actorSubjectId ?? "";
-    fetch(`/api/proxy/v1/labels?owner_ids=${encodeURIComponent(owner)}&limit=200`, {
-      cache: "no-store",
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!alive || !data) return;
-        const list = Array.isArray(data) ? (data as string[]) : [];
-        setRecentTags(list.slice().sort());
-      })
-      .catch(() => {
-        /* ignore: suggestions are best-effort */
-      });
-    return () => {
-      alive = false;
-    };
-  }, [actorSubjectId]);
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
-  // Context-sensitive heading: pick from {mode, kind, role}. The store's
-  // `identity.kind` defaults to PLACEMENT for create flows, so we resolve
-  // RECURRING first (it's the most specific), then label-only placements,
-  // then regular placements (executable tasks).
+
   const headingLabel = (() => {
     const isEdit = mode === "edit";
     if (identity.kind === TileKind.RECURRING) {
@@ -343,15 +281,12 @@ export function QuickTileCreate() {
     }
     return t(isEdit ? "quickCreate.titleEditTask" : "quickCreate.titleCreateTask");
   })();
-  // Drive the open/close animation independently of the store so the panel
-  // can slide out before it is unmounted.
+
   const [mounted, setMounted] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (isOpen) {
-      // Opening: keep the panel mounted, cancel any pending close timer,
-      // and clear the closing flag so the slide-in animation can run.
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
@@ -359,7 +294,6 @@ export function QuickTileCreate() {
       setMounted(true);
       setIsClosing(false);
     } else if (mounted) {
-      // Closing: trigger the slide-out, then unmount after the animation.
       setIsClosing(true);
       closeTimerRef.current = setTimeout(() => {
         setMounted(false);
@@ -391,9 +325,21 @@ export function QuickTileCreate() {
     };
   }, [visualOpen]);
 
-  // externalId is null on SSR/first render to keep hydration stable.
-  // uuidv7() uses Date.now() which differs between server and client.
-  // Mint a fresh one after mount.
+  useEffect(() => {
+    if (activePanel === "base") return;
+    function handleSubPanelOutsideClick(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const subPanel = document.querySelector(`[data-subpanel="${activePanel}"]`);
+      if (subPanel && subPanel.contains(target)) return;
+      setActivePanel("base");
+    }
+    document.addEventListener("mousedown", handleSubPanelOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleSubPanelOutsideClick);
+    };
+  }, [activePanel]);
+
   useEffect(() => {
     if (identity.externalId === null) {
       setField("identity.externalId", uuidv7());
@@ -402,31 +348,7 @@ export function QuickTileCreate() {
 
   if (!mounted) return null;
 
-  // A new executable tile without an explicit span is a flexible schedule
-  // definition.  Keep legacy placement, recurring, and edit paths below
-  // untouched; this path publishes the aggregate directly and never creates
-  // a fabricated Placement.
-  if (
-    mode === "create" &&
-    identity.kind === TileKind.PLACEMENT &&
-    plan.role === PlanRole.EXECUTABLE &&
-    !time.span.start &&
-    !time.span.end
-  ) {
-    return (
-      <FloatingScheduleEditor
-        onClose={close}
-        onSaved={() => {
-          reset();
-          notifyEventsChanged();
-          close();
-        }}
-      />
-    );
-  }
-
-  // --- validity -------------------------------------------------------------
-
+  // --- validity ---
   const titleOk = identity.title.trim().length > 0;
   const kindIsRecurring = identity.kind === TileKind.RECURRING;
   const spanHasStart = !!time.span.start;
@@ -439,9 +361,7 @@ export function QuickTileCreate() {
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
   const canSubmit = titleOk && spanOrderValid && durationValid && !submitBlocked;
 
-  // --- completion root summary ----------------------------------------------
-  // Recursively count child nodes so the main panel can show a compact
-  // summary of the completion condition without opening the subpanel.
+  // --- completion root summary ---
   function countConditionChildren(node: ConditionNode | null): number {
     if (!node) return 0;
     if (node.kind === ConditionKind.TERM) return 1;
@@ -453,30 +373,21 @@ export function QuickTileCreate() {
   const completionRootLabel = (() => {
     if (!completionRootNode) return t("quickCreate.completionNoRoot");
     switch (completionRootNode.kind) {
-      case ConditionKind.ALL:
-        return t("quickCreate.completionAll");
-      case ConditionKind.ANY:
-        return t("quickCreate.completionAny");
-      case ConditionKind.NOT:
-        return t("quickCreate.completionNot");
-      case ConditionKind.TERM:
-        return t("quickCreate.completionTerm");
-      default:
-        return t("quickCreate.completionNoRoot");
+      case ConditionKind.ALL: return t("quickCreate.completionAll");
+      case ConditionKind.ANY: return t("quickCreate.completionAny");
+      case ConditionKind.NOT: return t("quickCreate.completionNot");
+      case ConditionKind.TERM: return t("quickCreate.completionTerm");
+      default: return t("quickCreate.completionNoRoot");
     }
   })();
-  const _completionRootCount = countConditionChildren(completionRootNode); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const _completionRootCount = countConditionChildren(completionRootNode);
 
-  // --- windows array helpers ------------------------------------------------
-  // setField doesn't traverse arrays, so each array mutation rewrites the
-  // whole array. Frames / FrameRules share the same shape; see FrameRule
-  // helpers below for the discriminated-union twist.
-
+  // --- windows array helpers ---
   function addWindow() {
     const newWindow: Window = {
       id: uuidv7(),
       owner: "self",
-      kind: 0, // CALENDAR
+      kind: 0,
       bounds: { start: "", end: "" },
       rules: [],
       referenceId: null,
@@ -485,47 +396,31 @@ export function QuickTileCreate() {
   }
 
   function removeWindow(index: number) {
-    setField(
-      "windows",
-      windows.filter((_, i) => i !== index),
-    );
+    setField("windows", windows.filter((_, i) => i !== index));
   }
 
   function updateWindow(index: number, updater: (current: Window) => Window) {
-    setField(
-      "windows",
-      windows.map((w, i) => (i === index ? updater(w) : w)),
-    );
+    setField("windows", windows.map((w, i) => (i === index ? updater(w) : w)));
   }
 
   function addFrameRule() {
     const newRule: FrameRule = {
       id: uuidv7(),
-      generator: {
-        kind: "step",
-        value: { step: 0, origin: null, bounds: null },
-      },
+      generator: { kind: "step", value: { step: 0, origin: null, bounds: null } },
       active: null,
     };
     setField("recurring.frameRules", [...recurring.frameRules, newRule]);
   }
 
   function removeFrameRule(index: number) {
-    setField(
-      "recurring.frameRules",
-      recurring.frameRules.filter((_, i) => i !== index),
-    );
+    setField("recurring.frameRules", recurring.frameRules.filter((_, i) => i !== index));
   }
 
   function updateFrameRule(index: number, updater: (current: FrameRule) => FrameRule) {
-    setField(
-      "recurring.frameRules",
-      recurring.frameRules.map((r, i) => (i === index ? updater(r) : r)),
-    );
+    setField("recurring.frameRules", recurring.frameRules.map((r, i) => (i === index ? updater(r) : r)));
   }
 
-  // --- submit ---------------------------------------------------------------
-
+  // --- submit ---
   async function handleSubmit() {
     setError(null);
     setInvalidField(null);
@@ -543,13 +438,6 @@ export function QuickTileCreate() {
     setSubmitting(true);
     try {
       if (mode === "edit" && editingId && identity.kind === TileKind.RECURRING) {
-        // Recurring tile edit: routed through the v1 UPDATE_TILE
-        // command.  This path is taken when the panel was opened by
-        // loadFromRecurringTile (e.g. clicking a placement sourced
-        // from a Recurring tile in the day view).  v1 spec §02 says
-        // the recurring tile is the source of truth, so the update
-        // hits POST /v1/tiles/{id}/update and propagates to every
-        // placement on the next /v1/timeline read.
         const tileBody = {
           idempotency_key: crypto.randomUUID(),
           payload: {
@@ -570,13 +458,18 @@ export function QuickTileCreate() {
           const message = detail?.error ?? `HTTP ${res.status}`;
           throw new Error(`${t("quickCreate.updateError")} (api:v1) ${message}`);
         }
+        const planRes = await setPlanCommand({
+          client: makeClient(),
+          tileId: editingId,
+          role: plan.role,
+          references: plan.references,
+          completion: plan.completion,
+          planning: plan.planning,
+          metrics: plan.metrics,
+          decisions: plan.decisions,
+        });
+        if (!planRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`);
       } else if (mode === "edit" && editingId) {
-        // v1 placement update:
-        //   - Update tile fields (title/desc/color/icon) via
-        //     POST /v1/tiles/{tileId}/update.
-        //   - Update the placement baseline span via
-        //     POST /v1/placements/{placementId}/changes (PLACEMENT layer,
-        //     group=5, part=0/1, kind=SET).
         const startIso = time.span.start;
         let endIso = time.span.end;
         if (allDay && startIso) {
@@ -585,13 +478,9 @@ export function QuickTileCreate() {
           dayStart.setHours(0, 0, 0, 0);
           const dayEnd = new Date(dayStart);
           dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) {
-            endIso = dayEnd.toISOString();
-          }
+          if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
         }
-        if (!startIso || !endIso) {
-          throw new Error(`${t("quickCreate.updateError")} (api:v1) start/end required`);
-        }
+        if (!startIso || !endIso) throw new Error(`${t("quickCreate.updateError")} (api:v1) start/end required`);
         const tileUpdateRes = await updateTileCommand({
           client: makeClient(),
           tileId: editingTileId ?? editingId,
@@ -600,14 +489,8 @@ export function QuickTileCreate() {
           color: identity.visual.color ?? null,
           icon: identity.visual.icon ?? null,
         });
-        if (!tileUpdateRes.ok) {
-          throw new Error(
-            `${t("quickCreate.updateError")} (api:v1 stage:tile) ${tileUpdateRes.error.message}`,
-          );
-        }
-        if (!actorSubjectId) {
-          throw new Error("actorSubjectId required");
-        }
+        if (!tileUpdateRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:tile) ${tileUpdateRes.error.message}`);
+        if (!actorSubjectId) throw new Error("actorSubjectId required");
         const spanRes = await updatePlacementSpanCommand({
           client: makeClient(),
           placementId: editingId,
@@ -616,15 +499,20 @@ export function QuickTileCreate() {
           ownerSubjectId: actorSubjectId,
           actorSubjectId: actorSubjectId,
         });
-        if (!spanRes.ok) {
-          throw new Error(
-            `${t("quickCreate.updateError")} (api:v1 stage:span) ${spanRes.error.message}`,
-          );
-        }
+        if (!spanRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:span) ${spanRes.error.message}`);
+        const editPlacementTileId = editingTileId ?? editingId;
+        const planRes = await setPlanCommand({
+          client: makeClient(),
+          tileId: editPlacementTileId,
+          role: plan.role,
+          references: plan.references,
+          completion: plan.completion,
+          planning: plan.planning,
+          metrics: plan.metrics,
+          decisions: plan.decisions,
+        });
+        if (!planRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`);
       } else if (identity.kind === TileKind.RECURRING) {
-        // v1 periodic-tile -> placement-tile complete processing.
-        // Bypasses the v7-shaped BFF: we POST /v1/tiles (kind=0),
-        // POST /v1/recurring/{id}/frame-rules, then POST .../materialize.
         const startIso = time.span.start;
         let endIso = time.span.end;
         if (allDay && startIso) {
@@ -633,22 +521,12 @@ export function QuickTileCreate() {
           dayStart.setHours(0, 0, 0, 0);
           const dayEnd = new Date(dayStart);
           dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) {
-            endIso = dayEnd.toISOString();
-          }
+          if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
         }
-        if (!startIso || !endIso) {
-          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
-        }
-        // Build a v1 RecurrencePattern + timeOfDay from the store's
-        // recurrence.window when the user picked a weekly recurrence.
-        // store weekday_mask bits are Sun-first (bit 0=Sun); v1 wants
-        // Mon-first (bit 0=Mon..6=Sun) so re-pack the bitmask before
-        // handing it to the command helper.
+        if (!startIso || !endIso) throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
         const windowMask = recurrence?.window?.weekday_mask ?? 0;
         const weeklyV1Mask = (() => {
           let v1 = 0;
-          // store bit i (i=0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat) -> v1 bit (i+6)%7
           for (let i = 0; i < 7; i++) {
             if ((windowMask & (1 << i)) !== 0) {
               const v1Bit = (i + 6) % 7;
@@ -668,11 +546,10 @@ export function QuickTileCreate() {
           };
           const start = toHHMM(w.start_offset_min);
           const end = toHHMM(w.end_offset_min);
-          if (start === end) return undefined; // all-day: use legacy path
+          if (start === end) return undefined;
           return { start, end };
         })();
-        const recurrencePattern =
-          weeklyV1Mask !== 0 ? ({ kind: "weekly", weekdays: weeklyV1Mask } as const) : undefined;
+        const recurrencePattern = weeklyV1Mask !== 0 ? ({ kind: "weekly", weekdays: weeklyV1Mask } as const) : undefined;
         const recurringRes = await createRecurringCommand({
           client: makeClient(),
           title: identity.title,
@@ -687,17 +564,19 @@ export function QuickTileCreate() {
           timeOfDay,
           occurrences: 14,
         });
-        if (!recurringRes.ok) {
-          throw new Error(
-            `${t("quickCreate.createError")} (api:v1 stage:${recurringRes.stage}) ${recurringRes.error.message}`,
-          );
-        }
+        if (!recurringRes.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:${recurringRes.stage}) ${recurringRes.error.message}`);
+        const planRes = await setPlanCommand({
+          client: makeClient(),
+          tileId: recurringRes.tileId,
+          role: plan.role,
+          references: plan.references,
+          completion: plan.completion,
+          planning: plan.planning,
+          metrics: plan.metrics,
+          decisions: plan.decisions,
+        });
+        if (!planRes.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`);
       } else {
-        // v1 manual placement create: createTile (kind=PLACEMENT),
-        // then createPlacement (Manual source).  The createManualPlacementCommand
-        // helper handles the auto plan_id lookup.  For all-day tiles we
-        // expand the span to a full day so the server stores inclusive
-        // start / exclusive end at day boundaries.
         const startIso = time.span.start;
         let endIso = time.span.end;
         if (allDay && startIso) {
@@ -706,13 +585,9 @@ export function QuickTileCreate() {
           dayStart.setHours(0, 0, 0, 0);
           const dayEnd = new Date(dayStart);
           dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) {
-            endIso = dayEnd.toISOString();
-          }
+          if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
         }
-        if (!startIso || !endIso) {
-          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
-        }
+        if (!startIso || !endIso) throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
         const res = await createManualPlacementCommand({
           client: makeClient(),
           title: identity.title,
@@ -723,11 +598,18 @@ export function QuickTileCreate() {
           end: endIso,
           planRole: plan.role,
         });
-        if (!res.ok) {
-          throw new Error(
-            `${t("quickCreate.createError")} (api:v1 stage:${res.stage}) ${res.error.message}`,
-          );
-        }
+        if (!res.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:${res.stage}) ${res.error.message}`);
+        const planRes = await setPlanCommand({
+          client: makeClient(),
+          tileId: res.tileId,
+          role: plan.role,
+          references: plan.references,
+          completion: plan.completion,
+          planning: plan.planning,
+          metrics: plan.metrics,
+          decisions: plan.decisions,
+        });
+        if (!planRes.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`);
       }
 
       reset();
@@ -745,17 +627,13 @@ export function QuickTileCreate() {
 
   async function handleDelete() {
     if (mode !== "edit" || !editingId) return;
-    const confirmed =
-      typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
+    const confirmed = typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
     if (!confirmed) return;
     setSubmitting(true);
     setError(null);
     try {
-      // v1 placement soft-close: POST /v1/placements/{id}/close.
       const res = await closePlacementCommand({ client: makeClient(), placementId: editingId });
-      if (!res.ok) {
-        throw new Error(`${t("quickCreate.deleteError")} (api:v1) ${res.error.message}`);
-      }
+      if (!res.ok) throw new Error(`${t("quickCreate.deleteError")} (api:v1) ${res.error.message}`);
       reset();
       setAllDay(false);
       setActivePanel("base");
@@ -769,14 +647,15 @@ export function QuickTileCreate() {
     }
   }
 
+  // --- layout classes ---
   const panelClass = isDesktop
     ? cn(
         "fixed inset-y-0 right-0 z-[56]",
-        "w-[32rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
+        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
         isClosing
           ? "translate-x-full opacity-0"
           : activePanel !== "base"
-            ? "-translate-x-6 brightness-[0.7]"
+            ? "-translate-x-6"
             : "translate-x-0",
         "[animation:slideInFromRight_0.22s_ease-out]",
       )
@@ -786,26 +665,33 @@ export function QuickTileCreate() {
         isClosing
           ? "translate-y-full opacity-0"
           : activePanel !== "base"
-            ? "translate-y-6 brightness-[0.7]"
+            ? "translate-y-6"
             : "translate-y-0",
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
 
-  const subPanelClass = (panel: "time" | "recurring" | "references" | "completion" | "meta") =>
+  const subPanelClass = (panel: "intent" | "time" | "duration" | "recurring" | "references" | "completion" | "meta" | "behavior") =>
     isDesktop
       ? cn(
           "fixed inset-y-0 right-0 z-[57]",
-          "w-[28rem] flex flex-col bg-surface-0 shadow-2xl border-l border-border transition-transform duration-300 ease-out",
+          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
+          "transition-transform duration-300 ease-out",
           activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
         )
       : cn(
           "fixed inset-x-0 bottom-0 z-[57]",
-          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-2xl transition-transform duration-300 ease-out",
+          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
           activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
         );
 
+  // --- condition count ---
+  const conditionCount = windows.length + recurring.frameRules.length;
+  const ownerId = meta.ownerSubjectId;
+  const currentProject = ownerId ? projects.workspaces.find((w) => w.id === ownerId) : null;
+
   return (
     <>
+      {/* backdrop */}
       <div
         data-testid="quick-create-backdrop"
         className={cn(
@@ -813,722 +699,550 @@ export function QuickTileCreate() {
           isClosing ? "opacity-0 pointer-events-none" : "opacity-100",
         )}
         onClick={() => {
-          if (activePanel !== "base") {
-            setActivePanel("base");
-          } else {
-            close();
-          }
+          if (activePanel !== "base") setActivePanel("base");
+          else close();
         }}
         aria-hidden
       />
+
+      {/* main panel */}
       <section className={panelClass} aria-label={headingLabel}>
-        <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-section">
-          <h2 className="text-base font-semibold text-foreground">{headingLabel}</h2>
-          <button
-            type="button"
-            onClick={close}
-            className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-surface-2 transition-colors"
-            aria-label={t("tiles.closePanel")}
-          >
-            <X className="h-4 w-4" />
-          </button>
+        {/* ─── composer head ─── */}
+        <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-foreground text-background">
+            <Layers className="h-4 w-4" aria-hidden />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="block truncate text-[15px] font-semibold leading-tight text-foreground">
+              {headingLabel}
+            </h2>
+            <p className="block truncate text-xs text-foreground-muted">
+              {mode === "edit" ? t("quickCreate.subtitleEdit") : t("quickCreate.subtitleCreate")}
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {/* schema view — placeholder */}}
+              className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
+            >
+              <GitBranch className="h-3.5 w-3.5" aria-hidden />
+              <span>{t("quickCreate.schemaTitle")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={close}
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-0 text-foreground-muted transition-colors hover:bg-surface-1 hover:text-foreground"
+              aria-label={t("tiles.closePanel")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <FormPanel>
-            {/* §1 Identity */}
-            <FormRow
-              icon={
-                <div className="relative" ref={popoverRef}>
-                  {/* テーマカラーで塗りつぶされた丸バッジと白抜きアイコンのボタン */}
+        {/* ─── composer body ─── */}
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="mx-auto max-w-[640px]">
+              {/* ── main card ── */}
+              <section className="py-2">
+                {/* title input */}
+                <input
+                  type="text"
+                  value={identity.title}
+                  onChange={(e) => {
+                    setField("identity.title", e.target.value);
+                    if (invalidField === "title") setInvalidField(null);
+                  }}
+                  placeholder={t("quickCreate.titlePlaceholder")}
+                  aria-label={t("quickCreate.titlePlaceholder")}
+                  aria-required="true"
+                  aria-invalid={invalidField === "title" ? "true" : "false"}
+                  aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
+                  className="w-full border-0 bg-transparent pb-3 text-2xl font-bold tracking-tight text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+                />
+
+                {/* organize row: project + tags + add button */}
+                <div className="flex flex-wrap items-center gap-1.5 pb-3" data-testid="quick-create-organize-row">
+                  {currentProject && (
+                    <button
+                      type="button"
+                      onClick={() => setActivePanel("meta")}
+                      className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-[#d9e5f3] bg-[#eef3fb] px-2.5 text-[11px] font-bold text-[#37689e] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <FolderOpen className="h-3 w-3" aria-hidden />
+                      <span>{currentProject.display_name}</span>
+                    </button>
+                  )}
+                  {meta.tags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => setActivePanel("meta")}
+                      className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-[#e1dbf5] bg-[#f2effc] px-2.5 text-[11px] font-bold text-[#6754a8] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <Tag className="h-3 w-3" aria-hidden />
+                      <span>#{tag}</span>
+                    </button>
+                  ))}
                   <button
                     type="button"
-                    onClick={() => setVisualOpen(!visualOpen)}
-                    aria-expanded={visualOpen}
-                    aria-label={t("quickCreate.visualTitle")}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-white transition-all hover:scale-105 active:scale-95"
-                    style={{
-                      backgroundColor: identity.visual.color || "#94a3b8",
-                    }}
+                    onClick={() => setActivePanel("meta")}
+                    className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-0 px-2.5 text-[11px] font-bold text-foreground-muted hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                   >
-                    {(() => {
-                      const found = AVAILABLE_ICONS.find((i) => i.name === identity.visual.icon);
-                      if (found) {
-                        const IconComp = found.icon;
-                        return <IconComp size={14} />;
-                      }
-                      return <FileText size={14} />;
-                    })()}
+                    <Plus className="h-3 w-3" aria-hidden />
+                    <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
                   </button>
+                </div>
 
-                  {visualOpen && (
-                    <div className="absolute top-full left-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface-0 p-3 shadow-xl [animation:slideInFromTop_0.15s_ease-out] space-y-4">
-                      {/* Color Picker Section */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-                          {t("quickCreate.visualColorLabel")}
+                {/* tile kind selector */}
+                <RowSegmented
+                  icon={CheckCircle2}
+                  data-testid="quick-create-tile-kind"
+                  options={TILE_KIND_OPTIONS.map((opt) => ({
+                    value: String(opt.value),
+                    label: t(opt.label),
+                  }))}
+                  value={String(identity.kind)}
+                  onChange={(value) => {
+                    const next = Number(value) as TileKindValue;
+                    setField("identity.kind", next);
+                  }}
+                />
+
+                {/* ─── essentials ─── */}
+                <div className="pt-2" data-testid="quick-create-essentials">
+                  <hr className="border-border mb-2" />
+                  <V4EssentialRow
+                    icon={Calendar}
+                    label={t("quickCreate.timeNavTitle")}
+                    chip={
+                      time.span.start || time.span.end ? (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                          {allDay
+                            ? formatDisplayDate(time.span.start, true, locale, t)
+                            : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : t("quickCreate.spanUnset")} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : t("quickCreate.spanUnset")}`}
                         </span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {PRESET_COLORS.map((c) => {
-                            const isSelected = identity.visual.color === c;
-                            return (
-                              <button
-                                key={c}
-                                type="button"
-                                onClick={() => setField("identity.visual.color", c)}
-                                className={cn(
-                                  "h-5 w-5 rounded-full border transition-transform hover:scale-110 focus:outline-hidden",
-                                  isSelected
-                                    ? "border-foreground scale-110 ring-2 ring-primary/20"
-                                    : "border-black/10",
-                                )}
-                                style={{ backgroundColor: c }}
-                                aria-label={c}
-                              />
-                            );
-                          })}
-                          {/* Custom Color Input */}
-                          <label className="relative h-5 w-5 rounded-full border border-black/10 flex items-center justify-center cursor-pointer hover:bg-surface-2 transition-colors">
-                            <Palette size={10} className="text-foreground-muted" />
-                            <input
-                              type="color"
-                              aria-label={t("quickCreate.visualColorLabel")}
-                              value={normalizeHexColor(identity.visual.color)}
-                              onChange={(e) => setField("identity.visual.color", e.target.value)}
-                              className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                            />
-                          </label>
-                        </div>
+                      ) : (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                          {t("tiles.notSet")}
+                        </span>
+                      )
+                    }
+                    clearable={Boolean(time.span.start || time.span.end)}
+                    onClear={() => {
+                      setField("time.span.start", "");
+                      setField("time.span.end", "");
+                    }}
+                    onClick={() => setActivePanel("time")}
+                  />
+                  <V4EssentialRow
+                    icon={Clock}
+                    label={t("quickCreate.duration")}
+                    chip={
+                      time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                            {time.durationMinMax.minMs !== null
+                              ? `${Math.round(time.durationMinMax.minMs / 60000)}分`
+                              : "—"}
+                            {time.durationMinMax.maxMs !== null
+                              ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)}分`
+                              : ""}
+                          </span>
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted">
+                            <Link2 size={10} aria-hidden="true" />
+                            {t("quickCreate.durationLinkedNote")}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                          {t("tiles.notSet")}
+                        </span>
+                      )
+                    }
+                    clearable={time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null}
+                    onClear={() => {
+                      setField("time.durationMinMax.minMs", null);
+                      setField("time.durationMinMax.maxMs", null);
+                    }}
+                    onClick={() => setActivePanel("duration")}
+                  />
+                  <V4EssentialRow
+                    icon={Repeat}
+                    label={t("quickCreate.repeatChip")}
+                    chip={
+                      recurring.frameRules.length > 0 ? (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2.5 text-xs font-bold text-foreground">
+                          {`${recurring.frameRules.length} ルール`}
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                          {t("tiles.notSet")}
+                        </span>
+                      )
+                    }
+                    onClick={() => setActivePanel("recurring")}
+                  />
+                </div>
+
+                {/* ─── tasks block ─── */}
+                <div className="pt-3">
+                  <hr className="border-border mb-3" />
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                    <ListChecks size={14} aria-hidden="true" />
+                    <span>{t("quickCreate.completionRequires")}</span>
+                    <button
+                      type="button"
+                      onClick={() => setActivePanel("completion")}
+                      aria-label={t("quickCreate.completionRequires")}
+                      className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <ChevronRight size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
+                    {plan.completion.tasks.length > 0
+                      ? `${plan.completion.tasks.length}${t("quickCreate.completionItemsHint")}`
+                      : t("quickCreate.completionAddHint")}
+                  </div>
+                  <div className="space-y-1.5">
+                    {plan.completion.tasks.map((tk, i) => (
+                      <div
+                        key={tk.id}
+                        data-testid="quick-create-task-row"
+                        className="flex min-h-[38px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-1.5 text-xs"
+                      >
+                        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
+                        <span
+                          className={
+                            tk.content?.title
+                              ? "min-w-0 flex-1 truncate text-foreground"
+                              : "min-w-0 flex-1 truncate text-foreground-muted"
+                          }
+                        >
+                          {tk.content?.title || t("quickCreate.taskUntitled")}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = plan.completion.tasks.slice();
+                            next.splice(i, 1);
+                            setField("plan.completion.tasks", next);
+                          }}
+                          aria-label={t("quickCreate.taskMoreAria")}
+                          title={t("quickCreate.taskMoreTitle")}
+                          className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <MoreHorizontal size={14} aria-hidden="true" />
+                        </button>
                       </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setField("plan.completion.tasks", [
+                          ...plan.completion.tasks,
+                          {
+                            id: `tk_${Math.random().toString(36).slice(2, 9)}`,
+                            content: { title: "", note: null },
+                            show: null,
+                            complete: {
+                              id: `c_${Math.random().toString(36).slice(2, 9)}`,
+                              kind: 0,
+                              children: [],
+                              term: null,
+                            },
+                            order: [],
+                          },
+                        ]);
+                      }}
+                      className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-surface-0 text-xs font-bold text-foreground-muted hover:bg-surface-1"
+                    >
+                      ＋ タスクを追加
+                    </button>
+                  </div>
+                </div>
 
-                      {/* Icon Selector Section */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted block">
-                          {t("quickCreate.visualIconLabel")}
-                        </span>
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {AVAILABLE_ICONS.map(({ name, icon: IconComp }) => {
-                            const isSelected = identity.visual.icon === name;
-                            return (
-                              <button
-                                key={name}
-                                type="button"
-                                onClick={() => setField("identity.visual.icon", name)}
-                                className={cn(
-                                  "flex h-8 w-8 items-center justify-center rounded-md border transition-all hover:bg-surface-2",
-                                  isSelected
-                                    ? "border-primary bg-primary/10 text-primary"
-                                    : "border-border/40 text-foreground-muted",
-                                )}
-                                title={name}
-                                aria-label={name}
+                {/* ─── behavior block ─── */}
+                <div className="mt-3 pt-3" data-testid="quick-create-behavior-block">
+                  <hr className="border-border mb-3" />
+                  <div className="mb-2 flex items-baseline justify-between">
+                    <strong className="text-xs font-semibold text-foreground">
+                      {t("quickCreate.behaviorTitle")}
+                    </strong>
+                    <small className="text-[10px] text-foreground-muted">
+                      {t("quickCreate.behaviorSub")}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActivePanel("meta")}
+                    aria-label={t("quickCreate.behaviorEdit")}
+                    className="flex w-full min-h-[48px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-2 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                      {plan.role === PlanRole.LABEL ? (
+                        <Tag className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <Play className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-semibold text-foreground">
+                        {plan.role === PlanRole.LABEL
+                          ? t("quickCreate.behaviorLabel")
+                          : t("quickCreate.behaviorExecutable")}
+                      </div>
+                      <div className="text-[10px] text-foreground-muted">
+                        {plan.role === PlanRole.LABEL
+                          ? t("quickCreate.behaviorLabelSub")
+                          : t("quickCreate.behaviorExecutableSub")}
+                      </div>
+                    </div>
+                    <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
+                      {t("quickCreate.behaviorEdit")}
+                    </span>
+                  </button>
+                </div>
+              </section>
+
+              {/* ── condition card ── */}
+              <section className="pt-3">
+                <hr className="border-border mb-3" />
+                <div className="flex items-center justify-between mb-2">
+                  <strong className="text-xs font-semibold text-foreground">条件の組み合わせ</strong>
+                  <span className="text-[10px] text-foreground-muted">
+                    {conditionCount}
+                  </span>
+                </div>
+                <div className="p-2.5" data-testid="quick-create-condition-tree">
+                  {windows.length + recurring.frameRules.length === 0 ? (
+                    <p
+                      data-testid="quick-create-condition-empty"
+                      className="rounded-md border border-dashed border-border bg-surface-0 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
+                    >
+                      {t("quickCreate.conditionEmpty")}
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {windows.length > 0 && (
+                        <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              ALL
+                            </span>
+                            <strong className="text-[11px] font-semibold text-foreground">
+                              {t("quickCreate.conditionGroupWindow")}
+                            </strong>
+                            <button
+                              type="button"
+                              onClick={() => setActivePanel("time")}
+                              className="ml-auto text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                            >
+                              編集
+                            </button>
+                          </div>
+                          <div className="space-y-1">
+                            {windows.map((w, i) => (
+                              <div
+                                key={w.id ?? i}
+                                className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
                               >
-                                <IconComp size={16} />
-                              </button>
-                            );
-                          })}
+                                <Clock size={11} className="shrink-0 text-primary" aria-hidden="true" />
+                                <span className="min-w-0 flex-1 truncate text-foreground">
+                                  {w.bounds.start && w.bounds.end
+                                    ? `${w.bounds.start} → ${w.bounds.end}`
+                                    : t("quickCreate.conditionWindowOpen")}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = windows.filter((_, idx) => idx !== i);
+                                    setField("windows", next);
+                                  }}
+                                  aria-label={t("quickCreate.removeItem")}
+                                  className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
+                                >
+                                  <MoreHorizontal size={12} aria-hidden="true" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
+                      )}
+
+                      {recurring.frameRules.length > 0 && (
+                        <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                          <div className="mb-1 flex items-center gap-2">
+                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                              ALL
+                            </span>
+                            <strong className="text-[11px] font-semibold text-foreground">
+                              {t("quickCreate.conditionGroupFrame")}
+                            </strong>
+                            <button
+                              type="button"
+                              onClick={() => setActivePanel("recurring")}
+                              className="ml-auto text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                            >
+                              編集
+                            </button>
+                          </div>
+                          <div className="space-y-1">
+                            {recurring.frameRules.map((r, i) => (
+                              <div
+                                key={r.id ?? i}
+                                className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                              >
+                                <Repeat size={11} className="shrink-0 text-primary" aria-hidden="true" />
+                                <span className="min-w-0 flex-1 truncate text-foreground">
+                                  {r.generator?.kind === "step"
+                                    ? t("quickCreate.conditionFrameStep")
+                                    : t("quickCreate.conditionFrameOpen")}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = recurring.frameRules.filter((_, idx) => idx !== i);
+                                    setField("recurring.frameRules", next);
+                                  }}
+                                  aria-label={t("quickCreate.removeItem")}
+                                  className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
+                                >
+                                  <MoreHorizontal size={12} aria-hidden="true" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              }
-            >
-              <input
-                type="text"
-                value={identity.title}
-                onChange={(e) => {
-                  setField("identity.title", e.target.value);
-                  if (invalidField === "title") setInvalidField(null);
-                }}
-                placeholder={t("quickCreate.titlePlaceholder")}
-                aria-label={t("quickCreate.titlePlaceholder")}
-                aria-required="true"
-                aria-invalid={invalidField === "title" ? "true" : "false"}
-                aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
-                className="w-full bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-              />
-            </FormRow>
-
-            <FormRow icon={null}>
-              <Textarea
-                value={identity.description ?? ""}
-                onChange={(e) =>
-                  setField("identity.description", e.target.value.trim() ? e.target.value : null)
-                }
-                placeholder={t("quickCreate.descriptionPlaceholder")}
-                aria-label={t("quickCreate.descriptionPlaceholder")}
-                rows={2}
-                className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
-              />
-            </FormRow>
-
-            <FormDivider />
-
-            <RowSegmented
-              icon={CheckCircle2}
-              data-testid="quick-create-tile-kind"
-              options={TILE_KIND_OPTIONS.map((opt) => ({
-                value: String(opt.value),
-                label: t(opt.label),
-              }))}
-              value={String(identity.kind)}
-              onChange={(value) => {
-                const next = Number(value) as TileKindValue;
-                setField("identity.kind", next);
-              }}
-            />
-
-            <button
-              type="button"
-              onClick={() => setActivePanel("time")}
-              aria-label={t("quickCreate.timeNavTitle")}
-              data-testid="quick-create-time-open"
-              className="flex w-full items-center gap-2 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Clock size={14} aria-hidden="true" />
-              <span className="flex-1 text-left">{t("quickCreate.timeNavTitle")}</span>
-              <ChevronRight size={14} aria-hidden="true" />
-            </button>
-            <RowToggle
-              icon={Calendar}
-              placeholder={t("quickCreate.allDay")}
-              checked={allDay}
-              onChange={setAllDay}
-            />
-            <ScheduleRow
-              allDay={allDay}
-              spanStart={time.span.start}
-              spanEnd={time.span.end}
-              onStartChange={(value) => setField("time.span.start", value)}
-              onEndChange={(value) => setField("time.span.end", value)}
-              locale={locale}
-              t={t}
-            />
-            {!allDay ? (
-              <DurationRow
-                minMs={time.durationMinMax.minMs}
-                onChange={(value) => setField("time.durationMinMax.minMs", value)}
-                t={t}
-              />
-            ) : null}
-
-            {kindIsRecurring ? (
-              <>
-                <FormDivider />
-                <RowSubPanel
-                  icon={Repeat}
-                  name={t("quickCreate.recurrenceNavTitle")}
-                  value={recurring.frameRules.length > 0 ? String(recurring.frameRules.length) : ""}
-                  onClick={() => setActivePanel("recurring")}
-                />
-              </>
-            ) : null}
-
-            <FormDivider />
-
-            <RowSubPanel
-              icon={Link2}
-              name={t("quickCreate.referencesNavTitle")}
-              value={plan.references.length > 0 ? String(plan.references.length) : ""}
-              onClick={() => setActivePanel("references")}
-            />
-            <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-              {plan.references[0]
-                ? t("quickCreate.referenceKindLabel") +
-                  ": " +
-                  t(
-                    "quickCreate.referenceKind" +
-                      (["moment", "calendar", "frame", "tag", "project", "fact"][
-                        plan.references[0].target.kind
-                      ] ?? "moment"),
-                  )
-                : t("quickCreate.referenceEmptyHint")}
-            </div>
-
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted pt-2">
-              <ListChecks size={14} aria-hidden="true" />
-              <span>{t("quickCreate.completionNavTitle")}</span>
-              <button
-                type="button"
-                onClick={() => setActivePanel("completion")}
-                aria-label={t("quickCreate.completionNavTitle")}
-                className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-              >
-                <ChevronRight size={14} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-              {t("quickCreate.completionRootKindLabel") +
-                ": " +
-                completionRootLabel +
-                " " +
-                t("quickCreate.rootWithChildrenHint")}
-            </div>
-            <div className="space-y-2">
-              {plan.completion.timeRequirements.length === 0 &&
-              plan.completion.tasks.length === 0 ? (
-                <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-              ) : null}
-              {plan.completion.timeRequirements.map((tr, i) => (
-                <div
-                  key={tr.id}
-                  className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] text-foreground-muted">
-                      timeRequirement
-                    </span>
-                    <Button
-                      type="button"
-                      size="icon-xs"
-                      variant="ghost"
-                      icon={<Trash2 size={12} aria-hidden="true" />}
-                      onClick={() => {
-                        const next = plan.completion.timeRequirements.slice();
-                        next.splice(i, 1);
-                        setField("plan.completion.timeRequirements", next);
-                      }}
-                      aria-label={t("quickCreate.removeItem")}
-                      className="text-foreground-muted hover:text-danger"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="space-y-1">
-                      <span className="block text-foreground-muted">scope</span>
-                      <input
-                        type="number"
-                        value={tr.observation.scope}
-                        onChange={(e) => {
-                          const next = plan.completion.timeRequirements.slice();
-                          next[i] = {
-                            ...tr,
-                            observation: {
-                              ...tr.observation,
-                              scope: Number(e.target.value) as never,
-                            },
-                          };
-                          setField("plan.completion.timeRequirements", next);
-                        }}
-                        className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                    </label>
-                    <label className="space-y-1">
-                      <span className="block text-foreground-muted">min</span>
-                      <input
-                        type="number"
-                        value={
-                          tr.required.minMs === null
-                            ? ""
-                            : Math.round((tr.required.minMs ?? 0) / 60000)
-                        }
-                        onChange={(e) => {
-                          const next = plan.completion.timeRequirements.slice();
-                          const v = e.target.value;
-                          next[i] = {
-                            ...tr,
-                            required: {
-                              ...tr.required,
-                              minMs: v === "" ? null : Number(v) * 60000,
-                            },
-                          };
-                          setField("plan.completion.timeRequirements", next);
-                        }}
-                        className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                    </label>
-                  </div>
-                </div>
-              ))}
-              {plan.completion.tasks.map((tk, i) => (
-                <div
-                  key={tk.id}
-                  className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-mono text-[10px] text-foreground-muted">task</span>
-                    <Button
-                      type="button"
-                      size="icon-xs"
-                      variant="ghost"
-                      icon={<Trash2 size={12} aria-hidden="true" />}
-                      onClick={() => {
-                        const next = plan.completion.tasks.slice();
-                        next.splice(i, 1);
-                        setField("plan.completion.tasks", next);
-                      }}
-                      aria-label={t("quickCreate.removeItem")}
-                      className="text-foreground-muted hover:text-danger"
-                    />
-                  </div>
-                  <label className="block space-y-1">
-                    <span className="block text-foreground-muted">title</span>
-                    <input
-                      type="text"
-                      value={tk.content?.title ?? ""}
-                      onChange={(e) => {
-                        const next = plan.completion.tasks.slice();
-                        next[i] = {
-                          ...tk,
-                          content: { title: e.target.value, note: tk.content?.note ?? null },
-                        };
-                        setField("plan.completion.tasks", next);
-                      }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-left outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </label>
-                </div>
-              ))}
-              <div className="flex flex-wrap gap-1.5">
-                <Button
+                <button
                   type="button"
-                  size="small"
-                  variant="default"
-                  rounded
-                  iconLeft={<Plus size={12} aria-hidden="true" />}
-                  onClick={() => {
-                    setField("plan.completion.timeRequirements", [
-                      ...plan.completion.timeRequirements,
-                      {
-                        id: `tr_${Math.random().toString(36).slice(2, 9)}`,
-                        observation: { scope: 0 as never },
-                        required: { minMs: 60 * 60000 },
-                      },
-                    ]);
-                  }}
+                  onClick={() => setActivePanel("intent")}
+                  data-testid="quick-create-condition-add"
+                  className="mx-2.5 mb-2.5 flex h-10 w-[calc(100%-20px)] items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-0 text-[11px] font-bold text-foreground-muted hover:bg-surface-1"
                 >
-                  {t("quickCreate.timeRequirement")}
-                </Button>
-                <Button
-                  type="button"
-                  size="small"
-                  variant="default"
-                  rounded
-                  iconLeft={<Plus size={12} aria-hidden="true" />}
-                  onClick={() => {
-                    setField("plan.completion.tasks", [
-                      ...plan.completion.tasks,
-                      {
-                        id: `tk_${Math.random().toString(36).slice(2, 9)}`,
-                        content: { title: "", note: null },
-                        show: null,
-                        complete: {
-                          id: `c_${Math.random().toString(36).slice(2, 9)}`,
-                          kind: 0,
-                          children: [],
-                          term: null,
-                        },
-                        order: [],
-                      },
-                    ]);
-                  }}
-                >
-                  {t("quickCreate.task")}
-                </Button>
-              </div>
-            </div>
+                  <><Plus size={14} aria-hidden="true" />{t("quickCreate.addConditionOrGroup")}</>
+                </button>
+              </section>
 
-            <RowSubPanel
-              icon={Layers}
-              name={t("quickCreate.planningNavTitle")}
-              value=""
-              emptyLabel={t("quickCreate.phaseNotReady")}
-              disabled
-            />
-
-            <RowSubPanel
-              icon={BarChart3}
-              name={t("quickCreate.metricsNavTitle")}
-              value=""
-              emptyLabel={t("quickCreate.phaseNotReady")}
-              disabled
-            />
-
-            <RowSubPanel
-              icon={GitBranch}
-              name={t("quickCreate.decisionsNavTitle")}
-              value=""
-              emptyLabel={t("quickCreate.phaseNotReady")}
-              disabled
-            />
-
-            {kindIsRecurring ? (
-              <RowSubPanel
-                icon={Settings2}
-                name={t("quickCreate.recurringRulesNavTitle")}
-                value=""
-                emptyLabel={t("quickCreate.phaseNotReady")}
-                disabled
-              />
-            ) : null}
-
-            <FormDivider />
-
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-              <FolderOpen size={14} aria-hidden="true" />
-              <span>{t("quickCreate.metaNavTitle")}</span>
-              <button
-                type="button"
-                onClick={() => setActivePanel("meta")}
-                aria-label={t("quickCreate.metaExpandAria")}
-                className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              {/* simple note */}
+              <p
+                className="flex items-start gap-1.5 text-[10px] text-foreground-muted"
+                data-testid="quick-create-simple-note"
               >
-                <ChevronRight size={14} aria-hidden="true" />
-              </button>
-            </div>
-            <div
-              className="relative"
-              data-testid="project-suggest-row"
-              data-open={String(projectSuggest)}
-            >
-              <FormRow icon={null}>
-                <Dropdown
-                  value={meta.ownerSubjectId ?? ""}
-                  onChange={(v) => {
-                    setField("meta.ownerSubjectId", v ? v : null);
-                  }}
-                  onOpenChange={(open) => {
-                    if (open) setProjectSuggest(true);
-                    else setTimeout(() => setProjectSuggest(false), 150);
-                  }}
-                  size="small"
-                  aria-label={t("quickCreate.projectPlaceholder")}
-                  data-testid="owner-select"
-                  items={[
-                    { value: "", label: "Personal (default)" },
-                    ...projects.workspaces.map((w) => ({
-                      value: w.id,
-                      label: w.display_name,
-                    })),
-                  ]}
-                  className="w-full"
-                />
-              </FormRow>
-            </div>
-            <div className="relative" data-testid="tag-suggest-row" data-open={String(tagSuggest)}>
-              <FormRow icon={null}>
-                <div className="flex w-full flex-wrap items-center gap-1.5">
-                  {meta.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                    >
-                      <span>#{tag}</span>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setField(
-                            "meta.tags",
-                            meta.tags.filter((x) => x !== tag),
-                          )
-                        }
-                        aria-label={t("quickCreate.removeItem")}
-                        className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                      >
-                        <X size={10} aria-hidden="true" />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    ref={tagInputRef}
-                    type="text"
-                    placeholder={t("quickCreate.tagsPlaceholder")}
-                    aria-label={t("quickCreate.tagsPlaceholder")}
-                    className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-                    onFocus={(e) => {
-                      setTagInputDraft(e.currentTarget.value);
-                      setTagSuggest(true);
-                    }}
-                    onBlur={() => setTimeout(() => setTagSuggest(false), 150)}
-                    onChange={(e) => {
-                      setTagInputDraft(e.target.value);
-                      setTagSuggest(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === ",") {
-                        e.preventDefault();
-                        const v = (e.currentTarget.value || "").trim();
-                        if (!v) return;
-                        if (meta.tags.includes(v)) return;
-                        setField("meta.tags", [...meta.tags, v]);
-                        e.currentTarget.value = "";
-                        setTagInputDraft("");
-                      }
-                    }}
-                  />
-                </div>
-              </FormRow>
-              {tagSuggest
-                ? (() => {
-                    const draft = tagInputDraft.trim();
-                    const source = recentTags;
-                    const known = source.filter(
-                      (tg) =>
-                        !meta.tags.includes(tg) &&
-                        (!draft || tg.toLowerCase().includes(draft.toLowerCase())),
-                    );
-                    if (known.length === 0 && !draft) {
-                      return (
-                        <ul className="absolute left-0 right-0 top-full z-20 mt-1 rounded-md border border-border bg-surface-1 py-1 shadow-lg">
-                          <li>
-                            <button
-                              type="button"
-                              onMouseDown={(ev) => {
-                                ev.preventDefault();
-                                if (tagInputRef.current) {
-                                  tagInputRef.current.value = "";
-                                }
-                                setTagInputDraft("");
-                                setTagSuggest(false);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
-                            >
-                              <Plus size={12} aria-hidden="true" />
-                              <span className="truncate">
-                                {t("quickCreate.tagCreateHint") ?? "タグ名を入力して Enter"}
-                              </span>
-                            </button>
-                          </li>
-                        </ul>
-                      );
-                    }
-                    return (
-                      <ul className="absolute left-0 right-0 top-full z-20 mt-1 max-h-40 overflow-y-auto rounded-md border border-border bg-surface-1 py-1 shadow-lg">
-                        {known.slice(0, 8).map((tag) => (
-                          <li key={tag}>
-                            <button
-                              type="button"
-                              onMouseDown={(ev) => {
-                                ev.preventDefault();
-                                setField("meta.tags", [...meta.tags, tag]);
-                                if (tagInputRef.current) {
-                                  tagInputRef.current.value = "";
-                                }
-                                setTagInputDraft("");
-                                setTagSuggest(false);
-                              }}
-                              className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-surface-2 focus:outline-hidden"
-                            >
-                              <Tag size={12} aria-hidden="true" />
-                              <span className="truncate">#{tag}</span>
-                            </button>
-                          </li>
-                        ))}
-                        {draft ? (
-                          <li>
-                            <button
-                              type="button"
-                              onMouseDown={(ev) => {
-                                ev.preventDefault();
-                                setField("meta.tags", [...meta.tags, draft]);
-                                if (tagInputRef.current) {
-                                  tagInputRef.current.value = "";
-                                }
-                                setTagInputDraft("");
-                                setTagSuggest(false);
-                              }}
-                              className="flex w-full items-center gap-2 border-t border-border px-3 py-1.5 text-sm text-foreground-muted hover:bg-surface-2 focus:outline-hidden"
-                            >
-                              <Plus size={12} aria-hidden="true" />
-                              <span className="truncate">#{draft}</span>
-                            </button>
-                          </li>
-                        ) : null}
-                      </ul>
-                    );
-                  })()
-                : null}
-            </div>
-          </FormPanel>
+                <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+                <span>{t("quickCreate.simpleNote")}</span>
+              </p>
+          </div>
         </div>
 
-        <div className="border-t border-border bg-surface-0 p-section shrink-0 space-y-3">
-          <div data-testid="quick-create-plan-role">
-            <RowToggle
-              icon={Tag}
-              placeholder={t("quickCreate.labelOnly")}
-              checked={plan.role === PlanRole.LABEL}
-              onChange={(checked) =>
-                setField("plan.role", checked ? PlanRole.LABEL : PlanRole.EXECUTABLE)
-              }
-            />
+        {/* ─── composer foot ─── */}
+        <div className="flex h-[62px] shrink-0 items-center justify-between border-t border-border bg-surface-0 px-4">
+          <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
+            <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
+            <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
           </div>
-          {mode === "edit" ? (
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="danger"
-                size="large"
-                data-testid="quick-create-delete"
-                onClick={handleDelete}
-                disabled={submitting}
-                className="h-10"
-                iconLeft={<Trash2 size={14} aria-hidden="true" />}
-              >
-                {t("quickCreate.delete")}
-              </Button>
-              <Button
-                type="button"
-                variant="primary"
-                size="large"
-                block
-                data-testid="quick-create-submit"
-                onClick={handleSubmit}
-                loading={submitting}
-                disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-                className="h-10"
-              >
-                {submitting ? t("quickCreate.saving") : t("quickCreate.save")}
-              </Button>
-            </div>
-          ) : (
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="h-[37px] rounded-lg border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
+            >
+              下書き保存
+            </button>
             <Button
               type="button"
               variant="primary"
               size="large"
-              block
               data-testid="quick-create-submit"
               onClick={handleSubmit}
               loading={submitting}
               disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-              className="h-10"
+              className="h-10 bg-foreground text-background hover:bg-foreground/90"
             >
               {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
             </Button>
-          )}
-          {error ? <p className="mt-2 text-center text-xs text-danger">{error}</p> : null}
-          {loadError ? (
-            <p
-              role="alert"
-              data-testid="quick-create-load-error"
-              className="mt-2 text-center text-xs text-warning"
-            >
-              {loadError}
-            </p>
-          ) : null}
+          </div>
+        </div>
+        {error ? <p className="px-4 pb-2 text-center text-xs text-danger">{error}</p> : null}
+        {loadError ? (
+          <p role="alert" data-testid="quick-create-load-error" className="px-4 pb-2 text-center text-xs text-warning">
+            {loadError}
+          </p>
+        ) : null}
+      </section>
+
+      {/* ─── intent sub-panel ─── */}
+      <section data-subpanel="intent" className={subPanelClass("intent")} aria-hidden={activePanel !== "intent"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.addConditionOrGroup")}</strong>
+            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.intentSubTitle")}</small>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          <p className="mb-3 text-[11px] text-foreground-muted">{t("quickCreate.intentDescription")}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={() => setActivePanel("time")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <Calendar size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentNarrowTime")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentNarrowTimeSub")}</small>
+            </button>
+            <button type="button" onClick={() => setActivePanel("references")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <Link2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentReferenceTile")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentReferenceTileSub")}</small>
+            </button>
+            <button type="button" onClick={() => setActivePanel("recurring")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <Layers size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentNestStructure")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentNestStructureSub")}</small>
+            </button>
+            <button type="button" onClick={() => setActivePanel("meta")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <SlidersHorizontal size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentAdjustPlacement")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentAdjustPlacementSub")}</small>
+            </button>
+            <button type="button" onClick={() => setActivePanel("completion")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <ListChecks size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentCombineConditions")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentCombineConditionsSub")}</small>
+            </button>
+            <button type="button" onClick={() => setActivePanel("completion")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <CheckCircle2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentAddCompletion")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentAddCompletionSub")}</small>
+            </button>
+            <button type="button" onClick={() => setActivePanel("meta")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+              <Play size={16} className="mb-1.5 text-primary" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentDefineOnSuccess")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentDefineOnSuccessSub")}</small>
+            </button>
+            <button type="button" disabled className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60">
+              <Type size={16} className="mb-1.5" aria-hidden="true" />
+              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentTextCondition")}</strong>
+              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentTextConditionSub")}</small>
+            </button>
+          </div>
         </div>
       </section>
 
-      <section className={subPanelClass("time")} aria-hidden={activePanel !== "time"}>
-        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.back")}
-            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
+      {/* ─── time sub-panel ─── */}
+      <section data-subpanel="time" className={subPanelClass("time")} aria-hidden={activePanel !== "time"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
             <ChevronLeft size={16} aria-hidden="true" />
-            <span>{t("quickCreate.back")}</span>
           </button>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.cancel")}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.timeNavTitle")}</strong>
+            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.timeNavSub")}</small>
+          </div>
         </div>
         <FormPanel>
           <SchedulePanel
@@ -1546,26 +1260,87 @@ export function QuickTileCreate() {
         </FormPanel>
       </section>
 
-      <section className={subPanelClass("recurring")} aria-hidden={activePanel !== "recurring"}>
-        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.back")}
-            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
+      {/* ─── duration sub-panel ─── */}
+      <section data-subpanel="duration" className={subPanelClass("duration")} aria-hidden={activePanel !== "duration"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
             <ChevronLeft size={16} aria-hidden="true" />
-            <span>{t("quickCreate.back")}</span>
           </button>
-          <div className="flex-1" />
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.durationTitle")}</strong>
+            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.durationSub")}</small>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
           <button
             type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.cancel")}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={() => { setField("time.durationMinMax.minMs", null); setField("time.durationMinMax.maxMs", null); }}
+            className={cn(
+              "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
+              time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
+                ? "border-primary"
+                : "border-border hover:bg-surface-1"
+            )}
           >
-            <X size={16} aria-hidden="true" />
+            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
+            <div>
+              <strong className="block text-sm font-semibold">{t("quickCreate.durationNoneTitle")}</strong>
+              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.durationNoneSub")}</small>
+            </div>
           </button>
+
+          <div className="mb-4">
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">{t("quickCreate.durationInputLabel")}</div>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => { const cur = time.durationMinMax.minMs ?? 90 * 60000; const next = Math.max(10 * 60000, cur - 10 * 60000); setField("time.durationMinMax.minMs", next); setField("time.durationMinMax.maxMs", next); }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-0 text-foreground-muted hover:bg-surface-1">
+                −
+              </button>
+              <div className="flex-1 text-center text-lg font-semibold tabular-nums">
+                {time.durationMinMax.minMs !== null ? Math.round(time.durationMinMax.minMs / 60000) : 90}
+              </div>
+              <button type="button" onClick={() => { const cur = time.durationMinMax.minMs ?? 90 * 60000; const next = cur + 10 * 60000; setField("time.durationMinMax.minMs", next); setField("time.durationMinMax.maxMs", next); }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-0 text-foreground-muted hover:bg-surface-1">
+                ＋
+              </button>
+              <div className="flex rounded-lg border border-border bg-surface-0 p-0.5">
+                <span className="rounded-md bg-primary px-3 py-1 text-xs font-bold text-primary-fg">{t("quickCreate.minutesUnit")}</span>
+                <span className="rounded-md px-3 py-1 text-xs text-foreground-muted">{t("quickCreate.hoursUnit")}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-surface-0 p-3">
+            <div>
+              <strong className="block text-xs font-semibold">{t("quickCreate.durationUseCompletionTitle")}</strong>
+              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.durationUseCompletionSub")}</small>
+            </div>
+            <button type="button" className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors">
+              <div className="h-5 w-5 translate-x-5 rounded-full bg-white transition-transform" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button type="button" size="small" variant="ghost" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.cancel")}
+            </Button>
+            <div className="flex-1" />
+            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.metaApply")}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── recurring sub-panel ─── */}
+      <section data-subpanel="recurring" className={subPanelClass("recurring")} aria-hidden={activePanel !== "recurring"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.repeatChip")}</strong>
+          </div>
         </div>
         <AutomationPanel
           kindIsRecurring={kindIsRecurring}
@@ -1582,286 +1357,314 @@ export function QuickTileCreate() {
         />
       </section>
 
-      <section className={subPanelClass("references")} aria-hidden={activePanel !== "references"}>
-        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.back")}
-            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
+      {/* ─── references sub-panel ─── */}
+      <section data-subpanel="references" className={subPanelClass("references")} aria-hidden={activePanel !== "references"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
             <ChevronLeft size={16} aria-hidden="true" />
-            <span>{t("quickCreate.back")}</span>
           </button>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.cancel")}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.referencesNavTitle")}</strong>
+          </div>
         </div>
         <FormPanel>
           <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
-          <div className="space-y-2">
-            {plan.references.length === 0 ? (
-              <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-            ) : null}
-            {plan.references.map((ref, i) => (
-              <div key={i} className="space-y-1 rounded-md border border-border bg-surface-0 p-2">
-                <label className="block space-y-1 text-xs">
-                  <span className="block text-foreground-muted">id</span>
-                  <input
-                    type="text"
-                    value={ref.id}
-                    onChange={(e) => {
-                      const next = plan.references.slice();
-                      next[i] = { ...ref, id: e.target.value };
-                      setField("plan.references", next);
-                    }}
-                    className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </label>
-                <label className="block space-y-1 text-xs">
-                  <span className="block text-foreground-muted">target.kind</span>
-                  <input
-                    type="number"
-                    value={ref.target.kind}
-                    onChange={(e) => {
-                      const next = plan.references.slice();
-                      next[i] = { ...ref, target: { ...ref.target, kind: Number(e.target.value) } };
-                      setField("plan.references", next);
-                    }}
-                    className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                </label>
-                <Button
-                  type="button"
-                  size="icon-xs"
-                  variant="ghost"
-                  icon={<Trash2 size={14} aria-hidden="true" />}
-                  onClick={() => {
-                    const next = plan.references.slice();
-                    next.splice(i, 1);
-                    setField("plan.references", next);
-                  }}
-                  aria-label={t("quickCreate.removeItem")}
-                  className="text-foreground-muted hover:text-danger"
-                />
-              </div>
-            ))}
-            <Button
-              type="button"
-              size="small"
-              variant="default"
-              rounded
-              iconLeft={<Plus size={12} aria-hidden="true" />}
-              onClick={() => {
-                setField("plan.references", [
-                  ...plan.references,
-                  {
-                    id: "",
-                    target: { kind: 0, contextKind: null, referenceId: null, conditionId: null },
-                    pick: { kind: 0, momentId: null },
-                  },
-                ]);
-              }}
-            >
+          {plan.references.length === 0 ? (
+            <p className="text-xs text-foreground-muted">{t("quickCreate.referenceEmptyListHint")}</p>
+          ) : null}
+          <div className="flex flex-col gap-4">
+            {plan.references.map((ref, i) => {
+              const refIdDisplay = ref.id || `ref_${i + 1}`;
+              const hasTarget = ref.target.referenceId !== null && ref.target.referenceId !== "";
+              const intervalValue = (() => {
+                const m = ref.pick.momentId ? Number(ref.pick.momentId) : 10;
+                return Number.isFinite(m) && m > 0 ? m : 10;
+              })();
+              return (
+                <div key={`${refIdDisplay}-${i}`} className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3" data-testid={`reference-card-${i}`}>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                      {t("quickCreate.referenceTargetLabel")}
+                    </div>
+                    <div className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3", hasTarget ? "border-primary" : "border-border")} data-testid={`reference-target-card-${i}`}>
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                        <Calendar size={18} aria-hidden="true" />
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {hasTarget ? ref.target.referenceId : t("quickCreate.referenceTargetEmpty")}
+                        </span>
+                        <span className="truncate text-xs text-foreground-muted">
+                          {t("quickCreate.referenceTargetBadge")}
+                        </span>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      aria-label={t("quickCreate.referenceIdPlaceholder")}
+                      placeholder={t("quickCreate.referenceIdPlaceholder")}
+                      value={ref.target.referenceId ?? ""}
+                      onChange={(e) => {
+                        const next = plan.references.slice();
+                        next[i] = { ...ref, target: { ...ref.target, referenceId: e.target.value || null } };
+                        setField("plan.references", next);
+                      }}
+                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                      {t("quickCreate.referenceRelationLabel")}
+                    </div>
+                    <div role="radiogroup" aria-label={t("quickCreate.referenceRelationLabel")} className="flex w-full gap-1" data-testid={`reference-relation-tabs-${i}`}>
+                      {[
+                        { kind: 4, key: "referenceRelationAfter" },
+                        { kind: 3, key: "referenceRelationBefore" },
+                        { kind: 1, key: "referenceRelationFirst" },
+                        { kind: 2, key: "referenceRelationLast" },
+                        { kind: 0, key: "referenceRelationAll" },
+                      ].map((opt) => {
+                        const active = ref.pick.kind === opt.kind;
+                        return (
+                          <button
+                            key={opt.kind}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            onClick={() => {
+                              const next = plan.references.slice();
+                              next[i] = { ...ref, pick: { ...ref.pick, kind: opt.kind } };
+                              setField("plan.references", next);
+                            }}
+                            className={cn(
+                              "min-w-0 flex-1 truncate rounded-full border px-3 py-1.5 text-sm transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                              active
+                                ? "bg-primary text-primary-fg border-primary shadow-sm"
+                                : "bg-surface-1 text-foreground-muted border-border hover:text-foreground",
+                            )}
+                          >
+                            {t(`quickCreate.${opt.key}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                      {t("quickCreate.referenceIntervalLabel")}
+                    </div>
+                    <div className="flex items-center gap-2" data-testid={`reference-interval-stepper-${i}`}>
+                      <button type="button" aria-label="-" onClick={() => {
+                        const next = plan.references.slice();
+                        const nextVal = Math.max(5, intervalValue - 5);
+                        next[i] = { ...ref, pick: { ...ref.pick, momentId: String(nextVal) } };
+                        setField("plan.references", next);
+                      }} className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2">-</button>
+                      <div className="flex h-9 min-w-[3.5rem] flex-1 items-center justify-center rounded-md bg-surface-2 px-2 text-sm tabular-nums" aria-live="polite">{intervalValue}</div>
+                      <button type="button" aria-label="+" onClick={() => {
+                        const next = plan.references.slice();
+                        const nextVal = Math.min(120, intervalValue + 5);
+                        next[i] = { ...ref, pick: { ...ref.pick, momentId: String(nextVal) } };
+                        setField("plan.references", next);
+                      }} className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2">+</button>
+                      <div className="flex shrink-0 rounded-full border border-border bg-surface-1 p-0.5">
+                        <button type="button" className="rounded-full bg-primary px-3 py-1 text-xs text-primary-fg" aria-pressed="true">
+                          {t("quickCreate.referenceIntervalUnitMin")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 border-t border-border/40 pt-2">
+                    <Button type="button" size="small" variant="ghost" onClick={() => { const next = plan.references.slice(); next.splice(i, 1); setField("plan.references", next); }} className="text-danger hover:bg-danger/10">
+                      {t("quickCreate.referenceRemoveLabel")}
+                    </Button>
+                    <div className="flex-1" />
+                    <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+                      {t("quickCreate.referenceCancelLabel")}
+                    </Button>
+                    <Button type="button" size="small" variant="primary" onClick={() => setActivePanel("base")}>
+                      {t("quickCreate.referenceApplyLabel")}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+            <Button type="button" size="small" variant="default" rounded iconLeft={<Plus size={12} aria-hidden="true" />} onClick={() => {
+              setField("plan.references", [...plan.references, { id: "", target: { kind: 0, contextKind: null, referenceId: null, conditionId: null }, pick: { kind: 4, momentId: "10" } }]);
+            }} data-testid="reference-add-button">
               {t("quickCreate.addReference")}
             </Button>
           </div>
         </FormPanel>
       </section>
 
-      <section className={subPanelClass("completion")} aria-hidden={activePanel !== "completion"}>
-        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.back")}
-            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
+      {/* ─── completion sub-panel ─── */}
+      <section data-subpanel="completion" className={subPanelClass("completion")} aria-hidden={activePanel !== "completion"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
             <ChevronLeft size={16} aria-hidden="true" />
-            <span>{t("quickCreate.back")}</span>
           </button>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.cancel")}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.completionNavTitle")}</strong>
+          </div>
         </div>
         <FormPanel>
           <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
-          <div className="flex flex-col gap-1">
-            <ConditionEditor
-              node={plan.completion.root}
-              onChange={(next) => setField("plan.completion.root", next)}
-              t={t}
-            />
-          </div>
-          <FormDivider />
-          <SectionHeader icon={ListChecks} title={t("quickCreate.timeRequirements")} />
-          <div className="space-y-2">
-            {plan.completion.timeRequirements.length === 0 ? (
-              <p className="text-xs text-foreground-muted">{t("quickCreate.empty")}</p>
-            ) : null}
-            {plan.completion.timeRequirements.map((tr, i) => (
-              <div
-                key={tr.id}
-                className="rounded-md border border-border bg-surface-0 p-2 text-xs space-y-1"
+          <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3" data-testid="completion-condition-box">
+            <div className="flex items-center justify-between gap-2">
+              <strong className="text-sm font-semibold text-foreground">
+                {t("quickCreate.completionBuilderLogicLabel")}
+              </strong>
+              <select
+                aria-label={t("quickCreate.completionBuilderLogicLabel")}
+                value={String(plan.completion.root.kind)}
+                onChange={(e) => {
+                  const nextKind = Number(e.target.value);
+                  setField("plan.completion.root", { ...plan.completion.root, kind: nextKind as never });
+                }}
+                className="rounded-md border border-border bg-surface-1 px-2 py-1 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                data-testid="completion-logic-select"
               >
-                <p className="font-mono text-[10px] text-foreground-muted">{tr.id}</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="space-y-1">
-                    <span className="block text-foreground-muted">scope</span>
+                <option value={String(ConditionKind.ALL)}>{t("quickCreate.completionBuilderLogicAll")}</option>
+                <option value={String(ConditionKind.ANY)}>{t("quickCreate.completionBuilderLogicAny")}</option>
+                <option value={String(ConditionKind.NOT)}>{t("quickCreate.completionNot")}</option>
+              </select>
+            </div>
+            <ConditionEditor node={plan.completion.root} onChange={(next) => setField("plan.completion.root", next)} t={t} />
+            {plan.completion.timeRequirements.length > 0 && (
+              <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2" data-testid="completion-time-requirement-lines">
+                {plan.completion.timeRequirements.map((tr, i) => (
+                  <div key={tr.id} className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm" data-testid={`completion-time-line-${i}`}>
+                    <Clock size={16} className="shrink-0 text-foreground-muted" aria-hidden="true" />
+                    <span className="flex-1 text-foreground">
+                      {tr.required.minMs !== null ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}` : t("quickCreate.duration")}
+                    </span>
                     <input
                       type="number"
-                      value={tr.observation.scope}
-                      onChange={(e) => {
-                        const next = plan.completion.timeRequirements.slice();
-                        next[i] = {
-                          ...tr,
-                          observation: {
-                            ...tr.observation,
-                            scope: Number(e.target.value) as never,
-                          },
-                        };
-                        setField("plan.completion.timeRequirements", next);
-                      }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="block text-foreground-muted">min</span>
-                    <input
-                      type="number"
-                      value={
-                        tr.required.minMs === null
-                          ? ""
-                          : Math.round((tr.required.minMs ?? 0) / 60000)
-                      }
+                      min={5}
+                      step={5}
+                      aria-label={t("quickCreate.minutesUnit")}
+                      value={tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)}
                       onChange={(e) => {
                         const next = plan.completion.timeRequirements.slice();
                         const v = e.target.value;
-                        next[i] = {
-                          ...tr,
-                          required: {
-                            ...tr.required,
-                            minMs: v === "" ? null : Number(v) * 60000,
-                          },
-                        };
+                        next[i] = { ...tr, required: { ...tr.required, minMs: v === "" ? null : Number(v) * 60000 } };
                         setField("plan.completion.timeRequirements", next);
                       }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+                      className="w-16 rounded-md bg-surface-2 px-2 py-1 text-right text-xs tabular-nums outline-none focus:ring-2 focus:ring-primary/40"
                     />
-                  </label>
-                </div>
-                <Button
-                  type="button"
-                  size="icon-xs"
-                  variant="ghost"
-                  icon={<Trash2 size={14} aria-hidden="true" />}
-                  onClick={() => {
-                    const next = plan.completion.timeRequirements.slice();
-                    next.splice(i, 1);
-                    setField("plan.completion.timeRequirements", next);
-                  }}
-                  aria-label={t("quickCreate.removeItem")}
-                  className="text-foreground-muted hover:text-danger"
-                />
+                    <span className="text-xs text-foreground-muted">{t("quickCreate.minutesUnit")}</span>
+                    <Button type="button" size="icon-xs" variant="ghost" icon={<Trash2 size={12} aria-hidden="true" />} onClick={() => {
+                      const next = plan.completion.timeRequirements.slice();
+                      next.splice(i, 1);
+                      setField("plan.completion.timeRequirements", next);
+                    }} aria-label={t("quickCreate.removeItem")} className="text-foreground-muted hover:text-danger" />
+                  </div>
+                ))}
               </div>
-            ))}
-            <Button
-              type="button"
-              size="small"
-              variant="default"
-              rounded
-              iconLeft={<Plus size={12} aria-hidden="true" />}
-              onClick={() => {
-                setField("plan.metrics", [
-                  ...plan.metrics,
-                  {
-                    id: `m_${Math.random().toString(36).slice(2, 9)}`,
-                    output: 0,
-                    expression: { kind: "literal", value: 0 },
-                    limit: null,
-                  },
-                ]);
-              }}
-            >
-              {t("quickCreate.addMetric")}
+            )}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+              {t("quickCreate.conditionAddTitle")}
+            </div>
+            <div role="radiogroup" aria-label={t("quickCreate.conditionAddTitle")} className="flex w-full flex-wrap gap-1" data-testid="completion-condition-tabs">
+              {[
+                { key: "completionBuilderTabTime", termKind: null as null | "time" },
+                { key: "completionBuilderTabTask", termKind: "task" as const },
+                { key: "completionBuilderTabTile", termKind: "relation" as const },
+                { key: "completionBuilderTabRecord", termKind: "metric" as const },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  role="radio"
+                  aria-checked="false"
+                  onClick={() => {
+                    if (opt.termKind === null) {
+                      const newTr = { id: `tr_${Math.random().toString(36).slice(2, 9)}`, observation: { scope: 0 as never }, required: { minMs: time.durationMinMax.minMs ?? 60 * 60000 } };
+                      setField("plan.completion.timeRequirements", [...plan.completion.timeRequirements, newTr]);
+                      return;
+                    }
+                    const child = defaultTerm(opt.termKind === "relation" ? "relation" : opt.termKind === "metric" ? "metric" : "task");
+                    setField("plan.completion.root", { ...plan.completion.root, children: [...plan.completion.root.children, child] });
+                  }}
+                  className="min-w-0 flex-1 truncate rounded-full border border-border bg-surface-1 px-3 py-1.5 text-sm text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  {t(`quickCreate.${opt.key}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+            <Button type="button" size="small" variant="ghost" onClick={() => setField("plan.completion.root", { kind: ConditionKind.ALL, children: [], term: null })} className="text-danger hover:bg-danger/10">
+              {t("quickCreate.completionRemoveLabel")}
+            </Button>
+            <div className="flex-1" />
+            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.completionCancelLabel")}
+            </Button>
+            <Button type="button" size="small" variant="primary" onClick={() => setActivePanel("base")} data-testid="completion-apply">
+              {t("quickCreate.completionBuilderApply")}
             </Button>
           </div>
         </FormPanel>
       </section>
 
-      <section className={subPanelClass("meta")} aria-hidden={activePanel !== "meta"}>
-        <div className="flex items-center gap-2 border-b border-border px-section py-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.back")}
-            className="flex items-center gap-1 rounded-md px-1 py-1 text-sm text-foreground hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
+      {/* ─── meta sub-panel ─── */}
+      <section data-subpanel="meta" className={subPanelClass("meta")} aria-hidden={activePanel !== "meta"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
             <ChevronLeft size={16} aria-hidden="true" />
-            <span>{t("quickCreate.back")}</span>
           </button>
-          <div className="flex-1" />
-          <button
-            type="button"
-            onClick={() => setActivePanel("base")}
-            aria-label={t("quickCreate.cancel")}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <X size={16} aria-hidden="true" />
-          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.metaNavTitle")}</strong>
+          </div>
         </div>
         <FormPanel>
           <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
-          <FormRow icon={null}>
-            <Dropdown
-              value={meta.ownerSubjectId ?? ""}
-              onChange={(v) => {
-                setField("meta.ownerSubjectId", v ? v : null);
-              }}
-              size="small"
-              aria-label={t("quickCreate.projectPlaceholder")}
-              data-testid="owner-select-detail"
-              items={[
-                { value: "", label: "Personal (default)" },
-                ...projects.workspaces.map((w) => ({
-                  value: w.id,
-                  label: w.display_name,
-                })),
-              ]}
-              className="w-full"
-            />
-          </FormRow>
-          <FormRow icon={null}>
-            <div className="flex w-full flex-wrap items-center gap-1.5">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+              <span>{t("quickCreate.organizeProject")}</span>
+            </div>
+            <div className="flex flex-col gap-2" data-testid="meta-project-catalog">
+              <button type="button" onClick={() => setField("meta.ownerSubjectId", null)} aria-pressed={meta.ownerSubjectId === null}
+                className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", meta.ownerSubjectId === null ? "border-primary" : "border-border")}>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                  <FolderOpen size={18} aria-hidden="true" />
+                </div>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-sm font-medium text-foreground">{t("quickCreate.projectOwnerDefault")}</span>
+                  <span className="truncate text-xs text-foreground-muted">{t("quickCreate.organizeProjectDefaultSub")}</span>
+                </div>
+              </button>
+              {projects.workspaces.map((w) => {
+                const selected = meta.ownerSubjectId === w.id;
+                return (
+                  <button key={w.id} type="button" onClick={() => setField("meta.ownerSubjectId", w.id)} aria-pressed={selected}
+                    className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", selected ? "border-primary" : "border-border")}>
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                      <FolderOpen size={18} aria-hidden="true" />
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-medium text-foreground">{w.display_name}</span>
+                      <span className="truncate text-xs text-foreground-muted">{w.kind ?? "Project"}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+              <span>{t("quickCreate.organizeTags")}</span>
+              <span className="text-[10px] font-normal text-foreground-muted">{t("quickCreate.organizeTagsMulti")}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5" data-testid="meta-tag-chips">
               {meta.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-xs"
-                >
+                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-fg">
                   <span>#{tag}</span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setField(
-                        "meta.tags",
-                        meta.tags.filter((x) => x !== tag),
-                      )
-                    }
-                    aria-label={t("quickCreate.removeItem")}
-                    className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                  >
+                  <button type="button" onClick={() => setField("meta.tags", meta.tags.filter((x) => x !== tag))} className="text-primary-fg/80 hover:text-white">
                     <X size={10} aria-hidden="true" />
                   </button>
                 </span>
@@ -1870,7 +1673,7 @@ export function QuickTileCreate() {
                 type="text"
                 placeholder={t("quickCreate.tagsPlaceholder")}
                 aria-label={t("quickCreate.tagsPlaceholder")}
-                className="min-w-[8ch] flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+                className="min-w-[8ch] flex-1 rounded-md bg-surface-2 px-2 py-1 text-sm text-foreground placeholder:text-foreground-muted focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === ",") {
                     e.preventDefault();
@@ -1883,7 +1686,7 @@ export function QuickTileCreate() {
                 }}
               />
             </div>
-          </FormRow>
+          </div>
           <FormRow icon={null}>
             <Textarea
               value={meta.memo}
@@ -1894,48 +1697,141 @@ export function QuickTileCreate() {
               className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
             />
           </FormRow>
+          <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+            <Button type="button" size="small" variant="ghost" onClick={() => { setField("meta.ownerSubjectId", null); setField("meta.tags", []); setField("meta.memo", ""); }} className="text-danger hover:bg-danger/10">
+              {t("quickCreate.completionRemoveLabel")}
+            </Button>
+            <div className="flex-1" />
+            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.completionCancelLabel")}
+            </Button>
+            <Button type="button" size="small" variant="primary" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.metaApply")}
+            </Button>
+          </div>
         </FormPanel>
+      </section>
+
+      {/* ─── behavior sub-panel ─── */}
+      <section data-subpanel="behavior" className={subPanelClass("behavior")} aria-hidden={activePanel !== "behavior"}>
+        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
+          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+            <ChevronLeft size={16} aria-hidden="true" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <strong className="block truncate text-sm font-semibold">{t("quickCreate.behaviorTitle")}</strong>
+            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.behaviorSub")}</small>
+          </div>
+        </div>
+        <div className="flex-1 overflow-auto p-4">
+          <button
+            type="button"
+            onClick={() => setField("plan.role", PlanRole.EXECUTABLE)}
+            className={cn(
+              "mb-3 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
+              plan.role === PlanRole.EXECUTABLE ? "border-primary" : "border-border hover:bg-surface-1"
+            )}
+          >
+            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
+            <div>
+              <strong className="block text-sm font-semibold">{t("quickCreate.behaviorExecutable")}</strong>
+              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.behaviorExecutableSub")}</small>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setField("plan.role", PlanRole.LABEL)}
+            className={cn(
+              "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
+              plan.role === PlanRole.LABEL ? "border-primary" : "border-border hover:bg-surface-1"
+            )}
+          >
+            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
+            <div>
+              <strong className="block text-sm font-semibold">{t("quickCreate.behaviorLabel")}</strong>
+              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.behaviorLabelSub")}</small>
+            </div>
+          </button>
+
+          <div className="mb-4 rounded-lg border border-border bg-surface-0 p-3">
+            <div className="flex items-start gap-2">
+              <Info size={14} className="mt-0.5 shrink-0 text-foreground-muted" aria-hidden />
+              <span className="text-[11px] text-foreground-muted">{t("quickCreate.behaviorSchemaNote")}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button type="button" size="small" variant="ghost" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.cancel")}
+            </Button>
+            <div className="flex-1" />
+            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+              {t("quickCreate.metaApply")}
+            </Button>
+          </div>
+        </div>
       </section>
     </>
   );
 }
 
-// ---------- section / row primitives ----------
+// ============================================================
+// Helper components
+// ============================================================
 
-function ConditionKindSegmented({
-  value,
-  onChange,
-  t,
+function V4EssentialRow({
+  icon: Icon,
+  label,
+  chip,
+  clearable,
+  onClear,
+  onClick,
 }: {
-  value: number | import("@/lib/domain/v1/constants").ConditionKindValue;
-  onChange: (v: number) => void;
-  t: (k: string) => string;
+  icon: typeof Calendar;
+  label: string;
+  chip: React.ReactNode;
+  clearable?: boolean;
+  onClear?: () => void;
+  onClick: () => void;
 }) {
+  return (
+    <div className="grid min-h-[56px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 py-2">
+      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+        <Icon className="h-3.5 w-3.5" aria-hidden />
+      </div>
+      <button type="button" onClick={onClick}
+        aria-label={`${label} を編集`}
+        className="group flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 -my-1.5 -mx-1 cursor-pointer text-left transition-colors hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+        <div className="shrink-0 text-[11px] font-bold text-foreground-muted">{label}</div>
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">{chip}</div>
+      </button>
+      <div className="flex items-center gap-1">
+        {clearable && onClear ? (
+          <button type="button" onClick={onClear} aria-label="指定を消す"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
+        <button type="button" onClick={onClick} aria-hidden="true" tabIndex={-1}
+          className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted group-hover:text-foreground hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+          <ChevronRight className="h-4 w-4" aria-hidden />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ConditionKindSegmented({ value, onChange, t }: { value: number | import("@/lib/domain/v1/constants").ConditionKindValue; onChange: (v: number) => void; t: (k: string) => string }) {
   const options = [
     { value: String(ConditionKind.ALL), label: t("quickCreate.conditionAll") },
     { value: String(ConditionKind.ANY), label: t("quickCreate.conditionAny") },
     { value: String(ConditionKind.NOT), label: t("quickCreate.conditionNot") },
     { value: String(ConditionKind.TERM), label: t("quickCreate.conditionTerm") },
   ];
-  return (
-    <RowSegmented
-      icon={GitBranch}
-      options={options}
-      value={String(value)}
-      onChange={(v) => onChange(Number(v))}
-    />
-  );
+  return <RowSegmented icon={GitBranch} options={options} value={String(value)} onChange={(v) => onChange(Number(v))} />;
 }
 
-function TermKindSegmented({
-  value,
-  onChange,
-  t,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  t: (k: string) => string;
-}) {
+function TermKindSegmented({ value, onChange, t }: { value: string; onChange: (v: string) => void; t: (k: string) => string }) {
   const options = [
     { value: "calendar", label: t("quickCreate.termCalendar") },
     { value: "moment", label: t("quickCreate.termMoment") },
@@ -1947,50 +1843,21 @@ function TermKindSegmented({
     { value: "metric", label: t("quickCreate.termMetric") },
     { value: "life", label: t("quickCreate.termLife") },
   ];
-  return (
-    <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />
-  );
+  return <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />;
 }
 
 function defaultTerm(kind: string): Term {
   switch (kind) {
     case "calendar":
-      return {
-        kind: "calendar",
-        value: {
-          weekdayMask: 0,
-          timeStart: null,
-          timeEnd: null,
-          holidayKind: HolidayKind.ANY,
-          dateRange: null,
-          offsetMin: 0,
-        },
-      };
+      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: HolidayKind.ANY, dateRange: null, offsetMin: 0 } };
     case "moment":
-      return {
-        kind: "moment",
-        value: { referenceId: null, point: null, offsetMs: 0 },
-      };
+      return { kind: "moment", value: { referenceId: null, point: null, offsetMs: 0 } };
     case "relation":
-      return {
-        kind: "relation",
-        value: { referenceId: "", relation: 0, windowKind: 0 },
-      };
+      return { kind: "relation", value: { referenceId: "", relation: 0, windowKind: 0 } };
     case "gap":
-      return {
-        kind: "gap",
-        value: {
-          scope: 0,
-          leftAnchor: { referenceId: null, point: null },
-          rightAnchor: { referenceId: null, point: null },
-          size: { minMs: null, maxMs: null },
-        },
-      };
+      return { kind: "gap", value: { scope: 0, leftAnchor: { referenceId: null, point: null }, rightAnchor: { referenceId: null, point: null }, size: { minMs: null, maxMs: null } } };
     case "requirement":
-      return {
-        kind: "requirement",
-        value: { requirementId: "", state: 0 },
-      };
+      return { kind: "requirement", value: { requirementId: "", state: 0 } };
     case "task":
       return { kind: "task", value: { taskId: "", state: 0 } };
     case "fact":
@@ -1998,75 +1865,35 @@ function defaultTerm(kind: string): Term {
     case "metric":
       return { kind: "metric", value: { metricId: "", op: 0, value: null } };
     case "feedback":
-      return {
-        kind: "feedback",
-        value: { feedbackTxnId: "", op: 0, value: null },
-      };
+      return { kind: "feedback", value: { feedbackTxnId: "", op: 0, value: null } };
     case "life":
       return { kind: "life", value: { target: "", state: 0 } };
     default:
-      return {
-        kind: "calendar",
-        value: {
-          weekdayMask: 0,
-          timeStart: null,
-          timeEnd: null,
-          holidayKind: HolidayKind.ANY,
-          dateRange: null,
-          offsetMin: 0,
-        },
-      };
+      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: HolidayKind.ANY, dateRange: null, offsetMin: 0 } };
   }
 }
 
-function updateCalendar(
-  term: Term,
-  key: keyof import("@/lib/domain/v1/condition").CalendarTerm,
-  value: import("@/lib/domain/v1/condition").CalendarTerm[keyof import("@/lib/domain/v1/condition").CalendarTerm],
-) {
+function updateCalendar(term: Term, key: keyof import("@/lib/domain/v1/condition").CalendarTerm, value: import("@/lib/domain/v1/condition").CalendarTerm[keyof import("@/lib/domain/v1/condition").CalendarTerm]) {
   if (term.kind !== "calendar") return term;
   return { kind: "calendar", value: { ...term.value, [key]: value } } as Term;
 }
-function updateMoment(
-  term: Term,
-  key: keyof import("@/lib/domain/v1/condition").MomentTerm,
-  value: import("@/lib/domain/v1/condition").MomentTerm[keyof import("@/lib/domain/v1/condition").MomentTerm],
-) {
+function updateMoment(term: Term, key: keyof import("@/lib/domain/v1/condition").MomentTerm, value: import("@/lib/domain/v1/condition").MomentTerm[keyof import("@/lib/domain/v1/condition").MomentTerm]) {
   if (term.kind !== "moment") return term;
   return { kind: "moment", value: { ...term.value, [key]: value } } as Term;
 }
-function updateRelation(
-  term: Term,
-  key: keyof import("@/lib/domain/v1/condition").RelationTerm,
-  value: import("@/lib/domain/v1/condition").RelationTerm[keyof import("@/lib/domain/v1/condition").RelationTerm],
-) {
+function updateRelation(term: Term, key: keyof import("@/lib/domain/v1/condition").RelationTerm, value: import("@/lib/domain/v1/condition").RelationTerm[keyof import("@/lib/domain/v1/condition").RelationTerm]) {
   if (term.kind !== "relation") return term;
   return { kind: "relation", value: { ...term.value, [key]: value } } as Term;
 }
-function updateTask(
-  term: Term,
-  key: keyof import("@/lib/domain/v1/condition").TaskTerm,
-  value: import("@/lib/domain/v1/condition").TaskTerm[keyof import("@/lib/domain/v1/condition").TaskTerm],
-) {
+function updateTask(term: Term, key: keyof import("@/lib/domain/v1/condition").TaskTerm, value: import("@/lib/domain/v1/condition").TaskTerm[keyof import("@/lib/domain/v1/condition").TaskTerm]) {
   if (term.kind !== "task") return term;
   return { kind: "task", value: { ...term.value, [key]: value } } as Term;
 }
-function updateRequirement(
-  term: Term,
-  key: keyof import("@/lib/domain/v1/condition").RequirementTerm,
-  value: import("@/lib/domain/v1/condition").RequirementTerm[keyof import("@/lib/domain/v1/condition").RequirementTerm],
-) {
+function updateRequirement(term: Term, key: keyof import("@/lib/domain/v1/condition").RequirementTerm, value: import("@/lib/domain/v1/condition").RequirementTerm[keyof import("@/lib/domain/v1/condition").RequirementTerm]) {
   if (term.kind !== "requirement") return term;
-  return {
-    kind: "requirement",
-    value: { ...term.value, [key]: value },
-  } as Term;
+  return { kind: "requirement", value: { ...term.value, [key]: value } } as Term;
 }
-function updateLife(
-  term: Term,
-  key: keyof import("@/lib/domain/v1/condition").LifeTerm,
-  value: import("@/lib/domain/v1/condition").LifeTerm[keyof import("@/lib/domain/v1/condition").LifeTerm],
-) {
+function updateLife(term: Term, key: keyof import("@/lib/domain/v1/condition").LifeTerm, value: import("@/lib/domain/v1/condition").LifeTerm[keyof import("@/lib/domain/v1/condition").LifeTerm]) {
   if (term.kind !== "life") return term;
   return { kind: "life", value: { ...term.value, [key]: value } } as Term;
 }
@@ -2075,70 +1902,26 @@ function updateValue(term: Term, key: string, value: unknown): Term {
   return { ...term, value: { ...term.value, [key]: value } } as Term;
 }
 
-function TermFields({
-  term,
-  onChange,
-  t,
-}: {
-  term: Term;
-  onChange: (next: Term) => void;
-  t: (k: string) => string;
-}) {
+function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) => void; t: (k: string) => string }) {
   switch (term.kind) {
     case "calendar":
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.calendarWeekdayMask")}
-            </span>
-            <input
-              type="number"
-              value={term.value.weekdayMask}
-              onChange={(e) =>
-                onChange(updateCalendar(term, "weekdayMask", Number(e.target.value)))
-              }
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <span className="block text-foreground-muted">{t("quickCreate.calendarWeekdayMask")}</span>
+            <input type="number" value={term.value.weekdayMask} onChange={(e) => onChange(updateCalendar(term, "weekdayMask", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.calendarOffsetMin")}
-            </span>
-            <input
-              type="number"
-              value={term.value.offsetMin}
-              onChange={(e) => onChange(updateCalendar(term, "offsetMin", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <span className="block text-foreground-muted">{t("quickCreate.calendarOffsetMin")}</span>
+            <input type="number" value={term.value.offsetMin} onChange={(e) => onChange(updateCalendar(term, "offsetMin", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.calendarTimeStart")}
-            </span>
-            <input
-              type="time"
-              value={term.value.timeStart ?? ""}
-              onChange={(e) =>
-                onChange(
-                  updateCalendar(term, "timeStart", e.target.value === "" ? null : e.target.value),
-                )
-              }
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <span className="block text-foreground-muted">{t("quickCreate.calendarTimeStart")}</span>
+            <input type="time" value={term.value.timeStart ?? ""} onChange={(e) => onChange(updateCalendar(term, "timeStart", e.target.value === "" ? null : e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.calendarTimeEnd")}</span>
-            <input
-              type="time"
-              value={term.value.timeEnd ?? ""}
-              onChange={(e) =>
-                onChange(
-                  updateCalendar(term, "timeEnd", e.target.value === "" ? null : e.target.value),
-                )
-              }
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="time" value={term.value.timeEnd ?? ""} onChange={(e) => onChange(updateCalendar(term, "timeEnd", e.target.value === "" ? null : e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2146,28 +1929,12 @@ function TermFields({
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.momentReferenceId")}
-            </span>
-            <input
-              type="text"
-              value={term.value.referenceId ?? ""}
-              onChange={(e) =>
-                onChange(
-                  updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value),
-                )
-              }
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <span className="block text-foreground-muted">{t("quickCreate.momentReferenceId")}</span>
+            <input type="text" value={term.value.referenceId ?? ""} onChange={(e) => onChange(updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.momentOffsetMs")}</span>
-            <input
-              type="number"
-              value={term.value.offsetMs}
-              onChange={(e) => onChange(updateMoment(term, "offsetMs", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="number" value={term.value.offsetMs} onChange={(e) => onChange(updateMoment(term, "offsetMs", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2175,35 +1942,16 @@ function TermFields({
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.relationReferenceId")}
-            </span>
-            <input
-              type="text"
-              value={term.value.referenceId}
-              onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <span className="block text-foreground-muted">{t("quickCreate.relationReferenceId")}</span>
+            <input type="text" value={term.value.referenceId} onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.relationKind")}</span>
-            <input
-              type="number"
-              value={term.value.relation}
-              onChange={(e) => onChange(updateRelation(term, "relation", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="number" value={term.value.relation} onChange={(e) => onChange(updateRelation(term, "relation", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.relationWindowKind")}
-            </span>
-            <input
-              type="number"
-              value={term.value.windowKind}
-              onChange={(e) => onChange(updateRelation(term, "windowKind", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <span className="block text-foreground-muted">{t("quickCreate.relationWindowKind")}</span>
+            <input type="number" value={term.value.windowKind} onChange={(e) => onChange(updateRelation(term, "windowKind", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2212,21 +1960,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskId")}</span>
-            <input
-              type="text"
-              value={term.value.taskId}
-              onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="text" value={term.value.taskId} onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskState")}</span>
-            <input
-              type="number"
-              value={term.value.state}
-              onChange={(e) => onChange(updateTask(term, "state", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="number" value={term.value.state} onChange={(e) => onChange(updateTask(term, "state", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2235,21 +1973,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementId")}</span>
-            <input
-              type="text"
-              value={term.value.requirementId}
-              onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="text" value={term.value.requirementId} onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementState")}</span>
-            <input
-              type="number"
-              value={term.value.state}
-              onChange={(e) => onChange(updateRequirement(term, "state", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="number" value={term.value.state} onChange={(e) => onChange(updateRequirement(term, "state", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2257,46 +1985,25 @@ function TermFields({
     case "fact":
     case "feedback": {
       const v = term.value as unknown as { op: number; value: unknown; [k: string]: unknown };
-      const idKey =
-        term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
+      const idKey = term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">ID</span>
-            <input
-              type="text"
-              value={String(v[idKey] ?? "")}
-              onChange={(e) => onChange(updateValue(term, idKey, e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="text" value={String(v[idKey] ?? "")} onChange={(e) => onChange(updateValue(term, idKey, e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">op</span>
-            <input
-              type="number"
-              value={v.op}
-              onChange={(e) => onChange(updateValue(term, "op", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="number" value={v.op} onChange={(e) => onChange(updateValue(term, "op", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">value</span>
-            <input
-              type="text"
-              value={v.value === null || v.value === undefined ? "" : String(v.value)}
-              onChange={(e) => {
-                const raw = e.target.value;
-                if (raw === "") {
-                  onChange(updateValue(term, "value", null));
-                  return;
-                }
-                const num = Number(raw);
-                onChange(
-                  updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw),
-                );
-              }}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="text" value={v.value === null || v.value === undefined ? "" : String(v.value)} onChange={(e) => {
+              const raw = e.target.value;
+              if (raw === "") { onChange(updateValue(term, "value", null)); return; }
+              const num = Number(raw);
+              onChange(updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw));
+            }} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2306,21 +2013,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">target</span>
-            <input
-              type="text"
-              value={term.value.target}
-              onChange={(e) => onChange(updateLife(term, "target", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="text" value={term.value.target} onChange={(e) => onChange(updateLife(term, "target", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">state</span>
-            <input
-              type="number"
-              value={term.value.state}
-              onChange={(e) => onChange(updateLife(term, "state", Number(e.target.value)))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
-            />
+            <input type="number" value={term.value.state} onChange={(e) => onChange(updateLife(term, "state", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
           </label>
         </div>
       );
@@ -2331,20 +2028,8 @@ function TermFields({
   }
 }
 
-function ConditionEditor({
-  node,
-  onChange,
-  t,
-}: {
-  node: ConditionNode;
-  onChange: (next: ConditionNode) => void;
-  t: (k: string) => string;
-}) {
+function ConditionEditor({ node, onChange, t }: { node: ConditionNode; onChange: (next: ConditionNode) => void; t: (k: string) => string }) {
   const isTerm = node.kind === ConditionKind.TERM;
-  // Flat stack: no card border, no marginLeft indent, no inner pl-2.
-  // The depth parameter is kept (and passed) for API stability but is
-  // intentionally unused for layout so the whole condition tree reads
-  // as a single vertical list, matching the rest of the side panel.
   return (
     <div className="flex flex-col gap-1">
       <ConditionKindSegmented
@@ -2352,96 +2037,27 @@ function ConditionEditor({
         onChange={(kind) => {
           if (kind === ConditionKind.TERM) {
             const currentTerm = node.term ?? defaultTerm("calendar");
-            onChange({
-              kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue,
-              children: [],
-              term: currentTerm,
-            });
+            onChange({ kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue, children: [], term: currentTerm });
           } else {
-            onChange({
-              kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue,
-              children: node.children,
-              term: null,
-            });
+            onChange({ kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue, children: node.children, term: null });
           }
         }}
         t={t}
       />
       {isTerm ? (
         <>
-          <TermKindSegmented
-            value={node.term?.kind ?? "calendar"}
-            onChange={(k) =>
-              onChange({
-                kind: ConditionKind.TERM,
-                children: [],
-                term: defaultTerm(k),
-              })
-            }
-            t={t}
-          />
-          {node.term ? (
-            <TermFields
-              term={node.term}
-              onChange={(next) =>
-                onChange({
-                  kind: ConditionKind.TERM,
-                  children: [],
-                  term: next,
-                })
-              }
-              t={t}
-            />
-          ) : null}
+          <TermKindSegmented value={node.term?.kind ?? "calendar"} onChange={(k) => onChange({ kind: ConditionKind.TERM, children: [], term: defaultTerm(k) })} t={t} />
+          {node.term ? <TermFields term={node.term} onChange={(next) => onChange({ kind: ConditionKind.TERM, children: [], term: next })} t={t} /> : null}
         </>
       ) : (
         <>
           {node.children.map((child, i) => (
             <div key={i} className="flex flex-col gap-1">
-              <ConditionEditor
-                node={child}
-                onChange={(next) => {
-                  const children = node.children.slice();
-                  children[i] = next;
-                  onChange({ ...node, children });
-                }}
-                t={t}
-              />
-              <Button
-                type="button"
-                size="icon-xs"
-                variant="ghost"
-                icon={<Trash2 size={14} aria-hidden="true" />}
-                onClick={() => {
-                  const children = node.children.slice();
-                  children.splice(i, 1);
-                  onChange({ ...node, children });
-                }}
-                aria-label={t("quickCreate.conditionRemoveChild")}
-                className="self-start text-foreground-muted hover:text-danger"
-              />
+              <ConditionEditor node={child} onChange={(next) => { const children = node.children.slice(); children[i] = next; onChange({ ...node, children }); }} t={t} />
+              <Button type="button" size="icon-xs" variant="ghost" icon={<Trash2 size={14} aria-hidden="true" />} onClick={() => { const children = node.children.slice(); children.splice(i, 1); onChange({ ...node, children }); }} aria-label={t("quickCreate.conditionRemoveChild")} className="self-start text-foreground-muted hover:text-danger" />
             </div>
           ))}
-          <Button
-            type="button"
-            size="small"
-            variant="default"
-            rounded
-            iconLeft={<Plus size={12} aria-hidden="true" />}
-            onClick={() =>
-              onChange({
-                ...node,
-                children: [
-                  ...node.children,
-                  {
-                    kind: ConditionKind.TERM,
-                    children: [],
-                    term: defaultTerm("calendar"),
-                  },
-                ],
-              })
-            }
-          >
+          <Button type="button" size="small" variant="default" rounded iconLeft={<Plus size={12} aria-hidden="true" />} onClick={() => onChange({ ...node, children: [...node.children, { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") }] })}>
             {t("quickCreate.conditionAddChild")}
           </Button>
         </>
@@ -2449,103 +2065,3 @@ function ConditionEditor({
     </div>
   );
 }
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _FullFieldList({ data, emptyLabel }: { data: unknown; emptyLabel: string }) {
-  // v1 full-parameter dump. The structured editors will replace this
-  // incrementally, but every sub-panel must show the underlying data
-  // so no v1 field is hidden.
-  const serialized = (() => {
-    try {
-      return JSON.stringify(data, null, 2);
-    } catch {
-      return String(data);
-    }
-  })();
-  const isEmpty =
-    data === null ||
-    data === undefined ||
-    (Array.isArray(data) && data.length === 0) ||
-    (typeof data === "object" &&
-      !Array.isArray(data) &&
-      data !== null &&
-      Object.keys(data as object).length === 0);
-  return (
-    <div className="space-y-2">
-      {isEmpty ? <p className="text-xs text-foreground-muted">{emptyLabel}</p> : null}
-      <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-md bg-surface-2 p-3 text-[11px] leading-snug text-foreground-muted">
-        {serialized}
-      </pre>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function _StubRow({
-  icon: Icon,
-  title,
-  count,
-  badge,
-}: {
-  icon: typeof AlertCircle;
-  title: string;
-  count: number;
-  badge: string;
-}) {
-  return (
-    <FormRow icon={<Icon size={20} />}>
-      <div className="flex w-full items-center justify-between text-sm">
-        <span className="text-foreground-muted">{title}</span>
-        <span className="flex items-center gap-2 text-xs text-foreground-muted">
-          <span>{count}</span>
-          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] uppercase tracking-wide">
-            {badge}
-          </span>
-        </span>
-      </div>
-    </FormRow>
-  );
-}
-
-// ScheduleRow moved to components/tiles/editor/SchedulePanel.tsx (Plan #6 Phase 4).
-
-function DurationRow({
-  minMs,
-  onChange,
-  t,
-}: {
-  minMs: number | null;
-  onChange: (value: number | null) => void;
-  t: (key: string) => string;
-}) {
-  const valueMin = minMs !== null ? Math.round(minMs / 60000) : 60;
-  return (
-    <FormRow icon={<Clock size={20} />}>
-      <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
-        <span className="text-foreground-muted">{t("quickCreate.duration")}</span>
-        <input
-          type="number"
-          min={0}
-          step={5}
-          aria-label={t("quickCreate.durationAriaLabel")}
-          data-testid="duration-base-input"
-          value={valueMin}
-          onChange={(e) => {
-            const v = e.target.value;
-            onChange(v === "" ? null : Number(v) * 60000);
-          }}
-          className="w-20 rounded-md bg-surface-2 px-2 py-1 text-right text-sm outline-none focus:ring-2 focus:ring-primary/40"
-        />
-        <span className="text-foreground-muted">{t("quickCreate.minutesUnit")}</span>
-      </div>
-    </FormRow>
-  );
-}
-
-// coerceRecurrenceModel + GeneratorEditor + WindowEditor + RecurringLifeEditor
-// + FrameRulesList + FrameRuleRow + renderGeneratorFields moved to
-// components/tiles/editor/AutomationPanel.tsx (Plan #7 Phase 4).
-// Re-export ConditionKind so future Condition-tree editor (Phase B) has a
-// single import path; tree is currently a placeholder ALL-node, but the
-// constant is referenced from `submit.ts` already and tree placeholders
-// must import from this module to avoid circular imports.

@@ -38,6 +38,7 @@ import {
   isoToLocalDate,
   isoToLocalDateTime,
   localDateTimeToIso,
+  localDateToIsoDate,
 } from "./date-utils";
 
 const WINDOW_KIND_OPTIONS = [
@@ -92,7 +93,11 @@ function ScheduleRow({
           type={allDay ? "date" : "datetime-local"}
           aria-label={`${t("quickCreate.startAt")} (${allDay ? t("tiles.inputDate") : t("tiles.inputDatetime")})`}
           value={allDay ? isoToLocalDate(spanStart) : isoToLocalDateTime(spanStart)}
-          onChange={(e) => onStartChange(e.target.value)}
+          onChange={(e) =>
+            onStartChange(
+              allDay ? localDateToIsoDate(e.target.value) : localDateTimeToIso(e.target.value) ?? "",
+            )
+          }
           className="sr-only"
         />
       </div>
@@ -112,7 +117,11 @@ function ScheduleRow({
           type={allDay ? "date" : "datetime-local"}
           aria-label={`${t("quickCreate.endAt")} (${allDay ? t("tiles.inputDate") : t("tiles.inputDatetime")})`}
           value={allDay ? isoToLocalDate(spanEnd) : isoToLocalDateTime(spanEnd)}
-          onChange={(e) => onEndChange(e.target.value)}
+          onChange={(e) =>
+            onEndChange(
+              allDay ? localDateToIsoDate(e.target.value) : localDateTimeToIso(e.target.value) ?? "",
+            )
+          }
           className="sr-only"
         />
       </div>
