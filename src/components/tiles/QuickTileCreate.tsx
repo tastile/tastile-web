@@ -96,7 +96,6 @@ import {
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
-import type { FrameRule } from "@/lib/domain/v1/tile";
 import type { Window } from "@/lib/domain/v1/window";
 import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
 import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
@@ -273,9 +272,6 @@ export function QuickTileCreate() {
   const [activePanel, setActivePanel] = useState<
     "base" | "intent" | "time" | "duration" | "recurring" | "references" | "completion" | "meta" | "behavior"
   >("base");
-  const [recurringTab, setRecurringTab] = useState<"lifecycle" | "generator" | "window">(
-    "lifecycle",
-  );
   const projects = useProjects();
   const actorSubjectId = useCurrentActorSubjectId();
   useEffect(() => {
@@ -441,23 +437,6 @@ export function QuickTileCreate() {
 
   function updateWindow(index: number, updater: (current: Window) => Window) {
     setField("windows", windows.map((w, i) => (i === index ? updater(w) : w)));
-  }
-
-  function addFrameRule() {
-    const newRule: FrameRule = {
-      id: uuidv7(),
-      generator: { kind: "step", value: { step: 0, origin: null, bounds: null } },
-      active: null,
-    };
-    setField("recurring.frameRules", [...recurring.frameRules, newRule]);
-  }
-
-  function removeFrameRule(index: number) {
-    setField("recurring.frameRules", recurring.frameRules.filter((_, i) => i !== index));
-  }
-
-  function updateFrameRule(index: number, updater: (current: FrameRule) => FrameRule) {
-    setField("recurring.frameRules", recurring.frameRules.map((r, i) => (i === index ? updater(r) : r)));
   }
 
   // --- submit ---
@@ -1420,13 +1399,7 @@ export function QuickTileCreate() {
         <AutomationPanel
           kindIsRecurring={kindIsRecurring}
           recurring={recurring}
-          recurrence={recurrence}
-          recurringTab={recurringTab}
-          setRecurringTab={setRecurringTab}
           setField={setField}
-          addFrameRule={addFrameRule}
-          removeFrameRule={removeFrameRule}
-          updateFrameRule={updateFrameRule}
           locale={locale}
           t={t}
         />
