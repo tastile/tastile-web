@@ -100,6 +100,24 @@ describe("events upstream authentication", () => {
     expect(body.occurrences[0]).toMatchObject({ title: "2学期", allDay: true });
   });
 
+  it("keeps timed Core LABEL annotations in the hour grid", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify([{
+        placement_id: "placement-break",
+        tile_id: "tile-break",
+        role: 1,
+        content: { title: "休憩（5分）" },
+        span: { start: "2026-07-15T12:15:00Z", end: "2026-07-15T12:20:00Z" },
+      }])),
+    );
+
+    const response = await upstreamListTimeline({ start: "2026-07-15", end: "2026-07-16" });
+    const body = (await response.json()) as { occurrences: Array<{ allDay: boolean; title: string }> };
+
+    expect(body.occurrences[0]).toMatchObject({ title: "休憩（5分）", allDay: false });
+  });
+
   it("forwards only the Cognito-verified sub in bridge headers", async () => {
     configureCognito();
     cookieValues.set("tastile_access_token", "verified-token");

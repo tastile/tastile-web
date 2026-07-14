@@ -196,10 +196,12 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
       location: null,
       start,
       end,
-      // Core PlanRole::LABEL is calendar context, never a timed task.
-      // Keep it out of the hour grid and let Day/Week/Month render it
-      // through their existing all-day lanes.
-      allDay: raw.role === 1,
+      // A LABEL can be a timed, non-blocking annotation (such as a
+      // Pomodoro break) or date-wide calendar context.  Only the latter
+      // belongs in the all-day lane.
+      allDay:
+        raw.role === 1 &&
+        new Date(end).getTime() - new Date(start).getTime() >= 23 * 60 * 60 * 1000,
       color: mapTimelineColor(raw.visual?.color),
       recurrence: { frequency: "none" },
       attendees: [],
