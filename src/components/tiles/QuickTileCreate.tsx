@@ -30,6 +30,7 @@ import {
   Circle,
   MoreHorizontal,
   Calendar,
+  Check,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -871,6 +872,10 @@ export function QuickTileCreate() {
                       }
                     }}
                     onClick={() => setActivePanel("time")}
+                    editAria={t("quickCreate.essentialRowEditAria")}
+                    clearAria={t("quickCreate.essentialRowClearAria")}
+                    confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+                    confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
                   />
                   <V4EssentialRow
                     icon={Clock}
@@ -903,6 +908,10 @@ export function QuickTileCreate() {
                       setField("time.durationMinMax.maxMs", null);
                     }}
                     onClick={() => setActivePanel("duration")}
+                    editAria={t("quickCreate.essentialRowEditAria")}
+                    clearAria={t("quickCreate.essentialRowClearAria")}
+                    confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+                    confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
                   />
                   <V4EssentialRow
                     icon={Repeat}
@@ -920,7 +929,20 @@ export function QuickTileCreate() {
                         ) : null}
                       </span>
                     }
+                    clearable={
+                      recurring.repeatMode !== "once" ||
+                      Boolean(recurring.endDate)
+                    }
+                    onClear={() => {
+                      setField("recurring.repeatMode", "once");
+                      setField("recurring.weekdayMask", 0);
+                      setField("recurring.endDate", "");
+                    }}
                     onClick={() => setActivePanel("recurring")}
+                    editAria={t("quickCreate.essentialRowEditAria")}
+                    clearAria={t("quickCreate.essentialRowClearAria")}
+                    confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+                    confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
                   />
                 </div>
 
@@ -1849,6 +1871,10 @@ function V4EssentialRow({
   clearable,
   onClear,
   onClick,
+  editAria,
+  clearAria,
+  confirmClearAria,
+  confirmClearLabel,
 }: {
   icon: typeof Calendar;
   label: string;
@@ -1856,27 +1882,99 @@ function V4EssentialRow({
   clearable?: boolean;
   onClear?: () => void;
   onClick: () => void;
+  editAria?: string;
+  clearAria?: string;
+  confirmClearAria?: string;
+  confirmClearLabel?: string;
 }) {
+  const [armed, setArmed] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Tear down the auto-disarm timer on unmount so a navigated-away row
+  // doesn't leave a dangling timeout that fires into a stale component.
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
+  function disarm() {
+    setArmed(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  function handleClearClick() {
+    if (!onClear) return;
+    if (armed) {
+      disarm();
+      onClear();
+    } else {
+      setArmed(true);
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        setArmed(false);
+      }, 4000);
+    }
+  }
+
+  const canClear = Boolean(clearable && onClear);
+
   return (
     <div className="grid min-h-[56px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 py-2">
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </div>
-      <button type="button" onClick={onClick}
-        aria-label={`${label} を編集`}
-        className="group flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 -my-1.5 -mx-1 cursor-pointer text-left transition-colors hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
-        <div className="shrink-0 text-[11px] font-bold text-foreground-muted">{label}</div>
+      <button
+        type="button"
+        onClick={onClick}
+        aria-label={editAria ?? `${label} を編集`}
+        className="group grid min-w-0 grid-cols-[66px_minmax(0,1fr)] items-center gap-3 rounded-md px-2 py-1.5 -my-1.5 -mx-1 cursor-pointer text-left transition-colors hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <div className="select-none text-[11px] font-bold text-foreground-muted">
+          {label}
+        </div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">{chip}</div>
       </button>
       <div className="flex items-center gap-1">
-        {clearable && onClear ? (
-          <button type="button" onClick={onClear} aria-label="指定を消す"
-            className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
-            <X className="h-4 w-4" aria-hidden />
+        {canClear ? (
+          <button
+            type="button"
+            onClick={handleClearClick}
+            aria-label={
+              armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")
+            }
+            data-armed={armed ? "true" : undefined}
+            className={cn(
+              "flex h-10 min-w-[40px] items-center justify-center gap-1 rounded-md px-2 text-[11px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+              armed
+                ? "animate-pulse bg-danger text-white hover:bg-danger/90"
+                : "text-foreground-muted hover:bg-danger/15 hover:text-danger",
+            )}
+            onBlur={() => armed && disarm()}
+          >
+            {armed ? (
+              <>
+                <Check className="h-4 w-4" aria-hidden />
+                <span>{confirmClearLabel ?? "確定"}</span>
+              </>
+            ) : (
+              <X className="h-4 w-4" aria-hidden />
+            )}
           </button>
         ) : null}
-        <button type="button" onClick={onClick} aria-hidden="true" tabIndex={-1}
-          className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted group-hover:text-foreground hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+        <button
+          type="button"
+          onClick={onClick}
+          aria-hidden="true"
+          tabIndex={-1}
+          className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted group-hover:text-foreground hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        >
           <ChevronRight className="h-4 w-4" aria-hidden />
         </button>
       </div>
