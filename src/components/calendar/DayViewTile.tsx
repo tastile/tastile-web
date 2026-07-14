@@ -59,13 +59,10 @@ function DayViewTileImpl({
           className="inline-block h-2 w-2 shrink-0 rounded-full"
           style={{ backgroundColor: tile.color }}
         />
-        <span className="truncate text-xs font-medium">
-          {event.title || "(untitled)"}
-        </span>
+        <span className="truncate text-xs font-medium">{event.title || "(untitled)"}</span>
       </div>
       <div className="mt-0.5 truncate font-mono text-[10px] opacity-80">
-        {formatLocalTimeOfDay(event.start, tzOffset)} –{" "}
-        {formatLocalTimeOfDay(event.end, tzOffset)}
+        {formatLocalTimeOfDay(event.start, tzOffset)} – {formatLocalTimeOfDay(event.end, tzOffset)}
       </div>
       {event.location ? (
         <div className="mt-0.5 truncate text-[10px] opacity-70">{event.location}</div>

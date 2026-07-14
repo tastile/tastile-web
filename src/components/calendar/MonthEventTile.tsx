@@ -8,7 +8,7 @@ export interface MonthEventTileProps {
   event: CalendarEvent;
 }
 
-function pad(n: number): string {
+function _pad(n: number): string {
   return n.toString().padStart(2, "0");
 }
 

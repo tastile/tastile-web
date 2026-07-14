@@ -343,7 +343,6 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
             mode={mode}
             tzOffset={tzOffset}
             events={visibleEvents}
-            loading={loading}
             onCreateAtSlot={handleCreateAtSlot}
             onEditEvent={handleEditEvent}
           />

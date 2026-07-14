@@ -61,7 +61,7 @@ export default function RuntimePage() {
               },
               {
                 label: "API",
-                value: version?.ok ? version.data.api_version ?? "—" : "—",
+                value: version?.ok ? (version.data.api_version ?? "—") : "—",
               },
             ],
           },

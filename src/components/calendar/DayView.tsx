@@ -128,7 +128,6 @@ export function DayView({
       hourHeight={hourHeight}
       hours={hourOffsets.hours}
       effectiveDay={effectiveDay}
-      mode={mode}
       onCreateAtSlot={onCreateAtSlot}
       allDayArea={<AllDayLane events={allDayEvents} onEditEvent={onEditEvent} />}
       eventsArea={eventsArea}

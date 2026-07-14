@@ -328,25 +328,6 @@ function defaultRecurring(): RecurringSlice {
   };
 }
 
-export function defaultRecurrenceModel(): RecurrenceModel {
-  return {
-    generator: {
-      kind: "time_based",
-      step_min: 1440,
-      anchor_epoch_min: null,
-    },
-    window: {
-      weekday_mask: 0b0011111, // Mon–Fri
-      start_offset_min: 9 * 60,
-      end_offset_min: 18 * 60,
-      exclusions: [],
-    },
-    selector: {
-      expression: null,
-    },
-  };
-}
-
 function defaultAdvanced(): AdvancedSlice {
   return { changeSets: [], rules: [] };
 }

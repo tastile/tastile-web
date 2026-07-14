@@ -31,7 +31,8 @@ export function CompletionPanel({ timeRequirements, setField, t }: CompletionPan
         <FormRow key={tr.id} icon={<Clock size={20} />}>
           <div className="grid w-full grid-cols-2 gap-2 text-xs">
             <span className="text-foreground-muted">
-              #{i + 1} · {tr.required.minMs !== null ? `${Math.round(tr.required.minMs / 60000)} min` : "—"}
+              #{i + 1} ·{" "}
+              {tr.required.minMs !== null ? `${Math.round(tr.required.minMs / 60000)} min` : "—"}
             </span>
             <Button
               type="button"

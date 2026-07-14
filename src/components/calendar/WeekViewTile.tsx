@@ -55,8 +55,7 @@ function WeekViewTileImpl({
         {event.title || "(untitled)"}
       </div>
       <div className="truncate font-mono text-[9px] opacity-80">
-        {formatLocalTimeOfDay(event.start, tzOffset)} –{" "}
-        {formatLocalTimeOfDay(event.end, tzOffset)}
+        {formatLocalTimeOfDay(event.start, tzOffset)} – {formatLocalTimeOfDay(event.end, tzOffset)}
       </div>
     </button>
   );

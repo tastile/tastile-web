@@ -18,7 +18,6 @@ export interface WeekViewProps {
   mode: DisplayMode;
   tzOffset: number;
   events: CalendarEvent[];
-  loading: boolean;
   onCreateAtSlot?: (anchor: string, hour: number) => void;
   onEditEvent?: (event: CalendarEvent) => void;
 }
@@ -34,7 +33,6 @@ export function WeekView({
   mode,
   tzOffset,
   events,
-  loading,
   onCreateAtSlot,
   onEditEvent,
 }: WeekViewProps) {
@@ -90,7 +88,9 @@ export function WeekView({
       weekDates={weekDates}
       todayLocal={todayLocal}
       onCreateAtSlot={onCreateAtSlot}
-      allDayArea={(d) => <AllDayLane events={perDay.get(d)?.allDay ?? []} onEditEvent={onEditEvent} />}
+      allDayArea={(d) => (
+        <AllDayLane events={perDay.get(d)?.allDay ?? []} onEditEvent={onEditEvent} />
+      )}
       eventsArea={(d) => {
         const day = perDay.get(d);
         return (

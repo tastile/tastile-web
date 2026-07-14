@@ -372,7 +372,8 @@ export const translations = {
       behaviorExecutableSub: "配置から実行を開始し、完了条件を評価します",
       behaviorLabelSub: "通常どおり配置を生成し、Executionだけ開始しません",
       behaviorEdit: "変更",
-      simpleNote: "同じ値は、入力行・条件要約・配置結果の複数箇所から確認できます。詳細な構造は必要な時だけ開きます。",
+      simpleNote:
+        "同じ値は、入力行・条件要約・配置結果の複数箇所から確認できます。詳細な構造は必要な時だけ開きます。",
       completionEmptyHint: "完了条件はまだありません",
       taskUntitled: "(無題のタスク)",
       intentPickerTitle: "配置",
@@ -394,7 +395,8 @@ export const translations = {
       intentTextCondition: "テキスト値を条件にする",
       intentTextConditionSub: "Factの文字列を明示的に比較",
       intentSubTitle: "何を変えたいか選びます",
-      intentDescription: "スキーマ名ではなく、実現したいことから進みます。条件は後からグループ化・入れ子化できます。",
+      intentDescription:
+        "スキーマ名ではなく、実現したいことから進みます。条件は後からグループ化・入れ子化できます。",
       addConditionOrGroup: "条件またはグループを追加",
       timeNavSub: "日付と時間はそれぞれ指定なしにできます",
       durationTitle: "必要時間",
@@ -404,7 +406,8 @@ export const translations = {
       durationInputLabel: "合計時間",
       durationUseCompletionTitle: "完了条件にも使う",
       durationUseCompletionSub: "TimeRequirementへ同じ値を生成",
-      behaviorSchemaNote: "ラベルを選んでも、日時・繰り返し・参照・入れ子・Flowの入力欄は欠落しません。",
+      behaviorSchemaNote:
+        "ラベルを選んでも、日時・繰り返し・参照・入れ子・Flowの入力欄は欠落しません。",
       interruptNavTitle: "中断ルール",
       interruptNavGuide: "中断されたときの挙動",
       automationNavTitle: "自動化",
@@ -1425,7 +1428,7 @@ export const translations = {
       referenceCancelLabel: "Cancel",
       referenceApplyLabel: "Apply",
       referenceIntervalUnitMin: "min",
-      referenceEmptyListHint: "No references yet. Click \"+ Add reference\" to start.",
+      referenceEmptyListHint: 'No references yet. Click "+ Add reference" to start.',
       essentialRowEditAria: "Edit this row",
       essentialRowClearAria: "Clear this row",
       essentialRowClearConfirmAria: "Confirm (click again to delete)",
@@ -1460,7 +1463,8 @@ export const translations = {
       behaviorExecutableSub: "Schedule starts execution and evaluates completion",
       behaviorLabelSub: "Generates placement normally; does not start Execution",
       behaviorEdit: "Change",
-      simpleNote: "The same values appear in multiple places: input rows, condition summary, and placement results. Open detailed structure only when needed.",
+      simpleNote:
+        "The same values appear in multiple places: input rows, condition summary, and placement results. Open detailed structure only when needed.",
       completionEmptyHint: "No completion conditions yet",
       taskUntitled: "(untitled task)",
       intentPickerTitle: "Placement",
@@ -1482,7 +1486,8 @@ export const translations = {
       intentTextCondition: "Use text values as condition",
       intentTextConditionSub: "Explicitly compare string Fact values",
       intentSubTitle: "Pick what to change",
-      intentDescription: "Start from what you want to achieve, not schema names. Conditions can be grouped or nested later.",
+      intentDescription:
+        "Start from what you want to achieve, not schema names. Conditions can be grouped or nested later.",
       addConditionOrGroup: "Add condition or group",
       timeNavSub: "Date and time can each be set to none",
       durationTitle: "Required duration",
@@ -1492,7 +1497,8 @@ export const translations = {
       durationInputLabel: "Total time",
       durationUseCompletionTitle: "Use in completion",
       durationUseCompletionSub: "Generate same value for TimeRequirement",
-      behaviorSchemaNote: "Even with a label selected, all input fields for date, recurrence, reference, nesting, and flow remain available.",
+      behaviorSchemaNote:
+        "Even with a label selected, all input fields for date, recurrence, reference, nesting, and flow remain available.",
       interruptNavTitle: "Interrupt rules",
       interruptNavGuide: "Behavior when interrupted",
       automationNavTitle: "Automation",

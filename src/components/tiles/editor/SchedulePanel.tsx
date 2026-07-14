@@ -27,16 +27,10 @@ import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 import { useMemo } from "react";
 
 import { Button } from "@/components/ui/Button";
+import { FormDivider, FormRow, RowInput, RowSegmented, SectionHeader } from "@/components/ui/form";
 import { MiniCalendar } from "@/components/ui/MiniCalendar";
-import {
-  FormDivider,
-  FormRow,
-  RowInput,
-  RowSegmented,
-  SectionHeader,
-} from "@/components/ui/form";
 import type { Window } from "@/lib/domain/v1/window";
-import type { WhenMode, TimeOfDayMode } from "@/lib/stores/quick-create-store";
+import type { TimeOfDayMode, WhenMode } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
@@ -117,6 +111,7 @@ function ChoiceTabs<T extends string>({
       {options.map((opt) => {
         const active = value === opt.id;
         return (
+          // biome-ignore lint/a11y/useSemanticElements: button-styled radio inside role="radiogroup"; WAI-ARIA radiogroup pattern with aria-checked is intentional
           <button
             key={opt.id}
             type="button"
@@ -211,10 +206,7 @@ function TimeOfDayEditor({
 }: TimeOfDayEditorProps) {
   return (
     <div className="space-y-2">
-      <BuilderLabel
-        title={t("quickCreate.timeOfDayLabel")}
-        hint={t("quickCreate.timeOfDayHint")}
-      />
+      <BuilderLabel title={t("quickCreate.timeOfDayLabel")} hint={t("quickCreate.timeOfDayHint")} />
       <ChoiceTabs<TimeOfDayMode>
         value={mode}
         onChange={onModeChange}
@@ -256,7 +248,9 @@ function TimeOfDayEditor({
                 ))}
               </select>
             </div>
-            <span aria-hidden="true" className="text-foreground-muted">→</span>
+            <span aria-hidden="true" className="text-foreground-muted">
+              →
+            </span>
             <div className="flex flex-1 items-center gap-1 rounded-md border border-border bg-surface-2 px-2 py-1.5">
               <select
                 aria-label={`${t("quickCreate.timeOfDayLabel")} end hour`}
@@ -487,7 +481,11 @@ export function SchedulePanel({
   function applyTimeOfDayMode(next: TimeOfDayMode) {
     setField("time.timeOfDayMode", next);
     if (next === "range") {
-      const cur = timeOfDayToSpanValues(next, time.timeOfDayStart || "09:00", time.timeOfDayEnd || "18:00");
+      const cur = timeOfDayToSpanValues(
+        next,
+        time.timeOfDayStart || "09:00",
+        time.timeOfDayEnd || "18:00",
+      );
       setField("time.timeOfDayStart", cur.start);
       setField("time.timeOfDayEnd", cur.end);
     } else {
@@ -524,7 +522,10 @@ export function SchedulePanel({
       </div>
 
       {time.whenMode === "day" || time.whenMode === "range" ? (
-        <div className="space-y-2 rounded-lg border border-border bg-surface-0 p-3" data-testid="when-calendar">
+        <div
+          className="space-y-2 rounded-lg border border-border bg-surface-0 p-3"
+          data-testid="when-calendar"
+        >
           <MiniCalendar
             selected={startDay || undefined}
             onSelect={applyCalendarSelect}
@@ -566,7 +567,10 @@ export function SchedulePanel({
       ) : null}
 
       {time.whenMode === "reference" ? (
-        <div data-testid="when-reference-catalog" className="flex items-center gap-3 rounded-lg border border-border bg-surface-0 p-3">
+        <div
+          data-testid="when-reference-catalog"
+          className="flex items-center gap-3 rounded-lg border border-border bg-surface-0 p-3"
+        >
           <Folder size={20} className="shrink-0 text-foreground-muted" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <div className="text-xs font-semibold text-foreground">
@@ -582,9 +586,7 @@ export function SchedulePanel({
         </div>
       ) : null}
 
-      {time.whenMode !== "none" ? (
-        <FormDivider />
-      ) : null}
+      {time.whenMode !== "none" ? <FormDivider /> : null}
 
       {time.whenMode !== "none" ? (
         <TimeOfDayEditor

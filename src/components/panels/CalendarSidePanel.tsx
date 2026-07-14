@@ -6,7 +6,6 @@ import { MiniCalendar } from "@/components/ui/MiniCalendar";
 import type { DisplayMode } from "@/lib/calendar/layout";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
 
 type CalendarSidePanelView = "day" | "week" | "month" | "year" | "list";
 
@@ -104,85 +103,6 @@ export function CalendarSidePanel({ anchor, view, mode, onSelectDate }: Calendar
       <div className="mx-3 h-px bg-border" />
 
       {/* Projects checkbox section */}
-      <ProjectsCheckboxSection />
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// Timeline Side Panel
-// ─────────────────────────────────────────────
-type TimelineScale = "day" | "week" | "month" | "custom";
-
-interface TimelineSidePanelProps {
-  anchor: string;
-  scale: TimelineScale;
-  onSelectDate?: (date: string) => void;
-  onScaleChange?: (scale: TimelineScale) => void;
-}
-
-const SCALES: { key: TimelineScale; label: string }[] = [
-  { key: "day", label: "Day" },
-  { key: "week", label: "Week" },
-  { key: "month", label: "Month" },
-  { key: "custom", label: "Custom" },
-];
-
-export function TimelineSidePanel({
-  anchor,
-  scale,
-  onSelectDate,
-  onScaleChange,
-}: TimelineSidePanelProps) {
-  const { t } = useTranslation();
-  const scaleLabels: Record<TimelineScale, string> = {
-    day: t("panels.calendar.day"),
-    week: t("panels.calendar.week"),
-    month: t("panels.calendar.month"),
-    custom: t("panels.calendar.custom"),
-  };
-  return (
-    <div className="flex flex-col gap-4 pt-2">
-      {/* ミニカレンダー */}
-      <MiniCalendar
-        selected={anchor}
-        onSelect={(date) => {
-          onSelectDate?.(date);
-          // 日付クリック → custom range の start に設定
-          onScaleChange?.("custom");
-        }}
-      />
-
-      <div className="mx-3 h-px bg-border" />
-
-      {/* 表示スケール */}
-      <div className="px-3">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-          {t("panels.calendar.scale")}
-        </p>
-        <div className="flex flex-col gap-0.5">
-          {SCALES.map(({ key }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onScaleChange?.(key)}
-              className={cn(
-                "flex h-8 items-center rounded-md px-2.5 text-sm transition-colors",
-                scale === key
-                  ? "bg-surface-2 font-medium text-foreground"
-                  : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-              )}
-              aria-pressed={scale === key}
-            >
-              {scaleLabels[key]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="mx-3 h-px bg-border" />
-
-      {/* Projects checkbox section (shared with CalendarSidePanel) */}
       <ProjectsCheckboxSection />
     </div>
   );

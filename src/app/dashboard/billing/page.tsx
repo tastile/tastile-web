@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 
 export default function BillingPage() {

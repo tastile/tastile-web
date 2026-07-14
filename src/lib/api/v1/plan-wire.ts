@@ -30,8 +30,8 @@
  * form is extended to set them).
  */
 
-import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
+import { uuidv7 } from "@/lib/domain/v1/envelope";
 
 // ---------- UUIDv7 enforcement (v1/10 §1: identifiers are UUIDv7 only) ----------
 //
@@ -45,8 +45,7 @@ import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 // the store → wire converter gets a server-legal body without having to
 // know about v1 invariants.
 
-const UUIDV7_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUIDV7_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isUuidv7(value: string): boolean {
   return typeof value === "string" && UUIDV7_RE.test(value);
@@ -166,7 +165,7 @@ const RELATION_WINDOW_KIND: Record<number, string> = {
 };
 
 function lookupEnum(table: Record<number, string>, value: unknown): unknown {
-  if (typeof value === "number" && Object.prototype.hasOwnProperty.call(table, value)) {
+  if (typeof value === "number" && Object.hasOwn(table, value)) {
     return table[value];
   }
   return value;
@@ -280,7 +279,9 @@ interface WireCompletion {
   }>;
 }
 
-function convertTimeRequirement(tr: StoreTimeRequirement): WireCompletion["time_requirements"][number] {
+function convertTimeRequirement(
+  tr: StoreTimeRequirement,
+): WireCompletion["time_requirements"][number] {
   return {
     id: tr.id,
     observation: {
@@ -365,12 +366,8 @@ export function toWireSetPlanBody(storePlan: StorePlanInput): WireSetPlanBody {
     references: convertReferences(normalised.references ?? []),
     completion: convertCompletion(normalised.completion),
     planning: {
-      placement_rules: camelToSnakeDeep(
-        normalised.planning?.placementRules ?? [],
-      ) as unknown[],
-      nesting_rules: camelToSnakeDeep(
-        normalised.planning?.nestingRules ?? [],
-      ) as unknown[],
+      placement_rules: camelToSnakeDeep(normalised.planning?.placementRules ?? []) as unknown[],
+      nesting_rules: camelToSnakeDeep(normalised.planning?.nestingRules ?? []) as unknown[],
       flows: camelToSnakeDeep(normalised.planning?.flows ?? []) as unknown[],
     },
     metrics: camelToSnakeDeep(normalised.metrics ?? []) as unknown[],
@@ -406,20 +403,16 @@ function normaliseIds(plan: StorePlanInput): StorePlanInput {
     return { ...r, id: fresh };
   });
 
-  const timeRequirements = (plan.completion.timeRequirements ?? []).map(
-    (tr) => {
-      if (isUuidv7(tr.id)) return tr;
-      return { ...tr, id: uuidv7() };
-    },
-  );
+  const timeRequirements = (plan.completion.timeRequirements ?? []).map((tr) => {
+    if (isUuidv7(tr.id)) return tr;
+    return { ...tr, id: uuidv7() };
+  });
 
   const rewriteTermRefs = (node: ConditionNode): ConditionNode => {
     if (!node) return node;
     const children = node.children?.map(rewriteTermRefs);
     const term = rewriteTermRefsInTerm(node.term);
-    return children || term !== node.term
-      ? { ...node, children: children ?? [], term }
-      : node;
+    return children || term !== node.term ? { ...node, children: children ?? [], term } : node;
   };
 
   const rewriteTermRefsInTerm = (term: Term | null): Term | null => {
@@ -480,8 +473,7 @@ function normaliseIds(plan: StorePlanInput): StorePlanInput {
   );
 
   const rootChanged =
-    plan.completion.root &&
-    (plan.completion.root.children?.length ?? 0) > 0
+    plan.completion.root && (plan.completion.root.children?.length ?? 0) > 0
       ? rewriteTermRefs(plan.completion.root)
       : plan.completion.root;
   const rootIsNewRoot = rootChanged !== plan.completion.root;

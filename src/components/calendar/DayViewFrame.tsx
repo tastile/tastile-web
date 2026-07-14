@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, type ReactNode, type Ref } from "react";
-import type { DisplayMode } from "@/lib/calendar/layout";
 
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
@@ -16,7 +15,6 @@ export interface DayViewFrameProps {
   hours: number[];
   /** YYYY-MM-DD; used for slot-button test ids and as the anchor passed to onCreateAtSlot. */
   effectiveDay: string;
-  mode: DisplayMode;
   /** Stable callback from the parent (useCallback) — memo skips re-render only when this is referentially stable. */
   onCreateAtSlot?: (anchor: string, hour: number) => void;
   /** Dynamic content rendered in the ALL DAY sticky bar (chips). */
@@ -40,7 +38,6 @@ function DayViewFrameImpl({
   hourHeight,
   hours,
   effectiveDay,
-  mode,
   onCreateAtSlot,
   allDayArea,
   eventsArea,

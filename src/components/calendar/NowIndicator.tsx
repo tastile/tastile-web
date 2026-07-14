@@ -51,8 +51,7 @@ export function NowIndicator({ hourHeight, startHour, effectiveDay }: NowIndicat
   const nowMins = now.getHours() * 60 + now.getMinutes();
   // Match DayView's wrap-around handling so the line lands inside the
   // grid even when the hour grid is rotated (around/future modes).
-  const nowTop =
-    (((nowMins - startHour * 60 + 24 * 60) % (24 * 60)) / 60) * hourHeight;
+  const nowTop = (((nowMins - startHour * 60 + 24 * 60) % (24 * 60)) / 60) * hourHeight;
 
   return (
     <div

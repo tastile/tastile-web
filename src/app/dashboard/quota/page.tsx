@@ -45,7 +45,7 @@ export default function QuotaPage() {
             items: [
               {
                 label: "Tier",
-                value: data?.ok ? data.data.plan ?? "free" : "—",
+                value: data?.ok ? (data.data.plan ?? "free") : "—",
               },
               {
                 label: "Tiles",

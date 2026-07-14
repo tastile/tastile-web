@@ -24,7 +24,7 @@ import { FormPanel } from "@/components/ui/form";
 import { TileKind } from "@/lib/domain/v1/constants";
 import { cn } from "@/lib/utils/cn";
 
-import { type EditorLocale } from "./date-utils";
+import type { EditorLocale } from "./date-utils";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention
 // that already exists in this repo).
@@ -59,13 +59,11 @@ function WeekdayRow({
   mask,
   disabled,
   onToggle,
-  t,
   locale,
 }: {
   mask: number;
   disabled: boolean;
   onToggle: (bit: number) => void;
-  t: (key: string) => string;
   locale: EditorLocale;
 }) {
   return (
@@ -170,12 +168,7 @@ export interface AutomationPanelProps {
   t: (key: string) => string;
 }
 
-export function AutomationPanel({
-  recurring,
-  setField,
-  locale,
-  t,
-}: AutomationPanelProps) {
+export function AutomationPanel({ recurring, setField, locale, t }: AutomationPanelProps) {
   const weekdayEnabled = recurring.repeatMode === "weekly";
   return (
     <FormPanel>
@@ -192,6 +185,7 @@ export function AutomationPanel({
         {REPEAT_MODE_OPTIONS.map((opt) => {
           const active = recurring.repeatMode === opt.id;
           return (
+            // biome-ignore lint/a11y/useSemanticElements: button-styled radio inside role="radiogroup"; WAI-ARIA radiogroup pattern with aria-checked is intentional
             <button
               key={opt.id}
               type="button"
@@ -224,10 +218,7 @@ export function AutomationPanel({
         <WeekdayRow
           mask={recurring.weekdayMask}
           disabled={!weekdayEnabled}
-          onToggle={(bit) =>
-            setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))
-          }
-          t={t}
+          onToggle={(bit) => setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))}
           locale={locale}
         />
       </div>

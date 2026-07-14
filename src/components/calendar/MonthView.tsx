@@ -1,11 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  type DisplayMode,
-  eventSpansDay,
-  getMonthViewDates,
-} from "@/lib/calendar/layout";
+import { type DisplayMode, eventSpansDay, getMonthViewDates } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { cn } from "@/lib/utils/cn";
 import { MonthEventTile } from "./MonthEventTile";

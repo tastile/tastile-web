@@ -25,17 +25,14 @@
 "use client";
 
 import {
-  type AlertCircle,
   Bell,
-  Circle,
-  MoreHorizontal,
   Calendar,
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ChevronDown,
   Clock,
   Coffee,
   FileText,
@@ -49,12 +46,13 @@ import {
   Link2,
   ListChecks,
   MessageSquare,
+  MoreHorizontal,
   Palette,
   Play,
   Plus,
   Repeat,
-  SlidersHorizontal,
   Settings2,
+  SlidersHorizontal,
   Star,
   Tag,
   Trash2,
@@ -62,22 +60,11 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-
-import { Button } from "@/components/ui/Button";
-import { Dropdown } from "@/components/ui/Dropdown";
-import {
-  FormDivider,
-  FormPanel,
-  FormRow,
-  RowInput,
-  RowSegmented,
-  RowSubPanel,
-  RowToggle,
-  SectionHeader,
-} from "@/components/ui/form";
-import { Textarea } from "@/components/ui/Input";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
+import { Button } from "@/components/ui/Button";
+import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
+import { Textarea } from "@/components/ui/Input";
 import { makeClient } from "@/lib/api/v1/submit";
 import {
   closePlacementCommand,
@@ -103,10 +90,10 @@ import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore, type RepeatChoice } from "@/lib/stores/quick-create-store";
+import { type RepeatChoice, useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
-const PRESET_COLORS = [
+const _PRESET_COLORS = [
   "#5e6ad2",
   "#0d8a72",
   "#c08a2b",
@@ -119,7 +106,7 @@ const PRESET_COLORS = [
   "#6b7280",
 ];
 
-const AVAILABLE_ICONS = [
+const _AVAILABLE_ICONS = [
   { name: "FileText", icon: FileText },
   { name: "Clock", icon: Clock },
   { name: "Repeat", icon: Repeat },
@@ -162,14 +149,14 @@ const REPEAT_MODE_LABEL_KEY: Record<RepeatChoice, string> = {
   condition: "quickCreate.repeatCondition",
 };
 
-function localDateTimeToIso(value: string): string | null {
+function _localDateTimeToIso(value: string): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString();
 }
 
-function isoToLocalDateTime(iso: string | null | undefined): string {
+function _isoToLocalDateTime(iso: string | null | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
@@ -177,11 +164,11 @@ function isoToLocalDateTime(iso: string | null | undefined): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-function localDateToIsoDate(value: string): string {
+function _localDateToIsoDate(value: string): string {
   return value ? `${value}T00:00:00.000Z` : "";
 }
 
-function isoToLocalDate(iso: string | null | undefined): string {
+function _isoToLocalDate(iso: string | null | undefined): string {
   if (!iso) return "";
   return iso.slice(0, 10);
 }
@@ -220,7 +207,20 @@ function formatDisplayDate(
 
   const weekdaysJa = ["日", "月", "火", "水", "木", "金", "土"];
   const weekdaysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthsEn = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthsEn = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
   const month = date.getMonth() + 1;
   const day = date.getDate();
@@ -237,7 +237,7 @@ function formatDisplayDate(
   }
 }
 
-function normalizeHexColor(value: string): string {
+function _normalizeHexColor(value: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : "#000000";
 }
 
@@ -271,14 +271,22 @@ export function QuickTileCreate() {
   const [allDay, setAllDay] = useState(false);
   const [visualOpen, setVisualOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<
-    "base" | "intent" | "time" | "duration" | "recurring" | "references" | "completion" | "meta" | "behavior"
+    | "base"
+    | "intent"
+    | "time"
+    | "duration"
+    | "recurring"
+    | "references"
+    | "completion"
+    | "meta"
+    | "behavior"
   >("base");
   const projects = useProjects();
   const actorSubjectId = useCurrentActorSubjectId();
   useEffect(() => {
     void projects.refresh();
   }, [projects.refresh]);
-  const [intentPickerOpen, setIntentPickerOpen] = useState(false);
+  const [_intentPickerOpen, _setIntentPickerOpen] = useState(false);
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -330,9 +338,9 @@ export function QuickTileCreate() {
     function handlePointerDown(e: PointerEvent) {
       const target = e.target as Node;
       const anchor = taskMenuButtonRefs.current[menuIndex];
-      if (anchor && anchor.contains(target)) return;
+      if (anchor?.contains(target)) return;
       const popover = document.getElementById("quick-create-task-menu");
-      if (popover && popover.contains(target)) return;
+      if (popover?.contains(target)) return;
       setTaskMenuIndex(null);
     }
     function handleKeyDown(e: KeyboardEvent) {
@@ -368,7 +376,7 @@ export function QuickTileCreate() {
       const target = event.target;
       if (!(target instanceof Element)) return;
       const subPanel = document.querySelector(`[data-subpanel="${activePanel}"]`);
-      if (subPanel && subPanel.contains(target)) return;
+      if (subPanel?.contains(target)) return;
       setActivePanel("base");
     }
     document.addEventListener("mousedown", handleSubPanelOutsideClick);
@@ -406,14 +414,19 @@ export function QuickTileCreate() {
     return total;
   }
   const completionRootNode = plan.completion.root;
-  const completionRootLabel = (() => {
+  const _completionRootLabel = (() => {
     if (!completionRootNode) return t("quickCreate.completionNoRoot");
     switch (completionRootNode.kind) {
-      case ConditionKind.ALL: return t("quickCreate.completionAll");
-      case ConditionKind.ANY: return t("quickCreate.completionAny");
-      case ConditionKind.NOT: return t("quickCreate.completionNot");
-      case ConditionKind.TERM: return t("quickCreate.completionTerm");
-      default: return t("quickCreate.completionNoRoot");
+      case ConditionKind.ALL:
+        return t("quickCreate.completionAll");
+      case ConditionKind.ANY:
+        return t("quickCreate.completionAny");
+      case ConditionKind.NOT:
+        return t("quickCreate.completionNot");
+      case ConditionKind.TERM:
+        return t("quickCreate.completionTerm");
+      default:
+        return t("quickCreate.completionNoRoot");
     }
   })();
   const _completionRootCount = countConditionChildren(completionRootNode);
@@ -432,11 +445,17 @@ export function QuickTileCreate() {
   }
 
   function removeWindow(index: number) {
-    setField("windows", windows.filter((_, i) => i !== index));
+    setField(
+      "windows",
+      windows.filter((_, i) => i !== index),
+    );
   }
 
   function updateWindow(index: number, updater: (current: Window) => Window) {
-    setField("windows", windows.map((w, i) => (i === index ? updater(w) : w)));
+    setField(
+      "windows",
+      windows.map((w, i) => (i === index ? updater(w) : w)),
+    );
   }
 
   // --- submit ---
@@ -487,7 +506,10 @@ export function QuickTileCreate() {
           metrics: plan.metrics,
           decisions: plan.decisions,
         });
-        if (!planRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`);
+        if (!planRes.ok)
+          throw new Error(
+            `${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`,
+          );
       } else if (mode === "edit" && editingId) {
         const startIso = time.span.start;
         let endIso = time.span.end;
@@ -499,7 +521,8 @@ export function QuickTileCreate() {
           dayEnd.setDate(dayEnd.getDate() + 1);
           if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
         }
-        if (!startIso || !endIso) throw new Error(`${t("quickCreate.updateError")} (api:v1) start/end required`);
+        if (!startIso || !endIso)
+          throw new Error(`${t("quickCreate.updateError")} (api:v1) start/end required`);
         const tileUpdateRes = await updateTileCommand({
           client: makeClient(),
           tileId: editingTileId ?? editingId,
@@ -508,7 +531,10 @@ export function QuickTileCreate() {
           color: identity.visual.color ?? null,
           icon: identity.visual.icon ?? null,
         });
-        if (!tileUpdateRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:tile) ${tileUpdateRes.error.message}`);
+        if (!tileUpdateRes.ok)
+          throw new Error(
+            `${t("quickCreate.updateError")} (api:v1 stage:tile) ${tileUpdateRes.error.message}`,
+          );
         if (!actorSubjectId) throw new Error("actorSubjectId required");
         const spanRes = await updatePlacementSpanCommand({
           client: makeClient(),
@@ -518,7 +544,10 @@ export function QuickTileCreate() {
           ownerSubjectId: actorSubjectId,
           actorSubjectId: actorSubjectId,
         });
-        if (!spanRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:span) ${spanRes.error.message}`);
+        if (!spanRes.ok)
+          throw new Error(
+            `${t("quickCreate.updateError")} (api:v1 stage:span) ${spanRes.error.message}`,
+          );
         const editPlacementTileId = editingTileId ?? editingId;
         const planRes = await setPlanCommand({
           client: makeClient(),
@@ -530,7 +559,10 @@ export function QuickTileCreate() {
           metrics: plan.metrics,
           decisions: plan.decisions,
         });
-        if (!planRes.ok) throw new Error(`${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`);
+        if (!planRes.ok)
+          throw new Error(
+            `${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`,
+          );
       } else if (identity.kind === TileKind.RECURRING) {
         const startIso = time.span.start;
         let endIso = time.span.end;
@@ -542,7 +574,8 @@ export function QuickTileCreate() {
           dayEnd.setDate(dayEnd.getDate() + 1);
           if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
         }
-        if (!startIso || !endIso) throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
+        if (!startIso || !endIso)
+          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
         const windowMask = recurrence?.window?.weekday_mask ?? 0;
         const weeklyV1Mask = (() => {
           let v1 = 0;
@@ -568,7 +601,8 @@ export function QuickTileCreate() {
           if (start === end) return undefined;
           return { start, end };
         })();
-        const recurrencePattern = weeklyV1Mask !== 0 ? ({ kind: "weekly", weekdays: weeklyV1Mask } as const) : undefined;
+        const recurrencePattern =
+          weeklyV1Mask !== 0 ? ({ kind: "weekly", weekdays: weeklyV1Mask } as const) : undefined;
         const recurringRes = await createRecurringCommand({
           client: makeClient(),
           title: identity.title,
@@ -583,7 +617,10 @@ export function QuickTileCreate() {
           timeOfDay,
           occurrences: 14,
         });
-        if (!recurringRes.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:${recurringRes.stage}) ${recurringRes.error.message}`);
+        if (!recurringRes.ok)
+          throw new Error(
+            `${t("quickCreate.createError")} (api:v1 stage:${recurringRes.stage}) ${recurringRes.error.message}`,
+          );
         const planRes = await setPlanCommand({
           client: makeClient(),
           tileId: recurringRes.tileId,
@@ -594,7 +631,10 @@ export function QuickTileCreate() {
           metrics: plan.metrics,
           decisions: plan.decisions,
         });
-        if (!planRes.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`);
+        if (!planRes.ok)
+          throw new Error(
+            `${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`,
+          );
       } else {
         const startIso = time.span.start;
         let endIso = time.span.end;
@@ -606,7 +646,8 @@ export function QuickTileCreate() {
           dayEnd.setDate(dayEnd.getDate() + 1);
           if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
         }
-        if (!startIso || !endIso) throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
+        if (!startIso || !endIso)
+          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
         const res = await createManualPlacementCommand({
           client: makeClient(),
           title: identity.title,
@@ -617,7 +658,10 @@ export function QuickTileCreate() {
           end: endIso,
           planRole: plan.role,
         });
-        if (!res.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:${res.stage}) ${res.error.message}`);
+        if (!res.ok)
+          throw new Error(
+            `${t("quickCreate.createError")} (api:v1 stage:${res.stage}) ${res.error.message}`,
+          );
         const planRes = await setPlanCommand({
           client: makeClient(),
           tileId: res.tileId,
@@ -628,7 +672,10 @@ export function QuickTileCreate() {
           metrics: plan.metrics,
           decisions: plan.decisions,
         });
-        if (!planRes.ok) throw new Error(`${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`);
+        if (!planRes.ok)
+          throw new Error(
+            `${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`,
+          );
       }
 
       reset();
@@ -644,9 +691,10 @@ export function QuickTileCreate() {
     }
   }
 
-  async function handleDelete() {
+  async function _handleDelete() {
     if (mode !== "edit" || !editingId) return;
-    const confirmed = typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
+    const confirmed =
+      typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
     if (!confirmed) return;
     setSubmitting(true);
     setError(null);
@@ -689,7 +737,17 @@ export function QuickTileCreate() {
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
 
-  const subPanelClass = (panel: "intent" | "time" | "duration" | "recurring" | "references" | "completion" | "meta" | "behavior") =>
+  const subPanelClass = (
+    panel:
+      | "intent"
+      | "time"
+      | "duration"
+      | "recurring"
+      | "references"
+      | "completion"
+      | "meta"
+      | "behavior",
+  ) =>
     isDesktop
       ? cn(
           "fixed inset-y-0 right-0 z-[57]",
@@ -742,7 +800,9 @@ export function QuickTileCreate() {
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
-              onClick={() => {/* schema view — placeholder */}}
+              onClick={() => {
+                /* schema view — placeholder */
+              }}
               className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
             >
               <GitBranch className="h-3.5 w-3.5" aria-hidden />
@@ -762,481 +822,494 @@ export function QuickTileCreate() {
         {/* ─── composer body ─── */}
         <div className="flex-1 overflow-y-auto p-4">
           <div className="mx-auto max-w-[640px]">
-              {/* ── main card ── */}
-              <section className="py-2">
-                {/* title input */}
-                <input
-                  type="text"
-                  value={identity.title}
-                  onChange={(e) => {
-                    setField("identity.title", e.target.value);
-                    if (invalidField === "title") setInvalidField(null);
-                  }}
-                  placeholder={t("quickCreate.titlePlaceholder")}
-                  aria-label={t("quickCreate.titlePlaceholder")}
-                  aria-required="true"
-                  aria-invalid={invalidField === "title" ? "true" : "false"}
-                  aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
-                  className="w-full border-0 bg-transparent pb-3 text-2xl font-bold tracking-tight text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-                />
+            {/* ── main card ── */}
+            <section className="py-2">
+              {/* title input */}
+              <input
+                type="text"
+                value={identity.title}
+                onChange={(e) => {
+                  setField("identity.title", e.target.value);
+                  if (invalidField === "title") setInvalidField(null);
+                }}
+                placeholder={t("quickCreate.titlePlaceholder")}
+                aria-label={t("quickCreate.titlePlaceholder")}
+                aria-required="true"
+                aria-invalid={invalidField === "title" ? "true" : "false"}
+                aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
+                className="w-full border-0 bg-transparent pb-3 text-2xl font-bold tracking-tight text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+              />
 
-                {/* organize row: project + tags + add button */}
-                <div className="flex flex-wrap items-center gap-1.5 pb-3" data-testid="quick-create-organize-row">
-                  {currentProject && (
-                    <button
-                      type="button"
-                      onClick={() => setActivePanel("meta")}
-                      className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-[#d9e5f3] bg-[#eef3fb] px-2.5 text-[11px] font-bold text-[#37689e] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              {/* organize row: project + tags + add button */}
+              <div
+                className="flex flex-wrap items-center gap-1.5 pb-3"
+                data-testid="quick-create-organize-row"
+              >
+                {currentProject && (
+                  <button
+                    type="button"
+                    onClick={() => setActivePanel("meta")}
+                    className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-[#d9e5f3] bg-[#eef3fb] px-2.5 text-[11px] font-bold text-[#37689e] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <FolderOpen className="h-3 w-3" aria-hidden />
+                    <span>{currentProject.display_name}</span>
+                  </button>
+                )}
+                {meta.tags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setActivePanel("meta")}
+                    className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-[#e1dbf5] bg-[#f2effc] px-2.5 text-[11px] font-bold text-[#6754a8] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <Tag className="h-3 w-3" aria-hidden />
+                    <span>#{tag}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setActivePanel("meta")}
+                  className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-0 px-2.5 text-[11px] font-bold text-foreground-muted hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <Plus className="h-3 w-3" aria-hidden />
+                  <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
+                </button>
+              </div>
+
+              {/* tile kind selector */}
+              <RowSegmented
+                icon={CheckCircle2}
+                data-testid="quick-create-tile-kind"
+                options={TILE_KIND_OPTIONS.map((opt) => ({
+                  value: String(opt.value),
+                  label: t(opt.label),
+                }))}
+                value={String(identity.kind)}
+                onChange={(value) => {
+                  const next = Number(value) as TileKindValue;
+                  setField("identity.kind", next);
+                }}
+              />
+
+              {/* ─── essentials ─── */}
+              <div className="pt-2" data-testid="quick-create-essentials">
+                <hr className="border-border mb-2" />
+                <V4EssentialRow
+                  icon={Calendar}
+                  label={t("quickCreate.timeNavTitle")}
+                  chip={
+                    time.whenMode === "none" ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("quickCreate.whenNoneTitle")}
+                      </span>
+                    ) : time.whenMode === "reference" ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                        {t("quickCreate.referenceRangeTitle")}
+                      </span>
+                    ) : time.span.start || time.span.end ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                        {time.whenMode === "day"
+                          ? formatDisplayDate(time.span.start, true, locale, t)
+                          : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : t("quickCreate.spanUnset")} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : t("quickCreate.spanUnset")}`}
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("tiles.notSet")}
+                      </span>
+                    )
+                  }
+                  clearable={
+                    time.whenMode === "reference"
+                      ? Boolean(time.referenceId)
+                      : time.whenMode !== "none"
+                        ? Boolean(time.span.start || time.span.end)
+                        : false
+                  }
+                  onClear={() => {
+                    if (time.whenMode === "reference") {
+                      setField("time.referenceId", null);
+                      setField("time.referenceLabel", "");
+                    } else {
+                      setField("time.span.start", "");
+                      setField("time.span.end", "");
+                    }
+                  }}
+                  onClick={() => setActivePanel("time")}
+                  editAria={t("quickCreate.essentialRowEditAria")}
+                  clearAria={t("quickCreate.essentialRowClearAria")}
+                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+                />
+                <V4EssentialRow
+                  icon={Clock}
+                  label={t("quickCreate.duration")}
+                  chip={
+                    time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                          {time.durationMinMax.minMs !== null
+                            ? `${Math.round(time.durationMinMax.minMs / 60000)}分`
+                            : "—"}
+                          {time.durationMinMax.maxMs !== null
+                            ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)}分`
+                            : ""}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted">
+                          <Link2 size={10} aria-hidden="true" />
+                          {t("quickCreate.durationLinkedNote")}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("tiles.notSet")}
+                      </span>
+                    )
+                  }
+                  clearable={
+                    time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null
+                  }
+                  onClear={() => {
+                    setField("time.durationMinMax.minMs", null);
+                    setField("time.durationMinMax.maxMs", null);
+                  }}
+                  onClick={() => setActivePanel("duration")}
+                  editAria={t("quickCreate.essentialRowEditAria")}
+                  clearAria={t("quickCreate.essentialRowClearAria")}
+                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+                />
+                <V4EssentialRow
+                  icon={Repeat}
+                  label={t("quickCreate.repeatChip")}
+                  chip={
+                    recurring.repeatMode === "once" ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("tiles.notSet")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                        <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
+                        {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
+                          <span className="text-foreground-muted">
+                            (
+                            {WEEKDAY_LABELS_SHORT[locale]
+                              .filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0)
+                              .join(", ")}
+                            )
+                          </span>
+                        ) : null}
+                        {recurring.repeatMode !== "condition" && recurring.endDate ? (
+                          <span className="text-foreground-muted">
+                            ~ {recurring.endDate.slice(0, 10)}
+                          </span>
+                        ) : null}
+                      </span>
+                    )
+                  }
+                  clearable={recurring.repeatMode !== "once" || Boolean(recurring.endDate)}
+                  onClear={() => {
+                    setField("recurring.repeatMode", "once");
+                    setField("recurring.weekdayMask", 0);
+                    setField("recurring.endDate", "");
+                  }}
+                  onClick={() => setActivePanel("recurring")}
+                  editAria={t("quickCreate.essentialRowEditAria")}
+                  clearAria={t("quickCreate.essentialRowClearAria")}
+                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+                />
+              </div>
+
+              {/* ─── tasks block ─── */}
+              <div className="pt-3">
+                <hr className="border-border mb-3" />
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+                  <ListChecks size={14} aria-hidden="true" />
+                  <span>{t("quickCreate.completionRequires")}</span>
+                  <button
+                    type="button"
+                    onClick={() => setActivePanel("completion")}
+                    aria-label={t("quickCreate.completionRequires")}
+                    className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  >
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
+                </div>
+                <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
+                  {plan.completion.tasks.length > 0
+                    ? `${plan.completion.tasks.length}${t("quickCreate.completionItemsHint")}`
+                    : t("quickCreate.completionAddHint")}
+                </div>
+                <div className="space-y-1.5">
+                  {plan.completion.tasks.map((tk, i) => (
+                    <div
+                      key={tk.id}
+                      data-testid="quick-create-task-row"
+                      className="flex min-h-[38px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-1.5 text-xs"
                     >
-                      <FolderOpen className="h-3 w-3" aria-hidden />
-                      <span>{currentProject.display_name}</span>
-                    </button>
-                  )}
-                  {meta.tags.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => setActivePanel("meta")}
-                      className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-[#e1dbf5] bg-[#f2effc] px-2.5 text-[11px] font-bold text-[#6754a8] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <Tag className="h-3 w-3" aria-hidden />
-                      <span>#{tag}</span>
-                    </button>
+                      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
+                      <span
+                        className={
+                          tk.content?.title
+                            ? "min-w-0 flex-1 truncate text-foreground"
+                            : "min-w-0 flex-1 truncate text-foreground-muted"
+                        }
+                      >
+                        {tk.content?.title || t("quickCreate.taskUntitled")}
+                      </span>
+                      <button
+                        type="button"
+                        ref={(el) => {
+                          taskMenuButtonRefs.current[i] = el;
+                        }}
+                        onClick={() => setTaskMenuIndex((prev) => (prev === i ? null : i))}
+                        aria-label={t("quickCreate.taskMoreAria")}
+                        aria-haspopup="menu"
+                        aria-expanded={taskMenuIndex === i}
+                        title={t("quickCreate.taskMoreTitle")}
+                        className={cn(
+                          "flex h-6 w-6 items-center justify-center rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                          taskMenuIndex === i
+                            ? "bg-surface-2 text-foreground"
+                            : "text-foreground-muted hover:bg-surface-1 hover:text-foreground",
+                        )}
+                      >
+                        <MoreHorizontal size={14} aria-hidden="true" />
+                      </button>
+                    </div>
                   ))}
                   <button
                     type="button"
-                    onClick={() => setActivePanel("meta")}
-                    className="inline-flex h-[29px] items-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-0 px-2.5 text-[11px] font-bold text-foreground-muted hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    <Plus className="h-3 w-3" aria-hidden />
-                    <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
-                  </button>
-                </div>
-
-                {/* tile kind selector */}
-                <RowSegmented
-                  icon={CheckCircle2}
-                  data-testid="quick-create-tile-kind"
-                  options={TILE_KIND_OPTIONS.map((opt) => ({
-                    value: String(opt.value),
-                    label: t(opt.label),
-                  }))}
-                  value={String(identity.kind)}
-                  onChange={(value) => {
-                    const next = Number(value) as TileKindValue;
-                    setField("identity.kind", next);
-                  }}
-                />
-
-                {/* ─── essentials ─── */}
-                <div className="pt-2" data-testid="quick-create-essentials">
-                  <hr className="border-border mb-2" />
-                  <V4EssentialRow
-                    icon={Calendar}
-                    label={t("quickCreate.timeNavTitle")}
-                    chip={
-                      time.whenMode === "none" ? (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
-                          {t("quickCreate.whenNoneTitle")}
-                        </span>
-                      ) : time.whenMode === "reference" ? (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                          {t("quickCreate.referenceRangeTitle")}
-                        </span>
-                      ) : time.span.start || time.span.end ? (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                          {time.whenMode === "day"
-                            ? formatDisplayDate(time.span.start, true, locale, t)
-                            : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : t("quickCreate.spanUnset")} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : t("quickCreate.spanUnset")}`}
-                        </span>
-                      ) : (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
-                          {t("tiles.notSet")}
-                        </span>
-                      )
-                    }
-                    clearable={
-                      time.whenMode === "reference"
-                        ? Boolean(time.referenceId)
-                        : time.whenMode !== "none"
-                        ? Boolean(time.span.start || time.span.end)
-                        : false
-                    }
-                    onClear={() => {
-                      if (time.whenMode === "reference") {
-                        setField("time.referenceId", null);
-                        setField("time.referenceLabel", "");
-                      } else {
-                        setField("time.span.start", "");
-                        setField("time.span.end", "");
-                      }
-                    }}
-                    onClick={() => setActivePanel("time")}
-                    editAria={t("quickCreate.essentialRowEditAria")}
-                    clearAria={t("quickCreate.essentialRowClearAria")}
-                    confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                    confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
-                  />
-                  <V4EssentialRow
-                    icon={Clock}
-                    label={t("quickCreate.duration")}
-                    chip={
-                      time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                            {time.durationMinMax.minMs !== null
-                              ? `${Math.round(time.durationMinMax.minMs / 60000)}分`
-                              : "—"}
-                            {time.durationMinMax.maxMs !== null
-                              ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)}分`
-                              : ""}
-                          </span>
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted">
-                            <Link2 size={10} aria-hidden="true" />
-                            {t("quickCreate.durationLinkedNote")}
-                          </span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
-                          {t("tiles.notSet")}
-                        </span>
-                      )
-                    }
-                    clearable={time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null}
-                    onClear={() => {
-                      setField("time.durationMinMax.minMs", null);
-                      setField("time.durationMinMax.maxMs", null);
-                    }}
-                    onClick={() => setActivePanel("duration")}
-                    editAria={t("quickCreate.essentialRowEditAria")}
-                    clearAria={t("quickCreate.essentialRowClearAria")}
-                    confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                    confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
-                  />
-                  <V4EssentialRow
-                    icon={Repeat}
-                    label={t("quickCreate.repeatChip")}
-                    chip={
-                      recurring.repeatMode === "once" ? (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
-                          {t("tiles.notSet")}
-                        </span>
-                      ) : (
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                          <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
-                          {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
-                            <span className="text-foreground-muted">
-                              ({WEEKDAY_LABELS_SHORT[locale].filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0).join(", ")})
-                            </span>
-                          ) : null}
-                          {recurring.repeatMode !== "condition" && recurring.endDate ? (
-                            <span className="text-foreground-muted">~ {recurring.endDate.slice(0, 10)}</span>
-                          ) : null}
-                      </span>
-                        )
-                      }
-                    clearable={
-                      recurring.repeatMode !== "once" ||
-                      Boolean(recurring.endDate)
-                    }
-                    onClear={() => {
-                      setField("recurring.repeatMode", "once");
-                      setField("recurring.weekdayMask", 0);
-                      setField("recurring.endDate", "");
-                    }}
-                    onClick={() => setActivePanel("recurring")}
-                    editAria={t("quickCreate.essentialRowEditAria")}
-                    clearAria={t("quickCreate.essentialRowClearAria")}
-                    confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                    confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
-                  />
-                </div>
-
-                {/* ─── tasks block ─── */}
-                <div className="pt-3">
-                  <hr className="border-border mb-3" />
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-                    <ListChecks size={14} aria-hidden="true" />
-                    <span>{t("quickCreate.completionRequires")}</span>
-                    <button
-                      type="button"
-                      onClick={() => setActivePanel("completion")}
-                      aria-label={t("quickCreate.completionRequires")}
-                      className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <ChevronRight size={14} aria-hidden="true" />
-                    </button>
-                  </div>
-                  <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-                    {plan.completion.tasks.length > 0
-                      ? `${plan.completion.tasks.length}${t("quickCreate.completionItemsHint")}`
-                      : t("quickCreate.completionAddHint")}
-                  </div>
-                  <div className="space-y-1.5">
-                    {plan.completion.tasks.map((tk, i) => (
-                      <div
-                        key={tk.id}
-                        data-testid="quick-create-task-row"
-                        className="flex min-h-[38px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-1.5 text-xs"
-                      >
-                        <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
-                        <span
-                          className={
-                            tk.content?.title
-                              ? "min-w-0 flex-1 truncate text-foreground"
-                              : "min-w-0 flex-1 truncate text-foreground-muted"
-                          }
-                        >
-                          {tk.content?.title || t("quickCreate.taskUntitled")}
-                        </span>
-                        <button
-                          type="button"
-                          ref={(el) => {
-                            taskMenuButtonRefs.current[i] = el;
-                          }}
-                          onClick={() =>
-                            setTaskMenuIndex((prev) => (prev === i ? null : i))
-                          }
-                          aria-label={t("quickCreate.taskMoreAria")}
-                          aria-haspopup="menu"
-                          aria-expanded={taskMenuIndex === i}
-                          title={t("quickCreate.taskMoreTitle")}
-                          className={cn(
-                            "flex h-6 w-6 items-center justify-center rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-                            taskMenuIndex === i
-                              ? "bg-surface-2 text-foreground"
-                              : "text-foreground-muted hover:bg-surface-1 hover:text-foreground",
-                          )}
-                        >
-                          <MoreHorizontal size={14} aria-hidden="true" />
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setField("plan.completion.tasks", [
-                          ...plan.completion.tasks,
-                          {
-                            id: `tk_${Math.random().toString(36).slice(2, 9)}`,
-                            content: { title: "", note: null },
-                            show: null,
-                            complete: {
-                              id: `c_${Math.random().toString(36).slice(2, 9)}`,
-                              kind: 0,
-                              children: [],
-                              term: null,
-                            },
-                            order: [],
+                    onClick={() => {
+                      setField("plan.completion.tasks", [
+                        ...plan.completion.tasks,
+                        {
+                          id: `tk_${Math.random().toString(36).slice(2, 9)}`,
+                          content: { title: "", note: null },
+                          show: null,
+                          complete: {
+                            id: `c_${Math.random().toString(36).slice(2, 9)}`,
+                            kind: 0,
+                            children: [],
+                            term: null,
                           },
-                        ]);
-                      }}
-                      className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-surface-0 text-xs font-bold text-foreground-muted hover:bg-surface-1"
-                    >
-                      ＋ タスクを追加
-                    </button>
-                    {taskMenuIndex !== null && plan.completion.tasks[taskMenuIndex] ? (
-                      <TaskRowMenu
-                        anchor={taskMenuButtonRefs.current[taskMenuIndex] ?? null}
-                        index={taskMenuIndex}
-                        total={plan.completion.tasks.length}
-                        onClose={() => setTaskMenuIndex(null)}
-                        onMove={(dir) => {
-                          const j = taskMenuIndex;
-                          const target = dir === "up" ? j - 1 : j + 1;
-                          if (target < 0 || target >= plan.completion.tasks.length) return;
-                          const next = plan.completion.tasks.slice();
-                          const [moved] = next.splice(j, 1);
-                          next.splice(target, 0, moved);
-                          setField("plan.completion.tasks", next);
-                          setTaskMenuIndex(target);
-                        }}
-                        onDelete={() => {
-                          const next = plan.completion.tasks.slice();
-                          next.splice(taskMenuIndex, 1);
-                          setField("plan.completion.tasks", next);
-                          setTaskMenuIndex(null);
-                        }}
-                        t={t}
-                      />
-                    ) : null}
-                  </div>
-                </div>
-
-                {/* ─── behavior block ─── */}
-                <div className="mt-3 pt-3" data-testid="quick-create-behavior-block">
-                  <hr className="border-border mb-3" />
-                  <div className="mb-2 flex items-baseline justify-between">
-                    <strong className="text-xs font-semibold text-foreground">
-                      {t("quickCreate.behaviorTitle")}
-                    </strong>
-                    <small className="text-[10px] text-foreground-muted">
-                      {t("quickCreate.behaviorSub")}
-                    </small>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setActivePanel("meta")}
-                    aria-label={t("quickCreate.behaviorEdit")}
-                    className="flex w-full min-h-[48px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-2 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                          order: [],
+                        },
+                      ]);
+                    }}
+                    className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg border border-dashed border-border bg-surface-0 text-xs font-bold text-foreground-muted hover:bg-surface-1"
                   >
-                    <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
-                      {plan.role === PlanRole.LABEL ? (
-                        <Tag className="h-3.5 w-3.5" aria-hidden />
-                      ) : (
-                        <Play className="h-3.5 w-3.5" aria-hidden />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-xs font-semibold text-foreground">
-                        {plan.role === PlanRole.LABEL
-                          ? t("quickCreate.behaviorLabel")
-                          : t("quickCreate.behaviorExecutable")}
-                      </div>
-                      <div className="text-[10px] text-foreground-muted">
-                        {plan.role === PlanRole.LABEL
-                          ? t("quickCreate.behaviorLabelSub")
-                          : t("quickCreate.behaviorExecutableSub")}
-                      </div>
-                    </div>
-                    <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
-                      {t("quickCreate.behaviorEdit")}
-                    </span>
+                    ＋ タスクを追加
                   </button>
+                  {taskMenuIndex !== null && plan.completion.tasks[taskMenuIndex] ? (
+                    <TaskRowMenu
+                      anchor={taskMenuButtonRefs.current[taskMenuIndex] ?? null}
+                      index={taskMenuIndex}
+                      total={plan.completion.tasks.length}
+                      onClose={() => setTaskMenuIndex(null)}
+                      onMove={(dir) => {
+                        const j = taskMenuIndex;
+                        const target = dir === "up" ? j - 1 : j + 1;
+                        if (target < 0 || target >= plan.completion.tasks.length) return;
+                        const next = plan.completion.tasks.slice();
+                        const [moved] = next.splice(j, 1);
+                        next.splice(target, 0, moved);
+                        setField("plan.completion.tasks", next);
+                        setTaskMenuIndex(target);
+                      }}
+                      onDelete={() => {
+                        const next = plan.completion.tasks.slice();
+                        next.splice(taskMenuIndex, 1);
+                        setField("plan.completion.tasks", next);
+                        setTaskMenuIndex(null);
+                      }}
+                      t={t}
+                    />
+                  ) : null}
                 </div>
-              </section>
+              </div>
 
-              {/* ── condition card ── */}
-              <section className="pt-3">
+              {/* ─── behavior block ─── */}
+              <div className="mt-3 pt-3" data-testid="quick-create-behavior-block">
                 <hr className="border-border mb-3" />
-                <div className="flex items-center justify-between mb-2">
-                  <strong className="text-xs font-semibold text-foreground">条件の組み合わせ</strong>
-                  <span className="text-[10px] text-foreground-muted">
-                    {conditionCount}
-                  </span>
-                </div>
-                <div className="p-2.5" data-testid="quick-create-condition-tree">
-                  {windows.length + recurring.frameRules.length === 0 ? (
-                    <p
-                      data-testid="quick-create-condition-empty"
-                      className="rounded-md border border-dashed border-border bg-surface-0 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
-                    >
-                      {t("quickCreate.conditionEmpty")}
-                    </p>
-                  ) : (
-                    <div className="space-y-2">
-                      {windows.length > 0 && (
-                        <div className="rounded-lg bg-surface-1 px-2 py-1.5">
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                              ALL
-                            </span>
-                            <strong className="text-[11px] font-semibold text-foreground">
-                              {t("quickCreate.conditionGroupWindow")}
-                            </strong>
-                            <button
-                              type="button"
-                              onClick={() => setActivePanel("time")}
-                              className="ml-auto text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                            >
-                              編集
-                            </button>
-                          </div>
-                          <div className="space-y-1">
-                            {windows.map((w, i) => (
-                              <div
-                                key={w.id ?? i}
-                                className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
-                              >
-                                <Clock size={11} className="shrink-0 text-primary" aria-hidden="true" />
-                                <span className="min-w-0 flex-1 truncate text-foreground">
-                                  {w.bounds.start && w.bounds.end
-                                    ? `${w.bounds.start} → ${w.bounds.end}`
-                                    : t("quickCreate.conditionWindowOpen")}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = windows.filter((_, idx) => idx !== i);
-                                    setField("windows", next);
-                                  }}
-                                  aria-label={t("quickCreate.removeItem")}
-                                  className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
-                                >
-                                  <MoreHorizontal size={12} aria-hidden="true" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {recurring.frameRules.length > 0 && (
-                        <div className="rounded-lg bg-surface-1 px-2 py-1.5">
-                          <div className="mb-1 flex items-center gap-2">
-                            <span className="rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                              ALL
-                            </span>
-                            <strong className="text-[11px] font-semibold text-foreground">
-                              {t("quickCreate.conditionGroupFrame")}
-                            </strong>
-                            <button
-                              type="button"
-                              onClick={() => setActivePanel("recurring")}
-                              className="ml-auto text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                            >
-                              編集
-                            </button>
-                          </div>
-                          <div className="space-y-1">
-                            {recurring.frameRules.map((r, i) => (
-                              <div
-                                key={r.id ?? i}
-                                className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
-                              >
-                                <Repeat size={11} className="shrink-0 text-primary" aria-hidden="true" />
-                                <span className="min-w-0 flex-1 truncate text-foreground">
-                                  {r.generator?.kind === "step"
-                                    ? t("quickCreate.conditionFrameStep")
-                                    : t("quickCreate.conditionFrameOpen")}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = recurring.frameRules.filter((_, idx) => idx !== i);
-                                    setField("recurring.frameRules", next);
-                                  }}
-                                  aria-label={t("quickCreate.removeItem")}
-                                  className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
-                                >
-                                  <MoreHorizontal size={12} aria-hidden="true" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                <div className="mb-2 flex items-baseline justify-between">
+                  <strong className="text-xs font-semibold text-foreground">
+                    {t("quickCreate.behaviorTitle")}
+                  </strong>
+                  <small className="text-[10px] text-foreground-muted">
+                    {t("quickCreate.behaviorSub")}
+                  </small>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActivePanel("intent")}
-                  data-testid="quick-create-condition-add"
-                  className="mx-2.5 mb-2.5 flex h-10 w-[calc(100%-20px)] items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-0 text-[11px] font-bold text-foreground-muted hover:bg-surface-1"
+                  onClick={() => setActivePanel("meta")}
+                  aria-label={t("quickCreate.behaviorEdit")}
+                  className="flex w-full min-h-[48px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-2 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <><Plus size={14} aria-hidden="true" />{t("quickCreate.addConditionOrGroup")}</>
+                  <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                    {plan.role === PlanRole.LABEL ? (
+                      <Tag className="h-3.5 w-3.5" aria-hidden />
+                    ) : (
+                      <Play className="h-3.5 w-3.5" aria-hidden />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-foreground">
+                      {plan.role === PlanRole.LABEL
+                        ? t("quickCreate.behaviorLabel")
+                        : t("quickCreate.behaviorExecutable")}
+                    </div>
+                    <div className="text-[10px] text-foreground-muted">
+                      {plan.role === PlanRole.LABEL
+                        ? t("quickCreate.behaviorLabelSub")
+                        : t("quickCreate.behaviorExecutableSub")}
+                    </div>
+                  </div>
+                  <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
+                    {t("quickCreate.behaviorEdit")}
+                  </span>
                 </button>
-              </section>
+              </div>
+            </section>
 
-              {/* simple note */}
-              <p
-                className="flex items-start gap-1.5 text-[10px] text-foreground-muted"
-                data-testid="quick-create-simple-note"
+            {/* ── condition card ── */}
+            <section className="pt-3">
+              <hr className="border-border mb-3" />
+              <div className="flex items-center justify-between mb-2">
+                <strong className="text-xs font-semibold text-foreground">条件の組み合わせ</strong>
+                <span className="text-[10px] text-foreground-muted">{conditionCount}</span>
+              </div>
+              <div className="p-2.5" data-testid="quick-create-condition-tree">
+                {windows.length + recurring.frameRules.length === 0 ? (
+                  <p
+                    data-testid="quick-create-condition-empty"
+                    className="rounded-md border border-dashed border-border bg-surface-0 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
+                  >
+                    {t("quickCreate.conditionEmpty")}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {windows.length > 0 && (
+                      <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
+                            ALL
+                          </span>
+                          <strong className="text-[11px] font-semibold text-foreground">
+                            {t("quickCreate.conditionGroupWindow")}
+                          </strong>
+                          <button
+                            type="button"
+                            onClick={() => setActivePanel("time")}
+                            className="ml-auto text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            編集
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {windows.map((w, i) => (
+                            <div
+                              key={w.id ?? i}
+                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                            >
+                              <Clock
+                                size={11}
+                                className="shrink-0 text-primary"
+                                aria-hidden="true"
+                              />
+                              <span className="min-w-0 flex-1 truncate text-foreground">
+                                {w.bounds.start && w.bounds.end
+                                  ? `${w.bounds.start} → ${w.bounds.end}`
+                                  : t("quickCreate.conditionWindowOpen")}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = windows.filter((_, idx) => idx !== i);
+                                  setField("windows", next);
+                                }}
+                                aria-label={t("quickCreate.removeItem")}
+                                className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
+                              >
+                                <MoreHorizontal size={12} aria-hidden="true" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {recurring.frameRules.length > 0 && (
+                      <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                        <div className="mb-1 flex items-center gap-2">
+                          <span className="rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
+                            ALL
+                          </span>
+                          <strong className="text-[11px] font-semibold text-foreground">
+                            {t("quickCreate.conditionGroupFrame")}
+                          </strong>
+                          <button
+                            type="button"
+                            onClick={() => setActivePanel("recurring")}
+                            className="ml-auto text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                          >
+                            編集
+                          </button>
+                        </div>
+                        <div className="space-y-1">
+                          {recurring.frameRules.map((r, i) => (
+                            <div
+                              key={r.id ?? i}
+                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                            >
+                              <Repeat
+                                size={11}
+                                className="shrink-0 text-primary"
+                                aria-hidden="true"
+                              />
+                              <span className="min-w-0 flex-1 truncate text-foreground">
+                                {r.generator?.kind === "step"
+                                  ? t("quickCreate.conditionFrameStep")
+                                  : t("quickCreate.conditionFrameOpen")}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = recurring.frameRules.filter((_, idx) => idx !== i);
+                                  setField("recurring.frameRules", next);
+                                }}
+                                aria-label={t("quickCreate.removeItem")}
+                                className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
+                              >
+                                <MoreHorizontal size={12} aria-hidden="true" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setActivePanel("intent")}
+                data-testid="quick-create-condition-add"
+                className="mx-2.5 mb-2.5 flex h-10 w-[calc(100%-20px)] items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-surface-0 text-[11px] font-bold text-foreground-muted hover:bg-surface-1"
               >
-                <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-                <span>{t("quickCreate.simpleNote")}</span>
-              </p>
+                <Plus size={14} aria-hidden="true" />
+                {t("quickCreate.addConditionOrGroup")}
+              </button>
+            </section>
+
+            {/* simple note */}
+            <p
+              className="flex items-start gap-1.5 text-[10px] text-foreground-muted"
+              data-testid="quick-create-simple-note"
+            >
+              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+              <span>{t("quickCreate.simpleNote")}</span>
+            </p>
           </div>
         </div>
 
@@ -1269,79 +1342,173 @@ export function QuickTileCreate() {
         </div>
         {error ? <p className="px-4 pb-2 text-center text-xs text-danger">{error}</p> : null}
         {loadError ? (
-          <p role="alert" data-testid="quick-create-load-error" className="px-4 pb-2 text-center text-xs text-warning">
+          <p
+            role="alert"
+            data-testid="quick-create-load-error"
+            className="px-4 pb-2 text-center text-xs text-warning"
+          >
             {loadError}
           </p>
         ) : null}
       </section>
 
       {/* ─── intent sub-panel ─── */}
-      <section data-subpanel="intent" className={subPanelClass("intent")} aria-hidden={activePanel !== "intent"}>
+      <section
+        data-subpanel="intent"
+        className={subPanelClass("intent")}
+        aria-hidden={activePanel !== "intent"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.addConditionOrGroup")}</strong>
-            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.intentSubTitle")}</small>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.addConditionOrGroup")}
+            </strong>
+            <small className="block truncate text-[10px] text-foreground-muted">
+              {t("quickCreate.intentSubTitle")}
+            </small>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-4">
-          <p className="mb-3 text-[11px] text-foreground-muted">{t("quickCreate.intentDescription")}</p>
+          <p className="mb-3 text-[11px] text-foreground-muted">
+            {t("quickCreate.intentDescription")}
+          </p>
           <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setActivePanel("time")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("time")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <Calendar size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentNarrowTime")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentNarrowTimeSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentNarrowTime")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentNarrowTimeSub")}
+              </small>
             </button>
-            <button type="button" onClick={() => setActivePanel("references")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("references")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <Link2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentReferenceTile")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentReferenceTileSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentReferenceTile")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentReferenceTileSub")}
+              </small>
             </button>
-            <button type="button" onClick={() => setActivePanel("recurring")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("recurring")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <Layers size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentNestStructure")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentNestStructureSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentNestStructure")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentNestStructureSub")}
+              </small>
             </button>
-            <button type="button" onClick={() => setActivePanel("meta")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("meta")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <SlidersHorizontal size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentAdjustPlacement")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentAdjustPlacementSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentAdjustPlacement")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentAdjustPlacementSub")}
+              </small>
             </button>
-            <button type="button" onClick={() => setActivePanel("completion")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("completion")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <ListChecks size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentCombineConditions")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentCombineConditionsSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentCombineConditions")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentCombineConditionsSub")}
+              </small>
             </button>
-            <button type="button" onClick={() => setActivePanel("completion")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("completion")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <CheckCircle2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentAddCompletion")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentAddCompletionSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentAddCompletion")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentAddCompletionSub")}
+              </small>
             </button>
-            <button type="button" onClick={() => setActivePanel("meta")} className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary">
+            <button
+              type="button"
+              onClick={() => setActivePanel("meta")}
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+            >
               <Play size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentDefineOnSuccess")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentDefineOnSuccessSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentDefineOnSuccess")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentDefineOnSuccessSub")}
+              </small>
             </button>
-            <button type="button" disabled className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60">
+            <button
+              type="button"
+              disabled
+              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60"
+            >
               <Type size={16} className="mb-1.5" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">{t("quickCreate.intentTextCondition")}</strong>
-              <small className="text-[10px] text-foreground-muted">{t("quickCreate.intentTextConditionSub")}</small>
+              <strong className="mb-0.5 text-xs font-semibold">
+                {t("quickCreate.intentTextCondition")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.intentTextConditionSub")}
+              </small>
             </button>
           </div>
         </div>
       </section>
 
       {/* ─── time sub-panel ─── */}
-      <section data-subpanel="time" className={subPanelClass("time")} aria-hidden={activePanel !== "time"}>
+      <section
+        data-subpanel="time"
+        className={subPanelClass("time")}
+        aria-hidden={activePanel !== "time"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.timeNavTitle")}</strong>
-            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.timeNavSub")}</small>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.timeNavTitle")}
+            </strong>
+            <small className="block truncate text-[10px] text-foreground-muted">
+              {t("quickCreate.timeNavSub")}
+            </small>
           </div>
         </div>
         <FormPanel>
@@ -1359,71 +1526,131 @@ export function QuickTileCreate() {
       </section>
 
       {/* ─── duration sub-panel ─── */}
-      <section data-subpanel="duration" className={subPanelClass("duration")} aria-hidden={activePanel !== "duration"}>
+      <section
+        data-subpanel="duration"
+        className={subPanelClass("duration")}
+        aria-hidden={activePanel !== "duration"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.durationTitle")}</strong>
-            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.durationSub")}</small>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.durationTitle")}
+            </strong>
+            <small className="block truncate text-[10px] text-foreground-muted">
+              {t("quickCreate.durationSub")}
+            </small>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-4">
           <button
             type="button"
-            onClick={() => { setField("time.durationMinMax.minMs", null); setField("time.durationMinMax.maxMs", null); }}
+            onClick={() => {
+              setField("time.durationMinMax.minMs", null);
+              setField("time.durationMinMax.maxMs", null);
+            }}
             className={cn(
               "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
               time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
                 ? "border-accent/40 bg-accent-soft"
-                : "border-border hover:bg-surface-1"
+                : "border-border hover:bg-surface-1",
             )}
           >
             <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
             <div>
-              <strong className="block text-sm font-semibold">{t("quickCreate.durationNoneTitle")}</strong>
-              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.durationNoneSub")}</small>
+              <strong className="block text-sm font-semibold">
+                {t("quickCreate.durationNoneTitle")}
+              </strong>
+              <small className="block text-[10px] text-foreground-muted">
+                {t("quickCreate.durationNoneSub")}
+              </small>
             </div>
           </button>
 
           <div className="mb-4">
-            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">{t("quickCreate.durationInputLabel")}</div>
+            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+              {t("quickCreate.durationInputLabel")}
+            </div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={() => { const cur = time.durationMinMax.minMs ?? 90 * 60000; const next = Math.max(10 * 60000, cur - 10 * 60000); setField("time.durationMinMax.minMs", next); setField("time.durationMinMax.maxMs", next); }}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-0 text-foreground-muted hover:bg-surface-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const cur = time.durationMinMax.minMs ?? 90 * 60000;
+                  const next = Math.max(10 * 60000, cur - 10 * 60000);
+                  setField("time.durationMinMax.minMs", next);
+                  setField("time.durationMinMax.maxMs", next);
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-0 text-foreground-muted hover:bg-surface-1"
+              >
                 −
               </button>
               <div className="flex-1 text-center text-lg font-semibold tabular-nums">
-                {time.durationMinMax.minMs !== null ? Math.round(time.durationMinMax.minMs / 60000) : 90}
+                {time.durationMinMax.minMs !== null
+                  ? Math.round(time.durationMinMax.minMs / 60000)
+                  : 90}
               </div>
-              <button type="button" onClick={() => { const cur = time.durationMinMax.minMs ?? 90 * 60000; const next = cur + 10 * 60000; setField("time.durationMinMax.minMs", next); setField("time.durationMinMax.maxMs", next); }}
-                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-0 text-foreground-muted hover:bg-surface-1">
+              <button
+                type="button"
+                onClick={() => {
+                  const cur = time.durationMinMax.minMs ?? 90 * 60000;
+                  const next = cur + 10 * 60000;
+                  setField("time.durationMinMax.minMs", next);
+                  setField("time.durationMinMax.maxMs", next);
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-surface-0 text-foreground-muted hover:bg-surface-1"
+              >
                 ＋
               </button>
               <div className="flex rounded-lg border border-border bg-surface-0 p-0.5">
-                <span className="rounded-md bg-accent-soft px-3 py-1 text-xs font-bold text-accent-ink">{t("quickCreate.minutesUnit")}</span>
-                <span className="rounded-md px-3 py-1 text-xs text-foreground-muted">{t("quickCreate.hoursUnit")}</span>
+                <span className="rounded-md bg-accent-soft px-3 py-1 text-xs font-bold text-accent-ink">
+                  {t("quickCreate.minutesUnit")}
+                </span>
+                <span className="rounded-md px-3 py-1 text-xs text-foreground-muted">
+                  {t("quickCreate.hoursUnit")}
+                </span>
               </div>
             </div>
           </div>
 
           <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-surface-0 p-3">
             <div>
-              <strong className="block text-xs font-semibold">{t("quickCreate.durationUseCompletionTitle")}</strong>
-              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.durationUseCompletionSub")}</small>
+              <strong className="block text-xs font-semibold">
+                {t("quickCreate.durationUseCompletionTitle")}
+              </strong>
+              <small className="block text-[10px] text-foreground-muted">
+                {t("quickCreate.durationUseCompletionSub")}
+              </small>
             </div>
-            <button type="button" className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors">
+            <button
+              type="button"
+              className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors"
+            >
               <div className="h-5 w-5 translate-x-5 rounded-full bg-white transition-transform" />
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button type="button" size="small" variant="ghost" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="ghost"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.cancel")}
             </Button>
             <div className="flex-1" />
-            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="default"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.metaApply")}
             </Button>
           </div>
@@ -1431,37 +1658,54 @@ export function QuickTileCreate() {
       </section>
 
       {/* ─── recurring sub-panel ─── */}
-      <section data-subpanel="recurring" className={subPanelClass("recurring")} aria-hidden={activePanel !== "recurring"}>
+      <section
+        data-subpanel="recurring"
+        className={subPanelClass("recurring")}
+        aria-hidden={activePanel !== "recurring"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.repeatChip")}</strong>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.repeatChip")}
+            </strong>
           </div>
         </div>
-        <AutomationPanel
-          recurring={recurring}
-          setField={setField}
-          locale={locale}
-          t={t}
-        />
+        <AutomationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
       </section>
 
       {/* ─── references sub-panel ─── */}
-      <section data-subpanel="references" className={subPanelClass("references")} aria-hidden={activePanel !== "references"}>
+      <section
+        data-subpanel="references"
+        className={subPanelClass("references")}
+        aria-hidden={activePanel !== "references"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.referencesNavTitle")}</strong>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.referencesNavTitle")}
+            </strong>
           </div>
         </div>
         <FormPanel>
           <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
           {plan.references.length === 0 ? (
-            <p className="text-xs text-foreground-muted">{t("quickCreate.referenceEmptyListHint")}</p>
+            <p className="text-xs text-foreground-muted">
+              {t("quickCreate.referenceEmptyListHint")}
+            </p>
           ) : null}
           <div className="flex flex-col gap-4">
             {plan.references.map((ref, i) => {
@@ -1472,18 +1716,30 @@ export function QuickTileCreate() {
                 return Number.isFinite(m) && m > 0 ? m : 10;
               })();
               return (
-                <div key={`${refIdDisplay}-${i}`} className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3" data-testid={`reference-card-${i}`}>
+                <div
+                  key={`${refIdDisplay}-${i}`}
+                  className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
+                  data-testid={`reference-card-${i}`}
+                >
                   <div className="flex flex-col gap-1.5">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                       {t("quickCreate.referenceTargetLabel")}
                     </div>
-                    <div className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3", hasTarget ? "border-accent/40 bg-accent-soft" : "border-border")} data-testid={`reference-target-card-${i}`}>
+                    <div
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg border bg-surface-0 p-3",
+                        hasTarget ? "border-accent/40 bg-accent-soft" : "border-border",
+                      )}
+                      data-testid={`reference-target-card-${i}`}
+                    >
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                         <Calendar size={18} aria-hidden="true" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate text-sm font-medium text-foreground">
-                          {hasTarget ? ref.target.referenceId : t("quickCreate.referenceTargetEmpty")}
+                          {hasTarget
+                            ? ref.target.referenceId
+                            : t("quickCreate.referenceTargetEmpty")}
                         </span>
                         <span className="truncate text-xs text-foreground-muted">
                           {t("quickCreate.referenceTargetBadge")}
@@ -1497,7 +1753,10 @@ export function QuickTileCreate() {
                       value={ref.target.referenceId ?? ""}
                       onChange={(e) => {
                         const next = plan.references.slice();
-                        next[i] = { ...ref, target: { ...ref.target, referenceId: e.target.value || null } };
+                        next[i] = {
+                          ...ref,
+                          target: { ...ref.target, referenceId: e.target.value || null },
+                        };
                         setField("plan.references", next);
                       }}
                       className="w-full rounded-md bg-surface-2 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/40"
@@ -1507,7 +1766,12 @@ export function QuickTileCreate() {
                     <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                       {t("quickCreate.referenceRelationLabel")}
                     </div>
-                    <div role="radiogroup" aria-label={t("quickCreate.referenceRelationLabel")} className="flex w-full gap-1" data-testid={`reference-relation-tabs-${i}`}>
+                    <div
+                      role="radiogroup"
+                      aria-label={t("quickCreate.referenceRelationLabel")}
+                      className="flex w-full gap-1"
+                      data-testid={`reference-relation-tabs-${i}`}
+                    >
                       {[
                         { kind: 4, key: "referenceRelationAfter" },
                         { kind: 3, key: "referenceRelationBefore" },
@@ -1517,6 +1781,7 @@ export function QuickTileCreate() {
                       ].map((opt) => {
                         const active = ref.pick.kind === opt.kind;
                         return (
+                          // biome-ignore lint/a11y/useSemanticElements: button-styled radio inside role="radiogroup"; WAI-ARIA radiogroup pattern with aria-checked is intentional
                           <button
                             key={opt.kind}
                             type="button"
@@ -1544,45 +1809,106 @@ export function QuickTileCreate() {
                     <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                       {t("quickCreate.referenceIntervalLabel")}
                     </div>
-                    <div className="flex items-center gap-2" data-testid={`reference-interval-stepper-${i}`}>
-                      <button type="button" aria-label="-" onClick={() => {
-                        const next = plan.references.slice();
-                        const nextVal = Math.max(5, intervalValue - 5);
-                        next[i] = { ...ref, pick: { ...ref.pick, momentId: String(nextVal) } };
-                        setField("plan.references", next);
-                      }} className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2">-</button>
-                      <div className="flex h-9 min-w-[3.5rem] flex-1 items-center justify-center rounded-md bg-surface-2 px-2 text-sm tabular-nums" aria-live="polite">{intervalValue}</div>
-                      <button type="button" aria-label="+" onClick={() => {
-                        const next = plan.references.slice();
-                        const nextVal = Math.min(120, intervalValue + 5);
-                        next[i] = { ...ref, pick: { ...ref.pick, momentId: String(nextVal) } };
-                        setField("plan.references", next);
-                      }} className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2">+</button>
+                    <div
+                      className="flex items-center gap-2"
+                      data-testid={`reference-interval-stepper-${i}`}
+                    >
+                      <button
+                        type="button"
+                        aria-label="-"
+                        onClick={() => {
+                          const next = plan.references.slice();
+                          const nextVal = Math.max(5, intervalValue - 5);
+                          next[i] = { ...ref, pick: { ...ref.pick, momentId: String(nextVal) } };
+                          setField("plan.references", next);
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2"
+                      >
+                        -
+                      </button>
+                      <div
+                        className="flex h-9 min-w-[3.5rem] flex-1 items-center justify-center rounded-md bg-surface-2 px-2 text-sm tabular-nums"
+                        aria-live="polite"
+                      >
+                        {intervalValue}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="+"
+                        onClick={() => {
+                          const next = plan.references.slice();
+                          const nextVal = Math.min(120, intervalValue + 5);
+                          next[i] = { ...ref, pick: { ...ref.pick, momentId: String(nextVal) } };
+                          setField("plan.references", next);
+                        }}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2"
+                      >
+                        +
+                      </button>
                       <div className="flex shrink-0 rounded-full border border-border bg-surface-1 p-0.5">
-                        <button type="button" className="rounded-full bg-accent-soft px-3 py-1 text-xs text-accent-ink" aria-pressed="true">
+                        <button
+                          type="button"
+                          className="rounded-full bg-accent-soft px-3 py-1 text-xs text-accent-ink"
+                          aria-pressed="true"
+                        >
                           {t("quickCreate.referenceIntervalUnitMin")}
                         </button>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 border-t border-border/40 pt-2">
-                    <Button type="button" size="small" variant="ghost" onClick={() => { const next = plan.references.slice(); next.splice(i, 1); setField("plan.references", next); }} className="text-danger hover:bg-danger/10">
+                    <Button
+                      type="button"
+                      size="small"
+                      variant="ghost"
+                      onClick={() => {
+                        const next = plan.references.slice();
+                        next.splice(i, 1);
+                        setField("plan.references", next);
+                      }}
+                      className="text-danger hover:bg-danger/10"
+                    >
                       {t("quickCreate.referenceRemoveLabel")}
                     </Button>
                     <div className="flex-1" />
-                    <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+                    <Button
+                      type="button"
+                      size="small"
+                      variant="default"
+                      onClick={() => setActivePanel("base")}
+                    >
                       {t("quickCreate.referenceCancelLabel")}
                     </Button>
-                    <Button type="button" size="small" variant="primary" onClick={() => setActivePanel("base")}>
+                    <Button
+                      type="button"
+                      size="small"
+                      variant="primary"
+                      onClick={() => setActivePanel("base")}
+                    >
                       {t("quickCreate.referenceApplyLabel")}
                     </Button>
                   </div>
                 </div>
               );
             })}
-            <Button type="button" size="small" variant="default" rounded iconLeft={<Plus size={12} aria-hidden="true" />} onClick={() => {
-              setField("plan.references", [...plan.references, { id: "", target: { kind: 0, contextKind: null, referenceId: null, conditionId: null }, pick: { kind: 4, momentId: "10" } }]);
-            }} data-testid="reference-add-button">
+            <Button
+              type="button"
+              size="small"
+              variant="default"
+              rounded
+              iconLeft={<Plus size={12} aria-hidden="true" />}
+              onClick={() => {
+                setField("plan.references", [
+                  ...plan.references,
+                  {
+                    id: "",
+                    target: { kind: 0, contextKind: null, referenceId: null, conditionId: null },
+                    pick: { kind: 4, momentId: "10" },
+                  },
+                ]);
+              }}
+              data-testid="reference-add-button"
+            >
               {t("quickCreate.addReference")}
             </Button>
           </div>
@@ -1590,18 +1916,31 @@ export function QuickTileCreate() {
       </section>
 
       {/* ─── completion sub-panel ─── */}
-      <section data-subpanel="completion" className={subPanelClass("completion")} aria-hidden={activePanel !== "completion"}>
+      <section
+        data-subpanel="completion"
+        className={subPanelClass("completion")}
+        aria-hidden={activePanel !== "completion"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.completionNavTitle")}</strong>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.completionNavTitle")}
+            </strong>
           </div>
         </div>
         <FormPanel>
           <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
-          <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3" data-testid="completion-condition-box">
+          <div
+            className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
+            data-testid="completion-condition-box"
+          >
             <div className="flex items-center justify-between gap-2">
               <strong className="text-sm font-semibold text-foreground">
                 {t("quickCreate.completionBuilderLogicLabel")}
@@ -1611,45 +1950,86 @@ export function QuickTileCreate() {
                 value={String(plan.completion.root.kind)}
                 onChange={(e) => {
                   const nextKind = Number(e.target.value);
-                  setField("plan.completion.root", { ...plan.completion.root, kind: nextKind as never });
+                  setField("plan.completion.root", {
+                    ...plan.completion.root,
+                    kind: nextKind as never,
+                  });
                 }}
                 className="rounded-md border border-border bg-surface-1 px-2 py-1 text-sm text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 data-testid="completion-logic-select"
               >
-                <option value={String(ConditionKind.ALL)}>{t("quickCreate.completionBuilderLogicAll")}</option>
-                <option value={String(ConditionKind.ANY)}>{t("quickCreate.completionBuilderLogicAny")}</option>
+                <option value={String(ConditionKind.ALL)}>
+                  {t("quickCreate.completionBuilderLogicAll")}
+                </option>
+                <option value={String(ConditionKind.ANY)}>
+                  {t("quickCreate.completionBuilderLogicAny")}
+                </option>
                 <option value={String(ConditionKind.NOT)}>{t("quickCreate.completionNot")}</option>
               </select>
             </div>
-            <ConditionEditor node={plan.completion.root} onChange={(next) => setField("plan.completion.root", next)} t={t} />
+            <ConditionEditor
+              node={plan.completion.root}
+              onChange={(next) => setField("plan.completion.root", next)}
+              t={t}
+            />
             {plan.completion.timeRequirements.length > 0 && (
-              <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2" data-testid="completion-time-requirement-lines">
+              <div
+                className="flex flex-col gap-1.5 border-t border-border/40 pt-2"
+                data-testid="completion-time-requirement-lines"
+              >
                 {plan.completion.timeRequirements.map((tr, i) => (
-                  <div key={tr.id} className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm" data-testid={`completion-time-line-${i}`}>
-                    <Clock size={16} className="shrink-0 text-foreground-muted" aria-hidden="true" />
+                  <div
+                    key={tr.id}
+                    className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm"
+                    data-testid={`completion-time-line-${i}`}
+                  >
+                    <Clock
+                      size={16}
+                      className="shrink-0 text-foreground-muted"
+                      aria-hidden="true"
+                    />
                     <span className="flex-1 text-foreground">
-                      {tr.required.minMs !== null ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}` : t("quickCreate.duration")}
+                      {tr.required.minMs !== null
+                        ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}`
+                        : t("quickCreate.duration")}
                     </span>
                     <input
                       type="number"
                       min={5}
                       step={5}
                       aria-label={t("quickCreate.minutesUnit")}
-                      value={tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)}
+                      value={
+                        tr.required.minMs === null
+                          ? ""
+                          : Math.round((tr.required.minMs ?? 0) / 60000)
+                      }
                       onChange={(e) => {
                         const next = plan.completion.timeRequirements.slice();
                         const v = e.target.value;
-                        next[i] = { ...tr, required: { ...tr.required, minMs: v === "" ? null : Number(v) * 60000 } };
+                        next[i] = {
+                          ...tr,
+                          required: { ...tr.required, minMs: v === "" ? null : Number(v) * 60000 },
+                        };
                         setField("plan.completion.timeRequirements", next);
                       }}
                       className="w-16 rounded-md bg-surface-2 px-2 py-1 text-right text-xs tabular-nums outline-none focus:ring-2 focus:ring-primary/40"
                     />
-                    <span className="text-xs text-foreground-muted">{t("quickCreate.minutesUnit")}</span>
-                    <Button type="button" size="icon-xs" variant="ghost" icon={<Trash2 size={12} aria-hidden="true" />} onClick={() => {
-                      const next = plan.completion.timeRequirements.slice();
-                      next.splice(i, 1);
-                      setField("plan.completion.timeRequirements", next);
-                    }} aria-label={t("quickCreate.removeItem")} className="text-foreground-muted hover:text-danger" />
+                    <span className="text-xs text-foreground-muted">
+                      {t("quickCreate.minutesUnit")}
+                    </span>
+                    <Button
+                      type="button"
+                      size="icon-xs"
+                      variant="ghost"
+                      icon={<Trash2 size={12} aria-hidden="true" />}
+                      onClick={() => {
+                        const next = plan.completion.timeRequirements.slice();
+                        next.splice(i, 1);
+                        setField("plan.completion.timeRequirements", next);
+                      }}
+                      aria-label={t("quickCreate.removeItem")}
+                      className="text-foreground-muted hover:text-danger"
+                    />
                   </div>
                 ))}
               </div>
@@ -1659,13 +2039,19 @@ export function QuickTileCreate() {
             <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
               {t("quickCreate.conditionAddTitle")}
             </div>
-            <div role="radiogroup" aria-label={t("quickCreate.conditionAddTitle")} className="flex w-full flex-wrap gap-1" data-testid="completion-condition-tabs">
+            <div
+              role="radiogroup"
+              aria-label={t("quickCreate.conditionAddTitle")}
+              className="flex w-full flex-wrap gap-1"
+              data-testid="completion-condition-tabs"
+            >
               {[
                 { key: "completionBuilderTabTime", termKind: null as null | "time" },
                 { key: "completionBuilderTabTask", termKind: "task" as const },
                 { key: "completionBuilderTabTile", termKind: "relation" as const },
                 { key: "completionBuilderTabRecord", termKind: "metric" as const },
               ].map((opt) => (
+                // biome-ignore lint/a11y/useSemanticElements: button-styled radio inside role="radiogroup"; WAI-ARIA radiogroup pattern with aria-checked is intentional
                 <button
                   key={opt.key}
                   type="button"
@@ -1673,12 +2059,28 @@ export function QuickTileCreate() {
                   aria-checked="false"
                   onClick={() => {
                     if (opt.termKind === null) {
-                      const newTr = { id: `tr_${Math.random().toString(36).slice(2, 9)}`, observation: { scope: 0 as never }, required: { minMs: time.durationMinMax.minMs ?? 60 * 60000 } };
-                      setField("plan.completion.timeRequirements", [...plan.completion.timeRequirements, newTr]);
+                      const newTr = {
+                        id: `tr_${Math.random().toString(36).slice(2, 9)}`,
+                        observation: { scope: 0 as never },
+                        required: { minMs: time.durationMinMax.minMs ?? 60 * 60000 },
+                      };
+                      setField("plan.completion.timeRequirements", [
+                        ...plan.completion.timeRequirements,
+                        newTr,
+                      ]);
                       return;
                     }
-                    const child = defaultTerm(opt.termKind === "relation" ? "relation" : opt.termKind === "metric" ? "metric" : "task");
-                    setField("plan.completion.root", { ...plan.completion.root, children: [...plan.completion.root.children, child] });
+                    const child = defaultTerm(
+                      opt.termKind === "relation"
+                        ? "relation"
+                        : opt.termKind === "metric"
+                          ? "metric"
+                          : "task",
+                    );
+                    setField("plan.completion.root", {
+                      ...plan.completion.root,
+                      children: [...plan.completion.root.children, child],
+                    });
                   }}
                   className="min-w-0 flex-1 truncate rounded-full border border-border bg-surface-1 px-3 py-1.5 text-sm text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
@@ -1688,14 +2090,37 @@ export function QuickTileCreate() {
             </div>
           </div>
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">
-            <Button type="button" size="small" variant="ghost" onClick={() => setField("plan.completion.root", { kind: ConditionKind.ALL, children: [], term: null })} className="text-danger hover:bg-danger/10">
+            <Button
+              type="button"
+              size="small"
+              variant="ghost"
+              onClick={() =>
+                setField("plan.completion.root", {
+                  kind: ConditionKind.ALL,
+                  children: [],
+                  term: null,
+                })
+              }
+              className="text-danger hover:bg-danger/10"
+            >
               {t("quickCreate.completionRemoveLabel")}
             </Button>
             <div className="flex-1" />
-            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="default"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.completionCancelLabel")}
             </Button>
-            <Button type="button" size="small" variant="primary" onClick={() => setActivePanel("base")} data-testid="completion-apply">
+            <Button
+              type="button"
+              size="small"
+              variant="primary"
+              onClick={() => setActivePanel("base")}
+              data-testid="completion-apply"
+            >
               {t("quickCreate.completionBuilderApply")}
             </Button>
           </div>
@@ -1703,13 +2128,23 @@ export function QuickTileCreate() {
       </section>
 
       {/* ─── meta sub-panel ─── */}
-      <section data-subpanel="meta" className={subPanelClass("meta")} aria-hidden={activePanel !== "meta"}>
+      <section
+        data-subpanel="meta"
+        className={subPanelClass("meta")}
+        aria-hidden={activePanel !== "meta"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.metaNavTitle")}</strong>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.metaNavTitle")}
+            </strong>
           </div>
         </div>
         <FormPanel>
@@ -1719,27 +2154,52 @@ export function QuickTileCreate() {
               <span>{t("quickCreate.organizeProject")}</span>
             </div>
             <div className="flex flex-col gap-2" data-testid="meta-project-catalog">
-              <button type="button" onClick={() => setField("meta.ownerSubjectId", null)} aria-pressed={meta.ownerSubjectId === null}
-                className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", meta.ownerSubjectId === null ? "border-accent/40 bg-accent-soft" : "border-border")}>
+              <button
+                type="button"
+                onClick={() => setField("meta.ownerSubjectId", null)}
+                aria-pressed={meta.ownerSubjectId === null}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                  meta.ownerSubjectId === null
+                    ? "border-accent/40 bg-accent-soft"
+                    : "border-border",
+                )}
+              >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                   <FolderOpen size={18} aria-hidden="true" />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm font-medium text-foreground">{t("quickCreate.projectOwnerDefault")}</span>
-                  <span className="truncate text-xs text-foreground-muted">{t("quickCreate.organizeProjectDefaultSub")}</span>
+                  <span className="truncate text-sm font-medium text-foreground">
+                    {t("quickCreate.projectOwnerDefault")}
+                  </span>
+                  <span className="truncate text-xs text-foreground-muted">
+                    {t("quickCreate.organizeProjectDefaultSub")}
+                  </span>
                 </div>
               </button>
               {projects.workspaces.map((w) => {
                 const selected = meta.ownerSubjectId === w.id;
                 return (
-                  <button key={w.id} type="button" onClick={() => setField("meta.ownerSubjectId", w.id)} aria-pressed={selected}
-                    className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", selected ? "border-accent/40 bg-accent-soft" : "border-border")}>
+                  <button
+                    key={w.id}
+                    type="button"
+                    onClick={() => setField("meta.ownerSubjectId", w.id)}
+                    aria-pressed={selected}
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                      selected ? "border-accent/40 bg-accent-soft" : "border-border",
+                    )}
+                  >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                       <FolderOpen size={18} aria-hidden="true" />
                     </div>
                     <div className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate text-sm font-medium text-foreground">{w.display_name}</span>
-                      <span className="truncate text-xs text-foreground-muted">{w.kind ?? "Project"}</span>
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {w.display_name}
+                      </span>
+                      <span className="truncate text-xs text-foreground-muted">
+                        {w.kind ?? "Project"}
+                      </span>
                     </div>
                   </button>
                 );
@@ -1749,13 +2209,27 @@ export function QuickTileCreate() {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
               <span>{t("quickCreate.organizeTags")}</span>
-              <span className="text-[10px] font-normal text-foreground-muted">{t("quickCreate.organizeTagsMulti")}</span>
+              <span className="text-[10px] font-normal text-foreground-muted">
+                {t("quickCreate.organizeTagsMulti")}
+              </span>
             </div>
             <div className="flex flex-wrap items-center gap-1.5" data-testid="meta-tag-chips">
               {meta.tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-ink">
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-ink"
+                >
                   <span>#{tag}</span>
-                  <button type="button" onClick={() => setField("meta.tags", meta.tags.filter((x) => x !== tag))} className="text-primary-fg/80 hover:text-white">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setField(
+                        "meta.tags",
+                        meta.tags.filter((x) => x !== tag),
+                      )
+                    }
+                    className="text-primary-fg/80 hover:text-white"
+                  >
                     <X size={10} aria-hidden="true" />
                   </button>
                 </span>
@@ -1789,14 +2263,34 @@ export function QuickTileCreate() {
             />
           </FormRow>
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">
-            <Button type="button" size="small" variant="ghost" onClick={() => { setField("meta.ownerSubjectId", null); setField("meta.tags", []); setField("meta.memo", ""); }} className="text-danger hover:bg-danger/10">
+            <Button
+              type="button"
+              size="small"
+              variant="ghost"
+              onClick={() => {
+                setField("meta.ownerSubjectId", null);
+                setField("meta.tags", []);
+                setField("meta.memo", "");
+              }}
+              className="text-danger hover:bg-danger/10"
+            >
               {t("quickCreate.completionRemoveLabel")}
             </Button>
             <div className="flex-1" />
-            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="default"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.completionCancelLabel")}
             </Button>
-            <Button type="button" size="small" variant="primary" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="primary"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.metaApply")}
             </Button>
           </div>
@@ -1804,14 +2298,26 @@ export function QuickTileCreate() {
       </section>
 
       {/* ─── behavior sub-panel ─── */}
-      <section data-subpanel="behavior" className={subPanelClass("behavior")} aria-hidden={activePanel !== "behavior"}>
+      <section
+        data-subpanel="behavior"
+        className={subPanelClass("behavior")}
+        aria-hidden={activePanel !== "behavior"}
+      >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button type="button" onClick={() => setActivePanel("base")} className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1">
+          <button
+            type="button"
+            onClick={() => setActivePanel("base")}
+            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
+          >
             <ChevronLeft size={16} aria-hidden="true" />
           </button>
           <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">{t("quickCreate.behaviorTitle")}</strong>
-            <small className="block truncate text-[10px] text-foreground-muted">{t("quickCreate.behaviorSub")}</small>
+            <strong className="block truncate text-sm font-semibold">
+              {t("quickCreate.behaviorTitle")}
+            </strong>
+            <small className="block truncate text-[10px] text-foreground-muted">
+              {t("quickCreate.behaviorSub")}
+            </small>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-4">
@@ -1820,13 +2326,19 @@ export function QuickTileCreate() {
             onClick={() => setField("plan.role", PlanRole.EXECUTABLE)}
             className={cn(
               "mb-3 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
-              plan.role === PlanRole.EXECUTABLE ? "border-accent/40 bg-accent-soft" : "border-border hover:bg-surface-1"
+              plan.role === PlanRole.EXECUTABLE
+                ? "border-accent/40 bg-accent-soft"
+                : "border-border hover:bg-surface-1",
             )}
           >
             <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
             <div>
-              <strong className="block text-sm font-semibold">{t("quickCreate.behaviorExecutable")}</strong>
-              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.behaviorExecutableSub")}</small>
+              <strong className="block text-sm font-semibold">
+                {t("quickCreate.behaviorExecutable")}
+              </strong>
+              <small className="block text-[10px] text-foreground-muted">
+                {t("quickCreate.behaviorExecutableSub")}
+              </small>
             </div>
           </button>
           <button
@@ -1834,29 +2346,47 @@ export function QuickTileCreate() {
             onClick={() => setField("plan.role", PlanRole.LABEL)}
             className={cn(
               "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
-              plan.role === PlanRole.LABEL ? "border-accent/40 bg-accent-soft" : "border-border hover:bg-surface-1"
+              plan.role === PlanRole.LABEL
+                ? "border-accent/40 bg-accent-soft"
+                : "border-border hover:bg-surface-1",
             )}
           >
             <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
             <div>
-              <strong className="block text-sm font-semibold">{t("quickCreate.behaviorLabel")}</strong>
-              <small className="block text-[10px] text-foreground-muted">{t("quickCreate.behaviorLabelSub")}</small>
+              <strong className="block text-sm font-semibold">
+                {t("quickCreate.behaviorLabel")}
+              </strong>
+              <small className="block text-[10px] text-foreground-muted">
+                {t("quickCreate.behaviorLabelSub")}
+              </small>
             </div>
           </button>
 
           <div className="mb-4 rounded-lg border border-border bg-surface-0 p-3">
             <div className="flex items-start gap-2">
               <Info size={14} className="mt-0.5 shrink-0 text-foreground-muted" aria-hidden />
-              <span className="text-[11px] text-foreground-muted">{t("quickCreate.behaviorSchemaNote")}</span>
+              <span className="text-[11px] text-foreground-muted">
+                {t("quickCreate.behaviorSchemaNote")}
+              </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button type="button" size="small" variant="ghost" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="ghost"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.cancel")}
             </Button>
             <div className="flex-1" />
-            <Button type="button" size="small" variant="default" onClick={() => setActivePanel("base")}>
+            <Button
+              type="button"
+              size="small"
+              variant="default"
+              onClick={() => setActivePanel("base")}
+            >
               {t("quickCreate.metaApply")}
             </Button>
           </div>
@@ -1942,9 +2472,7 @@ function V4EssentialRow({
         aria-label={editAria ?? `${label} を編集`}
         className="group grid min-w-0 grid-cols-[66px_minmax(0,1fr)] items-center gap-3 rounded-md px-2 py-1.5 -my-1.5 -mx-1 cursor-pointer text-left transition-colors hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
       >
-        <div className="select-none text-[11px] font-bold text-foreground-muted">
-          {label}
-        </div>
+        <div className="select-none text-[11px] font-bold text-foreground-muted">{label}</div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">{chip}</div>
       </button>
       <div className="flex items-center gap-1">
@@ -1952,9 +2480,7 @@ function V4EssentialRow({
           <button
             type="button"
             onClick={handleClearClick}
-            aria-label={
-              armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")
-            }
+            aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
             data-armed={armed ? "true" : undefined}
             className={cn(
               "flex h-10 min-w-[40px] items-center justify-center gap-1 rounded-md px-2 text-[11px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
@@ -2017,7 +2543,10 @@ function TaskRowMenu({
     );
     const left = Math.max(
       8,
-      Math.min(rect.right - MENU_WIDTH, (typeof window !== "undefined" ? window.innerWidth : rect.right) - MENU_WIDTH - 8),
+      Math.min(
+        rect.right - MENU_WIDTH,
+        (typeof window !== "undefined" ? window.innerWidth : rect.right) - MENU_WIDTH - 8,
+      ),
     );
     setPos({ top, left });
   }, [anchor]);
@@ -2054,7 +2583,7 @@ function TaskRowMenu({
         <ChevronDown size={14} aria-hidden="true" />
         <span>{t("quickCreate.taskMoveDown")}</span>
       </button>
-      <div className="my-1 border-t border-border" role="separator" />
+      <hr className="my-1 border-t border-border" />
       <button
         type="button"
         role="menuitem"
@@ -2071,17 +2600,40 @@ function TaskRowMenu({
   );
 }
 
-function ConditionKindSegmented({ value, onChange, t }: { value: number | import("@/lib/domain/v1/constants").ConditionKindValue; onChange: (v: number) => void; t: (k: string) => string }) {
+function ConditionKindSegmented({
+  value,
+  onChange,
+  t,
+}: {
+  value: number | import("@/lib/domain/v1/constants").ConditionKindValue;
+  onChange: (v: number) => void;
+  t: (k: string) => string;
+}) {
   const options = [
     { value: String(ConditionKind.ALL), label: t("quickCreate.conditionAll") },
     { value: String(ConditionKind.ANY), label: t("quickCreate.conditionAny") },
     { value: String(ConditionKind.NOT), label: t("quickCreate.conditionNot") },
     { value: String(ConditionKind.TERM), label: t("quickCreate.conditionTerm") },
   ];
-  return <RowSegmented icon={GitBranch} options={options} value={String(value)} onChange={(v) => onChange(Number(v))} />;
+  return (
+    <RowSegmented
+      icon={GitBranch}
+      options={options}
+      value={String(value)}
+      onChange={(v) => onChange(Number(v))}
+    />
+  );
 }
 
-function TermKindSegmented({ value, onChange, t }: { value: string; onChange: (v: string) => void; t: (k: string) => string }) {
+function TermKindSegmented({
+  value,
+  onChange,
+  t,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  t: (k: string) => string;
+}) {
   const options = [
     { value: "calendar", label: t("quickCreate.termCalendar") },
     { value: "moment", label: t("quickCreate.termMoment") },
@@ -2093,19 +2645,39 @@ function TermKindSegmented({ value, onChange, t }: { value: string; onChange: (v
     { value: "metric", label: t("quickCreate.termMetric") },
     { value: "life", label: t("quickCreate.termLife") },
   ];
-  return <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />;
+  return (
+    <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />
+  );
 }
 
 function defaultTerm(kind: string): Term {
   switch (kind) {
     case "calendar":
-      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: HolidayKind.ANY, dateRange: null, offsetMin: 0 } };
+      return {
+        kind: "calendar",
+        value: {
+          weekdayMask: 0,
+          timeStart: null,
+          timeEnd: null,
+          holidayKind: HolidayKind.ANY,
+          dateRange: null,
+          offsetMin: 0,
+        },
+      };
     case "moment":
       return { kind: "moment", value: { referenceId: null, point: null, offsetMs: 0 } };
     case "relation":
       return { kind: "relation", value: { referenceId: "", relation: 0, windowKind: 0 } };
     case "gap":
-      return { kind: "gap", value: { scope: 0, leftAnchor: { referenceId: null, point: null }, rightAnchor: { referenceId: null, point: null }, size: { minMs: null, maxMs: null } } };
+      return {
+        kind: "gap",
+        value: {
+          scope: 0,
+          leftAnchor: { referenceId: null, point: null },
+          rightAnchor: { referenceId: null, point: null },
+          size: { minMs: null, maxMs: null },
+        },
+      };
     case "requirement":
       return { kind: "requirement", value: { requirementId: "", state: 0 } };
     case "task":
@@ -2119,31 +2691,65 @@ function defaultTerm(kind: string): Term {
     case "life":
       return { kind: "life", value: { target: "", state: 0 } };
     default:
-      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: HolidayKind.ANY, dateRange: null, offsetMin: 0 } };
+      return {
+        kind: "calendar",
+        value: {
+          weekdayMask: 0,
+          timeStart: null,
+          timeEnd: null,
+          holidayKind: HolidayKind.ANY,
+          dateRange: null,
+          offsetMin: 0,
+        },
+      };
   }
 }
 
-function updateCalendar(term: Term, key: keyof import("@/lib/domain/v1/condition").CalendarTerm, value: import("@/lib/domain/v1/condition").CalendarTerm[keyof import("@/lib/domain/v1/condition").CalendarTerm]) {
+function updateCalendar(
+  term: Term,
+  key: keyof import("@/lib/domain/v1/condition").CalendarTerm,
+  value: import("@/lib/domain/v1/condition").CalendarTerm[keyof import("@/lib/domain/v1/condition").CalendarTerm],
+) {
   if (term.kind !== "calendar") return term;
   return { kind: "calendar", value: { ...term.value, [key]: value } } as Term;
 }
-function updateMoment(term: Term, key: keyof import("@/lib/domain/v1/condition").MomentTerm, value: import("@/lib/domain/v1/condition").MomentTerm[keyof import("@/lib/domain/v1/condition").MomentTerm]) {
+function updateMoment(
+  term: Term,
+  key: keyof import("@/lib/domain/v1/condition").MomentTerm,
+  value: import("@/lib/domain/v1/condition").MomentTerm[keyof import("@/lib/domain/v1/condition").MomentTerm],
+) {
   if (term.kind !== "moment") return term;
   return { kind: "moment", value: { ...term.value, [key]: value } } as Term;
 }
-function updateRelation(term: Term, key: keyof import("@/lib/domain/v1/condition").RelationTerm, value: import("@/lib/domain/v1/condition").RelationTerm[keyof import("@/lib/domain/v1/condition").RelationTerm]) {
+function updateRelation(
+  term: Term,
+  key: keyof import("@/lib/domain/v1/condition").RelationTerm,
+  value: import("@/lib/domain/v1/condition").RelationTerm[keyof import("@/lib/domain/v1/condition").RelationTerm],
+) {
   if (term.kind !== "relation") return term;
   return { kind: "relation", value: { ...term.value, [key]: value } } as Term;
 }
-function updateTask(term: Term, key: keyof import("@/lib/domain/v1/condition").TaskTerm, value: import("@/lib/domain/v1/condition").TaskTerm[keyof import("@/lib/domain/v1/condition").TaskTerm]) {
+function updateTask(
+  term: Term,
+  key: keyof import("@/lib/domain/v1/condition").TaskTerm,
+  value: import("@/lib/domain/v1/condition").TaskTerm[keyof import("@/lib/domain/v1/condition").TaskTerm],
+) {
   if (term.kind !== "task") return term;
   return { kind: "task", value: { ...term.value, [key]: value } } as Term;
 }
-function updateRequirement(term: Term, key: keyof import("@/lib/domain/v1/condition").RequirementTerm, value: import("@/lib/domain/v1/condition").RequirementTerm[keyof import("@/lib/domain/v1/condition").RequirementTerm]) {
+function updateRequirement(
+  term: Term,
+  key: keyof import("@/lib/domain/v1/condition").RequirementTerm,
+  value: import("@/lib/domain/v1/condition").RequirementTerm[keyof import("@/lib/domain/v1/condition").RequirementTerm],
+) {
   if (term.kind !== "requirement") return term;
   return { kind: "requirement", value: { ...term.value, [key]: value } } as Term;
 }
-function updateLife(term: Term, key: keyof import("@/lib/domain/v1/condition").LifeTerm, value: import("@/lib/domain/v1/condition").LifeTerm[keyof import("@/lib/domain/v1/condition").LifeTerm]) {
+function updateLife(
+  term: Term,
+  key: keyof import("@/lib/domain/v1/condition").LifeTerm,
+  value: import("@/lib/domain/v1/condition").LifeTerm[keyof import("@/lib/domain/v1/condition").LifeTerm],
+) {
   if (term.kind !== "life") return term;
   return { kind: "life", value: { ...term.value, [key]: value } } as Term;
 }
@@ -2152,26 +2758,70 @@ function updateValue(term: Term, key: string, value: unknown): Term {
   return { ...term, value: { ...term.value, [key]: value } } as Term;
 }
 
-function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) => void; t: (k: string) => string }) {
+function TermFields({
+  term,
+  onChange,
+  t,
+}: {
+  term: Term;
+  onChange: (next: Term) => void;
+  t: (k: string) => string;
+}) {
   switch (term.kind) {
     case "calendar":
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">{t("quickCreate.calendarWeekdayMask")}</span>
-            <input type="number" value={term.value.weekdayMask} onChange={(e) => onChange(updateCalendar(term, "weekdayMask", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <span className="block text-foreground-muted">
+              {t("quickCreate.calendarWeekdayMask")}
+            </span>
+            <input
+              type="number"
+              value={term.value.weekdayMask}
+              onChange={(e) =>
+                onChange(updateCalendar(term, "weekdayMask", Number(e.target.value)))
+              }
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">{t("quickCreate.calendarOffsetMin")}</span>
-            <input type="number" value={term.value.offsetMin} onChange={(e) => onChange(updateCalendar(term, "offsetMin", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <span className="block text-foreground-muted">
+              {t("quickCreate.calendarOffsetMin")}
+            </span>
+            <input
+              type="number"
+              value={term.value.offsetMin}
+              onChange={(e) => onChange(updateCalendar(term, "offsetMin", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">{t("quickCreate.calendarTimeStart")}</span>
-            <input type="time" value={term.value.timeStart ?? ""} onChange={(e) => onChange(updateCalendar(term, "timeStart", e.target.value === "" ? null : e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <span className="block text-foreground-muted">
+              {t("quickCreate.calendarTimeStart")}
+            </span>
+            <input
+              type="time"
+              value={term.value.timeStart ?? ""}
+              onChange={(e) =>
+                onChange(
+                  updateCalendar(term, "timeStart", e.target.value === "" ? null : e.target.value),
+                )
+              }
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.calendarTimeEnd")}</span>
-            <input type="time" value={term.value.timeEnd ?? ""} onChange={(e) => onChange(updateCalendar(term, "timeEnd", e.target.value === "" ? null : e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="time"
+              value={term.value.timeEnd ?? ""}
+              onChange={(e) =>
+                onChange(
+                  updateCalendar(term, "timeEnd", e.target.value === "" ? null : e.target.value),
+                )
+              }
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2179,12 +2829,28 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">{t("quickCreate.momentReferenceId")}</span>
-            <input type="text" value={term.value.referenceId ?? ""} onChange={(e) => onChange(updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <span className="block text-foreground-muted">
+              {t("quickCreate.momentReferenceId")}
+            </span>
+            <input
+              type="text"
+              value={term.value.referenceId ?? ""}
+              onChange={(e) =>
+                onChange(
+                  updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value),
+                )
+              }
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.momentOffsetMs")}</span>
-            <input type="number" value={term.value.offsetMs} onChange={(e) => onChange(updateMoment(term, "offsetMs", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="number"
+              value={term.value.offsetMs}
+              onChange={(e) => onChange(updateMoment(term, "offsetMs", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2192,16 +2858,35 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label className="space-y-1">
-            <span className="block text-foreground-muted">{t("quickCreate.relationReferenceId")}</span>
-            <input type="text" value={term.value.referenceId} onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <span className="block text-foreground-muted">
+              {t("quickCreate.relationReferenceId")}
+            </span>
+            <input
+              type="text"
+              value={term.value.referenceId}
+              onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.relationKind")}</span>
-            <input type="number" value={term.value.relation} onChange={(e) => onChange(updateRelation(term, "relation", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="number"
+              value={term.value.relation}
+              onChange={(e) => onChange(updateRelation(term, "relation", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
-            <span className="block text-foreground-muted">{t("quickCreate.relationWindowKind")}</span>
-            <input type="number" value={term.value.windowKind} onChange={(e) => onChange(updateRelation(term, "windowKind", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <span className="block text-foreground-muted">
+              {t("quickCreate.relationWindowKind")}
+            </span>
+            <input
+              type="number"
+              value={term.value.windowKind}
+              onChange={(e) => onChange(updateRelation(term, "windowKind", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2210,11 +2895,21 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskId")}</span>
-            <input type="text" value={term.value.taskId} onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="text"
+              value={term.value.taskId}
+              onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskState")}</span>
-            <input type="number" value={term.value.state} onChange={(e) => onChange(updateTask(term, "state", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="number"
+              value={term.value.state}
+              onChange={(e) => onChange(updateTask(term, "state", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2223,11 +2918,21 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementId")}</span>
-            <input type="text" value={term.value.requirementId} onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="text"
+              value={term.value.requirementId}
+              onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementState")}</span>
-            <input type="number" value={term.value.state} onChange={(e) => onChange(updateRequirement(term, "state", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="number"
+              value={term.value.state}
+              onChange={(e) => onChange(updateRequirement(term, "state", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2235,25 +2940,46 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
     case "fact":
     case "feedback": {
       const v = term.value as unknown as { op: number; value: unknown; [k: string]: unknown };
-      const idKey = term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
+      const idKey =
+        term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">ID</span>
-            <input type="text" value={String(v[idKey] ?? "")} onChange={(e) => onChange(updateValue(term, idKey, e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="text"
+              value={String(v[idKey] ?? "")}
+              onChange={(e) => onChange(updateValue(term, idKey, e.target.value))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">op</span>
-            <input type="number" value={v.op} onChange={(e) => onChange(updateValue(term, "op", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="number"
+              value={v.op}
+              onChange={(e) => onChange(updateValue(term, "op", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">value</span>
-            <input type="text" value={v.value === null || v.value === undefined ? "" : String(v.value)} onChange={(e) => {
-              const raw = e.target.value;
-              if (raw === "") { onChange(updateValue(term, "value", null)); return; }
-              const num = Number(raw);
-              onChange(updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw));
-            }} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="text"
+              value={v.value === null || v.value === undefined ? "" : String(v.value)}
+              onChange={(e) => {
+                const raw = e.target.value;
+                if (raw === "") {
+                  onChange(updateValue(term, "value", null));
+                  return;
+                }
+                const num = Number(raw);
+                onChange(
+                  updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw),
+                );
+              }}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2263,11 +2989,21 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label className="space-y-1">
             <span className="block text-foreground-muted">target</span>
-            <input type="text" value={term.value.target} onChange={(e) => onChange(updateLife(term, "target", e.target.value))} className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="text"
+              value={term.value.target}
+              onChange={(e) => onChange(updateLife(term, "target", e.target.value))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
           <label className="space-y-1">
             <span className="block text-foreground-muted">state</span>
-            <input type="number" value={term.value.state} onChange={(e) => onChange(updateLife(term, "state", Number(e.target.value)))} className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40" />
+            <input
+              type="number"
+              value={term.value.state}
+              onChange={(e) => onChange(updateLife(term, "state", Number(e.target.value)))}
+              className="w-full rounded-md bg-surface-2 px-2 py-1 text-right outline-none focus:ring-2 focus:ring-primary/40"
+            />
           </label>
         </div>
       );
@@ -2278,7 +3014,15 @@ function TermFields({ term, onChange, t }: { term: Term; onChange: (next: Term) 
   }
 }
 
-function ConditionEditor({ node, onChange, t }: { node: ConditionNode; onChange: (next: ConditionNode) => void; t: (k: string) => string }) {
+function ConditionEditor({
+  node,
+  onChange,
+  t,
+}: {
+  node: ConditionNode;
+  onChange: (next: ConditionNode) => void;
+  t: (k: string) => string;
+}) {
   const isTerm = node.kind === ConditionKind.TERM;
   return (
     <div className="flex flex-col gap-1">
@@ -2287,27 +3031,82 @@ function ConditionEditor({ node, onChange, t }: { node: ConditionNode; onChange:
         onChange={(kind) => {
           if (kind === ConditionKind.TERM) {
             const currentTerm = node.term ?? defaultTerm("calendar");
-            onChange({ kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue, children: [], term: currentTerm });
+            onChange({
+              kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue,
+              children: [],
+              term: currentTerm,
+            });
           } else {
-            onChange({ kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue, children: node.children, term: null });
+            onChange({
+              kind: kind as import("@/lib/domain/v1/constants").ConditionKindValue,
+              children: node.children,
+              term: null,
+            });
           }
         }}
         t={t}
       />
       {isTerm ? (
         <>
-          <TermKindSegmented value={node.term?.kind ?? "calendar"} onChange={(k) => onChange({ kind: ConditionKind.TERM, children: [], term: defaultTerm(k) })} t={t} />
-          {node.term ? <TermFields term={node.term} onChange={(next) => onChange({ kind: ConditionKind.TERM, children: [], term: next })} t={t} /> : null}
+          <TermKindSegmented
+            value={node.term?.kind ?? "calendar"}
+            onChange={(k) =>
+              onChange({ kind: ConditionKind.TERM, children: [], term: defaultTerm(k) })
+            }
+            t={t}
+          />
+          {node.term ? (
+            <TermFields
+              term={node.term}
+              onChange={(next) => onChange({ kind: ConditionKind.TERM, children: [], term: next })}
+              t={t}
+            />
+          ) : null}
         </>
       ) : (
         <>
           {node.children.map((child, i) => (
             <div key={i} className="flex flex-col gap-1">
-              <ConditionEditor node={child} onChange={(next) => { const children = node.children.slice(); children[i] = next; onChange({ ...node, children }); }} t={t} />
-              <Button type="button" size="icon-xs" variant="ghost" icon={<Trash2 size={14} aria-hidden="true" />} onClick={() => { const children = node.children.slice(); children.splice(i, 1); onChange({ ...node, children }); }} aria-label={t("quickCreate.conditionRemoveChild")} className="self-start text-foreground-muted hover:text-danger" />
+              <ConditionEditor
+                node={child}
+                onChange={(next) => {
+                  const children = node.children.slice();
+                  children[i] = next;
+                  onChange({ ...node, children });
+                }}
+                t={t}
+              />
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="ghost"
+                icon={<Trash2 size={14} aria-hidden="true" />}
+                onClick={() => {
+                  const children = node.children.slice();
+                  children.splice(i, 1);
+                  onChange({ ...node, children });
+                }}
+                aria-label={t("quickCreate.conditionRemoveChild")}
+                className="self-start text-foreground-muted hover:text-danger"
+              />
             </div>
           ))}
-          <Button type="button" size="small" variant="default" rounded iconLeft={<Plus size={12} aria-hidden="true" />} onClick={() => onChange({ ...node, children: [...node.children, { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") }] })}>
+          <Button
+            type="button"
+            size="small"
+            variant="default"
+            rounded
+            iconLeft={<Plus size={12} aria-hidden="true" />}
+            onClick={() =>
+              onChange({
+                ...node,
+                children: [
+                  ...node.children,
+                  { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") },
+                ],
+              })
+            }
+          >
             {t("quickCreate.conditionAddChild")}
           </Button>
         </>

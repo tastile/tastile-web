@@ -22,12 +22,7 @@ export interface PageSummaryPanelProps {
   footer?: ReactNode;
 }
 
-export function PageSummaryPanel({
-  title,
-  description,
-  sections,
-  footer,
-}: PageSummaryPanelProps) {
+export function PageSummaryPanel({ title, description, sections, footer }: PageSummaryPanelProps) {
   return (
     <div className="flex flex-col gap-6 pt-4 px-3">
       <header className="flex flex-col gap-1 px-2">
@@ -63,7 +58,10 @@ export function PageSummaryPanel({
                   )}
                 >
                   {item.href ? (
-                    <Link href={item.href} className="flex w-full items-center justify-between gap-2">
+                    <Link
+                      href={item.href}
+                      className="flex w-full items-center justify-between gap-2"
+                    >
                       {content}
                     </Link>
                   ) : (

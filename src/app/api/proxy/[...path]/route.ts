@@ -766,10 +766,8 @@ function toRecurringTemplateList(parsed: unknown) {
           },
           window: {
             weekday_mask: 127,
-            start_offset_min:
-              typeof rec.window_start_min === "number" ? rec.window_start_min : 0,
-            end_offset_min:
-              typeof rec.window_end_min === "number" ? rec.window_end_min : 0,
+            start_offset_min: typeof rec.window_start_min === "number" ? rec.window_start_min : 0,
+            end_offset_min: typeof rec.window_end_min === "number" ? rec.window_end_min : 0,
           },
           selector: {
             expression: rec.expression ?? null,
