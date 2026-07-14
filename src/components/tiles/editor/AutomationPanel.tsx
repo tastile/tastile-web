@@ -86,7 +86,7 @@ function WeekdayRow({
               "flex h-8 w-9 items-center justify-center rounded-md border text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
               "disabled:cursor-not-allowed disabled:opacity-50",
               active
-                ? "border-primary bg-primary text-primary-fg"
+                ? "border-accent/40 bg-accent-soft text-accent-ink"
                 : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2 disabled:hover:bg-surface-1",
             )}
           >
@@ -207,7 +207,7 @@ export function AutomationPanel({
               className={cn(
                 "min-h-[32px] rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                 active
-                  ? "border-accent bg-accent-soft text-accent-ink"
+                  ? "border-accent/40 bg-accent-soft text-accent-ink"
                   : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
               )}
             >

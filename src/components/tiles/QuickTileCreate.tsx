@@ -728,7 +728,7 @@ export function QuickTileCreate() {
       <section className={panelClass} aria-label={headingLabel}>
         {/* ─── composer head ─── */}
         <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-foreground text-background">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
             <Layers className="h-4 w-4" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
@@ -917,18 +917,24 @@ export function QuickTileCreate() {
                     icon={Repeat}
                     label={t("quickCreate.repeatChip")}
                     chip={
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2.5 text-xs font-bold text-foreground">
-                        <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
-                        {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
-                          <span className="text-foreground-muted">
-                            ({WEEKDAY_LABELS_SHORT[locale].filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0).join(", ")})
-                          </span>
-                        ) : null}
-                        {recurring.repeatMode !== "once" && recurring.repeatMode !== "condition" && recurring.endDate ? (
-                          <span className="text-foreground-muted">~ {recurring.endDate.slice(0, 10)}</span>
-                        ) : null}
+                      recurring.repeatMode === "once" ? (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-dashed border-line bg-surface-0 px-2.5 text-xs font-bold text-foreground-muted">
+                          {t("tiles.notSet")}
+                        </span>
+                      ) : (
+                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                          <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
+                          {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
+                            <span className="text-foreground-muted">
+                              ({WEEKDAY_LABELS_SHORT[locale].filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0).join(", ")})
+                            </span>
+                          ) : null}
+                          {recurring.repeatMode !== "condition" && recurring.endDate ? (
+                            <span className="text-foreground-muted">~ {recurring.endDate.slice(0, 10)}</span>
+                          ) : null}
                       </span>
-                    }
+                        )
+                      }
                     clearable={
                       recurring.repeatMode !== "once" ||
                       Boolean(recurring.endDate)
@@ -1122,7 +1128,7 @@ export function QuickTileCreate() {
                       {windows.length > 0 && (
                         <div className="rounded-lg bg-surface-1 px-2 py-1.5">
                           <div className="mb-1 flex items-center gap-2">
-                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                            <span className="rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
                               ALL
                             </span>
                             <strong className="text-[11px] font-semibold text-foreground">
@@ -1168,7 +1174,7 @@ export function QuickTileCreate() {
                       {recurring.frameRules.length > 0 && (
                         <div className="rounded-lg bg-surface-1 px-2 py-1.5">
                           <div className="mb-1 flex items-center gap-2">
-                            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                            <span className="rounded-full border border-accent/40 bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
                               ALL
                             </span>
                             <strong className="text-[11px] font-semibold text-foreground">
@@ -1255,7 +1261,7 @@ export function QuickTileCreate() {
               onClick={handleSubmit}
               loading={submitting}
               disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-              className="h-10 bg-foreground text-background hover:bg-foreground/90"
+              className="h-10 bg-primary text-primary-fg hover:bg-primary/90"
             >
               {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
             </Button>
@@ -1370,7 +1376,7 @@ export function QuickTileCreate() {
             className={cn(
               "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
               time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
-                ? "border-primary"
+                ? "border-accent/40 bg-accent-soft"
                 : "border-border hover:bg-surface-1"
             )}
           >
@@ -1396,7 +1402,7 @@ export function QuickTileCreate() {
                 ＋
               </button>
               <div className="flex rounded-lg border border-border bg-surface-0 p-0.5">
-                <span className="rounded-md bg-primary px-3 py-1 text-xs font-bold text-primary-fg">{t("quickCreate.minutesUnit")}</span>
+                <span className="rounded-md bg-accent-soft px-3 py-1 text-xs font-bold text-accent-ink">{t("quickCreate.minutesUnit")}</span>
                 <span className="rounded-md px-3 py-1 text-xs text-foreground-muted">{t("quickCreate.hoursUnit")}</span>
               </div>
             </div>
@@ -1471,7 +1477,7 @@ export function QuickTileCreate() {
                     <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
                       {t("quickCreate.referenceTargetLabel")}
                     </div>
-                    <div className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3", hasTarget ? "border-primary" : "border-border")} data-testid={`reference-target-card-${i}`}>
+                    <div className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3", hasTarget ? "border-accent/40 bg-accent-soft" : "border-border")} data-testid={`reference-target-card-${i}`}>
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                         <Calendar size={18} aria-hidden="true" />
                       </div>
@@ -1524,7 +1530,7 @@ export function QuickTileCreate() {
                             className={cn(
                               "min-w-0 flex-1 truncate rounded-full border px-3 py-1.5 text-sm transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                               active
-                                ? "bg-primary text-primary-fg border-primary shadow-sm"
+                                ? "bg-accent-soft text-accent-ink border-accent/40"
                                 : "bg-surface-1 text-foreground-muted border-border hover:text-foreground",
                             )}
                           >
@@ -1553,7 +1559,7 @@ export function QuickTileCreate() {
                         setField("plan.references", next);
                       }} className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface-1 text-foreground hover:bg-surface-2">+</button>
                       <div className="flex shrink-0 rounded-full border border-border bg-surface-1 p-0.5">
-                        <button type="button" className="rounded-full bg-primary px-3 py-1 text-xs text-primary-fg" aria-pressed="true">
+                        <button type="button" className="rounded-full bg-accent-soft px-3 py-1 text-xs text-accent-ink" aria-pressed="true">
                           {t("quickCreate.referenceIntervalUnitMin")}
                         </button>
                       </div>
@@ -1714,7 +1720,7 @@ export function QuickTileCreate() {
             </div>
             <div className="flex flex-col gap-2" data-testid="meta-project-catalog">
               <button type="button" onClick={() => setField("meta.ownerSubjectId", null)} aria-pressed={meta.ownerSubjectId === null}
-                className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", meta.ownerSubjectId === null ? "border-primary" : "border-border")}>
+                className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", meta.ownerSubjectId === null ? "border-accent/40 bg-accent-soft" : "border-border")}>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                   <FolderOpen size={18} aria-hidden="true" />
                 </div>
@@ -1727,7 +1733,7 @@ export function QuickTileCreate() {
                 const selected = meta.ownerSubjectId === w.id;
                 return (
                   <button key={w.id} type="button" onClick={() => setField("meta.ownerSubjectId", w.id)} aria-pressed={selected}
-                    className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", selected ? "border-primary" : "border-border")}>
+                    className={cn("flex items-center gap-3 rounded-lg border bg-surface-0 p-3 text-left focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary", selected ? "border-accent/40 bg-accent-soft" : "border-border")}>
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                       <FolderOpen size={18} aria-hidden="true" />
                     </div>
@@ -1747,7 +1753,7 @@ export function QuickTileCreate() {
             </div>
             <div className="flex flex-wrap items-center gap-1.5" data-testid="meta-tag-chips">
               {meta.tags.map((tag) => (
-                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-fg">
+                <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs text-accent-ink">
                   <span>#{tag}</span>
                   <button type="button" onClick={() => setField("meta.tags", meta.tags.filter((x) => x !== tag))} className="text-primary-fg/80 hover:text-white">
                     <X size={10} aria-hidden="true" />
@@ -1814,7 +1820,7 @@ export function QuickTileCreate() {
             onClick={() => setField("plan.role", PlanRole.EXECUTABLE)}
             className={cn(
               "mb-3 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
-              plan.role === PlanRole.EXECUTABLE ? "border-primary" : "border-border hover:bg-surface-1"
+              plan.role === PlanRole.EXECUTABLE ? "border-accent/40 bg-accent-soft" : "border-border hover:bg-surface-1"
             )}
           >
             <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
@@ -1828,7 +1834,7 @@ export function QuickTileCreate() {
             onClick={() => setField("plan.role", PlanRole.LABEL)}
             className={cn(
               "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
-              plan.role === PlanRole.LABEL ? "border-primary" : "border-border hover:bg-surface-1"
+              plan.role === PlanRole.LABEL ? "border-accent/40 bg-accent-soft" : "border-border hover:bg-surface-1"
             )}
           >
             <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />

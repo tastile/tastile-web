@@ -127,7 +127,7 @@ function ChoiceTabs<T extends string>({
             className={cn(
               "min-h-[32px] rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
               active
-                ? "border-accent bg-accent-soft text-accent-ink"
+                ? "border-accent/40 bg-accent-soft text-accent-ink"
                 : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
             )}
           >
@@ -156,14 +156,14 @@ function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
       onClick={onActivate}
       className={cn(
         "flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-        active ? "border-primary" : "border-border hover:bg-surface-1",
+        active ? "border-accent/40 bg-accent-soft" : "border-border hover:bg-surface-1",
       )}
     >
       <span
         aria-hidden="true"
         className={cn(
           "h-3 w-3 shrink-0 rounded-full border-2",
-          active ? "border-primary bg-primary" : "border-foreground-muted",
+          active ? "border-accent bg-accent" : "border-foreground-muted",
         )}
       />
       <div className="min-w-0 flex-1">
@@ -298,7 +298,7 @@ function TimeOfDayEditor({
                 className={cn(
                   "rounded-full border px-3 py-1 text-[10px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
                   start === q.start && end === q.end
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? "border-accent/40 bg-accent-soft text-accent-ink"
                     : "border-border bg-surface-0 text-foreground-muted hover:bg-surface-1",
                 )}
                 data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
@@ -576,7 +576,7 @@ export function SchedulePanel({
               {t("quickCreate.referenceRangeSub")}
             </div>
           </div>
-          <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+          <span className="rounded-full border border-accent/40 bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-ink">
             {t("quickCreate.referenceRangeBadge")}
           </span>
         </div>
