@@ -521,62 +521,9 @@ export function startExecutionCommand(options: {
 
 // ---------- v1 Execution lifecycle commands ----------
 //
-// pause_execution / resume_execution use a unit payload (the path
-// carries execution_id).  Per `crates/v1/api/src/handlers/commands.rs`
-// `pause_execution`, the request body shape is
-// `CommandRequest<()>` so the wire payload must be `null`.  We model
-// this as a helper that still calls `envelope()` so the envelope
-// itself (`expected_revision`, `idempotency_key`, `occurred_at`) is
-// sent -- only the inner `payload` field is `null`.
-
-export function pauseExecutionCommand(options: {
-  client: ApiClient;
-  executionId: string;
-}): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/executions/${options.executionId}/pause`,
-    envelope(null),
-  );
-}
-
-export function resumeExecutionCommand(options: {
-  client: ApiClient;
-  executionId: string;
-}): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/executions/${options.executionId}/resume`,
-    envelope(null),
-  );
-}
-
-export interface FinishExecutionCommandOptions {
-  client: ApiClient;
-  executionId: string;
-  /**
-   * 0 = FINISHED_NORMAL, 1 = FINISHED_VOID.  Defaults to FINISHED_NORMAL.
-   */
-  kind?: number;
-  /** Optional debrief note; surfaces in the audit log. */
-  note?: string | null;
-}
-
-export function finishExecutionCommand(
-  options: FinishExecutionCommandOptions,
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/executions/${options.executionId}/finish`,
-    envelope({
-      kind: options.kind ?? 0,
-      note: options.note ?? null,
-    }),
-  );
-}
+// pause_execution / resume_execution / finish_execution helpers were
+// removed in the knip cleanup pass -- they were defined but never
+// imported.  Add them back here only when a caller materialises.
 
 export async function startTileExecutionCommand(
   options: StartTileCommandOptions,
