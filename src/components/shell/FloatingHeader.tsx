@@ -26,6 +26,7 @@ import {
   FloatingMenuTrigger,
 } from "@/components/ui/floating-menu";
 import { useActiveTile } from "@/lib/hooks/use-active-tile";
+import { V1ExecutionControls } from "@/components/execution/V1ExecutionControls";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
@@ -128,6 +129,8 @@ export function FloatingHeader({
 
         {/* 右: アクション */}
         <div className="flex items-center gap-1 pr-3">
+          <V1ExecutionControls />
+
           <button
             type="button"
             aria-label={t("shell.floatingHeader.openSearch")}
