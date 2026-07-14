@@ -33,6 +33,8 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Clock,
   Coffee,
   FileText,
@@ -284,6 +286,8 @@ export function QuickTileCreate() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
+  const [taskMenuIndex, setTaskMenuIndex] = useState<number | null>(null);
+  const taskMenuButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const headingLabel = (() => {
     const isEdit = mode === "edit";
@@ -322,6 +326,28 @@ export function QuickTileCreate() {
       }
     };
   }, [isOpen, mounted]);
+
+  useEffect(() => {
+    if (taskMenuIndex === null) return;
+    const menuIndex = taskMenuIndex;
+    function handlePointerDown(e: PointerEvent) {
+      const target = e.target as Node;
+      const anchor = taskMenuButtonRefs.current[menuIndex];
+      if (anchor && anchor.contains(target)) return;
+      const popover = document.getElementById("quick-create-task-menu");
+      if (popover && popover.contains(target)) return;
+      setTaskMenuIndex(null);
+    }
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setTaskMenuIndex(null);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [taskMenuIndex]);
 
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -940,14 +966,22 @@ export function QuickTileCreate() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => {
-                            const next = plan.completion.tasks.slice();
-                            next.splice(i, 1);
-                            setField("plan.completion.tasks", next);
+                          ref={(el) => {
+                            taskMenuButtonRefs.current[i] = el;
                           }}
+                          onClick={() =>
+                            setTaskMenuIndex((prev) => (prev === i ? null : i))
+                          }
                           aria-label={t("quickCreate.taskMoreAria")}
+                          aria-haspopup="menu"
+                          aria-expanded={taskMenuIndex === i}
                           title={t("quickCreate.taskMoreTitle")}
-                          className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                          className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded-md focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+                            taskMenuIndex === i
+                              ? "bg-surface-2 text-foreground"
+                              : "text-foreground-muted hover:bg-surface-1 hover:text-foreground",
+                          )}
                         >
                           <MoreHorizontal size={14} aria-hidden="true" />
                         </button>
@@ -976,6 +1010,31 @@ export function QuickTileCreate() {
                     >
                       ＋ タスクを追加
                     </button>
+                    {taskMenuIndex !== null && plan.completion.tasks[taskMenuIndex] ? (
+                      <TaskRowMenu
+                        anchor={taskMenuButtonRefs.current[taskMenuIndex] ?? null}
+                        index={taskMenuIndex}
+                        total={plan.completion.tasks.length}
+                        onClose={() => setTaskMenuIndex(null)}
+                        onMove={(dir) => {
+                          const j = taskMenuIndex;
+                          const target = dir === "up" ? j - 1 : j + 1;
+                          if (target < 0 || target >= plan.completion.tasks.length) return;
+                          const next = plan.completion.tasks.slice();
+                          const [moved] = next.splice(j, 1);
+                          next.splice(target, 0, moved);
+                          setField("plan.completion.tasks", next);
+                          setTaskMenuIndex(target);
+                        }}
+                        onDelete={() => {
+                          const next = plan.completion.tasks.slice();
+                          next.splice(taskMenuIndex, 1);
+                          setField("plan.completion.tasks", next);
+                          setTaskMenuIndex(null);
+                        }}
+                        t={t}
+                      />
+                    ) : null}
                   </div>
                 </div>
 
@@ -1833,6 +1892,89 @@ function V4EssentialRow({
           <ChevronRight className="h-4 w-4" aria-hidden />
         </button>
       </div>
+    </div>
+  );
+}
+
+function TaskRowMenu({
+  anchor,
+  index,
+  total,
+  onClose,
+  onMove,
+  onDelete,
+  t,
+}: {
+  anchor: HTMLButtonElement | null;
+  index: number;
+  total: number;
+  onClose: () => void;
+  onMove: (dir: "up" | "down") => void;
+  onDelete: () => void;
+  t: (key: string) => string;
+}) {
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  useEffect(() => {
+    if (!anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const MENU_WIDTH = 168;
+    const MENU_HEIGHT = 152;
+    const top = Math.min(
+      rect.bottom + 6,
+      typeof window !== "undefined" ? window.innerHeight - MENU_HEIGHT - 8 : rect.bottom + 6,
+    );
+    const left = Math.max(
+      8,
+      Math.min(rect.right - MENU_WIDTH, (typeof window !== "undefined" ? window.innerWidth : rect.right) - MENU_WIDTH - 8),
+    );
+    setPos({ top, left });
+  }, [anchor]);
+  if (!anchor || !pos) return null;
+  const canUp = index > 0;
+  const canDown = index < total - 1;
+  const itemClass =
+    "flex w-full items-center gap-2 px-3 py-2 text-left text-xs text-foreground transition-colors hover:bg-surface-2 focus:outline-hidden focus-visible:bg-surface-2 disabled:cursor-not-allowed disabled:text-foreground-muted disabled:hover:bg-transparent";
+  return (
+    <div
+      id="quick-create-task-menu"
+      role="menu"
+      aria-label={t("quickCreate.taskMenuLabel")}
+      className="fixed z-50 min-w-[168px] overflow-hidden rounded-lg border border-border bg-surface-elevated shadow-lg"
+      style={{ top: pos.top, left: pos.left }}
+    >
+      <button
+        type="button"
+        role="menuitem"
+        disabled={!canUp}
+        onClick={() => onMove("up")}
+        className={itemClass}
+      >
+        <ChevronUp size={14} aria-hidden="true" />
+        <span>{t("quickCreate.taskMoveUp")}</span>
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        disabled={!canDown}
+        onClick={() => onMove("down")}
+        className={itemClass}
+      >
+        <ChevronDown size={14} aria-hidden="true" />
+        <span>{t("quickCreate.taskMoveDown")}</span>
+      </button>
+      <div className="my-1 border-t border-border" role="separator" />
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => {
+          onDelete();
+          onClose();
+        }}
+        className={cn(itemClass, "text-danger hover:bg-danger/10 focus-visible:bg-danger/10")}
+      >
+        <Trash2 size={14} aria-hidden="true" />
+        <span>{t("quickCreate.taskMoreTitle")}</span>
+      </button>
     </div>
   );
 }
