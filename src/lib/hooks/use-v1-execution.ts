@@ -20,9 +20,9 @@ import {
   finishExecutionCommand,
   makeClient,
   pauseExecutionCommand,
+  type Result,
   resumeExecutionCommand,
   startExecutionCommand,
-  type Result,
 } from "@/lib/api/v1";
 import type { CommandResponse } from "@/lib/domain/v1/envelope";
 
@@ -63,7 +63,12 @@ export function useV1Execution(snapshot: V1ExecutionSnapshot | null) {
   const run = useCallback(
     async (action: V1ExecutionAction): Promise<Result<CommandResponse>> => {
       if (!snapshot) {
-        const err = { kind: 4 as const, message: "no active placement", currentRevision: null, violations: [] };
+        const err = {
+          kind: 4 as const,
+          message: "no active placement",
+          currentRevision: null,
+          violations: [],
+        };
         setState({ busy: null, error: err.message, last: { action, at: Date.now(), ok: false } });
         return { ok: false, error: err };
       }
@@ -85,7 +90,7 @@ export function useV1Execution(snapshot: V1ExecutionSnapshot | null) {
                 ok: false,
                 error: {
                   kind: 4 as const,
-                  message: "no execution to " + action,
+                  message: `no execution to ${action}`,
                   currentRevision: null,
                   violations: [],
                 },
@@ -113,7 +118,15 @@ export function useV1Execution(snapshot: V1ExecutionSnapshot | null) {
             break;
         }
       } catch (err) {
-        result = { ok: false, error: { kind: 7 as const, message: describeError(action, err), currentRevision: null, violations: [] } };
+        result = {
+          ok: false,
+          error: {
+            kind: 7 as const,
+            message: describeError(action, err),
+            currentRevision: null,
+            violations: [],
+          },
+        };
       }
       setState({
         busy: null,
@@ -140,7 +153,13 @@ export function snapshotFromActiveTile(active: {
   span_start: string | null;
   span_end: string | null;
 }): V1ExecutionSnapshot | null {
-  if (!active.tile_id || !active.placement_id || !active.title || !active.span_start || !active.span_end) {
+  if (
+    !active.tile_id ||
+    !active.placement_id ||
+    !active.title ||
+    !active.span_start ||
+    !active.span_end
+  ) {
     return null;
   }
   return {
