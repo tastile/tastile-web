@@ -74,21 +74,68 @@ export default function CalendarViewPage() {
   const blocks = useMemo<CalendarBlock[]>(() => {
     if (!data?.ok || !data.data) return [];
     const payload = data.data as Record<string, unknown>;
-    if (Array.isArray(payload)) return payload as CalendarBlock[];
-    if (Array.isArray(payload.blocks)) return payload.blocks as CalendarBlock[];
-    if (Array.isArray(payload.items)) return payload.items as CalendarBlock[];
+
+    // Normalize one v1 calendar item (from GET /v1/calendar/{day,week,month,year})
+    // into the CalendarBlock shape the views render. The wire format is:
+    //   { placement_id, content: { title, description }, role (0=work/1=label),
+    //     span: { start, end }, resolution: { state (0=open/1=closed/2=blocked) },
+    //     visual: { color, icon } }
+    // Map role 0 -> "work", role 1 -> "fixed", anything else -> "fixed".
+    // Hide anything the resolver marks CLOSED (state=1).
+    const mapOne = (raw: Record<string, unknown>): CalendarBlock | null => {
+      const content = (raw.content ?? {}) as { title?: string; description?: string | null };
+      const span = (raw.span ?? {}) as { start?: string; end?: string | null };
+      const visual = (raw.visual ?? {}) as { color?: string | null; icon?: string | null };
+      const role = typeof raw.role === "number" ? raw.role : 1;
+      const resolution = (raw.resolution ?? {}) as { state?: number };
+      const start = span.start;
+      const end = span.end ?? null;
+      if (!start || !content.title) return null;
+      // Hide placements that are CLOSED (resolution.state === 1) so the
+      // timeline does not surface stale rows. The lifecycle hooks manage
+      // those rows explicitly (open / pause / resume / finish).
+      if (resolution.state === 1) return null;
+      const type = role === 0 ? "work" : "fixed";
+      const durMs = end ? new Date(end).getTime() - new Date(start).getTime() : 0;
+      return {
+        id: typeof raw.placement_id === "string" ? raw.placement_id : undefined,
+        title: content.title,
+        type,
+        startAt: start,
+        endAt: end,
+        durationMin: Math.max(0, Math.round(durMs / 60000)),
+        status: "scheduled",
+        color: typeof visual.color === "string" ? visual.color : null,
+        icon: typeof visual.icon === "string" ? visual.icon : null,
+      } as CalendarBlock & { color?: string | null; icon?: string | null };
+    };
+
+    const collect = (arr: unknown[]): CalendarBlock[] => {
+      const out: CalendarBlock[] = [];
+      for (const item of arr) {
+        if (item && typeof item === "object") {
+          const mapped = mapOne(item as Record<string, unknown>);
+          if (mapped) out.push(mapped);
+        }
+      }
+      return out;
+    };
+
+    if (Array.isArray(payload)) return collect(payload as unknown[]);
+    if (Array.isArray(payload.blocks)) return collect(payload.blocks as unknown[]);
+    if (Array.isArray(payload.items)) return collect(payload.items as unknown[]);
     if (Array.isArray(payload.days)) {
       const out: CalendarBlock[] = [];
-      for (const day of payload.days as Array<{ blocks?: CalendarBlock[] }>) {
-        for (const b of day.blocks ?? []) out.push(b);
+      for (const day of payload.days as Array<{ blocks?: unknown[] }>) {
+        out.push(...collect(day.blocks ?? []));
       }
       return out;
     }
     if (Array.isArray(payload.months)) {
       const out: CalendarBlock[] = [];
-      for (const m of payload.months as Array<{ days?: Array<{ blocks?: CalendarBlock[] }> }>) {
+      for (const m of payload.months as Array<{ days?: Array<{ blocks?: unknown[] }> }>) {
         for (const day of m.days ?? []) {
-          for (const b of day.blocks ?? []) out.push(b);
+          out.push(...collect(day.blocks ?? []));
         }
       }
       return out;
@@ -223,6 +270,8 @@ interface CalendarBlock {
   endAt: string | Date | null;
   durationMin?: number;
   status?: "done" | "active" | "scheduled" | string;
+  color?: string | null;
+  icon?: string | null;
 }
 
 function SummaryCard({

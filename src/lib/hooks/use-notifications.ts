@@ -50,7 +50,10 @@ export function useNotifications() {
     const client = getCoreClient();
     const [access, execution] = await Promise.all([
       fetchAccessNotifications(t),
-      client.call<ExecutionSnapshot>("getExecutionView"),
+      // The endpoint may legitimately return null when no execution is
+      // active.  Type the result loosely so we can runtime-null-check
+      // it here instead of crashing when /v1/active-tile returns null.
+      client.call<ExecutionSnapshot | null>("getExecutionView"),
     ]);
 
     if (access.ok) {
@@ -71,11 +74,12 @@ export function useNotifications() {
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
-    if (execution.ok) {
-      const item = toExecutionNotification(execution.data, t);
+    if (execution.ok && execution.data) {
+      const execData = execution.data;
+      const item = toExecutionNotification(execData, t);
       setExecutionItem(item);
       if (item) {
-        const kind: NotificationKind = execution.data.pending_prompt_id
+        const kind: NotificationKind = execData.pending_prompt_id
           ? "prompt_pending"
           : "tile_started";
         emitOnce(seenSystemNotifications.current, item.id, {
@@ -85,10 +89,12 @@ export function useNotifications() {
           tag: item.id,
         });
       }
-    } else {
+    } else if (!execution.ok) {
       const msg = execution.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
+    // else: execution.ok === true && execution.data === null.  No active
+    // tile, nothing to notify, no error to surface.  Skip both branches.
 
     setLoading(false);
   }, [t]);
