@@ -116,16 +116,20 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   const effectiveAnchor = mode === "scope" ? anchor : todayLocalIso(tzOffset);
 
   // The occurrences API expects RFC3339; expand the (mode, view) window
+  // The occurrences API expects RFC3339; expand the (mode, view) window
   // into explicit [start, end] datetimes.
-  // The list view pulls a fixed wide window (today - 30d / +90d) so
-  // the entire list is in one capability-aware /v1/timeline call.
+  //
+  // The list view rolls a 31-day window centered on today.  v1 /v1/timeline
+  // caps the read window at 31 days (`MAX_TIMELINE_WINDOW`); a wider range
+  // returns 400.  We bias the window 14d past / 17d future so the user can
+  // still see the upcoming two weeks when they open the list view.
   const listRange = useMemo((): UseEventsRange => {
-    // Before the mount effect has run, nowMs is 0 — render with a
-    // sentinel window rather than touching Date during render.
+    // Before the mount effect has run, nowMs is 0 — render with a sentinel
+    // window rather than touching Date during render.
     const adjusted = nowMs - tzOffset * 60_000;
     return {
-      start: new Date(adjusted - 30 * 24 * 60 * 60 * 1000).toISOString(),
-      end: new Date(adjusted + 90 * 24 * 60 * 60 * 1000).toISOString(),
+      start: new Date(adjusted - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      end: new Date(adjusted + 17 * 24 * 60 * 60 * 1000).toISOString(),
     };
   }, [tzOffset, nowMs]);
 

@@ -67,7 +67,9 @@ export function WeekView({
       { allDay: CalendarEvent[]; timed: ReturnType<typeof layoutDayLanes> }
     >();
     for (const d of weekDates) {
-      const dayEvents = events.filter((e) => eventSpansDay(e, d));
+      // Pass tzOffset so a 01:00-JST sleep placement lands on the correct local date column.
+      // Without this, the filter falls back to UTC midnight and the sleep ends up in the previous day's column.
+      const dayEvents = events.filter((e) => eventSpansDay(e, d, tzOffset));
       m.set(d, {
         allDay: dayEvents.filter((e) => e.allDay),
         timed: layoutDayLanes(

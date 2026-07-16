@@ -32,7 +32,7 @@ function formatRemaining(target: Date): string {
 }
 
 export function V1ExecutionControls() {
-  const { snapshot, loading, error } = useV1ActiveTile();
+  const { snapshot, loading } = useV1ActiveTile();
   const tileSnapshot = snapshot ? snapshotFromActiveTile(snapshot) : null;
   const { state, run } = useV1Execution(tileSnapshot);
   const [tickMs, setTickMs] = useState(0);
@@ -45,17 +45,13 @@ export function V1ExecutionControls() {
 
   if (loading && !tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
-        実行なし
-      </div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">実行なし</div>
     );
   }
 
   if (!tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
-        実行なし
-      </div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">実行なし</div>
     );
   }
 
@@ -79,9 +75,11 @@ export function V1ExecutionControls() {
       {!hasExecution && (
         <button
           type="button"
-          onClick={() => void run("start").then(() => {
-            window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
-          })}
+          onClick={() =>
+            void run("start").then(() => {
+              window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
+            })
+          }
           disabled={state.busy !== null}
           className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
           aria-label="Start execution"

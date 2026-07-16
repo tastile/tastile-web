@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { V1ExecutionControls } from "@/components/execution/V1ExecutionControls";
 import { TastileLogo } from "@/components/TastileLogo";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import {
@@ -26,7 +27,6 @@ import {
   FloatingMenuTrigger,
 } from "@/components/ui/floating-menu";
 import { useActiveTile } from "@/lib/hooks/use-active-tile";
-import { V1ExecutionControls } from "@/components/execution/V1ExecutionControls";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 
