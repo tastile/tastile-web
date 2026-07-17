@@ -8,7 +8,10 @@
 
 import { cookies } from "next/headers";
 import { v5 as uuidv5 } from "uuid";
-import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
+import { NextResponse } from "next/server";
+import { setAuthCookies } from "@/lib/cognito/cookies";
+import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 const RUST_BASE = process.env.TASTILE_RUST_API_URL ?? "http://127.0.0.1:31400";
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
@@ -57,15 +60,12 @@ async function readJsonOrText(res: Response): Promise<unknown> {
   }
 }
 
-function upstreamError(status: number, body: unknown): Response {
+function upstreamError(status: number, body: unknown): NextResponse {
   const detail =
     (body as { error?: string; message?: string } | null)?.error ??
     (body as { error?: string; message?: string } | null)?.message;
   const message = detail ?? `Upstream returned ${status}`;
-  return new Response(JSON.stringify({ error: message }), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
+  return NextResponse.json({ error: message }, { status });
 }
 
 // v1 CommandEnvelope helpers ------------------------------------------------
@@ -101,29 +101,53 @@ function envelope<T>(payload: T): Record<string, unknown> {
 
 async function bridgeHeaders(
   extra?: Record<string, string>,
-): Promise<Record<string, string> | null> {
+): Promise<{ headers: Record<string, string>; refreshedTokens: import("@/lib/cognito/server").CognitoTokenSet | null } | null> {
   if (isE2EBypass()) {
     return {
-      ...(extra ?? {}),
-      "x-owner-id": DEV_ACTOR_SUBJECT_ID,
-      "x-actor-id": DEV_ACTOR_SUBJECT_ID,
+      headers: {
+        ...(extra ?? {}),
+        "x-owner-id": DEV_ACTOR_SUBJECT_ID,
+        "x-actor-id": DEV_ACTOR_SUBJECT_ID,
+      },
+      refreshedTokens: null,
     };
   }
 
   const cookieStore = await cookies();
-  const userSub = await resolveAuthenticatedUserSub({ cookieStore });
+  const auth = await ensureBridgeAuth({ cookieStore });
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  if (!userSub || !bridgeSecret) return null;
+  if (auth.status === "unauthorized" || !bridgeSecret) return null;
 
   return {
-    ...(extra ?? {}),
-    "x-tastile-web-bridge-secret": bridgeSecret,
-    "x-tastile-web-session-user": userSub,
+    headers: {
+      ...(extra ?? {}),
+      "x-tastile-web-bridge-secret": bridgeSecret,
+      "x-tastile-web-session-user": auth.userSub,
+    },
+    refreshedTokens: auth.refreshedTokens,
   };
 }
 
-function unauthenticatedUpstreamResponse(): Response {
-  return upstreamError(401, { error: "Unauthorized" });
+async function applyRefreshedAuthCookies(
+  response: NextResponse,
+  refreshedTokens: import("@/lib/cognito/server").CognitoTokenSet | null,
+): Promise<void> {
+  if (!refreshedTokens) return;
+  const claims = parseIdTokenClaims(refreshedTokens.id_token);
+  await setAuthCookies(
+    {
+      idToken: refreshedTokens.id_token,
+      accessToken: refreshedTokens.access_token,
+      refreshToken: refreshedTokens.refresh_token ?? null,
+      sub: claims.sub,
+      expiresIn: refreshedTokens.expires_in,
+    },
+    response,
+  );
+}
+
+function unauthenticatedUpstreamResponse(): NextResponse {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
 const TIMELINE_ITEM_TO_EVENT: Array<{ hex: string; name: string }> = [
@@ -209,11 +233,18 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
   qs.set("end", toUtcIso(q.end));
   qs.set("include_labels", "true");
   if (q.ownerIds?.length) qs.set("owner_ids", q.ownerIds.join(","));
-  const headers = await bridgeHeaders();
-  if (!headers) return unauthenticatedUpstreamResponse();
+  const auth = await bridgeHeaders();
+  if (!auth) return unauthenticatedUpstreamResponse();
   const url = `${RUST_BASE}/v1/timeline?${qs.toString()}`;
-  const res = await fetch(url, { cache: "no-store", headers });
-  if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
+  const res = await fetch(url, { cache: "no-store", headers: auth.headers });
+  if (!res.ok) {
+    const errBody = await readJsonOrText(res);
+    const errResponse = upstreamError(res.status, errBody);
+    if (errResponse instanceof NextResponse) {
+      await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
+    }
+    return errResponse;
+  }
   const items = (await readJsonOrText(res)) as TimelineItemRaw[] | null;
   const nowIso = new Date().toISOString();
   const minMinutes = q.minMinutes ?? 0;
@@ -257,10 +288,9 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
     });
   }
 
-  return new Response(JSON.stringify({ occurrences: events }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+  const response = NextResponse.json({ occurrences: events });
+  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+  return response;
 }
 
 export interface CalendarCreateInput {
@@ -301,16 +331,16 @@ export interface CalendarEventResult {
  * POST /v1/placements) so each request carries a fresh
  * idempotency_key, expected_revision=null, and a typed payload.
  */
-export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): Promise<Response> {
-  const headers = await bridgeHeaders({ "content-type": "application/json" });
-  if (!headers) return unauthenticatedUpstreamResponse();
+export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): Promise<NextResponse> {
+  const auth = await bridgeHeaders({ "content-type": "application/json" });
+  if (!auth) return unauthenticatedUpstreamResponse();
 
   // 1) POST /v1/tiles (kind=1 = PLACEMENT).  Server creates the tile
   //    and an auto-created Plan row in one transaction; aggregate_meta
   //    carries both ids back so we do not need a GET-after-POST.
   const tileRes = await fetch(`${RUST_BASE}/v1/tiles`, {
     method: "POST",
-    headers,
+    headers: auth.headers,
     body: JSON.stringify(
       envelope({
         kind: 1, // TileKind::PLACEMENT
@@ -323,7 +353,11 @@ export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): P
       }),
     ),
   });
-  if (!tileRes.ok) return upstreamError(tileRes.status, await readJsonOrText(tileRes));
+  if (!tileRes.ok) {
+    const errResponse = upstreamError(tileRes.status, await readJsonOrText(tileRes));
+    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
+    return errResponse;
+  }
   const tileBody = (await readJsonOrText(tileRes)) as Record<string, unknown> | null;
   const tileId = String((tileBody?.aggregate as { id?: string } | undefined)?.id ?? "");
   const planId = String(
@@ -338,7 +372,7 @@ export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): P
   //    occupies.
   const placementRes = await fetch(`${RUST_BASE}/v1/placements`, {
     method: "POST",
-    headers,
+    headers: auth.headers,
     body: JSON.stringify(
       envelope({
         tile_id: tileId,
@@ -364,7 +398,9 @@ export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): P
     ),
   });
   if (!placementRes.ok) {
-    return upstreamError(placementRes.status, await readJsonOrText(placementRes));
+    const errResponse = upstreamError(placementRes.status, await readJsonOrText(placementRes));
+    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
+    return errResponse;
   }
   const placementBody = (await readJsonOrText(placementRes)) as Record<string, unknown> | null;
   const placementId = String((placementBody?.aggregate as { id?: string } | undefined)?.id ?? "");
@@ -389,10 +425,9 @@ export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): P
     createdAt: nowIso,
     updatedAt: nowIso,
   };
-  return new Response(JSON.stringify({ event: toCamel(event) }), {
-    status: 201,
-    headers: { "content-type": "application/json" },
-  });
+  const response = NextResponse.json({ event: toCamel(event) }, { status: 201 });
+  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+  return response;
 }
 
 /** Update v1 tile fields (POST /v1/tiles/{id}/update). */
@@ -404,20 +439,23 @@ export async function upstreamUpdateTile(
     color?: string | null;
     icon?: string | null;
   },
-): Promise<Response> {
-  const headers = await bridgeHeaders({ "content-type": "application/json" });
-  if (!headers) return unauthenticatedUpstreamResponse();
+): Promise<NextResponse> {
+  const auth = await bridgeHeaders({ "content-type": "application/json" });
+  if (!auth) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}/update`, {
     method: "POST",
-    headers,
+    headers: auth.headers,
     body: JSON.stringify(envelope(toSnake({ tile_id: tileId, ...patch }))),
   });
-  if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
+  if (!res.ok) {
+    const errResponse = upstreamError(res.status, await readJsonOrText(res));
+    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
+    return errResponse;
+  }
   const tile = await readJsonOrText(res);
-  return new Response(JSON.stringify({ tile: toCamel(tile) }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+  const response = NextResponse.json({ tile: toCamel(tile) }, { status: 200 });
+  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+  return response;
 }
 
 /** Archive v1 tile (DELETE /v1/tiles/{id}) -- replaces "delete event".
@@ -428,29 +466,49 @@ export async function upstreamUpdateTile(
  * Content-Type: application/json + a parseable JSON object), so we send
  * `{ expected_revision, idempotency_key, occurred_at, payload: { tile_id } }`.
  */
-export async function upstreamArchiveTile(tileId: string): Promise<Response> {
-  const headers = await bridgeHeaders({ "content-type": "application/json" });
-  if (!headers) return unauthenticatedUpstreamResponse();
+export async function upstreamArchiveTile(tileId: string): Promise<NextResponse> {
+  const auth = await bridgeHeaders({ "content-type": "application/json" });
+  if (!auth) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}`, {
     method: "DELETE",
-    headers,
+    headers: auth.headers,
     body: JSON.stringify(envelope({ tile_id: tileId })),
   });
-  if (res.status === 204) return new Response(null, { status: 204 });
-  if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
-  return new Response(null, { status: 204 });
+  if (res.status === 204) {
+    const response = new NextResponse(null, { status: 204 });
+    await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+    return response;
+  }
+  if (!res.ok) {
+    const errResponse = upstreamError(res.status, await readJsonOrText(res));
+    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
+    return errResponse;
+  }
+  const response = new NextResponse(null, { status: 204 });
+  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+  return response;
 }
 
 /** Close a single placement without archiving its tile. */
-export async function upstreamClosePlacement(placementId: string): Promise<Response> {
-  const headers = await bridgeHeaders({ "content-type": "application/json" });
-  if (!headers) return unauthenticatedUpstreamResponse();
+export async function upstreamClosePlacement(placementId: string): Promise<NextResponse> {
+  const auth = await bridgeHeaders({ "content-type": "application/json" });
+  if (!auth) return unauthenticatedUpstreamResponse();
   const res = await fetch(`${RUST_BASE}/v1/placements/${encodeURIComponent(placementId)}/close`, {
     method: "POST",
-    headers,
+    headers: auth.headers,
     body: JSON.stringify(envelope({ placement_id: placementId })),
   });
-  if (res.status === 204) return new Response(null, { status: 204 });
-  if (!res.ok) return upstreamError(res.status, await readJsonOrText(res));
-  return new Response(null, { status: 204 });
+  if (res.status === 204) {
+    const response = new NextResponse(null, { status: 204 });
+    await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+    return response;
+  }
+  if (!res.ok) {
+    const errResponse = upstreamError(res.status, await readJsonOrText(res));
+    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
+    return errResponse;
+  }
+  const response = new NextResponse(null, { status: 204 });
+  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
+  return response;
 }

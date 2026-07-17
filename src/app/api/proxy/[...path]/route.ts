@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
-import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
+import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
+import { setAuthCookies } from "@/lib/cognito/cookies";
+import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 // RFC 4122 NAMESPACE_OID (also matches the uuid crate's
 // `Uuid::NAMESPACE_OID`).  The daemon's bridge auth derives the
@@ -54,7 +56,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   // request; unsigned uid cookies and decoded JWT payloads are never an
   // identity source. The bridge secret gates the core-side trust boundary.
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  const bridgeUserSub = await resolveAuthenticatedUserSub({ cookieStore: request.cookies });
+  const auth = await ensureBridgeAuth({ cookieStore: request.cookies });
   if (getIsE2EBypass()) {
     // E2E bypass: pin the dev actor while still forwarding to the configured
     // v1 API. The bridge-secret check is for production deploys.
@@ -67,16 +69,16 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
         { status: 500 },
       );
     }
-    if (!bridgeUserSub) {
+    if (auth.status === "unauthorized") {
       return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
-    headers.set("x-tastile-web-session-user", bridgeUserSub);
+    headers.set("x-tastile-web-session-user", auth.userSub);
     // v1 read handlers (read_tile, list_tiles, ...) authorize via
     // `read_actor` which only reads `x-actor-id` (not the bridge
     // headers).  The actor must match the daemon's bridge-derived
     // owner_id (`uuidv5(NAMESPACE_OID, user_sub)`), not the raw sub.
-    const actorId = bridgeActorId(bridgeUserSub);
+    const actorId = bridgeActorId(auth.userSub);
     headers.set("x-owner-id", actorId);
     headers.set("x-actor-id", actorId);
     const apiToken = request.cookies.get("tastile_api_token")?.value;
@@ -104,10 +106,24 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     for (const [name, value] of upstreamResponse.headers) {
       if (isSafeResponseHeader(name)) responseHeaders.set(name, value);
     }
-    return new NextResponse(upstreamResponse.body, {
+    const response = new NextResponse(upstreamResponse.body, {
       status: upstreamResponse.status,
       headers: responseHeaders,
     });
+    if (!getIsE2EBypass() && auth.status === "ok" && auth.refreshedTokens) {
+      const claims = parseIdTokenClaims(auth.refreshedTokens.id_token);
+      await setAuthCookies(
+        {
+          idToken: auth.refreshedTokens.id_token,
+          accessToken: auth.refreshedTokens.access_token,
+          refreshToken: auth.refreshedTokens.refresh_token ?? null,
+          sub: claims.sub,
+          expiresIn: auth.refreshedTokens.expires_in,
+        },
+        response,
+      );
+    }
+    return response;
   } catch (error) {
     console.error(`Proxy error for ${path}:`, error);
     return NextResponse.json({ error: "Proxy request failed" }, { status: 502 });
