@@ -116,5 +116,6 @@ function buildCognitoOAuthUrl(args: {
   if (args.provider) {
     url.searchParams.set("identity_provider", args.provider);
   }
+  url.searchParams.set("prompt", "select_account");
   return url;
 }
