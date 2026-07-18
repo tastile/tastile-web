@@ -1,5 +1,11 @@
+import {
+  type ApiError,
+  type CommandRequest,
+  type CommandResponse,
+  nowIso,
+  uuidv7,
+} from "@/lib/domain/v1/envelope";
 import { type ApiClient, getRead, type Result, sendCommand } from "./endpoints";
-import { type ApiError, type CommandRequest, type CommandResponse, nowIso, uuidv7 } from "@/lib/domain/v1/envelope";
 
 export interface UtcSpan {
   start: string;
@@ -10,9 +16,20 @@ export interface UtcSpan {
 export type SourceWireId = string;
 export type SourceWireInstant = string;
 
-export interface SourceRangeWire<T> { min: T | null; max: T | null; }
-export interface SourceTimeOfDayWire { hour: number; minute: number; second: number; nanos: number; }
-export interface SourceDateRangeWire { start: string; end: string; }
+export interface SourceRangeWire<T> {
+  min: T | null;
+  max: T | null;
+}
+export interface SourceTimeOfDayWire {
+  hour: number;
+  minute: number;
+  second: number;
+  nanos: number;
+}
+export interface SourceDateRangeWire {
+  start: string;
+  end: string;
+}
 
 /** Serde externally-tagged Condition and Term AST (`v1/05`). */
 export type SourceConditionWire =
@@ -36,8 +53,14 @@ export type SourceMomentComparisonWire =
   | { After: SourceMomentTargetWire }
   | { Between: [SourceMomentTargetWire, SourceMomentTargetWire] }
   | { Within: SourceRangeWire<number> };
-export interface SourcePickWire { kind: number; at: SourceMomentWire | null; }
-export interface SourceAnchorSelectorWire { when: SourceConditionWire; pick: SourcePickWire; }
+export interface SourcePickWire {
+  kind: number;
+  at: SourceMomentWire | null;
+}
+export interface SourceAnchorSelectorWire {
+  when: SourceConditionWire;
+  pick: SourcePickWire;
+}
 export interface SourceGapAnchorsWire {
   left: SourceAnchorSelectorWire;
   right: SourceAnchorSelectorWire;
@@ -65,8 +88,21 @@ export interface SourceMomentTermWire {
 export type SourceTermWire =
   | { Calendar: SourceCalendarTermWire }
   | { Moment: SourceMomentTermWire }
-  | { Relation: { reference_id: SourceWireId; relation: number; window_kind: "Root" | "LabelSpan" | "ParentSpan" | "Gap" } }
-  | { Gap: { scope: SourceScopeWire; left_anchor: SourceAnchorSelectorWire; right_anchor: SourceAnchorSelectorWire; size: SourceRangeWire<number> | null } }
+  | {
+      Relation: {
+        reference_id: SourceWireId;
+        relation: number;
+        window_kind: "Root" | "LabelSpan" | "ParentSpan" | "Gap";
+      };
+    }
+  | {
+      Gap: {
+        scope: SourceScopeWire;
+        left_anchor: SourceAnchorSelectorWire;
+        right_anchor: SourceAnchorSelectorWire;
+        size: SourceRangeWire<number> | null;
+      };
+    }
   | { Requirement: { time_requirement: SourceWireId; state: "Met" | "Unmet" | "Any" } }
   | { Task: { task_id: SourceWireId; state: "Visible" | "Marked" | "Completed" | "NotCompleted" } }
   | { Fact: { key: string; comparison: SourceFactComparisonWire } }
@@ -119,7 +155,12 @@ export interface SourceTaskDefinitionWire {
   content: { title: string; description: string | null };
   show: SourceConditionWire | null;
   complete: SourceConditionWire;
-  order: Array<{ id: SourceWireId; target_task_id: SourceWireId; relation: number; when: SourceConditionWire | null }>;
+  order: Array<{
+    id: SourceWireId;
+    target_task_id: SourceWireId;
+    relation: number;
+    when: SourceConditionWire | null;
+  }>;
 }
 export interface SourceCompletionWire {
   root: SourceConditionWire;
@@ -131,7 +172,13 @@ export interface SourcePlacementRuleWire {
   id: SourceWireId;
   when: SourceConditionWire | null;
   rank: number;
-  effect: { kind: number; scope: SourceScopeWire | null; span: SourceRangeWire<number> | null; score: number | null; record: number | null };
+  effect: {
+    kind: number;
+    scope: SourceScopeWire | null;
+    span: SourceRangeWire<number> | null;
+    score: number | null;
+    record: number | null;
+  };
 }
 export interface SourceNestingRuleWire {
   id: SourceWireId;
@@ -144,9 +191,22 @@ export interface SourceNestingRuleWire {
 export type SourceScalarExpressionWire =
   | { Literal: number }
   | { Read: SourceReadTargetWire }
-  | { Aggregate: { kind: number; scope: number; source: number; quantifier: number | null; reference: SourceWireId | null } }
+  | {
+      Aggregate: {
+        kind: number;
+        scope: number;
+        source: number;
+        quantifier: number | null;
+        reference: SourceWireId | null;
+      };
+    }
   | { Operate: { op: number; operands: SourceScalarExpressionWire[] } }
-  | { Choose: { branches: Array<{ when: SourceConditionWire; then: SourceScalarExpressionWire }>; default: SourceScalarExpressionWire | null } };
+  | {
+      Choose: {
+        branches: Array<{ when: SourceConditionWire; then: SourceScalarExpressionWire }>;
+        default: SourceScalarExpressionWire | null;
+      };
+    };
 export type SourceReadTargetWire =
   | { FrameDuration: SourceWireId }
   | { PlacementSpan: SourceWireId }
@@ -162,13 +222,27 @@ export interface SourceMetricWire {
   limit: SourceRangeWire<number> | null;
 }
 
-export type SourceTargetRefWire = { Placement: SourceWireId } | { Execution: SourceWireId } | { Plan: SourceWireId };
-export interface SourceInsideWire { parent: SourceWireId; scope: number; }
+export type SourceTargetRefWire =
+  | { Placement: SourceWireId }
+  | { Execution: SourceWireId }
+  | { Plan: SourceWireId };
+export interface SourceInsideWire {
+  parent: SourceWireId;
+  scope: number;
+}
 export type SourceChangeValueWire =
-  | { Span: UtcSpan } | { Instant: SourceWireInstant } | { Integer: number } | { Text: string }
-  | { Identifier: SourceWireId } | { Inside: SourceInsideWire } | { RangeInteger: SourceRangeWire<number> }
-  | { RangeInstant: SourceRangeWire<SourceWireInstant> } | { Bool: boolean } | { TimeRequirementRef: SourceWireId }
-  | { TaskDefRef: SourceWireId } | "None";
+  | { Span: UtcSpan }
+  | { Instant: SourceWireInstant }
+  | { Integer: number }
+  | { Text: string }
+  | { Identifier: SourceWireId }
+  | { Inside: SourceInsideWire }
+  | { RangeInteger: SourceRangeWire<number> }
+  | { RangeInstant: SourceRangeWire<SourceWireInstant> }
+  | { Bool: boolean }
+  | { TimeRequirementRef: SourceWireId }
+  | { TaskDefRef: SourceWireId }
+  | "None";
 export interface SourceChangeRuleWire {
   id: SourceWireId;
   target: SourceTargetRefWire;
@@ -176,41 +250,98 @@ export interface SourceChangeRuleWire {
   key: { group: number; item: SourceWireId | null; part: number };
   value: SourceChangeValueWire | null;
   source: number;
-  source_ref: { recurring: SourceWireId | null; flow: SourceWireId | null; frame: SourceWireId | null; feedback_txn: SourceWireId | null; decision_run: SourceWireId | null; execution: SourceWireId | null } | null;
+  source_ref: {
+    recurring: SourceWireId | null;
+    flow: SourceWireId | null;
+    frame: SourceWireId | null;
+    feedback_txn: SourceWireId | null;
+    decision_run: SourceWireId | null;
+    execution: SourceWireId | null;
+  } | null;
   rank: number;
 }
 export interface SourceDecisionWire {
   id: SourceWireId;
   observe: number;
   when: SourceConditionWire | null;
-  candidates: Array<{ id: SourceWireId; when: SourceConditionWire; rank: number; effects: SourceCandidateEffectWire[] }>;
-  reuse: Array<{ id: SourceWireId; when: SourceConditionWire; source: "All" | { Feedback: SourceWireId } | { Within: number }; apply: Array<{ id: SourceWireId; target: SourceTargetRefWire; key: { group: number; item: SourceWireId | null; part: number }; kind: number; value: SourceChangeValueWire | null }> }>;
+  candidates: Array<{
+    id: SourceWireId;
+    when: SourceConditionWire;
+    rank: number;
+    effects: SourceCandidateEffectWire[];
+  }>;
+  reuse: Array<{
+    id: SourceWireId;
+    when: SourceConditionWire;
+    source: "All" | { Feedback: SourceWireId } | { Within: number };
+    apply: Array<{
+      id: SourceWireId;
+      target: SourceTargetRefWire;
+      key: { group: number; item: SourceWireId | null; part: number };
+      kind: number;
+      value: SourceChangeValueWire | null;
+    }>;
+  }>;
   dialog: SourceInteractionNodeWire;
 }
 export type SourceCandidateEffectWire = {
   kind: number;
-  proposal: { id: SourceWireId; tile_id: SourceWireId; plan_id: SourceWireId; baseline: { span: UtcSpan; inside: SourceInsideWire | null }; inside: SourceInsideWire | null; proposal_key: { producer_id: SourceWireId; local_id: SourceWireId } | null } | null;
+  proposal: {
+    id: SourceWireId;
+    tile_id: SourceWireId;
+    plan_id: SourceWireId;
+    baseline: { span: UtcSpan; inside: SourceInsideWire | null };
+    inside: SourceInsideWire | null;
+    proposal_key: { producer_id: SourceWireId; local_id: SourceWireId } | null;
+  } | null;
   change: SourceChangeRuleWire | null;
-  request: { id: SourceWireId; kind: SourceRequestKindWire; payload: SourceChangeValueWire | null; idempotency_key: SourceWireId } | null;
+  request: {
+    id: SourceWireId;
+    kind: SourceRequestKindWire;
+    payload: SourceChangeValueWire | null;
+    idempotency_key: SourceWireId;
+  } | null;
   idempotency_key: SourceWireId | null;
 };
 export type SourceRequestKindWire =
-  | { StartExecution: SourceWireId } | { FinishExecution: SourceWireId } | { PauseExecution: SourceWireId }
-  | { ResumeExecution: SourceWireId } | { RecordFact: SourceWireId } | { MarkTask: [SourceWireId, SourceWireId] };
+  | { StartExecution: SourceWireId }
+  | { FinishExecution: SourceWireId }
+  | { PauseExecution: SourceWireId }
+  | { ResumeExecution: SourceWireId }
+  | { RecordFact: SourceWireId }
+  | { MarkTask: [SourceWireId, SourceWireId] };
 export interface SourceInteractionNodeWire {
   id: SourceWireId;
   visible: SourceConditionWire | null;
   view: { title: string; body: string | null };
-  inputs: Array<{ id: SourceWireId; visible: SourceConditionWire | null; enabled: SourceConditionWire | null; current: SourceChangeValueWire[]; options: Array<{ id: SourceWireId; label: string; value: SourceChangeValueWire }>; acceptance: number }>;
+  inputs: Array<{
+    id: SourceWireId;
+    visible: SourceConditionWire | null;
+    enabled: SourceConditionWire | null;
+    current: SourceChangeValueWire[];
+    options: Array<{ id: SourceWireId; label: string; value: SourceChangeValueWire }>;
+    acceptance: number;
+  }>;
   children: SourceInteractionNodeWire[];
 }
 
 /** SourceTile Flow definitions are deliberately separate from Plan planning. */
-export type SourceFlowSignalWire = "PlacementCreated" | "PlacementUpdated" | "PlacementClosed" | "ExecutionStarted" | "ExecutionFinished" | "FactChanged" | "MetricChanged";
+export type SourceFlowSignalWire =
+  | "PlacementCreated"
+  | "PlacementUpdated"
+  | "PlacementClosed"
+  | "ExecutionStarted"
+  | "ExecutionFinished"
+  | "FactChanged"
+  | "MetricChanged";
 export interface SourceFlowDefinitionWire {
   observes: SourceFlowSignalWire[];
   when: SourceConditionWire | null;
-  candidates: Array<{ when: SourceConditionWire; rank: number; outputs: Array<{ ProposeNewPlanPlacement: { span: UtcSpan } }> }>;
+  candidates: Array<{
+    when: SourceConditionWire;
+    rank: number;
+    outputs: Array<{ ProposeNewPlanPlacement: { span: UtcSpan } }>;
+  }>;
 }
 
 /** Server-owned SourceTile IDs are intentionally absent from this payload. */
@@ -275,9 +406,24 @@ export type SourceTileUpdatePayload = SourceTileCreatePayload;
 
 export interface SourceScheduleRead {
   required_duration_ms: number;
-  generation: { kind: number; at: string | null; starts_at: string | null; interval_ms: number | null; ends_at: string | null; weekday_mask: number | null; date_range_start: string | null; date_range_end: string | null; excluded_dates: string[] };
+  generation: {
+    kind: number;
+    at: string | null;
+    starts_at: string | null;
+    interval_ms: number | null;
+    ends_at: string | null;
+    weekday_mask: number | null;
+    date_range_start: string | null;
+    date_range_end: string | null;
+    excluded_dates: string[];
+  };
   window: { start_offset_ms: number; end_offset_ms: number };
-  split_policy: { kind: number; min_segment_ms: number | null; max_segment_ms: number | null; max_segments: number | null };
+  split_policy: {
+    kind: number;
+    min_segment_ms: number | null;
+    max_segment_ms: number | null;
+    max_segments: number | null;
+  };
   priority: number;
 }
 
@@ -341,7 +487,12 @@ export function createSourceTile(options: {
   client: ApiClient;
   payload: SourceTileCreatePayload;
 }): Promise<SourceTileCommandResult> {
-  return sendCommand(options.client, "POST", "/v1/source-tiles", commandEnvelope(options.payload, null));
+  return sendCommand(
+    options.client,
+    "POST",
+    "/v1/source-tiles",
+    commandEnvelope(options.payload, null),
+  );
 }
 
 export function updateSourceTile(options: {
@@ -350,7 +501,12 @@ export function updateSourceTile(options: {
   expectedRevision: number;
   payload: SourceTileUpdatePayload;
 }): Promise<SourceTileCommandResult> {
-  return sendCommand(options.client, "PUT", `/v1/source-tiles/${options.sourceTileId}`, commandEnvelope(options.payload, options.expectedRevision));
+  return sendCommand(
+    options.client,
+    "PUT",
+    `/v1/source-tiles/${options.sourceTileId}`,
+    commandEnvelope(options.payload, options.expectedRevision),
+  );
 }
 
 export function reflowSourceTile(options: {
@@ -359,13 +515,24 @@ export function reflowSourceTile(options: {
   expectedRevision: number;
   range: UtcSpan;
 }): Promise<SourceTileCommandResult> {
-  return sendCommand(options.client, "POST", `/v1/source-tiles/${options.sourceTileId}/reflow`, commandEnvelope({ range: options.range }, options.expectedRevision));
+  return sendCommand(
+    options.client,
+    "POST",
+    `/v1/source-tiles/${options.sourceTileId}/reflow`,
+    commandEnvelope({ range: options.range }, options.expectedRevision),
+  );
 }
 
-export function getSourceTile(client: ApiClient, sourceTileId: string): Promise<Result<SourceTileDetail>> {
+export function getSourceTile(
+  client: ApiClient,
+  sourceTileId: string,
+): Promise<Result<SourceTileDetail>> {
   return getRead(client, `/v1/source-tiles/${sourceTileId}`);
 }
 
-export function listSourceTilePlacements(client: ApiClient, sourceTileId: string): Promise<Result<PlacementRead[]>> {
+export function listSourceTilePlacements(
+  client: ApiClient,
+  sourceTileId: string,
+): Promise<Result<PlacementRead[]>> {
   return getRead(client, `/v1/source-tiles/${sourceTileId}/placements`);
 }

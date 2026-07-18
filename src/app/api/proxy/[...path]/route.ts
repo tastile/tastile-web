@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
-import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
 import { setAuthCookies } from "@/lib/cognito/cookies";
+import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 
 // RFC 4122 NAMESPACE_OID (also matches the uuid crate's

@@ -7,8 +7,8 @@
 //! wrapping, and HTTP error mapping.
 
 import { cookies } from "next/headers";
-import { v5 as uuidv5 } from "uuid";
 import { NextResponse } from "next/server";
+import { v5 as uuidv5 } from "uuid";
 import { setAuthCookies } from "@/lib/cognito/cookies";
 import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
@@ -99,9 +99,10 @@ function envelope<T>(payload: T): Record<string, unknown> {
   };
 }
 
-async function bridgeHeaders(
-  extra?: Record<string, string>,
-): Promise<{ headers: Record<string, string>; refreshedTokens: import("@/lib/cognito/server").CognitoTokenSet | null } | null> {
+async function bridgeHeaders(extra?: Record<string, string>): Promise<{
+  headers: Record<string, string>;
+  refreshedTokens: import("@/lib/cognito/server").CognitoTokenSet | null;
+} | null> {
   if (isE2EBypass()) {
     return {
       headers: {
@@ -331,7 +332,9 @@ export interface CalendarEventResult {
  * POST /v1/placements) so each request carries a fresh
  * idempotency_key, expected_revision=null, and a typed payload.
  */
-export async function upstreamCreateCalendarEvent(input: CalendarCreateInput): Promise<NextResponse> {
+export async function upstreamCreateCalendarEvent(
+  input: CalendarCreateInput,
+): Promise<NextResponse> {
   const auth = await bridgeHeaders({ "content-type": "application/json" });
   if (!auth) return unauthenticatedUpstreamResponse();
 
