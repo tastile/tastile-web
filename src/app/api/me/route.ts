@@ -20,10 +20,12 @@ export async function GET(): Promise<Response> {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
   }
 
-  const claims = await getAccountIdTokenClaims();
-  const profileRes = await getCoreClient().call<OwnerProfileView>("getOwnerProfile", {
-    pathParams: { kind: "0", id: ownerId },
-  });
+  const [claims, profileRes] = await Promise.all([
+    getAccountIdTokenClaims(),
+    getCoreClient().call<OwnerProfileView>("getOwnerProfile", {
+      pathParams: { kind: "0", id: ownerId },
+    }),
+  ]);
   if (!profileRes.ok) {
     // Don't leak the upstream status code verbatim; the BFF's contract
     // is "logged-in user can see their profile" so any failure maps to

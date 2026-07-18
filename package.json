@@ -19,7 +19,8 @@
     "test:unit": "node scripts/run-vitest.mjs",
     "test:e2e": "playwright test",
     "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run test:unit",
-    "check:release": "bun run check && bun audit --production && bun run build:prod"
+    "check:release": "bun run check && bun audit --production && bun run build:prod",
+    "doctor": "npx react-doctor@latest"
   },
   "dependencies": {
     "@mantine/core": "^8",
@@ -60,7 +61,7 @@
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
     "tailwindcss": "^4.3.2",
-    "typescript": "7.0.2",
+    "typescript": "6.0.3",
     "vitest": "^4.1.10"
   },
   "overrides": {

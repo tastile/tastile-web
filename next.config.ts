@@ -4,9 +4,6 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactCompiler: false,
   allowedDevOrigins: ['localhost', '127.0.0.1'],
-  experimental: {
-    useTypeScriptCli: true,
-  },
   async redirects() {
     return [
       {
