@@ -110,6 +110,9 @@ function fromWireCommandResponse(raw: unknown): unknown {
       changeIds: am.changeIds ?? am.change_ids ?? [],
       windowIds: am.windowIds ?? am.window_ids ?? null,
       flowIds: am.flowIds ?? am.flow_ids ?? null,
+      sourceTileId: am.sourceTileId ?? am.source_tile_id ?? null,
+      occurrenceIds: am.occurrenceIds ?? am.occurrence_ids ?? [],
+      placementIds: am.placementIds ?? am.placement_ids ?? [],
     };
   }
   return {
@@ -143,7 +146,7 @@ function validateCommandResponse(raw: unknown): ApiError | null {
 
 export async function sendCommand<TReq>(
   client: ApiClient,
-  method: "POST" | "DELETE",
+  method: "POST" | "PUT" | "DELETE",
   path: string,
   envelope: CommandRequest<TReq>,
 ): Promise<Result<CommandResponse>> {

@@ -9,5 +9,6 @@ export {
 } from "./endpoints";
 export * from "./plan-wire";
 export * from "./schedule-definition";
+export * from "./source-tiles";
 export { makeClient } from "./submit";
 export * from "./tile-commands";

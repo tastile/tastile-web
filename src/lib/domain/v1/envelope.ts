@@ -131,6 +131,10 @@ export interface AggregateMeta {
   /** Flow aggregate ids created by `POST /v1/schedule-definitions`.
    *  Other commands leave this null. */
   flowIds: string[] | null;
+  /** Canonical SourceTile command ids. */
+  sourceTileId?: string | null;
+  occurrenceIds?: string[];
+  placementIds?: string[];
 }
 
 export interface CommandResponse {
