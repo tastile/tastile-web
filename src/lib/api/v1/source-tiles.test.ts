@@ -14,6 +14,7 @@ const client = {
 };
 
 const range = { start: "2026-07-19T00:00:00Z", end: "2026-07-20T00:00:00Z" };
+const wireId = "019f7655-35b5-7a98-9480-003855af3168";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -54,7 +55,57 @@ const sourceDefinition: SourceTileCreatePayload = {
   horizon: range,
 };
 
+const nonEmptySourceDefinition: SourceTileCreatePayload = {
+  ...sourceDefinition,
+  plan: {
+    role: 0,
+    references: [{ id: wireId, target: 0, pick: { kind: 0, at: { Absolute: "2026-07-19T08:00:00Z" } }, when: { Term: { Fact: { key: "ready", comparison: "Exists" } } } }],
+    completion: {
+      root: { All: [{ Term: { Task: { task_id: wireId, state: "Completed" } } }] },
+      time_requirements: [{ id: wireId, observation: { scope: 1, source: 0, aggregate: 0, quantifier: null, reference: null }, required: { min: 900000, max: null }, preferred: null }],
+      tasks: [{ id: wireId, content: { title: "Discordを開く", description: null }, show: null, complete: { Term: { Requirement: { time_requirement: wireId, state: "Met" } } }, order: [] }],
+    },
+    planning: {
+      placement_rules: [{ id: wireId, when: null, rank: 0, effect: { kind: 0, scope: null, span: null, score: null, record: null } }],
+      nesting_rules: [{ id: wireId, direction: 0, when: null, rank: 0, target: { id: wireId, target: 0, pick: { kind: 0, at: null } }, scope: { kind: 0, parent: null, gap: null } }],
+    },
+    metrics: [{ id: wireId, output: 0, expression: { Choose: { branches: [{ when: { Term: { Metric: { metric_id: wireId, comparison: { GreaterThan: 0 } } } }, then: { Literal: 1 } }], default: { Literal: 0 } } }, limit: { min: 0, max: 1 } }],
+    decisions: [{
+      id: wireId,
+      observe: 0,
+      when: null,
+      candidates: [{ id: wireId, when: { Term: { Life: { target: { Placement: wireId }, state: "Active" } } }, rank: 0, effects: [{ kind: 0, proposal: null, change: null, request: null, idempotency_key: null }] }],
+      reuse: [{
+        id: wireId,
+        when: { Any: [{ Term: { Fact: { key: "feedback", comparison: { Equal: "yes" } } } }] },
+        source: "All",
+        apply: [],
+      }],
+      dialog: { id: wireId, visible: null, view: { title: "確認", body: null }, inputs: [], children: [] },
+    }],
+  },
+  flows: [{
+    observes: ["PlacementCreated", "ExecutionFinished"],
+    when: { Term: { Calendar: { weekday_mask: 1, time_start: null, time_end: null, holiday_kind: 2, date_range: null, offset_min: 540 } } },
+    candidates: [{ when: { Term: { Gap: { scope: { kind: 0, parent: null, gap: null }, left_anchor: { when: { Any: [{ Term: { Fact: { key: "left", comparison: "Exists" } } }] }, pick: { kind: 0, at: null } }, right_anchor: { when: { Any: [{ Term: { Fact: { key: "right", comparison: "Exists" } } }] }, pick: { kind: 0, at: null } }, size: null } } }, rank: 1, outputs: [{ ProposeNewPlanPlacement: { span: range } }] }],
+  }],
+};
+
 describe("SourceTile client", () => {
+  it("serializes non-empty Core enums with their externally tagged wire shapes", () => {
+    const wire = JSON.parse(JSON.stringify(nonEmptySourceDefinition));
+
+    expect(wire.plan.completion.root).toEqual({ All: [{ Term: { Task: { task_id: wireId, state: "Completed" } } }] });
+    expect(wire.plan.metrics[0].expression).toEqual({ Choose: {
+      branches: [{ when: { Term: { Metric: { metric_id: wireId, comparison: { GreaterThan: 0 } } } }, then: { Literal: 1 } }],
+      default: { Literal: 0 },
+    } });
+    expect(wire.flows[0]).toEqual(expect.objectContaining({
+      observes: ["PlacementCreated", "ExecutionFinished"],
+      candidates: [expect.objectContaining({ outputs: [{ ProposeNewPlanPlacement: { span: range } }] })],
+    }));
+  });
+
   it("creates and updates through the canonical SourceTile commands", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
       command_id: "command-1", accepted_at: "2026-07-19T00:00:00Z",
