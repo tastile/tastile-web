@@ -6,9 +6,78 @@ export interface UtcSpan {
   end: string;
 }
 
+/** JSON-only values accepted by Core's typed Plan/Flow definitions. */
+export type SourceTileWireValue =
+  | null
+  | boolean
+  | number
+  | string
+  | SourceTileWireValue[]
+  | { [key: string]: SourceTileWireValue };
+
+/** Server-owned SourceTile IDs are intentionally absent from this payload. */
+export interface SourceTileDefinitionWire {
+  title: string;
+  description: string | null;
+  color: string | null;
+  icon: string | null;
+  external_id: string | null;
+}
+
+/** Exact top-level `SchedulePlanDefinition` wire contract. */
+export interface SourceTilePlanWire {
+  role: number;
+  references: SourceTileWireValue[];
+  completion: SourceTileWireValue;
+  planning: {
+    placement_rules: SourceTileWireValue[];
+    nesting_rules: SourceTileWireValue[];
+  };
+  metrics: SourceTileWireValue[];
+  decisions: SourceTileWireValue[];
+}
+
+export interface SourceGenerationWire {
+  /** Core's current `SourceGenerationKind` numeric registry value. */
+  kind: number;
+  at: string | null;
+  starts_at: string | null;
+  interval_ms: number | null;
+  ends_at: string | null;
+  weekday_mask: number | null;
+  date_range_start: string | null;
+  date_range_end: string | null;
+  excluded_dates?: string[];
+}
+
+export interface SourceScheduleWire {
+  required_duration_ms: number;
+  generation: SourceGenerationWire;
+  window: { start_offset_ms: number; end_offset_ms: number };
+  split_policy: {
+    kind: number;
+    min_segment_ms: number | null;
+    max_segment_ms: number | null;
+    max_segments: number | null;
+  };
+  priority: number;
+}
+
+/** `POST /v1/source-tiles` payload. */
+export interface SourceTileCreatePayload {
+  tile: SourceTileDefinitionWire;
+  plan: SourceTilePlanWire;
+  flows: SourceTileWireValue[];
+  schedule: SourceScheduleWire;
+  horizon: UtcSpan;
+}
+
+/** `PUT /v1/source-tiles/{id}` body; the source ID belongs only in the path. */
+export type SourceTileUpdatePayload = SourceTileCreatePayload;
+
 export interface SourceScheduleRead {
   required_duration_ms: number;
-  generation: { kind: number; at: string | null; starts_at: string | null; interval_ms: number | null; ends_at: string | null; weekday_mask: number | null; date_range_start: string | null; date_range_end: string | null };
+  generation: { kind: number; at: string | null; starts_at: string | null; interval_ms: number | null; ends_at: string | null; weekday_mask: number | null; date_range_start: string | null; date_range_end: string | null; excluded_dates: string[] };
   window: { start_offset_ms: number; end_offset_ms: number };
   split_policy: { kind: number; min_segment_ms: number | null; max_segment_ms: number | null; max_segments: number | null };
   priority: number;
@@ -68,6 +137,22 @@ export type SourceTileCommandResult =
 
 function commandEnvelope<T>(payload: T, expectedRevision: number | null): CommandRequest<T> {
   return { expectedRevision, idempotencyKey: uuidv7(), occurredAt: nowIso(), payload };
+}
+
+export function createSourceTile(options: {
+  client: ApiClient;
+  payload: SourceTileCreatePayload;
+}): Promise<SourceTileCommandResult> {
+  return sendCommand(options.client, "POST", "/v1/source-tiles", commandEnvelope(options.payload, null));
+}
+
+export function updateSourceTile(options: {
+  client: ApiClient;
+  sourceTileId: string;
+  expectedRevision: number;
+  payload: SourceTileUpdatePayload;
+}): Promise<SourceTileCommandResult> {
+  return sendCommand(options.client, "PUT", `/v1/source-tiles/${options.sourceTileId}`, commandEnvelope(options.payload, options.expectedRevision));
 }
 
 export function reflowSourceTile(options: {
