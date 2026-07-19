@@ -31,9 +31,21 @@ export async function ensureBridgeAuth(args: {
   });
   if (userSub) return { status: "ok", userSub, refreshedTokens: null };
 
-  if (!env) return { status: "unauthorized" };
+  if (!env) {
+    console.warn(
+      "[auth] ensureBridgeAuth: Cognito env is null — NEXT_PUBLIC_COGNITO_* vars missing?",
+    );
+    return { status: "unauthorized" };
+  }
   const refreshToken = args.cookieStore.get(COOKIE_REFRESH_TOKEN)?.value;
-  if (!refreshToken) return { status: "unauthorized" };
+  if (!refreshToken) {
+    const hasAccess = !!args.cookieStore.get("tastile_access_token")?.value;
+    const hasId = !!args.cookieStore.get("tastile_id_token")?.value;
+    console.warn(
+      `[auth] ensureBridgeAuth: no refresh_token cookie (access_token=${hasAccess}, id_token=${hasId})`,
+    );
+    return { status: "unauthorized" };
+  }
 
   try {
     const tokens = await refreshTokens({
@@ -42,9 +54,13 @@ export async function ensureBridgeAuth(args: {
       fetchImpl: args.fetchImpl,
     });
     const claims = parseIdTokenClaims(tokens.id_token);
-    if (!claims.sub) return { status: "unauthorized" };
+    if (!claims.sub) {
+      console.warn("[auth] ensureBridgeAuth: refreshed id_token has no sub claim");
+      return { status: "unauthorized" };
+    }
     return { status: "ok", userSub: claims.sub, refreshedTokens: tokens };
-  } catch {
+  } catch (err) {
+    console.warn("[auth] ensureBridgeAuth: refresh_token grant failed —", err);
     return { status: "unauthorized" };
   }
 }

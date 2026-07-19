@@ -15,6 +15,11 @@ export async function verifyCognitoAccessToken({
     env.issuer.replace(/\/+$/, "") !== expectedIssuer ||
     env.hostedUiBaseUrl.replace(/\/+$/, "") !== expectedHostedUiBaseUrl
   ) {
+    console.warn(
+      "[auth] verifyCognitoAccessToken: env validation failed —",
+      `issuer expected=${expectedIssuer} got=${env.issuer},`,
+      `hostedUiBaseUrl expected=${expectedHostedUiBaseUrl} got=${env.hostedUiBaseUrl}`,
+    );
     return null;
   }
 
@@ -24,11 +29,22 @@ export async function verifyCognitoAccessToken({
       headers: { authorization: `Bearer ${accessToken}` },
       cache: "no-store",
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.warn(
+        `[auth] verifyCognitoAccessToken: /oauth2/userInfo returned ${response.status}`,
+        `(token length=${accessToken.length})`,
+      );
+      return null;
+    }
 
     const body = (await response.json()) as { sub?: unknown };
-    return typeof body.sub === "string" && body.sub.length > 0 ? body.sub : null;
-  } catch {
+    if (typeof body.sub !== "string" || body.sub.length === 0) {
+      console.warn("[auth] verifyCognitoAccessToken: userInfo response has no valid sub");
+      return null;
+    }
+    return body.sub;
+  } catch (err) {
+    console.warn("[auth] verifyCognitoAccessToken: fetch error —", err);
     return null;
   }
 }

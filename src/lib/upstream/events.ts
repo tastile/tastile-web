@@ -117,7 +117,12 @@ async function bridgeHeaders(extra?: Record<string, string>): Promise<{
   const cookieStore = await cookies();
   const auth = await ensureBridgeAuth({ cookieStore });
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  if (auth.status === "unauthorized" || !bridgeSecret) return null;
+  if (auth.status === "unauthorized" || !bridgeSecret) {
+    console.warn(
+      `[upstream] bridgeHeaders: auth=${auth.status}, bridgeSecret=${bridgeSecret ? "set" : "MISSING"}`,
+    );
+    return null;
+  }
 
   return {
     headers: {

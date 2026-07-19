@@ -70,6 +70,9 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       );
     }
     if (auth.status === "unauthorized") {
+      const cookieNames = ["tastile_access_token", "tastile_id_token", "tastile_refresh_token"];
+      const present = cookieNames.filter((n) => !!request.cookies.get(n)?.value);
+      console.warn(`[proxy] 401 for ${path} — cookies present: [${present.join(", ") || "none"}]`);
       return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
