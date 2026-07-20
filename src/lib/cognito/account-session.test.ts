@@ -15,7 +15,7 @@ import { COOKIE_ID_TOKEN } from "./cookies";
 import { getAccountOwnerId } from "./account-session";
 
 // MUST match crates/v1/api/src/handlers/common.rs `Uuid::NAMESPACE_OID`
-const NAMESPACE_OID = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+const NAMESPACE_OID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8";
 
 function makeIdToken(sub: string): string {
   const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
