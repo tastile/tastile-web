@@ -64,15 +64,27 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     headers.set("x-actor-id", DEV_ACTOR_SUBJECT_ID);
   } else {
     if (!bridgeSecret) {
+      console.error("[proxy] TASTILE_WEB_BRIDGE_SECRET is not set");
       return NextResponse.json(
         { error: "web bridge is not configured on the server" },
-        { status: 500 },
+        { status: 503 },
       );
     }
     if (auth.status === "unauthorized") {
       const cookieNames = ["tastile_access_token", "tastile_id_token", "tastile_refresh_token"];
       const present = cookieNames.filter((n) => !!request.cookies.get(n)?.value);
-      console.warn(`[proxy] 401 for ${path} — cookies present: [${present.join(", ") || "none"}]`);
+      const hasRefresh = !!request.cookies.get("tastile_refresh_token")?.value;
+      console.warn(
+        `[proxy] 401 for ${path} — cookies: [${present.join(", ") || "none"}], refresh_token: ${hasRefresh}`,
+      );
+      // For browser navigations (Accept: text/html), redirect to login so the
+      // user can re-authenticate. API callers (fetch/XHR) still get a JSON 401.
+      const accept = request.headers.get("accept") ?? "";
+      if (accept.includes("text/html")) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("error", "session_expired");
+        return NextResponse.redirect(loginUrl);
+      }
       return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
     }
     headers.set("x-tastile-web-bridge-secret", bridgeSecret);
@@ -105,6 +117,11 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
 
   try {
     const upstreamResponse = await fetch(url.toString(), init);
+    if (!upstreamResponse.ok) {
+      console.warn(
+        `[proxy] upstream ${request.method} ${url.pathname} returned ${upstreamResponse.status}`,
+      );
+    }
     const responseHeaders = new Headers();
     for (const [name, value] of upstreamResponse.headers) {
       if (isSafeResponseHeader(name)) responseHeaders.set(name, value);
@@ -128,8 +145,8 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     }
     return response;
   } catch (error) {
-    console.error(`Proxy error for ${path}:`, error);
-    return NextResponse.json({ error: "Proxy request failed" }, { status: 502 });
+    console.error(`[proxy] fetch failed for ${path} → ${url.toString()}:`, error);
+    return NextResponse.json({ error: "Proxy request failed", path }, { status: 502 });
   }
 }
 

@@ -11,6 +11,7 @@ import { FloatingHeader } from "@/components/shell/FloatingHeader";
 import { SideToolPanel } from "@/components/shell/SideToolPanel";
 import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import { BottomSheet } from "@/components/ui/BottomSheet";
+import { AuthProvider, useAuth } from "@/lib/context/auth-context";
 import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -18,13 +19,15 @@ import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   return (
-    <ExecutionEngineProvider>
-      <SecurityLockGate>
-        <SidePanelProvider>
-          <DashboardLayoutInner>{children}</DashboardLayoutInner>
-        </SidePanelProvider>
-      </SecurityLockGate>
-    </ExecutionEngineProvider>
+    <AuthProvider>
+      <ExecutionEngineProvider>
+        <SecurityLockGate>
+          <SidePanelProvider>
+            <DashboardLayoutInner>{children}</DashboardLayoutInner>
+          </SidePanelProvider>
+        </SecurityLockGate>
+      </ExecutionEngineProvider>
+    </AuthProvider>
   );
 }
 
@@ -32,6 +35,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const openQuickCreate = useQuickCreateStore((s) => s.open);
   const closeQuickCreate = useQuickCreateStore((s) => s.close);
   const { t } = useTranslation();
+  const { session } = useAuth();
   // NOTE: do NOT subscribe to useSidePanelContent() here — that would
   // re-render this layout (and its children, including the page tree)
   // every time the side-panel content changes, which combines with the
@@ -73,7 +77,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen flex-col bg-background">
       <FloatingHeader
-        userName="Operator"
+        userName={session?.displayName ?? "Loading..."}
         onOpenSearch={() => setSearchOpen(true)}
         onOpenNotifications={() => setNotificationsOpen(true)}
         notificationsButtonRef={notificationsButtonRef}

@@ -1,25 +1,18 @@
 "use client";
 
 export interface BrowserCognitoSession {
-  idToken: string;
-  accessToken: string;
-  expiresAt: number;
-  userSub: string;
-  email: string | null;
+  sub: string;
+  exp: number;
+  ownerId: string | null;
 }
 
 let cachedSession: BrowserCognitoSession | null = null;
-
-export async function getIdTokenClient(force = false): Promise<string | null> {
-  const session = await getCognitoSessionClient(force);
-  return session?.idToken ?? null;
-}
 
 export async function getCognitoSessionClient(
   force = false,
 ): Promise<BrowserCognitoSession | null> {
   const now = Math.floor(Date.now() / 1000);
-  if (!force && cachedSession && cachedSession.expiresAt > now + 30) {
+  if (!force && cachedSession && cachedSession.exp > now + 30) {
     return cachedSession;
   }
 
@@ -39,18 +32,16 @@ export async function getCognitoSessionClient(
     return null;
   }
 
-  const payload = (await response.json()) as Partial<BrowserCognitoSession>;
-  if (!payload.idToken || typeof payload.expiresAt !== "number" || !payload.userSub) {
+  const payload = (await response.json()) as Record<string, unknown>;
+  if (typeof payload.sub !== "string") {
     cachedSession = null;
     return null;
   }
 
   cachedSession = {
-    idToken: payload.idToken,
-    accessToken: payload.accessToken ?? "",
-    expiresAt: payload.expiresAt,
-    userSub: payload.userSub,
-    email: payload.email ?? null,
+    sub: payload.sub,
+    exp: typeof payload.exp === "number" ? payload.exp : 0,
+    ownerId: typeof payload.owner_id === "string" ? payload.owner_id : null,
   };
   return cachedSession;
 }

@@ -13,7 +13,9 @@ import {
 import { tryGetCognitoEnv } from "./env";
 import { type IdTokenClaims, parseIdTokenClaims, refreshTokens } from "./server";
 
-const NAMESPACE_OID = "6ba7b810-9dad-11d1-80b4-00c04fd430c8";
+// RFC 4122 NAMESPACE_OID — must match the daemon's bridge derivation
+// and the proxy route's NS_OID constant.
+const NAMESPACE_OID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8";
 
 export async function getAccountOwnerId(): Promise<string | null> {
   const claims = await getAccountIdTokenClaims();

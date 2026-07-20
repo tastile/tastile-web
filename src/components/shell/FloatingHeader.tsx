@@ -192,7 +192,12 @@ export function FloatingHeader({
                 </Link>
               </FloatingMenuItem>
               <FloatingMenuSeparator />
-              <FloatingMenuItem className="cursor-pointer flex items-center gap-2">
+              <FloatingMenuItem
+                className="cursor-pointer flex items-center gap-2"
+                onClick={() => {
+                  window.location.href = "/auth/cognito/logout";
+                }}
+              >
                 <LogOut className="h-4 w-4 shrink-0" />
                 {t("shell.floatingHeader.logOut")}
               </FloatingMenuItem>

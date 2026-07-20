@@ -10,8 +10,10 @@ export function useSseSync(opts: {
   const { accessToken, onEvent, enabled } = opts;
   useEffect(() => {
     if (enabled === false) return;
-    const base = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:31400";
-    const url = new URL(`${base}/read/events/state`);
+    // SSE must go through the Next.js proxy so the browser never needs
+    // direct access to the backend loopback address.
+    const base = process.env.NEXT_PUBLIC_APP_URL ?? "";
+    const url = new URL(`${base}/api/proxy/read/events/state`);
     url.searchParams.set("access_token", accessToken);
     const es = new EventSource(url.toString());
     es.onmessage = (e) => {
