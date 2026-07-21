@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import proxy, { isNativeAuthReturnRequest } from "./middleware";
+import proxy, { isNativeAuthReturnRequest } from "./proxy";
 
 afterEach(() => {
 	vi.restoreAllMocks();
