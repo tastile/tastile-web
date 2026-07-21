@@ -27,9 +27,26 @@ export async function GET(): Promise<Response> {
     }),
   ]);
   if (!profileRes.ok) {
-    // Don't leak the upstream status code verbatim; the BFF's contract
-    // is "logged-in user can see their profile" so any failure maps to
-    // 502 (we couldn't read from the source of truth).
+    const upstreamStatus = profileRes.error.status;
+    // Upstream auth failure → our session is bad; force re-login
+    if (upstreamStatus === 401 || upstreamStatus === 403) {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
+    // Profile row missing for a freshly-signed-up owner is normal;
+    // return 200 with nulls so the client can render the empty state.
+    if (upstreamStatus === 404) {
+      return NextResponse.json({
+        owner_id: ownerId,
+        email: claims?.email ?? null,
+        email_verified: claims?.emailVerified ?? false,
+        display_name: null,
+        avatar_url: null,
+        bio: null,
+        accent_color: null,
+        revision: 0,
+      });
+    }
+    // 5xx or anything else from the source of truth
     return NextResponse.json({ error: "UPSTREAM_FAILURE" }, { status: 502 });
   }
 

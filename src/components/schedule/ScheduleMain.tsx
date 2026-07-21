@@ -200,7 +200,7 @@ export function ScheduleMain() {
         {/* Recurring templates list as a table */}
         {view === "recurring" && !recurring.loading && recurring.templates.length > 0 && (
           <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
-            {recurring.templates.map((template) => (
+            {recurring.templates.filter((t) => t?.recurrence).map((template) => (
               <button
                 key={template.id}
                 type="button"
@@ -273,12 +273,14 @@ export function ScheduleMain() {
 function describeGenerator(
   template: ReturnType<typeof useRecurringTemplates>["templates"][number],
 ) {
-  const phases = template.recurrence.generator.focus_block_based?.phases;
+  const generator = template?.recurrence?.generator;
+  if (!generator) return "Recurring";
+  const phases = generator.focus_block_based?.phases;
   if (phases && phases.length > 0) {
     return `${phases.length} phases`;
   }
-  if (typeof template.recurrence.generator.step_min === "number") {
-    return `Every ${template.recurrence.generator.step_min} min`;
+  if (typeof generator.step_min === "number") {
+    return `Every ${generator.step_min} min`;
   }
   return "Recurring";
 }
