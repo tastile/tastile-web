@@ -200,60 +200,62 @@ export function ScheduleMain() {
         {/* Recurring templates list as a table */}
         {view === "recurring" && !recurring.loading && recurring.templates.length > 0 && (
           <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
-            {recurring.templates.filter((t) => t?.recurrence).map((template) => (
-              <button
-                key={template.id}
-                type="button"
-                onClick={() => {
-                  // Starter template row: we never call GET
-                  // /v1/tiles/{template.id} here. loadFromTemplate seeds
-                  // create-mode from the template's title/note/recurrence
-                  // and Submit POSTs CREATE_TILE on a fresh server-assigned
-                  // UUIDv7. See plan
-                  // docs/plans/2026-07-04-tile-panel-create-flow.md §B.
-                  const { loadFromTemplate } = useQuickCreateStore.getState();
-                  loadFromTemplate(template);
-                }}
-                className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-foreground">
-                      {template.title}
-                    </div>
-                    {template.note ? (
-                      <div className="mt-0.5 text-xs text-foreground-subtle truncate">
-                        {template.note}
+            {recurring.templates
+              .filter((t) => t?.recurrence)
+              .map((template) => (
+                <button
+                  key={template.id}
+                  type="button"
+                  onClick={() => {
+                    // Starter template row: we never call GET
+                    // /v1/tiles/{template.id} here. loadFromTemplate seeds
+                    // create-mode from the template's title/note/recurrence
+                    // and Submit POSTs CREATE_TILE on a fresh server-assigned
+                    // UUIDv7. See plan
+                    // docs/plans/2026-07-04-tile-panel-create-flow.md §B.
+                    const { loadFromTemplate } = useQuickCreateStore.getState();
+                    loadFromTemplate(template);
+                  }}
+                  className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-foreground">
+                        {template.title}
                       </div>
-                    ) : null}
+                      {template.note ? (
+                        <div className="mt-0.5 text-xs text-foreground-subtle truncate">
+                          {template.note}
+                        </div>
+                      ) : null}
+                    </div>
+                    <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
+                      Template
+                    </span>
                   </div>
-                  <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
-                    Template
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-foreground-subtle">
-                  <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
-                    {describeGenerator(template)}
-                  </span>
-                  <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
-                    {formatWindow(
-                      template.recurrence.window.start_offset_min,
-                      template.recurrence.window.end_offset_min,
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded px-1.5 py-0.5 border",
-                      template.recurrence.selector.expression
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-surface-3/50 border-border",
-                    )}
-                  >
-                    {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
-                  </span>
-                </div>
-              </button>
-            ))}
+                  <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-foreground-subtle">
+                    <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
+                      {describeGenerator(template)}
+                    </span>
+                    <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
+                      {formatWindow(
+                        template.recurrence.window.start_offset_min,
+                        template.recurrence.window.end_offset_min,
+                      )}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded px-1.5 py-0.5 border",
+                        template.recurrence.selector.expression
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-surface-3/50 border-border",
+                      )}
+                    >
+                      {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
+                    </span>
+                  </div>
+                </button>
+              ))}
           </div>
         )}
 
