@@ -11,42 +11,6 @@ export class CognitoAccountError extends Error {
   }
 }
 
-export type CognitoUserProfile = {
-  username: string;
-  email: string | null;
-  emailVerified: boolean;
-  userStatus: string | null;
-  preferredUsername: string | null;
-};
-
-export async function getCognitoUser(
-  env: CognitoEnv,
-  accessToken: string,
-): Promise<CognitoUserProfile> {
-  const response = await cognitoRequest(env, "GetUser", {
-    AccessToken: accessToken,
-  });
-  const attributes = Array.isArray(response.UserAttributes) ? response.UserAttributes : [];
-  const map = new Map<string, string>();
-  for (const attribute of attributes) {
-    if (
-      attribute &&
-      typeof attribute === "object" &&
-      typeof (attribute as { Name?: unknown }).Name === "string" &&
-      typeof (attribute as { Value?: unknown }).Value === "string"
-    ) {
-      map.set((attribute as { Name: string }).Name, (attribute as { Value: string }).Value);
-    }
-  }
-  return {
-    username: typeof response.Username === "string" ? response.Username : "",
-    email: map.get("email") ?? null,
-    emailVerified: map.get("email_verified") === "true",
-    userStatus: typeof response.UserStatus === "string" ? response.UserStatus : null,
-    preferredUsername: map.get("preferred_username") ?? null,
-  };
-}
-
 export async function updateCognitoUserEmail(
   env: CognitoEnv,
   accessToken: string,
