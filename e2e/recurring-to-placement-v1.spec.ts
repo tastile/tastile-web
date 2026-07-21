@@ -1,7 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
+import { v1AuthHeaders } from "./helpers/v1";
 import { execFileSync } from "node:child_process";
 
 const OWNER = "00000000-0000-0000-0000-000000000001";
+const bearer = process.env.TASTILE_E2E_BEARER ?? "";
 const ACTOR = "00000000-0000-0000-0000-000000000001";
 const V1_BASE = "http://127.0.0.1:31400";
 
@@ -43,7 +45,7 @@ async function postV1(
   return page.request.post(`${V1_BASE}${path}`, {
     headers: {
       "content-type": "application/json",
-      "x-owner-id": OWNER,
+      "authorization": `Bearer ${bearer}`,
       "x-actor-id": ACTOR,
     },
     data: body,
@@ -145,7 +147,7 @@ test.describe("v1 — recurring tile flows through to placement in occurrences",
     const timelineRes = await page.request.get(
       `${V1_BASE}/v1/timeline?start=${day}T00:00:00Z&end=${day}T23:59:59Z`,
       {
-        headers: { "x-owner-id": OWNER, "x-actor-id": ACTOR },
+        headers: { "authorization": `Bearer ${bearer}` },
       },
     );
     expect(timelineRes.status()).toBe(200);

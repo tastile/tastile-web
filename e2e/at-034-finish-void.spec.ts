@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { v1AuthHeaders } from "./helpers/v1";
 import { execFileSync } from "node:child_process";
 
 const OWNER = "00000000-0000-0000-0000-000000000001";
@@ -20,7 +21,7 @@ async function cleanDb() {
   );
 }
 
-const auth = { "content-type": "application/json", "x-owner-id": OWNER, "x-actor-id": ACTOR };
+const auth = v1AuthHeaders();
 async function postV1(page: Page, path: string, body: unknown) {
   return page.request.post(`${V1_BASE}${path}`, { headers: auth, data: body });
 }

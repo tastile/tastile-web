@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
+import { v1AuthHeaders } from "./helpers/v1";
 import { execFileSync } from "node:child_process";
 
 // UI-driven end-to-end test for the periodic (Recurring) tile -> placement
@@ -92,7 +93,7 @@ test.describe("quick tile create — recurring e2e", () => {
     const actorId = "00000000-0000-0000-0000-000000000001";
     const tlRes = await page.request.get(
       `/api/proxy/v1/timeline?start=${prev}T00:00:00.000Z&end=${next}T23:59:59.999Z`,
-      { headers: { "x-owner-id": ownerId, "x-actor-id": actorId } },
+      { headers: v1AuthHeaders() },
     );
     expect(tlRes.ok()).toBeTruthy();
     const tl = (await tlRes.json()) as Array<{

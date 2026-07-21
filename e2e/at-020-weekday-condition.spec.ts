@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext } from "@playwright/test";
+import { v1AuthHeaders } from "./helpers/v1";
 import { execFileSync } from "node:child_process";
 
 const OWNER = "00000000-0000-0000-0000-000000000001";
@@ -20,7 +21,7 @@ async function cleanDb() {
 
 async function postV1(req: APIRequestContext, path: string, body: unknown) {
   return req.post(PROXY + path, {
-    headers: { "content-type": "application/json", "x-owner-id": OWNER, "x-actor-id": ACTOR },
+    ...v1AuthHeaders(),
     data: body,
   });
 }
