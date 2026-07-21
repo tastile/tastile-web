@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
-import { CognitoAccountError, getCognitoUser } from "@/lib/cognito/account-client";
-import { getAccountAccessToken } from "@/lib/cognito/account-session";
+import { getAccountAccessToken, getAccountIdTokenClaims } from "@/lib/cognito/account-session";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 
 export async function GET() {
@@ -12,23 +11,26 @@ export async function GET() {
   const accessToken = await getAccountAccessToken(response);
   if (!accessToken) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
 
-  try {
-    const sub = await verifyCognitoAccessToken({ accessToken, env });
-    if (!sub) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
-    const profile = await getCognitoUser(env, accessToken);
-    const json = NextResponse.json({ profile: { ...profile, sub } });
-    for (const cookie of response.cookies.getAll()) {
-      json.cookies.set(cookie);
-    }
-    return json;
-  } catch (error) {
-    console.error("[profile] Cognito GetUser failed:", error);
-    if (error instanceof CognitoAccountError) {
-      return NextResponse.json(
-        { error: "not_authenticated", cognito_code: error.code },
-        { status: 401 },
-      );
-    }
-    return NextResponse.json({ error: "profile_failed" }, { status: 502 });
+  const sub = await verifyCognitoAccessToken({ accessToken, env });
+  if (!sub) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+
+  // Read profile attributes from the id_token (sub, email, email_verified,
+  // preferred_username). The id_token was validated by Cognito at issuance,
+  // and /oauth2/userInfo above already proved the access_token is alive.
+  // Avoid calling GetUser: its strict scope/region requirements reject
+  // tokens that userInfo accepts, making the profile unviewable.
+  const claims = await getAccountIdTokenClaims();
+  const profile = {
+    username: claims?.preferredUsername ?? sub,
+    email: claims?.email ?? null,
+    emailVerified: claims?.emailVerified ?? false,
+    userStatus: null as string | null,
+    preferredUsername: claims?.preferredUsername ?? null,
+  };
+
+  const json = NextResponse.json({ profile: { ...profile, sub } });
+  for (const cookie of response.cookies.getAll()) {
+    json.cookies.set(cookie);
   }
+  return json;
 }
