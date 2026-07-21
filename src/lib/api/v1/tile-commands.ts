@@ -260,9 +260,33 @@ function expandPatternRanges(
   return out;
 }
 
+/// True when the legacy Recurring writer path may run from the Web client.
+/// Per `v1/02` Recurring is legacy read compatibility; per `v1/10` sec.9
+/// the canonical new-spec path is `POST /v1/source-tiles`.  Mirror the
+/// server-side gate in `auth.rs::default_break_seed_enabled` and
+/// `migrations.rs::legacy_default_break_seed_enabled` so the Recurring
+/// tile -> placement chain cannot be entered from the Web UI either.
+function legacyRecurringWriteEnabled(): boolean {
+  if (typeof process === "undefined" || !process.env) return false;
+  const raw = process.env.NEXT_PUBLIC_TASTILE_LEGACY_RECURRING_WRITE;
+  return raw === "1" || raw === "true" || raw === "yes";
+}
+
 export async function createRecurringCommand(
   options: CreateRecurringCommandOptions,
 ): Promise<CreateRecurringResult> {
+  if (!legacyRecurringWriteEnabled()) {
+    return {
+      ok: false,
+      error: {
+        kind: 0,
+        message: "createRecurringCommand is disabled; use POST /v1/source-tiles",
+        currentRevision: null,
+        violations: [],
+      },
+      stage: "tile",
+    };
+  }
   const title = options.title.trim();
   if (!title) return { ...emptyTitleError(), stage: "tile" };
   if (!options.start || !options.end) {

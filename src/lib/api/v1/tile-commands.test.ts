@@ -156,7 +156,26 @@ describe("tile v1 commands", () => {
     });
   });
 
-  it("createRecurringCommand sends placeholder frame rule id and reads aggregateMeta.frameRuleId", async () => {
+  it("createRecurringCommand refuses when TASTILE_LEGACY_RECURRING_WRITE is unset (Web mirror of server env gate)", async () => {
+  const { createRecurringCommand } = await import("./tile-commands");
+  const client = {
+    baseUrl: "https://core.example",
+    getIdToken: vi.fn().mockResolvedValue("token"),
+  };
+  const res = await createRecurringCommand({
+    client,
+    title: "Disabled",
+    start: "2026-07-19T00:00:00Z",
+    end: "2026-07-19T01:00:00Z",
+  });
+  expect(res.ok).toBe(false);
+  if (!res.ok) {
+    expect(res.error.message).toMatch(/disabled|use POST .v1.source-tiles/);
+  }
+});
+
+it("createRecurringCommand sends placeholder frame rule id and reads aggregateMeta.frameRuleId", async () => {
+  vi.stubEnv("NEXT_PUBLIC_TASTILE_LEGACY_RECURRING_WRITE", "1");
     // 2 round trips: 1) create recurring tile (with frame_rule in body,
     //    atomically) 2) materialize.  Plan 2026-07-07-v1-recurring-atomic-frame.md
     //    collapses the prior 3-step flow so v1/10 §4 holds.
