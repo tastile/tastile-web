@@ -41,7 +41,10 @@ async function ensureCredentialId() {
         name: "Tastile local security lock",
         displayName: "Tastile local security lock",
       },
-      pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+      pubKeyCredParams: [
+        { type: "public-key", alg: -7 }, // ES256 (WebAuthn default)
+        { type: "public-key", alg: -257 }, // RS256 (WebAuthn default)
+      ],
       authenticatorSelection: {
         authenticatorAttachment: "platform",
         userVerification: "required",

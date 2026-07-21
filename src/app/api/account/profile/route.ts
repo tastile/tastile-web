@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
-import { getCognitoUser } from "@/lib/cognito/account-client";
+import { CognitoAccountError, getCognitoUser } from "@/lib/cognito/account-client";
 import { getAccountAccessToken } from "@/lib/cognito/account-session";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 
@@ -22,7 +22,13 @@ export async function GET() {
     }
     return json;
   } catch (error) {
-    console.error("Cognito GetUser failed", error);
+    console.error("[profile] Cognito GetUser failed:", error);
+    if (error instanceof CognitoAccountError) {
+      return NextResponse.json(
+        { error: "not_authenticated", cognito_code: error.code },
+        { status: 401 },
+      );
+    }
     return NextResponse.json({ error: "profile_failed" }, { status: 502 });
   }
 }
