@@ -286,3 +286,18 @@ function expandWeeklyV1(
   }
   return out;
 }
+/**
+ * Build v1 request headers. If TASTILE_E2E_BEARER is set in the environment
+ * (CI / live WSLC), use it as `Authorization: Bearer <token>`. Otherwise
+ * fall back to the v0 dev-only `x-owner-id` / `x-actor-id` headers so the
+ * local dev path still works without provisioning a token.
+ */
+export function v1AuthHeaders(): Record<string, string> {
+  const bearer = process.env.TASTILE_E2E_BEARER;
+  if (bearer) {
+    return { "content-type": "application/json", "authorization": `Bearer ${bearer}` };
+  }
+  const owner = process.env.TASTILE_E2E_OWNER_ID ?? "00000000-0000-0000-0000-000000000001";
+  const actor = process.env.TASTILE_E2E_ACTOR_ID ?? owner;
+  return { "content-type": "application/json", "x-owner-id": owner, "x-actor-id": actor };
+}
