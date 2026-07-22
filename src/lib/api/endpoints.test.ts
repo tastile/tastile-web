@@ -1,5 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CORE_V1_ENDPOINTS, CoreClient } from "./endpoints";
+
+beforeEach(() => {
+  // The singleton resolver throws when neither NEXT_PUBLIC_TASTILE_CORE_URL
+  // nor E2E bypass is set; tests exercise the singleton without
+  // configuring a real host, so fall through to the loopback daemon.
+  vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "1");
+});
 
 function calledUrls(fetchImpl: ReturnType<typeof vi.fn>): string[] {
   return fetchImpl.mock.calls.map((call) => String(call[0]));

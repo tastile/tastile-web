@@ -1,10 +1,13 @@
 //! Upstream bridge: when TASTILE_USE_RUST_CORE=1, the Next.js
-//! calendar routes forward requests to the v1 Rust API running on
-//! http://127.0.0.1:31400.  Calendar data flows through v1 tiles,
-//! v1 placements, and /v1/timeline; the v0 /v1/events CRUD surface
-//! has been removed.  This module owns URL construction, the
-//! snake_case <-> camelCase field conversion, the v1 command envelope
-//! wrapping, and HTTP error mapping.
+//! calendar routes forward requests to the v1 Rust API.  The base URL
+//! is read from `CLOUD_API_BASE` (preferred) or `TASTILE_RUST_API_URL`
+//! (legacy alias) via `getCloudApiBase`, which throws
+//! `MissingCloudApiBaseError` at request time if the env is missing.
+//! Calendar data flows through v1 tiles, v1 placements, and
+//! /v1/timeline; the v0 /v1/events CRUD surface has been removed.
+//! This module owns URL construction, the snake_case <-> camelCase
+//! field conversion, the v1 command envelope wrapping, and HTTP error
+//! mapping.
 
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
@@ -12,12 +15,16 @@ import { v5 as uuidv5 } from "uuid";
 import { setAuthCookies } from "@/lib/cognito/cookies";
 import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
+import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
 
-const RUST_BASE = process.env.TASTILE_RUST_API_URL ?? "http://127.0.0.1:31400";
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 // Resolved at call time so tests mutating process.env after module load still see the bypass branch.
 function isE2EBypass(): boolean {
   return process.env.E2E_BYPASS_AUTH === "1";
+}
+
+function rustBase(): string {
+  return getCloudApiBase({ assert: true });
 }
 
 type AnyObj = Record<string, unknown>;
@@ -241,7 +248,7 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
   if (q.ownerIds?.length) qs.set("owner_ids", q.ownerIds.join(","));
   const auth = await bridgeHeaders();
   if (!auth) return unauthenticatedUpstreamResponse();
-  const url = `${RUST_BASE}/v1/timeline?${qs.toString()}`;
+  const url = `${rustBase()}/v1/timeline?${qs.toString()}`;
   const res = await fetch(url, { cache: "no-store", headers: auth.headers });
   if (!res.ok) {
     const errBody = await readJsonOrText(res);
@@ -346,7 +353,7 @@ export async function upstreamCreateCalendarEvent(
   // 1) POST /v1/tiles (kind=1 = PLACEMENT).  Server creates the tile
   //    and an auto-created Plan row in one transaction; aggregate_meta
   //    carries both ids back so we do not need a GET-after-POST.
-  const tileRes = await fetch(`${RUST_BASE}/v1/tiles`, {
+  const tileRes = await fetch(`${rustBase()}/v1/tiles`, {
     method: "POST",
     headers: auth.headers,
     body: JSON.stringify(
@@ -378,7 +385,7 @@ export async function upstreamCreateCalendarEvent(
   // 2) POST /v1/placements (CREATE_PLACEMENT) with source=MANUAL (3).
   //    The PlacementBaseline carries the time span the calendar event
   //    occupies.
-  const placementRes = await fetch(`${RUST_BASE}/v1/placements`, {
+  const placementRes = await fetch(`${rustBase()}/v1/placements`, {
     method: "POST",
     headers: auth.headers,
     body: JSON.stringify(
@@ -450,7 +457,7 @@ export async function upstreamUpdateTile(
 ): Promise<NextResponse> {
   const auth = await bridgeHeaders({ "content-type": "application/json" });
   if (!auth) return unauthenticatedUpstreamResponse();
-  const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}/update`, {
+  const res = await fetch(`${rustBase()}/v1/tiles/${encodeURIComponent(tileId)}/update`, {
     method: "POST",
     headers: auth.headers,
     body: JSON.stringify(envelope(toSnake({ tile_id: tileId, ...patch }))),
@@ -477,7 +484,7 @@ export async function upstreamUpdateTile(
 export async function upstreamArchiveTile(tileId: string): Promise<NextResponse> {
   const auth = await bridgeHeaders({ "content-type": "application/json" });
   if (!auth) return unauthenticatedUpstreamResponse();
-  const res = await fetch(`${RUST_BASE}/v1/tiles/${encodeURIComponent(tileId)}`, {
+  const res = await fetch(`${rustBase()}/v1/tiles/${encodeURIComponent(tileId)}`, {
     method: "DELETE",
     headers: auth.headers,
     body: JSON.stringify(envelope({ tile_id: tileId })),
@@ -501,7 +508,7 @@ export async function upstreamArchiveTile(tileId: string): Promise<NextResponse>
 export async function upstreamClosePlacement(placementId: string): Promise<NextResponse> {
   const auth = await bridgeHeaders({ "content-type": "application/json" });
   if (!auth) return unauthenticatedUpstreamResponse();
-  const res = await fetch(`${RUST_BASE}/v1/placements/${encodeURIComponent(placementId)}/close`, {
+  const res = await fetch(`${rustBase()}/v1/placements/${encodeURIComponent(placementId)}/close`, {
     method: "POST",
     headers: auth.headers,
     body: JSON.stringify(envelope({ placement_id: placementId })),

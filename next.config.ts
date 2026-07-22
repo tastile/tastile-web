@@ -1,8 +1,11 @@
+import bundleAnalyzer from "@next/bundle-analyzer";
 import type { NextConfig } from "next";
+
+const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  reactCompiler: false,
+  reactCompiler: true,
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   async redirects() {
     return [
@@ -25,4 +28,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

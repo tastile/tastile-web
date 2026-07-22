@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
+import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
 
-const DEFAULT_CORE_URL = "http://127.0.0.1:31400";
 // Name used when registering the per-login session token. The plaintext
 // `access_token` is only ever returned at this POST — afterwards the server
 // only retains its hash, so the client must keep the cookie or re-login.
@@ -90,10 +90,10 @@ export function setApiTokenCookie(token: string, response?: NextResponse): void 
 }
 
 export function coreUrl() {
-  return (
-    process.env.TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-    DEFAULT_CORE_URL
-  ).replace(/\/$/, "");
+  const value =
+    process.env.TASTILE_CORE_URL?.trim() ??
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ??
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL?.trim() ??
+    getCloudApiBase({ assert: true });
+  return value.replace(/\/$/, "");
 }

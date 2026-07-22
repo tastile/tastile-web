@@ -2,7 +2,6 @@
 
 import { Textarea, TextInput } from "@mantine/core";
 import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
-import { cn } from "@/lib/utils/cn";
 
 const SIZE_MAP = {
   tiny: "xs",

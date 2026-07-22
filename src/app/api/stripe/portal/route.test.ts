@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 process.env.STRIPE_SECRET_KEY = "sk_test_dummy";
-process.env.NEXT_PUBLIC_APP_URL = "https://app.tastile.app";
+process.env.NEXT_PUBLIC_APP_URL = "https://app.example.test";
+const RETURN_URL = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/preferences/account?tab=subscription`;
 
 const resolveAuthenticatedUserSub = vi.fn();
 const getSubscriptionForUser = vi.fn();
@@ -58,7 +59,7 @@ describe("POST /api/stripe/portal", () => {
     expect(body.url).toBe("https://billing.stripe.com/session");
     expect(billingPortalSessionsCreate).toHaveBeenCalledWith({
       customer: "cus_42",
-      return_url: "https://app.tastile.app/dashboard/preferences/account?tab=subscription",
+      return_url: RETURN_URL,
     });
   });
 });

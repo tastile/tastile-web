@@ -1,3 +1,4 @@
+# INTERNAL ONLY — DO NOT RUN FROM PUBLIC CI. Filtered out of public history in Step 5. See docs/HARNESS.md §13.
 # Deploys the v1 (api) Rust binary to an EC2 host using S3 + SSM.
 # v7 binaries (tastile-daemon, tastile-cli) are intentionally NOT deployed.
 param(

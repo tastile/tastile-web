@@ -144,6 +144,89 @@ function validateCommandResponse(raw: unknown): ApiError | null {
   return null;
 }
 
+export async function postCommand<TReq>(
+  client: ApiClient,
+  path: string,
+  envelope: CommandRequest<TReq>,
+): Promise<Result<CommandResponse>> {
+  const token = client.useProxyBridge ? null : await client.getIdToken();
+  if (!client.useProxyBridge && !token) {
+    return { ok: false, error: FORBIDDEN_NO_TOKEN };
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(`${client.baseUrl}${path}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(toWireCommandRequest(envelope)),
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      error: networkError(err instanceof Error ? err.message : "fetch failed"),
+    };
+  }
+
+  if (!res.ok) {
+    const body = await parseJson(res);
+    return {
+      ok: false,
+      error: toApiError(body, `HTTP ${res.status}`),
+    };
+  }
+
+  const raw = fromWireCommandResponse(await parseJson(res));
+  const shapeError = validateCommandResponse(raw);
+  if (shapeError) {
+    return { ok: false, error: shapeError };
+  }
+  return { ok: true, data: raw as CommandResponse, status: res.status };
+}
+
+export async function getRead<T>(client: ApiClient, path: string): Promise<Result<T>> {
+  const token = client.useProxyBridge ? null : await client.getIdToken();
+  if (!client.useProxyBridge && !token) {
+    return { ok: false, error: FORBIDDEN_NO_TOKEN };
+  }
+
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  let res: Response;
+  try {
+    res = await fetch(`${client.baseUrl}${path}`, {
+      method: "GET",
+      headers,
+    });
+  } catch (err) {
+    return {
+      ok: false,
+      error: networkError(err instanceof Error ? err.message : "fetch failed"),
+    };
+  }
+
+  if (!res.ok) {
+    const body = await parseJson(res);
+    return {
+      ok: false,
+      error: toApiError(body, `HTTP ${res.status}`),
+    };
+  }
+
+  const raw = await parseJson(res);
+  if (!raw || typeof raw !== "object") {
+    return { ok: false, error: networkError("response body is not an object") };
+  }
+  return { ok: true, data: raw as T, status: res.status };
+}
+
+/** @deprecated Use `postCommand` instead. */
 export async function sendCommand<TReq>(
   client: ApiClient,
   method: "POST" | "PUT" | "DELETE",
@@ -188,49 +271,4 @@ export async function sendCommand<TReq>(
     return { ok: false, error: shapeError };
   }
   return { ok: true, data: raw as CommandResponse, status: res.status };
-}
-
-export function postCommand<TReq>(
-  client: ApiClient,
-  path: string,
-  envelope: CommandRequest<TReq>,
-): Promise<Result<CommandResponse>> {
-  return sendCommand(client, "POST", path, envelope);
-}
-
-export async function getRead<T>(client: ApiClient, path: string): Promise<Result<T>> {
-  const token = client.useProxyBridge ? null : await client.getIdToken();
-  if (!client.useProxyBridge && !token) {
-    return { ok: false, error: FORBIDDEN_NO_TOKEN };
-  }
-
-  const headers: Record<string, string> = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  let res: Response;
-  try {
-    res = await fetch(`${client.baseUrl}${path}`, {
-      method: "GET",
-      headers,
-    });
-  } catch (err) {
-    return {
-      ok: false,
-      error: networkError(err instanceof Error ? err.message : "fetch failed"),
-    };
-  }
-
-  if (!res.ok) {
-    const body = await parseJson(res);
-    return {
-      ok: false,
-      error: toApiError(body, `HTTP ${res.status}`),
-    };
-  }
-
-  const raw = await parseJson(res);
-  if (!raw || typeof raw !== "object") {
-    return { ok: false, error: networkError("response body is not an object") };
-  }
-  return { ok: true, data: raw as T, status: res.status };
 }

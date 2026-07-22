@@ -2,7 +2,7 @@
 
 import { ArrowRight, Compass, FileCode2, Hash, Layers, Search, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { ENDPOINTS, type EndpointKey, TAG_ORDER } from "@/lib/api/endpoints";
 import { cn } from "@/lib/utils/cn";
 
@@ -156,6 +156,11 @@ export function CommandPalette() {
     };
   }, [open, openPalette]);
 
+  // useDeferredValue keeps the search input snappy. Without it, every
+  // keystroke re-runs buildEndpointItems (≈45 endpoint objects) plus
+  // the title/subtitle/tag filter at the same priority as the input
+  // commit, which can stall typing on slower devices.
+  const deferredQuery = useDeferredValue(query);
   const items = useMemo(() => {
     const endpointItems = buildEndpointItems();
     const recentItems: PaletteItem[] = recent
@@ -177,8 +182,8 @@ export function CommandPalette() {
       })
       .filter((x): x is PaletteItem => x !== null);
     const all = [...recentItems, ...NAV, ...endpointItems];
-    if (!query.trim()) return all.slice(0, 30);
-    const q = query.toLowerCase();
+    if (!deferredQuery.trim()) return all.slice(0, 30);
+    const q = deferredQuery.toLowerCase();
     return all
       .filter((it) => {
         return (
@@ -188,7 +193,7 @@ export function CommandPalette() {
         );
       })
       .slice(0, 50);
-  }, [query, recent]);
+  }, [deferredQuery, recent]);
 
   function commit(item: PaletteItem) {
     setOpen(false);
@@ -223,6 +228,12 @@ export function CommandPalette() {
       onClick={(e) => {
         if (e.target === dialogRef.current) {
           dialogRef.current?.close();
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          setOpen(false);
         }
       }}
       className="mx-auto mt-[10vh] w-[min(720px,92vw)] overflow-hidden rounded-xl border border-border bg-surface-elevated shadow-lg p-0 [&::backdrop]:bg-foreground/5 [&::backdrop]:backdrop-blur-sm"

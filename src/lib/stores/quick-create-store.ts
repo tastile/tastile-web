@@ -1,19 +1,41 @@
 /**
  * QuickCreateStore — single source of truth for the QuickTileCreate form.
  *
- * The form is a multi-layer overlay: BasePanel → 6 SubPanels → Editors.
- * All panels read/write this same store; state flows through `setField`.
+ * Sections mirror the v1 spec (v1/02, v1/03, v1/04, v1/05, v1/08, v1/13):
+ *   §1 Identity   — Tile.Base (title, kind, visual, externalId)
+ *   §2 Plan       — Plan.role, completion, planning, metrics, decisions, references
+ *   §3 Time       — Span, DurationRange
+ *   §4 Windows    — Window[] (first-class per v1/03)
+ *   §5 Recurring  — life, frameRules[], rules[] (only when identity.kind = RECURRING)
+ *   §6 Advanced   — changeSets[], rules[] (ChangeSet layer per v1/04)
+ *   §7 Meta       — project, tags, memo
  *
- * Fields mirror the v1 domain types in `@/lib/domain/v1`. We only keep the
- * shape needed for *creating* a tile here; editing reuses the same store.
+ * The store is the single source of truth for all v1 form fields. The
+ * submit flow (`@/lib/api/v1/submit`) reads this store directly to build
+ * the v1 envelope sequence — there is no v7-shaped intermediate form state.
+ *
+ * Slice naming follows the v1 spec section that owns the data, not the
+ * UI section that displays it. `frameRules` is intentionally distinct
+ * from `frames` on the v1 `Recurring` aggregate: the form edits input
+ * `FrameRule[]` (what the worker materializes from), while the
+ * aggregate stores materialized `Frame[]` (worker output).
  */
 
 import { create } from "zustand";
 import type { RecurrenceModel } from "@/lib/domain/tile";
+import type { Stamp } from "@/lib/domain/v1/actor";
+import type { ChangeRule } from "@/lib/domain/v1/change-set";
 import type { TaskDefinition, TimeRequirement } from "@/lib/domain/v1/completion";
-import { PlanRole, RecurringState, TileKind, type TileKindValue } from "@/lib/domain/v1/constants";
-import type { FrameRule, Plan, Recurring } from "@/lib/domain/v1/tile";
-import type { DurationRange, Span, Window } from "@/lib/domain/v1/window";
+import {
+  ConditionKind,
+  PlanRole,
+  RecurringState,
+  type RecurringStateValue,
+  TileKind,
+  type TileKindValue,
+} from "@/lib/domain/v1/constants";
+import type { FrameRule, Plan, RecurringRule } from "@/lib/domain/v1/tile";
+import type { DateRange, DurationRange, Span, Window } from "@/lib/domain/v1/window";
 
 /**
  * Structural shape of a starter template row's `recurrence` field as
@@ -21,9 +43,7 @@ import type { DurationRange, Span, Window } from "@/lib/domain/v1/window";
  * `kind` discriminator on `generator`). The store only round-trips
  * this through to the form as a seed — Submit reconstructs the v1
  * FrameRule body from form fields, so we do not constrain this to the
- * strict `RecurrenceModel` discriminated union. The legacy v0-shape
- * `focus_block_based` slot is left here for back-compat with any seed
- * caller that still passes it; the proxy no longer synthesises it.
+ * strict `RecurrenceModel` discriminated union.
  */
 export interface RecurrenceTemplateRecurrence {
   generator: {
@@ -39,6 +59,8 @@ export interface RecurrenceTemplateRecurrence {
     expression: unknown | null;
   };
 }
+
+export type RepeatChoice = "once" | "daily" | "weekly" | "interval" | "condition";
 
 // ---------- slice types ----------
 
@@ -64,26 +86,36 @@ export interface TimeSlice {
   referenceLabel: string;
 }
 
-export type RepeatChoice = "once" | "daily" | "weekly" | "interval" | "condition";
-
+/**
+ * Recurring form input. Tracks `frameRules[]` (input to materialization)
+ * and `rules[]` (output rules); not the materialized `Frame[]` on the
+ * aggregate. See file header for the frames vs. frameRules distinction.
+ */
 export interface RecurringSlice {
-  life: Recurring["life"];
+  life: {
+    active: DateRange;
+    state: RecurringStateValue;
+    changed: Stamp;
+  };
   frameRules: FrameRule[];
-  rules: Recurring["rules"];
+  rules: RecurringRule[];
   repeatMode: RepeatChoice;
   weekdayMask: number;
   endDate: string;
 }
 
 export interface AdvancedSlice {
-  changeSets: unknown[];
-  rules: unknown[];
+  changeSets: ChangeRule[];
+  rules: ChangeRule[];
 }
 
 export interface MetaSlice {
   ownerSubjectId: string | null;
+  project: string | null;
   tags: string[];
   memo: string;
+  /** Backwards-compat: `true` mirrors `plan.role = LABEL`. Set via setLabelOnly. */
+  isLabelOnly: boolean;
 }
 
 // ---------- store ----------
@@ -108,10 +140,6 @@ export interface RecurringTemplateShape {
 }
 
 export interface QuickCreateState {
-  // Backwards-compat open/close surface retained so existing consumers
-  // (QuickTileCreate, layout clients, ActivityBar, etc.) keep compiling.
-  // The new model is live editing: panel renders unconditionally and the
-  // store is the single source of truth for all field state.
   isOpen: boolean;
   mode: QuickCreateMode;
   editingId: string | null;
@@ -162,78 +190,48 @@ export interface QuickCreateState {
   advanced: AdvancedSlice;
   meta: MetaSlice;
 
+  /**
+   * Set a field by dotted path (e.g. `"identity.title"`,
+   * `"time.span.start"`, `"recurring.life.state"`). Intermediate objects
+   * must be initialised in advance — see `buildDefaultQuickCreateState`.
+   * Array-index path segments are intentionally unsupported.
+   */
   setField: (path: string, value: unknown) => void;
+  /** Convenience: flips `plan.role` between EXECUTABLE / LABEL in sync with `meta.isLabelOnly`. */
+  setLabelOnly: (isLabelOnly: boolean) => void;
   /**
    * Hydrate the form from an existing CalendarEvent so the panel can
-   * be reused for editing. Title, description, span, duration, project,
-   * tags, and memo are mapped. Fields that are immutable post-create
-   * (kind, plan.role, windows, frame rules) are intentionally not
-   * mutated — the editor surfaces in `QuickTileCreate` hide those
-   * rows in edit mode.
+   * be reused for editing.
    */
   loadFromEvent: (event: import("@/lib/domain/calendar").CalendarEvent) => void;
   /**
    * Hydrate the form from an existing recurring Tile so the panel can be
-   * reused for editing. Opens the panel FIRST in edit mode
-   * (mode="edit", editingId=tileId, submitBlocked=false, loadError=null)
-   * so the user always sees visual feedback, then fetches the full v1
-   * Tile via getTile(id) and maps the v1 read view into the store.
-   * On success: `submitBlocked` stays false and Submit goes through
-   * UPDATE_TILE/UPDATE_PLACEMENT. On failure: `submitBlocked` is set
-   * true and `loadError` is set; the panel stays in edit mode with
-   * editingId preserved so the user sees what they intended, but
-   * QuickTileCreate gates Submit until a retry succeeds or the
-   * panel is closed (see plan
-   * docs/plans/2026-07-04-tile-panel-create-flow.md §B refinement).
-   * Returns the fetched Tile on success or null on error.
+   * reused for editing. Opens the panel FIRST in edit mode, then fetches
+   * the full v1 Tile via getTile(id) and maps the v1 read view into the store.
    */
   loadFromRecurringTile: (tileId: string) => Promise<unknown | null>;
   /**
-   * Hydrate the form from a starter Recurring template row produced
-   * by the proxy's `toRecurringTemplateList`. This path NEVER calls
-   * /v1/tiles/{template.id}; we treat the row as a seed and let
-   * Submit POST CREATE_TILE on a fresh server-assigned UUIDv7. The
-   * panel opens in create mode (mode="create", editingId=null,
-   * submitBlocked=false) and seeds identity from the template's
-   * title/note/recurrence. See plan §B refinement for the split
-   * with `loadFromRecurringTile`.
+   * Hydrate the form from a starter Recurring template row.
    */
   loadFromTemplate: (template: RecurringTemplateShape) => void;
+  /** Reset all field state to defaults; preserves `isOpen`. */
   reset: () => void;
 }
 
 // ---------- defaults ----------
 
 function defaultConditionRoot(): Plan["completion"]["root"] {
-  // Root is an ALL aggregator. We pre-seed it with a single TaskTerm pointing at
-  // the default task seeded by defaultPlan(), so the completion condition is
-  // non-vacuous on first paint. Editors can replace or extend this freely.
-  const defaultTaskId = "task_default";
-  return {
-    kind: 0, // ALL
-    children: [
-      {
-        kind: 3, // TERM
-        children: [],
-        term: { kind: "task", value: { taskId: defaultTaskId, state: 2 } }, // COMPLETED
-      },
-    ],
-    term: null,
-  };
+  return { kind: ConditionKind.ALL, children: [], term: null };
 }
 
 function defaultTimeRequirement(): TimeRequirement {
-  // Sensible work-window default: placement's total active duration
-  // must fall within 30–90 minutes. Editors expose scope / aggregate
-  // for finer control; the id is regenerated on every fresh form
-  // mount so persisted forms never collide.
   return {
     id: `tr_${Math.random().toString(36).slice(2, 9)}`,
     observation: {
-      scope: 1, // PLACEMENT
-      source: 0, // ACTIVE_SEGMENT
-      aggregate: 0, // TOTAL_DURATION
-      quantifier: 0, // ALL
+      scope: 1,
+      source: 0,
+      aggregate: 0,
+      quantifier: 0,
     },
     required: {
       minMs: 30 * 60_000,
@@ -244,17 +242,15 @@ function defaultTimeRequirement(): TimeRequirement {
 }
 
 function defaultTask(): TaskDefinition {
-  // Stable id so the TaskTerm seeded in defaultConditionRoot() references the
-  // first task by name. Subsequent added tasks still use random ids.
   const id = "task_default";
   return {
     id,
     content: { title: "作業完了", note: null },
     show: null,
     complete: {
-      kind: 3, // TERM
+      kind: ConditionKind.TERM,
       children: [],
-      term: { kind: "task", value: { taskId: id, state: 2 } }, // COMPLETED
+      term: { kind: "task", value: { taskId: id, state: 2 } },
     },
     order: [],
   };
@@ -308,18 +304,20 @@ function defaultTime(): TimeSlice {
   };
 }
 
+function defaultRecurringLife(): RecurringSlice["life"] {
+  return {
+    active: { startDate: "", endDate: "" },
+    state: RecurringState.ACTIVE,
+    changed: {
+      at: new Date().toISOString(),
+      actor: { id: "self", kind: 0, ownerId: null },
+    },
+  };
+}
+
 function defaultRecurring(): RecurringSlice {
   return {
-    life: {
-      active: { startDate: "", endDate: "" },
-      state: RecurringState.ACTIVE,
-      // TODO: validate before submit — `actor.kind` should be an ActorKindValue
-      // and `at` should be a real ISO timestamp.
-      changed: {
-        at: new Date().toISOString(),
-        actor: { id: "self", kind: 0, ownerId: null },
-      },
-    },
+    life: defaultRecurringLife(),
     frameRules: [],
     rules: [],
     repeatMode: "once",
@@ -335,8 +333,10 @@ function defaultAdvanced(): AdvancedSlice {
 function defaultMeta(): MetaSlice {
   return {
     ownerSubjectId: null,
+    project: null,
     tags: [],
     memo: "",
+    isLabelOnly: false,
   };
 }
 
@@ -380,11 +380,6 @@ export function buildDefaultQuickCreateState(): Pick<
 // ---------- path setter ----------
 
 function setDeepPath(state: QuickCreateState, path: string, value: unknown): QuickCreateState {
-  // NOTE: if an intermediate segment is null/undefined or a non-object
-  // primitive, the original state is returned unchanged. Callers must
-  // initialise nested objects explicitly (e.g. via `buildDefaultQuickCreateState`)
-  // before assigning to a deep path. Array-index path segments are not
-  // supported and are intentionally out of scope here.
   const segments = path.split(".");
   if (segments.length === 0) return state;
   const [head, ...rest] = segments;
@@ -418,12 +413,13 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
     set({ isOpen: false, mode: "create", editingId: null, editingTileId: null, loadError: null }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
-  reset: () =>
-    set((state) => ({
-      ...buildDefaultQuickCreateState(),
-      // Preserve the current open/close state — `reset` only clears form
-      // fields, it does not dismiss the panel.
-      isOpen: state.isOpen,
+  setLabelOnly: (isLabelOnly) =>
+    set(() => ({
+      meta: { ...useQuickCreateStore.getState().meta, isLabelOnly },
+      plan: {
+        ...useQuickCreateStore.getState().plan,
+        role: isLabelOnly ? PlanRole.LABEL : PlanRole.EXECUTABLE,
+      },
     })),
   loadFromEvent: (event) =>
     set(() => ({
@@ -441,10 +437,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       },
       time: {
         span: { start: event.start, end: event.end },
-        durationMinMax: {
-          minMs: 30 * 60_000,
-          maxMs: 30 * 60_000,
-        },
+        durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
         whenMode: event.start || event.end ? (event.end ? "range" : "day") : "none",
         timeOfDayMode: "unspecified",
         timeOfDayStart: "",
@@ -453,21 +446,12 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         referenceLabel: "",
       },
       meta: {
-        ownerSubjectId: null,
+        ...useQuickCreateStore.getState().meta,
         tags: Array.isArray(event.tags) ? event.tags : [],
         memo: event.memo ?? "",
       },
     })),
   loadFromRecurringTile: async (tileId: string) => {
-    // Edit-existing path: caller has a real tileId from a placement or
-    // event (CalendarMain, TasksMain). The panel opens in edit mode
-    // immediately so the user sees visual feedback; the GET to
-    // /v1/tiles/{tileId} is advisory and hydrates the form on
-    // success. Per plan §B refinement, on failure we BLOCK Submit
-    // (submitBlocked=true) instead of silently falling back to
-    // CREATE_TILE — we cannot confirm the tile still exists, so
-    // UPDATE_TILE on a phantom id would be a silent data loss
-    // hazard. Caller retries or closes the panel.
     set({
       isOpen: true,
       mode: "edit" as const,
@@ -475,9 +459,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       editingTileId: tileId,
       loadError: null,
       submitBlocked: false,
-      // Default to RECURRING (kind=0) so the radio lands on 定期 until
-      // hydration overrides it; the caller told us this is a recurring
-      // tile.
       identity: {
         ...defaultIdentity(),
         kind: TileKind.RECURRING,
@@ -489,9 +470,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
     });
 
     try {
-      // Lazy import: endpoints.ts is on the consumer side of this store
-      // (it imports submit.ts → quick-create-store), so a top-level
-      // static import here would create a circular dependency.
       const { getCoreClient } = await import("@/lib/api/endpoints");
       const res = await getCoreClient().call<unknown>("getTile", {
         pathParams: { id: tileId },
@@ -500,19 +478,12 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         const detail = !res.ok
           ? `status=${res.error.kind} ${res.error.message ?? ""}`.trim()
           : "empty response";
-        // Panel stays in edit mode + editingId preserved; Submit is
-        // gated by submitBlocked until retry succeeds.
         set({
           submitBlocked: true,
           loadError: `Failed to load recurring tile ${tileId} (${detail}). Submit is blocked until the tile is re-fetchable; reload or close the panel.`,
         });
         return null;
       }
-      // The v1 endpoint `GET /v1/tiles/{id}` returns a flat `TileView`
-      // (v1-domain read view). Fields are snake_case in JSON. The labels
-      // / span / recurrence edits are NOT supported yet because the v1
-      // backend does not expose an aggregate-detail endpoint; populate
-      // only what the read API actually returns.
       const tile = res.data as {
         id: string;
         kind: 0 | 1 | 2;
@@ -527,8 +498,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
         tile.kind === TileKind.PLACEMENT || tile.kind === TileKind.EXECUTION
           ? tile.kind
           : TileKind.RECURRING;
-      // Hydration succeeded — confirm Submit is unblocked and seed the
-      // form from the fetched view.
       set({
         submitBlocked: false,
         identity: {
@@ -541,9 +510,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
             icon: tile.icon ?? (incomingKind === TileKind.RECURRING ? "Repeat" : "check-circle"),
           },
         },
-        // TODO: restore when /v1/tiles/{id}/detail returns labels + recurrence.
         meta: {
-          ownerSubjectId: null,
+          ...useQuickCreateStore.getState().meta,
           tags: [],
           memo: "",
         },
@@ -552,7 +520,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       return tile;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      // Same BLOCK-save semantics as the non-OK branch above.
       set({
         submitBlocked: true,
         loadError: `Failed to load recurring tile ${tileId}: ${msg}. Submit is blocked until the tile is re-fetchable; reload or close the panel.`,
@@ -561,12 +528,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
     }
   },
   loadFromTemplate: (template) => {
-    // Starter-template path: caller (ScheduleMain) passes a Recurring
-    // template row whose id is a server-resolvable UUIDv7. We never
-    // call /v1/tiles/{template.id}; we just seed create mode from the
-    // template's title/recurrence so Submit POSTs CREATE_TILE on a
-    // fresh server-assigned UUIDv7. `template.recurrence` may be
-    // absent if the proxy source did not include it.
     set({
       isOpen: true,
       mode: "create" as const,
@@ -586,4 +547,9 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
       recurrence: template.recurrence,
     });
   },
+  reset: () =>
+    set((state) => ({
+      ...buildDefaultQuickCreateState(),
+      isOpen: state.isOpen,
+    })),
 }));

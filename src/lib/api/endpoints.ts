@@ -17,6 +17,8 @@
  * null in browser code.
  */
 
+import { MissingCloudApiBaseError } from "@/lib/upstream/cloud-api-base";
+
 export type ApiErrorKind =
   | "unauthorized"
   | "not_found"
@@ -969,13 +971,20 @@ function shouldUseProxyBridge(url: string): boolean {
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
   const rawBaseUrl =
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-    "http://127.0.0.1:31400";
-  const usesCloudProxy = shouldUseProxyBridge(rawBaseUrl);
-  const baseUrl = usesCloudProxy ? "/api/proxy" : rawBaseUrl;
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ??
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL?.trim() ??
+    "";
+  const baseUrl =
+    rawBaseUrl ||
+    // E2E bypass intentionally retains a local-default sentinel for tests; never reachable in OSS build.
+    (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1" ? "http://127.0.0.1:31400" : "");
+  if (!baseUrl) {
+    throw new MissingCloudApiBaseError();
+  }
+  const usesCloudProxy = shouldUseProxyBridge(baseUrl);
+  const clientBaseUrl = usesCloudProxy ? "/api/proxy" : baseUrl;
   _client = new CoreClient({
-    baseUrl,
+    baseUrl: clientBaseUrl,
     useProxyBridge: usesCloudProxy,
     // Browser code never holds Cognito tokens. The proxy bridge adds the
     // v1 bearer token server-side; the local v1 daemon is reached only

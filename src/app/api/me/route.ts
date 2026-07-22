@@ -15,6 +15,27 @@ interface OwnerProfileView {
 }
 
 export async function GET(): Promise<Response> {
+  // Local-dev / CI bypass: synthesize the same shape the real handler returns
+  // for a freshly-signed-up owner (all profile fields null, revision 0) so
+  // the dashboard header renders without a round-trip through the local
+  // daemon.  Mirrors `getAccountOwnerId`'s E2E shortcut.
+  if (process.env.E2E_BYPASS_AUTH === "1") {
+    const ownerId = await getAccountOwnerId();
+    if (!ownerId) {
+      return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
+    return NextResponse.json({
+      owner_id: ownerId,
+      email: null,
+      email_verified: false,
+      display_name: null,
+      avatar_url: null,
+      bio: null,
+      accent_color: null,
+      revision: 0,
+    });
+  }
+
   const ownerId = await getAccountOwnerId();
   if (!ownerId) {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });

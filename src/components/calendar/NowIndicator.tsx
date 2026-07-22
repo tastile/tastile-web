@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMinuteClock } from "@/lib/hooks/minute-clock";
 
 export interface NowIndicatorProps {
   /** px per hour in the time grid. The line lands at (nowMins / 60) * hourHeight. */
@@ -23,28 +23,20 @@ function todayIso(): string {
 /**
  * The "current time" red line + dot on the day/week time grid.
  *
- * Owns its own 60 s ticker so the line drifts in real time without
- * causing the rest of the calendar (events, headers, layout) to
- * re-render. The parent (DayView/WeekView) only renders this on the
- * today column; ticks fire here and only here.
+ * Reads the shared 60s clock from MinuteClockProvider so the line drifts
+ * in real time without each calendar subview owning its own ticker. The
+ * parent (DayView/WeekView) only renders this on the today column; the
+ * 60s tick comes from the single provider in /dashboard/timeline/page.tsx.
  *
  * SSR note: the position depends on `Date.now()` which differs between
- * server and client. We defer the actual `style.top` until after the
- * first client commit (via the `mounted` flag) so React doesn't emit
- * a hydration-mismatch warning that bails out of patching.
+ * server and client. We bail out until after the first client commit
+ * (nowMs > 0 means provider has run an effect) so React doesn't emit a
+ * hydration-mismatch warning that bails out of patching.
  */
 export function NowIndicator({ hourHeight, startHour, effectiveDay }: NowIndicatorProps) {
-  const [nowMs, setNowMs] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    setNowMs(Date.now());
-    const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
-    return () => window.clearInterval(id);
-  }, []);
-
-  if (!mounted) return null;
+  const sharedNowMs = useMinuteClock();
+  const nowMs = sharedNowMs ?? 0;
+  if (nowMs === 0) return null;
   if (effectiveDay !== todayIso()) return null;
 
   const now = new Date(nowMs);

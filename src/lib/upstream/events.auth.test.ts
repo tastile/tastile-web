@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { applyTestPoolToEnv, setupTestPoolFromEnv, type TestPoolConfig } from "@/lib/test/setupTestPoolFromEnv";
+
+const POOL: TestPoolConfig = setupTestPoolFromEnv();
 
 const cookieValues = new Map<string, string>();
 
@@ -23,6 +26,7 @@ beforeEach(() => {
   cookieValues.clear();
   cookieValues.set("tastile_uid", "forged-victim");
   process.env.TASTILE_WEB_BRIDGE_SECRET = "bridge-secret";
+  process.env.CLOUD_API_BASE = process.env.CLOUD_API_BASE ?? "http://localhost:31400";
 });
 
 afterEach(() => {
@@ -58,6 +62,7 @@ describe("events upstream authentication", () => {
 
   it("forwards to the local core as the dev actor when E2E auth bypass is enabled", async () => {
     process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "http://localhost:31400";
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
       .mockResolvedValue(new Response("[]", { status: 200 }));
@@ -69,7 +74,7 @@ describe("events upstream authentication", () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://127.0.0.1:31400/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z&include_labels=true",
+      `${"http://localhost:31400"}/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z&include_labels=true`,
       expect.objectContaining({
         headers: {
           "x-owner-id": "00000000-0000-0000-0000-000000000001",
@@ -81,6 +86,7 @@ describe("events upstream authentication", () => {
 
   it("maps Core LABEL timeline items to all-day calendar events", async () => {
     process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "http://localhost:31400";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify([{
         placement_id: "placement-label",
@@ -102,6 +108,7 @@ describe("events upstream authentication", () => {
 
   it("keeps timed Core LABEL annotations in the hour grid", async () => {
     process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "http://localhost:31400";
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify([{
         placement_id: "placement-break",
@@ -136,13 +143,5 @@ describe("events upstream authentication", () => {
 });
 
 function configureCognito() {
-  process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID = "ap-northeast-1_pool";
-  process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID = "client";
-  process.env.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN = "tastile";
-  process.env.NEXT_PUBLIC_COGNITO_ISSUER =
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool";
-  process.env.NEXT_PUBLIC_COGNITO_JWKS_URL = `${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/.well-known/jwks.json`;
-  process.env.NEXT_PUBLIC_COGNITO_REGION = "ap-northeast-1";
-  process.env.NEXT_PUBLIC_COGNITO_CALLBACK_URL = "https://app.tastile.app/auth/callback";
-  process.env.NEXT_PUBLIC_COGNITO_LOGOUT_URL = "https://app.tastile.app";
+  applyTestPoolToEnv(POOL);
 }

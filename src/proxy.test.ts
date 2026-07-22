@@ -1,6 +1,19 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { applyTestPoolToEnv, setupTestPoolFromEnv } from "@/lib/test/setupTestPoolFromEnv";
 import proxy, { isNativeAuthReturnRequest } from "./proxy";
+
+// Tests default to the mock pool fixture; CI may opt into the prod pool
+// by setting `TASTILE_TEST_USE_PROD_FIXTURE=true` (gated on CI=true).
+const POOL = setupTestPoolFromEnv();
+const APP_HOST = (() => {
+  try {
+    return new URL(POOL.callbackUrl).host;
+  } catch {
+    return "app.example.test";
+  }
+})();
+const APP_BASE_URL = `https://${APP_HOST}`;
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -23,7 +36,7 @@ describe("middleware native auth return detection", () => {
 		expect(
 			isNativeAuthReturnRequest(
 				new URLSearchParams({
-					redirect_uri: "https://app.tastile.app/auth/callback",
+					redirect_uri: `${APP_BASE_URL}/auth/callback`,
 					state: "web-state-123456",
 				}),
 			),
@@ -34,7 +47,7 @@ describe("middleware native auth return detection", () => {
 describe("middleware authentication", () => {
 	it("rejects forged uid and decode-only id token cookies", async () => {
 		configureCognito();
-		const request = new NextRequest("https://app.tastile.app/dashboard", {
+		const request = new NextRequest(`${APP_BASE_URL}/dashboard`, {
 			headers: {
 				cookie: "tastile_uid=victim; tastile_id_token=header.payload.signature",
 			},
@@ -51,7 +64,7 @@ describe("middleware authentication", () => {
 		const fetchMock = vi
 			.spyOn(globalThis, "fetch")
 			.mockResolvedValueOnce(new Response(JSON.stringify({ sub: "verified-sub" })));
-		const request = new NextRequest("https://app.tastile.app/dashboard", {
+		const request = new NextRequest(`${APP_BASE_URL}/dashboard`, {
 			headers: {
 				cookie: "tastile_access_token=verified-token; tastile_uid=forged-sub",
 			},
@@ -70,7 +83,7 @@ describe("middleware authentication", () => {
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
 			new Response("Unauthorized", { status: 401 }),
 		);
-		const request = new NextRequest("https://app.tastile.app/dashboard", {
+		const request = new NextRequest(`${APP_BASE_URL}/dashboard`, {
 			headers: { cookie: "tastile_access_token=forged-token; tastile_uid=victim" },
 		});
 
@@ -82,14 +95,7 @@ describe("middleware authentication", () => {
 });
 
 function configureCognito() {
-	process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID = "ap-northeast-1_pool";
-	process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID = "client";
-	process.env.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN = "tastile";
-	process.env.NEXT_PUBLIC_COGNITO_ISSUER =
-		"https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool";
-	process.env.NEXT_PUBLIC_COGNITO_JWKS_URL =
-		`${process.env.NEXT_PUBLIC_COGNITO_ISSUER}/.well-known/jwks.json`;
-	process.env.NEXT_PUBLIC_COGNITO_REGION = "ap-northeast-1";
-	process.env.NEXT_PUBLIC_COGNITO_CALLBACK_URL = "https://app.tastile.app/auth/callback";
-	process.env.NEXT_PUBLIC_COGNITO_LOGOUT_URL = "https://app.tastile.app";
+	applyTestPoolToEnv(POOL);
+	process.env.NEXT_PUBLIC_APEX_HOST = "example.test";
+	process.env.NEXT_PUBLIC_APP_HOST = APP_HOST;
 }

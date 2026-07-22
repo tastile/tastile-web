@@ -67,6 +67,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
   const interactive = Boolean(onClick);
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: button semantics are enabled only when onClick is provided
     <div
       role={interactive ? "button" : undefined}
       tabIndex={interactive ? 0 : undefined}

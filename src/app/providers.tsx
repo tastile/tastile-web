@@ -3,6 +3,7 @@
 import { MantineProvider } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import type { ReactNode } from "react";
+import { ThemeClassSyncer } from "@/components/theme/ThemeClassSyncer";
 import { cssVariablesResolver } from "@/lib/theme/css-variables-resolver";
 import { mantineTheme } from "@/lib/theme/mantine-theme";
 
@@ -20,6 +21,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
       cssVariablesResolver={cssVariablesResolver}
       defaultColorScheme="auto"
     >
+      <ThemeClassSyncer />
       <DatesProvider settings={{ locale: "en", firstDayOfWeek: 0 }}>{children}</DatesProvider>
     </MantineProvider>
   );

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyThemeMode } from "@/lib/theme-mode";
+import { applyThemeMode, readPersistedThemeMode } from "@/lib/theme-mode";
 
 const storage = new Map<string, string>();
 
@@ -32,6 +32,27 @@ beforeEach(() => {
 afterEach(() => {
 	document.documentElement.removeAttribute("data-mantine-color-scheme");
 	document.documentElement.className = "";
+});
+
+describe("readPersistedThemeMode", () => {
+	it("prefers the explicit theme-mode key over the legacy tastile-theme store", () => {
+		storage.set("theme-mode", "dark-black");
+		storage.set("tastile-theme", JSON.stringify({ state: { theme: "light" } }));
+
+		expect(readPersistedThemeMode()).toBe("dark-black");
+	});
+
+	it("migrates a legacy gray theme to dark-gray", () => {
+		storage.set("tastile-theme", JSON.stringify({ state: { theme: "gray" } }));
+
+		expect(readPersistedThemeMode()).toBe("dark-gray");
+	});
+
+	it("survives a corruption in the legacy payload by falling back", () => {
+		storage.set("tastile-theme", "{not valid json");
+
+		expect(readPersistedThemeMode()).toBe("light");
+	});
 });
 
 describe("applyThemeMode", () => {

@@ -1,5 +1,15 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { setupTestPoolFromEnv, type TestPoolConfig } from "@/lib/test/setupTestPoolFromEnv";
+
+const POOL: TestPoolConfig = setupTestPoolFromEnv();
+const APP_BASE_URL = (() => {
+  try {
+    return new URL(POOL.callbackUrl).origin;
+  } catch {
+    return "https://app.example.test";
+  }
+})();
 
 const ensureDefaultApiTokenForUser = vi.fn();
 const resolveAuthenticatedUserSub = vi.fn();
@@ -26,7 +36,7 @@ describe("GET /api/proxy/sse", () => {
   it("rejects forged identity cookies when no direct API token exists", async () => {
     resolveAuthenticatedUserSub.mockResolvedValueOnce(null);
     const { GET } = await import("./route");
-    const request = new NextRequest("https://app.tastile.app/api/proxy/sse", {
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/sse`, {
       headers: { cookie: "tastile_uid=victim; tastile_id_token=header.payload.sig" },
     });
 
@@ -38,7 +48,7 @@ describe("GET /api/proxy/sse", () => {
 
   it("keeps direct bearer auth isolated from bridge identity creation", async () => {
     const { GET } = await import("./route");
-    const request = new NextRequest("https://app.tastile.app/api/proxy/sse", {
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/sse`, {
       headers: { authorization: "Bearer direct-api-token", cookie: "tastile_uid=forged" },
     });
 
@@ -53,7 +63,7 @@ describe("GET /api/proxy/sse", () => {
 
   it("keeps the API-token cookie path isolated from forged uid cookies", async () => {
     const { GET } = await import("./route");
-    const request = new NextRequest("https://app.tastile.app/api/proxy/sse", {
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/sse`, {
       headers: { cookie: "tastile_api_token=direct-token; tastile_uid=forged" },
     });
 

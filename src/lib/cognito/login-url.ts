@@ -1,3 +1,5 @@
+import { MissingRequiredEnvError } from "@/lib/upstream/cloud-api-base";
+
 import type { CognitoEnv } from "./env";
 
 export const COGNITO_IDENTITY_PROVIDERS = ["Google", "SignInWithApple"] as const;
@@ -11,14 +13,25 @@ export function parseCognitoPlatform(value: string | null | undefined): CognitoP
   return "web";
 }
 
-export const ALLOWED_OAUTH_REDIRECT_URIS: ReadonlySet<string> = new Set<string>([
-  "http://localhost:3000/auth/callback",
-  "http://localhost:3000/auth/desktop/callback",
-  "https://app.tastile.app/auth/callback",
-  "https://app.tastile.app/auth/desktop/callback",
-  "tastile://auth/callback",
-  "tastile-desktop://auth/callback",
-]);
+function getAppHostForRedirects(): string {
+  const appHost = process.env.NEXT_PUBLIC_APP_HOST?.trim();
+  if (!appHost) {
+    throw new MissingRequiredEnvError("NEXT_PUBLIC_APP_HOST");
+  }
+  return appHost;
+}
+
+function getAllowedOAuthRedirectUris(): ReadonlySet<string> {
+  const appHost = getAppHostForRedirects();
+  return new Set<string>([
+    "http://localhost:3000/auth/callback",
+    "http://localhost:3000/auth/desktop/callback",
+    `https://${appHost}/auth/callback`,
+    `https://${appHost}/auth/desktop/callback`,
+    "tastile://auth/callback",
+    "tastile-desktop://auth/callback",
+  ]);
+}
 
 export function getConfiguredCognitoIdentityProviders(): Set<CognitoIdentityProvider> {
   const raw =
@@ -61,13 +74,13 @@ export function defaultRedirectUriForPlatform(platform: CognitoPlatform, fallbac
     if (fallback.startsWith("http://localhost")) {
       return "http://localhost:3000/auth/desktop/callback";
     }
-    return "https://app.tastile.app/auth/desktop/callback";
+    return `https://${getAppHostForRedirects()}/auth/desktop/callback`;
   }
   return fallback;
 }
 
 export function safeOAuthRedirectUri(value: string | null, fallback: string): string {
-  if (value && ALLOWED_OAUTH_REDIRECT_URIS.has(value)) return value;
+  if (value && getAllowedOAuthRedirectUris().has(value)) return value;
   return fallback;
 }
 

@@ -1,8 +1,19 @@
 {
   "name": "tastile-web",
   "version": "0.1.16",
+  "description": "Tastile web dashboard, PWA, and landing — Next.js client for the Tastile execution control system",
   "private": true,
   "packageManager": "bun@1.3.14",
+  "license": "Apache-2.0",
+  "author": "361do_sleep <rebuild.up.up@gmail.com> (https://x.com/361do_sleep)",
+  "homepage": "https://tastile.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tastile/tastile-web.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tastile/tastile-web/issues"
+  },
   "engines": {
     "node": ">=20.11.0"
   },
@@ -41,6 +52,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.3",
+    "@next/bundle-analyzer": "^16.2.11",
     "@next/eslint-plugin-next": "^16.2.10",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.3.2",
@@ -48,6 +60,8 @@
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@typescript-eslint/eslint-plugin": "^8.65.0",
+    "@typescript-eslint/parser": "^8.65.0",
     "@vitest/ui": "^4.1.10",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.5",

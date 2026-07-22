@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { describe, expect, it, vi } from "vitest";
+import { applyTestPoolToEnv, setupTestPoolFromEnv, type TestPoolConfig } from "@/lib/test/setupTestPoolFromEnv";
 import { GET } from "./route";
 
 vi.mock("@/lib/cognito/pkce", () => ({
@@ -10,19 +11,16 @@ vi.mock("@/lib/cognito/pkce", () => ({
 	generateState: () => "test-state",
 }));
 
-const baseEnv = {
-	NEXT_PUBLIC_APP_URL: "https://app.example.test",
-	NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN: "tastile-beta",
-	NEXT_PUBLIC_COGNITO_CLIENT_ID: "test-client-id",
-	NEXT_PUBLIC_COGNITO_USER_POOL_ID: "ap-northeast-1_example",
-	NEXT_PUBLIC_COGNITO_REGION: "ap-northeast-1",
-	NEXT_PUBLIC_COGNITO_ISSUER:
-		"https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_example",
-	NEXT_PUBLIC_COGNITO_JWKS_URL:
-		"https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_example/.well-known/jwks.json",
-	NEXT_PUBLIC_COGNITO_CALLBACK_URL: "https://app.example.test/auth/callback",
-	NEXT_PUBLIC_COGNITO_LOGOUT_URL: "https://app.example.test",
-};
+const POOL: TestPoolConfig = setupTestPoolFromEnv();
+const APP_HOST = (() => {
+	try {
+		return new URL(POOL.callbackUrl).host;
+	} catch {
+		return "app.example.test";
+	}
+})();
+const APP_BASE_URL = `https://${APP_HOST}`;
+const HOSTED_UI_HOSTNAME = `${POOL.hostedUiDomain}.auth.${POOL.region}.amazoncognito.com`;
 
 function makeRequest(url: string): NextRequest {
 	return new NextRequest(new Request(url));
@@ -33,16 +31,14 @@ describe("/auth/cognito/login", () => {
 		setCognitoEnv("COGNITO");
 
 		const response = await GET(
-			makeRequest("https://app.example.test/auth/cognito/login?next=/app"),
+			makeRequest(`${APP_BASE_URL}/auth/cognito/login?next=/app`),
 		);
 		const location = response.headers.get("location");
 		expect(location).toBeTruthy();
 
 		const authorizeUrl = new URL(location!);
-		expect(authorizeUrl.hostname).toBe(
-			"tastile-beta.auth.ap-northeast-1.amazoncognito.com",
-		);
-		expect(authorizeUrl.searchParams.get("client_id")).toBe("test-client-id");
+		expect(authorizeUrl.hostname).toBe(HOSTED_UI_HOSTNAME);
+		expect(authorizeUrl.searchParams.get("client_id")).toBe(POOL.clientId);
 		expect(authorizeUrl.searchParams.get("state")).toBe("test-state");
 		expect(authorizeUrl.searchParams.get("identity_provider")).toBeNull();
 	});
@@ -51,9 +47,7 @@ describe("/auth/cognito/login", () => {
 		setCognitoEnv("COGNITO,Google");
 
 		const response = await GET(
-			makeRequest(
-				"https://app.example.test/auth/cognito/login?provider=Google",
-			),
+			makeRequest(`${APP_BASE_URL}/auth/cognito/login?provider=Google`),
 		);
 		const location = response.headers.get("location");
 		expect(location).toBeTruthy();
@@ -67,7 +61,7 @@ describe("/auth/cognito/login", () => {
 
 		const response = await GET(
 			makeRequest(
-				"https://app.example.test/auth/cognito/login?provider=Google&redirect_uri=tastile%3A%2F%2Fauth%2Fcallback&state=native-state-123456&code_challenge=native-challenge-123456",
+				`${APP_BASE_URL}/auth/cognito/login?provider=Google&redirect_uri=tastile%3A%2F%2Fauth%2Fcallback&state=native-state-123456&code_challenge=native-challenge-123456`,
 			),
 		);
 		const location = response.headers.get("location");
@@ -88,7 +82,7 @@ describe("/auth/cognito/login", () => {
 
 		const response = await GET(
 			makeRequest(
-				"https://app.example.test/auth/cognito/login?provider=SignInWithApple",
+				`${APP_BASE_URL}/auth/cognito/login?provider=SignInWithApple`,
 			),
 		);
 		const location = response.headers.get("location");
@@ -107,7 +101,7 @@ describe("/auth/cognito/login", () => {
 			makeRequest("http://localhost:3000/auth/cognito/login?provider=GitHub"),
 		);
 		expect(unknownResponse.headers.get("location")).toBe(
-			"https://app.example.test/login?error=unsupported_provider",
+			`${APP_BASE_URL}/login?error=unsupported_provider`,
 		);
 	});
 
@@ -120,14 +114,14 @@ describe("/auth/cognito/login", () => {
 			),
 		);
 		expect(disabledResponse.headers.get("location")).toBe(
-			"https://app.example.test/login?error=provider_not_configured",
+			`${APP_BASE_URL}/login?error=provider_not_configured`,
 		);
 	});
 });
 
 function setCognitoEnv(enabledProviders: string) {
-	for (const [key, value] of Object.entries(baseEnv)) {
-		process.env[key] = value;
-	}
+	applyTestPoolToEnv(POOL);
+	process.env.NEXT_PUBLIC_APP_URL = APP_BASE_URL;
+	process.env.NEXT_PUBLIC_APP_HOST = APP_HOST;
 	process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS = enabledProviders;
 }

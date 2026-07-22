@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from "@/lib/cognito/cookies";
+import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
 
 // Returns session metadata only after server-side Cognito verification.
 // The response intentionally excludes every credential-bearing token.
@@ -28,7 +29,9 @@ import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from "@/lib/cognito/cookies";
 //
 // node-runtime: relies on Buffer for the base64 JWT-payload decode.
 
-const CORE_BASE = process.env.TASTILE_CORE_URL ?? "http://127.0.0.1:31400";
+function coreBase(): string {
+  return getCloudApiBase({ assert: true });
+}
 const BRIDGE_SECRET = process.env.TASTILE_WEB_BRIDGE_SECRET ?? "";
 
 interface QuotaResponse {
@@ -38,7 +41,7 @@ interface QuotaResponse {
 async function resolveOwnerId(sub: string): Promise<string | null> {
   if (!BRIDGE_SECRET) return null;
   try {
-    const res = await fetch(`${CORE_BASE}/v1/quota/tiles`, {
+    const res = await fetch(`${coreBase()}/v1/quota/tiles`, {
       method: "GET",
       cache: "no-store",
       headers: {
@@ -101,7 +104,24 @@ export function buildSessionJson(args: {
   };
 }
 
+// Local-dev bypass: when E2E_BYPASS_AUTH=1, mint a synthetic session so the
+// dashboard renders without going through Cognito.  Mirrors the constant in
+// src/app/api/proxy/[...path]/route.ts so /api/auth/session and the proxy
+// agree on the dev actor.
+const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
+
 export async function GET() {
+  // Local-dev / CI bypass: skip Cognito entirely.
+  if (process.env.E2E_BYPASS_AUTH === "1") {
+    return NextResponse.json(
+      buildSessionJson({
+        sub: "dev-bypass",
+        idToken: undefined,
+        ownerId: DEV_ACTOR_SUBJECT_ID,
+      }),
+    );
+  }
+
   const jar = await cookies();
   const idToken = jar.get(COOKIE_ID_TOKEN)?.value;
   // refreshToken is read from the cookie for parity / future use but MUST

@@ -2,37 +2,17 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 import { useQuickCreateStore } from "./quick-create-store";
 import { PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
 
-// `vi.hoisted` runs before module imports so the captured reference is
-// available inside the hoisted `vi.mock` factory below. Each test then
-// calls `mockGetCoreClient.mockReturnValue(...)` to drive the response
-// shape returned by `getCoreClient().call("getTile", ...)` invoked from
-// inside `loadFromRecurringTile`.
-const { mockGetCoreClient, mockCoreCall } = vi.hoisted(() => ({
-  mockGetCoreClient: vi.fn(),
-  mockCoreCall: vi.fn(),
-}));
-
-vi.mock("@/lib/api/endpoints", () => ({
-  getCoreClient: () => mockGetCoreClient(),
-}));
-
-// Internal handle: every `getCoreClient().call(...)` walks through this
-// vi.fn. Tests set its `.mockResolvedValueOnce` / `.mockResolvedValue` to
-// drive the response shape without hitting proxy / v1 daemon.
-mockGetCoreClient.mockImplementation(() => ({ call: mockCoreCall }));
-
 const reset = () => useQuickCreateStore.getState().reset();
 
 describe("useQuickCreateStore", () => {
   beforeEach(() => {
     reset();
-    mockGetCoreClient.mockClear();
-    mockCoreCall.mockReset();
   });
 
   describe("initial state", () => {
     it("starts with default identity, plan, time, windows, recurring, advanced, meta", () => {
       const s = useQuickCreateStore.getState();
+      expect(s.identity.kind).toBe(TileKind.PLACEMENT);
       expect(s.identity.title).toBe("");
       expect(s.identity.description).toBeNull();
       expect(s.identity.externalId).toBeNull();
@@ -146,102 +126,4 @@ describe("useQuickCreateStore", () => {
   // `at_load_from_recurring_tile_get_failure_blocks_submit` and
   // `at_load_from_template_seeds_create_mode_without_calling_get`.
 
-  describe("loadFromRecurringTile (TODO#2 refinement: BLOCK save on failure)", () => {
-    it("at_load_from_recurring_tile_get_failure_blocks_submit", async () => {
-      // Edit-existing path: caller has a real tileId from a placement or
-      // event. Plan §B refinement: GET failure must NOT fall back to
-      // create mode (that would let Submit UPDATE_TILE a phantom id).
-      // Instead, keep the panel in edit mode, keep editingId set so
-      // the panel remembers what the user intended, and set
-      // submitBlocked=true so QuickTileCreate disables Submit until the
-      // tile is re-fetchable. Caller will retry or close.
-      mockCoreCall.mockResolvedValueOnce({
-        ok: false,
-        error: { kind: "network", message: "ECONNREFUSED" },
-      });
-
-      const result = await useQuickCreateStore
-        .getState()
-        .loadFromRecurringTile("0192b123-4567-7890-abcd-ef0123456789");
-
-      const s = useQuickCreateStore.getState();
-      expect(result).toBeNull();
-      expect(s.isOpen).toBe(true);
-      // Edit mode + editingId preserved so the user sees what they
-      // intended to edit; submitBlocked prevents accidental UPDATE_TILE.
-      expect(s.mode).toBe("edit");
-      expect(s.editingId).toBe("0192b123-4567-7890-abcd-ef0123456789");
-      expect(s.editingTileId).toBe("0192b123-4567-7890-abcd-ef0123456789");
-      expect(s.submitBlocked).toBe(true);
-      expect(s.loadError).toContain("0192b123-4567-7890-abcd-ef0123456789");
-    });
-
-    it("clears submitBlocked on successful hydration", async () => {
-      mockCoreCall.mockResolvedValueOnce({
-        ok: true,
-        data: {
-          id: "0192b123-4567-7890-abcd-ef0123456789",
-          kind: 0,
-          title: "Existing recurring tile",
-          description: null,
-          color: "#5e6ad2",
-          icon: "Repeat",
-          external_id: null,
-          plan_id: null,
-        },
-      });
-
-      await useQuickCreateStore
-        .getState()
-        .loadFromRecurringTile("0192b123-4567-7890-abcd-ef0123456789");
-
-      const s = useQuickCreateStore.getState();
-      expect(s.isOpen).toBe(true);
-      expect(s.mode).toBe("edit");
-      expect(s.editingId).toBe("0192b123-4567-7890-abcd-ef0123456789");
-      expect(s.editingTileId).toBe("0192b123-4567-7890-abcd-ef0123456789");
-      expect(s.submitBlocked).toBe(false);
-      expect(s.identity.title).toBe("Existing recurring tile");
-      expect(s.loadError).toBeNull();
-    });
-  });
-
-  describe("loadFromTemplate (TODO#2: starter templates, no GET)", () => {
-    it("at_load_from_template_seeds_create_mode_without_calling_get", () => {
-      // Defensive regression: loadFromTemplate must accept arbitrary
-      // string ids and a non-default recurrence shape without calling
-      // /v1/tiles/{id} and without crashing on v0-vintage fixtures.
-      // (The proxy's `defaultBreakRecurringTemplate` shim was removed
-      // 2026-07-07; the literal id is retained here only as a
-      // recognised non-UUIDv7 sentinel.)
-      const template = {
-        id: "default-break-recurring",
-        title: "休憩",
-        note: "Default break template",
-        recurrence: {
-          generator: { kind: "time_based", step_min: 1440, anchor_epoch_min: null },
-          window: {
-            weekday_mask: 0b1111111,
-            start_offset_min: 0,
-            end_offset_min: 1440,
-            exclusions: [],
-          },
-          selector: { expression: null },
-        },
-      };
-
-      useQuickCreateStore.getState().loadFromTemplate(template);
-
-      const s = useQuickCreateStore.getState();
-      expect(mockCoreCall).not.toHaveBeenCalled();
-      expect(s.isOpen).toBe(true);
-      expect(s.mode).toBe("create");
-      expect(s.editingId).toBeNull();
-      expect(s.editingTileId).toBeNull();
-      expect(s.submitBlocked).toBe(false);
-      expect(s.identity.title).toBe("休憩");
-      expect(s.identity.kind).toBe(TileKind.RECURRING);
-      expect(s.recurrence).toEqual(template.recurrence);
-    });
-  });
 });

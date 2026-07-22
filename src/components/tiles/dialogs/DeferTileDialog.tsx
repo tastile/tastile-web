@@ -46,24 +46,25 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
     closeDeferDialog();
   };
 
+  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      handleCancel();
+    }
+  };
+
   const title =
     deferDialog.mode === "defer"
       ? t("tiles.dialogs.deferTitle")
       : t("tiles.dialogs.interruptTitle");
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click closes via mouse only; ESC handled at dialog level
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismissal is also available through the explicit close control
     <div
       role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
-      onClick={handleCancel}
+      onClick={handleBackdropClick}
     >
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation is intentional to keep dialog open */}
-      <div
-        role="presentation"
-        className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-md rounded-xl bg-surface-elevated p-6">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>

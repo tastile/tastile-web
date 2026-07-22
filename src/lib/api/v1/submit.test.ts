@@ -17,7 +17,7 @@ describe("makeClient (api/v1/submit.ts)", () => {
     const { makeClient } = await import("./submit");
     const client = makeClient();
     expect(client.useProxyBridge).toBe(true);
-    expect(client.baseUrl).toBe("/api/proxy");
+    expect(client.baseUrl).toBe("/api/proxy/v1");
     await expect(client.getIdToken()).resolves.toBe("e2e-bypass-token");
   });
 

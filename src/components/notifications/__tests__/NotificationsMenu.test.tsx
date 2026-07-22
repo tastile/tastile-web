@@ -7,6 +7,11 @@ import { NotificationsMenu } from "@/components/notifications/NotificationsMenu"
 // fetch is called by useNotifications; return empty arrays so the panel
 // renders without hitting the network.
 beforeEach(() => {
+  // E2E bypass keeps `getCoreClient()` from throwing because the test
+  // environment does not set NEXT_PUBLIC_TASTILE_CORE_URL. The bypass
+  // base URL is the loopback v1 daemon — but `fetch` is stubbed above
+  // so no real HTTP request is ever issued.
+  vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "1");
   vi.stubGlobal(
     "fetch",
     vi.fn(async () =>

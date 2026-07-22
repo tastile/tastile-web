@@ -71,36 +71,59 @@ export default async function LoginPage({
           </h1>
 
           {errorMessage ? (
-            <div role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm leading-5 text-danger">
+            <div
+              role="alert"
+              className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm leading-5 text-danger"
+            >
               {errorMessage}
             </div>
           ) : null}
 
           <div className="mt-5 space-y-2">
             {googleEnabled ? (
-              <a href={`/auth/cognito/login?provider=Google${desktopSuffix}`} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover">
+              <a
+                href={`/auth/cognito/login?provider=Google${desktopSuffix}`}
+                className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+              >
                 <Globe className="h-4 w-4" aria-hidden="true" />
                 Google で続行
               </a>
             ) : null}
             {appleEnabled ? (
-              <a href={`/auth/cognito/login?provider=SignInWithApple${desktopSuffix}`} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2">
+              <a
+                href={`/auth/cognito/login?provider=SignInWithApple${desktopSuffix}`}
+                className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
+              >
                 <Apple className="h-4 w-4" aria-hidden="true" />
                 Apple で続行
               </a>
             ) : null}
-            <a href={`/auth/email${desktopPageSuffix}`} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2">
+            <a
+              href={`/auth/email${desktopPageSuffix}`}
+              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
+            >
               <Fingerprint className="h-4 w-4" aria-hidden="true" />
               Passkey / メールで続行
             </a>
           </div>
 
-          <a href={`/auth/signup${desktopPageSuffix}`} className="mt-3 flex min-h-12 items-center justify-center text-sm text-foreground-muted underline underline-offset-2 hover:text-foreground">
+          <a
+            href={`/auth/signup${desktopPageSuffix}`}
+            className="mt-3 flex min-h-12 items-center justify-center text-sm text-foreground-muted underline underline-offset-2 hover:text-foreground"
+          >
             アカウントを作成
           </a>
 
           <p className="text-center text-[11px] leading-4 text-foreground-subtle">
-            続行すると、<Link href="/terms" className="underline underline-offset-2 hover:text-foreground">利用規約</Link>と<Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">プライバシーポリシー</Link>に同意したものとみなされます。
+            続行すると、
+            <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+              利用規約
+            </Link>
+            と
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              プライバシーポリシー
+            </Link>
+            に同意したものとみなされます。
           </p>
         </section>
       </main>

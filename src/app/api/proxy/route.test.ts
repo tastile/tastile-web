@@ -1,5 +1,15 @@
 import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { applyTestPoolToEnv, setupTestPoolFromEnv, type TestPoolConfig } from "@/lib/test/setupTestPoolFromEnv";
+
+const POOL: TestPoolConfig = setupTestPoolFromEnv();
+const APP_BASE_URL = (() => {
+  try {
+    return new URL(POOL.callbackUrl).origin;
+  } catch {
+    return "https://app.example.test";
+  }
+})();
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -52,7 +62,7 @@ describe("api proxy v1 path compatibility", () => {
       configureCognito();
       process.env.TASTILE_WEB_BRIDGE_SECRET = "bridge-secret";
       const route = await import("./[...path]/route");
-      const request = new NextRequest("https://app.tastile.app/api/proxy/v1/tiles", {
+      const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
         method,
         headers: { cookie: "tastile_uid=victim-sub" },
       });
@@ -74,7 +84,7 @@ describe("api proxy v1 path compatibility", () => {
       .mockResolvedValueOnce(new Response(JSON.stringify({ sub: "verified-sub" })))
       .mockResolvedValueOnce(new Response("[]", { status: 200 }));
     const { GET } = await import("./[...path]/route");
-    const request = new NextRequest("https://app.tastile.app/api/proxy/v1/tiles", {
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
       headers: {
         cookie:
           "tastile_access_token=verified-token; tastile_uid=forged-sub",
@@ -105,7 +115,7 @@ describe("api proxy v1 path compatibility", () => {
     );
     const { POST } = await import("./[...path]/route");
     const request = new NextRequest(
-      "https://app.tastile.app/api/proxy/v1/tiles?include=placements",
+      `${APP_BASE_URL}/api/proxy/v1/tiles?include=placements`,
       {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -133,14 +143,5 @@ describe("api proxy v1 path compatibility", () => {
 });
 
 function configureCognito() {
-  process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID = "ap-northeast-1_pool";
-  process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID = "client";
-  process.env.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN = "tastile";
-  process.env.NEXT_PUBLIC_COGNITO_ISSUER =
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool";
-  process.env.NEXT_PUBLIC_COGNITO_JWKS_URL =
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool/.well-known/jwks.json";
-  process.env.NEXT_PUBLIC_COGNITO_REGION = "ap-northeast-1";
-  process.env.NEXT_PUBLIC_COGNITO_CALLBACK_URL = "https://app.tastile.app/auth/callback";
-  process.env.NEXT_PUBLIC_COGNITO_LOGOUT_URL = "https://app.tastile.app";
+  applyTestPoolToEnv(POOL);
 }

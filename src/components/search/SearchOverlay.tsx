@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
 const DASHBOARD_ROUTES = [
   { path: "/dashboard", label: "Dashboard" },
@@ -26,8 +26,16 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
 
-  const filteredRoutes = DASHBOARD_ROUTES.filter((r) =>
-    query ? r.label.toLowerCase().includes(query.toLowerCase()) : false,
+  // useDeferredValue keeps the input snappy while the filter + map run on
+  // a lower-priority update. Without it, every keystroke re-renders and
+  // re-filters on the same priority as the input commit.
+  const deferredQuery = useDeferredValue(query);
+  const filteredRoutes = useMemo(
+    () =>
+      DASHBOARD_ROUTES.filter((r) =>
+        deferredQuery ? r.label.toLowerCase().includes(deferredQuery.toLowerCase()) : false,
+      ),
+    [deferredQuery],
   );
 
   const results = useMemo(
@@ -66,6 +74,12 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
       aria-label="Search pages"
       onClose={onClose}
       onClick={handleBackdropClick}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
       className="mx-auto mt-24 max-w-[600px] w-[92vw] rounded-xl border border-border bg-surface-elevated shadow-lg text-left [&::backdrop]:bg-foreground/5 [&::backdrop]:backdrop-blur-sm p-0"
     >
       <div className="flex items-center gap-2 border-b border-border px-4 py-3">

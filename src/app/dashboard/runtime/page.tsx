@@ -347,9 +347,9 @@ function formatUptime(sec: number): string {
 }
 
 function coreBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL ??
-    "http://127.0.0.1:31400"
-  );
+  const base =
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "";
+  if (base) return base;
+  if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") return "http://127.0.0.1:31400";
+  return "/api/proxy";
 }

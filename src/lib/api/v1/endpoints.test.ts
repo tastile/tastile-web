@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { postCommand, sendCommand, getRead, type ApiClient } from "./endpoints";
+import { postCommand, getRead, type ApiClient } from "./endpoints";
 import { ApiErrorKind } from "@/lib/domain/v1/constants";
 
 const mockFetch = vi.fn();
@@ -233,46 +233,6 @@ describe("postCommand", () => {
       expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
       expect(res.error.message).toContain("500");
     }
-  });
-});
-
-describe("sendCommand", () => {
-  beforeEach(() => mockFetch.mockReset());
-
-  it("sends DELETE commands with a v1 envelope body", async () => {
-    mockFetch.mockResolvedValueOnce(
-      okResponse({
-        command_id: "c-delete",
-        accepted_at: "t-delete",
-        aggregate: null,
-        revision: null,
-        result: 0,
-        pending: [],
-      }),
-    );
-
-    const res = await sendCommand(
-      { baseUrl: "/api/proxy", getIdToken: async () => null, useProxyBridge: true },
-      "DELETE",
-      "/v1/tiles/tile-1",
-      {
-        expectedRevision: null,
-        idempotencyKey: "k-delete",
-        occurredAt: "t-delete",
-        payload: { tile_id: "tile-1" },
-      },
-    );
-
-    expect(res.ok).toBe(true);
-    const [url, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-    expect(url).toBe("/api/proxy/v1/tiles/tile-1");
-    expect(init.method).toBe("DELETE");
-    expect(JSON.parse(init.body as string)).toEqual({
-      expected_revision: null,
-      idempotency_key: "k-delete",
-      occurred_at: "t-delete",
-      payload: { tile_id: "tile-1" },
-    });
   });
 });
 

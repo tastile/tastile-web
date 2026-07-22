@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   type DisplayMode,
   eventSpansDay,
@@ -7,6 +7,7 @@ import {
   layoutDayLanes,
 } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
+import { useMinuteClock } from "@/lib/hooks/minute-clock";
 import { useZoom } from "@/lib/hooks/use-zoom";
 import { AllDayLane } from "./AllDayLane";
 import { NowIndicator } from "./NowIndicator";
@@ -42,11 +43,10 @@ export function WeekView({
   // Tick only drives the dynamic content (NowIndicator + todayLocal).
   // Frame props (weekDates, todayLocal) only change on day-rollover,
   // not on every tick — memoized WeekViewFrame skips re-render.
-  const [nowMs, setNowMs] = useState(() => Date.now());
-  useEffect(() => {
-    const id = window.setInterval(() => setNowMs(Date.now()), 60_000);
-    return () => window.clearInterval(id);
-  }, []);
+  // Shared 60s clock — provider lives in /dashboard/timeline/page.tsx
+  // and serves all calendar subviews (DayView/WeekView/NowIndicator).
+  const sharedNowMs = useMinuteClock();
+  const nowMs = sharedNowMs ?? Date.now();
 
   const weekDates = useMemo(
     () => getWeekViewDates(mode, anchor, tzOffset),

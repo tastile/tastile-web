@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import type { CognitoEnv } from "./env";
 import {
 	buildCognitoAuthorizeUrl,
@@ -22,6 +22,10 @@ const env: CognitoEnv = {
 	callbackUrl: "https://tastile.app/auth/callback",
 	logoutUrl: "https://tastile.app",
 };
+
+beforeEach(() => {
+	process.env.NEXT_PUBLIC_APP_HOST = "app.example.test";
+});
 
 describe("cognito login url", () => {
 	it("adds Google identity_provider when selected", () => {

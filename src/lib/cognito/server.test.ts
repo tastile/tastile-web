@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { setupTestPoolFromEnv, type TestPoolConfig } from "@/lib/test/setupTestPoolFromEnv";
 import type { CognitoTokenSet } from "./server";
 import {
 	exchangeCodeForTokens,
@@ -6,18 +7,17 @@ import {
 	refreshTokens,
 } from "./server";
 
+const POOL: TestPoolConfig = setupTestPoolFromEnv();
 const FAKE_ENV = {
-	userPoolId: "ap-northeast-1_pwYcPWOyR",
-	clientId: "client",
-	hostedUiDomain: "tastile-beta",
-	issuer:
-		"https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pwYcPWOyR",
-	jwksUrl:
-		"https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pwYcPWOyR/.well-known/jwks.json",
-	hostedUiBaseUrl: "https://tastile-beta.auth.ap-northeast-1.amazoncognito.com",
-	region: "ap-northeast-1",
-	callbackUrl: "http://localhost:3000/auth/callback",
-	logoutUrl: "http://localhost:3000",
+	userPoolId: POOL.userPoolId,
+	clientId: POOL.clientId,
+	hostedUiDomain: POOL.hostedUiDomain,
+	issuer: POOL.issuer,
+	jwksUrl: POOL.jwksUrl,
+	hostedUiBaseUrl: `https://${POOL.hostedUiDomain}.auth.${POOL.region}.amazoncognito.com`,
+	region: POOL.region,
+	callbackUrl: POOL.callbackUrl,
+	logoutUrl: POOL.logoutUrl,
 };
 
 const b64url = (s: string) => Buffer.from(s).toString("base64url");
@@ -62,12 +62,12 @@ describe("exchangeCodeForTokens", () => {
 		];
 		const [url, init] = call;
 		expect(url).toBe(
-			"https://tastile-beta.auth.ap-northeast-1.amazoncognito.com/oauth2/token",
+			`${FAKE_ENV.hostedUiBaseUrl}/oauth2/token`,
 		);
 		expect(init?.method).toBe("POST");
 		const body = String(init?.body);
 		expect(body).toContain("grant_type=authorization_code");
-		expect(body).toContain("client_id=client");
+		expect(body).toContain(`client_id=${FAKE_ENV.clientId}`);
 		expect(body).toContain("code=abc");
 		expect(body).toContain("code_verifier=verifier");
 		expect(body).toContain(

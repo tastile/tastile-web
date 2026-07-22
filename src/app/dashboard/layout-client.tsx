@@ -1,6 +1,7 @@
 "use client";
 
 import { PanelLeftDashed } from "lucide-react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
@@ -9,13 +10,22 @@ import { SecurityLockGate } from "@/components/security/SecurityLockGate";
 import { ActivityBar } from "@/components/shell/ActivityBar";
 import { FloatingHeader } from "@/components/shell/FloatingHeader";
 import { SideToolPanel } from "@/components/shell/SideToolPanel";
-import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import { BottomSheet } from "@/components/ui/BottomSheet";
 import { AuthProvider, useAuth } from "@/lib/context/auth-context";
 import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+
+// QuickTileCreate is a 3000-line client component with many submodules;
+// split it out of the layout bundle so the initial dashboard load only
+// pays for the dialog when the user actually opens it. Rendered through
+// a Zustand store internally — keeping it always-mounted (no `loading`
+// placeholder) so the store subscription is wired before open.
+const QuickTileCreate = dynamic(
+  () => import("@/components/tiles/QuickTileCreate").then((m) => m.QuickTileCreate),
+  { ssr: false },
+);
 
 export function DashboardLayoutClient({ children }: { children: React.ReactNode }) {
   return (

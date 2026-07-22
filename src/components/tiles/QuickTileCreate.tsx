@@ -69,15 +69,8 @@ import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { Button } from "@/components/ui/Button";
 import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
-import { makeClient } from "@/lib/api/v1/submit";
-import {
-  closePlacementCommand,
-  createManualPlacementCommand,
-  createRecurringCommand,
-  setPlanCommand,
-  updatePlacementSpanCommand,
-  updateTileCommand,
-} from "@/lib/api/v1/tile-commands";
+import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
+import { closePlacementCommand } from "@/lib/api/v1/tile-commands";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 import {
   ConditionKind,
@@ -257,7 +250,7 @@ export function QuickTileCreate() {
   const setField = useQuickCreateStore((s) => s.setField);
   const mode = useQuickCreateStore((s) => s.mode);
   const editingId = useQuickCreateStore((s) => s.editingId);
-  const editingTileId = useQuickCreateStore((s) => s.editingTileId);
+  const _editingTileId = useQuickCreateStore((s) => s.editingTileId);
   const loadError = useQuickCreateStore((s) => s.loadError);
   const submitBlocked = useQuickCreateStore((s) => s.submitBlocked);
 
@@ -266,14 +259,14 @@ export function QuickTileCreate() {
   const time = useQuickCreateStore((s) => s.time);
   const windows = useQuickCreateStore((s) => s.windows);
   const recurring = useQuickCreateStore((s) => s.recurring);
-  const recurrence = useQuickCreateStore((s) => s.recurrence);
+  const _recurrence = useQuickCreateStore((s) => s.recurrence);
   const _advanced = useQuickCreateStore((s) => s.advanced);
   const meta = useQuickCreateStore((s) => s.meta);
 
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
 
-  const [allDay, setAllDay] = useState(false);
+  const [_allDay, setAllDay] = useState(false);
   const [visualOpen, setVisualOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<
     | "base"
@@ -301,7 +294,7 @@ export function QuickTileCreate() {
     }
     return Array.from(seen).sort((a, b) => a.localeCompare(b, "ja"));
   }, [tiles.tiles]);
-  const actorSubjectId = useCurrentActorSubjectId();
+  const _actorSubjectId = useCurrentActorSubjectId();
   useEffect(() => {
     void projects.refresh();
   }, [projects.refresh]);
@@ -469,209 +462,14 @@ export function QuickTileCreate() {
     }
     if (!canSubmit) return;
 
+    const client = makeClient();
     setSubmitting(true);
     try {
-      if (mode === "edit" && editingId && identity.kind === TileKind.RECURRING) {
-        const tileBody = {
-          idempotency_key: crypto.randomUUID(),
-          payload: {
-            tile_id: editingId,
-            title: identity.title,
-            description: identity.description ?? null,
-            color: identity.visual.color ?? null,
-            icon: identity.visual.icon ?? null,
-          },
-        };
-        const res = await fetch(`/api/proxy/v1/tiles/${editingId}/update`, {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify(tileBody),
-        });
-        if (!res.ok) {
-          const detail = await res.json().catch(() => null);
-          const message = detail?.error ?? `HTTP ${res.status}`;
-          throw new Error(`${t("quickCreate.updateError")} (api:v1) ${message}`);
-        }
-        const planRes = await setPlanCommand({
-          client: makeClient(),
-          tileId: editingId,
-          role: plan.role,
-          references: plan.references,
-          completion: plan.completion,
-          planning: plan.planning,
-          metrics: plan.metrics,
-          decisions: plan.decisions,
-        });
-        if (!planRes.ok)
-          throw new Error(
-            `${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`,
-          );
-      } else if (mode === "edit" && editingId) {
-        const startIso = time.span.start;
-        let endIso = time.span.end;
-        if (allDay && startIso) {
-          const startDate = new Date(startIso);
-          const dayStart = new Date(startDate);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
-        }
-        if (!startIso || !endIso)
-          throw new Error(`${t("quickCreate.updateError")} (api:v1) start/end required`);
-        const tileUpdateRes = await updateTileCommand({
-          client: makeClient(),
-          tileId: editingTileId ?? editingId,
-          title: identity.title,
-          description: identity.description ?? null,
-          color: identity.visual.color ?? null,
-          icon: identity.visual.icon ?? null,
-        });
-        if (!tileUpdateRes.ok)
-          throw new Error(
-            `${t("quickCreate.updateError")} (api:v1 stage:tile) ${tileUpdateRes.error.message}`,
-          );
-        if (!actorSubjectId) throw new Error("actorSubjectId required");
-        const spanRes = await updatePlacementSpanCommand({
-          client: makeClient(),
-          placementId: editingId,
-          start: startIso,
-          end: endIso,
-          ownerSubjectId: actorSubjectId,
-          actorSubjectId: actorSubjectId,
-        });
-        if (!spanRes.ok)
-          throw new Error(
-            `${t("quickCreate.updateError")} (api:v1 stage:span) ${spanRes.error.message}`,
-          );
-        const editPlacementTileId = editingTileId ?? editingId;
-        const planRes = await setPlanCommand({
-          client: makeClient(),
-          tileId: editPlacementTileId,
-          role: plan.role,
-          references: plan.references,
-          completion: plan.completion,
-          planning: plan.planning,
-          metrics: plan.metrics,
-          decisions: plan.decisions,
-        });
-        if (!planRes.ok)
-          throw new Error(
-            `${t("quickCreate.updateError")} (api:v1 stage:plan) ${planRes.error.message}`,
-          );
-      } else if (identity.kind === TileKind.RECURRING) {
-        const startIso = time.span.start;
-        let endIso = time.span.end;
-        if (allDay && startIso) {
-          const startDate = new Date(startIso);
-          const dayStart = new Date(startDate);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
-        }
-        if (!startIso || !endIso)
-          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
-        const windowMask = recurrence?.window?.weekday_mask ?? 0;
-        const weeklyV1Mask = (() => {
-          let v1 = 0;
-          for (let i = 0; i < 7; i++) {
-            if ((windowMask & (1 << i)) !== 0) {
-              const v1Bit = (i + 6) % 7;
-              v1 |= 1 << v1Bit;
-            }
-          }
-          return v1;
-        })();
-        const timeOfDay = (() => {
-          const w = recurrence?.window;
-          if (!w) return undefined;
-          const toHHMM = (mins: number) => {
-            const clamped = ((Math.floor(mins) % 1440) + 1440) % 1440;
-            const h = Math.floor(clamped / 60);
-            const m = clamped % 60;
-            return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-          };
-          const start = toHHMM(w.start_offset_min);
-          const end = toHHMM(w.end_offset_min);
-          if (start === end) return undefined;
-          return { start, end };
-        })();
-        const recurrencePattern =
-          weeklyV1Mask !== 0 ? ({ kind: "weekly", weekdays: weeklyV1Mask } as const) : undefined;
-        const recurringRes = await createRecurringCommand({
-          client: makeClient(),
-          title: identity.title,
-          description: identity.description ?? null,
-          color: identity.visual.color,
-          icon: identity.visual.icon,
-          start: startIso,
-          end: endIso,
-          stepMs: 86_400_000,
-          planRole: plan.role,
-          pattern: recurrencePattern,
-          timeOfDay,
-          occurrences: 14,
-        });
-        if (!recurringRes.ok)
-          throw new Error(
-            `${t("quickCreate.createError")} (api:v1 stage:${recurringRes.stage}) ${recurringRes.error.message}`,
-          );
-        const planRes = await setPlanCommand({
-          client: makeClient(),
-          tileId: recurringRes.tileId,
-          role: plan.role,
-          references: plan.references,
-          completion: plan.completion,
-          planning: plan.planning,
-          metrics: plan.metrics,
-          decisions: plan.decisions,
-        });
-        if (!planRes.ok)
-          throw new Error(
-            `${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`,
-          );
-      } else {
-        const startIso = time.span.start;
-        let endIso = time.span.end;
-        if (allDay && startIso) {
-          const startDate = new Date(startIso);
-          const dayStart = new Date(startDate);
-          dayStart.setHours(0, 0, 0, 0);
-          const dayEnd = new Date(dayStart);
-          dayEnd.setDate(dayEnd.getDate() + 1);
-          if (!endIso || new Date(endIso) <= startDate) endIso = dayEnd.toISOString();
-        }
-        if (!startIso || !endIso)
-          throw new Error(`${t("quickCreate.createError")} (api:v1) start/end required`);
-        const res = await createManualPlacementCommand({
-          client: makeClient(),
-          title: identity.title,
-          description: identity.description ?? null,
-          color: identity.visual.color ?? null,
-          icon: identity.visual.icon ?? null,
-          start: startIso,
-          end: endIso,
-          planRole: plan.role,
-        });
-        if (!res.ok)
-          throw new Error(
-            `${t("quickCreate.createError")} (api:v1 stage:${res.stage}) ${res.error.message}`,
-          );
-        const planRes = await setPlanCommand({
-          client: makeClient(),
-          tileId: res.tileId,
-          role: plan.role,
-          references: plan.references,
-          completion: plan.completion,
-          planning: plan.planning,
-          metrics: plan.metrics,
-          decisions: plan.decisions,
-        });
-        if (!planRes.ok)
-          throw new Error(
-            `${t("quickCreate.createError")} (api:v1 stage:plan) ${planRes.error.message}`,
-          );
+      const result = await submitCreateTile({ client });
+      if (!result.ok) {
+        throw new Error(
+          `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
+        );
       }
 
       reset();

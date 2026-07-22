@@ -179,7 +179,8 @@ export default function GeneralPage() {
             <div>
               <p className="text-sm font-semibold text-foreground">Require device unlock</p>
               <p className="mt-1 text-xs text-foreground-muted">
-                Default is off. Turn on to require device unlock on launch. Uses this browser&apos;s platform authenticator.
+                Default is off. Turn on to require device unlock on launch. Uses this browser&apos;s
+                platform authenticator.
               </p>
             </div>
             <button

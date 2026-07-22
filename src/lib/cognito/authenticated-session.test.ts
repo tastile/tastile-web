@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { applyTestPoolToEnv, setupTestPoolFromEnv, type TestPoolConfig } from "@/lib/test/setupTestPoolFromEnv";
 import { COOKIE_ACCESS_TOKEN, COOKIE_USER_SUB } from "./cookies";
 import { resolveAuthenticatedUserSub } from "./authenticated-session";
+
+const POOL: TestPoolConfig = setupTestPoolFromEnv();
 
 const cookieStore = new Map<string, string>();
 
@@ -15,20 +18,7 @@ function cookies() {
 
 beforeEach(() => {
   cookieStore.clear();
-  vi.stubEnv("NEXT_PUBLIC_COGNITO_USER_POOL_ID", "ap-northeast-1_pool");
-  vi.stubEnv("NEXT_PUBLIC_COGNITO_CLIENT_ID", "client");
-  vi.stubEnv("NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN", "tastile");
-  vi.stubEnv(
-    "NEXT_PUBLIC_COGNITO_ISSUER",
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool",
-  );
-  vi.stubEnv(
-    "NEXT_PUBLIC_COGNITO_JWKS_URL",
-    "https://cognito-idp.ap-northeast-1.amazonaws.com/ap-northeast-1_pool/.well-known/jwks.json",
-  );
-  vi.stubEnv("NEXT_PUBLIC_COGNITO_REGION", "ap-northeast-1");
-  vi.stubEnv("NEXT_PUBLIC_COGNITO_CALLBACK_URL", "https://app.tastile.app/auth/callback");
-  vi.stubEnv("NEXT_PUBLIC_COGNITO_LOGOUT_URL", "https://app.tastile.app");
+  applyTestPoolToEnv(POOL);
 });
 
 afterEach(() => {
@@ -66,15 +56,15 @@ describe("resolveAuthenticatedUserSub", () => {
         cookieStore: cookies(),
         fetchImpl,
         env: {
-          userPoolId: "ap-northeast-1_pool",
-          clientId: "client",
-          hostedUiDomain: "tastile",
+          userPoolId: POOL.userPoolId,
+          clientId: POOL.clientId,
+          hostedUiDomain: POOL.hostedUiDomain,
           issuer: "https://issuer.example/wrong-pool",
           jwksUrl: "https://issuer.example/wrong-pool/.well-known/jwks.json",
-          hostedUiBaseUrl: "https://tastile.auth.ap-northeast-1.amazoncognito.com",
-          region: "ap-northeast-1",
-          callbackUrl: "https://app.tastile.app/auth/callback",
-          logoutUrl: "https://app.tastile.app",
+          hostedUiBaseUrl: `https://${POOL.hostedUiDomain}.auth.${POOL.region}.amazoncognito.com`,
+          region: POOL.region,
+          callbackUrl: POOL.callbackUrl,
+          logoutUrl: POOL.logoutUrl,
         },
       }),
     ).resolves.toBeNull();
@@ -92,7 +82,7 @@ describe("resolveAuthenticatedUserSub", () => {
       resolveAuthenticatedUserSub({ cookieStore: cookies(), fetchImpl }),
     ).resolves.toBe("verified-sub");
     expect(fetchImpl).toHaveBeenCalledWith(
-      "https://tastile.auth.ap-northeast-1.amazoncognito.com/oauth2/userInfo",
+      `https://${POOL.hostedUiDomain}.auth.${POOL.region}.amazoncognito.com/oauth2/userInfo`,
       expect.objectContaining({
         headers: { authorization: "Bearer verified-access-token" },
       }),

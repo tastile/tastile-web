@@ -73,3 +73,29 @@ probe*raw*.json
 /.tastile-data/
 
 .claude/*
+
+# Local environment / secrets — never commit
+.env
+.env.local
+.env.*.local
+.env.product
+.env.dev
+.env.product.bak
+.env.dev.bak
+
+# Claude / agent / IDE tooling
+.claude/
+.agents/
+
+# Pencil prototype / container leftovers
+app-ui.pen
+Containerfile
+containerfile
+
+# Dist artifacts / screenshots / zips
+.tmp-screens/
+dist/
+
+# Build / cache
+.turbo/
+bun.lockb.bak

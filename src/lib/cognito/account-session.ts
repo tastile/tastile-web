@@ -17,7 +17,15 @@ import { type IdTokenClaims, parseIdTokenClaims, refreshTokens } from "./server"
 // and the proxy route's NS_OID constant.
 const NAMESPACE_OID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8";
 
+// Local-dev bypass: when E2E_BYPASS_AUTH=1, the proxy and /api/auth/session
+// already synthesize a fixed owner_id.  Mirror that here so all server-side
+// helpers that derive the owner id (e.g. /api/me, billing, profile) agree
+// without needing real Cognito cookies.  Keep this UUID in sync with
+// src/app/api/proxy/[...path]/route.ts and src/app/api/auth/session/route.ts.
+const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
+
 export async function getAccountOwnerId(): Promise<string | null> {
+  if (process.env.E2E_BYPASS_AUTH === "1") return DEV_ACTOR_SUBJECT_ID;
   const claims = await getAccountIdTokenClaims();
   if (!claims?.sub) return null;
   return uuidv5(claims.sub, NAMESPACE_OID);

@@ -1,3 +1,4 @@
+# INTERNAL ONLY — DO NOT RUN FROM PUBLIC CI. Filtered out of public history in Step 5. See docs/HARNESS.md §13.
 # Deploys the v1 (web) Next.js standalone bundle to an EC2 host via S3 + SSM.
 param(
     [Parameter(Mandatory=$false)][string]$Tag = "''",

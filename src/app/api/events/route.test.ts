@@ -31,6 +31,8 @@ beforeEach(() => {
   resolveAuthenticatedUserSub.mockReset();
   resolveAuthenticatedUserSub.mockResolvedValue("verified-test-user");
   vi.stubEnv("TASTILE_WEB_BRIDGE_SECRET", "bridge-secret");
+  vi.stubEnv("CLOUD_API_BASE", "http://127.0.0.1:0");
+  vi.stubEnv("E2E_BYPASS_AUTH", "1");
   vi.stubGlobal("fetch", fetchMock);
   // Default upstream success: tile create returns CommandResponse with
   // aggregate.id (the new tile) and aggregate_meta.plan_id; placement

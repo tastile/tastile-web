@@ -2,7 +2,7 @@
 
 import { Alert } from "@mantine/core";
 import { AlertCircle, Calendar, Clock, MapPin } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
 import { cn } from "@/lib/utils/cn";
 
@@ -41,8 +41,12 @@ export interface EventListViewProps {
 
 export function EventListView({ events, loading, error }: EventListViewProps) {
   const [query, setQuery] = useState("");
+  // useDeferredValue keeps the input snappy while the filter + groupByDay
+  // run on a lower-priority update. Without this, typing into a long
+  // event list freezes the input for the duration of the filter.
+  const deferredQuery = useDeferredValue(query);
   const groups = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = deferredQuery.trim().toLowerCase();
     const filtered = q
       ? events.filter(
           (e) =>
@@ -52,7 +56,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
         )
       : events;
     return groupByDay(filtered);
-  }, [events, query]);
+  }, [events, deferredQuery]);
 
   // Frame (search input + day-grouped list container) is always rendered
   // so the shell never flashes between a "Loading…" placeholder and the

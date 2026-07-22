@@ -346,8 +346,8 @@ function DayGrid({ blocks }: { blocks: CalendarBlock[] }) {
             style={{ height: `${hourHeight}px` }}
           >
             {(blocksByHour.get(h) ?? []).map((b, i) => (
-                <BlockChip key={(b.id ?? b.title) + i} block={b} />
-              ))}
+              <BlockChip key={(b.id ?? b.title) + i} block={b} />
+            ))}
           </div>
         </Fragment>
       ))}

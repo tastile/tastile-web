@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+const MANIFEST_URL = "https://download.example.test/updates/desktop/manifest.json";
+
 describe("GET /api/download/windows", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		vi.restoreAllMocks();
-		process.env.TASTILE_DESKTOP_MANIFEST_URL =
-			"https://download.tastile.app/updates/desktop/manifest.json";
+		process.env.TASTILE_DESKTOP_MANIFEST_URL = MANIFEST_URL;
 	});
 
 	it("redirects to latest desktop installer from manifest", async () => {
@@ -37,10 +38,7 @@ describe("GET /api/download/windows", () => {
 		const { GET } = await import("./route");
 		await GET();
 
-		expect(fetchMock).toHaveBeenCalledWith(
-			"https://download.tastile.app/updates/desktop/manifest.json",
-			{ cache: "no-store" },
-		);
+		expect(fetchMock).toHaveBeenCalledWith(MANIFEST_URL, { cache: "no-store" });
 	});
 
 	it("returns service unavailable when manifest cannot be fetched", async () => {
