@@ -116,13 +116,22 @@ export function CommandPalette() {
     }
   });
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   const openPalette = useCallback(() => {
     setQuery("");
     setActiveIndex(0);
     setOpen(true);
-    window.setTimeout(() => inputRef.current?.focus(), 16);
   }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const dialog = dialogRef.current;
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+      window.setTimeout(() => inputRef.current?.focus(), 16);
+    }
+  }, [open]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -134,8 +143,6 @@ export function CommandPalette() {
         } else {
           openPalette();
         }
-      } else if (e.key === "Escape" && open) {
-        setOpen(false);
       }
     }
     function onCustom() {
@@ -209,80 +216,79 @@ export function CommandPalette() {
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]"
-      role="dialog"
-      aria-modal
+    <dialog
+      ref={dialogRef}
       aria-label="Command palette"
+      onClose={() => setOpen(false)}
+      onClick={(e) => {
+        if (e.target === dialogRef.current) {
+          dialogRef.current?.close();
+        }
+      }}
+      className="mx-auto mt-[10vh] w-[min(720px,92vw)] overflow-hidden rounded-xl border border-border bg-surface-elevated shadow-lg p-0 [&::backdrop]:bg-foreground/5 [&::backdrop]:backdrop-blur-sm"
     >
-      <div
-        className="absolute inset-0 bg-foreground/5 backdrop-blur-sm"
-        onClick={() => setOpen(false)}
-        aria-hidden
-      />
-      <div className="relative z-10 w-[min(720px,92vw)] overflow-hidden rounded-xl border border-border bg-surface-elevated shadow-lg">
-        <div className="flex items-center gap-2 border-b border-border px-3">
-          <Search className="h-4 w-4 text-foreground-subtle" />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setActiveIndex(0);
-            }}
-            onKeyDown={onKeyDown}
-            placeholder="Type a command, page, or endpoint…"
-            className="h-12 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-lighter"
+      <div className="flex items-center gap-2 border-b border-border px-3">
+        <Search className="h-4 w-4 text-foreground-subtle" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setActiveIndex(0);
+          }}
+          onKeyDown={onKeyDown}
+          placeholder="Type a command, page, or endpoint…"
+          aria-label="Command palette search"
+          className="h-12 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-lighter"
+        />
+        <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
+          ESC
+        </kbd>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="ml-1 grid h-6 w-6 place-items-center rounded text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+          aria-label="Close"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      <div className="max-h-[60vh] overflow-y-auto p-1.5">
+        {items.length === 0 ? (
+          <div className="px-3 py-8 text-center text-sm text-foreground-lighter">No results</div>
+        ) : (
+          <GroupedList
+            items={items}
+            activeIndex={activeIndex}
+            onSelect={commit}
+            onHover={setActiveIndex}
           />
-          <kbd className="rounded border border-border bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium text-foreground-subtle">
-            ESC
-          </kbd>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            className="ml-1 grid h-6 w-6 place-items-center rounded text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
-            aria-label="Close"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+        )}
+      </div>
+      <div className="flex items-center justify-between border-t border-border bg-surface-0 px-3 py-2 text-[10px] text-foreground-lighter">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1">
+            <kbd className="rounded border border-border bg-surface-2 px-1">↑</kbd>
+            <kbd className="rounded border border-border bg-surface-2 px-1">↓</kbd>
+            navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="rounded border border-border bg-surface-2 px-1">↵</kbd>
+            open
+          </span>
         </div>
-        <div className="max-h-[60vh] overflow-y-auto p-1.5">
-          {items.length === 0 ? (
-            <div className="px-3 py-8 text-center text-sm text-foreground-lighter">No results</div>
-          ) : (
-            <GroupedList
-              items={items}
-              activeIndex={activeIndex}
-              onSelect={commit}
-              onHover={setActiveIndex}
-            />
-          )}
-        </div>
-        <div className="flex items-center justify-between border-t border-border bg-surface-0 px-3 py-2 text-[10px] text-foreground-lighter">
-          <div className="flex items-center gap-3">
-            <span className="flex items-center gap-1">
-              <kbd className="rounded border border-border bg-surface-2 px-1">↑</kbd>
-              <kbd className="rounded border border-border bg-surface-2 px-1">↓</kbd>
-              navigate
+        <div className="flex items-center gap-1">
+          {TAG_ORDER.slice(0, 4).map((t) => (
+            <span
+              key={t}
+              className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono uppercase tracking-wider"
+            >
+              {t}
             </span>
-            <span className="flex items-center gap-1">
-              <kbd className="rounded border border-border bg-surface-2 px-1">↵</kbd>
-              open
-            </span>
-          </div>
-          <div className="flex items-center gap-1">
-            {TAG_ORDER.slice(0, 4).map((t) => (
-              <span
-                key={t}
-                className="rounded border border-border bg-surface-2 px-1.5 py-0.5 font-mono uppercase tracking-wider"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
+          ))}
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 
