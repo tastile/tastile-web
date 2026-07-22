@@ -10,13 +10,6 @@ import { AppProviders } from "./providers";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
 
-// Mock font variables to avoid build-time Google Fonts download failures in offline/sandboxed environments
-const geistSans = { variable: "font-sans" };
-const geistMono = { variable: "font-mono" };
-const outfit = { variable: "font-sans" };
-const inter = { variable: "font-sans" };
-const zenKaku = { variable: "font-zen-kaku" };
-
 export const metadata: Metadata = {
   title: "Tastile — Execution Control",
   description: "Stop managing tasks. Start controlling execution.",
@@ -55,9 +48,7 @@ export default function RootLayout({
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init runs synchronously before paint */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} ${inter.variable} ${zenKaku.variable} antialiased`}
-      >
+      <body className="font-sans antialiased">
         <GoogleAnalytics measurementId={gaMeasurementId} />
         <AppProviders>{children}</AppProviders>
       </body>

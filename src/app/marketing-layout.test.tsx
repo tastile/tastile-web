@@ -1,5 +1,7 @@
 /** @vitest-environment jsdom */
 
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import DownloadPage from "@/app/download/page";
@@ -16,6 +18,25 @@ vi.mock("@/components/NavControls", () => ({
 }));
 
 describe("marketing page layout consistency", () => {
+	it("uses concrete font stacks without mock font variables", () => {
+		const globalsCss = readFileSync(
+			join(process.cwd(), "src/app/globals.css"),
+			"utf8",
+		);
+		const rootLayout = readFileSync(
+			join(process.cwd(), "src/app/layout.tsx"),
+			"utf8",
+		);
+
+		expect(globalsCss).not.toContain("var(--font-inter)");
+		expect(globalsCss).not.toContain("var(--font-geist-mono)");
+		expect(globalsCss).toContain(
+			'--font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;',
+		);
+		expect(rootLayout).not.toContain("Mock font variables");
+		expect(rootLayout).toContain('<body className="font-sans antialiased">');
+	});
+
 	it("keeps footer pinned to viewport bottom with shared flex column shell", async () => {
 		const downloadUi = await DownloadPage({
 			searchParams: Promise.resolve({}),
