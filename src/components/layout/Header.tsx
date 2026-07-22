@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AccountMenu } from "@/app/app/account-menu";
 import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
+import { pickDisplayLabel } from "@/lib/auth/display-label";
 import type { ExecutionSyncStatus } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -31,10 +32,11 @@ export function Header({ executionState }: HeaderProps) {
   useEffect(() => {
     // The session route intentionally returns only safe metadata
     // ({sub, exp, owner_id}) — no email, name, picture, or Cognito
-    // token material. We derive the avatar/display label from `owner_id`
-    // when present and from `sub` as a fallback. Anything richer (real
-    // profile fields) must come from a dedicated /v1 profile endpoint,
-    // not from decoding an id_token in the browser.
+    // token material. We call /api/me (best-effort) for the real
+    // display_name / email / avatar, and fall back to a derived label
+    // only when the profile is missing. Anything richer than the
+    // derived label must come from /api/me, not from decoding an
+    // id_token in the browser.
     void (async () => {
       const session = await fetchSafeSession();
       if (!session) {
@@ -43,14 +45,18 @@ export function Header({ executionState }: HeaderProps) {
         return;
       }
 
-      const fallbackName = session.owner_id
-        ? session.owner_id.slice(0, 8)
-        : session.sub.slice(0, 8);
+      const profile = await fetchProfile();
+      const displayName = pickDisplayLabel({
+        displayName: profile?.displayName ?? null,
+        email: profile?.email ?? null,
+        ownerId: session.owner_id,
+        sub: session.sub,
+      });
 
-      setAvatarUrl(null);
+      setAvatarUrl(profile?.avatarUrl ?? null);
       setUserData({
-        displayName: fallbackName,
-        email: "",
+        displayName,
+        email: profile?.email ?? "",
         plan: "free",
       });
     })();
@@ -142,6 +148,31 @@ async function fetchSafeSession(): Promise<SafeSession | null> {
       sub: data.sub,
       exp: typeof data.exp === "number" ? data.exp : 0,
       owner_id: typeof data.owner_id === "string" ? data.owner_id : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+interface ProfileMe {
+  email: string | null;
+  displayName: string | null;
+  avatarUrl: string | null;
+}
+
+async function fetchProfile(): Promise<ProfileMe | null> {
+  try {
+    const res = await fetch("/api/me", { cache: "no-store" });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      email?: string | null;
+      display_name?: string | null;
+      avatar_url?: string | null;
+    };
+    return {
+      email: typeof data.email === "string" ? data.email : null,
+      displayName: typeof data.display_name === "string" ? data.display_name : null,
+      avatarUrl: typeof data.avatar_url === "string" ? data.avatar_url : null,
     };
   } catch {
     return null;

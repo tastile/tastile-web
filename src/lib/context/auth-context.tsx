@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { pickDisplayLabel } from "@/lib/auth/display-label";
 
 interface AuthSession {
   sub: string;
@@ -67,20 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Profile fetch is best-effort; session data is sufficient
         }
 
-        // Fallback: derive a label from owner_id or sub
-        if (!displayName) {
-          displayName = sessionData.owner_id
-            ? sessionData.owner_id.slice(0, 8)
-            : sessionData.sub.slice(0, 8);
-        }
-
         if (alive) {
           setValue({
             session: {
               sub: sessionData.sub,
               ownerId: sessionData.owner_id ?? null,
               email,
-              displayName,
+              displayName: pickDisplayLabel({
+                displayName,
+                email,
+                ownerId: sessionData.owner_id ?? null,
+                sub: sessionData.sub,
+              }),
               avatarUrl,
             },
             loading: false,
