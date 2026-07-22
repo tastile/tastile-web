@@ -26,7 +26,7 @@ export default function GeneralPage() {
   const { t } = useTranslation();
   // SSR-safe defaults so server and first client render agree;
   // localStorage is read once after mount.
-  const [securityLock, setSecurityLock] = useState(true);
+  const [securityLock, setSecurityLock] = useState(false);
   const [securityLockMinutes, setSecurityLockMinutes] = useState(10);
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | "unsupported"
@@ -179,7 +179,7 @@ export default function GeneralPage() {
             <div>
               <p className="text-sm font-semibold text-foreground">Require device unlock</p>
               <p className="mt-1 text-xs text-foreground-muted">
-                Default is on. Uses this browser&apos;s platform authenticator.
+                Default is off. Turn on to require device unlock on launch. Uses this browser&apos;s platform authenticator.
               </p>
             </div>
             <button

@@ -4,7 +4,9 @@ export const SECURITY_LOCK_LEFT_AT_KEY = "tastile.securityLock.leftAt";
 export const SECURITY_LOCK_CREDENTIAL_ID_KEY = "tastile.securityLock.credentialId";
 
 export function getSecurityLockEnabled(storage: Storage): boolean {
-  return storage.getItem(SECURITY_LOCK_ENABLED_KEY) !== "false";
+  // Default is OFF. Returns true only when the user explicitly stored "true".
+  // null / unset / "false" / any other value → false.
+  return storage.getItem(SECURITY_LOCK_ENABLED_KEY) === "true";
 }
 
 export function setSecurityLockEnabled(storage: Storage, enabled: boolean) {
