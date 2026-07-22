@@ -100,7 +100,7 @@ export default function ApiExplorerPage() {
           <>
             <Pill variant="active">
               <Database className="h-3 w-3" />
-              Live · http://127.0.0.1:31400
+              Live · {liveBaseUrl()}
             </Pill>
             <Pill variant="default">{Object.keys(ENDPOINTS).length} endpoints</Pill>
             <Pill variant="default">{TAG_ORDER.length} tags</Pill>
@@ -122,6 +122,7 @@ export default function ApiExplorerPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search endpoints, paths, keywords…"
+            aria-label="Search endpoints, paths, keywords"
             className="h-9 w-full rounded-md border border-border bg-surface-1 pl-8 pr-3 text-sm text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent focus:ring-2 focus:ring-focus"
           />
         </div>
@@ -572,13 +573,24 @@ function defaultBody(k: EndpointKey): string {
 }
 
 function curlCommand(method: string, path: string, body: string): string {
-  const base = process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? "http://127.0.0.1:31400";
+  const base = coreBaseUrl();
   const lines = [`curl -X ${method} '${base}${path}'`, `  -H 'accept: application/json'`];
   if (method !== "GET" && body.trim()) {
     lines.push(`  -H 'content-type: application/json'`);
     lines.push(`  -d '${body.replace(/'/g, "\\'")}'`);
   }
   return lines.join(" \\\n");
+}
+
+function coreBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "";
+}
+
+function liveBaseUrl(): string {
+  const base = coreBaseUrl();
+  if (base) return base;
+  if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") return "http://127.0.0.1:31400";
+  return "/api/proxy";
 }
 
 function copyToClipboard(text: string) {

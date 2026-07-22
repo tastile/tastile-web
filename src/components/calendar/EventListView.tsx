@@ -65,6 +65,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
           type="search"
           data-testid="event-list-search"
           placeholder="Search events…"
+          aria-label="Search events"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           className="h-8 w-full max-w-sm rounded-md border border-border bg-surface-1 px-2.5 text-xs placeholder:text-foreground-muted focus:border-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control"

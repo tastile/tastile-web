@@ -171,6 +171,7 @@ export default function EventsPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search by type, id, actor, tile…"
+            aria-label="Search by type, id, actor, tile"
             className="h-9 w-full rounded-md border border-border bg-surface-1 pl-8 pr-3 text-sm text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent focus:ring-2 focus:ring-focus"
           />
         </div>
