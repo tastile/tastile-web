@@ -13,7 +13,7 @@ export function RequiredTimePanel({
   onChange: (minutes: number) => void;
 }) {
   return (
-    <div className="block space-y-1">
+    <div className="space-y-1">
       <span className="flex items-center gap-1.5 text-sm text-foreground">
         <Timer size={14} aria-hidden className="text-foreground-muted" />
         必要時間

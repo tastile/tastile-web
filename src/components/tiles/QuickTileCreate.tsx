@@ -786,10 +786,10 @@ export function QuickTileCreate() {
             <Layers className="h-4 w-4" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="block truncate text-[15px] font-semibold leading-tight text-foreground">
+            <h2 className="truncate text-[15px] font-semibold leading-tight text-foreground">
               {headingLabel}
             </h2>
-            <p className="block truncate text-xs text-foreground-muted">
+            <p className="truncate text-xs text-foreground-muted">
               {mode === "edit" ? t("quickCreate.subtitleEdit") : t("quickCreate.subtitleCreate")}
             </p>
           </div>
