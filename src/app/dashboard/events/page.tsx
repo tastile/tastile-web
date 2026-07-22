@@ -249,6 +249,13 @@ function FragmentRow({
     <>
       <tr
         onClick={onToggle}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onToggle();
+          }
+        }}
+        tabIndex={0}
         className="cursor-pointer border-b border-border transition-colors hover:bg-surface-2"
       >
         <td className="px-2 py-1.5 align-top">

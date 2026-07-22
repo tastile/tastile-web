@@ -164,6 +164,13 @@ export default function ApiExplorerPage() {
                 <tr
                   key={k}
                   onClick={() => setFocus(k)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setFocus(k);
+                    }
+                  }}
+                  tabIndex={0}
                   className={cn(
                     "cursor-pointer border-b border-border transition-colors",
                     isFocused ? "bg-accent-soft" : "hover:bg-surface-2",
