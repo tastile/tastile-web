@@ -78,6 +78,9 @@ jobs:
         # STRIPE_* / NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY aligned with the
         # systemd EnvironmentFile. Without these, /api/stripe/checkout returns
         # 500 {"error":"Stripe is not configured"} and the UI appears dead.
+        # Single-line --parameters (matches deploy.yml's existing pattern)
+        # so the runner's bash inlines ${STRIPE_*}; commands are written
+        # so each SSM step is self-contained (no ENV_FILE variable carry).
         env:
           WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
@@ -86,12 +89,7 @@ jobs:
           STRIPE_PRO_YEARLY_PRICE_ID: ${{ secrets.STRIPE_PRO_YEARLY_PRICE_ID }}
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
         run: |
-          set -euo pipefail
-          CMD_ID=$(aws ssm send-command \
-            --instance-ids "$WEB_INSTANCE_ID" \
-            --document-name AWS-RunShellScript \
-            --parameters 'commands=["set -euo pipefail","ENV_FILE=/etc/tastile/tastile-web.env","sudo touch \"$ENV_FILE\"","for n in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRO_MONTHLY_PRICE_ID STRIPE_PRO_YEARLY_PRICE_ID NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; do sudo sed -i.bak \"/^${n}=/d\" \"$ENV_FILE\"; done","sudo bash -c \"cat >> \\\"$ENV_FILE\\\" <<ENVEOF\nSTRIPE_SECRET_KEY=$STRIPE_SECRET_KEY\nSTRIPE_WEBHOOK_SECRET=$STRIPE_WEBHOOK_SECRET\nSTRIPE_PRO_MONTHLY_PRICE_ID=$STRIPE_PRO_MONTHLY_PRICE_ID\nSTRIPE_PRO_YEARLY_PRICE_ID=$STRIPE_PRO_YEARLY_PRICE_ID\nNEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY\nENVEOF\"","sudo systemctl daemon-reload"]' \
-            --output text --query 'Command.CommandId')
+          CMD_ID=$(aws ssm send-command --instance-ids "$WEB_INSTANCE_ID" --document-name AWS-RunShellScript --parameters "commands=['sudo touch /etc/tastile/tastile-web.env','sudo bash -c \"for n in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRO_MONTHLY_PRICE_ID STRIPE_PRO_YEARLY_PRICE_ID NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; do sed -i.bak \\\"/^\\${n}=/d\\\" /etc/tastile/tastile-web.env; done\"','sudo bash -c \"printf \\\"STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}\\\\nSTRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\\\\nSTRIPE_PRO_MONTHLY_PRICE_ID=${STRIPE_PRO_MONTHLY_PRICE_ID}\\\\nSTRIPE_PRO_YEARLY_PRICE_ID=${STRIPE_PRO_YEARLY_PRICE_ID}\\\\nNEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}\\\\n\\\" >> /etc/tastile/tastile-web.env\"','sudo systemctl daemon-reload']" --output text --query 'Command.CommandId')
           echo "ForwardStripeEnv CommandId: $CMD_ID"
           for i in $(seq 1 18); do
             sleep 5
