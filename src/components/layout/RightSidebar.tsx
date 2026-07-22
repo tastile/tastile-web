@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { TimelineAxis } from "@/components/execution/TimelineAxis";
 import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import type { TileId } from "@/lib/domain/ids";
@@ -51,6 +52,15 @@ export function RightSidebar({
 }: RightSidebarProps) {
   const { t, locale } = useTranslation();
   void _nextReason;
+  // Stable fallback date set on the client only to avoid SSR/CSR mismatch
+  // when item.startAt/item.endAt is missing. Defaults to epoch so SSR
+  // and the first client render produce the same value; useEffect upgrades
+  // it to "now" after mount.
+  const [nowFallback, setNowFallback] = useState<Date | null>(null);
+  useEffect(() => {
+    setNowFallback(new Date());
+  }, []);
+  const fallback = nowFallback ?? new Date(0);
   const timelineRangeLabel = formatTimelineRangeLabel(
     timelineWindowStart,
     timelineWindowEnd,
@@ -136,8 +146,8 @@ export function RightSidebar({
             durationLabel: "",
             dateLabel: item.date,
             timeLabel: item.time,
-            startAt: item.startAt ?? new Date(),
-            endAt: item.endAt ?? new Date(),
+            startAt: item.startAt ?? fallback,
+            endAt: item.endAt ?? fallback,
           }))}
           markers={timelineMarkers}
           canvasHeightPx={timelineCanvasHeightPx}

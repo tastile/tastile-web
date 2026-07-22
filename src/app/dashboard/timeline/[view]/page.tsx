@@ -388,13 +388,20 @@ function WeekGrid({ blocks }: { blocks: CalendarBlock[] }) {
 }
 
 function MonthGrid({ blocks }: { blocks: CalendarBlock[] }) {
-  const first = new Date();
-  first.setDate(1);
-  const days = Array.from({ length: 35 }, (_, i) => {
-    const d = new Date(first);
-    d.setDate(first.getDate() - first.getDay() + i);
-    return d;
-  });
+  const [monthAnchor, setMonthAnchor] = useState<Date | null>(null);
+  useEffect(() => {
+    const first = new Date();
+    first.setDate(1);
+    setMonthAnchor(first);
+  }, []);
+  const days = useMemo(() => {
+    if (!monthAnchor) return [];
+    return Array.from({ length: 35 }, (_, i) => {
+      const d = new Date(monthAnchor);
+      d.setDate(monthAnchor.getDate() - monthAnchor.getDay() + i);
+      return d;
+    });
+  }, [monthAnchor]);
   return (
     <div className="grid grid-cols-7">
       {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((w) => (
@@ -407,7 +414,7 @@ function MonthGrid({ blocks }: { blocks: CalendarBlock[] }) {
       ))}
       {days.map((d) => {
         const dayBlocks = blocks.filter((b) => sameDay(new Date(b.startAt), d));
-        const isCurrentMonth = d.getMonth() === new Date().getMonth();
+        const isCurrentMonth = monthAnchor ? d.getMonth() === monthAnchor.getMonth() : false;
         return (
           <div
             key={d.toISOString()}
