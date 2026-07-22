@@ -213,6 +213,7 @@ export function CommandPalette() {
       className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh]"
       role="dialog"
       aria-modal
+      aria-label="Command palette"
     >
       <div
         className="absolute inset-0 bg-foreground/5 backdrop-blur-sm"
