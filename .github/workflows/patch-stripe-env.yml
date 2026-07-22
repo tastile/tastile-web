@@ -1,0 +1,68 @@
+name: Patch Stripe env (one-shot)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  patch-stripe-env:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assume AWS role via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Write Stripe secrets to web env + restart
+        env:
+          WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          STRIPE_PRO_MONTHLY_PRICE_ID: ${{ secrets.STRIPE_PRO_MONTHLY_PRICE_ID }}
+          STRIPE_PRO_YEARLY_PRICE_ID: ${{ secrets.STRIPE_PRO_YEARLY_PRICE_ID }}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+        run: |
+          ENV_FILE=/etc/tastile/tastile-web.env
+          printf '%s\n' 'set -euo pipefail' \
+            "ENV_FILE=${ENV_FILE}" \
+            'sudo touch "$ENV_FILE"' \
+            'for n in TASTILE_WEB_BRIDGE_SECRET STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRO_MONTHLY_PRICE_ID STRIPE_PRO_YEARLY_PRICE_ID NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; do' \
+            '  sudo sed -i.bak "/^${n}=/d" "$ENV_FILE"' \
+            'done' \
+            'sudo bash -c "cat >> \"$ENV_FILE\" <<ENVEOF
+          TASTILE_WEB_BRIDGE_SECRET=${TASTILE_WEB_BRIDGE_SECRET}
+          STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+          STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+          STRIPE_PRO_MONTHLY_PRICE_ID=${STRIPE_PRO_MONTHLY_PRICE_ID}
+          STRIPE_PRO_YEARLY_PRICE_ID=${STRIPE_PRO_YEARLY_PRICE_ID}
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+          ENVEOF"' \
+            'sudo systemctl daemon-reload' \
+            'sudo systemctl restart tastile-web.service' \
+            'sleep 4' \
+            'systemctl is-active tastile-web.service' \
+            'curl -fsS -o /dev/null -w "login HTTP %{http_code}\n" http://127.0.0.1:3000/login' \
+            'curl -sS -o - -w "\ncheckout HTTP %{http_code}\n" -X POST -H "Content-Type: application/json" -d "{\"interval\":\"monthly\"}" http://127.0.0.1:3000/api/stripe/checkout || true' \
+            'sudo grep -E "STRIPE_=|NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=" "$ENV_FILE" | sed -E "s/=(sk_[A-Za-z0-9]+|whsec_[A-Za-z0-9]+|price_[A-Za-z0-9]+|pk_[A-Za-z0-9]+).*/=<REDACTED>/"' \
+            > /tmp/ssm-patch-cmd.sh
+          cat /tmp/ssm-patch-cmd.sh
+          CMD_ID=$(aws ssm send-command \
+            --instance-ids "$WEB_INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --parameters "file:///tmp/ssm-patch-cmd.sh" \
+            --output text --query 'Command.CommandId')
+          echo "CommandId: $CMD_ID"
+          for i in $(seq 1 36); do
+            sleep 5
+            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$WEB_INSTANCE_ID" --output text --query 'Status')
+            echo "  [${i}x5s] status=$STATUS"
+            [ "$STATUS" = "Success" ] || [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ] && break
+          done
+          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$WEB_INSTANCE_ID"
