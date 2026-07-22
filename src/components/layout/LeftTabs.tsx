@@ -19,7 +19,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
   return (
     <aside
       className={cn(
-        "group flex flex-col gap-2 rounded-xl bg-surface-elevated p-2 transition-all duration-200",
+        "group flex flex-col gap-2 rounded-xl bg-surface-elevated p-2 transition-[width] duration-200",
         pinnedOpen ? "w-44" : "w-14 hover:w-44",
       )}
     >
@@ -27,7 +27,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
       <button
         type="button"
         onClick={openQuickCreate}
-        className="relative flex h-11 w-full items-center overflow-hidden rounded-md bg-primary text-primary-fg transition-all hover:bg-primary-hover"
+        className="relative flex h-11 w-full items-center overflow-hidden rounded-md bg-primary text-primary-fg transition-colors hover:bg-primary-hover"
         title={t("nav.new")}
       >
         <div className="flex w-10 shrink-0 items-center justify-center">

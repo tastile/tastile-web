@@ -170,7 +170,7 @@ export function AppShell({
       <button
         type="button"
         onClick={() => setShowSidebar(!showSidebar)}
-        className="fixed bottom-6 right-0 z-50 hidden h-12 w-10 items-center justify-center rounded-l-xl bg-surface-elevated text-foreground-muted transition-all hover:bg-surface-2 hover:text-foreground lg:flex"
+        className="fixed bottom-6 right-0 z-50 hidden h-12 w-10 items-center justify-center rounded-l-xl bg-surface-elevated text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground lg:flex"
         style={{
           transform: showSidebar ? "translateX(0)" : "translateX(4px)",
         }}
