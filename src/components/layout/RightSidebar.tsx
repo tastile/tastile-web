@@ -150,6 +150,11 @@ export function RightSidebar({
   );
 }
 
+const timelineRangeFormatters: Record<"ja" | "en", Intl.DateTimeFormat> = {
+  ja: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric" }),
+  en: new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" }),
+};
+
 function formatTimelineRangeLabel(
   start: Date | null,
   end: Date | null,
@@ -166,10 +171,7 @@ function formatTimelineRangeLabel(
     (end.getDate() === 1 &&
       start.getDate() === new Date(start.getFullYear(), start.getMonth() + 1, 0).getDate());
   const displayEnd = isNextDayMidnight ? new Date(end.getTime() - 1) : end;
-  const fmt = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
-    month: "numeric",
-    day: "numeric",
-  });
+  const fmt = timelineRangeFormatters[locale];
   const startLabel = fmt.format(start);
   const endLabel = fmt.format(displayEnd);
   if (startLabel === endLabel) return startLabel;

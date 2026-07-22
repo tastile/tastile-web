@@ -1,3 +1,17 @@
+type Locale = "ja" | "en";
+type FmtOptions = Intl.DateTimeFormatOptions;
+
+const dtFormatters = new Map<string, Intl.DateTimeFormat>();
+function getDtFormatter(locale: Locale, opts: FmtOptions): Intl.DateTimeFormat {
+  const key = `${locale}|${JSON.stringify(opts)}`;
+  let fmt = dtFormatters.get(key);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", opts);
+    dtFormatters.set(key, fmt);
+  }
+  return fmt;
+}
+
 export function formatDuration(minutes: number | null, locale: "ja" | "en" = "ja"): string {
   if (minutes === null || minutes === undefined) return locale === "ja" ? "未設定" : "unspecified";
 
@@ -22,7 +36,7 @@ export function formatDateTime(
 ): string {
   if (!date) return locale === "ja" ? "未設定" : "unscheduled";
 
-  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
+  return getDtFormatter(locale, {
     month: "numeric",
     day: "numeric",
     hour: "2-digit",
@@ -51,7 +65,7 @@ export function formatFriendlyDateTime(
   const diffTime = startOfTarget.getTime() - startOfToday.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-  const timeStr = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
+  const timeStr = getDtFormatter(locale, {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
@@ -63,11 +77,11 @@ export function formatFriendlyDateTime(
     if (diffDays === 1) return `明日 ${timeStr}`;
     if (diffDays === -1) return `昨日 ${timeStr}`;
 
-    const dayOfWeek = new Intl.DateTimeFormat("ja-JP", {
+    const dayOfWeek = getDtFormatter("ja", {
       weekday: "short",
       timeZone: timeZone ?? undefined,
     }).format(targetDate);
-    const dateStr = new Intl.DateTimeFormat("ja-JP", {
+    const dateStr = getDtFormatter("ja", {
       month: "numeric",
       day: "numeric",
       timeZone: timeZone ?? undefined,
@@ -78,7 +92,7 @@ export function formatFriendlyDateTime(
     if (diffDays === 1) return `Tomorrow ${timeStr}`;
     if (diffDays === -1) return `Yesterday ${timeStr}`;
 
-    const dateStr = new Intl.DateTimeFormat("en-US", {
+    const dateStr = getDtFormatter("en", {
       month: "short",
       day: "numeric",
       timeZone: timeZone ?? undefined,
@@ -93,7 +107,7 @@ export function formatTimeOnly(
   timeZone?: string | null,
 ): string {
   if (!date) return locale === "ja" ? "未設定" : "unscheduled";
-  return new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", {
+  return getDtFormatter(locale, {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: timeZone ?? undefined,

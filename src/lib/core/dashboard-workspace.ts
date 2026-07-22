@@ -484,24 +484,37 @@ function minutesBetween(start: Date, end: Date): number {
   return Math.max(0, (end.getTime() - start.getTime()) / 60000);
 }
 
+const timeFormattersByTz = new Map<string, Intl.DateTimeFormat>();
+const dateFormattersByTz = new Map<string, Intl.DateTimeFormat>();
+
 function formatTime(d: Date, tz?: string | null): string {
   if (tz) {
-    return new Intl.DateTimeFormat("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-      timeZone: tz,
-    }).format(d);
+    let fmt = timeFormattersByTz.get(tz);
+    if (!fmt) {
+      fmt = new Intl.DateTimeFormat("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: tz,
+      });
+      timeFormattersByTz.set(tz, fmt);
+    }
+    return fmt.format(d);
   }
   return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatDate(d: Date, tz?: string | null): string {
   if (tz) {
-    return new Intl.DateTimeFormat("en-GB", {
-      month: "2-digit",
-      day: "2-digit",
-      timeZone: tz,
-    }).format(d);
+    let fmt = dateFormattersByTz.get(tz);
+    if (!fmt) {
+      fmt = new Intl.DateTimeFormat("en-GB", {
+        month: "2-digit",
+        day: "2-digit",
+        timeZone: tz,
+      });
+      dateFormattersByTz.set(tz, fmt);
+    }
+    return fmt.format(d);
   }
   return d.toLocaleDateString([], { month: "2-digit", day: "2-digit" });
 }
