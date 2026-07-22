@@ -33,7 +33,7 @@ function legacyExecutionEngineRemoved(): never {
 }
 
 export function useDaemonExecution() {
-  const [state] = useState<AppState>(AppState.initial());
+  const [state] = useState<AppState>(() => AppState.initial());
   const [loading] = useState(false);
 
   // Throws — kept as a `useCallback` so existing call-sites type-check
