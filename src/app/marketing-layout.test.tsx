@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import DownloadPage from "@/app/download/page";
 import LoginPage from "@/app/login/page";
 import PricingPage from "@/app/pricing/page";
@@ -18,6 +18,10 @@ vi.mock("@/components/NavControls", () => ({
 }));
 
 describe("marketing page layout consistency", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
 	it("uses concrete font stacks without mock font variables", () => {
 		const globalsCss = readFileSync(
 			join(process.cwd(), "src/app/globals.css"),
@@ -79,16 +83,46 @@ describe("marketing page layout consistency", () => {
 		expect(termsContainer.querySelector("main")?.className).toContain("flex-1");
 	});
 
-	it("uses centered single login panel with title and sign-in link together", async () => {
+	it("renders only configured providers in the compact login shell", async () => {
+		vi.stubEnv("NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS", "Google");
+
 		const { container } = render(
 			await LoginPage({ searchParams: Promise.resolve({}) }),
 		);
 
-		expect(container.querySelector("main.layout-shell.flex-1")).toBeTruthy();
-		expect(container.querySelector("main.layout-grid-2")).toBeFalsy();
-		expect(container.querySelector('[data-testid="login-panel"]')).toBeTruthy();
-		expect(screen.getByText("Tastile Account")).toBeTruthy();
-		expect(screen.getByText("実行制御を、すぐ始める")).toBeTruthy();
-		expect(screen.getByText("Passkey / メールで続行")).toBeTruthy();
+		expect(container.querySelector("header")).toBeNull();
+		expect(container.querySelector("footer")).toBeNull();
+		expect(screen.getByRole("heading", { name: "ログイン" })).toBeTruthy();
+		expect(screen.queryByText("実行制御を、すぐ始める")).toBeNull();
+		expect(screen.getByRole("link", { name: "Google で続行" })).toBeTruthy();
+		expect(screen.queryByText("Apple で続行")).toBeNull();
+		expect(screen.getByRole("link", { name: "Passkey / メールで続行" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "アカウントを作成" })).toBeTruthy();
+	});
+
+	it("preserves native auth query values in compact provider links", async () => {
+		vi.stubEnv(
+			"NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS",
+			"Google,SignInWithApple",
+		);
+
+		const { container } = render(
+			await LoginPage({
+				searchParams: Promise.resolve({
+					redirect_uri: "tastile://auth/callback",
+					state: "abcdefghijklmnop",
+					code_challenge: "qrstuvwxyz123456",
+					platform: "android",
+				}),
+			}),
+		);
+
+		const googleHref = container
+			.querySelector<HTMLAnchorElement>('a[href^="/auth/cognito/login?provider=Google"]')
+			?.getAttribute("href");
+		expect(googleHref).toContain("redirect_uri=tastile%3A%2F%2Fauth%2Fcallback");
+		expect(googleHref).toContain("state=abcdefghijklmnop");
+		expect(googleHref).toContain("code_challenge=qrstuvwxyz123456");
+		expect(googleHref).toContain("platform=android");
 	});
 });

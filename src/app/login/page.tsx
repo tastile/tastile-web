@@ -1,13 +1,10 @@
-import { Apple, Fingerprint, Globe, Info, KeyRound, Laptop, Smartphone } from "lucide-react";
+import { Apple, Fingerprint, Globe } from "lucide-react";
 import Link from "next/link";
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { TastileLogo } from "@/components/TastileLogo";
 import {
   getConfiguredCognitoIdentityProviders,
   parseCognitoPlatform,
 } from "@/lib/cognito/login-url";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 
 const ERROR_MESSAGES: Record<string, string> = {
   no_session: "サインインが必要です。",
@@ -54,144 +51,59 @@ export default async function LoginPage({
   const desktopPageSuffix = desktopQuery.size > 0 ? `?${desktopQuery.toString()}` : "";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader hideAuth translations={getHeaderTranslations("ja")} />
-
-      <main className="layout-shell grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.05fr_1fr]">
-        <section className="space-y-8">
-          <div className="space-y-5">
-            <div className="flex items-center gap-4">
-              <TastileLogo size={64} className="text-foreground" />
-              <div>
-                <p className="text-sm font-medium text-primary">Tastile Account</p>
-                <h1 className="mt-1 text-4xl font-semibold text-foreground sm:text-5xl">
-                  実行制御を、すぐ始める
-                </h1>
-              </div>
-            </div>
-            <p className="max-w-2xl text-lg leading-8 text-foreground-muted">
-              1 つのアカウントで Web、Windows、Android のすべてのデバイスを使えます。
-            </p>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-lg bg-surface-1 p-4">
-              <Fingerprint className="h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="mt-3 text-sm font-medium text-foreground">Passkey ready</p>
-              <p className="mt-1 text-sm text-foreground-subtle">
-                対応端末では生体認証やセキュリティキーを使えます。
-              </p>
-            </div>
-            <div className="rounded-lg bg-surface-1 p-4">
-              <Laptop className="h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="mt-3 text-sm font-medium text-foreground">Desktop</p>
-              <p className="mt-1 text-sm text-foreground-subtle">
-                Windows アプリはブラウザ認証後に戻ります。
-              </p>
-            </div>
-            <div className="rounded-lg bg-surface-1 p-4">
-              <Smartphone className="h-5 w-5 text-primary" aria-hidden="true" />
-              <p className="mt-3 text-sm font-medium text-foreground">Android</p>
-              <p className="mt-1 text-sm text-foreground-subtle">
-                Android でも同じアカウントで利用できます。
-              </p>
-            </div>
-          </div>
-        </section>
+    <div className="min-h-svh bg-background font-[family-name:var(--font-jp)]">
+      <main className="flex min-h-svh w-full flex-col items-center justify-center px-4 py-4">
+        <Link
+          href="/"
+          aria-label="Tastile ホーム"
+          className="flex min-h-12 items-center gap-2 text-foreground"
+        >
+          <TastileLogo size={36} />
+          <span className="text-lg font-semibold tracking-tight">tastile</span>
+        </Link>
 
         <section
           data-testid="login-panel"
-          className="w-full rounded-lg bg-surface-elevated p-6 sm:p-8"
+          className="mt-6 w-full max-w-sm rounded-xl bg-surface-elevated p-5 sm:p-6"
         >
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground">アカウント</h2>
-              <p className="mt-2 text-sm leading-6 text-foreground-muted">
-                新規登録も既存ログインも、安全な画面で完了します。
-              </p>
-            </div>
+          <h1 className="font-[family-name:var(--font-jp-heading)] text-xl font-semibold text-foreground">
+            ログイン
+          </h1>
 
-            {errorMessage ? (
-              <div className="rounded-lg bg-danger/10 px-4 py-3 text-sm text-danger">
-                {errorMessage}
-              </div>
+          {errorMessage ? (
+            <div role="alert" className="mt-4 rounded-lg bg-danger/10 px-3 py-2 text-sm leading-5 text-danger">
+              {errorMessage}
+            </div>
+          ) : null}
+
+          <div className="mt-5 space-y-2">
+            {googleEnabled ? (
+              <a href={`/auth/cognito/login?provider=Google${desktopSuffix}`} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover">
+                <Globe className="h-4 w-4" aria-hidden="true" />
+                Google で続行
+              </a>
             ) : null}
-
-            <div className="space-y-3">
-              {googleEnabled ? (
-                <a
-                  href={`/auth/cognito/login?provider=Google${desktopSuffix}`}
-                  className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
-                >
-                  <Globe className="h-4 w-4" aria-hidden="true" />
-                  Google で続行
-                </a>
-              ) : (
-                <div className="flex w-full items-center justify-between gap-3 rounded-md bg-surface-0 px-4 py-3 text-sm text-foreground-muted">
-                  <span className="inline-flex items-center gap-3">
-                    <Globe className="h-4 w-4" aria-hidden="true" />
-                    Google で続行
-                  </span>
-                  <span className="text-xs">設定中</span>
-                </div>
-              )}
-              {appleEnabled ? (
-                <a
-                  href={`/auth/cognito/login?provider=SignInWithApple${desktopSuffix}`}
-                  className="flex w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
-                >
-                  <Apple className="h-4 w-4" aria-hidden="true" />
-                  Apple で続行
-                </a>
-              ) : (
-                <div className="flex w-full items-center justify-between gap-3 rounded-md bg-surface-0 px-4 py-3 text-sm text-foreground-muted">
-                  <span className="inline-flex items-center gap-3">
-                    <Apple className="h-4 w-4" aria-hidden="true" />
-                    Apple で続行
-                  </span>
-                  <span className="text-xs">設定中</span>
-                </div>
-              )}
-              <a
-                href={`/auth/email${desktopPageSuffix}`}
-                className="flex w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
-              >
-                <Fingerprint className="h-4 w-4" aria-hidden="true" />
-                Passkey / メールで続行
+            {appleEnabled ? (
+              <a href={`/auth/cognito/login?provider=SignInWithApple${desktopSuffix}`} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2">
+                <Apple className="h-4 w-4" aria-hidden="true" />
+                Apple で続行
               </a>
-              <a
-                href={`/auth/signup${desktopPageSuffix}`}
-                className="flex w-full items-center justify-center gap-3 rounded-md bg-surface-0 px-4 py-3 text-sm font-medium text-foreground-muted hover:bg-surface-1 hover:text-foreground"
-              >
-                <KeyRound className="h-4 w-4" aria-hidden="true" />
-                新しいアカウントを作成
-              </a>
-            </div>
-
-            <div className="rounded-lg bg-surface-0 p-4">
-              <div className="flex gap-3">
-                <Info className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                <p className="text-sm leading-6 text-foreground-muted">
-                  登録後は Passkey を追加してから Web / Desktop / Android で利用できます。
-                </p>
-              </div>
-            </div>
-
-            <p className="text-xs leading-5 text-foreground-subtle">
-              続行すると、
-              <Link href="/terms" className="underline hover:text-foreground">
-                利用規約
-              </Link>
-              と
-              <Link href="/privacy" className="underline hover:text-foreground">
-                プライバシーポリシー
-              </Link>
-              に同意したものとみなされます。
-            </p>
+            ) : null}
+            <a href={`/auth/email${desktopPageSuffix}`} className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2">
+              <Fingerprint className="h-4 w-4" aria-hidden="true" />
+              Passkey / メールで続行
+            </a>
           </div>
+
+          <a href={`/auth/signup${desktopPageSuffix}`} className="mt-3 flex min-h-12 items-center justify-center text-sm text-foreground-muted underline underline-offset-2 hover:text-foreground">
+            アカウントを作成
+          </a>
+
+          <p className="text-center text-[11px] leading-4 text-foreground-subtle">
+            続行すると、<Link href="/terms" className="underline underline-offset-2 hover:text-foreground">利用規約</Link>と<Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">プライバシーポリシー</Link>に同意したものとみなされます。
+          </p>
         </section>
       </main>
-      <SiteFooter translations={getFooterTranslations("ja")} />
     </div>
   );
 }
