@@ -93,7 +93,7 @@ const nonEmptySourceDefinition: SourceTileCreatePayload = {
 
 describe("SourceTile client", () => {
   it("serializes non-empty Core enums with their externally tagged wire shapes", () => {
-    const wire = JSON.parse(JSON.stringify(nonEmptySourceDefinition));
+    const wire = structuredClone(nonEmptySourceDefinition);
 
     expect(wire.plan.completion.root).toEqual({ All: [{ Term: { Task: { task_id: wireId, state: "Completed" } } }] });
     expect(wire.plan.metrics[0].expression).toEqual({ Choose: {
