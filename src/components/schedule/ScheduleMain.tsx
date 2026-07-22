@@ -200,9 +200,10 @@ export function ScheduleMain() {
         {/* Recurring templates list as a table */}
         {view === "recurring" && !recurring.loading && recurring.templates.length > 0 && (
           <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
-            {recurring.templates
-              .filter((t) => t?.recurrence)
-              .map((template) => (
+            {recurring.templates.reduce<typeof recurring.templates>((acc, t) => {
+              if (t?.recurrence) acc.push(t);
+              return acc;
+            }, []).map((template) => (
                 <button
                   key={template.id}
                   type="button"

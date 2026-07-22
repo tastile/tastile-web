@@ -313,6 +313,19 @@ function SummaryCard({
 function DayGrid({ blocks }: { blocks: CalendarBlock[] }) {
   const { ref: gridRef, zoom: hourHeight } = useZoom<HTMLDivElement>({ initial: 56 });
   const hours = Array.from({ length: 24 }, (_, h) => h);
+  const blocksByHour = useMemo(() => {
+    const map = new Map<number, CalendarBlock[]>();
+    for (const b of blocks) {
+      const h = new Date(b.startAt).getHours();
+      let bucket = map.get(h);
+      if (!bucket) {
+        bucket = [];
+        map.set(h, bucket);
+      }
+      bucket.push(b);
+    }
+    return map;
+  }, [blocks]);
   return (
     <div
       ref={gridRef}
@@ -332,9 +345,7 @@ function DayGrid({ blocks }: { blocks: CalendarBlock[] }) {
             className="relative border-b border-border px-4 py-1.5"
             style={{ height: `${hourHeight}px` }}
           >
-            {blocks
-              .filter((b) => new Date(b.startAt).getHours() === h)
-              .map((b, i) => (
+            {(blocksByHour.get(h) ?? []).map((b, i) => (
                 <BlockChip key={(b.id ?? b.title) + i} block={b} />
               ))}
           </div>
