@@ -34,6 +34,15 @@ async function proxyToken(id: string, init: { method: string; body?: string }) {
     cache: "no-store",
   });
 
+  // Always forward the upstream response verbatim — including 4xx/5xx — so the client
+  // sees the real status/body. Branching on ok makes the status check explicit.
+  if (!response.ok) {
+    const errorText = await response.text();
+    return new NextResponse(normalizeResponseText(errorText), {
+      status: response.status,
+      headers: { "content-type": response.headers.get("content-type") ?? "application/json" },
+    });
+  }
   const text = await response.text();
   return new NextResponse(normalizeResponseText(text), {
     status: response.status,

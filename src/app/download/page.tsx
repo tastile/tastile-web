@@ -23,7 +23,7 @@ export default async function DownloadPage({
   const version = release?.latestVersion ?? "latest";
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
       <main className="flex-1">
         <div className="layout-shell max-w-4xl py-20">
@@ -36,6 +36,7 @@ export default async function DownloadPage({
             {/* Direct Download */}
             <a
               href="/api/download/windows"
+              download
               className="flex items-center gap-3 rounded-full bg-primary px-8 py-4 text-lg font-medium text-primary-fg hover:bg-primary-hover"
             >
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">

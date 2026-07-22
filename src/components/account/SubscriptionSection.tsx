@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { translations } from "@/lib/i18n/translations";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -144,12 +145,12 @@ export function SubscriptionSection() {
               {opening ? t("account.subscription.loading") : t("account.subscription.manage")}
             </button>
           ) : (
-            <a
+            <Link
               href="/pricing"
               className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
             >
               {t("account.subscription.upgrade")}
-            </a>
+            </Link>
           )}
         </div>
       </section>
@@ -219,12 +220,12 @@ export function SubscriptionSection() {
           </ul>
           {!isPro && (
             <div className="mt-4">
-              <a
+              <Link
                 href="/pricing"
                 className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover w-full block text-center"
               >
                 {subDict.upgrade}
-              </a>
+              </Link>
             </div>
           )}
         </section>

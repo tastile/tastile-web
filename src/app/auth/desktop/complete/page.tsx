@@ -29,7 +29,7 @@ export default function DesktopAuthCompletePage() {
 `;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader hideAuth translations={getHeaderTranslations("ja")} />
 
       <main className="layout-shell flex flex-1 items-center justify-center py-12">

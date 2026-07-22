@@ -262,13 +262,13 @@ function AccountPageInner() {
                 </h3>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row">
-                <a
+                <Link
                   href="/auth/cognito/login?next=/dashboard/account"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
                 >
                   <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                   {t("preferences.account.passkey")}
-                </a>
+                </Link>
                 <Link
                   href="/auth/email"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground"

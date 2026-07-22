@@ -19,6 +19,7 @@ export function PricingCard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ interval }),
       });
+      if (!res.ok) return;
       const { url } = await res.json();
       if (url) {
         window.location.href = url;

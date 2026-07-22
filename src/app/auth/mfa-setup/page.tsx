@@ -38,10 +38,11 @@ function MfaSetupInner() {
     (async () => {
       try {
         const res = await fetch("/api/account/mfa/setup", { method: "POST" });
-        const json = await res.json();
         if (!res.ok) {
+          const json = (await res.json().catch(() => ({}))) as { error?: string };
           throw new Error(json.error ?? "setup_failed");
         }
+        const json = await res.json();
         if (!cancelled) {
           setState({
             kind: "ready",

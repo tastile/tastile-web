@@ -75,7 +75,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [closeQuickCreate]);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background">
       <FloatingHeader
         userName={session?.displayName ?? "Loading..."}
         onOpenSearch={() => setSearchOpen(true)}

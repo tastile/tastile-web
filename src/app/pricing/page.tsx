@@ -21,7 +21,7 @@ export default async function PricingPage({
   const dict = translations[lang].marketing.pricing;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
       <main className="flex-1">
         <div className="layout-shell max-w-5xl py-20">

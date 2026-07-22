@@ -32,7 +32,7 @@ export function AuthShell({
   };
 }) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader hideAuth translations={headerTranslations} />
 
       <main className="layout-shell grid flex-1 items-center gap-8 py-12 lg:grid-cols-[1.05fr_1fr]">

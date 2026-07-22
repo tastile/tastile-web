@@ -1,6 +1,7 @@
 "use client";
 
 import { Calendar, Clock, ListTodo } from "lucide-react";
+import Link from "next/link";
 import { type ReactNode, useRef } from "react";
 import { useScrollProgress } from "@/hooks/useScrollProgress";
 import { easeOut, lerp, mapRange } from "@/lib/animate";
@@ -77,7 +78,7 @@ export function ScrollPage({
       {/* ═══ LAYER 1: Hero — title stays, mock UI scrolls away ═══ */}
       <div className="relative" style={{ minHeight: "250vh" }}>
         {/* Sticky hero text — stays visible while mock scrolls */}
-        <div className="sticky top-0 h-screen flex items-center z-10">
+        <div className="sticky top-0 h-dvh flex items-center z-10">
           <div className="layout-shell w-full">
             <div className="max-w-[600px]">
               <span className="mb-6 inline-block rounded-full bg-surface-0 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-foreground-subtle">
@@ -94,18 +95,18 @@ export function ScrollPage({
                 {t.heroDesc}
               </p>
               <div className="mt-12 flex flex-wrap gap-4">
-                <a
+                <Link
                   href="/login"
                   className="inline-flex items-center gap-2 rounded-full bg-foreground px-8 py-3.5 text-sm font-medium text-background transition-colors duration-150 hover:bg-interactive-hover"
                 >
                   {t.heroCta1}
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/download"
                   className="inline-flex items-center gap-2 rounded-full bg-surface-0 px-8 py-3.5 text-sm font-medium text-foreground-muted transition-colors duration-150 hover:bg-surface-2 hover:text-foreground"
                 >
                   {t.heroCta2}
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -167,7 +168,7 @@ function MockUIScroll({ lang, stepIcons }: { lang: string; stepIcons: ReactNode[
 
   return (
     <div ref={ref} className="h-[250vh]">
-      <div className="sticky top-0 h-screen flex items-center justify-end pr-16">
+      <div className="sticky top-0 h-dvh flex items-center justify-end pr-16">
         <div
           className="w-[420px]"
           style={{
@@ -233,7 +234,7 @@ function AppsReveal({ lang }: { lang: "ja" | "en" }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "300vh" }}>
-      <div className="sticky top-0 h-screen flex items-center">
+      <div className="sticky top-0 h-dvh flex items-center">
         <div className="layout-shell w-full">
           {/* Title */}
           <h2
@@ -322,7 +323,7 @@ function BridgeReveal({ t }: { t: Dict }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "200vh" }}>
-      <div className="sticky top-0 h-screen flex items-center justify-center">
+      <div className="sticky top-0 h-dvh flex items-center justify-center">
         <div className="text-center max-w-2xl px-8">
           <h2
             className="font-[family-name:var(--font-jp-heading)] text-3xl font-semibold tracking-tight text-foreground lg:text-5xl"
@@ -355,7 +356,7 @@ function HowReveal({ t, lang }: { t: Dict; lang: "ja" | "en" }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "350vh" }}>
-      <div className="sticky top-0 h-screen flex items-center">
+      <div className="sticky top-0 h-dvh flex items-center">
         <div className="layout-shell w-full">
           <h2
             className="font-[family-name:var(--font-jp-heading)] mb-12 text-center text-3xl font-semibold tracking-tight text-foreground lg:text-4xl"
@@ -419,7 +420,7 @@ function CycleReveal({ t }: { t: Dict }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "250vh" }}>
-      <div className="sticky top-0 h-screen flex items-center">
+      <div className="sticky top-0 h-dvh flex items-center">
         <div className="layout-shell w-full">
           <h2
             className="font-[family-name:var(--font-jp-heading)] mb-12 text-center text-3xl font-semibold tracking-tight text-foreground lg:text-4xl"
@@ -469,7 +470,7 @@ function LifeReveal({ t }: { t: Dict }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "250vh" }}>
-      <div className="sticky top-0 h-screen flex items-center justify-center">
+      <div className="sticky top-0 h-dvh flex items-center justify-center">
         <div className="text-center max-w-xl px-8">
           <h2
             className="font-[family-name:var(--font-jp-heading)] mb-12 text-3xl font-semibold tracking-tight text-foreground lg:text-4xl"
@@ -508,7 +509,7 @@ function PricingReveal({ t, lang }: { t: Dict; lang: "ja" | "en" }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "200vh" }}>
-      <div className="sticky top-0 h-screen flex items-center justify-center">
+      <div className="sticky top-0 h-dvh flex items-center justify-center">
         <div className="text-center max-w-lg px-8">
           <h2
             className="font-[family-name:var(--font-jp-heading)] mb-4 text-3xl font-semibold tracking-tight text-foreground lg:text-4xl"
@@ -535,12 +536,12 @@ function PricingReveal({ t, lang }: { t: Dict; lang: "ja" | "en" }) {
               transform: `translateY(${ty(p, 0.25, 0.45, 12)}px)`,
             }}
           >
-            <a
+            <Link
               href="/pricing"
               className="inline-flex items-center gap-2 rounded-full bg-foreground px-10 py-4 text-sm font-medium text-background transition-colors duration-150 hover:bg-interactive-hover"
             >
               {lang === "ja" ? "料金プランを見る" : "View Pricing"}
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -555,7 +556,7 @@ function QAReveal({ t }: { t: Dict }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "300vh" }}>
-      <div className="sticky top-0 h-screen flex items-center">
+      <div className="sticky top-0 h-dvh flex items-center">
         <div className="layout-shell max-w-2xl w-full">
           <h2
             className="font-[family-name:var(--font-jp-heading)] mb-10 text-center text-3xl font-semibold tracking-tight text-foreground lg:text-4xl"
@@ -595,7 +596,7 @@ function CTAReveal({ t }: { t: Dict }) {
 
   return (
     <div ref={ref} className="relative py-32" style={{ minHeight: "200vh" }}>
-      <div className="sticky top-0 h-screen flex items-center justify-center">
+      <div className="sticky top-0 h-dvh flex items-center justify-center">
         <div className="text-center max-w-3xl px-8">
           <h2
             className="font-[family-name:var(--font-jp-heading)] text-4xl font-semibold leading-tight tracking-tight text-foreground lg:text-6xl"
@@ -630,18 +631,18 @@ function CTAReveal({ t }: { t: Dict }) {
               transform: `translateY(${ty(p, 0.38, 0.58, 12)}px)`,
             }}
           >
-            <a
+            <Link
               href="/login"
               className="inline-flex items-center gap-2 rounded-full bg-foreground px-10 py-4 text-sm font-medium text-background transition-colors duration-150 hover:bg-interactive-hover"
             >
               {t.ctaCta1}
-            </a>
-            <a
+            </Link>
+            <Link
               href="/download"
               className="inline-flex items-center gap-2 rounded-full bg-surface-0 px-10 py-4 text-sm font-medium text-foreground-muted transition-colors duration-150 hover:bg-surface-2 hover:text-foreground"
             >
               {t.ctaCta2}
-            </a>
+            </Link>
           </div>
         </div>
       </div>

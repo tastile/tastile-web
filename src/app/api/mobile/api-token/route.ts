@@ -30,14 +30,15 @@ export async function POST(request: Request) {
     body: JSON.stringify({ label: "android-client" }),
     cache: "no-store",
   });
-  const text = await upstream.text();
   if (!upstream.ok) {
-    return new NextResponse(text, {
+    const errorText = await upstream.text();
+    return new NextResponse(errorText, {
       status: upstream.status,
       headers: { "content-type": upstream.headers.get("content-type") ?? "application/json" },
     });
   }
 
+  const text = await upstream.text();
   const created = JSON.parse(text) as Record<string, unknown>;
   return NextResponse.json({
     ...created,

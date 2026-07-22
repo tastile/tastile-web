@@ -2,6 +2,7 @@
 
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FloatingMenu,
@@ -105,14 +106,14 @@ export function AccountMenu({
         </FloatingMenuLabel>
         <FloatingMenuSeparator />
         <FloatingMenuItem asChild>
-          <a href="/dashboard/preferences/account" className="w-full">
+          <Link href="/dashboard/preferences/account" className="w-full">
             Account settings
-          </a>
+          </Link>
         </FloatingMenuItem>
         <FloatingMenuItem asChild>
-          <a href={plan === "pro" ? "/dashboard/billing" : "/pricing"} className="w-full">
+          <Link href={plan === "pro" ? "/dashboard/billing" : "/pricing"} className="w-full">
             {plan === "pro" ? "Billing" : "Upgrade to Pro"}
-          </a>
+          </Link>
         </FloatingMenuItem>
         <FloatingMenuSeparator />
         <FloatingMenuItem onSelect={handleSignOut} className="text-danger">

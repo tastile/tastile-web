@@ -55,7 +55,7 @@ export function AppShell({
   }, [railPinned]);
 
   return (
-    <div className="flex h-screen flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background">
       {executionState?.pendingPrompt ? (
         <div
           className="fixed inset-0 z-[68] bg-foreground/25 backdrop-blur-[1px]"

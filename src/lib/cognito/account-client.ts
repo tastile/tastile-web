@@ -48,15 +48,18 @@ async function cognitoRequest(
     body: JSON.stringify(body),
     cache: "no-store",
   });
-  const text = await response.text();
-  const payload = text ? (JSON.parse(text) as CognitoJson) : {};
+  // fetch resolves on HTTP 4xx/5xx — check status before reading the body.
   if (!response.ok) {
+    const errorText = await response.text();
+    const errorPayload = errorText ? (JSON.parse(errorText) as CognitoJson) : {};
     const code =
-      typeof payload.__type === "string"
-        ? (payload.__type.split("#").pop() ?? "CognitoError")
+      typeof errorPayload.__type === "string"
+        ? (errorPayload.__type.split("#").pop() ?? "CognitoError")
         : "CognitoError";
-    const message = typeof payload.message === "string" ? payload.message : response.statusText;
+    const message =
+      typeof errorPayload.message === "string" ? errorPayload.message : response.statusText;
     throw new CognitoAccountError(message, code);
   }
-  return payload;
+  const text = await response.text();
+  return text ? (JSON.parse(text) as CognitoJson) : {};
 }

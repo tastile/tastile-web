@@ -9,7 +9,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
   const t = landingDict[lang];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
       <main className="flex-1">
         <LandingPage t={t} lang={lang} />

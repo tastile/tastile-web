@@ -19,5 +19,5 @@ export default function ApiDocsPage() {
     ref.current.appendChild(scalar);
   }, []);
 
-  return <div ref={ref} className="min-h-screen" />;
+  return <div ref={ref} className="min-h-dvh" />;
 }
