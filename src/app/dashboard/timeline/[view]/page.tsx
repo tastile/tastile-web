@@ -358,7 +358,7 @@ function WeekGrid({ blocks }: { blocks: CalendarBlock[] }) {
           <div key={d.toISOString()} className="border-r border-border last:border-r-0">
             <div className="border-b border-border bg-surface-0 px-3 py-2 text-center">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-                {d.toLocaleDateString(undefined, { weekday: "short" })}
+                {d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })}
               </div>
               <div className="font-mono text-lg font-semibold tabular-nums text-ink-1">
                 {d.getDate()}
@@ -442,7 +442,7 @@ function YearGrid({ blocks }: { blocks: CalendarBlock[] }) {
             className="flex flex-col gap-1 rounded-md border border-border bg-surface-0 p-3"
           >
             <div className="text-xs font-semibold text-ink-1">
-              {new Date(2000, m, 1).toLocaleDateString(undefined, { month: "long" })}
+              {new Date(2000, m, 1).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })}
             </div>
             <div className="flex items-center gap-2 text-[10px] text-ink-3">
               <span className="font-mono">{work}</span>
@@ -504,7 +504,12 @@ function sameDay(a: Date, b: Date): boolean {
 }
 
 function formatTime(d: Date): string {
-  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
 }
 
 function descriptionFor(v: ViewKey): string {

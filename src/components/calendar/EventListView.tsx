@@ -112,7 +112,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
         groups.map(([day, items]) => (
           <div key={day} data-testid={`event-list-day-${day}`}>
             <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-subtle">
-              {new Date(`${day}T00:00:00Z`).toLocaleDateString(undefined, {
+              {new Date(`${day}T00:00:00Z`).toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "long",
                 day: "numeric",

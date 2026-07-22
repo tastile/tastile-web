@@ -146,7 +146,7 @@ function ProjectEditForm({
       </label>
       <div className="flex items-center justify-between font-mono text-[10px] text-foreground-subtle md:col-span-3">
         <span>
-          {tileCount} tiles · created {new Date(project.created_at).toLocaleDateString()}
+          {tileCount} tiles · created {new Date(project.created_at).toLocaleDateString("en-US", { timeZone: "UTC" })}
         </span>
         <div className="flex items-center gap-2">
           {error && <span className="text-status-danger">{error}</span>}

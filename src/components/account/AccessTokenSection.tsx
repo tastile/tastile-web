@@ -277,5 +277,5 @@ function Meta({ label, value, mono = false }: { label: string; value: string; mo
 
 function formatDate(value: string | null, locale: string) {
   if (!value) return "-";
-  return new Date(value).toLocaleString(locale === "ja" ? "ja-JP" : "en-US");
+  return new Date(value).toLocaleString(locale === "ja" ? "ja-JP" : "en-US", { timeZone: "UTC" });
 }

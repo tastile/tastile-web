@@ -85,8 +85,9 @@ export function LabelSpanPicker({
         <option value="">期間を選ぶ</option>
         {items.map((item) => (
           <option key={item.placement_id} value={item.placement_id}>
-            {item.title}（{new Date(item.span_start).toLocaleDateString()} –{" "}
-            {new Date(item.span_end).toLocaleDateString()}）
+            {item.title}（
+            {new Date(item.span_start).toLocaleDateString("ja-JP", { timeZone: "UTC" })} –{" "}
+            {new Date(item.span_end).toLocaleDateString("ja-JP", { timeZone: "UTC" })}）
           </option>
         ))}
       </select>

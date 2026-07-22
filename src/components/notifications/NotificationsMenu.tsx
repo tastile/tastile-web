@@ -28,7 +28,7 @@ interface NotificationsMenuProps {
 // invisible. The trigger now lives in FloatingHeader; we accept
 // its ref here so FloatingMenuContent can anchor to it.
 export function NotificationsMenu({ open, onOpenChange, anchorRef }: NotificationsMenuProps) {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const { notifications, loading, error } = useNotifications();
 
   return (
@@ -49,7 +49,11 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
               <div key={n.id} className="border-b border-surface-2 px-4 py-3 last:border-b-0">
                 <div className="text-xs text-foreground">{n.message}</div>
                 <div className="mt-1 font-mono text-[10px] text-foreground-subtle">
-                  {n.timestamp.toLocaleTimeString()}
+                  {n.timestamp.toLocaleTimeString(locale === "ja" ? "ja-JP" : "en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    timeZone: "UTC",
+                  })}
                 </div>
               </div>
             ))}
