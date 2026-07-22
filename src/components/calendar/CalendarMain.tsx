@@ -88,6 +88,124 @@ function modeLabel(view: CalendarView, mode: DisplayMode): string | null {
   return "From now · 31d";
 }
 
+interface CalendarToolbarProps {
+  view: CalendarView;
+  mode: DisplayMode;
+  anchor: string;
+  effectiveAnchor: string;
+  navDisabled: boolean;
+  titlePrefix: string | null;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onViewChange: (view: CalendarView) => void;
+  onModeChange: (mode: DisplayMode) => void;
+}
+
+function CalendarToolbar({
+  view,
+  mode,
+  effectiveAnchor,
+  navDisabled,
+  titlePrefix,
+  onPrev,
+  onNext,
+  onToday,
+  onViewChange,
+  onModeChange,
+}: CalendarToolbarProps) {
+  return (
+    <div className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-2 bg-surface-0 px-4">
+      <button
+        type="button"
+        onClick={onPrev}
+        aria-label="Previous"
+        aria-disabled={navDisabled}
+        disabled={navDisabled}
+        title={navDisabled ? "Always anchored at today" : undefined}
+        data-testid="cal-prev"
+        className={cn(
+          "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+          navDisabled &&
+            "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
+        )}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <h2 className="font-mono text-sm text-foreground" data-testid="cal-title">
+        {titlePrefix ? (
+          <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+            {titlePrefix}
+          </span>
+        ) : null}
+        {formatAnchor(view, effectiveAnchor)}
+      </h2>
+      <button
+        type="button"
+        onClick={onNext}
+        aria-label="Next"
+        aria-disabled={navDisabled}
+        disabled={navDisabled}
+        title={navDisabled ? "Always anchored at today" : undefined}
+        data-testid="cal-next"
+        className={cn(
+          "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+          navDisabled &&
+            "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
+        )}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={onToday}
+        data-testid="cal-today"
+        className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+      >
+        Today
+      </button>
+      <div className="ml-auto flex items-center gap-2">
+        <SegmentedControl
+          size="xs"
+          radius="md"
+          withItemsBorders={false}
+          value={mode}
+          onChange={(value) => onModeChange(value as DisplayMode)}
+          data={VALID_MODES.map((m) => ({
+            value: m,
+            label: m === "scope" ? "Scope" : m === "around" ? "Around" : "Future",
+            "data-testid": `cal-mode-${m}`,
+          }))}
+          styles={{
+            root: { backgroundColor: "var(--surface-1)" },
+            indicator: { backgroundColor: "var(--surface-2)" },
+            label: { color: "var(--foreground)" },
+          }}
+          data-testid="cal-mode-switcher"
+        />
+        <SegmentedControl
+          size="xs"
+          radius="md"
+          withItemsBorders={false}
+          value={view}
+          onChange={(value) => onViewChange(value as CalendarView)}
+          data={(["day", "week", "month", "list"] as const).map((v) => ({
+            value: v,
+            label: v[0].toUpperCase() + v.slice(1),
+            "data-testid": `cal-view-${v}`,
+          }))}
+          styles={{
+            root: { backgroundColor: "var(--surface-1)" },
+            indicator: { backgroundColor: "var(--surface-2)" },
+            label: { color: "var(--foreground)" },
+          }}
+          data-testid="cal-view-switcher"
+        />
+      </div>
+    </div>
+  );
+}
+
 export function CalendarMain({ initialView = "day" }: { initialView?: CalendarView }) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -243,97 +361,22 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
 
   return (
     <div className="flex h-full flex-col" data-testid="calendar-main">
-      <div className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-2 bg-surface-0 px-4">
-        <button
-          type="button"
-          onClick={() => setAnchor((a) => shiftDate(a, view, -1))}
-          aria-label="Previous"
-          aria-disabled={navDisabled}
-          disabled={navDisabled}
-          title={navDisabled ? "Always anchored at today" : undefined}
-          data-testid="cal-prev"
-          className={cn(
-            "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-            navDisabled &&
-              "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
-          )}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
-        <h2 className="font-mono text-sm text-foreground" data-testid="cal-title">
-          {titlePrefix ? (
-            <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
-              {titlePrefix}
-            </span>
-          ) : null}
-          {formatAnchor(view, effectiveAnchor)}
-        </h2>
-        <button
-          type="button"
-          onClick={() => setAnchor((a) => shiftDate(a, view, 1))}
-          aria-label="Next"
-          aria-disabled={navDisabled}
-          disabled={navDisabled}
-          title={navDisabled ? "Always anchored at today" : undefined}
-          data-testid="cal-next"
-          className={cn(
-            "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-            navDisabled &&
-              "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
-          )}
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setMode("scope");
-            setAnchor(localIsoDate());
-          }}
-          data-testid="cal-today"
-          className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
-        >
-          Today
-        </button>
-        <div className="ml-auto flex items-center gap-2">
-          <SegmentedControl
-            size="xs"
-            radius="md"
-            withItemsBorders={false}
-            value={mode}
-            onChange={(value) => setMode(value as DisplayMode)}
-            data={VALID_MODES.map((m) => ({
-              value: m,
-              label: m === "scope" ? "Scope" : m === "around" ? "Around" : "Future",
-              "data-testid": `cal-mode-${m}`,
-            }))}
-            styles={{
-              root: { backgroundColor: "var(--surface-1)" },
-              indicator: { backgroundColor: "var(--surface-2)" },
-              label: { color: "var(--foreground)" },
-            }}
-            data-testid="cal-mode-switcher"
-          />
-          <SegmentedControl
-            size="xs"
-            radius="md"
-            withItemsBorders={false}
-            value={view}
-            onChange={(value) => setView(value as CalendarView)}
-            data={(["day", "week", "month", "list"] as const).map((v) => ({
-              value: v,
-              label: v[0].toUpperCase() + v.slice(1),
-              "data-testid": `cal-view-${v}`,
-            }))}
-            styles={{
-              root: { backgroundColor: "var(--surface-1)" },
-              indicator: { backgroundColor: "var(--surface-2)" },
-              label: { color: "var(--foreground)" },
-            }}
-            data-testid="cal-view-switcher"
-          />
-        </div>
-      </div>
+      <CalendarToolbar
+        view={view}
+        mode={mode}
+        anchor={anchor}
+        effectiveAnchor={effectiveAnchor}
+        navDisabled={navDisabled}
+        titlePrefix={titlePrefix}
+        onPrev={() => setAnchor((a) => shiftDate(a, view, -1))}
+        onNext={() => setAnchor((a) => shiftDate(a, view, 1))}
+        onToday={() => {
+          setMode("scope");
+          setAnchor(localIsoDate());
+        }}
+        onViewChange={setView}
+        onModeChange={setMode}
+      />
       <div className="relative min-h-0 flex-1 px-4 pb-6">
         {/* Error banner overlays the calendar area without taking layout
             space — the API poll cycle flips `error` on/off repeatedly,
