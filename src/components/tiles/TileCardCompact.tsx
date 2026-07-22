@@ -65,12 +65,11 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
   };
 
   const interactive = Boolean(onClick);
-  const interactiveProps = interactive ? ({ role: "button", tabIndex: 0 } as const) : ({} as const);
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: card acts as button only when onClick is provided (role + tabIndex added)
     <div
-      {...interactiveProps}
+      role={interactive ? "button" : undefined}
+      tabIndex={interactive ? 0 : undefined}
       onClick={handleCardClick}
       onKeyDown={interactive ? handleCardKeyDown : undefined}
       className={cn(

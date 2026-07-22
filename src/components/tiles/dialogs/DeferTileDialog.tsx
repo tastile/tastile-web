@@ -52,15 +52,15 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
       : t("tiles.dialogs.interruptTitle");
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes dialog on click
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click closes via mouse only; ESC handled at dialog level
     <div
+      role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
       onClick={handleCancel}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: dialog body intercepts backdrop clicks */}
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation is intentional to keep dialog open */}
       <div
+        role="presentation"
         className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
         onClick={(e) => e.stopPropagation()}
       >
