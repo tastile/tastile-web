@@ -16,13 +16,12 @@
  */
 
 import { Pause, Play, Square } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useV1ActiveTile } from "@/lib/hooks/use-v1-active-tile";
 import { snapshotFromActiveTile, useV1Execution } from "@/lib/hooks/use-v1-execution";
 
-function formatRemaining(target: Date): string {
-  const now = Date.now();
-  const ms = Math.max(0, target.getTime() - now);
+function formatRemaining(target: Date, nowMs: number): string {
+  const ms = Math.max(0, target.getTime() - nowMs);
   const totalSec = Math.floor(ms / 1000);
   const h = Math.floor(totalSec / 3600);
   const m = Math.floor((totalSec % 3600) / 60);
@@ -35,13 +34,19 @@ export function V1ExecutionControls() {
   const { snapshot, loading } = useV1ActiveTile();
   const tileSnapshot = snapshot ? snapshotFromActiveTile(snapshot) : null;
   const { state, run } = useV1Execution(tileSnapshot);
-  const [tickMs, setTickMs] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
-  // Tick every second only while we have an active placement to render
-  if (typeof window !== "undefined" && tileSnapshot) {
-    setTimeout(() => setTickMs(Date.now()), 1000);
-  }
-  void tickMs; // keep the linter happy
+  // Tick every second only while we have an active placement to render.
+  // This used to call setTimeout from inside the render body, which on
+  // every commit spawned a new timer with no cleanup — the count grew
+  // unboundedly while a placement was active. Routing through useEffect
+  // lets React cancel the previous schedule on each tick.
+  useEffect(() => {
+    if (!tileSnapshot) return;
+    setNowMs(Date.now());
+    const id = window.setTimeout(() => setNowMs(Date.now()), 1000);
+    return () => window.clearTimeout(id);
+  }, [tileSnapshot]);
 
   if (loading && !tileSnapshot) {
     return (
@@ -56,7 +61,7 @@ export function V1ExecutionControls() {
   }
 
   const spanEnd = new Date(tileSnapshot.span_end);
-  const remaining = formatRemaining(spanEnd);
+  const remaining = formatRemaining(spanEnd, nowMs);
   const hasExecution = Boolean(tileSnapshot.execution_id);
 
   const onClick = (action: "pause" | "resume" | "finish") => () => {
