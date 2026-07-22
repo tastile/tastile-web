@@ -119,7 +119,6 @@ export function ProjectsSidePanel() {
           className="flex flex-col gap-1.5 border-t border-border/40 px-2 py-2"
         >
           <Input
-            autoFocus
             placeholder="Project name"
             value={name}
             onChange={(e) => setName(e.target.value)}

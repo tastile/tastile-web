@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   type DisplayMode,
   eventSpansDay,
@@ -48,7 +48,8 @@ export function DayView({
   // Shared 60s clock — provider lives in /dashboard/timeline/page.tsx
   // and serves all calendar subviews (DayView/WeekView/NowIndicator).
   const sharedNowMs = useMinuteClock();
-  const nowMs = sharedNowMs ?? Date.now();
+  const [fallbackMs] = useState(() => Date.now());
+  const nowMs = sharedNowMs ?? fallbackMs;
 
   const now = useMemo(() => new Date(nowMs), [nowMs]);
 

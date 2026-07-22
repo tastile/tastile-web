@@ -75,7 +75,7 @@ export default function DesktopAuthCompletePage() {
       </main>
 
       <SiteFooter translations={getFooterTranslations("ja")} />
-      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink redirect runs only on this auth-complete page */}
+      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink-redirect reads URL fragment and must run inline before paint — cannot be ref'd to a JS file */}
       <script dangerouslySetInnerHTML={{ __html: script }} />
     </div>
   );

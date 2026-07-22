@@ -20,7 +20,7 @@ interface Profile {
 }
 
 export function ProfilePanel() {
-  const [profile, _setProfile] = useState<Profile | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [profile, _setProfile] = useState<Profile | null>(null);
 
   if (!profile) return <div>Profile not found</div>;
 

@@ -25,19 +25,20 @@ export function DeleteTileDialog({ onConfirm }: DeleteTileDialogProps) {
     closeDeleteDialog();
   };
 
+  const handleBackdropClick = (event: React.MouseEvent) => {
+    if (event.target === event.currentTarget) {
+      handleCancel();
+    }
+  };
+
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: modal backdrop closes dialog on click
-    // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click closes via mouse only; ESC handled at dialog level
-    <div
+    <button
+      type="button"
+      aria-label={t("common.cancel")}
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
-      onClick={handleCancel}
+      onClick={handleBackdropClick}
     >
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: dialog body intercepts backdrop clicks */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation is intentional to keep dialog open */}
-      <div
-        className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-md rounded-xl bg-surface-elevated p-6">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">{t("tiles.actions.delete")}</h2>
@@ -74,6 +75,6 @@ export function DeleteTileDialog({ onConfirm }: DeleteTileDialogProps) {
           </button>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

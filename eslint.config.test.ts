@@ -26,11 +26,12 @@ afterAll(() => {
   for (const p of probes) p.cleanup();
 });
 
+const eslint = new ESLint({
+  cwd: repoRoot,
+  overrideConfigFile: configPath,
+});
+
 async function lintFile(filePath: string): Promise<LintOutcome[]> {
-  const eslint = new ESLint({
-    cwd: repoRoot,
-    overrideConfigFile: configPath,
-  });
   const [result] = await eslint.lintFiles([filePath]);
   return result.messages.map((m) => ({
     ruleId: m.ruleId,
@@ -38,7 +39,7 @@ async function lintFile(filePath: string): Promise<LintOutcome[]> {
   }));
 }
 
-describe("eslint.config.mjs boundary rules", () => {
+describe("eslint.config.mjs boundary rules", { timeout: 30_000 }, () => {
   it("forbids client components from importing next/headers", async () => {
     const file = writeProbe(
       "src/components/__probe__.tsx",

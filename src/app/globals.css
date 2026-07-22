@@ -176,6 +176,40 @@
 }
 
 /* ============================================
+   Scrollbar — thin, semi-transparent, hover-only
+   ============================================ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
+/* ============================================
    Scroll Reveal Animation
    ============================================ */
 .scroll-reveal {
@@ -300,41 +334,6 @@ button {
 
 .themed-datetime-input::-webkit-calendar-picker-indicator {
   opacity: 0.72;
-}
-
-/* ============================================
-   Scrollbar — thin, semi-transparent, hover-only
-   ============================================ */
-/* biome-ignore lint/style/noDescendingSpecificity: selectors target different properties; functional order is preserved. */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-}
-
-*:hover {
-  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
-}
-
-*::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-*::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
-}
-
-*:hover::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.3);
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.5);
 }
 
 /* ============================================

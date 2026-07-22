@@ -46,7 +46,7 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
     closeDeferDialog();
   };
 
-  const handleBackdropClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleBackdropClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (event.target === event.currentTarget) {
       handleCancel();
     }
@@ -58,13 +58,20 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
       : t("tiles.dialogs.interruptTitle");
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop dismissal is also available through the explicit close control
-    <div
-      role="presentation"
+    <button
+      type="button"
+      aria-label={t("common.cancel")}
       className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50"
       onClick={handleBackdropClick}
     >
-      <div className="w-full max-w-md rounded-xl bg-surface-elevated p-6">
+      <div
+        role="dialog"
+        tabIndex={-1}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") handleCancel();
+        }}
+        className="w-full max-w-md rounded-xl bg-surface-elevated p-6"
+      >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
@@ -148,6 +155,6 @@ export function DeferTileDialog({ onConfirm }: DeferTileDialogProps) {
           </Button>
         </div>
       </div>
-    </div>
+    </button>
   );
 }

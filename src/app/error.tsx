@@ -13,7 +13,6 @@ export default function GlobalError({
     // Server-side errors carry a digest for tracing in production logs.
     // Skip the noisy stack on the client when one is present.
     if (process.env.NODE_ENV === "development") {
-      // eslint-disable-next-line no-console -- local dev aid only
       console.error("[tastile-web] unhandled error boundary:", error);
     }
   }, [error]);

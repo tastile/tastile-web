@@ -1,7 +1,6 @@
 import { PlacementSource, PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
 import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/lib/domain/v1/envelope";
 import { type ApiClient, postCommand, type Result, sendCommand } from "./endpoints";
-import { type StorePlanInput, toWireSetPlanBody } from "./plan-wire";
 
 type CommandResult = Result<import("@/lib/domain/v1/envelope").CommandResponse>;
 
@@ -441,69 +440,6 @@ export async function updateTileCommand(options: UpdateTileCommandOptions): Prom
   );
 }
 
-// ---------- v1 SET_PLAN (POST /v1/tiles/{tileId}/plan) ----------
-
-export interface SetPlanCommandOptions {
-  client: ApiClient;
-  tileId: string;
-  /**
-   * Loose `unknown` types at the API boundary — the converter
-   * (`toWireSetPlanBody`) requires a strict `StorePlanInput` shape and
-   * we cast at the call site because the source-of-truth is the typed
-   * QuickCreate store (`useQuickCreateStore.plan`). Keeping the public
-   * surface loose means callers can pass a `Plan` directly without an
-   * adapter layer.
-   */
-  role: number;
-  references: unknown;
-  completion: unknown;
-  planning: unknown;
-  metrics: unknown[];
-  decisions: unknown[];
-}
-
-/**
- * v1 plan-structure command.  Tile creation is separate from plan structure
- * (see v1/14 §2 and SetPlanPayload in `domain::command`): the first POST
- * /v1/tiles writes the Tile row + an auto-created Plan row; subsequent edits
- * to references / completion / planning / metrics / decisions go through
- * POST /v1/tiles/{tileId}/plan so the wire form carries the full Plan body.
- *
- * The plan-shape fields are typed `unknown` at this boundary; the
- * converter `toWireSetPlanBody` rewrites both the key naming
- * (camelCase → snake_case) AND the Condition/Term discriminated-union
- * shape (internally-tagged `{kind, value}` → externally-tagged
- * `{"Variant": {...}}`) plus TaskContent (note → description) and
- * TimeRequirement.required ({minMs, maxMs} → {min, max}) plus
- * TimeObservation.reference (default null). See plan-wire.ts for the
- * rewrite rules.
- */
-export function setPlanCommand(options: SetPlanCommandOptions): Promise<CommandResult> {
-  const storePlan: StorePlanInput = {
-    role: options.role,
-    references: options.references as StorePlanInput["references"],
-    completion: options.completion as StorePlanInput["completion"],
-    planning: options.planning as StorePlanInput["planning"],
-    metrics: options.metrics,
-    decisions: options.decisions,
-  };
-  const wire = toWireSetPlanBody(storePlan);
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/tiles/${options.tileId}/plan`,
-    envelope({
-      tile_id: options.tileId,
-      role: wire.role,
-      references: wire.references,
-      completion: wire.completion,
-      planning: wire.planning,
-      metrics: wire.metrics,
-      decisions: wire.decisions,
-    }),
-  );
-}
-
 export function startTileCommand(options: StartTileCommandOptions): Promise<CommandResult> {
   const sourceRef = {
     created: null,
@@ -640,13 +576,6 @@ export interface CreatePlacementCommandOptions {
   end: string;
 }
 
-export interface UpdatePlacementSpanCommandOptions {
-  client: ApiClient;
-  placementId: string;
-  start: string;
-  end: string;
-}
-
 export interface ClosePlacementCommandOptions {
   client: ApiClient;
   placementId: string;
@@ -706,115 +635,6 @@ export function createPlacementCommand(
   );
 }
 
-// v1 wire constants for the AppendChanges payload.  Sent as one
-// ChangeSet with two Change rows (SPAN_START, SPAN_END) per request.
-// ChangeGroup::PLACEMENT = 5 (Key.group), ChangeLayer::PLACEMENT = 1,
-// ChangeKind::Set = 0, MergeMode::Override = 0, ChangeSource::User = 2,
-// ActorKind::User = 0.  Key parts: SPAN_START = 0, SPAN_END = 1.
-const APPEND_CHANGE_GROUP_PLACEMENT = 5 as const;
-const APPEND_CHANGE_LAYER_PLACEMENT = 1 as const;
-const APPEND_CHANGE_KIND_SET = 0 as const;
-const APPEND_CHANGE_MERGE_OVERRIDE = 0 as const;
-const APPEND_CHANGE_SOURCE_USER = 2 as const;
-const APPEND_CHANGE_ACTOR_USER = 0 as const;
-const APPEND_CHANGE_PART_SPAN_START = 0 as const;
-const APPEND_CHANGE_PART_SPAN_END = 1 as const;
-
-/**
- * Build the v1 wire payload for POST /v1/placements/{id}/changes.
- *
- * The server expects an AppendChangesPayload:
- *   { placement_id, changeset: ChangeSet }
- * where ChangeSet is the full audit envelope (id / owner_id / target /
- * layer / rank / changes / activation / revoked / source / source_ref /
- * created_at / created_by).  We send SPAN_START and SPAN_END as two
- * `Change` rows in one ChangeSet to avoid two HTTP round trips and to
- * keep the audit envelope atomic.
- *
- * Wire shape (externally tagged, snake_case):
- *   payload.changeset.target           = { Placement: "<uuid>" }
- *   payload.changeset.changes[*].value = { Instant: "<iso-8601>" }
- */
-function buildSpanChangesetPayload(
-  placementId: string,
-  start: string,
-  end: string,
-  ownerId: string,
-  actorId: string,
-) {
-  const now = nowIso();
-  const makeChange = (part: number, instant: string) => ({
-    id: uuidv7(),
-    key: {
-      group: APPEND_CHANGE_GROUP_PLACEMENT,
-      item: placementId,
-      part,
-    },
-    kind: APPEND_CHANGE_KIND_SET,
-    value: { Instant: instant },
-    merge: APPEND_CHANGE_MERGE_OVERRIDE,
-    source: APPEND_CHANGE_SOURCE_USER,
-    source_ref: null,
-    rank: 0,
-  });
-  return {
-    placement_id: placementId,
-    changeset: {
-      id: uuidv7(),
-      owner_id: ownerId,
-      target: { Placement: placementId },
-      layer: APPEND_CHANGE_LAYER_PLACEMENT,
-      rank: 0,
-      changes: [
-        makeChange(APPEND_CHANGE_PART_SPAN_START, start),
-        makeChange(APPEND_CHANGE_PART_SPAN_END, end),
-      ],
-      activation: { when: null, until: null },
-      revoked: null,
-      source: APPEND_CHANGE_SOURCE_USER,
-      source_ref: null,
-      created_at: now,
-      created_by: {
-        at: now,
-        actor: actorId,
-        actor_kind: APPEND_CHANGE_ACTOR_USER,
-        command_id: uuidv7(),
-      },
-    },
-  };
-}
-
-/**
- * Replace the baseline span (start + end) of an existing placement.
- *
- * v1 wire: one POST /v1/placements/{id}/changes carrying a single
- * ChangeSet with two `Change` rows:
- *   - Key { group: PLACEMENT(5), item: placementId, part: 0 } value=Instant(start)
- *   - Key { group: PLACEMENT(5), item: placementId, part: 1 } value=Instant(end)
- * The owner and actor ids must come from the caller; in E2E bypass mode
- * they are the DEV_ACTOR_SUBJECT_ID placeholder.
- */
-export async function updatePlacementSpanCommand(
-  options: UpdatePlacementSpanCommandOptions & {
-    ownerSubjectId: string;
-    actorSubjectId: string;
-  },
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/placements/${options.placementId}/changes`,
-    envelope(
-      buildSpanChangesetPayload(
-        options.placementId,
-        options.start,
-        options.end,
-        options.ownerSubjectId,
-        options.actorSubjectId,
-      ),
-    ),
-  );
-}
 /** Soft-close a placement.  POST /v1/placements/{id}/close. */
 export function closePlacementCommand(
   options: ClosePlacementCommandOptions,

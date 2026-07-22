@@ -45,7 +45,7 @@ export default function RootLayout({
     <html lang="en" {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript defaultColorScheme="auto" />
-        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme init runs synchronously before paint */}
+        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme-init must run inline before paint to prevent FOUC — cannot be ref'd to a JS file */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${zenKakuGothicNew.className} font-sans antialiased`}>

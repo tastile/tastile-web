@@ -6,6 +6,12 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     exclude: ['e2e/**', 'node_modules/**', 'dist/**', '.next/**', '.claude/worktrees/**'],
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        execArgv: ['--max-old-space-size=4096'],
+      },
+    },
   },
   resolve: {
     alias: {

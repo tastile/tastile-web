@@ -22,9 +22,7 @@ const OCC_BASE = "/api/events/occurrences";
  *  the hook's local state (the upstream module returns the
  *  placement_id as `event.id`).
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- reference constants
 const _TILE_BASE = "/api/events/tiles";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _PLACEMENT_BASE = "/api/events/placements";
 
 export interface UseEventsRange {

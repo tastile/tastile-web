@@ -9,7 +9,7 @@
 export function getAvatarUrl(
   avatarUrl: string | null | undefined,
   email: string | null | undefined,
-  _displayName: string | null | undefined, // eslint-disable-line @typescript-eslint/no-unused-vars
+  _displayName: string | null | undefined,
 ): string {
   if (avatarUrl) return avatarUrl;
 

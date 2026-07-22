@@ -297,7 +297,7 @@ export function QuickTileCreate() {
   const _actorSubjectId = useCurrentActorSubjectId();
   useEffect(() => {
     void projects.refresh();
-  }, [projects.refresh]);
+  }, [projects]);
   const [_intentPickerOpen, _setIntentPickerOpen] = useState(false);
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);

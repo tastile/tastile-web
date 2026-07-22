@@ -54,7 +54,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // SideToolPanel already subscribes internally and re-renders on its
   // own. The mobile floating button below reads its own subscription
   // through a small dedicated component instead.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for future use
   const _pathname = usePathname();
   const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);

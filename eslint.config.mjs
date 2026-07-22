@@ -46,6 +46,9 @@ const eslintConfig = defineConfig([
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
       "react-hooks/set-state-in-effect": "off",
+      // Disabled because jsx-a11y does not recognize <dialog> as interactive,
+      // causing false positives. Biome's a11y rules cover this correctly.
+      "jsx-a11y/no-noninteractive-element-interactions": "off",
     },
   },
   {

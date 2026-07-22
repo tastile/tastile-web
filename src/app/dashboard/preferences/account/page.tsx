@@ -67,14 +67,28 @@ function AccountPageInner() {
     setLoading(false);
   }
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: loadProfile is intentionally only invoked once on mount
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void loadProfile();
+      void (async () => {
+        setLoading(true);
+        setNotice(null);
+        const response = await fetch("/api/account/profile", { cache: "no-store" });
+        if (!response.ok) {
+          setNotice({
+            tone: "error",
+            text: t("preferences.account.notice.loadFailed"),
+          });
+          setLoading(false);
+          return;
+        }
+        const body = (await response.json()) as { profile: Profile };
+        setProfile(body.profile);
+        setPendingEmail(body.profile.email ?? "");
+        setLoading(false);
+      })();
     }, 0);
     return () => window.clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: loadProfile is called exactly once on mount
-  }, []);
+  }, [t]);
 
   const accountId = useMemo(() => profile?.sub ?? profile?.username ?? "-", [profile]);
 

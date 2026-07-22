@@ -5,14 +5,13 @@
  * Interfaces only. No business logic.
  */
 
-import type { Stamp } from "./actor";
 import type { ChangeRule } from "./change-set";
 import type { Completion } from "./completion";
 import type { ConditionNode } from "./condition";
-import type { PlanRoleValue, RecurringStateValue } from "./constants";
+import type { PlanRoleValue } from "./constants";
 import type { Metric } from "./metric";
 import type { Reference } from "./reference";
-import type { DateRange, DurationRange, Moment, Window } from "./window";
+import type { DurationRange, Moment, Window } from "./window";
 
 // ---------- Planning (rules & flows) ----------
 
@@ -130,15 +129,6 @@ export interface Plan {
   decisions: Decision[];
 }
 
-// ---------- Recurring ----------
-
-export interface RecurringLife {
-  active: DateRange;
-  /** ACTIVE=0 | PAUSED=1 | ENDED=2 | CANCELLED=3 (RecurringState) */
-  state: RecurringStateValue;
-  changed: Stamp;
-}
-
 // ---------- FrameRule generators ----------
 
 export interface StepGenerator {
@@ -179,19 +169,6 @@ export interface FrameRule {
   active: ConditionNode | null;
 }
 
-// ---------- Frame (worker eval unit — not a Placement) ----------
-
-export interface Frame {
-  id: string;
-  ownerId: string;
-  recurringTile: string;
-  frameRuleId: string;
-  rangeStart: string;
-  rangeEnd: string;
-  sourceRevision: number;
-  createdAt: string;
-}
-
 // ---------- RecurringOutput (RecurringRule output element) ----------
 
 /** RecurringOutput.kind: PROPOSE_PLACEMENT=0 | PROPOSE_CHANGE=1 */
@@ -206,16 +183,6 @@ export interface RecurringRule {
   when: ConditionNode | null;
   rank: number;
   outputs: RecurringOutput[];
-}
-
-// ---------- Recurring ----------
-
-export interface Recurring {
-  tileId: string;
-  plan: Plan;
-  life: RecurringLife;
-  frames: Frame[];
-  rules: RecurringRule[];
 }
 
 // ---------- Convenience: Window re-export (anchor for tile.ts consumers) ----------

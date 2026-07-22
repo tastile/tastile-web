@@ -121,7 +121,6 @@ const FloatingMenuTrigger = React.forwardRef<HTMLElement, FloatingMenuTriggerPro
     if (asChild && React.isValidElement(children)) {
       const child = children as React.ReactElement<Record<string, unknown>>;
       const childProps = child.props ?? {};
-      // eslint-disable-next-line react-hooks/refs
       return React.cloneElement(child, {
         ...props,
         ref: setRefs,
@@ -393,7 +392,6 @@ const FloatingMenuItem = React.forwardRef<HTMLElement, FloatingMenuItemProps>(
     if (asChild && React.isValidElement(children)) {
       const child = children as React.ReactElement<Record<string, unknown>>;
       const childProps = child.props ?? {};
-      // eslint-disable-next-line react-hooks/refs
       return React.cloneElement(child, {
         ...props,
         ref,

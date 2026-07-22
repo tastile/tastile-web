@@ -35,12 +35,13 @@ export function TileBlock({ block, onClick, dimmed }: TileBlockProps) {
         onClick();
       }}
       disabled={notEditable}
-      style={{
-        // @ts-expect-error CSS custom property
-        "--accent": accent,
-        height: `${Math.max(20, minutes * 1.5)}px`,
-        opacity: dimmed ? 0.3 : 1,
-      }}
+      style={
+        {
+          "--accent": accent,
+          height: `${Math.max(20, minutes * 1.5)}px`,
+          opacity: dimmed ? 0.3 : 1,
+        } as React.CSSProperties
+      }
       className={cn(
         "relative w-full overflow-hidden rounded-md px-2 py-1 text-left",
         "bg-[color-mix(in_oklab,var(--accent)_18%,var(--surface-1))]",

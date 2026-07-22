@@ -76,7 +76,6 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
 
   const elRef = useRef<T | null>(null);
   // _attachedTick is read by React to subscribe to changes; setAttachedTick is the trigger.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_attachedTick, setAttachedTick] = useState(0);
 
   const scrollParentCacheRef = useRef<HTMLElement | null>(null);
@@ -206,7 +205,9 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
     [applyVisualZoom, commitZoom],
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: _attachedTick is a ref-attachment signal
+  // _attachedTick is a state counter that increments when the callback ref
+  // points to a new element. Its change triggers a re-render, which causes
+  // this effect to re-run and re-attach gesture listeners to the new element.
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
@@ -304,7 +305,7 @@ export function useZoom<T extends HTMLElement = HTMLElement>({
       }
       clearVisual();
     };
-  }, [applyVisualZoom, clearVisual, commitZoom, getScrollParent, scheduleCommit, _attachedTick]);
+  }, [applyVisualZoom, clearVisual, commitZoom, getScrollParent, scheduleCommit]);
 
   const reset = useCallback(() => {
     clearVisual();

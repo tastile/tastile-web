@@ -56,7 +56,7 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
     }
   };
 
-  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
     if (!onClick) return;
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
@@ -66,18 +66,13 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
 
   const interactive = Boolean(onClick);
 
-  return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: button semantics are enabled only when onClick is provided
-    <div
-      role={interactive ? "button" : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      onClick={handleCardClick}
-      onKeyDown={interactive ? handleCardKeyDown : undefined}
-      className={cn(
-        "flex items-center gap-4 py-2 px-3 border-b border-border/40 hover:bg-surface-2 transition-colors",
-        onClick && "cursor-pointer",
-      )}
-    >
+  const cardClassName = cn(
+    "flex items-center gap-4 py-2 px-3 border-b border-border/40 hover:bg-surface-2 transition-colors",
+    onClick && "cursor-pointer",
+  );
+
+  const cardContent = (
+    <>
       {/* ステータス */}
       <TileStatusIcon
         lifecycle={lifecycle}
@@ -154,8 +149,23 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
           <SquarePen className="h-3.5 w-3.5" />
         </button>
       ) : null}
-    </div>
+    </>
   );
+
+  if (interactive) {
+    return (
+      <button
+        type="button"
+        onClick={handleCardClick}
+        onKeyDown={handleCardKeyDown}
+        className={cardClassName}
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+  return <div className={cardClassName}>{cardContent}</div>;
 }
 
 function resolveDurationText(tile: Tile, locale: "ja" | "en"): string {
