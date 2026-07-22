@@ -71,49 +71,58 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
   return (
     <div className={cn(TILE_CARD_STYLES.base)}>
       {/* Header - always visible */}
-      <button
-        type="button"
-        aria-expanded={isExpanded}
-        onClick={handleCardClick}
-        onKeyDown={handleCardKeyDown}
+      <div
         className={cn(
-          "flex w-full items-center gap-3 text-left",
+          "flex items-center",
           TILE_CARD_STYLES.padding.comfortable,
-          "cursor-pointer",
           TILE_CARD_STYLES.hover,
         )}
       >
-        <TileStatusIcon
-          lifecycle={lifecycle}
-          onClick={actions.onStart ? handleStatusClick : undefined}
-          size={20}
-        />
+        <button
+          type="button"
+          aria-expanded={isExpanded}
+          onClick={handleCardClick}
+          onKeyDown={handleCardKeyDown}
+          className="flex flex-1 items-center gap-3 text-left cursor-pointer"
+        >
+          <TileStatusIcon
+            lifecycle={lifecycle}
+            onClick={actions.onStart ? handleStatusClick : undefined}
+            size={20}
+          />
 
-        <div className="flex-1 min-w-0">
-          <h4
+          <div className="flex-1 min-w-0">
+            <h4
+              className={cn(
+                "text-sm font-semibold text-foreground",
+                lifecycle === "done" && "line-through opacity-60",
+              )}
+            >
+              {tile.core.title}
+            </h4>
+          </div>
+
+          <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
+            <p className="font-mono">
+              {durationLabel} {durationText}
+            </p>
+            <p>
+              {t("tiles.startAt")} {startText}
+            </p>
+          </div>
+
+          <ChevronRight
             className={cn(
-              "text-sm font-semibold text-foreground",
-              lifecycle === "done" && "line-through opacity-60",
+              "h-4 w-4 transition-transform text-foreground-muted",
+              isExpanded && "rotate-90",
             )}
-          >
-            {tile.core.title}
-          </h4>
-        </div>
-
-        <div className="min-w-[92px] shrink-0 text-right text-xs text-foreground-muted whitespace-nowrap">
-          <p className="font-mono">
-            {durationLabel} {durationText}
-          </p>
-          <p>
-            {t("tiles.startAt")} {startText}
-          </p>
-        </div>
+          />
+        </button>
 
         {actions.onEdit ? (
           <button
             type="button"
-            onClick={(event) => {
-              event.stopPropagation();
+            onClick={() => {
               actions.onEdit?.(tile.core.id);
             }}
             className="inline-flex h-8 w-8 items-center justify-center rounded bg-surface-0 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
@@ -123,14 +132,7 @@ export function TileCardExpandable(props: TileCardExpandableProps) {
             <SquarePen className="h-4 w-4" />
           </button>
         ) : null}
-
-        <ChevronRight
-          className={cn(
-            "h-4 w-4 transition-transform text-foreground-muted",
-            isExpanded && "rotate-90",
-          )}
-        />
-      </button>
+      </div>
 
       {/* Expanded details */}
       {isExpanded && (
