@@ -7,7 +7,7 @@
  * Phase A: skeleton. Full implementation in Phase X.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface Profile {
   kind: number;
@@ -21,14 +21,7 @@ interface Profile {
 
 export function ProfilePanel() {
   const [profile, _setProfile] = useState<Profile | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // TODO: fetch from GET /v1/owners/0/{id}/profile
-    setLoading(false);
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
   if (!profile) return <div>Profile not found</div>;
 
   return (
