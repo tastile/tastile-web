@@ -81,9 +81,13 @@ export function V1ExecutionControls() {
         <button
           type="button"
           onClick={() =>
-            void run("start").then(() => {
-              window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
-            })
+            void run("start")
+              .then(() => {
+                window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
+              })
+              .catch((err: unknown) => {
+                console.error("v1 start execution failed", err);
+              })
           }
           disabled={state.busy !== null}
           className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
