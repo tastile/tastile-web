@@ -92,6 +92,3 @@ function FieldLabel({
 }
 
 export { FieldLabel, Input, TextareaBase as Textarea };
-// Legacy alias — the previous export was named `inputVariants` (cva output).
-// No other component imports it, but keep a stub so future imports don't break.
-export const inputVariants = cn;

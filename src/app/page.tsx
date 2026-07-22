@@ -1,4 +1,5 @@
-import { LandingPage, type Lang, landingDict } from "@/components/marketing/LandingPage";
+import { LandingPage } from "@/components/marketing/LandingPage";
+import { type Lang, landingDict } from "@/components/marketing/landing-dict";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
