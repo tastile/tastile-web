@@ -1,7 +1,6 @@
 import { describe, expect, it, afterAll } from "vitest";
 import { ESLint } from "eslint";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 
 const repoRoot = __dirname;
@@ -26,12 +25,24 @@ afterAll(() => {
   for (const p of probes) p.cleanup();
 });
 
-const eslint = new ESLint({
-  cwd: repoRoot,
-  overrideConfigFile: configPath,
-});
+// Each test gets a fresh ESLint instance. The TS-ESLint parser shares a
+// single Program per process and lazily registers file-system watchers
+// for files present at program-creation time. When a probe file is
+// `fs.writeFileSync`'d AFTER the program is created, the Program can
+// miss it on the fast path of the next lintFiles() call (CI's
+// ubuntu-latest runner shows 2–66 ms follow-up timings vs the 6 s
+// program init, which is the signature of "parser returned no source
+// file, no rules fired"). Constructing a fresh ESLint per test forces a
+// fresh Program that reads all files on disk at init, so the probe is
+// guaranteed to be in the program when lintFiles() runs.
+function makeEslint(): ESLint {
+  return new ESLint({ cwd: repoRoot, overrideConfigFile: configPath });
+}
 
-async function lintFile(filePath: string): Promise<LintOutcome[]> {
+async function lintFile(
+  eslint: ESLint,
+  filePath: string,
+): Promise<LintOutcome[]> {
   const [result] = await eslint.lintFiles([filePath]);
   return result.messages.map((m) => ({
     ruleId: m.ruleId,
@@ -45,7 +56,7 @@ describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
       "src/components/__probe__.tsx",
       `import { cookies } from "next/headers";\nexport const x = cookies;\n`,
     );
-    const messages = await lintFile(file);
+    const messages = await lintFile(makeEslint(), file);
     const hits = messages.filter((m) => m.ruleId === "no-restricted-imports");
     expect(hits).toHaveLength(1);
     expect(hits[0]?.message).toMatch(/next\/headers/);
@@ -56,7 +67,7 @@ describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
       "src/lib/domain/v1/__probe__.ts",
       `import { TastileLogo } from "@/components/TastileLogo";\nexport const x = TastileLogo;\n`,
     );
-    const messages = await lintFile(file);
+    const messages = await lintFile(makeEslint(), file);
     const hits = messages.filter((m) => m.ruleId === "no-restricted-imports");
     expect(hits.length).toBeGreaterThan(0);
     expect(hits.some((h) => /@\/components\/TastileLogo/.test(h.message))).toBe(true);
@@ -67,7 +78,7 @@ describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
       "src/lib/__probe__.ts",
       `import { ProfilePanel } from "@/features/profile/ProfilePanel";\nexport const x = ProfilePanel;\n`,
     );
-    const messages = await lintFile(file);
+    const messages = await lintFile(makeEslint(), file);
     const hits = messages.filter((m) => m.ruleId === "no-restricted-imports");
     expect(hits.length).toBeGreaterThan(0);
     expect(hits.some((h) => /@\/features/.test(h.message))).toBe(true);
@@ -78,7 +89,7 @@ describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
       "src/lib/hooks/use-__probe__.ts",
       `import { something } from "@/lib/upstream/events";\nexport const x = something;\n`,
     );
-    const messages = await lintFile(file);
+    const messages = await lintFile(makeEslint(), file);
     const hits = messages.filter((m) => m.ruleId === "no-restricted-imports");
     expect(hits.length).toBeGreaterThan(0);
     expect(hits.some((h) => /upstream\/events/.test(h.message))).toBe(true);
@@ -89,7 +100,7 @@ describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
       "src/app/api/__probe__/route.ts",
       `import { NextResponse } from "next/server";\nexport const GET = () => NextResponse.json({ ok: true });\n`,
     );
-    const messages = await lintFile(file);
+    const messages = await lintFile(makeEslint(), file);
     const hits = messages.filter((m) => m.ruleId === "no-restricted-imports");
     expect(hits).toHaveLength(0);
   });
@@ -99,7 +110,7 @@ describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
       "src/components/__probe__.test.ts",
       `import { cookies } from "next/headers";\nexport const x = cookies;\n`,
     );
-    const messages = await lintFile(file);
+    const messages = await lintFile(makeEslint(), file);
     const hits = messages.filter((m) => m.ruleId === "no-restricted-imports");
     expect(hits).toHaveLength(0);
   });
