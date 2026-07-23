@@ -1,38 +1,35 @@
 "use client";
 
-import { useMemo } from "react";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 
+const BILLING_SIDE_PANEL = (
+  <PageSummaryPanel
+    title="Billing"
+    description="Manage your subscription, payment method, and invoice history. Pro features unlock when the webhook confirms."
+    sections={[
+      {
+        heading: "Quick links",
+        items: [
+          { label: "Quota", value: "→", href: "/dashboard/quota" },
+          { label: "Account", value: "→", href: "/dashboard/preferences/account" },
+          { label: "Pricing", value: "→", href: "/pricing" },
+        ],
+      },
+      {
+        heading: "Related",
+        items: [
+          { label: "Timeline", value: "→", href: "/dashboard/timeline" },
+          { label: "API explorer", value: "→", href: "/dashboard/api" },
+        ],
+      },
+    ]}
+  />
+);
+
 export default function BillingPage() {
-  const sidePanel = useMemo(
-    () => (
-      <PageSummaryPanel
-        title="Billing"
-        description="Manage your subscription, payment method, and invoice history. Pro features unlock when the webhook confirms."
-        sections={[
-          {
-            heading: "Quick links",
-            items: [
-              { label: "Quota", value: "→", href: "/dashboard/quota" },
-              { label: "Account", value: "→", href: "/dashboard/preferences/account" },
-              { label: "Pricing", value: "→", href: "/pricing" },
-            ],
-          },
-          {
-            heading: "Related",
-            items: [
-              { label: "Timeline", value: "→", href: "/dashboard/timeline" },
-              { label: "API explorer", value: "→", href: "/dashboard/api" },
-            ],
-          },
-        ]}
-      />
-    ),
-    [],
-  );
-  useSidePanel(sidePanel);
+  useSidePanel(BILLING_SIDE_PANEL);
 
   return (
     <div className="space-y-6">

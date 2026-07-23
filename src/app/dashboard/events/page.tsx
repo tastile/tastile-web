@@ -39,21 +39,25 @@ export default function EventsPage() {
   > | null>(null);
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("All");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
     setEvents(null);
-    const result = await getCoreClient().call<
-      { events: DebugEvent[]; count: number } | DebugEvent[]
-    >("getDebugEvents");
-    setEvents(result);
-    setLoading(false);
+    try {
+      const result = await getCoreClient().call<
+        { events: DebugEvent[]; count: number } | DebugEvent[]
+      >("getDebugEvents");
+      setEvents(result);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   const list: DebugEvent[] = useMemo(() => {

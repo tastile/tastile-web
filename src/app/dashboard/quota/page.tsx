@@ -32,7 +32,7 @@ interface QuotaData {
 export default function QuotaPage() {
   const [data, setData] = useState<Result<QuotaData> | null>(null);
   const [session, setSession] = useState<Result<unknown> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const sidePanel = useMemo(
     () => (
@@ -79,17 +79,21 @@ export default function QuotaPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const client = getCoreClient();
-    const [q, s] = await Promise.all([
-      client.call<QuotaData>("getTileQuota"),
-      client.call("getSession"),
-    ]);
-    setData(q);
-    setSession(s);
-    setLoading(false);
+    try {
+      const [q, s] = await Promise.all([
+        client.call<QuotaData>("getTileQuota"),
+        client.call("getSession"),
+      ]);
+      setData(q);
+      setSession(s);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   const plan = (data?.ok && data.data.plan) || (session?.ok ? "free" : "—");

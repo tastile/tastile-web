@@ -40,7 +40,7 @@ export default function RuntimePage() {
   const [health, setHealth] = useState<Result<HealthData> | null>(null);
   const [version, setVersion] = useState<Result<VersionData> | null>(null);
   const [paths, setPaths] = useState<Result<RuntimePaths> | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const sidePanel = useMemo(
     () => (
@@ -83,19 +83,23 @@ export default function RuntimePage() {
   const load = useCallback(async () => {
     setLoading(true);
     const client = getCoreClient();
-    const [h, v, p] = await Promise.all([
-      client.call<HealthData>("getHealth"),
-      client.call<VersionData>("getVersion"),
-      client.call<RuntimePaths>("getRuntimePaths"),
-    ]);
-    setHealth(h);
-    setVersion(v);
-    setPaths(p);
-    setLoading(false);
+    try {
+      const [h, v, p] = await Promise.all([
+        client.call<HealthData>("getHealth"),
+        client.call<VersionData>("getVersion"),
+        client.call<RuntimePaths>("getRuntimePaths"),
+      ]);
+      setHealth(h);
+      setVersion(v);
+      setPaths(p);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   return (
@@ -254,8 +258,11 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
   async function run() {
     setLoading(true);
     setResult(null);
-    setResult(await getCoreClient().call(k));
-    setLoading(false);
+    try {
+      setResult(await getCoreClient().call(k));
+    } finally {
+      setLoading(false);
+    }
   }
   const meta = ENDPOINTS[k];
   return (

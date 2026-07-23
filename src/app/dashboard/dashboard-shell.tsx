@@ -14,7 +14,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { clearCachedCognitoSession } from "@/lib/cognito/session";
 
 type DashboardShellProps = {
@@ -26,6 +26,11 @@ type DashboardShellProps = {
 };
 
 const RAIL_PINNED_KEY = "dashboard-rail-pinned";
+const TOOL_NAV_ITEMS = [
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/tiles", label: "Tiles", icon: BarChart3 },
+  { href: "/dashboard/history", label: "History", icon: History },
+];
 
 function readPinnedPreference() {
   if (typeof window === "undefined") {
@@ -92,18 +97,9 @@ export function DashboardShell({
     setAccountOpen((prev) => !prev);
   }
 
-  const toolNavItems = useMemo(
-    () => [
-      { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-      { href: "/dashboard/tiles", label: "Tiles", icon: BarChart3 },
-      { href: "/dashboard/history", label: "History", icon: History },
-    ],
-    [],
-  );
-
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
+    <div className="min-h-dvh bg-background text-foreground">
+      <div className="flex min-h-dvh">
         <aside
           onMouseEnter={() => setHoverOpen(true)}
           onMouseLeave={() => {
@@ -111,7 +107,7 @@ export function DashboardShell({
             setAccountOpen(false);
           }}
           className={[
-            "fixed inset-y-0 left-0 z-40 bg-surface-1 transition-all duration-300 ease-out",
+            "fixed inset-y-0 left-0 z-40 bg-surface-1 transition-[width,transform] duration-300 ease-out",
             mobileOpen ? "w-64" : desktopExpanded ? "w-64" : "w-16",
             mobileOpen ? "translate-x-0" : "-translate-x-full",
             "lg:static lg:translate-x-0",
@@ -124,13 +120,11 @@ export function DashboardShell({
                 if (window.innerWidth < 1024) {
                   setMobileOpen((prev) => !prev);
                 } else {
-                  setPinnedOpen((prev) => {
-                    const next = !prev;
-                    if (!next) {
-                      setAccountOpen(false);
-                    }
-                    return next;
-                  });
+                  const next = !pinnedOpen;
+                  setPinnedOpen(next);
+                  if (!next) {
+                    setAccountOpen(false);
+                  }
                 }
               }}
               className={[
@@ -143,7 +137,7 @@ export function DashboardShell({
               </span>
             </button>
             <nav>
-              {toolNavItems.map((item) => {
+              {TOOL_NAV_ITEMS.map((item) => {
                 const active = pathname === item.href;
                 const Icon = item.icon;
                 return (
@@ -299,7 +293,7 @@ export function DashboardShell({
           />
         ) : null}
 
-        <div className="flex min-h-screen flex-1 flex-col transition-all duration-200">
+        <div className="flex min-h-dvh flex-1 flex-col transition-colors duration-200">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between bg-background px-4 backdrop-blur lg:px-6">
             <div className="flex items-center gap-2">
               <button
