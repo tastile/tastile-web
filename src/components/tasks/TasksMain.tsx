@@ -137,6 +137,7 @@ export function TasksMain() {
                 <TileCardCompact
                   key={t.id}
                   tile={tile}
+                  listView={t}
                   onStart={startingTileId === t.id ? undefined : handleStart}
                   onEdit={(tileId) => {
                     // The QuickCreate store opens the panel first (in edit

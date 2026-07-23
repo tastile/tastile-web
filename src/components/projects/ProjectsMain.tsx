@@ -67,7 +67,7 @@ export function ProjectsMain() {
         {!loading && tiles.length > 0 && (
           <div className="divide-y divide-border/40 overflow-hidden rounded-lg border border-border bg-surface-1 shadow-xs">
             {tiles.map((t) => (
-              <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
+              <TileCardCompact key={t.id} tile={mapListViewToTile(t)} listView={t} />
             ))}
           </div>
         )}

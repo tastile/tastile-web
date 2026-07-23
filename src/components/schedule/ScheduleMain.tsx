@@ -266,7 +266,7 @@ export function ScheduleMain() {
         {view !== "recurring" && !loading && filteredTiles.length > 0 && (
           <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
             {filteredTiles.map((t) => (
-              <TileCardCompact key={t.id} tile={mapListViewToTile(t)} />
+              <TileCardCompact key={t.id} tile={mapListViewToTile(t)} listView={t} />
             ))}
           </div>
         )}

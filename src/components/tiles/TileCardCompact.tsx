@@ -3,6 +3,7 @@
 import { SquarePen } from "lucide-react";
 import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
+import type { TileListView } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
 import { formatDuration, formatFriendlyDateTime } from "@/lib/utils/tile-formatters";
@@ -11,13 +12,29 @@ import { TileStatusIcon } from "./shared/TileStatusIcon";
 
 interface TileCardCompactProps {
   tile: Tile | null;
+  /**
+   * Optional raw `TileListView` — when present and `view.source` is
+   * non-null, a SourceTile summary chip is rendered alongside the
+   * label/project badges. The chip reads `view.source.kind` only inside
+   * the render branch; the `Tile` domain type has no slot for source
+   * metadata, so this prop is passed sibling-style rather than through
+   * the mapper (v1/10 §9 — no break/sleep discriminator on Tile).
+   */
+  listView?: TileListView | null;
   loading?: boolean;
   onStart?: (tileId: TileId) => void;
   onClick?: (tile: Tile) => void;
   onEdit?: (tileId: TileId) => void;
 }
 
-export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: TileCardCompactProps) {
+export function TileCardCompact({
+  tile,
+  listView,
+  loading,
+  onStart,
+  onClick,
+  onEdit,
+}: TileCardCompactProps) {
   const { t, locale } = useTranslation();
 
   if (loading) {
@@ -110,6 +127,30 @@ export function TileCardCompact({ tile, loading, onStart, onClick, onEdit }: Til
               </span>
             );
           })}
+
+          {/* SourceTile summary chip. Rendered only when `listView.source`
+              is non-null — never derives a "is this a Source?" discriminator
+              elsewhere (v1/10 §9). The `kind` field is numeric-typed; we
+              branch on 0/1/null for display text only. */}
+          {listView?.source
+            ? (() => {
+                const sourceKind = listView.source?.kind ?? null;
+                const chipLabel =
+                  sourceKind === 0
+                    ? "休憩"
+                    : sourceKind === 1
+                      ? "睡眠"
+                      : "Source";
+                return (
+                  <span
+                    className="px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap bg-surface-3/50 text-foreground-subtle border-border"
+                    data-source-kind={sourceKind ?? "legacy"}
+                  >
+                    {chipLabel}
+                  </span>
+                );
+              })()
+            : null}
         </div>
       </div>
 

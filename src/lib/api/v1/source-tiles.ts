@@ -475,6 +475,32 @@ export interface SourceTileDetail {
   placements: PlacementRead[];
 }
 
+/**
+ * Numeric-typed wire-format mirror of `domain::read::SourceTileSummary`
+ * (v1/14 §10). Field names match the Rust struct verbatim — JSON keys are
+ * the Rust field names, NOT SQL aliases. Numeric codes follow v1/10 §2:
+ *   - `kind`            Option<i16>  0=BREAK / 1=SLEEP / null=legacy pre-v0.5.3
+ *   - `source_state`    i16          0=ACTIVE / 1=PAUSED / 2=ENDED / 3=CANCELLED
+ *   - `generation_kind` i16          0=ONESHOT / 1=RECURRING / 2=DEMAND
+ *   - `split_kind`      i16          0=UNSPLIT / 1=SPLIT
+ * `kind === null` is preserved (legacy SourceTiles pre-V1_029 must NOT be
+ * guessed from display text per v1/10 §9).
+ */
+export interface SourceTileSummaryWire {
+  kind: number | null;
+  source_state: number;
+  generation_kind: number;
+  split_kind: number;
+  priority: number;
+  required_duration_ms: number;
+  window_start_offset_ms: number;
+  window_end_offset_ms: number;
+  weekday_mask: number | null;
+  external_id: string | null;
+  color: string | null;
+  icon: string | null;
+}
+
 export type SourceTileCommandResult =
   | { ok: true; data: CommandResponse; status: number }
   | { ok: false; error: ApiError };

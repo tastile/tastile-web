@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { SourceTileSummaryWire } from "@/lib/api/v1/source-tiles";
 import { getCoreClient } from "@/lib/api/endpoints";
 
 /**
@@ -40,6 +41,13 @@ export interface TileListView {
     window_end_min: number;
     expression: string | null;
   } | null;
+  /**
+   * SourceTile summary (when this tile was materialized from a Source),
+   * mirroring `domain::read::SourceTileSummary`. Numeric codes only —
+   * see `SourceTileSummaryWire` in `lib/api/v1/source-tiles.ts`. `null`
+   * for tiles with no Source origin.
+   */
+  source: SourceTileSummaryWire | null;
 }
 
 export interface UseTileListArgs {
