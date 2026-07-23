@@ -1,5 +1,6 @@
-import { describe, expect, it, afterAll } from "vitest";
+import { describe, expect, it, afterAll, beforeAll } from "vitest";
 import { ESLint } from "eslint";
+import { clearCaches } from "@typescript-eslint/typescript-estree";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -25,16 +26,23 @@ afterAll(() => {
   for (const p of probes) p.cleanup();
 });
 
-// Each test gets a fresh ESLint instance. The TS-ESLint parser shares a
-// single Program per process and lazily registers file-system watchers
-// for files present at program-creation time. When a probe file is
-// `fs.writeFileSync`'d AFTER the program is created, the Program can
-// miss it on the fast path of the next lintFiles() call (CI's
-// ubuntu-latest runner shows 2–66 ms follow-up timings vs the 6 s
-// program init, which is the signature of "parser returned no source
-// file, no rules fired"). Constructing a fresh ESLint per test forces a
-// fresh Program that reads all files on disk at init, so the probe is
-// guaranteed to be in the program when lintFiles() runs.
+// The TS-ESLint parser caches a single Program per process (per
+// tsconfig path) in a module-level Map. When this test file is loaded
+// alongside other test files in the same vitest worker, the cached
+// Program was already initialized against a different set of on-disk
+// files. Writing a probe file with fs.writeFileSync and then calling
+// lintFiles on a *fresh* ESLint instance still reuses that cached
+// Program, which can miss the probe (CI's ubuntu-latest runner shows
+// 4–17 ms follow-up timings vs the 6 s program init, the signature of
+// "parser returned no source file, no rules fired"). clearCaches()
+// drops the cached Program so the next new ESLint() builds a fresh
+// one that scans the current on-disk state. The typescript-estree
+// package documents this exact use case in clearCaches()'s JSDoc:
+// "In tests to reset parser state to keep tests isolated."
+beforeAll(() => {
+  clearCaches();
+});
+
 function makeEslint(): ESLint {
   return new ESLint({ cwd: repoRoot, overrideConfigFile: configPath });
 }
