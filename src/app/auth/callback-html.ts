@@ -108,7 +108,7 @@ export function callbackHtmlResponse(args: {
     <div class="bar" aria-hidden="true"><span></span></div>
     <p class="muted" style="margin-top:18px;font-size:14px;">自動で移動しない場合は <a href="${escapedDestination}">こちら</a> を開いてください。</p>
   </main>
-  <script>setTimeout(function(){ window.location.replace(${JSON.stringify(args.destination)}); }, 900);</script>
+  <script>setTimeout(function(){ window.location.replace(${safeScriptJsonString(args.destination)}); }, 900);</script>
 </body>
 </html>`;
 
@@ -127,4 +127,24 @@ function escapeHtml(value: string): string {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+// Serialize a string for embedding inside an inline <script> block.
+// JSON.stringify does not HTML-escape, so a destination containing "</script>"
+// (or other HTML-meaningful chars like <, >, &, U+2028, U+2029) could break out
+// of the script tag. We pass the JSON through a second pass that replaces those
+// characters with their \\uXXXX escape sequences; the JSON literal still parses to the
+// original string at runtime.
+function safeScriptJsonString(value: string): string {
+  // U+2028 / U+2029 are valid JSON characters but act as line terminators in
+  // JavaScript source, so we build the regex via String.fromCharCode to keep
+  // this file parseable.
+  const lineSeparator = new RegExp(String.fromCharCode(0x2028), "g");
+  const paragraphSeparator = new RegExp(String.fromCharCode(0x2029), "g");
+  return JSON.stringify(value)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(lineSeparator, "\\u2028")
+    .replace(paragraphSeparator, "\\u2029");
 }
