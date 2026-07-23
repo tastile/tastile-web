@@ -25,7 +25,6 @@
 
 import { SegmentedControl, Select } from "@mantine/core";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
-import { useMemo } from "react";
 
 import { Button } from "@/components/ui/Button";
 import { FormDivider, FormRow, RowInput, RowSegmented, SectionHeader } from "@/components/ui/form";
@@ -403,23 +402,25 @@ export function SchedulePanel({
   const endDay = isoToPicker(time.span.end);
 
   // Days to highlight as a range: every day from start to end inclusive.
-  const highlightDays = useMemo<readonly string[] | undefined>(() => {
-    if (time.whenMode !== "range" || !startDay || !endDay) return undefined;
+  // React Compiler memoizes this automatically; no manual `useMemo` needed.
+  let highlightDays: readonly string[] | undefined;
+  if (time.whenMode === "range" && startDay && endDay) {
     const start = new Date(startDay);
     const end = new Date(endDay);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return undefined;
-    const days: string[] = [];
-    if (start <= end) {
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        days.push(d.toISOString().slice(0, 10));
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      const days: string[] = [];
+      if (start <= end) {
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+          days.push(d.toISOString().slice(0, 10));
+        }
+      } else {
+        for (let d = new Date(end); d <= start; d.setDate(d.getDate() + 1)) {
+          days.push(d.toISOString().slice(0, 10));
+        }
       }
-    } else {
-      for (let d = new Date(end); d <= start; d.setDate(d.getDate() + 1)) {
-        days.push(d.toISOString().slice(0, 10));
-      }
+      highlightDays = days;
     }
-    return days;
-  }, [time.whenMode, startDay, endDay]);
+  }
 
   function applyCalendarSelect(date: string) {
     if (time.whenMode === "day") {

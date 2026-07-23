@@ -13,7 +13,13 @@ export function useSseSync(opts: {
     // SSE must go through the Next.js proxy so the browser never needs
     // direct access to the backend loopback address.
     const base = process.env.NEXT_PUBLIC_APP_URL ?? "";
-    const url = new URL(`${base}/api/proxy/read/events/state`);
+    const target = `${base}/api/proxy/read/events/state`;
+    // URL.canParse guards against a missing/empty NEXT_PUBLIC_APP_URL
+    // (e.g. when running under the SSR test environment without a
+    // configured public origin) so the effect fails closed instead of
+    // throwing TypeError during render.
+    if (!URL.canParse(target)) return;
+    const url = new URL(target);
     url.searchParams.set("access_token", accessToken);
     const es = new EventSource(url.toString());
     es.onmessage = (e) => {
