@@ -30,78 +30,98 @@ export function AccessTokenSection() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const loadTokens = useCallback(async () => {
+  const loadTokens = useCallback(() => {
     setLoading(true);
     setError(null);
-    try {
-      const response = await fetch("/api/account/tokens", { cache: "no-store" });
-      if (!response.ok) throw new Error(t("account.tokens.error.loadFailed"));
-      setTokens((await response.json()) as ApiToken[]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("account.tokens.error.loadFallback"));
-    } finally {
-      setLoading(false);
-    }
+    return fetch("/api/account/tokens", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) {
+          setError(t("account.tokens.error.loadFailed"));
+          return;
+        }
+        setTokens((await response.json()) as ApiToken[]);
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : t("account.tokens.error.loadFallback"));
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [t]);
 
   useEffect(() => {
     void loadTokens();
   }, [loadTokens]);
 
-  async function createToken(event: React.FormEvent<HTMLFormElement>) {
+  function createToken(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
     setCreatedToken(null);
-    try {
-      const response = await fetch("/api/account/tokens", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name }),
+    void fetch("/api/account/tokens", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          setError(t("account.tokens.error.createFailed"));
+          return;
+        }
+        const created = (await response.json()) as CreatedToken;
+        setCreatedToken(created);
+        setName("");
+        await loadTokens();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : t("account.tokens.error.createFallback"));
+      })
+      .finally(() => {
+        setSubmitting(false);
       });
-      if (!response.ok) throw new Error(t("account.tokens.error.createFailed"));
-      const created = (await response.json()) as CreatedToken;
-      setCreatedToken(created);
-      setName("");
-      await loadTokens();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("account.tokens.error.createFallback"));
-    } finally {
-      setSubmitting(false);
-    }
   }
 
-  async function saveName(tokenId: string) {
+  function saveName(tokenId: string) {
     setSubmitting(true);
     setError(null);
-    try {
-      const response = await fetch(`/api/account/tokens/${tokenId}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name: editingName }),
+    void fetch(`/api/account/tokens/${tokenId}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name: editingName }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          setError(t("account.tokens.error.updateFailed"));
+          return;
+        }
+        setEditingId(null);
+        await loadTokens();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : t("account.tokens.error.updateFallback"));
+      })
+      .finally(() => {
+        setSubmitting(false);
       });
-      if (!response.ok) throw new Error(t("account.tokens.error.updateFailed"));
-      setEditingId(null);
-      await loadTokens();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("account.tokens.error.updateFallback"));
-    } finally {
-      setSubmitting(false);
-    }
   }
 
-  async function revokeToken(tokenId: string) {
+  function revokeToken(tokenId: string) {
     setSubmitting(true);
     setError(null);
-    try {
-      const response = await fetch(`/api/account/tokens/${tokenId}`, { method: "DELETE" });
-      if (!response.ok) throw new Error(t("account.tokens.error.revokeFailed"));
-      await loadTokens();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("account.tokens.error.revokeFallback"));
-    } finally {
-      setSubmitting(false);
-    }
+    void fetch(`/api/account/tokens/${tokenId}`, { method: "DELETE" })
+      .then(async (response) => {
+        if (!response.ok) {
+          setError(t("account.tokens.error.revokeFailed"));
+          return;
+        }
+        await loadTokens();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : t("account.tokens.error.revokeFallback"));
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
   }
 
   async function copyToken(value: string) {

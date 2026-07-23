@@ -1,7 +1,8 @@
 "use client";
 
+import { type QueryFunctionContext, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { translations } from "@/lib/i18n/translations";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useLocaleStore } from "@/lib/stores/locale-store";
@@ -16,6 +17,17 @@ type SubscriptionState =
       currentPeriodEnd: number;
       cancelAtPeriodEnd: boolean;
     };
+
+const subscriptionQueryKey = ["account", "subscription"] as const;
+
+async function fetchSubscription({
+  signal,
+}: QueryFunctionContext<typeof subscriptionQueryKey>): Promise<SubscriptionState> {
+  const res = await fetch("/api/billing/subscription", { cache: "no-store", signal });
+  if (!res.ok) throw new Error("Failed to load subscription");
+  const data = (await res.json()) as { subscription: SubscriptionState };
+  return data.subscription;
+}
 
 async function openPortal(): Promise<void> {
   const res = await fetch("/api/stripe/portal", { method: "POST" });
@@ -37,44 +49,27 @@ export function SubscriptionSection() {
   const { t } = useTranslation();
   const { locale } = useLocaleStore();
   const subDict = translations[locale].account.subscription;
-  const [state, setState] = useState<SubscriptionState | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const subscriptionQuery = useQuery({
+    queryKey: subscriptionQueryKey,
+    queryFn: fetchSubscription,
+  });
+  const [actionError, setActionError] = useState<string | null>(null);
   const [intervalChoice, setIntervalChoice] = useState<"monthly" | "yearly">("monthly");
   const [opening, setOpening] = useState(false);
+  const state = subscriptionQuery.data ?? null;
+  const loading = subscriptionQuery.isLoading;
+  const error = actionError ?? (subscriptionQuery.isError ? t("account.subscription.error") : null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const res = await fetch("/api/billing/subscription", { cache: "no-store" });
-        if (!res.ok) {
-          if (!cancelled) setError(t("account.subscription.error"));
-          return;
-        }
-        const data = (await res.json()) as { subscription: SubscriptionState };
-        if (!cancelled) setState(data.subscription);
-      } catch {
-        if (!cancelled) setError(t("account.subscription.error"));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [t]);
-
-  const handleManage = async () => {
+  const handleManage = () => {
     setOpening(true);
-    try {
-      await openPortal();
-    } catch (err) {
-      console.error(err);
-      setError(t("account.subscription.error"));
-    } finally {
-      setOpening(false);
-    }
+    void openPortal()
+      .catch((err: unknown) => {
+        console.error(err);
+        setActionError(t("account.subscription.error"));
+      })
+      .finally(() => {
+        setOpening(false);
+      });
   };
 
   if (loading) {
