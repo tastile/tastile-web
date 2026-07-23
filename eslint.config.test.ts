@@ -1,4 +1,4 @@
-import { describe, expect, it, afterAll, beforeAll } from "vitest";
+import { describe, expect, it, afterAll, beforeEach } from "vitest";
 import { ESLint } from "eslint";
 import { clearCaches } from "@typescript-eslint/typescript-estree";
 import fs from "node:fs";
@@ -38,8 +38,10 @@ afterAll(() => {
 // drops the cached Program so the next new ESLint() builds a fresh
 // one that scans the current on-disk state. The typescript-estree
 // package documents this exact use case in clearCaches()'s JSDoc:
-// "In tests to reset parser state to keep tests isolated."
-beforeAll(() => {
+// "In tests to reset parser state to keep tests isolated." We call
+// it before each test because the Program is re-cached after each
+// fresh new ESLint() and we want the next test's probe to be visible.
+beforeEach(() => {
   clearCaches();
 });
 
