@@ -53,42 +53,49 @@ export function ProjectsSidePanel() {
     setCreating(false);
   }
 
-  async function handleCreate() {
+  function handleCreate() {
     if (!name.trim()) {
       setCreateError("name required");
       return;
     }
     setCreatingBusy(true);
     setCreateError(null);
-    try {
-      const ws = await createWorkspace({
-        display_name: name.trim(),
-        slug: slug.trim() || null,
-        color,
-        parent_subject_id: parentId,
+    // Promise chain instead of try/catch/finally in the render path so the
+    // React Compiler sees a supported pattern. busy flag is reset via
+    // .finally() on both success and failure paths.
+    void createWorkspace({
+      display_name: name.trim(),
+      slug: slug.trim() || null,
+      color,
+      parent_subject_id: parentId,
+    })
+      .then(async (ws) => {
+        await refresh();
+        handleSelect(ws.id);
+        resetForm();
+      })
+      .catch((e: unknown) => {
+        setCreateError((e as Error).message);
+      })
+      .finally(() => {
+        setCreatingBusy(false);
       });
-      await refresh();
-      handleSelect(ws.id);
-      resetForm();
-    } catch (e) {
-      setCreateError((e as Error).message);
-    } finally {
-      setCreatingBusy(false);
-    }
   }
 
-  async function handleDelete(id: string, displayName: string) {
+  function handleDelete(id: string, displayName: string) {
     if (typeof window !== "undefined" && !window.confirm(`Delete project "${displayName}"?`))
       return;
-    try {
-      await deleteWorkspace(id);
-      await refresh();
-      if (currentOwner === id) handleSelect(null);
-    } catch (e) {
-      if (typeof window !== "undefined") {
-        window.alert(`Failed to delete: ${(e as Error).message}`);
-      }
-    }
+    // Same Promise-chain shape: refresh + select on success, alert on failure.
+    void deleteWorkspace(id)
+      .then(async () => {
+        await refresh();
+        if (currentOwner === id) handleSelect(null);
+      })
+      .catch((e: unknown) => {
+        if (typeof window !== "undefined") {
+          window.alert(`Failed to delete: ${(e as Error).message}`);
+        }
+      });
   }
 
   return (

@@ -8,7 +8,11 @@ import type { Dict, Lang } from "./LandingPage";
 type Interval = "monthly" | "yearly";
 
 export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
-  const [interval, setInterval] = useState<Interval>("monthly");
+  // Avoid naming the state setter `setInterval`: the effect-needs-cleanup rule
+  // flags any `setInterval(...)` call as if it were a real timer, which is a
+  // false positive for React useState setters. Use a distinct identifier so
+  // the rule disappears without an eslint suppression.
+  const [billingInterval, setBillingInterval] = useState<Interval>("monthly");
   const isJa = lang === "ja";
   const display = isJa
     ? "font-[family-name:var(--font-zen-kaku)]"
@@ -52,14 +56,14 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             className="inline-flex items-center rounded-full border border-surface-2 bg-surface-0 p-1 text-sm"
           >
             {(["monthly", "yearly"] as const).map((value) => {
-              const isActive = interval === value;
+              const isActive = billingInterval === value;
               return (
                 <button
                   key={value}
                   type="button"
                   role="tab"
                   aria-selected={isActive}
-                  onClick={() => setInterval(value)}
+                  onClick={() => setBillingInterval(value)}
                   className={[
                     "mkt-cta rounded-full px-4 py-2 font-medium",
                     isActive
@@ -151,9 +155,9 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               <p
                 className={`mt-3 flex items-baseline gap-2 text-5xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
               >
-                {interval === "monthly" ? "$5" : "$50"}
+                {billingInterval === "monthly" ? "$5" : "$50"}
                 <span className="text-base font-normal text-foreground-muted">
-                  /{interval === "monthly" ? "mo" : "yr"}
+                  /{billingInterval === "monthly" ? "mo" : "yr"}
                 </span>
               </p>
             </div>
