@@ -7,12 +7,21 @@ async function readBody(response: Response): Promise<string> {
 
 function extractScriptJson(html: string): string {
   const match = html.match(
-    /window\.location\.replace\(([\s\S]*?)\);\s*},\s*900\);<\/script>/,
+    /<script type="application\/json" id="auth-callback-destination">([\s\S]*?)<\/script>/,
   );
   if (!match) {
     throw new Error("script block not found");
   }
   return match[1] ?? "";
+}
+
+function unescapeHtml(value: string): string {
+  return value
+    .replaceAll("&amp;", "&")
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'");
 }
 
 describe("callbackHtmlResponse", () => {
@@ -30,14 +39,14 @@ describe("callbackHtmlResponse", () => {
     expect(html).not.toContain("</script><script>alert('pwn')</script>");
 
     const scriptCloseCount = (html.match(/<\/script>/gi) ?? []).length;
-    expect(scriptCloseCount).toBe(1);
+    expect(scriptCloseCount).toBe(2);
 
     const scriptJson = extractScriptJson(html);
-    expect(JSON.parse(scriptJson)).toBe(destination);
+    expect(JSON.parse(unescapeHtml(scriptJson))).toBe(destination);
   });
 
-  it("escapes <, >, &, U+2028, and U+2029 in the inline script JSON literal", async () => {
-    const destination = "/d?x=<a>&y=2 z=3 w=4";
+  it("escapes <, >, and & in the JSON script tag", async () => {
+    const destination = "/d?x=<a>&y=2";
     const response = callbackHtmlResponse({
       title: "t",
       message: "m",
@@ -47,13 +56,11 @@ describe("callbackHtmlResponse", () => {
     const html = await readBody(response);
     const scriptJson = extractScriptJson(html);
 
-    expect(scriptJson).toContain("\\u003c");
-    expect(scriptJson).toContain("\\u003e");
-    expect(scriptJson).toContain("\\u0026");
-    expect(scriptJson).toContain("\\u2028");
-    expect(scriptJson).toContain("\\u2029");
+    expect(scriptJson).toContain("&lt;");
+    expect(scriptJson).toContain("&gt;");
+    expect(scriptJson).toContain("&amp;");
 
-    expect(JSON.parse(scriptJson)).toBe(destination);
+    expect(JSON.parse(unescapeHtml(scriptJson))).toBe(destination);
   });
 
   it("preserves a normal destination path", async () => {
@@ -70,7 +77,7 @@ describe("callbackHtmlResponse", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
 
     const scriptJson = extractScriptJson(html);
-    expect(JSON.parse(scriptJson)).toBe(destination);
+    expect(JSON.parse(unescapeHtml(scriptJson))).toBe(destination);
 
     expect(html).toContain("ようこそ");
     expect(html).not.toContain("<script>alert");

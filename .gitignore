@@ -99,3 +99,11 @@ dist/
 # Build / cache
 .turbo/
 bun.lockb.bak
+
+# Diagnostic artifacts (react-doctor, debug screenshots, manual walkthroughs)
+.doctor-cache/
+evidence/doctor/
+evidence/manual-*.log
+evidence/verify-*.log
+evidence/web-verify-*.log
+/*-2026*.png
