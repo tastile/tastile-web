@@ -7,26 +7,27 @@ import { useTranslation } from "@/lib/i18n/use-translation";
 
 export function PricingCard() {
   const [isLoading, setIsLoading] = useState(false);
-  const [interval, setInterval] = useState<"monthly" | "yearly">("monthly");
+  // Avoid naming the state setter `setInterval`: the effect-needs-cleanup rule
+  // flags any `setInterval(...)` call as if it were a real timer, which is a
+  // false positive for React useState setters. Use a distinct identifier so
+  // the rule disappears without an eslint suppression.
+  const [selectedInterval, setSelectedInterval] = useState<"monthly" | "yearly">("monthly");
   const { t, locale } = useTranslation();
   const dict = translations[locale].marketing.pricing;
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = () => {
     setIsLoading(true);
-    try {
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interval }),
+    void postCheckout(selectedInterval)
+      .then((url) => {
+        if (url) window.location.href = url;
+      })
+      .catch(() => {
+        // network/parse failure is non-fatal: leave the user on the page so
+        // they can retry; loading flag is reset below either way.
+      })
+      .then(() => {
+        setIsLoading(false);
       });
-      if (!res.ok) return;
-      const { url } = await res.json();
-      if (url) {
-        window.location.href = url;
-      }
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -39,15 +40,15 @@ export function PricingCard() {
       <div className="mt-3 flex gap-2">
         <button
           type="button"
-          onClick={() => setInterval("monthly")}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${interval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
+          onClick={() => setSelectedInterval("monthly")}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${selectedInterval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
         >
           {t("marketing.pricing.monthly")}
         </button>
         <button
           type="button"
-          onClick={() => setInterval("yearly")}
-          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${interval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
+          onClick={() => setSelectedInterval("yearly")}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${selectedInterval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
         >
           {t("marketing.pricing.yearly")}{" "}
           <span className="text-success">{t("marketing.pricing.yearlySave")}</span>
@@ -55,10 +56,10 @@ export function PricingCard() {
       </div>
       <div className="mt-4 flex items-baseline">
         <span className="text-4xl font-[590] text-foreground">
-          {interval === "monthly" ? "$4" : "$40"}
+          {selectedInterval === "monthly" ? "$4" : "$40"}
         </span>
         <span className="ml-2 text-foreground-muted">
-          {interval === "monthly"
+          {selectedInterval === "monthly"
             ? t("marketing.pricing.perMonth")
             : t("marketing.pricing.perYear")}
         </span>
@@ -88,4 +89,18 @@ export function PricingCard() {
       </div>
     </div>
   );
+}
+
+// Module-local helper extracted out of the component body so the React
+// Compiler does not have to model a try/catch/finally inside the render path.
+// The Promise chain drives the success/failure/loading-reset states explicitly.
+async function postCheckout(interval: "monthly" | "yearly"): Promise<string | null> {
+  const res = await fetch("/api/stripe/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ interval }),
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { url?: string };
+  return typeof body.url === "string" ? body.url : null;
 }

@@ -91,25 +91,30 @@ function ProjectEditForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function save() {
+  function save() {
     if (!name.trim()) {
       setError("name required");
       return;
     }
     setSaving(true);
     setError(null);
-    try {
-      await updateWorkspace(project.id, {
-        display_name: name.trim(),
-        slug: slug.trim() || null,
-        color,
+    // Promise chain instead of try/catch/finally in the render path so the
+    // React Compiler sees a supported pattern. saving flag is reset via
+    // .finally() on both success and failure paths.
+    void updateWorkspace(project.id, {
+      display_name: name.trim(),
+      slug: slug.trim() || null,
+      color,
+    })
+      .then(async () => {
+        await onSaved();
+      })
+      .catch((e: unknown) => {
+        setError((e as Error).message);
+      })
+      .finally(() => {
+        setSaving(false);
       });
-      await onSaved();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
   }
 
   return (

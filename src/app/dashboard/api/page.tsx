@@ -281,25 +281,30 @@ function EndpointDetail({
   );
   const placeholders = [...meta.path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
 
-  async function run() {
+  function run() {
     setRunning(true);
     setResponse(null);
-    try {
-      const client = getCoreClient();
-      const query = queryText.trim()
-        ? (JSON.parse(queryText) as Record<string, string | number | boolean>)
-        : undefined;
-      const body = meta.method !== "GET" && bodyText.trim() ? JSON.parse(bodyText) : undefined;
-      const result = await client.call(endpointKey, { pathParams, query, body });
-      setResponse(result);
-    } catch (e) {
-      setResponse({
-        ok: false,
-        error: { kind: "validation", status: 0, message: (e as Error).message, body: null },
+    // Promise chain instead of try/catch/finally so the React Compiler sees a
+    // supported pattern. running flag is reset via .finally() on both success
+    // and failure paths; status is checked before parsing the body so we
+    // surface real server errors as `Result` rather than swallowing them.
+    void executeApiCall(endpointKey, meta.method, {
+      pathParams,
+      queryText,
+      bodyText,
+    })
+      .then((result) => {
+        setResponse(result);
+      })
+      .catch((e: unknown) => {
+        setResponse({
+          ok: false,
+          error: { kind: "validation", status: 0, message: (e as Error).message, body: null },
+        });
+      })
+      .finally(() => {
+        setRunning(false);
       });
-    } finally {
-      setRunning(false);
-    }
   }
 
   return (
@@ -604,4 +609,28 @@ function copyToClipboard(text: string) {
   if (typeof navigator !== "undefined" && navigator.clipboard) {
     void navigator.clipboard.writeText(text);
   }
+}
+
+// Module-local async helper extracted out of the component body so the
+// React Compiler does not have to model a try/catch/finally inside the render
+// path. The component consumes the resolved `Result` via a Promise chain.
+async function executeApiCall(
+  endpointKey: EndpointKey,
+  method: string,
+  inputs: {
+    pathParams: Record<string, string>;
+    queryText: string;
+    bodyText: string;
+  },
+): Promise<Result<unknown>> {
+  const client = getCoreClient();
+  const query = inputs.queryText.trim()
+    ? (JSON.parse(inputs.queryText) as Record<string, string | number | boolean>)
+    : undefined;
+  const body = method !== "GET" && inputs.bodyText.trim() ? JSON.parse(inputs.bodyText) : undefined;
+  return client.call(endpointKey, {
+    pathParams: inputs.pathParams,
+    query,
+    body,
+  });
 }

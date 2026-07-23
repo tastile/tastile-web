@@ -79,48 +79,19 @@ export function AppShell({
         onAction={(action, payload) => {
           const prompt = executionState?.pendingPrompt;
           if (!prompt || handlingPromptAction) return;
-          void (async () => {
-            setHandlingPromptAction(true);
-            try {
-              const command = toPromptActionCommand(
-                action,
-                prompt,
-                startupRecoveryStopAt,
-                payload?.deferMinutes,
-              );
-              if (command) {
-                await execute(command, Actor.human("self"));
-                await execute(
-                  {
-                    type: "clear_prompt",
-                    prompt_id: prompt.promptId,
-                    reason: "actioned",
-                  },
-                  Actor.human("self"),
-                );
-              } else if (action === "dismiss") {
-                await execute(
-                  {
-                    type: "clear_prompt",
-                    prompt_id: prompt.promptId,
-                    reason: "dismissed",
-                  },
-                  Actor.human("self"),
-                );
-              } else {
-                await execute(
-                  {
-                    type: "clear_prompt",
-                    prompt_id: prompt.promptId,
-                    reason: "dismissed",
-                  },
-                  Actor.human("self"),
-                );
-              }
-            } finally {
-              setHandlingPromptAction(false);
-            }
-          })();
+          // Fire-and-forget the prompt-action sequence; chain .then() instead
+          // of try/finally so the React Compiler sees a supported pattern in
+          // the render path.
+          setHandlingPromptAction(true);
+          void runPromptAction(
+            execute,
+            action,
+            prompt,
+            startupRecoveryStopAt,
+            payload?.deferMinutes,
+          ).finally(() => {
+            setHandlingPromptAction(false);
+          });
         }}
       />
       {executionState?.pendingPrompt?.actions.includes("confirm_stop_at") ? (
@@ -288,4 +259,39 @@ function resolvePromptDeferStartAt(prompt: PendingPrompt, explicitDeferMinutes?:
         ? prompt.suggestedMinutes
         : DEFAULT_PROMPT_DEFER_MINUTES;
   return new Date(Date.now() + deferMin * 60 * 1000);
+}
+
+// Module-local async helper extracted out of the render path so the React
+// Compiler does not have to model a try/finally inside the component body.
+// The Promise chain drives the busy-flag reset via .finally(), matching the
+// original behavior (reset on both success and failure).
+async function runPromptAction(
+  execute: (command: Command, actor: ReturnType<typeof Actor.human>) => Promise<unknown>,
+  action: PromptAction,
+  prompt: PendingPrompt,
+  startupRecoveryStopAt: string,
+  deferMinutes?: number,
+): Promise<void> {
+  const command = toPromptActionCommand(action, prompt, startupRecoveryStopAt, deferMinutes);
+  if (command) {
+    await execute(command, Actor.human("self"));
+    await execute(
+      {
+        type: "clear_prompt",
+        prompt_id: prompt.promptId,
+        reason: "actioned",
+      },
+      Actor.human("self"),
+    );
+    return;
+  }
+  // Fallback: action that maps to null (e.g. dismiss) still clears the prompt.
+  await execute(
+    {
+      type: "clear_prompt",
+      prompt_id: prompt.promptId,
+      reason: "dismissed",
+    },
+    Actor.human("self"),
+  );
 }
