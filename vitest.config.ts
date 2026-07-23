@@ -23,8 +23,17 @@ export default defineConfig({
     // jsdom + Stripe mocks + Next helpers added in 0.1.16 push some
     // workers past the default 4 GB V8 ceiling. The Vitest 4 docs let
     // us pass these to the worker entry without pulling in the legacy
-    // `poolOptions.forks.execArgv` shape.
-    execArgv: ["--max-old-space-size=8192"],
+    // `poolOptions.forks.execArgv` shape. The trailing `--no-warnings`
+    // would silence Node's own deprecation / experimental-flag chatter
+    // but the plan forbids hiding warnings at the gate boundary, so we
+    // instead point `--localstorage-file` at a per-worker temp file so
+    // Node's "provided without a valid path" warning (emitted by
+    // Node 22+ when --localstorage is on but the path is empty) is
+    // resolved at the source rather than filtered at the boundary.
+    execArgv: [
+      "--max-old-space-size=8192",
+      "--localstorage-file=node_modules/.cache/vitest-localstorage.json",
+    ],
     // Default env for test workers. Only set if not already present in
     // process.env, so CI overrides still win. We deliberately do NOT
     // load `.env.local` here — it carries `E2E_BYPASS_AUTH=1` and
@@ -38,6 +47,8 @@ export default defineConfig({
     env: {
       CLOUD_API_BASE: "http://127.0.0.1:31400",
       TASTILE_RUST_API_URL: "http://127.0.0.1:31400",
+      NEXT_PUBLIC_TASTILE_CORE_URL: "http://127.0.0.1:31400",
+      NEXT_PUBLIC_DAEMON_BASE_URL: "http://127.0.0.1:31400",
     },
   },
   resolve: {
