@@ -323,7 +323,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
         onMinDurationChange={setMinDuration}
       />
     ),
-    [anchor, view, mode, minDuration, setAnchor, setMode, setMinDuration],
+    [anchor, view, mode, minDuration, setMode],
   );
   useSidePanel(sidePanelElement);
 

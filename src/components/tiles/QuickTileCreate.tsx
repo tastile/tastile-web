@@ -280,7 +280,7 @@ export function QuickTileCreate() {
     | "behavior"
   >("base");
   const projects = useProjects();
-const refreshProjects = projects.refresh;
+  const refreshProjects = projects.refresh;
   // Pull a sample of existing tiles so the TagsInput can suggest labels
   // the user has already used. Without this, the picker has no data prop
   // and freeform entry is the only path.

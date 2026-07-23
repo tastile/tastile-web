@@ -76,6 +76,7 @@
     "postcss": "^8.5.16",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",
+    "react-doctor": "^0.9.0",
     "tailwindcss": "^4.3.2",
     "typescript": "6.0.3",
     "vitest": "^4.1.10"

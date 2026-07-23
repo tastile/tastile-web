@@ -4,6 +4,13 @@
 // module-resolution path that `bunx vitest` uses (which `bun run test:unit`
 // is supposed to mirror). Wrapping for the wrapper's own sake (e.g. capturing
 // the entry path) is intentional — it is not a place to hide warnings.
+//
+// Test env defaults live in `vitest.config.ts` (`test.env`). We
+// intentionally do NOT load `.env.local` here because it sets
+// `E2E_BYPASS_AUTH=1` and other production-shape flags that flip
+// auth/owner-derivation paths and break the negative-path tests
+// (`/api/me` should 401 when no id_token cookie is present, not
+// short-circuit on E2E_BYPASS_AUTH and return 200).
 import { spawn } from "node:child_process";
 import path from "node:path";
 import url from "node:url";

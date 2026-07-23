@@ -61,18 +61,14 @@ export function MfaSetupClient({ email }: { email: string }) {
       // `!res.ok` branch to be in place before any `.json()` call so a failed
       // response cannot trigger a body parse that would then throw.
       if (!res.ok) {
-        const parsed = (await res
-          .json()
-          .catch(() => null)) as SetupErrorBody | null;
+        const parsed = (await res.json().catch(() => null)) as SetupErrorBody | null;
         setState({
           kind: "error",
           message: errorMessageFrom(parsed, "setup_failed"),
         });
         return;
       }
-      const parsed = (await res
-        .json()
-        .catch(() => null)) as SetupSuccess | null;
+      const parsed = (await res.json().catch(() => null)) as SetupSuccess | null;
       if (
         !parsed ||
         typeof (parsed as SetupSuccess).secretCode !== "string" ||
@@ -121,18 +117,14 @@ export function MfaSetupClient({ email }: { email: string }) {
       return;
     }
     if (!res.ok) {
-      const parsed = (await res
-        .json()
-        .catch(() => null)) as VerifyErrorBody | null;
+      const parsed = (await res.json().catch(() => null)) as VerifyErrorBody | null;
       setState({
         kind: "error",
         message: errorMessageFrom(parsed, "verify_failed"),
       });
       return;
     }
-    const parsed = (await res
-      .json()
-      .catch(() => null)) as VerifySuccess | VerifyErrorBody | null;
+    const parsed = (await res.json().catch(() => null)) as VerifySuccess | VerifyErrorBody | null;
     if (parsed && parsed.ok === true) {
       setState({ kind: "done" });
       router.replace("/dashboard");
