@@ -9,5 +9,3 @@
 export const queryKeys = {
   activeTile: ["v1", "active-tile"] as const,
 } as const;
-
-export type QueryKey = typeof queryKeys.activeTile | readonly ["v1", "active-tile", ...unknown[]];
