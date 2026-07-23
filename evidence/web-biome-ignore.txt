@@ -1,0 +1,4 @@
+=== biome-ignore ===
+src/app/auth/desktop/complete/page.tsx:78:      {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink-redirect reads URL fragment and must run inline before paint — cannot be ref'd to a JS file */}
+src/app/layout.tsx:48:        {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme-init must run inline before paint to prevent FOUC — cannot be ref'd to a JS file */}
+TOTAL_BIOME_IGNORE=2

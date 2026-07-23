@@ -20,7 +20,7 @@ function isoAtUtc(date: string, hour: number, minute: number): string {
   return `${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00.000Z`;
 }
 
-async function deleteAllEvents(_req: APIRequestContext) { // eslint-disable-line @typescript-eslint/no-unused-vars
+async function deleteAllEvents(_req: APIRequestContext) { 
   // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
   // directly via docker exec so the day view is fully empty for the next test.
   execFileSync(
@@ -53,8 +53,8 @@ test.describe("quick tile create — recurring e2e", () => {
   const next = new Date(new Date(day + "T00:00:00Z").getTime() + 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10);
-    const startIso = isoAtUtc(day, 9, 0); // eslint-disable-line @typescript-eslint/no-unused-vars
-    const endIso = isoAtUtc(day, 10, 0); // eslint-disable-line @typescript-eslint/no-unused-vars
+    const startIso = isoAtUtc(day, 9, 0); 
+    const endIso = isoAtUtc(day, 10, 0); 
 
     await page.goto("/dashboard/calendar?view=day");
     await page.getByTestId("sidebar-new-tile").first().click();

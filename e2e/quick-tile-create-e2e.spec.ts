@@ -9,7 +9,7 @@ function todayUtc(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 }
 
-async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+async function deleteAllEvents(_page: Page) { 
   // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
   // directly via docker exec so the day view is fully empty for the next test.
   execFileSync(

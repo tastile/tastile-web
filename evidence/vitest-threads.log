@@ -1,0 +1,51 @@
+$ node scripts/run-vitest.mjs
+
+ RUN  v4.1.10 C:/Users/rebui/Desktop/tastile/tastile-web
+
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:44664) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+node:events:486
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: Worker exited unexpectedly
+    at Worker.emitUnexpectedExit (file:///C:/Users/rebui/Desktop/tastile/tastile-web/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3023:33)
+    at Worker.emit (node:events:508:20)
+    at Worker.[kOnExit] (node:internal/worker:381:10)
+    at Worker.<computed>.onexit (node:internal/worker:295:20)
+Emitted 'error' event at:
+    at Worker.emitUnexpectedExit (file:///C:/Users/rebui/Desktop/tastile/tastile-web/node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3025:22)
+    at Worker.emit (node:events:508:20)
+    at Worker.[kOnExit] (node:internal/worker:381:10)
+    at Worker.<computed>.onexit (node:internal/worker:295:20)
+
+Node.js v25.8.1
+error: script "test:unit" exited with code 1

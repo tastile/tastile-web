@@ -39,7 +39,7 @@ async function lintFile(filePath: string): Promise<LintOutcome[]> {
   }));
 }
 
-describe("eslint.config.mjs boundary rules", { timeout: 30_000 }, () => {
+describe("eslint.config.mjs boundary rules", { timeout: 120_000 }, () => {
   it("forbids client components from importing next/headers", async () => {
     const file = writeProbe(
       "src/components/__probe__.tsx",

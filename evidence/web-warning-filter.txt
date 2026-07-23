@@ -1,0 +1,8 @@
+=== NODE_NO_WARNINGS / --no-warnings / stderr filter ===
+scripts/run-vitest.mjs:3:// experimental-flag warning (--localstorage-file without a value) so the
+scripts/run-vitest.mjs:6:// We invoke the vitest.mjs entry directly with NODE_OPTIONS=--no-warnings so
+scripts/run-vitest.mjs:20:  env: { ...process.env, NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --no-warnings`.trim() },
+scripts/run-vitest.mjs:32:        !line.includes("--localstorage-file") &&
+scripts/run-vitest.mjs:33:        !line.includes("--trace-warnings") &&
+scripts/run-vitest.mjs:34:        !line.includes("--trace-deprecation"),
+TOTAL=6

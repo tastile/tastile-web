@@ -1,0 +1,12 @@
+=== skipped tests (.skip / describe.skip / it.skip / xit) ===
+e2e/calendar-event-flow.spec.ts:20:  test.skip("create -> list-view -> edit -> delete", async ({ page }) => {
+e2e/calendar-event-flow.spec.ts:80:  test.skip("month view shows event on correct day", async ({ page }) => {
+e2e/dashboard-wasm-parity.spec.ts:17:  test.skip('create tile survives reload', async ({ page }) => {
+e2e/dashboard-wasm-parity.spec.ts:30:  test.skip('supports non-default recurring create flow', async ({ page }) => {
+e2e/dashboard-wasm-parity.spec.ts:44:  test.skip('status icon opens prompt banner and can dismiss', async ({ page }) => {
+e2e/dashboard-wasm-parity.spec.ts:53:  test.skip('timeline controls operate and zoom does not stretch block height', async ({ page }) => {
+e2e/dashboard-wasm-parity.spec.ts:69:  test.skip('next up shows 1+5 cap and ready list keeps bounded rendering', async ({ page }) => {
+e2e/dashboard-wasm-parity.spec.ts:80:  test.skip('header active countdown updates while running', async ({ page }) => {
+e2e/debug-network.spec.ts:3:test.skip("debug quick tile submit with network capture", async ({ page }) => {
+e2e/quick-tile-meta-roundtrip.spec.ts:26:test.describe.skip("quick tile create — project / tag / memo round-trip", () => {
+TOTAL=10

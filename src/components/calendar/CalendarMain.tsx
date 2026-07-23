@@ -303,17 +303,29 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
 
   // Side panel controls use the same URL-synchronised state transitions as
   // the toolbar, so deep links and browser navigation remain reliable.
-  useSidePanel(
-    <CalendarSidePanel
-      anchor={anchor}
-      view={view}
-      mode={mode}
-      minDuration={minDuration}
-      onSelectDate={setAnchor}
-      onModeChange={setMode}
-      onMinDurationChange={setMinDuration}
-    />,
+  //
+  // The panel element MUST be reference-stable across renders. `useSidePanel`
+  // deduplicates pushes by reference equality on a `lastContentRef`; an
+  // inline JSX literal here would create a fresh element on every render
+  // and trigger the external-store notification path, which loops through
+  // `CalendarSidePanel` → `ProjectsCheckboxSection` → `useProjects` mount
+  // effect → `setState(loading: true)` → re-render → repeat ("Maximum
+  // update depth exceeded"). Memoize the element against its props.
+  const sidePanelElement = useMemo(
+    () => (
+      <CalendarSidePanel
+        anchor={anchor}
+        view={view}
+        mode={mode}
+        minDuration={minDuration}
+        onSelectDate={setAnchor}
+        onModeChange={setMode}
+        onMinDurationChange={setMinDuration}
+      />
+    ),
+    [anchor, view, mode, minDuration, setAnchor, setMode, setMinDuration],
   );
+  useSidePanel(sidePanelElement);
 
   const navDisabled = mode !== "scope";
 

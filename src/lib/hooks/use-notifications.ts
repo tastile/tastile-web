@@ -9,6 +9,24 @@ import {
   showNotification,
 } from "@/lib/notifications/browser";
 
+// Polling cadence used while the previous poll succeeded. When upstream
+// returns a 5xx or the fetch itself fails, the next poll waits longer
+// so a permanently-down daemon doesn't burn CPU/network and pollute the
+// browser console with redundant errors.
+const BASE_INTERVAL_MS = 15_000;
+const MAX_BACKOFF_MS = 5 * 60_000;
+
+/**
+ * Compute the delay for the next poll based on the most recent result.
+ * Successful polls reset to the base cadence. Failed polls grow the
+ * delay (15s → 30s → 60s → 120s → 240s → … capped at 5 minutes).
+ */
+function nextDelayMs(consecutiveFailures: number): number {
+  if (consecutiveFailures <= 0) return BASE_INTERVAL_MS;
+  const exp = Math.min(consecutiveFailures, 6); // 2^6 = 64× base
+  return Math.min(BASE_INTERVAL_MS * 2 ** exp, MAX_BACKOFF_MS);
+}
+
 export interface NotificationItem {
   id: string;
   message: string;
@@ -56,6 +74,8 @@ export function useNotifications() {
       client.call<ExecutionSnapshot | null>("getExecutionView"),
     ]);
 
+    let failed = false;
+
     if (access.ok) {
       setAccessItems(access.items);
       for (const item of access.items) {
@@ -68,6 +88,7 @@ export function useNotifications() {
         });
       }
     } else {
+      failed = true;
       // Stabilize the Error reference: identical failure message must not
       // mint a new Error object every 15s poll.
       const msg = access.error.message;
@@ -90,6 +111,7 @@ export function useNotifications() {
         });
       }
     } else if (!execution.ok) {
+      failed = true;
       const msg = execution.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
@@ -97,17 +119,43 @@ export function useNotifications() {
     // tile, nothing to notify, no error to surface.  Skip both branches.
 
     setLoading(false);
+    return { failed };
   }, [t]);
 
   useEffect(() => {
     void requestNotificationPermissionOnce();
-    void refresh();
-    const interval = window.setInterval(() => void refresh(), 15_000);
-    const onChanged = () => void refresh();
+    const failuresRef = { current: 0 };
+    let cancelled = false;
+    let timer: number | null = null;
+    const schedule = (delay: number) => {
+      if (cancelled) return;
+      timer = window.setTimeout(() => {
+        const run = async () => {
+          const result = await refresh();
+          if (cancelled) return;
+          if (result.failed) failuresRef.current += 1;
+          else failuresRef.current = 0;
+          schedule(nextDelayMs(failuresRef.current));
+        };
+        void run();
+      }, delay);
+    };
+    const initialRun = async () => {
+      const result = await refresh();
+      if (cancelled) return;
+      if (result.failed) failuresRef.current += 1;
+      schedule(nextDelayMs(failuresRef.current));
+    };
+    void initialRun();
+    const onChanged = () => {
+      failuresRef.current = 0;
+      void refresh();
+    };
     window.addEventListener("tastile:execution-changed", onChanged);
     window.addEventListener("tastile:notifications-changed", onChanged);
     return () => {
-      window.clearInterval(interval);
+      cancelled = true;
+      if (timer !== null) window.clearTimeout(timer);
       window.removeEventListener("tastile:execution-changed", onChanged);
       window.removeEventListener("tastile:notifications-changed", onChanged);
     };

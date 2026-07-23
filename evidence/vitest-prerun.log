@@ -1,0 +1,99 @@
+
+ RUN  v4.1.10 C:/Users/rebui/Desktop/tastile/tastile-web
+
+(node:30084) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35564) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13316) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:45212) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36012) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34792) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38196) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36512) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:46564) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:4780) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28908) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:46008) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:11240) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32924) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15524) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ eslint.config.test.ts (6 tests | 1 failed) 59007ms
+     × forbids client components from importing next/headers 35141ms
+
+<--- Last few GCs --->
+
+[37960:00000080026F5000]   513039 ms: Scavenge (during sweeping) 4090.7 (4095.4) -> 4089.0 (4095.4) MB, pooled: 0.0 MB, 46.29 / 0.00 ms (average mu = 0.354, current mu = 0.369) allocation failure; 
+[37960:00000080026F5000]   514978 ms: Mark-Compact (reduce) 4093.6 (4098.1) -> 4088.6 (4092.4) MB, pooled: 0.0 MB, 1206.84 / 0.00 ms (+ 499.1 ms in 73 steps since start of marking, biggest step 27.8 ms, walltime since start of marking 1853 ms) (average mu
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF610902846 node::OnFatalError+1318
+ 2: 00007FF6114A2627 v8::Function::NewInstance+423
+ 3: 00007FF6112B0A37 v8::base::AddressSpaceReservation::AddressSpaceReservation+328087
+ 4: 00007FF6112B4947 v8::base::AddressSpaceReservation::AddressSpaceReservation+344231
+ 5: 00007FF6112C6548 v8::internal::StrongRootAllocatorBase::deallocate_impl+19176
+ 6: 00007FF6112C5D7B v8::internal::StrongRootAllocatorBase::deallocate_impl+17179
+ 7: 00007FF612A491ED v8::platform::DelayedTaskQueue::Terminate+10478861
+ 8: 00007FF6112AE368 v8::base::AddressSpaceReservation::AddressSpaceReservation+318152
+ 9: 00007FF6112CBFA0 X509_STORE_set_cleanup+5664
+10: 00007FF6112CACCE X509_STORE_set_cleanup+846
+11: 00007FF6112D891B SSL_CTX_set_cookie_generate_cb+21131
+12: 00007FF610ED871E v8::String::Utf8Value::~Utf8Value+152798
+13: 0000008025E3B4FA 
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  eslint.config.test.ts > eslint.config.mjs boundary rules > forbids client components from importing next/headers
+Error: Test timed out in 30000ms.
+If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+ ❯ eslint.config.test.ts:43:3
+     41|
+     42| describe("eslint.config.mjs boundary rules", { timeout: 30_000 }, () =…
+     43|   it("forbids client components from importing next/headers", async ()…
+       |   ^
+     44|     const file = writeProbe(
+     45|       "src/components/__probe__.tsx",
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Worker forks emitted error.
+ ❯ EventEmitter.onTaskError node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3459:21
+ ❯ EventEmitter.emit node:events:508:20
+ ❯ ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3025:22
+ ❯ ChildProcess.emit node:events:508:20
+ ❯ Process.ChildProcess._handle.onexit node:internal/child_process:294:12
+
+Caused by: Error: Worker exited unexpectedly
+ ❯ ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3023:33
+ ❯ ChildProcess.emit node:events:508:20
+ ❯ Process.ChildProcess._handle.onexit node:internal/child_process:294:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed | 79 passed (81)
+      Tests  1 failed | 440 passed (474)
+     Errors  1 error
+   Start at  08:06:31
+   Duration  558.95s (transform 24.45s, setup 0ms, import 403.59s, tests 89.13s, environment 232.10s)
+

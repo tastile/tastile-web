@@ -1,0 +1,40 @@
+=== eslint-disable (excluding node_modules / .claude / .next) ===
+scripts/append-weekly-helper.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+scripts/dev-browser.cjs:1:/* eslint-disable */
+scripts/diag2.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+scripts/fix-escape.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+scripts/fix-escape.cjs:7:const nl = eol; // eslint-disable-line @typescript-eslint/no-unused-vars
+scripts/patch-recent-tags.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+scripts/patch-recurring-create.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+scripts/patch-v1-helper.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+scripts/patch-v1-helper.cjs:45:const id = "' + 'X' + '"; // eslint-disable-line @typescript-eslint/no-unused-vars
+scripts/rewrite-recommend-spec.cjs:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/at-020-weekday-condition.spec.ts:32:// eslint-disable-next-line @typescript-eslint/no-unused-vars
+e2e/at-053-idempotency.spec.ts:32:async function getV1(page: Page, path: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/at-053-idempotency.spec.ts:36:async function createRecurring(page: Page, title: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/at-053-idempotency.spec.ts:45:async function addStepFrameRule(page: Page, recurringId: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/at-053-idempotency.spec.ts:67:async function materialize(page: Page, recurringId: string, frameRuleId: string, start: string, end: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/at-053-idempotency.spec.ts:79:async function placementIdForRecurring(page: Page, recurringId: string): Promise<string> { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/at-053-idempotency.spec.ts:91:async function appendChangeSet(page: Page, placementId: string, slot: 0 | 1, instant: string) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/at-070-073-legacy-shape.spec.ts:13:const WEB = "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web"; // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-create-e2e.spec.ts:12:async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-create-recurring-e2e.spec.ts:23:async function deleteAllEvents(_req: APIRequestContext) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-create-recurring-e2e.spec.ts:56:    const startIso = isoAtUtc(day, 9, 0); // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-create-recurring-e2e.spec.ts:57:    const endIso = isoAtUtc(day, 10, 0); // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-create-v1-params.spec.ts:4:function todayUtc(): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-create-v1-params.spec.ts:12:async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-edit-delete.spec.ts:14:async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-meta-roundtrip.spec.ts:12:async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-sidebar-to-timeline.spec.ts:12:async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-sidebar-to-timeline.spec.ts:34:  const prev = new Date(new Date(day + "T00:00:00Z").getTime() - 24 * 60 * 60 * 1000) // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-sidebar-to-timeline.spec.ts:37:  const next = new Date(new Date(day + "T00:00:00Z").getTime() + 24 * 60 * 60 * 1000) // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/quick-tile-timeline-display.spec.ts:12:async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/_manual_walkthrough.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/_manual_walkthrough2.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/_manual_walkthrough3.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/_manual_walkthrough_place.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/_manual_walkthrough_place.js:3:const fs = require("node:fs"); // eslint-disable-line @typescript-eslint/no-unused-vars
+e2e/_manual_walkthrough_rec.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/_zoom.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+e2e/_zoom2.js:1:/* eslint-disable @typescript-eslint/no-require-imports */
+TOTAL_ESLINT_DISABLE=38

@@ -1,4 +1,3 @@
-/* eslint-disable */
 const { spawn } = require('child_process');
 const { chromium } = require('playwright');
 

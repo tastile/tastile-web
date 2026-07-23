@@ -10,7 +10,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 const CORE = "C:\\Users\\rebui\\Desktop\\tastile\\tastile-core";
-const WEB = "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web"; // eslint-disable-line @typescript-eslint/no-unused-vars
+const WEB = "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web"; 
 
 function psqlAt(sql: string): string {
   return execFileSync(

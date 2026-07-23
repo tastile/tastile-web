@@ -9,7 +9,7 @@ function todayUtc(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 }
 
-async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+async function deleteAllEvents(_page: Page) { 
   // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
   // directly via docker exec so the day view is fully empty for the next test.
   execFileSync(
@@ -31,10 +31,10 @@ test.describe('quick tile - end-to-end create to timeline render', () => {
   test('panel sidebar create -> day view shows the tile in the timeline', async ({ page }) => {
     const title = 'sidebar-to-timeline-' + Date.now();
     const day = todayUtc();
-  const prev = new Date(new Date(day + "T00:00:00Z").getTime() - 24 * 60 * 60 * 1000) // eslint-disable-line @typescript-eslint/no-unused-vars
+  const prev = new Date(new Date(day + "T00:00:00Z").getTime() - 24 * 60 * 60 * 1000) 
     .toISOString()
     .slice(0, 10);
-  const next = new Date(new Date(day + "T00:00:00Z").getTime() + 24 * 60 * 60 * 1000) // eslint-disable-line @typescript-eslint/no-unused-vars
+  const next = new Date(new Date(day + "T00:00:00Z").getTime() + 24 * 60 * 60 * 1000) 
     .toISOString()
     .slice(0, 10);
 

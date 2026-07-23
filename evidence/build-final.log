@@ -1,0 +1,95 @@
+▲ Next.js 16.3.0-canary.83 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 299ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 21.0s
+  Running TypeScript ...
+  Finished TypeScript in 32.6s ...
+  Collecting page data using 19 workers ...
+  Generating static pages using 19 workers (0/64) ...
+  Generating static pages using 19 workers (16/64) 
+  Generating static pages using 19 workers (32/64) 
+  Generating static pages using 19 workers (48/64) 
+✓ Generating static pages using 19 workers (64/64) in 3.0s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /api/account/email/start
+├ ƒ /api/account/email/verify
+├ ƒ /api/account/mfa/setup
+├ ƒ /api/account/mfa/verify
+├ ƒ /api/account/profile
+├ ƒ /api/account/tokens
+├ ƒ /api/account/tokens/[id]
+├ ƒ /api/auth/session
+├ ƒ /api/billing/subscription
+├ ƒ /api/download/windows
+├ ƒ /api/events
+├ ƒ /api/events/[id]
+├ ƒ /api/events/occurrences
+├ ƒ /api/events/placements/[id]/close
+├ ƒ /api/events/tiles/[id]
+├ ƒ /api/events/tiles/[id]/update
+├ ƒ /api/me
+├ ƒ /api/mobile/api-token
+├ ƒ /api/openapi
+├ ƒ /api/proxy/[...path]
+├ ƒ /api/proxy/sse
+├ ƒ /api/stripe/checkout
+├ ƒ /api/stripe/portal
+├ ƒ /api/stripe/webhook
+├ ƒ /api/version
+├ ƒ /app
+├ ƒ /app/execute
+├ ƒ /app/prompt
+├ ƒ /app/settings
+├ ƒ /app/tiles
+├ ○ /apple-icon.png
+├ ƒ /auth/callback
+├ ƒ /auth/cognito/login
+├ ƒ /auth/cognito/logout
+├ ƒ /auth/cognito/signup
+├ ƒ /auth/confirm
+├ ƒ /auth/desktop/callback
+├ ○ /auth/desktop/complete
+├ ƒ /auth/email
+├ ƒ /auth/email/complete
+├ ƒ /auth/email/confirm
+├ ƒ /auth/email/resend
+├ ƒ /auth/email/signup
+├ ƒ /auth/email/start
+├ ƒ /auth/email/verify
+├ ƒ /auth/mfa-setup
+├ ƒ /auth/signup
+├ ○ /dashboard
+├ ○ /dashboard/api
+├ ○ /dashboard/billing
+├ ○ /dashboard/events
+├ ○ /dashboard/preferences
+├ ○ /dashboard/preferences/account
+├ ○ /dashboard/preferences/general
+├ ○ /dashboard/projects
+├ ○ /dashboard/quota
+├ ○ /dashboard/runtime
+├ ○ /dashboard/schedule
+├ ○ /dashboard/tasks
+├ ○ /dashboard/timeline
+├ ƒ /dashboard/timeline/[view]
+├ ○ /docs/api
+├ ƒ /download
+├ ○ /icon
+├ ƒ /login
+├ ƒ /pricing
+├ ○ /privacy
+├ ○ /terms
+└ ○ /tokushoho
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 // Restore v1.ts to a clean state with correctly escaped SQL.
 const fs = require('node:fs');
 const path = 'C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts';
 const before = fs.readFileSync(path, 'utf8');
 const eol = before.includes('\r\n') ? '\r\n' : '\n';
-const nl = eol; // eslint-disable-line @typescript-eslint/no-unused-vars
+const nl = eol;
 
 // Find the broken lines.
 const oldSnippet = '      const escaped = label.replace(/' + "'" + '/g, "' + "'" + "'" + "'" + ');';

@@ -1,0 +1,108 @@
+$ node scripts/run-vitest.mjs
+
+ RUN  v4.1.10 C:/Users/rebui/Desktop/tastile/tastile-web
+
+stderr | src/lib/context/side-panel-context.test.tsx > useSidePanel reference-stability contract > fires the subscriber effect at most once when the pushed element is reference-stable
+Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+
+ ❯ src/lib/context/side-panel-context.test.tsx (1 test | 1 failed) 12ms
+     × fires the subscriber effect at most once when the pushed element is reference-stable 7ms
+(node:35080) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39880) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:43844) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19420) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:34428) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:27988) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38812) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15340) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:35160) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:24404) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:13504) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:30440) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:40604) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:38208) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:39600) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+<--- Last few GCs --->
+
+[29764:0000008003E53000]   548027 ms: Scavenge (during sweeping) 8180.2 (8188.6) -> 8176.7 (8188.8) MB, pooled: 0.0 MB, 39.81 / 0.00 ms (average mu = 0.326, current mu = 0.288) allocation failure; 
+[29764:0000008003E53000]   550983 ms: Mark-Compact (reduce) 8187.2 (8195.8) -> 8175.3 (8182.1) MB, pooled: 0.0 MB, 1813.16 / 0.00 ms (+ 841.6 ms in 167 steps since start of marking, biggest step 6.0 ms, walltime since start of marking 2861 ms) (average mu
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF610902846 node::OnFatalError+1318
+ 2: 00007FF6114A2627 v8::Function::NewInstance+423
+ 3: 00007FF6112B0A37 v8::base::AddressSpaceReservation::AddressSpaceReservation+328087
+ 4: 00007FF6112B4947 v8::base::AddressSpaceReservation::AddressSpaceReservation+344231
+ 5: 00007FF6112C6548 v8::internal::StrongRootAllocatorBase::deallocate_impl+19176
+ 6: 00007FF6112C5D7B v8::internal::StrongRootAllocatorBase::deallocate_impl+17179
+ 7: 00007FF612A491ED v8::platform::DelayedTaskQueue::Terminate+10478861
+ 8: 00007FF6112AE368 v8::base::AddressSpaceReservation::AddressSpaceReservation+318152
+ 9: 00007FF6112CBFA0 X509_STORE_set_cleanup+5664
+10: 00007FF6112CACCE X509_STORE_set_cleanup+846
+11: 00007FF6112D891B SSL_CTX_set_cookie_generate_cb+21131
+12: 00007FF610ED871E v8::String::Utf8Value::~Utf8Value+152798
+13: 000000802657B4FA 
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/context/side-panel-context.test.tsx > useSidePanel reference-stability contract > fires the subscriber effect at most once when the pushed element is reference-stable
+TypeError: Cannot read properties of null (reading 'useCallback')
+ ❯ process.env.NODE_ENV.exports.useCallback node_modules/react/cjs/react.development.js:1204:33
+ ❯ src/lib/context/side-panel-context.test.tsx:56:21
+     56|     };
+     57|
+     58|     const { unmount } = render(
+       |             ^
+     59|       <SidePanelProvider>
+     60|         <StableContentFixture onPushCount={record} />
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.
+
+⎯⎯⎯⎯⎯⎯ Unhandled Error ⎯⎯⎯⎯⎯⎯⎯
+Error: [vitest-pool]: Worker forks emitted error.
+ ❯ EventEmitter.onTaskError node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3459:21
+ ❯ EventEmitter.emit node:events:508:20
+ ❯ ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3025:22
+ ❯ ChildProcess.emit node:events:508:20
+ ❯ Process.ChildProcess._handle.onexit node:internal/child_process:294:12
+
+Caused by: Error: Worker exited unexpectedly
+ ❯ ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/cli-api.BK8pd4xc.js:3023:33
+ ❯ ChildProcess.emit node:events:508:20
+ ❯ Process.ChildProcess._handle.onexit node:internal/child_process:294:12
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+
+ Test Files  1 failed | 82 passed (84)
+      Tests  1 failed | 457 passed (491)
+     Errors  1 error
+   Start at  09:07:15
+   Duration  575.72s (transform 7.53s, setup 0ms, import 202.40s, tests 55.35s, environment 131.86s)
+
+error: script "test:unit" exited with code 1

@@ -1,0 +1,45 @@
+$ node scripts/run-vitest.mjs
+
+ RUN  v4.1.10 C:/Users/rebui/Desktop/tastile/tastile-web
+
+ ❯ .doctor-cache/node_modules/fast-uri/test/parse.test.js (0 test)
+ ❯ .doctor-cache/node_modules/fast-uri/test/uri-js.test.js (0 test)
+ ❯ .doctor-cache/node_modules/zod/src/v4/classic/tests/to-json-schema.test.ts (0 test)
+ ❯ .doctor-cache/node_modules/gensync/test/index.test.js (0 test)
+ ❯ .doctor-cache/node_modules/fast-uri/test/security.test.js (0 test)
+ ❯ .doctor-cache/node_modules/fast-uri/test/serialize.test.js (0 test)
+ ❯ .doctor-cache/node_modules/fast-uri/test/rfc-3986.test.js (0 test)
+(node:48756) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ .doctor-cache/node_modules/fast-uri/test/resolve.test.js (0 test)
+(node:51836) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:51700) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:29148) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:14888) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:20368) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ .doctor-cache/node_modules/fast-uri/test/equal.test.js (0 test)
+(node:10072) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15104) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:33152) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15468) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:32812) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28384) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:36340) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ .doctor-cache/node_modules/fast-uri/test/util.test.js (0 test)
+ ❯ .doctor-cache/node_modules/fast-uri/test/uri-js-compatibility.test.js (0 test)
+ ❯ .doctor-cache/node_modules/fast-uri/test/security-normalization.test.js (0 test)
+(node:51676) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+ ❯ .doctor-cache/node_modules/zod/src/v4/classic/tests/datetime.test.ts (0 test)

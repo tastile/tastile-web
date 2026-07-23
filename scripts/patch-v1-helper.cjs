@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 // Extend v1CreatePlacement to accept tags[] and seed v1_annotation rows
 const fs = require('node:fs');
 const path = 'C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts';
@@ -42,7 +41,7 @@ if (!after2.includes(marker)) {
   process.exit(1);
 }
 
-const id = "' + 'X' + '"; // eslint-disable-line @typescript-eslint/no-unused-vars
+const id = "' + 'X' + '";
 // Build the SQL using a string concat so we never have to escape backticks/single-quotes
 // inside a single-quoted TS source file written via PowerShell.
 const replacementParts = [

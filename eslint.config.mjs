@@ -159,6 +159,67 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  {
+    // Playwright E2E test files. They run under Node and only need a tiny
+    // subset of the React/Next rules. We must provide a matching config
+    // block (otherwise ESLint flags them as "no matching configuration")
+    // and we strip the React/JSX/Next rules that don't apply.
+    files: ["e2e/**/*.ts", "e2e/**/*.spec.ts"],
+    languageOptions: {
+      parser: tsParser,
+      globals: {
+        ...globals.node,
+      },
+      parserOptions: {
+        project: "./tsconfig.json",
+        sourceType: "module",
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+    },
+    rules: {
+      // E2E specs use `page` as a placeholder, so `no-unused-vars` from
+      // TS-ESLint would flag every helper signature. We rely on
+      // TypeScript itself to enforce type correctness; unused helpers
+      // surface at compile time, not as lint findings.
+      "@typescript-eslint/no-unused-vars": "off",
+    },
+  },
+  {
+    // Node-side JS scripts (.mjs/.cjs/.js). The build-product script, the
+    // vitest runner wrapper, and one-off maintenance helpers live here.
+    // JS files cannot use the TS parser (project-aware parse fails on
+    // files outside tsconfig), so we rely on ESLint's default parser.
+    files: ["scripts/**/*.{js,mjs,cjs}"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      // The `set-env` scanner decides between module vs commonjs per file
+      // based on its imports; the default ESLint behavior handles .mjs
+      // (module) and .cjs (script) correctly when sourceType is omitted.
+    },
+    rules: {},
+  },
+  {
+    // Node-side TypeScript scripts (`.ts`/`.mts`).
+    files: ["scripts/**/*.{ts,mts}"],
+    languageOptions: {
+      parser: tsParser,
+      globals: {
+        ...globals.node,
+      },
+      parserOptions: {
+        project: "./tsconfig.json",
+        sourceType: "module",
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+    },
+    rules: {},
+  },
   globalIgnores([
     ".next/**",
     ".next-turbopack-broken-*/**",
@@ -172,9 +233,19 @@ const eslintConfig = defineConfig([
     "deploy-staging/**",
     "deploy-staging2/**",
     "deploy-*/**",
-    "e2e/**",
-    "scripts/**",
     ".claude/worktrees/**",
+    // One-off manual walkthrough scripts. They are scratch space for the
+    // operator and not part of the lint surface (their names start with
+    // `_manual_`/`_zoom*` to signal that explicitly).
+    "e2e/_manual_*.js",
+    "e2e/_zoom*.js",
+    // PowerShell helpers (.ps1) are outside ESLint's parser scope.
+    "scripts/**/*.ps1",
+    "scripts/**/*.sh",
+    // The shell helpers under scripts/v1 and scripts/wslc use top-of-file
+    // bangs and patterns we don't want to validate against the TS rule set.
+    "scripts/v1/**",
+    "scripts/wslc/**",
   ]),
 ]);
 

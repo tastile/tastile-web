@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 
-function todayUtc(): string { // eslint-disable-line @typescript-eslint/no-unused-vars
+function todayUtc(): string { 
   // Use the date in the user's local timezone (the test runner is
   // pinned to Asia/Tokyo). UTC-vs-local would otherwise drop events
   // created at the day boundary because the day view queries
@@ -9,7 +9,7 @@ function todayUtc(): string { // eslint-disable-line @typescript-eslint/no-unuse
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 }
 
-async function deleteAllEvents(_page: Page) { // eslint-disable-line @typescript-eslint/no-unused-vars
+async function deleteAllEvents(_page: Page) { 
   // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
   // directly via docker exec so the day view is fully empty for the next test.
   execFileSync(
