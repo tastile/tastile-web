@@ -34,6 +34,26 @@ vi.mock("@/components/execution/GlobalPromptBanner", () => ({
 	),
 }));
 
+// AppShell renders Header which uses @tanstack/react-query's useQuery. This
+// test exercises AppShell's prompt-action handling, not Header identity
+// fetch, so we stub the query hooks to a no-op client. Without this mock
+// the merged-main Header (useQuery) raises "No QueryClient set" and the
+// tests fail even though the branch-version Header (useState) did not.
+vi.mock("@tanstack/react-query", async () => {
+	const actual = await vi.importActual<typeof import("@tanstack/react-query")>(
+		"@tanstack/react-query",
+	);
+	return {
+		...actual,
+		useQuery: () => ({ data: undefined, isLoading: false, isError: false }),
+		useQueryClient: () => ({
+			getQueryData: () => undefined,
+			setQueryData: () => undefined,
+			invalidateQueries: () => undefined,
+		}),
+	};
+});
+
 beforeEach(() => {
 	executeMock.mockReset();
 	executeMock.mockResolvedValue(undefined);
