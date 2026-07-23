@@ -37,6 +37,7 @@
     "@mantine/core": "^8",
     "@mantine/dates": "^8",
     "@mantine/hooks": "^8",
+    "@tanstack/react-query": "^5.101.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.21",
@@ -48,6 +49,7 @@
     "tailwind-merge": "^3.6.0",
     "uuid": "^14.0.1",
     "yakuhanjp": "^4.1.1",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

@@ -1,67 +1,63 @@
 "use client";
 
 /**
- * useV1ActiveTile -- thin polling wrapper around `GET /v1/active-tile`.
+ * useV1ActiveTile -- polling hook around `GET /v1/active-tile`.
  *
- * The v1 endpoint returns the placement the engine is currently
- * executing (the "main tile").  It carries the v1 IDs we need to
- * drive pause / resume / finish on the matching execution.
+ * Thin wrapper around `useQuery` that:
+ *   - dedupes concurrent subscribers via the dashboard QueryClient
+ *   - polls every 5 seconds while mounted
+ *   - refetches immediately when `tastile:execution-changed` fires
+ *   - validates the wire payload at the edge (see
+ *     `src/lib/api/v1/active-tile.ts`)
  *
- * This is intentionally separate from `useActiveTile`, which polls
- * the v0-era `getExecutionView` (ExecutionViewSnapshot) for the
- FloatingHeader countdown.  New lifecycle controls should read
- from this hook so the wire IDs and the polling cadence match the
- v1 API.
+ * The public return shape is preserved so existing consumers
+ * (notably `V1ExecutionControls`) keep working unchanged.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { getCoreClient } from "@/lib/api/endpoints";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { fetchV1ActiveTile, type V1ActiveTileSnapshot } from "@/lib/api/v1/active-tile";
+import { queryKeys } from "@/lib/query/query-keys";
 
-export interface V1ActiveTileSnapshot {
-  tile_id: string;
-  placement_id: string;
-  execution_id: string | null;
-  title: string;
-  span_start: string;
-  span_end: string;
-}
-
-const EMPTY: V1ActiveTileSnapshot | null = null;
+export type { V1ActiveTileSnapshot } from "@/lib/api/v1/active-tile";
 
 export function useV1ActiveTile(): {
   snapshot: V1ActiveTileSnapshot | null;
   loading: boolean;
   error: Error | null;
 } {
-  const [snapshot, setSnapshot] = useState<V1ActiveTileSnapshot | null>(EMPTY);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const mountedRef = useRef(true);
-  const fetchSnapshot = useCallback(async () => {
-    const res = await getCoreClient().call<V1ActiveTileSnapshot>("getActiveTile");
-    if (!mountedRef.current) return;
-    if (res.ok) {
-      setSnapshot(res.data ?? null);
-      setError(null);
-    } else {
-      const msg = res.error.message;
-      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
-    }
-    setLoading(false);
-  }, []);
+  const queryClient = useQueryClient();
+  const query = useQuery<V1ActiveTileSnapshot | null, Error>({
+    queryKey: queryKeys.activeTile,
+    queryFn: async () => {
+      const res = await fetchV1ActiveTile();
+      if (res.ok) return res.data;
+      // Surface structured API failures as a plain Error so the
+      // hook's external contract stays `Error | null`, while the
+      // original `ApiError` remains reachable via `cause` for any
+      // caller that needs the kind/status/body.
+      const apiError = new Error(res.error.message);
+      (apiError as Error & { cause?: unknown }).cause = res.error;
+      throw apiError;
+    },
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: false,
+    retry: false,
+  });
 
   useEffect(() => {
-    mountedRef.current = true;
-    void fetchSnapshot();
-    const interval = window.setInterval(() => void fetchSnapshot(), 5_000);
-    const onChanged = () => void fetchSnapshot();
+    const onChanged = () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.activeTile });
+    };
     window.addEventListener("tastile:execution-changed", onChanged);
     return () => {
-      window.clearInterval(interval);
       window.removeEventListener("tastile:execution-changed", onChanged);
-      mountedRef.current = false;
     };
-  }, [fetchSnapshot]);
+  }, [queryClient]);
 
-  return { snapshot, loading, error };
+  return {
+    snapshot: query.data ?? null,
+    loading: query.isLoading,
+    error: query.error ?? null,
+  };
 }
