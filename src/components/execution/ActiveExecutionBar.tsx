@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { Actor } from "@/lib/domain/actor";
 import type { PhaseKind } from "@/lib/domain/execution";
@@ -27,7 +27,7 @@ export function ActiveExecutionBar({
   mode = "default",
 }: ActiveExecutionBarProps) {
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [requestPromptPending, setRequestPromptPending] = useState(false);
+  const requestPromptPending = useRef(false);
   const { state, execute } = useExecutionEngineContext();
   const { t } = useTranslation();
 
@@ -154,8 +154,8 @@ export function ActiveExecutionBar({
         size={20}
         className="shrink-0"
         onClick={() => {
-          if (!canRequestPrompt || requestPromptPending) return;
-          setRequestPromptPending(true);
+          if (!canRequestPrompt || requestPromptPending.current) return;
+          requestPromptPending.current = true;
           void execute(
             {
               type: "request_prompt",
@@ -165,7 +165,7 @@ export function ActiveExecutionBar({
             },
             Actor.human("self"),
           ).finally(() => {
-            setRequestPromptPending(false);
+            requestPromptPending.current = false;
           });
         }}
       />

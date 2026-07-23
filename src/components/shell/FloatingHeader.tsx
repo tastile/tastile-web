@@ -57,7 +57,7 @@ export function FloatingHeader({
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   const { snapshot } = useActiveTile();
-  const [nowMs, setNowMs] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   // Only tick once per second while the countdown is actually visible
   // (working state with an end time). Without this guard the header
@@ -66,7 +66,6 @@ export function FloatingHeader({
   const ticking = Boolean(snapshot?.is_working && ends);
 
   useEffect(() => {
-    setNowMs(Date.now());
     if (!ticking) return;
     const id = window.setInterval(() => setNowMs(Date.now()), 1000);
     return () => window.clearInterval(id);

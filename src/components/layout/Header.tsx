@@ -1,7 +1,8 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { AccountMenu } from "@/app/app/account-menu";
 import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
@@ -22,45 +23,27 @@ interface HeaderProps {
 
 export function Header({ executionState }: HeaderProps) {
   const { t } = useTranslation();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [userData, setUserData] = useState<{
-    displayName: string;
-    email: string;
-    plan: string;
-  } | null>(null);
-
-  useEffect(() => {
-    // The session route intentionally returns only safe metadata
-    // ({sub, exp, owner_id}) — no email, name, picture, or Cognito
-    // token material. We call /api/me (best-effort) for the real
-    // display_name / email / avatar, and fall back to a derived label
-    // only when the profile is missing. Anything richer than the
-    // derived label must come from /api/me, not from decoding an
-    // id_token in the browser.
-    void (async () => {
-      const session = await fetchSafeSession();
-      if (!session) {
-        setAvatarUrl(null);
-        setUserData(null);
-        return;
-      }
-
-      const profile = await fetchProfile();
-      const displayName = pickDisplayLabel({
+  const sessionQuery = useQuery(safeSessionQueryOptions);
+  const profileQuery = useQuery({
+    ...profileQueryOptions,
+    enabled: Boolean(sessionQuery.data),
+  });
+  const identity = useMemo(() => {
+    const session = sessionQuery.data;
+    if (!session) return null;
+    const profile = profileQuery.data;
+    return {
+      avatarUrl: profile?.avatarUrl ?? null,
+      displayName: pickDisplayLabel({
         displayName: profile?.displayName ?? null,
         email: profile?.email ?? null,
         ownerId: session.owner_id,
         sub: session.sub,
-      });
-
-      setAvatarUrl(profile?.avatarUrl ?? null);
-      setUserData({
-        displayName,
-        email: profile?.email ?? "",
-        plan: "free",
-      });
-    })();
-  }, []);
+      }),
+      email: profile?.email ?? "",
+      plan: "free",
+    };
+  }, [profileQuery.data, sessionQuery.data]);
 
   return (
     <header className="flex h-14 items-center justify-between rounded-xl bg-surface-elevated px-4 lg:h-16">
@@ -107,12 +90,12 @@ export function Header({ executionState }: HeaderProps) {
         >
           <Bell className="h-5 w-5" />
         </button>
-        {userData ? (
+        {identity ? (
           <AccountMenu
-            displayName={userData.displayName}
-            avatarUrl={avatarUrl}
-            plan={userData.plan}
-            email={userData.email}
+            displayName={identity.displayName}
+            avatarUrl={identity.avatarUrl}
+            plan={identity.plan}
+            email={identity.email}
             menuPlacement="down"
           />
         ) : (
@@ -160,7 +143,7 @@ interface ProfileMe {
   avatarUrl: string | null;
 }
 
-async function fetchProfile(): Promise<ProfileMe | null> {
+export async function fetchProfile(): Promise<ProfileMe | null> {
   try {
     const res = await fetch("/api/me", { cache: "no-store" });
     if (!res.ok) return null;
@@ -178,3 +161,17 @@ async function fetchProfile(): Promise<ProfileMe | null> {
     return null;
   }
 }
+
+export const safeSessionQueryOptions = {
+  queryKey: ["auth", "safe-session"] as const,
+  queryFn: fetchSafeSession,
+  retry: false,
+  staleTime: 60_000,
+};
+
+export const profileQueryOptions = {
+  queryKey: ["account", "profile"] as const,
+  queryFn: fetchProfile,
+  retry: false,
+  staleTime: 60_000,
+};

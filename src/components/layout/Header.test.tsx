@@ -1,5 +1,6 @@
 /** @vitest-environment jsdom */
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Header } from "./Header";
@@ -46,7 +47,11 @@ describe("Header identity fetch", () => {
     const fetchMock = buildFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<Header />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <Header />
+      </QueryClientProvider>,
+    );
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalled();
     });
@@ -60,7 +65,11 @@ describe("Header identity fetch", () => {
     const fetchMock = buildFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<Header />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <Header />
+      </QueryClientProvider>,
+    );
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
     const init = (fetchMock.mock.calls[0]?.[1] ?? {}) as RequestInit;
@@ -74,7 +83,11 @@ describe("Header identity fetch", () => {
     const fetchMock = buildFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<Header />);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <Header />
+      </QueryClientProvider>,
+    );
     await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
 
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));

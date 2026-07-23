@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { Actor } from "@/lib/domain/actor";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
@@ -10,7 +10,7 @@ export function ActiveExecutionBadge() {
   const { state, execute } = useExecutionEngineContext();
   const { t } = useTranslation();
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [requestPromptPending, setRequestPromptPending] = useState(false);
+  const requestPromptPending = useRef(false);
   const activeTile = state.execution.activeTileId
     ? (state.tiles.get(state.execution.activeTileId) ?? null)
     : null;
@@ -42,8 +42,8 @@ export function ActiveExecutionBadge() {
         size={16}
         className="shrink-0"
         onClick={() => {
-          if (!canRequestPrompt || requestPromptPending) return;
-          setRequestPromptPending(true);
+          if (!canRequestPrompt || requestPromptPending.current) return;
+          requestPromptPending.current = true;
           void execute(
             {
               type: "request_prompt",
@@ -53,7 +53,7 @@ export function ActiveExecutionBadge() {
             },
             Actor.human("self"),
           ).finally(() => {
-            setRequestPromptPending(false);
+            requestPromptPending.current = false;
           });
         }}
       />
