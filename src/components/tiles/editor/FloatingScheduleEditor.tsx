@@ -34,16 +34,19 @@ export function FloatingScheduleEditor({
     setSaving(true);
     setError(null);
     const payload = buildFloatingSchedulePayload({ title, requiredMinutes: minutes, label });
-    const result = await publishScheduleDefinition({
-      client: makeClient(),
-      payload,
-    });
-    setSaving(false);
-    if (!result.ok) {
-      setError(result.error.message);
-      return;
+    try {
+      const result = await publishScheduleDefinition({
+        client: makeClient(),
+        payload,
+      });
+      if (!result.ok) {
+        setError(result.error.message);
+        return;
+      }
+      onSaved();
+    } finally {
+      setSaving(false);
     }
-    onSaved();
   }
 
   return (

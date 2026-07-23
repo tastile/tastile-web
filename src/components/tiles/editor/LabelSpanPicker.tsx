@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   listReferenceCatalog,
@@ -12,6 +12,14 @@ import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 
 import type { FloatingLabel } from "./floating-schedule";
 
+type LoadState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; items: ReferenceCatalogItem[] }
+  | { status: "ready"; items: ReferenceCatalogItem[] };
+
+const ERROR_MESSAGE = "期間ラベルを読み込めませんでした。";
+
 export function LabelSpanPicker({
   value,
   onChange,
@@ -20,46 +28,40 @@ export function LabelSpanPicker({
   onChange: (label: FloatingLabel | null) => void;
 }) {
   const ownerId = useCurrentActorSubjectId();
-  const [items, setItems] = useState<ReferenceCatalogItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(() => {
-    if (!ownerId) return;
-    setLoading(true);
-    setError(null);
-    void listReferenceCatalog(makeClient(), ownerId, ScheduleReferenceUsage.LABEL_SPAN)
-      .then((result) => {
-        if (result.ok) {
-          setItems(result.data);
-        } else {
-          setItems([]);
-          setError("期間ラベルを読み込めませんでした。");
-        }
-      })
-      .catch(() => setError("期間ラベルを読み込めませんでした。"))
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [ownerId]);
+  const [state, setState] = useState<LoadState>({ status: "idle" });
 
   useEffect(() => {
-    let current = true;
     if (!ownerId) return;
-    setLoading(true);
-    setError(null);
+    let current = true;
+    setState({ status: "loading" });
     void listReferenceCatalog(makeClient(), ownerId, ScheduleReferenceUsage.LABEL_SPAN)
       .then((result) => {
         if (!current) return;
-        if (result.ok) setItems(result.data);
-        else setError("期間ラベルを読み込めませんでした。");
+        if (result.ok) setState({ status: "ready", items: result.data });
+        else setState({ status: "error", items: [] });
       })
-      .catch(() => current && setError("期間ラベルを読み込めませんでした。"))
-      .finally(() => current && setLoading(false));
+      .catch(() => {
+        if (current) setState({ status: "error", items: [] });
+      });
     return () => {
       current = false;
     };
   }, [ownerId]);
+
+  const items = state.status === "ready" || state.status === "error" ? state.items : [];
+  const loading = state.status === "loading" || state.status === "idle";
+  const error = state.status === "error" ? ERROR_MESSAGE : null;
+
+  const reload = () => {
+    if (!ownerId) return;
+    setState({ status: "loading" });
+    void listReferenceCatalog(makeClient(), ownerId, ScheduleReferenceUsage.LABEL_SPAN)
+      .then((result) => {
+        if (result.ok) setState({ status: "ready", items: result.data });
+        else setState({ status: "error", items: [] });
+      })
+      .catch(() => setState({ status: "error", items: [] }));
+  };
 
   return (
     <label className="block space-y-1">
@@ -95,7 +97,7 @@ export function LabelSpanPicker({
       {error ? (
         <div role="alert" className="flex items-center justify-between gap-2 text-xs text-danger">
           <span>{error}</span>
-          <button type="button" onClick={load} className="underline">
+          <button type="button" onClick={reload} className="underline">
             再試行
           </button>
         </div>

@@ -85,8 +85,8 @@ export function ScrollPage({
                 {t.heroBadge}
               </span>
               <h1 className="font-[family-name:var(--font-jp-heading)] text-5xl font-semibold leading-[1.1] tracking-tight text-foreground lg:text-7xl">
-                {t.heroTitle.map((l, i) => (
-                  <span key={`hero-${i}`} className="block">
+                {t.heroTitle.map((l) => (
+                  <span key={l} className="block">
                     {l}
                   </span>
                 ))}
@@ -374,7 +374,7 @@ function HowReveal({ t, lang }: { t: Dict; lang: "ja" | "en" }) {
             }}
           >
             {t.howPipeline[lang].split(" → ").map((step, i, arr) => (
-              <span key={i} className="flex items-center gap-3">
+              <span key={`${step}-${i}`} className="flex items-center gap-3">
                 <span className="rounded-xl bg-surface-elevated px-5 py-2.5 text-sm font-medium text-foreground shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                   {step}
                 </span>
@@ -390,7 +390,7 @@ function HowReveal({ t, lang }: { t: Dict; lang: "ja" | "en" }) {
               const e = s + 0.16;
               return (
                 <div
-                  key={i}
+                  key={item.symbol}
                   className="flex items-start gap-5"
                   style={{
                     opacity: op(p, s, e),
@@ -435,7 +435,7 @@ function CycleReveal({ t }: { t: Dict }) {
               const isArrow = step.icon === "→";
               return (
                 <div
-                  key={i}
+                  key={`${step.icon}-${i}`}
                   className="flex items-center"
                   style={{
                     opacity: op(p, s, e),
@@ -484,7 +484,7 @@ function LifeReveal({ t }: { t: Dict }) {
               const e = s + 0.15;
               return (
                 <p
-                  key={i}
+                  key={line}
                   className="text-center text-lg text-foreground-muted"
                   style={{
                     opacity: op(p, s, e),
@@ -604,7 +604,7 @@ function CTAReveal({ t }: { t: Dict }) {
           >
             {t.ctaTitle.map((l, i) => (
               <span
-                key={i}
+                key={l}
                 className="block"
                 style={{
                   opacity: op(p, 0.1 + i * 0.08, 0.35 + i * 0.08),
