@@ -725,6 +725,11 @@ export const translations = {
       duration: "所要",
       noTiles: "タイルがありません",
       unscheduled: "未スケジュール",
+      source: {
+        break: "休憩",
+        sleep: "睡眠",
+        legacy: "Source",
+      },
       notSet: "未設定",
       closePanel: "パネルを閉じる",
       weekdayAriaPrefix: "曜日",
@@ -1827,6 +1832,11 @@ export const translations = {
       duration: "Duration",
       noTiles: "No tiles yet",
       unscheduled: "Unscheduled",
+      source: {
+        break: "Break",
+        sleep: "Sleep",
+        legacy: "Source",
+      },
       notSet: "Not set",
       closePanel: "Close panel",
       weekdayAriaPrefix: "Weekday",

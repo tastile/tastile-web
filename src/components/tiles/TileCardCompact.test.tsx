@@ -4,6 +4,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { Tile } from "@/lib/domain/tile";
 import { TileId } from "@/lib/domain/ids";
+import type { TileListView } from "@/lib/hooks/use-tile-list";
 import { TileCardCompact } from "./TileCardCompact";
 
 vi.mock("@/lib/i18n/use-translation", () => ({
@@ -65,6 +66,41 @@ const emptyTemporal = {
   activeEnd: null,
 } as const;
 
+const baseListView: TileListView = {
+  id: "019ef8d5-354a-7bd2-b22a-b4bd372ea0d1",
+  plan_id: null,
+  title: "study math",
+  lifecycle: 0,
+  next_action: null,
+  done_definition: null,
+  worked_minutes: 0,
+  break_minutes: 0,
+  labels: [],
+  objective_mode: 0,
+  target_work_min: 60,
+  target_rest_min: null,
+  done_rule: null,
+  resume_note: null,
+  projected_next_start_at: null,
+  temporal: null,
+  recurrence: null,
+  source: null,
+};
+
+const baseSource = {
+  source_state: 0,
+  generation_kind: 0,
+  split_kind: 0,
+  priority: 0,
+  required_duration_ms: 0,
+  window_start_offset_ms: 0,
+  window_end_offset_ms: 0,
+  weekday_mask: null,
+  external_id: null,
+  color: null,
+  icon: null,
+};
+
 describe("TileCardCompact", () => {
   it("shows the fixed_start time when lifecycle is READY and a temporal anchor exists", () => {
     render(<TileCardCompact tile={baseTile} />);
@@ -82,6 +118,30 @@ describe("TileCardCompact", () => {
     };
     render(<TileCardCompact tile={tile} />);
     expect(screen.getByText("tiles.unscheduled")).toBeTruthy();
+  });
+
+  it("renders the translated break source chip with numeric source kind", () => {
+    const listView: TileListView = {
+      ...baseListView,
+      source: { ...baseSource, kind: 0 as const },
+    };
+
+    render(<TileCardCompact tile={baseTile} listView={listView} />);
+
+    const chip = screen.getByText("tiles.source.break");
+    expect(chip.getAttribute("data-source-kind")).toBe("0");
+  });
+
+  it("renders the translated legacy source chip with legacy source kind", () => {
+    const listView: TileListView = {
+      ...baseListView,
+      source: { ...baseSource, kind: null },
+    };
+
+    render(<TileCardCompact tile={baseTile} listView={listView} />);
+
+    const chip = screen.getByText("tiles.source.legacy");
+    expect(chip.getAttribute("data-source-kind")).toBe("legacy");
   });
 
   it("renders nothing for the time column when lifecycle is STARTED but no temporal anchor exists", () => {

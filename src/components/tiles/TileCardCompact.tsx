@@ -137,10 +137,10 @@ export function TileCardCompact({
                 const sourceKind = listView.source?.kind ?? null;
                 const chipLabel =
                   sourceKind === 0
-                    ? "休憩"
+                    ? t("tiles.source.break")
                     : sourceKind === 1
-                      ? "睡眠"
-                      : "Source";
+                      ? t("tiles.source.sleep")
+                      : t("tiles.source.legacy");
                 return (
                   <span
                     className="px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap bg-surface-3/50 text-foreground-subtle border-border"
