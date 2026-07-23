@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SourceTileSummaryWire } from "@/lib/api/v1/source-tiles";
 import { getCoreClient } from "@/lib/api/endpoints";
+import type { SourceTileSummaryWire } from "@/lib/api/v1/source-tiles";
 
 /**
  * Mirrors the OpenAPI TileListView schema (snake_case).
