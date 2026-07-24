@@ -39,7 +39,6 @@ describe("api proxy v1 path compatibility", () => {
     injectTimelineTodayDefaults(params);
     expect(params.get("start")).toBeDefined();
     expect(params.get("end")).toBeDefined();
-    // end = start + 24h
     expect(
       new Date(params.get("end")!).getTime() -
         new Date(params.get("start")!).getTime(),
@@ -57,14 +56,12 @@ describe("api proxy v1 path compatibility", () => {
   });
 
   it.each(["GET", "POST", "PUT", "PATCH", "DELETE"])(
-    "rejects a forged uid cookie for %s requests",
+    "rejects %s requests without API token cookie",
     async (method) => {
-      configureCognito();
-      process.env.TASTILE_WEB_BRIDGE_SECRET = "bridge-secret";
+      process.env.CLOUD_API_BASE = "https://core.tastile.test";
       const route = await import("./[...path]/route");
       const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
         method,
-        headers: { cookie: "tastile_uid=victim-sub" },
       });
 
       const response = await route[method as "GET" | "POST" | "PUT" | "PATCH" | "DELETE"](request, {
@@ -75,19 +72,15 @@ describe("api proxy v1 path compatibility", () => {
     },
   );
 
-  it("forwards only the Cognito-verified sub to the bridge", async () => {
-    configureCognito();
-    process.env.TASTILE_WEB_BRIDGE_SECRET = "bridge-secret";
+  it("forwards API token as Bearer to core", async () => {
     process.env.CLOUD_API_BASE = "https://core.tastile.test";
     const fetchMock = vi
       .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(new Response(JSON.stringify({ sub: "verified-sub" })))
       .mockResolvedValueOnce(new Response("[]", { status: 200 }));
     const { GET } = await import("./[...path]/route");
     const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
       headers: {
-        cookie:
-          "tastile_access_token=verified-token; tastile_uid=forged-sub",
+        cookie: "tastile_api_token=my-api-token-123",
       },
     });
 
@@ -96,8 +89,8 @@ describe("api proxy v1 path compatibility", () => {
     });
 
     expect(response.status).toBe(200);
-    const upstreamHeaders = fetchMock.mock.calls[1][1]?.headers as Headers;
-    expect(upstreamHeaders.get("x-tastile-web-session-user")).toBe("verified-sub");
+    const upstreamHeaders = fetchMock.mock.calls[0][1]?.headers as Headers;
+    expect(upstreamHeaders.get("authorization")).toBe("Bearer my-api-token-123");
   });
 
   it("forwards E2E requests to core without replacing its response", async () => {
@@ -141,7 +134,3 @@ describe("api proxy v1 path compatibility", () => {
     expect(response.headers.get("x-core-request-id")).toBe("request-123");
   });
 });
-
-function configureCognito() {
-  applyTestPoolToEnv(POOL);
-}
