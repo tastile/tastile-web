@@ -329,13 +329,22 @@ export function getModeRange(
         end: new Date(todayMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
       };
     }
-    // scope: anchor's week, week start = Sunday
-    const dow = new Date(localMidnightMs).getUTCDay();
-    const weekStartMs = localMidnightMs - dow * 24 * 60 * 60 * 1000;
-    return {
-      start: new Date(weekStartMs).toISOString(),
-      end: new Date(weekStartMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
-    };
+    // scope: anchor's week, week start = Sunday.
+    // Compute dow from local date components directly to avoid
+    // getUTCDay() returning the wrong day on timezone-shifted timestamps.
+    // Use localMidnightMs (not UTC midnight) so the API range starts at
+    // local midnight — UTC midnight would be 9 AM in JST.
+    {
+      const yy = y ?? 1970;
+      const mm = (m ?? 1) - 1;
+      const dd = d ?? 1;
+      const dow = new Date(Date.UTC(yy, mm, dd)).getUTCDay();
+      const weekStartMs = localMidnightMs - dow * 24 * 60 * 60 * 1000;
+      return {
+        start: new Date(weekStartMs).toISOString(),
+        end: new Date(weekStartMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+    }
   }
 
   // month
@@ -396,20 +405,31 @@ export function getWeekViewDates(
   tzOffsetMinutes: number,
 ): string[] {
   const [y, m, d] = anchor.split("-").map(Number);
-  const localMidnightMs = Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1) - tzOffsetMinutes * 60_000;
+  const yy = y ?? 1970;
+  const mm = (m ?? 1) - 1;
+  const dd = d ?? 1;
 
-  let baseMs: number;
-  if (mode === "around") baseMs = localMidnightMs - 3 * 24 * 60 * 60 * 1000;
-  else if (mode === "future") baseMs = localMidnightMs;
-  else {
-    const dow = new Date(localMidnightMs).getUTCDay();
-    baseMs = localMidnightMs - dow * 24 * 60 * 60 * 1000;
+  if (mode === "around") {
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(Date.UTC(yy, mm, dd - 3 + i));
+      return toIsoDate(day);
+    });
   }
-  const out: string[] = [];
-  for (let i = 0; i < 7; i++) {
-    out.push(toIsoDate(new Date(baseMs + i * 24 * 60 * 60 * 1000)));
+  if (mode === "future") {
+    return Array.from({ length: 7 }, (_, i) => {
+      const day = new Date(Date.UTC(yy, mm, dd + i));
+      return toIsoDate(day);
+    });
   }
-  return out;
+  // scope: Sun..Sat of anchor's week.
+  // Compute dow from the local date components directly — using
+  // getUTCDay() on a timezone-shifted localMidnightMs gives the
+  // wrong day for positive tz offsets (JST etc.).
+  const dow = new Date(Date.UTC(yy, mm, dd)).getUTCDay();
+  return Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(Date.UTC(yy, mm, dd - dow + i));
+    return toIsoDate(day);
+  });
 }
 
 /**
@@ -432,13 +452,13 @@ export function getMonthViewDates(
     // 31 days, padded to full weeks
     const startMs = localMidnightMs - 15 * 24 * 60 * 60 * 1000;
     const endMs = startMs + 31 * 24 * 60 * 60 * 1000;
-    return padToFullWeeks(startMs, endMs);
+    return padToFullWeeks(startMs, endMs, tzOffsetMinutes);
   }
   if (mode === "future") {
     // 31 days starting today
     const startMs = localMidnightMs;
     const endMs = startMs + 31 * 24 * 60 * 60 * 1000;
-    return padToFullWeeks(startMs, endMs);
+    return padToFullWeeks(startMs, endMs, tzOffsetMinutes);
   }
   // scope: build full month grid
   const year = y ?? 1970;
@@ -446,12 +466,15 @@ export function getMonthViewDates(
   const startMs = Date.UTC(year, month, 1);
   const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
   const endMs = Date.UTC(year, month, lastDay) + 24 * 60 * 60 * 1000;
-  return padToFullWeeks(startMs, endMs);
+  return padToFullWeeks(startMs, endMs, tzOffsetMinutes);
 }
 
-function padToFullWeeks(startMs: number, endMs: number): string[] {
-  // snap start to previous Sunday
-  const startDow = new Date(startMs).getUTCDay();
+function padToFullWeeks(startMs: number, endMs: number, tzOffsetMinutes = 0): string[] {
+  // snap start to previous Sunday.
+  // Recover the local date by adding back the timezone offset so that
+  // getUTCDay() returns the correct local day of week.
+  const localMs = startMs + tzOffsetMinutes * 60_000;
+  const startDow = new Date(localMs).getUTCDay();
   const gridStart = startMs - startDow * 24 * 60 * 60 * 1000;
   // ensure last cell is a Saturday
   const days = Math.ceil((endMs - gridStart) / (24 * 60 * 60 * 1000));

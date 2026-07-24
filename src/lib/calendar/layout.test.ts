@@ -58,4 +58,34 @@ describe("eventSpansDay tzOffset handling (Week view 睡眠 regression)", () => 
       "2026-07-18",
     ]);
   });
+
+  it("Week view getWeekViewDates returns correct Sun..Sat when anchor is Sunday (JST)", () => {
+    // Anchor 2026-07-19 (Sun JST). The grid must start on Jul 19 itself,
+    // not the previous week. This was broken by getUTCDay() on a
+    // timezone-shifted localMidnightMs returning 6 (Sat) instead of 0 (Sun).
+    const days = getWeekViewDates("scope", "2026-07-19", 540);
+    expect(days).toEqual([
+      "2026-07-19",
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-25",
+    ]);
+  });
+
+  it("Week view getWeekViewDates returns correct Sun..Sat when anchor is Saturday (JST)", () => {
+    // Anchor 2026-07-25 (Sat JST). The grid must end on Jul 25 itself.
+    const days = getWeekViewDates("scope", "2026-07-25", 540);
+    expect(days).toEqual([
+      "2026-07-19",
+      "2026-07-20",
+      "2026-07-21",
+      "2026-07-22",
+      "2026-07-23",
+      "2026-07-24",
+      "2026-07-25",
+    ]);
+  });
 });
