@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import { Apple, Fingerprint, Globe } from "lucide-react";
 import Link from "next/link";
 import { TastileLogo } from "@/components/TastileLogo";
@@ -53,22 +54,17 @@ export default async function LoginPage({
   return (
     <div className="min-h-svh bg-background font-[family-name:var(--font-jp)]">
       <main className="flex min-h-svh w-full flex-col items-center justify-center px-4 py-4">
-        <Link
-          href="/"
-          aria-label="Tastile ホーム"
-          className="flex min-h-12 items-center gap-2 text-foreground"
-        >
-          <TastileLogo size={36} />
-          <span className="text-lg font-semibold tracking-tight">tastile</span>
-        </Link>
-
         <section
           data-testid="login-panel"
           className="mt-6 w-full max-w-sm rounded-xl bg-surface-elevated p-5 sm:p-6"
         >
-          <h1 className="font-[family-name:var(--font-jp-heading)] text-xl font-semibold text-foreground">
-            ログイン
-          </h1>
+          <div className="flex min-h-12 items-center justify-center gap-2 text-foreground">
+            <TastileLogo size={36} />
+            <span className="text-lg font-semibold leading-none tracking-tight">tastile</span>
+            <h1 className="font-[family-name:var(--font-jp-heading)] text-xl font-semibold leading-none text-foreground">
+              にログイン
+            </h1>
+          </div>
 
           {errorMessage ? (
             <div
@@ -79,52 +75,59 @@ export default async function LoginPage({
             </div>
           ) : null}
 
-          <div className="mt-5 space-y-2">
+          <div className="my-2 space-y-2">
             {googleEnabled ? (
-              <a
+              <Button
+                component="a"
                 href={`/auth/cognito/login?provider=Google${desktopSuffix}`}
-                className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
+                leftSection={<Globe className="h-4 w-4" aria-hidden="true" />}
+                fullWidth
               >
-                <Globe className="h-4 w-4" aria-hidden="true" />
                 Google で続行
-              </a>
+              </Button>
             ) : null}
             {appleEnabled ? (
-              <a
+              <Button
+                component="a"
                 href={`/auth/cognito/login?provider=SignInWithApple${desktopSuffix}`}
-                className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
+                leftSection={<Apple className="h-4 w-4" aria-hidden="true" />}
+                fullWidth
               >
-                <Apple className="h-4 w-4" aria-hidden="true" />
                 Apple で続行
-              </a>
+              </Button>
             ) : null}
-            <a
+            <Button
+              component="a"
               href={`/auth/email${desktopPageSuffix}`}
-              className="flex min-h-12 w-full items-center justify-center gap-3 rounded-md bg-surface-1 px-4 py-3 text-sm font-medium text-foreground hover:bg-surface-2"
+              leftSection={<Fingerprint className="h-4 w-4" aria-hidden="true" />}
+              fullWidth
             >
-              <Fingerprint className="h-4 w-4" aria-hidden="true" />
               Passkey / メールで続行
-            </a>
+            </Button>
           </div>
-
-          <a
+          <hr className="mx-1 opacity-20" />
+          <Button
+            component="a"
             href={`/auth/signup${desktopPageSuffix}`}
-            className="mt-3 flex min-h-12 items-center justify-center text-sm text-foreground-muted underline underline-offset-2 hover:text-foreground"
+            fullWidth
+            className="my-2"
+            variant="outline"
           >
             アカウントを作成
-          </a>
-
-          <p className="text-center text-[11px] leading-4 text-foreground-subtle">
-            続行すると、
-            <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
-              利用規約
-            </Link>
-            と
-            <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
-              プライバシーポリシー
-            </Link>
-            に同意したものとみなされます。
-          </p>
+          </Button>
+          <section className="mx-4 text-center text-sm leading-5 text-foreground-subtle">
+            <p className="text-center text-[11px] leading-4 text-foreground-subtle">
+              続行すると、
+              <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+                利用規約
+              </Link>
+              と
+              <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                プライバシーポリシー
+              </Link>
+              に同意したものとみなされます。
+            </p>
+          </section>
         </section>
       </main>
     </div>

@@ -3,7 +3,6 @@ import { TastileLogo } from "@/components/TastileLogo";
 
 export function SiteHeader({
   hideAuth,
-  showFeatureLink = false,
   translations,
 }: {
   hideAuth?: boolean;
@@ -24,14 +23,6 @@ export function SiteHeader({
           <span className="text-xl font-semibold tracking-tight text-foreground">tastile</span>
         </Link>
         <nav className="flex items-center gap-1">
-          {showFeatureLink ? (
-            <Link
-              href="/#features"
-              className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block"
-            >
-              {translations.features}
-            </Link>
-          ) : null}
           <Link
             href="/pricing"
             className="hidden rounded-md px-3 py-2 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground sm:block"

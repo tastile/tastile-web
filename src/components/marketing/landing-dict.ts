@@ -100,11 +100,11 @@ export type Dict = {
 export const landingDict: Record<Lang, Dict> = {
   ja: {
     hero: {
-      badge: "実行支援ツール",
-      title: ["考えるのをやめて、", "ただ実行するだけ。"],
+      badge: "自動スケジューリングエンジン",
+      title: ["考えない", "もう迷わない"],
       sub: "タスクを追加すれば、Tastileが時間枠に合わせて自動的にスケジュールを組みます。",
       context:
-        "カレンダー、時計、タスク管理を一つの実行エンジンに統合。あなたが何をすべきかを、あなたに代わってTastileが決定します。",
+        "カレンダー、時計、タスク管理を一つの実行エンジンに統合。次になにをするべきか、あなたに代わってTastileが決定します。",
       pierceText: "実行",
       ctaPrimary: "はじめる",
       ctaSecondary: "ダウンロード",
@@ -141,7 +141,7 @@ export const landingDict: Record<Lang, Dict> = {
     },
     bento: {
       eyebrow: "6つの軸",
-      title: "タイルは6つの軸で定義されます。",
+      title: "あなたの時間割は、6つの軸で動く",
       intro: "ひとつのタスクは、6つの軸を組み合わせることで形作られます。",
       lead: "あなたが軸を定義すれば、あとはエンジンが処理します。各軸が他の軸を参照することで、タイルの形状が決定されます。",
       rows: [
@@ -233,7 +233,7 @@ export const landingDict: Record<Lang, Dict> = {
     },
     manifesto: {
       eyebrow: "思想",
-      title: ["タスク管理ではない。", "実行の、エンジン。"],
+      title: ["ただのタスク管理ではない、", "行動のエンジン。"],
       lead: "Tastileはタスクを追加する道具ではなく、実行をまわすエンジンである。あなたがすることは「決める」ではなく「走り切る」になる。",
       leftLabel: "いつものタスク管理",
       leftItems: [
@@ -247,7 +247,7 @@ export const landingDict: Record<Lang, Dict> = {
       rightLabel: "Tastile",
       rightHeadline: "1つのタイルが、今この瞬間に動いている。",
       rightSubtext: "他は、全部エンジンが面倒を見ている。",
-      timelineTitle: "Tastileのある1日",
+      timelineTitle: "ある1日",
       timelineSubtitle: "09:00から18:00まで、エンジンがやったこと。",
       timeline: [
         {
@@ -296,7 +296,7 @@ export const landingDict: Record<Lang, Dict> = {
     },
     pricing: {
       eyebrow: "料金",
-      title: ["無料で、始める。", "必要になったら、Proへ。"],
+      title: ["無料で始める。", "Proでもっと走らせる。"],
       intro:
         "主要機能はそのまま無料。Proはタイル無制限・デスクトップ同期。アップグレードもダウングレードもいつでも。",
       monthly: "月額",
@@ -370,7 +370,7 @@ export const landingDict: Record<Lang, Dict> = {
     },
     finalCta: {
       pierceText: "走らせる",
-      title: ["管理するのを、やめる。", "走らせる。"],
+      title: ["考えるのをやめる。", "いますぐ動け。"],
       note: "Tastileは、まず無料で。Webアプリ単体でも、デスクトップと組み合わせても、どちらでも。",
       promise: ["クレジットカード不要", "無料枠で十分使える", "いつでもProに切り替え"],
       ctaPrimary: "始める",

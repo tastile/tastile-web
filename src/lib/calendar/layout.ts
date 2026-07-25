@@ -399,11 +399,7 @@ export function getDayViewHourOffsets(
  * of anchor's week. Mode "around" → today − 3 .. today + 3. Mode
  * "future" → today .. today + 6.
  */
-export function getWeekViewDates(
-  mode: DisplayMode,
-  anchor: string,
-  tzOffsetMinutes: number,
-): string[] {
+export function getWeekViewDates(mode: DisplayMode, anchor: string): string[] {
   const [y, m, d] = anchor.split("-").map(Number);
   const yy = y ?? 1970;
   const mm = (m ?? 1) - 1;
