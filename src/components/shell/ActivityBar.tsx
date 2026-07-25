@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button, Divider, Menu, Tooltip } from "@mantine/core";
 import {
   CalendarDays,
   CheckSquare,
@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { forwardRef, useState, type ComponentPropsWithoutRef } from "react";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { type SidebarBehavior, useShellStore } from "@/lib/stores/shell-store";
@@ -38,246 +38,234 @@ const PREF_ITEM: NavItem = {
   Icon: Settings,
 };
 
+const SIDEBAR_BEHAVIORS: {
+  value: SidebarBehavior;
+  labelKey: string;
+}[] = [
+    { value: "open", labelKey: "shell.activityBar.expanded" },
+    { value: "closed", labelKey: "shell.activityBar.collapsed" },
+    { value: "expandable", labelKey: "shell.activityBar.expandOnHover" },
+  ];
+
 export function ActivityBar() {
   const pathname = usePathname();
-  // The sidebar + button always opens the create flow with a timed
-  // span (the next half-hour, 30 min long). This matches the
-  // cell-click flow so the resulting tile lands in the timeline
-  // where the user can resize / drag / edit it. A separate allDay
-  // toggle inside the panel still lets the user convert to a
-  // full-day tile before committing.
-  const openQuickCreate = () => useQuickCreateStore.getState().openCreate({ initialAllDay: false });
   const { t } = useTranslation();
   const sidebarBehavior = useShellStore((s) => s.sidebarBehavior);
   const setSidebarBehavior = useShellStore((s) => s.setSidebarBehavior);
   const [hovered, setHovered] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [menuOpened, setMenuOpened] = useState(false);
 
-  // 実際に展開するか判定
   const expanded = sidebarBehavior === "open" || (sidebarBehavior === "expandable" && hovered);
+
+  const openQuickCreate = () => {
+    useQuickCreateStore.getState().openCreate({ initialAllDay: false });
+  };
 
   return (
     <div
       className={cn(
-        "hidden md:block relative shrink-0 transition-[width] duration-200 ease-in-out z-20",
+        "relative z-20 hidden shrink-0 transition-[width] duration-200 ease-in-out md:block",
         sidebarBehavior === "open" ? "w-48" : "w-12",
       )}
     >
       <nav
         aria-label={t("shell.activityBar.ariaLabel")}
         className={cn(
-          "absolute inset-y-0 left-0 flex flex-col items-stretch bg-surface-0",
-          "overflow-hidden",
+          "absolute inset-y-0 left-0 flex flex-col items-stretch overflow-hidden bg-surface-0",
           "transition-[width] duration-200 ease-in-out",
           expanded ? "w-48" : "w-12",
         )}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        {/* タスク作成ボタン — アクセントカラー */}
         <div className="px-1 pt-1">
-          <NavButton
+          <ActivityButton
             label={t("nav.new")}
             Icon={Plus}
             expanded={expanded}
             onClick={openQuickCreate}
             data-testid="sidebar-new-tile"
-            className="text-foreground hover:bg-surface-2"
+            withTooltip
           />
         </div>
 
-        {/* ナビゲーション項目 */}
-        <div className="flex flex-1 flex-col gap-0.5 px-1 pt-2 overflow-hidden">
-          {NAV_ITEMS.map(({ path, labelKey, Icon }) => {
-            const active = pathname === path || pathname.startsWith(`${path}/`);
-            return (
-              <NavLink
-                key={path}
-                href={path}
-                label={t(labelKey)}
-                Icon={Icon}
-                active={active}
-                expanded={expanded}
-              />
-            );
-          })}
-          <div className="mx-2 my-2 h-px bg-border shrink-0" />
-          <NavLink
+        <div className="flex flex-1 flex-col gap-0.5 overflow-hidden px-1 pt-2">
+          {NAV_ITEMS.map(({ path, labelKey, Icon }) => (
+            <ActivityLink
+              key={path}
+              href={path}
+              label={t(labelKey)}
+              Icon={Icon}
+              active={pathname === path || pathname.startsWith(`${path}/`)}
+              expanded={expanded}
+            />
+          ))}
+
+          <Divider className="mx-2 my-2 shrink-0 border-border" />
+
+          <ActivityLink
             href={PREF_ITEM.path}
             label={t(PREF_ITEM.labelKey)}
             Icon={PREF_ITEM.Icon}
-            active={pathname?.startsWith("/dashboard/preferences")}
+            active={pathname.startsWith("/dashboard/preferences")}
             expanded={expanded}
           />
         </div>
 
-        {/* 開閉コントロール — 下揃え */}
-        <div className="relative px-1 pb-1">
-          <UnstyledButton
-            type="button"
-            onClick={() => setDropdownOpen((v) => !v)}
-            aria-label={t("shell.activityBar.sidebarControl")}
-            aria-haspopup="true"
-            aria-expanded={dropdownOpen}
-            className={cn(
-              "relative flex h-10 w-full items-center overflow-hidden rounded-md",
-              "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-              "transition-colors",
-            )}
+        <div className="px-1 pb-1">
+          <Menu
+            opened={menuOpened}
+            onChange={setMenuOpened}
+            position="top-start"
+            offset={4}
+            width={176}
+            shadow="lg"
+            closeOnItemClick
           >
-            <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
-              <PanelLeftDashed className="h-4 w-4" aria-hidden />
-            </span>
-            <span
-              className={cn(
-                "absolute left-10 whitespace-nowrap text-sm",
-                "transition-[opacity,transform] duration-200",
-                expanded
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 -translate-x-2 pointer-events-none",
-              )}
-            >
-              {t("shell.activityBar.sidebar")}
-            </span>
-          </UnstyledButton>
-
-          {/* ドロップダウンメニュー */}
-          {dropdownOpen && (
-            <>
-              {/* オーバーレイ（外クリックで閉じる）*/}
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setDropdownOpen(false)}
-                aria-hidden
+            <Menu.Target>
+              <ActivityButton
+                label={t("shell.activityBar.sidebar")}
+                ariaLabel={t("shell.activityBar.sidebarControl")}
+                Icon={PanelLeftDashed}
+                expanded={expanded}
               />
-              <div
-                role="menu"
-                className={cn(
-                  "absolute bottom-full left-1 z-50 mb-1",
-                  "w-44 rounded-lg border border-border bg-surface-elevated shadow-lg",
-                  "py-1",
-                )}
+            </Menu.Target>
+
+            <Menu.Dropdown className="border-border bg-surface-elevated">
+              <Menu.Label>{t("shell.activityBar.sidebarControl")}</Menu.Label>
+              <Menu.Divider />
+              <Menu.RadioGroup
+                value={sidebarBehavior}
+                onChange={(value) => setSidebarBehavior(value as SidebarBehavior)}
               >
-                <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-                  {t("shell.activityBar.sidebarControl")}
-                </div>
-                <div className="mx-2 my-1 h-px bg-border" />
-                {(
-                  [
-                    { value: "open", labelKey: "shell.activityBar.expanded" },
-                    { value: "closed", labelKey: "shell.activityBar.collapsed" },
-                    { value: "expandable", labelKey: "shell.activityBar.expandOnHover" },
-                  ] as { value: SidebarBehavior; labelKey: string }[]
-                ).map(({ value, labelKey }) => (
-                  <UnstyledButton
-                    key={value}
-                    role="menuitemradio"
-                    aria-checked={sidebarBehavior === value}
-                    type="button"
-                    onClick={() => {
-                      setSidebarBehavior(value);
-                      setDropdownOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-1.5 text-sm",
-                      "hover:bg-surface-2 transition-colors",
-                      sidebarBehavior === value
-                        ? "text-foreground font-medium"
-                        : "text-foreground-subtle",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border",
-                        sidebarBehavior === value
-                          ? "border-primary bg-primary"
-                          : "border-foreground-subtle",
-                      )}
-                    >
-                      {sidebarBehavior === value && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-primary-fg" />
-                      )}
-                    </span>
+                {SIDEBAR_BEHAVIORS.map(({ value, labelKey }) => (
+                  <Menu.RadioItem key={value} value={value}>
                     {t(labelKey)}
-                  </UnstyledButton>
+                  </Menu.RadioItem>
                 ))}
-              </div>
-            </>
-          )}
+              </Menu.RadioGroup>
+            </Menu.Dropdown>
+          </Menu>
         </div>
       </nav>
     </div>
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// NavButton (icon + label for non-link buttons e.g. + button)
-// ──────────────────────────────────────────────────────────────────────────────
-interface NavButtonProps {
+interface ActivityButtonProps extends ComponentPropsWithoutRef<"button"> {
   label: string;
   Icon: LucideIcon;
   expanded: boolean;
-  onClick: () => void;
-  className?: string;
-  "data-testid"?: string;
+  ariaLabel?: string;
+  withTooltip?: boolean;
 }
 
-function NavButton({
-  label,
-  Icon,
-  expanded,
-  onClick,
-  className,
-  "data-testid": dataTestId,
-}: NavButtonProps) {
-  return (
-    <div className="group/item relative">
-      <UnstyledButton
-        type="button"
-        title={label}
-        onClick={onClick}
-        data-testid={dataTestId}
-        className={cn(
-          "relative flex h-10 w-full items-center overflow-hidden rounded-md transition-colors",
-          className,
-        )}
-      >
-        <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
-          <Icon className="h-4 w-4" aria-hidden />
-        </span>
-        <span
-          className={cn(
-            "absolute left-10 whitespace-nowrap text-sm font-medium",
-            "transition-[opacity,transform] duration-200",
-            expanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none",
-          )}
-        >
-          {label}
-        </span>
-      </UnstyledButton>
+const activityButtonStyles = {
+  root: {
+    width: "100%",
+    height: 40,
+    minHeight: 40,
+    padding: 0,
+    overflow: "hidden",
+    flexShrink: 0,
+  },
+  inner: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "flex-start",
+  },
+  label: {
+    display: "block",
+    width: "100%",
+    height: "100%",
+    overflow: "visible",
+  },
+} as const;
 
-      {/* ホバーツールチップ (折りたたみ時) */}
-      {!expanded && (
-        <div
-          role="tooltip"
-          className={cn(
-            "pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2",
-            "whitespace-nowrap rounded-md bg-surface-elevated px-2.5 py-1.5",
-            "text-xs font-medium text-foreground shadow-md border border-border",
-            "opacity-0 group-hover/item:opacity-100 transition-opacity duration-150",
-          )}
-        >
-          {label}
-        </div>
-      )}
-    </div>
+interface ActivityContentProps {
+  label: string;
+  Icon: LucideIcon;
+  expanded: boolean;
+  active?: boolean;
+}
+
+function ActivityContent({ label, Icon, expanded, active = false }: ActivityContentProps) {
+  return (
+    <span
+      style={{
+        display: "flex",
+        alignItems: "center",
+        width: "100%",
+        height: 40,
+        minWidth: 0,
+      }}
+    >
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 40,
+          minWidth: 40,
+          height: 40,
+          flex: "0 0 40px",
+        }}
+      >
+        <Icon className={cn("h-4 w-4", active && "text-foreground")} aria-hidden />
+      </span>
+      <span
+        className={cn(
+          "min-w-0 whitespace-nowrap text-left text-sm",
+          "transition-[opacity,transform] duration-200 ease-in-out",
+          expanded
+            ? "translate-x-0 opacity-100"
+            : "pointer-events-none -translate-x-2 opacity-0",
+        )}
+        style={{
+          display: "block",
+          flex: "1 1 auto",
+          overflow: "hidden",
+        }}
+      >
+        {label}
+      </span>
+    </span>
   );
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// NavLink
-// ──────────────────────────────────────────────────────────────────────────────
-interface NavLinkProps {
+const ActivityButton = forwardRef<HTMLButtonElement, ActivityButtonProps>(
+  function ActivityButton(
+    { label, Icon, expanded, ariaLabel, withTooltip = false, className, ...props },
+    ref,
+  ) {
+    const button = (
+      <Button
+        ref={ref}
+        type="button"
+        variant="subtle"
+        aria-label={ariaLabel ?? label}
+        className={cn(
+          "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+          className,
+        )}
+        styles={activityButtonStyles}
+        {...props}
+      >
+        <ActivityContent label={label} Icon={Icon} expanded={expanded} />
+      </Button>
+    );
+
+    if (!withTooltip) return button;
+
+    return (
+      <Tooltip label={label} position="right" withArrow openDelay={300} disabled={expanded}>
+        {button}
+      </Tooltip>
+    );
+  },
+);
+
+interface ActivityLinkProps {
   href: string;
   label: string;
   Icon: LucideIcon;
@@ -285,52 +273,28 @@ interface NavLinkProps {
   expanded: boolean;
 }
 
-function NavLink({ href, label, Icon, active, expanded }: NavLinkProps) {
+function ActivityLink({ href, label, Icon, active, expanded }: ActivityLinkProps) {
   return (
-    <div className="relative group/item">
-      <Link
+    <Tooltip label={label} position="right" withArrow openDelay={300} disabled={expanded}>
+      <Button
+        component={Link}
         href={href}
+        variant="subtle"
         aria-label={label}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "relative flex h-10 w-full items-center overflow-hidden rounded-md",
           "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-          "transition-colors",
           active && "bg-surface-2 text-foreground",
         )}
+        styles={activityButtonStyles}
       >
-        {/* アクティブインジケーター削除 */}
-        {/* アイコン */}
-        <span className="absolute left-0 flex h-10 w-10 shrink-0 items-center justify-center">
-          <Icon className={cn("h-4 w-4", active ? "text-foreground" : "")} aria-hidden />
-        </span>
-        {/* ラベル (展開時のみ) */}
-        <span
-          className={cn(
-            "absolute left-10 whitespace-nowrap text-sm",
-            "transition-[opacity,transform] duration-200",
-            active ? "text-foreground" : "text-foreground-subtle group-hover/item:text-foreground",
-            expanded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 pointer-events-none",
-          )}
-        >
-          {label}
-        </span>
-      </Link>
-
-      {/* ホバーツールチップ (折りたたみ時のみ) */}
-      {!expanded && (
-        <div
-          role="tooltip"
-          className={cn(
-            "pointer-events-none absolute left-full top-1/2 z-50 ml-2 -translate-y-1/2",
-            "whitespace-nowrap rounded-md bg-surface-elevated px-2.5 py-1.5",
-            "text-xs font-medium text-foreground shadow-md border border-border",
-            "opacity-0 group-hover/item:opacity-100 transition-opacity duration-150",
-          )}
-        >
-          {label}
-        </div>
-      )}
-    </div>
+        <ActivityContent
+          label={label}
+          Icon={Icon}
+          expanded={expanded}
+          active={active}
+        />
+      </Button>
+    </Tooltip>
   );
 }

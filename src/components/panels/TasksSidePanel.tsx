@@ -144,14 +144,13 @@ export function TasksSidePanel() {
       />
       <div className="px-3 border-t border-border/40 pt-4">
         <Button
-          variant="subtle"
-          size="compact-sm"
+          variant="default"
+          leftSection={<RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" />}
+          fullWidth
           type="button"
           onClick={resetToDefaults}
-          className="flex w-full items-center justify-center gap-1.5 rounded-md bg-surface-1 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-2 transition-colors"
           data-testid="tasks-reset-defaults"
         >
-          <RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" aria-hidden />
           {t("panels.tasks.resetToDefaults")}
         </Button>
       </div>

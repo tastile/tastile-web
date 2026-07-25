@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { memo } from "react";
 import { monthEventStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -33,7 +33,7 @@ function MonthEventTileImpl({ event, date }: MonthEventTileProps) {
   const isStart = !event.allDay || date === start;
   const isEnd = !event.allDay || date === last;
   return (
-    <UnstyledButton
+    <Button
       type="button"
       data-testid={`month-event-${event.id}`}
       className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
@@ -44,7 +44,7 @@ function MonthEventTileImpl({ event, date }: MonthEventTileProps) {
     >
       {event.allDay ? "" : `${formatTime(event.start)} `}
       {event.allDay && !isStart ? "" : event.title}
-    </UnstyledButton>
+    </Button>
   );
 }
 

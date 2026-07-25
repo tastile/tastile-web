@@ -1,6 +1,6 @@
 "use client";
 
-import { Group, UnstyledButton } from "@mantine/core";
+import { Group, Button } from "@mantine/core";
 import { ChevronRight, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { FormRow } from "./FormRow";
@@ -36,7 +36,7 @@ export function RowSubPanel({
       trailing={disabled ? null : <ChevronRight size={16} className="text-foreground-muted" />}
       className={className}
     >
-      <UnstyledButton
+      <Button
         onClick={disabled ? undefined : onClick}
         disabled={disabled}
         className={cn(
@@ -54,7 +54,7 @@ export function RowSubPanel({
         >
           {isEmpty ? (emptyLabel ?? "未追加") : value}
         </span>
-      </UnstyledButton>
+      </Button>
     </FormRow>
   );
 }

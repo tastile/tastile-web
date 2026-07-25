@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { Search } from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
@@ -105,22 +105,21 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
       {results.length > 0 && (
         <div className="max-h-80 overflow-y-auto p-2">
           {results.map((r, i) => (
-            <UnstyledButton
+            <Button
               key={r.id}
               type="button"
               onClick={() => {
                 window.location.href = r.path;
                 onClose();
               }}
-              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm ${
-                i === selectedIndex
+              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm ${i === selectedIndex
                   ? "bg-surface-2 text-foreground"
                   : "text-foreground-muted hover:bg-surface-2"
-              }`}
+                }`}
             >
               <span className="text-foreground-subtle">→</span>
               {r.label}
-            </UnstyledButton>
+            </Button>
           ))}
         </div>
       )}

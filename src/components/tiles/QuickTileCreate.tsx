@@ -33,7 +33,6 @@ import {
   SegmentedControl,
   Select,
   TagsInput,
-  UnstyledButton,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
@@ -521,25 +520,25 @@ export function QuickTileCreate() {
   // --- layout classes ---
   const panelClass = isDesktop
     ? cn(
-        "fixed inset-y-0 right-0 z-[56]",
-        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-x-full opacity-0"
-          : activePanel !== "base"
-            ? "-translate-x-6"
-            : "translate-x-0",
-        "[animation:slideInFromRight_0.22s_ease-out]",
-      )
+      "fixed inset-y-0 right-0 z-[56]",
+      "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
+      isClosing
+        ? "translate-x-full opacity-0"
+        : activePanel !== "base"
+          ? "-translate-x-6"
+          : "translate-x-0",
+      "[animation:slideInFromRight_0.22s_ease-out]",
+    )
     : cn(
-        "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-y-full opacity-0"
-          : activePanel !== "base"
-            ? "translate-y-6"
-            : "translate-y-0",
-        "[animation:slideInFromBottom_0.22s_ease-out]",
-      );
+      "fixed inset-x-0 bottom-0 z-[56]",
+      "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
+      isClosing
+        ? "translate-y-full opacity-0"
+        : activePanel !== "base"
+          ? "translate-y-6"
+          : "translate-y-0",
+      "[animation:slideInFromBottom_0.22s_ease-out]",
+    );
 
   const subPanelClass = (
     panel:
@@ -554,16 +553,16 @@ export function QuickTileCreate() {
   ) =>
     isDesktop
       ? cn(
-          "fixed inset-y-0 right-0 z-[57]",
-          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
-          "transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
-        )
+        "fixed inset-y-0 right-0 z-[57]",
+        "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
+        "transition-transform duration-300 ease-out",
+        activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
+      )
       : cn(
-          "fixed inset-x-0 bottom-0 z-[57]",
-          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
-        );
+        "fixed inset-x-0 bottom-0 z-[57]",
+        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
+        activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
+      );
 
   // --- condition count ---
   const conditionCount = windows.length + recurring.frameRules.length;
@@ -637,17 +636,17 @@ export function QuickTileCreate() {
                 data-testid="quick-create-organize-row"
               >
                 {currentProject && (
-                  <UnstyledButton
+                  <Button
                     type="button"
                     onClick={() => setActivePanel("meta")}
                     className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-[#eef3fb] px-2.5 text-[11px] font-bold text-[#37689e] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <FolderOpen className="h-3 w-3" aria-hidden />
                     <span>{currentProject.display_name}</span>
-                  </UnstyledButton>
+                  </Button>
                 )}
                 {meta.tags.map((tag) => (
-                  <UnstyledButton
+                  <Button
                     key={tag}
                     type="button"
                     onClick={() => setActivePanel("meta")}
@@ -655,16 +654,16 @@ export function QuickTileCreate() {
                   >
                     <Tag className="h-3 w-3" aria-hidden />
                     <span>#{tag}</span>
-                  </UnstyledButton>
+                  </Button>
                 ))}
-                <UnstyledButton
+                <Button
                   type="button"
                   onClick={() => setActivePanel("meta")}
                   className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-[11px] font-bold text-foreground-muted hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <Plus className="h-3 w-3" aria-hidden />
                   <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
-                </UnstyledButton>
+                </Button>
               </div>
 
               {/* ─── essentials ─── */}
@@ -890,7 +889,7 @@ export function QuickTileCreate() {
                       </Menu>
                     </div>
                   ))}
-                  <UnstyledButton
+                  <Button
                     type="button"
                     onClick={() => {
                       setField("plan.completion.tasks", [
@@ -912,7 +911,7 @@ export function QuickTileCreate() {
                     className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg bg-surface-1 text-xs font-bold text-foreground-muted hover:bg-surface-2"
                   >
                     ＋ タスクを追加
-                  </UnstyledButton>
+                  </Button>
                 </div>
               </div>
 
@@ -927,7 +926,7 @@ export function QuickTileCreate() {
                     {t("quickCreate.behaviorSub")}
                   </small>
                 </div>
-                <UnstyledButton
+                <Button
                   type="button"
                   onClick={() => setActivePanel("meta")}
                   aria-label={t("quickCreate.behaviorEdit")}
@@ -955,7 +954,7 @@ export function QuickTileCreate() {
                   <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
                     {t("quickCreate.behaviorEdit")}
                   </span>
-                </UnstyledButton>
+                </Button>
               </div>
             </section>
 
@@ -985,14 +984,14 @@ export function QuickTileCreate() {
                           <strong className="text-[11px] font-semibold text-foreground">
                             {t("quickCreate.conditionGroupWindow")}
                           </strong>
-                          <UnstyledButton
+                          <Button
                             type="button"
                             onClick={() => setActivePanel("time")}
                             className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <Pencil className="h-3 w-3" aria-hidden />
                             編集
-                          </UnstyledButton>
+                          </Button>
                         </div>
                         <div className="space-y-1">
                           {windows.map((w, i) => (
@@ -1036,14 +1035,14 @@ export function QuickTileCreate() {
                           <strong className="text-[11px] font-semibold text-foreground">
                             {t("quickCreate.conditionGroupFrame")}
                           </strong>
-                          <UnstyledButton
+                          <Button
                             type="button"
                             onClick={() => setActivePanel("recurring")}
                             className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <Pencil className="h-3 w-3" aria-hidden />
                             編集
-                          </UnstyledButton>
+                          </Button>
                         </div>
                         <div className="space-y-1">
                           {recurring.frameRules.map((r, i) => (
@@ -1080,7 +1079,7 @@ export function QuickTileCreate() {
                   </div>
                 )}
               </div>
-              <UnstyledButton
+              <Button
                 type="button"
                 onClick={() => setActivePanel("intent")}
                 data-testid="quick-create-condition-add"
@@ -1088,7 +1087,7 @@ export function QuickTileCreate() {
               >
                 <Plus size={14} aria-hidden="true" />
                 {t("quickCreate.addConditionOrGroup")}
-              </UnstyledButton>
+              </Button>
             </section>
 
             {/* simple note */}
@@ -1109,13 +1108,13 @@ export function QuickTileCreate() {
             <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
           </div>
           <div className="flex items-center gap-2">
-            <UnstyledButton
+            <Button
               type="button"
               className="flex h-[37px] items-center gap-1.5 rounded-lg border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
             >
               <Save size={14} aria-hidden="true" />
               下書き保存
-            </UnstyledButton>
+            </Button>
             <Button
               type="button"
               variant="primary"
@@ -1171,7 +1170,7 @@ export function QuickTileCreate() {
             {t("quickCreate.intentDescription")}
           </p>
           <div className="grid grid-cols-2 gap-2">
-            <UnstyledButton
+            <Button
               type="button"
               onClick={() => setActivePanel("time")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1183,8 +1182,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentNarrowTimeSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               onClick={() => setActivePanel("references")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1196,8 +1195,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentReferenceTileSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               onClick={() => setActivePanel("recurring")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1209,8 +1208,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentNestStructureSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               onClick={() => setActivePanel("meta")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1222,8 +1221,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentAdjustPlacementSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               onClick={() => setActivePanel("completion")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1235,8 +1234,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentCombineConditionsSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               onClick={() => setActivePanel("completion")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1248,8 +1247,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentAddCompletionSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               onClick={() => setActivePanel("meta")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1261,8 +1260,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentDefineOnSuccessSub")}
               </small>
-            </UnstyledButton>
-            <UnstyledButton
+            </Button>
+            <Button
               type="button"
               disabled
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60"
@@ -1274,7 +1273,7 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentTextConditionSub")}
               </small>
-            </UnstyledButton>
+            </Button>
           </div>
         </div>
       </section>
@@ -1340,7 +1339,7 @@ export function QuickTileCreate() {
           </div>
         </div>
         <div className="flex-1 overflow-auto p-4">
-          <UnstyledButton
+          <Button
             type="button"
             onClick={() => {
               setField("time.durationMinMax.minMs", null);
@@ -1362,7 +1361,7 @@ export function QuickTileCreate() {
                 {t("quickCreate.durationNoneSub")}
               </small>
             </div>
-          </UnstyledButton>
+          </Button>
 
           <div className="mb-4">
             <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
@@ -1410,12 +1409,12 @@ export function QuickTileCreate() {
                 {t("quickCreate.durationUseCompletionSub")}
               </small>
             </div>
-            <UnstyledButton
+            <Button
               type="button"
               className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors"
             >
               <div className="h-5 w-5 translate-x-5 rounded-full bg-white transition-transform" />
-            </UnstyledButton>
+            </Button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -2185,7 +2184,7 @@ function V4EssentialRow({
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </div>
-      <UnstyledButton
+      <Button
         type="button"
         onClick={onClick}
         aria-label={editAria ?? `${label} を編集`}
@@ -2193,10 +2192,10 @@ function V4EssentialRow({
       >
         <div className="select-none text-[11px] font-bold text-foreground-muted">{label}</div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">{chip}</div>
-      </UnstyledButton>
+      </Button>
       <div className="flex items-center gap-1">
         {canClear ? (
-          <UnstyledButton
+          <Button
             type="button"
             onClick={handleClearClick}
             aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
@@ -2217,7 +2216,7 @@ function V4EssentialRow({
             ) : (
               <X className="h-4 w-4" aria-hidden />
             )}
-          </UnstyledButton>
+          </Button>
         ) : null}
         <ActionIcon
           type="button"
@@ -2600,7 +2599,7 @@ function TermFields({
     case "metric":
     case "fact":
     case "feedback": {
-      const v = term.value as unknown as { op: number; value: unknown; [k: string]: unknown };
+      const v = term.value as unknown as { op: number; value: unknown;[k: string]: unknown };
       const idKey =
         term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (

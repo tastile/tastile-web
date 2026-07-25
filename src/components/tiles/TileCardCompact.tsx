@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon, UnstyledButton } from "@mantine/core";
+import { ActionIcon, Button } from "@mantine/core";
 import { SquarePen } from "lucide-react";
 import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
@@ -135,22 +135,22 @@ export function TileCardCompact({
               branch on 0/1/null for display text only. */}
           {listView?.source
             ? (() => {
-                const sourceKind = listView.source?.kind ?? null;
-                const chipLabel =
-                  sourceKind === 0
-                    ? t("tiles.source.break")
-                    : sourceKind === 1
-                      ? t("tiles.source.sleep")
-                      : t("tiles.source.legacy");
-                return (
-                  <span
-                    className="px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap bg-surface-3/50 text-foreground-subtle border-border"
-                    data-source-kind={sourceKind ?? "legacy"}
-                  >
-                    {chipLabel}
-                  </span>
-                );
-              })()
+              const sourceKind = listView.source?.kind ?? null;
+              const chipLabel =
+                sourceKind === 0
+                  ? t("tiles.source.break")
+                  : sourceKind === 1
+                    ? t("tiles.source.sleep")
+                    : t("tiles.source.legacy");
+              return (
+                <span
+                  className="px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap bg-surface-3/50 text-foreground-subtle border-border"
+                  data-source-kind={sourceKind ?? "legacy"}
+                >
+                  {chipLabel}
+                </span>
+              );
+            })()
             : null}
         </div>
       </div>
@@ -198,14 +198,14 @@ export function TileCardCompact({
 
   if (interactive) {
     return (
-      <UnstyledButton
+      <Button
         type="button"
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
         className={cardClassName}
       >
         {cardContent}
-      </UnstyledButton>
+      </Button>
     );
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { memo, type ReactNode, type Ref } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -117,7 +117,7 @@ function WeekViewFrameImpl({
             className="relative border-r border-surface-2 last:border-r-0"
           >
             {HOURS.map((h) => (
-              <UnstyledButton
+              <Button
                 key={h}
                 type="button"
                 data-testid={`week-slot-${d}-${pad(h)}`}

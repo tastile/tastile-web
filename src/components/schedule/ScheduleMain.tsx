@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert, UnstyledButton } from "@mantine/core";
+import { Alert, Button } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
@@ -216,7 +216,7 @@ export function ScheduleMain() {
                 return acc;
               }, [])
               .map((template) => (
-                <UnstyledButton
+                <Button
                   key={template.id}
                   type="button"
                   onClick={() => {
@@ -261,7 +261,7 @@ export function ScheduleMain() {
                       {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
                     </span>
                   </div>
-                </UnstyledButton>
+                </Button>
               ))}
           </div>
         )}

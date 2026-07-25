@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -46,7 +46,7 @@ export function AccountMenu({
   return (
     <FloatingMenu>
       <FloatingMenuTrigger asChild>
-        <UnstyledButton
+        <Button
           type="button"
           className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-foreground/20"
         >
@@ -70,7 +70,7 @@ export function AccountMenu({
             className="text-foreground-muted transition-transform duration-200 data-[state=open]:rotate-0 data-[state=closed]:rotate-180"
             aria-hidden
           />
-        </UnstyledButton>
+        </Button>
       </FloatingMenuTrigger>
       <FloatingMenuContent align="end" side={side} className="w-64">
         <FloatingMenuLabel className="font-normal">
@@ -97,9 +97,8 @@ export function AccountMenu({
           </div>
           <div className="mt-2">
             <span
-              className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
-                plan === "pro" ? "bg-primary/10 text-primary" : "bg-surface-2 text-foreground-muted"
-              }`}
+              className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${plan === "pro" ? "bg-primary/10 text-primary" : "bg-surface-2 text-foreground-muted"
+                }`}
             >
               {plan === "pro" ? "Pro" : "Free"}
             </span>

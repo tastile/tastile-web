@@ -8,7 +8,7 @@ import {
   Select,
   TextInput,
   Tree,
-  UnstyledButton,
+  Button,
   useTree,
 } from "@mantine/core";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
@@ -113,7 +113,7 @@ export function ProjectsSidePanel() {
           {t("panels.projects.projects")}
         </span>
         {!creating ? (
-          <UnstyledButton
+          <Button
             type="button"
             onClick={() => setCreating(true)}
             className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted hover:bg-surface-1 hover:text-foreground"
@@ -121,7 +121,7 @@ export function ProjectsSidePanel() {
           >
             <Plus className="h-3 w-3" aria-hidden />
             New
-          </UnstyledButton>
+          </Button>
         ) : null}
       </div>
 
@@ -219,7 +219,7 @@ export function ProjectsSidePanel() {
 
       <div className="px-2">
         <div className="flex flex-col space-y-0.5">
-          <UnstyledButton
+          <Button
             type="button"
             onClick={() => handleSelect(null)}
             className={cn(
@@ -231,7 +231,7 @@ export function ProjectsSidePanel() {
           >
             <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-border" />
             <span className="min-w-0 flex-1 truncate">{t("panels.projects.allProjects")}</span>
-          </UnstyledButton>
+          </Button>
 
           {loading && (
             <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">
@@ -312,7 +312,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
           ) : (
             <span aria-hidden className="h-4 w-4 shrink-0" />
           )}
-          <UnstyledButton
+          <Button
             type="button"
             onClick={() => onSelect(node.value)}
             className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
@@ -324,7 +324,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
               style={{ backgroundColor: color ?? "#6b7280" }}
             />
             <span className="min-w-0 flex-1 truncate">{displayName}</span>
-          </UnstyledButton>
+          </Button>
           <ActionIcon
             variant="subtle"
             size="sm"

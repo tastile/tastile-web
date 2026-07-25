@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { X } from "lucide-react";
 import { useState } from "react";
 
@@ -53,32 +53,32 @@ export function FloatingScheduleEditor({
   return (
     <div className="fixed inset-y-0 right-0 z-[56] flex w-full max-w-lg flex-col border-l border-border bg-surface-0 shadow-lg">
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
-        <h2 className="text-base font-semibold">タイルを作成</h2>
-        <UnstyledButton
+        <h2 className="text-base font-semibold">Create Tile</h2>
+        <Button
           type="button"
           onClick={onClose}
-          aria-label="閉じる"
+          aria-label="Close"
           className="flex items-center gap-1 rounded-md bg-surface-1 px-2 py-1 text-xs font-semibold text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
           <X size={14} aria-hidden />
-          閉じる
-        </UnstyledButton>
+          Close
+        </Button>
       </header>
       <main className="flex-1 space-y-6 overflow-y-auto p-5">
         <label className="block space-y-1">
-          <span className="text-sm text-foreground">何をしますか？</span>
+          <span className="text-sm text-foreground">What do you want to do?</span>
           <input
-            aria-label="タイル名"
+            aria-label="Tile Name"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="例: 競プロ"
+            placeholder="Example: Programming Contest"
             className="w-full rounded-md bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
           />
         </label>
         <RequiredTimePanel minutes={minutes} onChange={setMinutes} />
         <AvailabilityPanel label={label} onChange={setLabel} />
-        <section aria-label="設定内容" className="rounded-md bg-surface-2 p-3">
-          <p className="mb-2 text-xs font-medium text-foreground-muted">設定内容</p>
+        <section aria-label="settings" className="rounded-md bg-surface-2 p-3">
+          <p className="mb-2 text-xs font-medium text-foreground-muted">settings</p>
           <ul className="space-y-1 text-sm">
             {summary.map((line) => (
               <li key={line}>{line}</li>
@@ -93,7 +93,7 @@ export function FloatingScheduleEditor({
           </p>
         ) : null}
         <Button type="button" disabled={!canSave} onClick={() => void save()} className="w-full">
-          {saving ? "保存中…" : "空き時間へ配置する"}
+          {saving ? "Saving…" : "Place in Available Time"}
         </Button>
       </footer>
     </div>

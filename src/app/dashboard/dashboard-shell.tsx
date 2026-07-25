@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon, NavLink, UnstyledButton } from "@mantine/core";
+import { ActionIcon, NavLink, Button } from "@mantine/core";
 import {
   BarChart3,
   ChevronDown,
@@ -201,7 +201,7 @@ export function DashboardShell({
                         <span>{plan === "pro" ? "Billing" : "Upgrade to Pro"}</span>
                       </Link>
 
-                      <UnstyledButton
+                      <Button
                         type="button"
                         onClick={() => {
                           setAccountOpen(false);
@@ -213,11 +213,11 @@ export function DashboardShell({
                           <LogOut size={16} />
                         </span>
                         <span>Sign out</span>
-                      </UnstyledButton>
+                      </Button>
                     </div>
                   </div>
 
-                  <UnstyledButton
+                  <Button
                     data-testid="account-trigger-button"
                     aria-expanded={desktopExpanded && accountOpen}
                     title={email}
@@ -273,7 +273,7 @@ export function DashboardShell({
                     >
                       {accountOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </span>
-                  </UnstyledButton>
+                  </Button>
                 </div>
               </div>
             </div>

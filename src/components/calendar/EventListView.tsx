@@ -1,7 +1,7 @@
 "use client";
 
-import { Alert, TextInput, UnstyledButton } from "@mantine/core";
-import { AlertCircle, Calendar, Clock, MapPin } from "lucide-react";
+import { TextInput, Button } from "@mantine/core";
+import { Calendar, Clock, MapPin, Search } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
 import { cn } from "@/lib/utils/cn";
@@ -49,11 +49,11 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
     const q = deferredQuery.trim().toLowerCase();
     const filtered = q
       ? events.filter(
-          (e) =>
-            e.title.toLowerCase().includes(q) ||
-            (e.location ?? "").toLowerCase().includes(q) ||
-            (e.description ?? "").toLowerCase().includes(q),
-        )
+        (e) =>
+          e.title.toLowerCase().includes(q) ||
+          (e.location ?? "").toLowerCase().includes(q) ||
+          (e.description ?? "").toLowerCase().includes(q),
+      )
       : events;
     return groupByDay(filtered);
   }, [events, deferredQuery]);
@@ -66,6 +66,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
     <div className="relative space-y-6" data-testid="event-list-wrapper">
       <div className="flex items-center gap-2">
         <TextInput
+          leftSection={<Search className="h-3.5 w-3.5 text-foreground-subtle" aria-hidden />}
           type="search"
           data-testid="event-list-search"
           placeholder="Search events…"
@@ -84,22 +85,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
           </span>
         ) : null}
       </div>
-      {/* Absolute overlay so the list rows below do not shift when the
-          polling error flips on/off — same fix as CalendarMain. */}
-      {error ? (
-        <div className="pointer-events-none absolute inset-x-0 top-10 z-20 flex justify-center">
-          <Alert
-            variant="light"
-            color="red"
-            icon={<AlertCircle className="h-4 w-4" />}
-            title="Couldn’t load events"
-            data-testid="event-list-error"
-            className="pointer-events-auto w-full max-w-2xl"
-          >
-            {error.message}
-          </Alert>
-        </div>
-      ) : null}
+
       {groups.length === 0 ? (
         <div
           className="flex flex-col items-center gap-2 py-16 text-center"
@@ -129,7 +115,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
             <ul className="divide-y divide-border rounded-md border border-border bg-surface-0">
               {items.map((event) => (
                 <li key={event.id}>
-                  <UnstyledButton
+                  <Button
                     type="button"
                     data-testid={`event-list-item-${event.id}`}
                     className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-1"
@@ -162,7 +148,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
                         ) : null}
                       </div>
                     </div>
-                  </UnstyledButton>
+                  </Button>
                 </li>
               ))}
             </ul>

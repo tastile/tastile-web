@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,7 +25,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
       )}
     >
       {/* New Tile Button - Top */}
-      <UnstyledButton
+      <Button
         type="button"
         onClick={openQuickCreate}
         className="relative flex h-11 w-full items-center overflow-hidden rounded-md bg-primary text-primary-fg transition-colors hover:bg-primary-hover"
@@ -42,7 +42,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
         >
           {t("nav.new")}
         </span>
-      </UnstyledButton>
+      </Button>
 
       {/* Navigation Tabs */}
       <nav className="flex flex-1 flex-col gap-2">

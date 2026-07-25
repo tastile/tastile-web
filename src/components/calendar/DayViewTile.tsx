@@ -1,6 +1,6 @@
 "use client";
 
-import { UnstyledButton } from "@mantine/core";
+import { Button } from "@mantine/core";
 import { memo } from "react";
 import { eventTileStyle, formatLocalTimeOfDay } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -37,7 +37,7 @@ function DayViewTileImpl({
   const leftPct = widthPct * laneIndex;
 
   return (
-    <UnstyledButton
+    <Button
       type="button"
       data-testid={`day-event-${event.id}`}
       data-lane={laneIndex}
@@ -68,7 +68,7 @@ function DayViewTileImpl({
       {event.location ? (
         <div className="mt-0.5 truncate text-[10px] opacity-70">{event.location}</div>
       ) : null}
-    </UnstyledButton>
+    </Button>
   );
 }
 

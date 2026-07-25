@@ -7,7 +7,7 @@ import {
   getTreeExpandedState,
   SegmentedControl,
   Tree,
-  UnstyledButton,
+  Button,
   useTree,
 } from "@mantine/core";
 import { CalendarClock, ChevronRight, Folder, RefreshCw } from "lucide-react";
@@ -238,13 +238,13 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: color ?? "#6b7280" }}
           />
-          <UnstyledButton
+          <Button
             type="button"
             onClick={() => toggleCascade(node.value)}
             className="min-w-0 flex-1 truncate text-left text-xs text-foreground-subtle hover:text-foreground"
           >
             {node.label}
-          </UnstyledButton>
+          </Button>
         </div>
       );
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon, Button, UnstyledButton } from "@mantine/core";
+import { ActionIcon, Button } from "@mantine/core";
 import {
   Bell,
   CalendarDays,
@@ -156,13 +156,13 @@ export function FloatingHeader({
 
           <FloatingMenu>
             <FloatingMenuTrigger asChild>
-              <UnstyledButton
+              <Button
                 type="button"
                 aria-label={t("shell.floatingHeader.userMenu")}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-fg hover:bg-primary-hover ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {userName.charAt(0)}
-              </UnstyledButton>
+              </Button>
             </FloatingMenuTrigger>
             <FloatingMenuContent align="end" className="w-56 mt-1">
               <FloatingMenuLabel className="font-normal">
