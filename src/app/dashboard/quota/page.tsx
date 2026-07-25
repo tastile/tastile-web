@@ -1,21 +1,14 @@
 "use client";
 
-import {
-  AlertTriangle,
-  CreditCard,
-  Gauge,
-  KeyRound,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react";
+import { Alert, Badge, Button, Loader } from "@mantine/core";
+import { IconAlertCircle, IconAlertTriangle } from "@tabler/icons-react";
+import { CreditCard, Gauge, KeyRound, RefreshCw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Pill, StatusDot } from "@/components/ui/StatusDot";
+import { StatusDot } from "@/components/ui/StatusDot";
 import { getCoreClient, type Result } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
@@ -111,18 +104,37 @@ export default function QuotaPage() {
         description="Plan limits and current usage. Read-only — upgrade from the pricing page when you need more."
         meta={
           <>
-            <Pill variant={data?.ok ? "active" : "default"}>
-              <StatusDot status={data?.ok ? "active" : "pending"} size="xs" pulse={data?.ok} />
+            <Badge
+              variant="light"
+              color={data?.ok ? "green" : "gray"}
+              size="sm"
+              radius="xl"
+              leftSection={
+                <StatusDot status={data?.ok ? "active" : "pending"} size="xs" pulse={data?.ok} />
+              }
+            >
               {data?.ok ? "Live" : "Loading"}
-            </Pill>
-            <Pill variant="accent">
-              <KeyRound className="h-3 w-3" /> {String(plan)}
-            </Pill>
+            </Badge>
+            <Badge
+              variant="light"
+              color="violet"
+              size="sm"
+              radius="xl"
+              leftSection={<KeyRound size={12} />}
+            >
+              {String(plan)}
+            </Badge>
           </>
         }
         actions={
-          <Button variant="secondary" size="medium" onClick={load} loading={loading}>
-            <RefreshCw className="h-3.5 w-3.5" /> Refresh
+          <Button
+            variant="default"
+            size="sm"
+            onClick={load}
+            loading={loading}
+            leftSection={<RefreshCw size={14} />}
+          >
+            Refresh
           </Button>
         }
       />
@@ -154,10 +166,9 @@ export default function QuotaPage() {
             <span>{Math.max(0, tilesLimit - tilesUsed)} remaining</span>
           </div>
           {tilesPct >= 80 ? (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-status-warn/30 bg-status-warn-soft p-2.5 text-xs text-status-warn">
-              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <Alert icon={<IconAlertTriangle size={16} />} color="yellow" variant="light" mt="sm">
               Approaching your tile limit. Upgrade for more capacity.
-            </div>
+            </Alert>
           ) : null}
         </Card>
 
@@ -200,13 +211,9 @@ export default function QuotaPage() {
                 : "Up to 50 tiles, 30 days history."}
             </p>
           </div>
-          <Link
-            href="/pricing"
-            className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-sm font-medium text-primary-fg hover:bg-primary-hover"
-          >
-            <CreditCard className="h-3.5 w-3.5" />
+          <Button component={Link} href="/pricing" size="sm" leftSection={<CreditCard size={14} />}>
             {plan === "pro" ? "Manage subscription" : "Upgrade to Pro"}
-          </Link>
+          </Button>
         </div>
       </Card>
 
@@ -217,12 +224,12 @@ export default function QuotaPage() {
             {JSON.stringify(session.data, null, 2)}
           </pre>
         ) : session ? (
-          <div className="mt-3 text-xs text-status-danger">
+          <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" mt="sm">
             {session.error.kind} · {session.error.status} · {session.error.message}
-          </div>
+          </Alert>
         ) : (
           <div className="mt-3 flex items-center gap-2 text-xs text-ink-3">
-            <Loader2 className="h-3 w-3 animate-spin" /> Loading session…
+            <Loader size="xs" /> Loading session…
           </div>
         )}
       </Card>

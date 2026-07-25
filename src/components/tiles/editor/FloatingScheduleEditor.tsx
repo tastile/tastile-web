@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, UnstyledButton } from "@mantine/core";
 import { X } from "lucide-react";
 import { useState } from "react";
 
@@ -53,7 +54,7 @@ export function FloatingScheduleEditor({
     <div className="fixed inset-y-0 right-0 z-[56] flex w-full max-w-lg flex-col border-l border-border bg-surface-0 shadow-lg">
       <header className="flex items-center justify-between border-b border-border px-5 py-4">
         <h2 className="text-base font-semibold">タイルを作成</h2>
-        <button
+        <UnstyledButton
           type="button"
           onClick={onClose}
           aria-label="閉じる"
@@ -61,7 +62,7 @@ export function FloatingScheduleEditor({
         >
           <X size={14} aria-hidden />
           閉じる
-        </button>
+        </UnstyledButton>
       </header>
       <main className="flex-1 space-y-6 overflow-y-auto p-5">
         <label className="block space-y-1">
@@ -91,14 +92,9 @@ export function FloatingScheduleEditor({
             {error}
           </p>
         ) : null}
-        <button
-          type="button"
-          disabled={!canSave}
-          onClick={() => void save()}
-          className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-        >
+        <Button type="button" disabled={!canSave} onClick={() => void save()} className="w-full">
           {saving ? "保存中…" : "空き時間へ配置する"}
-        </button>
+        </Button>
       </footer>
     </div>
   );

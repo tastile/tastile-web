@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon, NavLink, UnstyledButton } from "@mantine/core";
 import {
   BarChart3,
   ChevronDown,
@@ -8,7 +9,7 @@ import {
   History,
   LayoutDashboard,
   LogOut,
-  Menu,
+  Menu as MenuIcon,
   Settings,
 } from "lucide-react";
 import Image from "next/image";
@@ -114,8 +115,10 @@ export function DashboardShell({
           ].join(" ")}
         >
           <div className="flex h-full flex-col px-2 py-3">
-            <button
-              type="button"
+            <ActionIcon
+              variant="subtle"
+              color="gray"
+              size="lg"
               onClick={() => {
                 if (window.innerWidth < 1024) {
                   setMobileOpen((prev) => !prev);
@@ -127,46 +130,33 @@ export function DashboardShell({
                   }
                 }
               }}
-              className={[
-                "mb-2 flex h-10 self-start items-center rounded-md border border-border bg-surface-1 px-3 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground",
-              ].join(" ")}
+              className="mb-2 self-start"
               aria-label="Toggle navigation rail"
             >
-              <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center">
-                <Menu size={18} />
-              </span>
-            </button>
+              <MenuIcon size={18} />
+            </ActionIcon>
             <nav>
               {TOOL_NAV_ITEMS.map((item) => {
                 const active = pathname === item.href;
                 const Icon = item.icon;
                 return (
-                  <Link
+                  <NavLink
                     key={item.href}
                     href={item.href}
-                    className={[
-                      "mb-1 flex h-10 items-center rounded-md px-3 text-sm",
-                      active
-                        ? "border border-border bg-surface-2 text-foreground"
-                        : "text-foreground-muted hover:bg-surface-2 hover:text-foreground",
-                    ].join(" ")}
-                    title={item.label}
+                    component={Link}
+                    leftSection={<Icon size={18} />}
+                    label={desktopExpanded ? item.label : undefined}
+                    active={active}
                     onClick={() => setMobileOpen(false)}
-                  >
-                    <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center">
-                      <Icon size={18} />
-                    </span>
-                    <span
-                      className={[
-                        "overflow-hidden whitespace-nowrap transition-[max-width,margin,opacity,transform] duration-300 ease-out",
-                        desktopExpanded
-                          ? "ml-3 max-w-28 opacity-100 translate-x-0"
-                          : "ml-0 max-w-0 opacity-0 -translate-x-1",
-                      ].join(" ")}
-                    >
-                      {item.label}
-                    </span>
-                  </Link>
+                    className="mb-1"
+                    title={item.label}
+                    styles={{
+                      root: {
+                        borderRadius: "var(--mantine-radius-md)",
+                        height: 40,
+                      },
+                    }}
+                  />
                 );
               })}
             </nav>
@@ -211,29 +201,35 @@ export function DashboardShell({
                         <span>{plan === "pro" ? "Billing" : "Upgrade to Pro"}</span>
                       </Link>
 
-                      <button
+                      <UnstyledButton
                         type="button"
                         onClick={() => {
                           setAccountOpen(false);
                           void handleSignOut();
                         }}
-                        className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
+                        className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-sm text-danger hover:bg-danger/10"
                       >
                         <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center">
                           <LogOut size={16} />
                         </span>
                         <span>Sign out</span>
-                      </button>
+                      </UnstyledButton>
                     </div>
                   </div>
 
-                  <button
-                    type="button"
+                  <UnstyledButton
                     data-testid="account-trigger-button"
                     aria-expanded={desktopExpanded && accountOpen}
                     title={email}
                     onClick={handleAccountToggle}
-                    className="mb-1 flex h-10 w-full items-center rounded-md px-3 text-sm text-foreground-muted hover:bg-surface-2"
+                    className="mb-1 w-full"
+                    styles={{
+                      root: {
+                        borderRadius: "var(--mantine-radius-md)",
+                        height: 40,
+                        padding: "0 var(--mantine-spacing-xs)",
+                      },
+                    }}
                   >
                     {avatarUrl ? (
                       <Image
@@ -277,7 +273,7 @@ export function DashboardShell({
                     >
                       {accountOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                     </span>
-                  </button>
+                  </UnstyledButton>
                 </div>
               </div>
             </div>
@@ -287,8 +283,11 @@ export function DashboardShell({
         {mobileOpen ? (
           <button
             type="button"
-            className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+            className="fixed inset-0 z-30 cursor-default border-none bg-black/20 lg:hidden"
             onClick={() => setMobileOpen(false)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setMobileOpen(false);
+            }}
             aria-label="Close navigation rail"
           />
         ) : null}
@@ -296,14 +295,16 @@ export function DashboardShell({
         <div className="flex min-h-dvh flex-1 flex-col transition-colors duration-200">
           <header className="sticky top-0 z-20 flex h-14 items-center justify-between bg-background px-4 backdrop-blur lg:px-6">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                size="sm"
                 onClick={() => setMobileOpen(true)}
-                className="inline-flex h-8 w-8 items-center justify-center text-foreground-muted hover:bg-surface-2 hover:text-foreground lg:hidden"
                 aria-label="Open navigation rail"
+                className="lg:hidden"
               >
-                <Menu size={18} />
-              </button>
+                <MenuIcon size={18} />
+              </ActionIcon>
               <span className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground-subtle">
                 Execution Dashboard
               </span>

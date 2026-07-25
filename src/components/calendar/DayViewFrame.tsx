@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import { memo, type ReactNode, type Ref } from "react";
 
 function pad(n: number): string {
@@ -67,7 +68,7 @@ function DayViewFrameImpl({
           style={{ backgroundSize: `100% ${hourHeight}px` }}
         >
           {hours.map((h, idx) => (
-            <button
+            <UnstyledButton
               key={`slot-${h}-${idx}`}
               type="button"
               data-testid={`day-slot-${effectiveDay}-${pad(h)}`}

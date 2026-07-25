@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { act, render, screen } from "@testing-library/react";
+import { act, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { PricingTeaser } from "./PricingTeaser";
 import type { Dict, Lang } from "./LandingPage";
 
@@ -42,7 +43,7 @@ describe("PricingTeaser", () => {
 	});
 
 	it("renders monthly price by default and switches when yearly is selected", () => {
-		render(<PricingTeaser t={teaserDict} lang={"en" satisfies Lang} />);
+		renderWithMantine(<PricingTeaser t={teaserDict} lang={"en" satisfies Lang} />);
 
 		const tabs = screen.getAllByRole("tab");
 		expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");

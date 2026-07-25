@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import { memo } from "react";
 import { eventTileStyle, formatLocalTimeOfDay } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -35,7 +36,7 @@ function WeekViewTileImpl({
   const leftPct = widthPct * laneIndex;
 
   return (
-    <button
+    <UnstyledButton
       type="button"
       data-testid={`week-event-${event.id}`}
       data-lane={laneIndex}
@@ -57,7 +58,7 @@ function WeekViewTileImpl({
       <div className="truncate font-mono text-[9px] opacity-80">
         {formatLocalTimeOfDay(event.start, tzOffset)} – {formatLocalTimeOfDay(event.end, tzOffset)}
       </div>
-    </button>
+    </UnstyledButton>
   );
 }
 

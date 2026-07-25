@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { ArrowUpRight, Check } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -58,9 +59,11 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             {(["monthly", "yearly"] as const).map((value) => {
               const isActive = billingInterval === value;
               return (
-                <button
+                <Button
                   key={value}
                   type="button"
+                  variant="subtle"
+                  size="compact-sm"
                   role="tab"
                   aria-selected={isActive}
                   onClick={() => setBillingInterval(value)}
@@ -77,7 +80,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                       {t.yearlyNote}
                     </span>
                   ) : null}
-                </button>
+                </Button>
               );
             })}
           </div>

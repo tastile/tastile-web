@@ -1,6 +1,6 @@
 "use client";
 
-import { NumberInput, Slider, Switch, TextInput } from "@mantine/core";
+import { Button, NumberInput, Slider, Switch, TextInput } from "@mantine/core";
 import { Clock, Flame, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
@@ -143,7 +143,9 @@ export function TasksSidePanel() {
         t={t}
       />
       <div className="px-3 border-t border-border/40 pt-4">
-        <button
+        <Button
+          variant="subtle"
+          size="compact-sm"
           type="button"
           onClick={resetToDefaults}
           className="flex w-full items-center justify-center gap-1.5 rounded-md bg-surface-1 px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-surface-2 transition-colors"
@@ -151,7 +153,7 @@ export function TasksSidePanel() {
         >
           <RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" aria-hidden />
           {t("panels.tasks.resetToDefaults")}
-        </button>
+        </Button>
       </div>
     </div>
   );

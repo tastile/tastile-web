@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { PricingCard } from "./PricingCard";
 
 vi.mock("@/lib/i18n/use-translation", () => ({
@@ -45,7 +46,7 @@ describe("PricingCard checkout flow", () => {
 		);
 		vi.stubGlobal("fetch", fetchMock);
 
-		render(<PricingCard />);
+		renderWithMantine(<PricingCard />);
 
 		const upgrade = screen.getByRole("button", { name: "marketing.pricing.upgrade" });
 		fireEvent.click(upgrade);
@@ -77,7 +78,7 @@ describe("PricingCard checkout flow", () => {
 		);
 		vi.stubGlobal("fetch", fetchMock);
 
-		render(<PricingCard />);
+		renderWithMantine(<PricingCard />);
 
 		fireEvent.click(screen.getByRole("button", { name: /marketing\.pricing\.yearly/ }));
 		fireEvent.click(screen.getByRole("button", { name: "marketing.pricing.upgrade" }));

@@ -1,13 +1,14 @@
 "use client";
 
-import { SegmentedControl } from "@mantine/core";
-import { Calendar, CalendarDays, Coffee, Database, Loader2, PinIcon, Timer } from "lucide-react";
+import { Alert, Badge, Button, Loader, SegmentedControl } from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
+import { Calendar, CalendarDays, Coffee, Database, PinIcon, Timer } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Pill, StatusDot } from "@/components/ui/StatusDot";
+import { StatusDot } from "@/components/ui/StatusDot";
 import { ENDPOINTS, type EndpointKey, getCoreClient, type Result } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useZoom } from "@/lib/hooks/use-zoom";
@@ -158,15 +159,27 @@ export default function CalendarViewPage() {
         description={descriptionFor(view)}
         meta={
           <>
-            <Pill variant="accent">
-              <CalendarDays className="h-3 w-3" />
+            <Badge
+              variant="light"
+              color="violet"
+              size="sm"
+              radius="xl"
+              leftSection={<CalendarDays size={12} />}
+            >
               {rangeLabel[view]}
-            </Pill>
-            <Pill variant="default">
-              <Database className="h-3 w-3" />
+            </Badge>
+            <Badge
+              variant="light"
+              color="gray"
+              size="sm"
+              radius="xl"
+              leftSection={<Database size={12} />}
+            >
               GET {ENDPOINTS[endpoint].path}
-            </Pill>
-            <Pill variant="default">{summary.total} blocks</Pill>
+            </Badge>
+            <Badge variant="light" color="gray" size="sm" radius="xl">
+              {summary.total} blocks
+            </Badge>
           </>
         }
         actions={
@@ -219,24 +232,30 @@ export default function CalendarViewPage() {
       <Card padded={false}>
         {loading ? (
           <div className="flex items-center gap-2 p-6 text-sm text-ink-3">
-            <Loader2 className="h-4 w-4 animate-spin" /> Loading {view} view…
+            <Loader size="xs" /> Loading {view} view…
           </div>
         ) : !data?.ok ? (
-          <div className="p-6 text-sm text-status-danger">
-            {data?.error.kind} · {data?.error.status} · {data?.error.message}
+          <div className="p-6">
+            <Alert
+              icon={<IconAlertCircle size={16} />}
+              title={`${data?.error.kind} · ${data?.error.status}`}
+              color="red"
+              variant="light"
+            >
+              {data?.error.message}
+            </Alert>
           </div>
         ) : blocks.length === 0 ? (
           <div className="p-12 text-center text-sm text-ink-4">
             <Calendar className="mx-auto mb-2 h-6 w-6" />
             No blocks in this {view}.
             <div className="mt-3">
-              <button
-                type="button"
+              <Button
+                size="compact-sm"
                 onClick={() => useQuickCreateStore.getState().openCreate({ initialAllDay: false })}
-                className="inline-flex h-7 items-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-fg"
               >
                 Create a tile
-              </button>
+              </Button>
             </div>
           </div>
         ) : view === "day" ? (

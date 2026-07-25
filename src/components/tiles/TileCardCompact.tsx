@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon, UnstyledButton } from "@mantine/core";
 import { SquarePen } from "lucide-react";
 import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
@@ -177,7 +178,7 @@ export function TileCardCompact({
 
       {/* アクション */}
       {onEdit ? (
-        <button
+        <ActionIcon
           type="button"
           onClick={(event) => {
             event.stopPropagation();
@@ -186,23 +187,25 @@ export function TileCardCompact({
           className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded bg-surface-2 text-foreground-muted hover:bg-surface-3 hover:text-foreground"
           aria-label="Edit tile"
           title="Edit tile"
+          variant="subtle"
+          size="sm"
         >
           <SquarePen className="h-3.5 w-3.5" />
-        </button>
+        </ActionIcon>
       ) : null}
     </>
   );
 
   if (interactive) {
     return (
-      <button
+      <UnstyledButton
         type="button"
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
         className={cardClassName}
       >
         {cardContent}
-      </button>
+      </UnstyledButton>
     );
   }
 

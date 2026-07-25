@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { renderWithMantine } from '@/test/render-with-mantine'
 import { DashboardShell } from './dashboard-shell'
 import type { AnchorHTMLAttributes, ReactNode } from 'react'
 
@@ -56,7 +57,7 @@ describe('DashboardShell UI behavior', () => {
   })
 
   it('opens on click and closes on outside click', () => {
-    render(
+    renderWithMantine(
       <DashboardShell
         plan="free"
         displayName="Test User"
@@ -81,7 +82,7 @@ describe('DashboardShell UI behavior', () => {
   })
 
   it('signs out and redirects to login from account menu', async () => {
-    render(
+    renderWithMantine(
       <DashboardShell
         plan="pro"
         displayName="Test User"

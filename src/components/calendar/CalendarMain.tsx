@@ -1,5 +1,5 @@
 "use client";
-import { Alert, SegmentedControl } from "@mantine/core";
+import { ActionIcon, Alert, Button, SegmentedControl } from "@mantine/core";
 import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -116,8 +116,10 @@ function CalendarToolbar({
 }: CalendarToolbarProps) {
   return (
     <div className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-2 bg-surface-0 px-4">
-      <button
+      <ActionIcon
         type="button"
+        variant="subtle"
+        size="sm"
         onClick={onPrev}
         aria-label="Previous"
         aria-disabled={navDisabled}
@@ -131,7 +133,7 @@ function CalendarToolbar({
         )}
       >
         <ChevronLeft className="h-4 w-4" />
-      </button>
+      </ActionIcon>
       <h2 className="font-mono text-sm text-foreground" data-testid="cal-title">
         {titlePrefix ? (
           <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
@@ -140,8 +142,10 @@ function CalendarToolbar({
         ) : null}
         {formatAnchor(view, effectiveAnchor)}
       </h2>
-      <button
+      <ActionIcon
         type="button"
+        variant="subtle"
+        size="sm"
         onClick={onNext}
         aria-label="Next"
         aria-disabled={navDisabled}
@@ -155,15 +159,17 @@ function CalendarToolbar({
         )}
       >
         <ChevronRight className="h-4 w-4" />
-      </button>
-      <button
+      </ActionIcon>
+      <Button
         type="button"
+        variant="subtle"
+        size="compact-sm"
         onClick={onToday}
         data-testid="cal-today"
         className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
         Today
-      </button>
+      </Button>
       <div className="ml-auto flex items-center gap-2">
         <SegmentedControl
           size="xs"

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { useEffect } from "react";
 
 export default function GlobalError({
@@ -28,13 +29,15 @@ export default function GlobalError({
       <p className="max-w-md text-center text-sm text-foreground-muted">
         {error.message || "An unexpected error occurred."}
       </p>
-      <button
+      <Button
         type="button"
+        variant="subtle"
+        size="compact-sm"
         onClick={reset}
         className="mt-2 inline-flex h-8 items-center rounded-md bg-primary px-3 text-xs font-semibold text-primary-fg transition-opacity hover:opacity-90"
       >
         Try again
-      </button>
+      </Button>
     </div>
   );
 }

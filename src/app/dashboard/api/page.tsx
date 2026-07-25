@@ -1,12 +1,22 @@
 "use client";
 
+import {
+  ActionIcon,
+  Alert,
+  Badge,
+  Button,
+  Chip,
+  Text,
+  Textarea,
+  TextInput,
+  UnstyledButton,
+} from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
 import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Pill } from "@/components/ui/StatusDot";
 import {
   type ApiTag,
   ENDPOINTS,
@@ -98,17 +108,25 @@ export default function ApiExplorerPage() {
         description="Every core operation grouped by tag. Inspect request inputs and run it against your connected core."
         meta={
           <>
-            <Pill variant="active">
-              <Database className="h-3 w-3" />
+            <Badge
+              variant="light"
+              color="green"
+              size="sm"
+              radius="xl"
+              leftSection={<Database size={12} />}
+            >
               Live · {liveBaseUrl()}
-            </Pill>
-            <Pill variant="default">{Object.keys(ENDPOINTS).length} endpoints</Pill>
-            <Pill variant="default">{TAG_ORDER.length} tags</Pill>
+            </Badge>
+            <Badge variant="light" color="gray" size="sm" radius="xl">
+              {Object.keys(ENDPOINTS).length} endpoints
+            </Badge>
+            <Badge variant="light" color="gray" size="sm" radius="xl">
+              {TAG_ORDER.length} tags
+            </Badge>
           </>
         }
         actions={
-          <Button variant="secondary" size="medium">
-            <Code2 className="h-3.5 w-3.5" />
+          <Button variant="default" size="sm" leftSection={<Code2 size={14} />}>
             Download OpenAPI
           </Button>
         }
@@ -116,29 +134,36 @@ export default function ApiExplorerPage() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-4" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search endpoints, paths, keywords…"
-            aria-label="Search endpoints, paths, keywords"
-            className="h-9 w-full rounded-md border border-border bg-surface-1 pl-8 pr-3 text-sm text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent focus:ring-2 focus:ring-focus"
-          />
-        </div>
+        <TextInput
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search endpoints, paths, keywords…"
+          aria-label="Search endpoints, paths, keywords"
+          leftSection={<Search size={14} />}
+          size="sm"
+          className="flex-1"
+        />
         <div className="flex flex-wrap items-center gap-1.5">
-          <FilterChip active={filterTag === "All"} onClick={() => setFilterTag("All")}>
+          <Chip
+            checked={filterTag === "All"}
+            onChange={() => setFilterTag("All")}
+            size="xs"
+            variant="filled"
+            radius="sm"
+          >
             All
-          </FilterChip>
+          </Chip>
           {TAG_ORDER.map((t) => (
-            <FilterChip
+            <Chip
               key={t}
-              active={filterTag === t}
-              onClick={() => setFilterTag(t)}
-              count={ENDPOINTS_BY_TAG[t].length}
+              checked={filterTag === t}
+              onChange={() => setFilterTag(t)}
+              size="xs"
+              variant="filled"
+              radius="sm"
             >
-              {t}
-            </FilterChip>
+              {t} {ENDPOINTS_BY_TAG[t].length}
+            </Chip>
           ))}
         </div>
       </div>
@@ -227,43 +252,6 @@ export default function ApiExplorerPage() {
   );
 }
 
-function FilterChip({
-  active,
-  onClick,
-  children,
-  count,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  count?: number;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-xs font-medium transition-colors",
-        active
-          ? "border-accent bg-accent-soft text-accent"
-          : "border-border bg-surface-1 text-ink-2 hover:border-border-strong hover:text-ink-1",
-      )}
-    >
-      {children}
-      {typeof count === "number" ? (
-        <span
-          className={cn(
-            "rounded px-1 font-mono text-[10px]",
-            active ? "bg-accent/15 text-accent" : "bg-surface-2 text-ink-3",
-          )}
-        >
-          {count}
-        </span>
-      ) : null}
-    </button>
-  );
-}
-
 function EndpointDetail({
   endpointKey,
   onClose,
@@ -324,14 +312,9 @@ function EndpointDetail({
             {meta.tag}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="grid h-6 w-6 place-items-center rounded text-ink-3 hover:bg-surface-2 hover:text-ink-1"
-          aria-label="Close detail"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
+        <ActionIcon variant="subtle" size="sm" onClick={onClose} aria-label="Close detail">
+          <X size={14} />
+        </ActionIcon>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2">
@@ -362,34 +345,44 @@ function EndpointDetail({
           {placeholders.length > 0 ? (
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               {placeholders.map((name) => (
-                <label
-                  key={name}
-                  className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
-                >
-                  Path: {name}
-                  <input
+                <div key={name} className="flex flex-col gap-1">
+                  <label
+                    htmlFor={`api-path-param-${name}`}
+                    className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
+                  >
+                    Path: {name}
+                  </label>
+                  <TextInput
+                    id={`api-path-param-${name}`}
                     value={pathParams[name] ?? ""}
                     onChange={(event) =>
                       setPathParams((current) => ({ ...current, [name]: event.target.value }))
                     }
                     placeholder={`{${name}}`}
-                    className="mt-1 h-8 w-full rounded-md border border-border bg-surface-0 px-2 font-mono text-xs text-ink-1 outline-none focus:border-accent focus:ring-2 focus:ring-focus"
+                    size="xs"
+                    styles={{ input: { fontFamily: "var(--font-geist-mono)" } }}
                   />
-                </label>
+                </div>
               ))}
             </div>
           ) : null}
 
           <div className="mt-4">
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <label
+              htmlFor="api-query-params"
+              className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
+            >
               Query parameters (optional JSON object)
-              <input
-                value={queryText}
-                onChange={(event) => setQueryText(event.target.value)}
-                placeholder='{"limit": 20}'
-                className="mt-1 h-8 w-full rounded-md border border-border bg-surface-0 px-2 font-mono text-xs text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent focus:ring-2 focus:ring-focus"
-              />
             </label>
+            <TextInput
+              id="api-query-params"
+              value={queryText}
+              onChange={(event) => setQueryText(event.target.value)}
+              placeholder='{"limit": 20}'
+              size="xs"
+              mt={4}
+              styles={{ input: { fontFamily: "var(--font-geist-mono)" } }}
+            />
           </div>
 
           {meta.method !== "GET" ? (
@@ -398,19 +391,18 @@ function EndpointDetail({
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
                   Request body
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setBodyText(defaultBody(endpointKey))}
-                  className="text-[10px] text-ink-4 hover:text-ink-2"
-                >
-                  Reset
-                </button>
+                <UnstyledButton onClick={() => setBodyText(defaultBody(endpointKey))}>
+                  <Text size="xs" c="dimmed">
+                    Reset
+                  </Text>
+                </UnstyledButton>
               </div>
-              <textarea
+              <Textarea
                 value={bodyText}
                 onChange={(e) => setBodyText(e.target.value)}
                 spellCheck={false}
-                className="h-44 w-full rounded-md border border-border bg-surface-0 p-2 font-mono text-[11px] text-ink-1 outline-none focus:border-accent focus:ring-2 focus:ring-focus"
+                h={176}
+                styles={{ input: { fontFamily: "var(--font-geist-mono)", fontSize: "11px" } }}
               />
             </div>
           ) : (
@@ -421,21 +413,21 @@ function EndpointDetail({
 
           <div className="mt-4 flex items-center gap-2">
             <Button
-              variant="primary"
-              size="medium"
+              variant="filled"
+              size="sm"
               onClick={run}
               loading={running}
               disabled={running}
+              leftSection={<PlayCircle size={14} />}
             >
-              <PlayCircle className="h-3.5 w-3.5" />
               Run request
             </Button>
             <Button
-              variant="secondary"
-              size="medium"
+              variant="default"
+              size="sm"
               onClick={() => copyToClipboard(curlCommand(meta.method, meta.path, bodyText))}
+              leftSection={<Copy size={14} />}
             >
-              <Copy className="h-3.5 w-3.5" />
               Copy as curl
             </Button>
             <span className="ml-auto font-mono text-[10px] text-ink-4">{endpointKey}</span>
@@ -473,9 +465,9 @@ function EndpointDetail({
               : "// Click Run request to invoke this endpoint."}
           </pre>
           {response && !response.ok ? (
-            <div className="mt-2 rounded-md border border-status-danger/30 bg-status-danger-soft p-2 text-xs text-status-danger">
+            <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" mt="sm">
               {response.error.message}
-            </div>
+            </Alert>
           ) : null}
         </div>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import { useMemo } from "react";
@@ -83,13 +84,14 @@ export function Header({ executionState }: HeaderProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
+        <ActionIcon
+          variant="subtle"
+          size="lg"
+          className="rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
           title={t("header.notifications")}
         >
           <Bell className="h-5 w-5" />
-        </button>
+        </ActionIcon>
         {identity ? (
           <AccountMenu
             displayName={identity.displayName}

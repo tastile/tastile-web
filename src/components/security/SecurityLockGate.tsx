@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { useEffect, useState } from "react";
 import {
   getSecurityLockEnabled,
@@ -148,21 +149,25 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
               Use the standard unlock method for this device to continue.
             </p>
             {message ? <p className="mt-3 text-sm text-danger">{message}</p> : null}
-            <button
+            <Button
               type="button"
               onClick={unlock}
               className="mt-6 w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg"
+              variant="subtle"
+              size="compact-sm"
             >
               Unlock with this device
-            </button>
+            </Button>
             {state === "unavailable" ? (
-              <button
+              <Button
                 type="button"
                 onClick={() => setState("unlocked")}
                 className="mt-3 w-full rounded-full px-4 py-3 text-sm font-semibold text-foreground"
+                variant="subtle"
+                size="compact-sm"
               >
                 Continue
-              </button>
+              </Button>
             ) : null}
           </div>
         </div>

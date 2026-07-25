@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import {
   CalendarDays,
   CheckSquare,
@@ -112,7 +113,7 @@ export function ActivityBar() {
 
         {/* 開閉コントロール — 下揃え */}
         <div className="relative px-1 pb-1">
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => setDropdownOpen((v) => !v)}
             aria-label={t("shell.activityBar.sidebarControl")}
@@ -138,7 +139,7 @@ export function ActivityBar() {
             >
               {t("shell.activityBar.sidebar")}
             </span>
-          </button>
+          </UnstyledButton>
 
           {/* ドロップダウンメニュー */}
           {dropdownOpen && (
@@ -168,7 +169,7 @@ export function ActivityBar() {
                     { value: "expandable", labelKey: "shell.activityBar.expandOnHover" },
                   ] as { value: SidebarBehavior; labelKey: string }[]
                 ).map(({ value, labelKey }) => (
-                  <button
+                  <UnstyledButton
                     key={value}
                     role="menuitemradio"
                     aria-checked={sidebarBehavior === value}
@@ -198,7 +199,7 @@ export function ActivityBar() {
                       )}
                     </span>
                     {t(labelKey)}
-                  </button>
+                  </UnstyledButton>
                 ))}
               </div>
             </>
@@ -231,7 +232,7 @@ function NavButton({
 }: NavButtonProps) {
   return (
     <div className="group/item relative">
-      <button
+      <UnstyledButton
         type="button"
         title={label}
         onClick={onClick}
@@ -253,7 +254,7 @@ function NavButton({
         >
           {label}
         </span>
-      </button>
+      </UnstyledButton>
 
       {/* ホバーツールチップ (折りたたみ時) */}
       {!expanded && (

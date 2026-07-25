@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Copy, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { Alert, Button, Modal, TextInput } from "@mantine/core";
+import { AlertCircle, Check, Copy, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -29,6 +30,7 @@ export function AccessTokenSection() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const loadTokens = useCallback(() => {
     setLoading(true);
@@ -71,6 +73,7 @@ export function AccessTokenSection() {
         const created = (await response.json()) as CreatedToken;
         setCreatedToken(created);
         setName("");
+        setCreating(false);
         await loadTokens();
       })
       .catch((err: unknown) => {
@@ -138,21 +141,21 @@ export function AccessTokenSection() {
       </div>
 
       {error ? (
-        <div className="rounded-md bg-danger/10 px-4 py-3 text-sm text-danger">{error}</div>
+        <Alert title={error} icon={<AlertCircle className="h-4 w-4" />} color="red" />
       ) : null}
 
       {createdToken ? (
         <section className="rounded-md bg-success/10 p-4">
           <div className="mb-2 flex items-center justify-between gap-3">
             <h3 className="font-semibold text-foreground">{t("account.tokens.newTokenHeading")}</h3>
-            <button
-              type="button"
+            <Button
+              component="button"
               onClick={() => void copyToken(createdToken.access_token)}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? t("account.tokens.copied") : t("account.tokens.copy")}
-            </button>
+            </Button>
           </div>
           <code className="block break-all rounded-md border border-border bg-surface-0 p-3 font-mono text-xs text-foreground">
             {createdToken.access_token}
@@ -160,27 +163,60 @@ export function AccessTokenSection() {
         </section>
       ) : null}
 
-      <form onSubmit={createToken} className="border border-border bg-surface-0 rounded-md p-5">
-        <label className="block text-sm">
-          <span className="mb-2 block font-medium text-foreground">
-            {t("account.tokens.nameLabel")}
-          </span>
-          <input
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            maxLength={80}
-            className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={submitting || !name.trim()}
-          className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
+      <div className="flex items-center gap-3">
+        <Button
+          component="button"
+          onClick={() => setCreating(true)}
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
           <Plus className="h-4 w-4" />
           {t("account.tokens.issue")}
-        </button>
-      </form>
+        </Button>
+      </div>
+
+      <Modal
+        opened={creating}
+        onClose={() => {
+          setCreating(false);
+          setName("");
+        }}
+        title={t("account.tokens.nameLabel")}
+        centered
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void createToken(e);
+          }}
+          className="space-y-4"
+        >
+          <TextInput
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+            maxLength={80}
+            label={t("account.tokens.nameLabel")}
+            placeholder={t("account.tokens.namePlaceholder")}
+            required
+            data-autofocus
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              component="button"
+              type="button"
+              variant="default"
+              onClick={() => {
+                setCreating(false);
+                setName("");
+              }}
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button component="button" type="submit" disabled={submitting || !name.trim()}>
+              {t("account.tokens.issue")}
+            </Button>
+          </div>
+        </form>
+      </Modal>
 
       <section className="border border-border bg-surface-0 rounded-md p-5">
         <div className="mb-4 flex items-center gap-3">
@@ -213,14 +249,13 @@ export function AccessTokenSection() {
                           maxLength={80}
                           className="min-w-0 flex-1 rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
-                        <button
-                          type="button"
+                        <Button
+                          component="button"
                           onClick={() => void saveName(token.token_id)}
                           disabled={submitting || !editingName.trim()}
-                          className="rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-fg disabled:opacity-60"
                         >
                           {t("common.save")}
-                        </button>
+                        </Button>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -237,8 +272,8 @@ export function AccessTokenSection() {
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <button
-                      type="button"
+                    <Button
+                      component="button"
                       onClick={() => {
                         setEditingId(token.token_id);
                         setEditingName(token.name);
@@ -248,16 +283,16 @@ export function AccessTokenSection() {
                     >
                       <Pencil className="h-4 w-4" />
                       {t("account.tokens.rename")}
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <Button
+                      component="button"
                       onClick={() => void revokeToken(token.token_id)}
                       disabled={revoked || submitting}
                       className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-danger disabled:opacity-40"
                     >
                       <Trash2 className="h-4 w-4" />
                       {t("account.tokens.revoke")}
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-3">

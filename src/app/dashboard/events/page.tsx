@@ -1,5 +1,7 @@
 "use client";
 
+import { Alert, Badge, Button, Loader, Text, TextInput } from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
 import {
   Activity,
   ChevronDown,
@@ -8,7 +10,6 @@ import {
   Database,
   Download,
   Filter,
-  Loader2,
   RefreshCw,
   Search,
   Terminal,
@@ -16,11 +17,9 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { EmptyState } from "@/components/ui/Empty";
-import { Pill } from "@/components/ui/StatusDot";
 import { getCoreClient, type Result } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 
@@ -139,29 +138,44 @@ export default function EventsPage() {
         description="The raw fact stream. Every state in the UI was derived from one of these. Append-only — there is no UPDATE on an event."
         meta={
           <>
-            <Pill variant={events?.ok ? "active" : "default"}>
-              <Database className="h-3 w-3" />
+            <Badge
+              variant="light"
+              color={events?.ok ? "green" : "gray"}
+              size="sm"
+              radius="xl"
+              leftSection={<Database size={12} />}
+            >
               {list.length} events
-            </Pill>
-            <Pill variant="default">
-              <Terminal className="h-3 w-3" />
+            </Badge>
+            <Badge
+              variant="light"
+              color="gray"
+              size="sm"
+              radius="xl"
+              leftSection={<Terminal size={12} />}
+            >
               GET /debug/events
-            </Pill>
+            </Badge>
           </>
         }
         actions={
           <>
             <Button
-              variant="secondary"
-              size="medium"
+              variant="default"
+              size="sm"
               onClick={downloadJson}
               disabled={!list.length}
+              leftSection={<Download size={14} />}
             >
-              <Download className="h-3.5 w-3.5" />
               Download JSON
             </Button>
-            <Button variant="secondary" size="medium" onClick={load} loading={loading}>
-              <RefreshCw className="h-3.5 w-3.5" />
+            <Button
+              variant="default"
+              size="sm"
+              onClick={load}
+              loading={loading}
+              leftSection={<RefreshCw size={14} />}
+            >
               Refresh
             </Button>
           </>
@@ -169,16 +183,15 @@ export default function EventsPage() {
       />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-ink-4" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by type, id, actor, tile…"
-            aria-label="Search by type, id, actor, tile"
-            className="h-9 w-full rounded-md border border-border bg-surface-1 pl-8 pr-3 text-sm text-ink-1 outline-none placeholder:text-ink-4 focus:border-accent focus:ring-2 focus:ring-focus"
-          />
-        </div>
+        <TextInput
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search by type, id, actor, tile…"
+          aria-label="Search by type, id, actor, tile"
+          leftSection={<Search size={14} />}
+          size="sm"
+          className="flex-1"
+        />
         <div className="flex items-center gap-1.5">
           <Filter className="h-3.5 w-3.5 text-ink-3" />
           <Dropdown
@@ -194,7 +207,7 @@ export default function EventsPage() {
       <Card padded={false}>
         {loading ? (
           <div className="flex items-center gap-2 p-6 text-sm text-ink-3">
-            <Loader2 className="h-4 w-4 animate-spin" /> Reading event log…
+            <Loader size="xs" /> Reading event log…
           </div>
         ) : !events?.ok ? (
           <div className="p-6">
@@ -344,15 +357,24 @@ function ErrorState({
     );
   }
   return (
-    <div className="flex flex-col items-center gap-2 text-center">
-      <div className="text-sm font-semibold text-status-danger">
-        {error.kind} · {error.status}
-      </div>
-      <p className="text-xs text-ink-3">{error.message}</p>
-      <Button variant="secondary" size="small" onClick={onRetry}>
-        <RefreshCw className="h-3 w-3" /> Retry
+    <Alert
+      icon={<IconAlertCircle size={16} />}
+      title={`${error.kind} · ${error.status}`}
+      color="red"
+      variant="light"
+    >
+      <Text size="sm" mb="sm">
+        {error.message}
+      </Text>
+      <Button
+        variant="subtle"
+        size="compact-sm"
+        onClick={onRetry}
+        leftSection={<RefreshCw size={12} />}
+      >
+        Retry
       </Button>
-    </div>
+    </Alert>
   );
 }
 

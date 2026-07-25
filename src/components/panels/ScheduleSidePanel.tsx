@@ -1,7 +1,15 @@
 "use client";
 
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
-import { Checkbox, getTreeExpandedState, SegmentedControl, Tree, useTree } from "@mantine/core";
+import {
+  ActionIcon,
+  Checkbox,
+  getTreeExpandedState,
+  SegmentedControl,
+  Tree,
+  UnstyledButton,
+  useTree,
+} from "@mantine/core";
 import { CalendarClock, ChevronRight, Folder, RefreshCw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useTransition } from "react";
@@ -199,7 +207,9 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
       return (
         <div {...elementProps} className="flex items-center gap-2 py-0.5">
           {hasChildren ? (
-            <button
+            <ActionIcon
+              variant="subtle"
+              size="sm"
               type="button"
               aria-label={expanded ? "Collapse" : "Expand"}
               onClick={() => tree.toggleExpanded(node.value)}
@@ -210,7 +220,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
                 aria-hidden
                 className={cn("transition-transform", expanded && "rotate-90")}
               />
-            </button>
+            </ActionIcon>
           ) : (
             <span aria-hidden className="h-4 w-4 shrink-0" />
           )}
@@ -228,13 +238,13 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: color ?? "#6b7280" }}
           />
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => toggleCascade(node.value)}
             className="min-w-0 flex-1 truncate text-left text-xs text-foreground-subtle hover:text-foreground"
           >
             {node.label}
-          </button>
+          </UnstyledButton>
         </div>
       );
     },

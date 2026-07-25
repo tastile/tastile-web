@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import { useEffect, useState } from "react";
 
 import {
@@ -97,9 +98,9 @@ export function LabelSpanPicker({
       {error ? (
         <div role="alert" className="flex items-center justify-between gap-2 text-xs text-danger">
           <span>{error}</span>
-          <button type="button" onClick={reload} className="underline">
+          <UnstyledButton type="button" onClick={reload} className="underline">
             再試行
-          </button>
+          </UnstyledButton>
         </div>
       ) : null}
       {!loading && !error && items.length === 0 ? (

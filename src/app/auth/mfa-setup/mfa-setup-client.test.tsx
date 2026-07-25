@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 
 const { mockReplace } = vi.hoisted(() => ({
   mockReplace: vi.fn(),
@@ -58,7 +59,7 @@ afterEach(() => {
 
 async function renderClient(email = "user@example.com") {
   const { MfaSetupClient } = await import("./mfa-setup-client");
-  render(<MfaSetupClient email={email} />);
+  renderWithMantine(<MfaSetupClient email={email} />);
 }
 
 describe("MfaSetupClient", () => {

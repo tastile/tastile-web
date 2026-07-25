@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactElement } from "react";
+import { renderWithMantine } from "@/test/render-with-mantine";
 
 // The child Client Component imports `next/navigation` and `useLocaleStore`.
 // Mock both so the test does not need the Next app-router runtime or the
@@ -52,7 +53,7 @@ async function renderPage(searchParams: Promise<Record<string, unknown>>) {
   // and avoids pulling in `@mantine/*` providers via the client component.
   const { default: MfaSetupPage } = await import("./page");
   const element = await MfaSetupPage({ searchParams });
-  render(element as ReactElement);
+  renderWithMantine(element as ReactElement);
 }
 
 describe("MfaSetupPage (Server Component)", () => {

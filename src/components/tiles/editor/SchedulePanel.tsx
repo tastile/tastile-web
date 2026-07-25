@@ -23,7 +23,7 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
-import { SegmentedControl, Select } from "@mantine/core";
+import { ActionIcon, SegmentedControl, Select, UnstyledButton } from "@mantine/core";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 
 import { Button } from "@/components/ui/Button";
@@ -133,7 +133,7 @@ interface NullCardProps {
 
 function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
   return (
-    <button
+    <UnstyledButton
       type="button"
       data-testid={testId}
       aria-pressed={active}
@@ -154,7 +154,7 @@ function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
         <div className="text-xs font-semibold text-foreground">{title}</div>
         <div className="text-[10px] text-foreground-muted">{sub}</div>
       </div>
-    </button>
+    </UnstyledButton>
   );
 }
 
@@ -266,7 +266,7 @@ function TimeOfDayEditor({
           </div>
           <div className="flex flex-wrap gap-1" data-testid="time-of-day-quick-row">
             {QUICK_RANGES.map((q) => (
-              <button
+              <UnstyledButton
                 key={q.labelKey}
                 type="button"
                 onClick={() => onQuickPick(q.start, q.end)}
@@ -279,7 +279,7 @@ function TimeOfDayEditor({
                 data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
               >
                 {t(q.labelKey)}
-              </button>
+              </UnstyledButton>
             ))}
           </div>
         </div>
@@ -305,14 +305,16 @@ function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
         <span className="text-xs text-foreground-muted">
           {t("quickCreate.windowsTitle")} #{index + 1}
         </span>
-        <button
+        <ActionIcon
+          variant="subtle"
+          size="sm"
           type="button"
           onClick={() => onRemove(index)}
           aria-label={t("quickCreate.windowRemove")}
           className="text-foreground-muted hover:text-danger focus:outline-hidden"
         >
           <X size={14} />
-        </button>
+        </ActionIcon>
       </div>
       <RowSegmented
         icon={Calendar}
@@ -520,7 +522,7 @@ export function SchedulePanel({
               { id: "tomorrow", labelKey: "quickCreate.calendarTomorrow", days: 1 },
               { id: "thisWeek", labelKey: "quickCreate.calendarThisWeek", days: 7 },
             ].map((q) => (
-              <button
+              <UnstyledButton
                 key={q.id}
                 type="button"
                 onClick={() => {
@@ -543,7 +545,7 @@ export function SchedulePanel({
                 data-testid={`when-calendar-quick-${q.id}`}
               >
                 {t(q.labelKey)}
-              </button>
+              </UnstyledButton>
             ))}
           </div>
         </div>

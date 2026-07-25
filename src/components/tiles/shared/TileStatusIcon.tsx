@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon } from "@mantine/core";
 import { CheckCircle2, Circle, CircleDot } from "lucide-react";
 import type { TileLifecycle } from "@/lib/domain/tile";
 import { TILE_STATUS_COLORS } from "@/lib/styles/tile-card-styles";
@@ -31,7 +32,7 @@ export function TileStatusIcon({
   };
 
   return (
-    <button
+    <ActionIcon
       type="button"
       onClick={handleClick}
       disabled={disabled || !onClick}
@@ -45,11 +46,13 @@ export function TileStatusIcon({
         className,
       )}
       aria-label={`Status: ${lifecycle}`}
+      variant="subtle"
+      size="sm"
     >
       {lifecycle === "started" && (
         <div className="absolute inset-0 rounded-full bg-current animate-ping opacity-75" />
       )}
       <IconComponent size={size} className="relative z-10" />
-    </button>
+    </ActionIcon>
   );
 }

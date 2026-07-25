@@ -84,6 +84,6 @@
     // import tracing loses the indirection; the helper itself is sound.
     "src/lib/cognito/session.ts"
   ],
-  "ignoreDependencies": ["tailwindcss"],
+  "ignoreDependencies": ["tailwindcss", "@typescript-eslint/typescript-estree"],
   "ignoreExportsUsedInFile": true
 }

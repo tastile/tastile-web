@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -156,13 +157,13 @@ export function MfaSetupClient({ email }: { email: string }) {
         <p className="text-foreground">
           {t("auth.mfaSetup.errorPrefix")} {state.message}
         </p>
-        <button
+        <Button
           type="button"
           className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
           onClick={() => router.push("/auth/email")}
         >
           {t("auth.mfaSetup.retrySignin")}
-        </button>
+        </Button>
       </main>
     );
   }
@@ -201,22 +202,23 @@ export function MfaSetupClient({ email }: { email: string }) {
         <input
           id="code"
           value={code}
-          onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+          onChange={(e) => setCode(e.currentTarget.value.replace(/[^0-9]/g, "").slice(0, 6))}
           inputMode="numeric"
           pattern="[0-9]{6}"
           autoComplete="one-time-code"
+          maxLength={6}
           required
-          className="w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
         />
       </div>
-      <button
+      <Button
         type="button"
         onClick={submitCode}
         disabled={!/^[0-9]{6}$/.test(code)}
         className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-50"
       >
         {t("auth.mfaSetup.verify")}
-      </button>
+      </Button>
     </main>
   );
 }

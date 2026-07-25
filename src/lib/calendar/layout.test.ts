@@ -47,7 +47,7 @@ describe("eventSpansDay tzOffset handling (Week view 睡眠 regression)", () => 
   it("Week view getWeekViewDates returns 7 dates in the JST week", () => {
     // Anchor 2026-07-15 (Wed JST). With tzOffset=540, the Sun..Sat grid
     // should be 2026-07-12 .. 2026-07-18.
-    const days = getWeekViewDates("scope", "2026-07-15", 540);
+    const days = getWeekViewDates("scope", "2026-07-15");
     expect(days).toEqual([
       "2026-07-12",
       "2026-07-13",
@@ -63,7 +63,7 @@ describe("eventSpansDay tzOffset handling (Week view 睡眠 regression)", () => 
     // Anchor 2026-07-19 (Sun JST). The grid must start on Jul 19 itself,
     // not the previous week. This was broken by getUTCDay() on a
     // timezone-shifted localMidnightMs returning 6 (Sat) instead of 0 (Sun).
-    const days = getWeekViewDates("scope", "2026-07-19", 540);
+    const days = getWeekViewDates("scope", "2026-07-19");
     expect(days).toEqual([
       "2026-07-19",
       "2026-07-20",
@@ -77,7 +77,7 @@ describe("eventSpansDay tzOffset handling (Week view 睡眠 regression)", () => 
 
   it("Week view getWeekViewDates returns correct Sun..Sat when anchor is Saturday (JST)", () => {
     // Anchor 2026-07-25 (Sat JST). The grid must end on Jul 25 itself.
-    const days = getWeekViewDates("scope", "2026-07-25", 540);
+    const days = getWeekViewDates("scope", "2026-07-25");
     expect(days).toEqual([
       "2026-07-19",
       "2026-07-20",

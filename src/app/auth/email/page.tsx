@@ -1,3 +1,5 @@
+import { Button } from "@mantine/core";
+
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { AuthShell } from "../auth-shell";
 
@@ -36,16 +38,13 @@ export default async function EmailPage({
             type="email"
             autoComplete="email"
             required
-            className="mt-2 w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-2 w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             placeholder="you@example.com"
           />
         </div>
-        <button
-          type="submit"
-          className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
-        >
+        <Button type="submit" className="w-full">
           続行
-        </button>
+        </Button>
       </form>
     </AuthShell>
   );

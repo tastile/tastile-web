@@ -49,10 +49,7 @@ export function WeekView({
   const [fallbackMs] = useState(() => Date.now());
   const nowMs = sharedNowMs ?? fallbackMs;
 
-  const weekDates = useMemo(
-    () => getWeekViewDates(mode, anchor, tzOffset),
-    [mode, anchor, tzOffset],
-  );
+  const weekDates = useMemo(() => getWeekViewDates(mode, anchor), [mode, anchor]);
 
   // Day-of-week row uses local-time "today" (not UTC) to match the
   // device's clock; the time-grid below shifts per-day to local time

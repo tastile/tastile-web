@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GlobalPromptBanner } from "@/components/execution/GlobalPromptBanner";
@@ -138,8 +139,9 @@ export function AppShell({
       <div className="lg:hidden">{quickCreatePanel}</div>
 
       {/* Sidebar Toggle - Fixed Bottom Right */}
-      <button
-        type="button"
+      <ActionIcon
+        variant="subtle"
+        size="lg"
         onClick={() => setShowSidebar(!showSidebar)}
         className="fixed bottom-6 right-0 z-50 hidden h-12 w-10 items-center justify-center rounded-l-xl bg-surface-elevated text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground lg:flex"
         style={{
@@ -147,7 +149,7 @@ export function AppShell({
         }}
       >
         {showSidebar ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-      </button>
+      </ActionIcon>
     </div>
   );
 }

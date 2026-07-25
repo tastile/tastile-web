@@ -1,10 +1,10 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
-import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { updateWorkspace, useProjects, type Workspace } from "@/lib/hooks/use-projects";

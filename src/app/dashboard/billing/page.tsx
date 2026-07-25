@@ -1,5 +1,6 @@
 "use client";
 
+import { Card as MantineCard, Progress, Stack, Text } from "@mantine/core";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -35,26 +36,36 @@ export default function BillingPage() {
     <div className="space-y-6">
       <h1 className="text-2xl font-[590] text-foreground">Billing</h1>
       <SubscriptionSection />
-      <div className="rounded-xl bg-surface-elevated p-6">
-        <h2 className="mb-4 text-lg font-[590] text-foreground">Usage</h2>
-        <div className="space-y-4">
+      <MantineCard
+        radius="md"
+        withBorder
+        shadow="xs"
+        bg="var(--surface-1)"
+        className="border-border"
+      >
+        <Text size="lg" fw={590} mb="md">
+          Usage
+        </Text>
+        <Stack gap="md">
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-foreground-muted">Tiles</span>
-              <span className="text-foreground">Up to 50 cloud</span>
+              <Text size="sm" c="dimmed">
+                Tiles
+              </Text>
+              <Text size="sm">Up to 50 cloud</Text>
             </div>
-            <div className="h-2 rounded-full bg-surface-2">
-              <div className="h-2 rounded-full bg-primary" style={{ width: "0%" }} />
-            </div>
+            <Progress value={0} size="sm" radius="xl" />
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-foreground-muted">History</span>
-              <span className="text-foreground">30 days</span>
+              <Text size="sm" c="dimmed">
+                History
+              </Text>
+              <Text size="sm">30 days</Text>
             </div>
           </div>
-        </div>
-      </div>
+        </Stack>
+      </MantineCard>
     </div>
   );
 }

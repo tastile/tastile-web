@@ -1,11 +1,19 @@
 "use client";
 
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
-import { Checkbox, getTreeExpandedState, Select, Tree, useTree } from "@mantine/core";
+import {
+  ActionIcon,
+  Checkbox,
+  getTreeExpandedState,
+  Select,
+  Tree,
+  UnstyledButton,
+  useTree,
+} from "@mantine/core";
+import { DatePicker } from "@mantine/dates";
 import { ChevronRight, Clock, Filter } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useTransition } from "react";
-import { MiniCalendar } from "@/components/ui/MiniCalendar";
 import type { DisplayMode } from "@/lib/calendar/layout";
 import { useProjects, type Workspace } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -40,7 +48,7 @@ interface CalendarSidePanelProps {
 //   future → 今日 ~ 範囲末日
 //   scope  → 既存のスコープ網掛け
 // と落とし込む。
-function getHighlightDates(
+function _getHighlightDates(
   view: CalendarSidePanelView | undefined,
   mode: DisplayMode | undefined,
   anchor: string,
@@ -91,28 +99,31 @@ function getHighlightDates(
 
 export function CalendarSidePanel({
   anchor,
-  view,
+  view: _view,
   mode,
   minDuration = 0,
   onSelectDate,
   onModeChange,
   onMinDurationChange,
 }: CalendarSidePanelProps) {
-  const highlight = getHighlightDates(view, mode, anchor);
   // Around / future modes always anchor to today; the mini calendar
   // is read-only so the user can't pick a date the main view will
   // ignore anyway.
-  const locked = mode === "around" || mode === "future";
+  const _locked = mode === "around" || mode === "future";
 
   return (
-    <div className="flex flex-col gap-4 pt-2">
+    <div className="flex flex-col gap-4 pt-2 overflow-hidden">
       {/* ミニカレンダー */}
-      <MiniCalendar
-        selected={anchor}
-        onSelect={onSelectDate}
-        highlight={highlight}
-        disabled={locked}
-      />
+      <div className="px-3">
+        <DatePicker
+          aria-label="Select date"
+          value={anchor}
+          onChange={(value) => {
+            if (value) onSelectDate?.(value);
+          }}
+          size="sm"
+        />
+      </div>
 
       <div className="mx-3 h-px bg-border" />
 
@@ -295,7 +306,9 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
       return (
         <div {...elementProps} className="flex items-center gap-2 py-0.5">
           {hasChildren ? (
-            <button
+            <ActionIcon
+              variant="subtle"
+              size="sm"
               type="button"
               aria-label={expanded ? "Collapse" : "Expand"}
               onClick={() => tree.toggleExpanded(node.value)}
@@ -306,7 +319,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
                 aria-hidden
                 className={cn("transition-transform", expanded && "rotate-90")}
               />
-            </button>
+            </ActionIcon>
           ) : (
             <span aria-hidden className="h-4 w-4 shrink-0" />
           )}
@@ -324,13 +337,13 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
             className="h-2 w-2 shrink-0 rounded-full"
             style={{ backgroundColor: color ?? "#6b7280" }}
           />
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => toggleCascade(node.value)}
             className="min-w-0 flex-1 truncate text-left text-xs text-foreground-subtle hover:text-foreground"
           >
             {node.label}
-          </button>
+          </UnstyledButton>
         </div>
       );
     },

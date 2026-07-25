@@ -15,6 +15,7 @@
  * `/v1/active-tile` polling for live updates.
  */
 
+import { Button } from "@mantine/core";
 import { Pause, Play, Square } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useV1ActiveTile } from "@/lib/hooks/use-v1-active-tile";
@@ -78,7 +79,7 @@ export function V1ExecutionControls() {
         {remaining}
       </div>
       {!hasExecution && (
-        <button
+        <Button
           type="button"
           onClick={() =>
             void run("start")
@@ -92,39 +93,47 @@ export function V1ExecutionControls() {
           disabled={state.busy !== null}
           className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
           aria-label="Start execution"
+          variant="subtle"
+          size="compact-sm"
         >
           <Play className="h-3 w-3" /> Start
-        </button>
+        </Button>
       )}
       {hasExecution && (
         <>
-          <button
+          <Button
             type="button"
             onClick={onClick("pause")}
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-[11px] font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
             aria-label="Pause execution"
+            variant="subtle"
+            size="compact-sm"
           >
             <Pause className="h-3 w-3" /> Pause
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onClick("resume")}
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-[11px] font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
             aria-label="Resume execution"
+            variant="subtle"
+            size="compact-sm"
           >
             <Play className="h-3 w-3" /> Resume
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={onClick("finish")}
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-status-warn px-2 text-[11px] font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             aria-label="Finish execution"
+            variant="subtle"
+            size="compact-sm"
           >
             <Square className="h-3 w-3" /> Finish
-          </button>
+          </Button>
         </>
       )}
       {state.error && (

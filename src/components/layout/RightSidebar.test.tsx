@@ -1,9 +1,10 @@
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TileId } from "@/lib/domain/ids";
 import { Tile } from "@/lib/domain/tile";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { RightSidebar } from "./RightSidebar";
 
 vi.mock("@/lib/i18n/use-translation", () => ({
@@ -22,7 +23,7 @@ describe("RightSidebar", () => {
 		);
 		const onPromptSuggested = vi.fn();
 
-		render(
+		renderWithMantine(
 			<RightSidebar
 				nextTile={nextTile}
 				nextQuickTiles={[quickTile]}

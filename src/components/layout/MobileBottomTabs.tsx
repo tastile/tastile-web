@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import { Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -55,13 +56,13 @@ interface MobileActionButtonProps {
 
 function MobileActionButton({ icon, label, onClick }: MobileActionButtonProps) {
   return (
-    <button
+    <UnstyledButton
       type="button"
       onClick={onClick}
       className="flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2 text-foreground-muted transition-colors hover:bg-surface-2 hover:text-foreground"
     >
       {icon}
       <span className="text-xs">{label}</span>
-    </button>
+    </UnstyledButton>
   );
 }

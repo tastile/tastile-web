@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { useState } from "react";
 import type { PendingPrompt, PromptAction } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -52,41 +53,47 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
             <div className="text-sm font-semibold text-foreground">{title}</div>
           </div>
           {canDismiss ? (
-            <button
+            <Button
               type="button"
               onClick={onDismiss}
               className="rounded-md px-2 py-1 text-xs text-foreground-muted hover:bg-surface-2"
+              variant="subtle"
+              size="compact-sm"
             >
               {t("common.close")}
-            </button>
+            </Button>
           ) : null}
         </div>
         {showDeferOptions ? (
           <div className="mt-3">
             <div className="grid grid-cols-2 gap-2">
               {deferOptions.map((option) => (
-                <button
+                <Button
                   key={option.label}
                   type="button"
                   onClick={() => onAction?.("defer_tile", { deferMinutes: option.minutes })}
                   className="min-h-10 rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
+                  variant="subtle"
+                  size="compact-sm"
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
-            <button
+            <Button
               type="button"
               onClick={() => setDeferMenuPromptId(null)}
               className="mt-2 min-h-9 rounded-full bg-surface-2 px-3 py-2 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
+              variant="subtle"
+              size="compact-sm"
             >
               {t("common.back")}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {visibleActions.map((action) => (
-              <button
+              <Button
                 key={action}
                 type="button"
                 onClick={() => {
@@ -97,9 +104,11 @@ export function GlobalPromptBanner({ prompt, onAction, onDismiss }: GlobalPrompt
                   onAction?.(action);
                 }}
                 className="min-h-10 rounded-full bg-surface-2 px-4 py-2 text-sm font-semibold text-foreground hover:bg-surface-1"
+                variant="subtle"
+                size="compact-sm"
               >
                 {labelForAction(action, t)}
-              </button>
+              </Button>
             ))}
           </div>
         )}

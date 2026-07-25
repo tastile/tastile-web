@@ -2,13 +2,14 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import DownloadPage from "@/app/download/page";
 import LoginPage from "@/app/login/page";
 import PricingPage from "@/app/pricing/page";
 import PrivacyPage from "@/app/privacy/page";
 import TermsPage from "@/app/terms/page";
+import { renderWithMantine } from "@/test/render-with-mantine";
 
 vi.mock("@/lib/desktop-release", () => ({
 	fetchDesktopReleaseInfo: async () => ({ latestVersion: "test-version" }),
@@ -49,7 +50,7 @@ describe("marketing page layout consistency", () => {
 			searchParams: Promise.resolve({}),
 		});
 		const { container: downloadContainer, unmount: unmountDownload } =
-			render(downloadUi);
+			renderWithMantine(downloadUi);
 		expect(downloadContainer.firstElementChild?.className).toContain("flex");
 		expect(downloadContainer.firstElementChild?.className).toContain(
 			"flex-col",
@@ -62,7 +63,7 @@ describe("marketing page layout consistency", () => {
 		const pricingUi = await PricingPage({
 			searchParams: Promise.resolve({}),
 		});
-		const pricingContainer = render(pricingUi).container;
+		const pricingContainer = renderWithMantine(pricingUi).container;
 		expect(pricingContainer.firstElementChild?.className).toContain("flex");
 		expect(pricingContainer.firstElementChild?.className).toContain("flex-col");
 		expect(pricingContainer.querySelector("main")?.className).toContain(
@@ -71,7 +72,7 @@ describe("marketing page layout consistency", () => {
 
 		const privacyUi = PrivacyPage();
 		const { container: privacyContainer, unmount: unmountPrivacy } =
-			render(privacyUi);
+			renderWithMantine(privacyUi);
 		expect(privacyContainer.firstElementChild?.className).toContain("flex");
 		expect(privacyContainer.firstElementChild?.className).toContain("flex-col");
 		expect(privacyContainer.querySelector("main")?.className).toContain(
@@ -80,7 +81,7 @@ describe("marketing page layout consistency", () => {
 		unmountPrivacy();
 
 		const termsUi = TermsPage();
-		const { container: termsContainer } = render(termsUi);
+		const { container: termsContainer } = renderWithMantine(termsUi);
 		expect(termsContainer.firstElementChild?.className).toContain("flex");
 		expect(termsContainer.firstElementChild?.className).toContain("flex-col");
 		expect(termsContainer.querySelector("main")?.className).toContain("flex-1");
@@ -89,7 +90,7 @@ describe("marketing page layout consistency", () => {
 	it("renders only configured providers in the compact login shell", async () => {
 		vi.stubEnv("NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS", "Google");
 
-		const { container } = render(
+		const { container } = renderWithMantine(
 			await LoginPage({ searchParams: Promise.resolve({}) }),
 		);
 
@@ -109,7 +110,7 @@ describe("marketing page layout consistency", () => {
 			"Google,SignInWithApple",
 		);
 
-		const { container } = render(
+		const { container } = renderWithMantine(
 			await LoginPage({
 				searchParams: Promise.resolve({
 					redirect_uri: "tastile://auth/callback",

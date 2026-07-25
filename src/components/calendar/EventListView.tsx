@@ -1,6 +1,6 @@
 "use client";
 
-import { Alert } from "@mantine/core";
+import { Alert, TextInput, UnstyledButton } from "@mantine/core";
 import { AlertCircle, Calendar, Clock, MapPin } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
@@ -65,14 +65,15 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
   return (
     <div className="relative space-y-6" data-testid="event-list-wrapper">
       <div className="flex items-center gap-2">
-        <input
+        <TextInput
           type="search"
           data-testid="event-list-search"
           placeholder="Search events…"
           aria-label="Search events"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="h-8 w-full max-w-sm rounded-md border border-border bg-surface-1 px-2.5 text-xs placeholder:text-foreground-muted focus:border-control focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control"
+          onChange={(e) => setQuery(e.currentTarget.value)}
+          size="xs"
+          className="w-full max-w-sm"
         />
         {loading ? (
           <span
@@ -128,7 +129,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
             <ul className="divide-y divide-border rounded-md border border-border bg-surface-0">
               {items.map((event) => (
                 <li key={event.id}>
-                  <button
+                  <UnstyledButton
                     type="button"
                     data-testid={`event-list-item-${event.id}`}
                     className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-1"
@@ -161,7 +162,7 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
                         ) : null}
                       </div>
                     </div>
-                  </button>
+                  </UnstyledButton>
                 </li>
               ))}
             </ul>

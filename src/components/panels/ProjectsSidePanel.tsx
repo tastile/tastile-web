@@ -1,12 +1,20 @@
 "use client";
 
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
-import { getTreeExpandedState, Select, Tree, useTree } from "@mantine/core";
+import {
+  ActionIcon,
+  getTreeExpandedState,
+  Modal,
+  Select,
+  TextInput,
+  Tree,
+  UnstyledButton,
+  useTree,
+} from "@mantine/core";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Button as UIButton } from "@/components/ui/Button";
 import {
   createWorkspace,
   deleteWorkspace,
@@ -105,7 +113,7 @@ export function ProjectsSidePanel() {
           {t("panels.projects.projects")}
         </span>
         {!creating ? (
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => setCreating(true)}
             className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted hover:bg-surface-1 hover:text-foreground"
@@ -113,36 +121,49 @@ export function ProjectsSidePanel() {
           >
             <Plus className="h-3 w-3" aria-hidden />
             New
-          </button>
+          </UnstyledButton>
         ) : null}
       </div>
 
-      {creating ? (
+      <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
         <form
           onSubmit={(e) => {
             e.preventDefault();
             void handleCreate();
           }}
-          className="flex flex-col gap-1.5 border-t border-border/40 px-2 py-2"
+          className="flex flex-col gap-3"
         >
-          <Input
+          <TextInput
             placeholder="Project name"
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => setName(e.currentTarget.value)}
             maxLength={80}
             required
             data-testid="project-create-name"
+            label="Name"
+            size="sm"
           />
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="slug (optional)"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
-              pattern="[a-z0-9-]+"
-              maxLength={40}
-              data-testid="project-create-slug"
-            />
+          <TextInput
+            placeholder="slug (optional)"
+            value={slug}
+            onChange={(e) =>
+              setSlug(e.currentTarget.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))
+            }
+            pattern="[a-z0-9-]+"
+            maxLength={40}
+            data-testid="project-create-slug"
+            label="Slug"
+            size="sm"
+          />
+          <div>
+            <label
+              htmlFor="project-color"
+              className="mb-1 block text-[10px] text-foreground-subtle"
+            >
+              Color
+            </label>
             <input
+              id="project-color"
               type="color"
               value={color}
               onChange={(e) => setColor(e.target.value)}
@@ -173,16 +194,16 @@ export function ProjectsSidePanel() {
             comboboxProps={{ withinPortal: true }}
             data-testid="project-create-parent"
           />
-          <div className="flex items-center gap-1.5">
-            <Button
+          <div className="flex items-center gap-2">
+            <UIButton
               type="submit"
               size="small"
               disabled={creatingBusy || !name.trim()}
               data-testid="project-create-submit"
             >
               {creatingBusy ? "Creating..." : "Create"}
-            </Button>
-            <Button
+            </UIButton>
+            <UIButton
               type="button"
               size="small"
               variant="ghost"
@@ -190,15 +211,15 @@ export function ProjectsSidePanel() {
               disabled={creatingBusy}
             >
               Cancel
-            </Button>
+            </UIButton>
             {createError && <span className="text-[10px] text-status-danger">{createError}</span>}
           </div>
         </form>
-      ) : null}
+      </Modal>
 
       <div className="px-2">
         <div className="flex flex-col space-y-0.5">
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => handleSelect(null)}
             className={cn(
@@ -210,7 +231,7 @@ export function ProjectsSidePanel() {
           >
             <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-border" />
             <span className="min-w-0 flex-1 truncate">{t("panels.projects.allProjects")}</span>
-          </button>
+          </UnstyledButton>
 
           {loading && (
             <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">
@@ -274,7 +295,9 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
           )}
         >
           {hasChildren ? (
-            <button
+            <ActionIcon
+              variant="subtle"
+              size="sm"
               type="button"
               aria-label={expanded ? "Collapse" : "Expand"}
               onClick={() => tree.toggleExpanded(node.value)}
@@ -285,11 +308,11 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
                 aria-hidden
                 className={cn("transition-transform", expanded && "rotate-90")}
               />
-            </button>
+            </ActionIcon>
           ) : (
             <span aria-hidden className="h-4 w-4 shrink-0" />
           )}
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => onSelect(node.value)}
             className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
@@ -301,8 +324,10 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
               style={{ backgroundColor: color ?? "#6b7280" }}
             />
             <span className="min-w-0 flex-1 truncate">{displayName}</span>
-          </button>
-          <button
+          </UnstyledButton>
+          <ActionIcon
+            variant="subtle"
+            size="sm"
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -313,7 +338,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
             data-testid={`project-delete-${node.value}`}
           >
             ×
-          </button>
+          </ActionIcon>
         </div>
       );
     },

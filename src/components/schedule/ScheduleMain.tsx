@@ -1,5 +1,6 @@
 "use client";
 
+import { Alert, UnstyledButton } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
@@ -111,19 +112,28 @@ export function ScheduleMain() {
           </div>
         )}
         {view === "recurring" && recurring.error && (
-          <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-            Failed to load recurring templates: {recurring.error.message}
-          </div>
+          <Alert
+            className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+            title="Failed to load recurring templates"
+          >
+            {recurring.error.message}
+          </Alert>
         )}
         {view === "placements" && placementsState.error && (
-          <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
-            Failed to load placements: {placementsState.error.message}
-          </div>
+          <Alert
+            className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+            title="Failed to load placements"
+          >
+            {placementsState.error.message}
+          </Alert>
         )}
         {view === "recurring" && !recurring.loading && recurring.templates.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
+          <Alert
+            className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1"
+            title="No recurring templates found"
+          >
             <p className="text-sm">No recurring templates found in the source database.</p>
-          </div>
+          </Alert>
         )}
         {view !== "recurring" &&
           view !== "placements" &&
@@ -206,16 +216,10 @@ export function ScheduleMain() {
                 return acc;
               }, [])
               .map((template) => (
-                <button
+                <UnstyledButton
                   key={template.id}
                   type="button"
                   onClick={() => {
-                    // Starter template row: we never call GET
-                    // /v1/tiles/{template.id} here. loadFromTemplate seeds
-                    // create-mode from the template's title/note/recurrence
-                    // and Submit POSTs CREATE_TILE on a fresh server-assigned
-                    // UUIDv7. See plan
-                    // docs/plans/2026-07-04-tile-panel-create-flow.md §B.
                     const { loadFromTemplate } = useQuickCreateStore.getState();
                     loadFromTemplate(template);
                   }}
@@ -257,7 +261,7 @@ export function ScheduleMain() {
                       {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
                     </span>
                   </div>
-                </button>
+                </UnstyledButton>
               ))}
           </div>
         )}

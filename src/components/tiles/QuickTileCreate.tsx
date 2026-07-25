@@ -24,7 +24,17 @@
 
 "use client";
 
-import { Menu, NumberInput, Radio, SegmentedControl, Select, TagsInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  Menu,
+  NumberInput,
+  Radio,
+  SegmentedControl,
+  Select,
+  TagsInput,
+  UnstyledButton,
+} from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
   Bell,
@@ -66,7 +76,6 @@ import {
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
-import { Button } from "@/components/ui/Button";
 import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
 import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
@@ -123,7 +132,7 @@ const _AVAILABLE_ICONS = [
   { name: "Star", icon: Star },
 ];
 
-const TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> = [
+const _TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> = [
   { value: TileKind.PLACEMENT, label: "quickCreate.kindPlacement" },
   { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
 ];
@@ -588,29 +597,16 @@ export function QuickTileCreate() {
             <h2 className="truncate text-[15px] font-semibold leading-tight text-foreground">
               {headingLabel}
             </h2>
-            <p className="truncate text-xs text-foreground-muted">
-              {mode === "edit" ? t("quickCreate.subtitleEdit") : t("quickCreate.subtitleCreate")}
-            </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                /* schema view — placeholder */
-              }}
-              className="flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
-            >
-              <GitBranch className="h-3.5 w-3.5" aria-hidden />
-              <span>{t("quickCreate.schemaTitle")}</span>
-            </button>
-            <button
+            <ActionIcon
               type="button"
               onClick={close}
               className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-0 text-foreground-muted transition-colors hover:bg-surface-1 hover:text-foreground"
               aria-label={t("tiles.closePanel")}
             >
               <X className="h-4 w-4" />
-            </button>
+            </ActionIcon>
           </div>
         </div>
 
@@ -641,17 +637,17 @@ export function QuickTileCreate() {
                 data-testid="quick-create-organize-row"
               >
                 {currentProject && (
-                  <button
+                  <UnstyledButton
                     type="button"
                     onClick={() => setActivePanel("meta")}
                     className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-[#eef3fb] px-2.5 text-[11px] font-bold text-[#37689e] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <FolderOpen className="h-3 w-3" aria-hidden />
                     <span>{currentProject.display_name}</span>
-                  </button>
+                  </UnstyledButton>
                 )}
                 {meta.tags.map((tag) => (
-                  <button
+                  <UnstyledButton
                     key={tag}
                     type="button"
                     onClick={() => setActivePanel("meta")}
@@ -659,32 +655,17 @@ export function QuickTileCreate() {
                   >
                     <Tag className="h-3 w-3" aria-hidden />
                     <span>#{tag}</span>
-                  </button>
+                  </UnstyledButton>
                 ))}
-                <button
+                <UnstyledButton
                   type="button"
                   onClick={() => setActivePanel("meta")}
                   className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-[11px] font-bold text-foreground-muted hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                 >
                   <Plus className="h-3 w-3" aria-hidden />
                   <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
-                </button>
+                </UnstyledButton>
               </div>
-
-              {/* tile kind selector */}
-              <RowSegmented
-                icon={CheckCircle2}
-                data-testid="quick-create-tile-kind"
-                options={TILE_KIND_OPTIONS.map((opt) => ({
-                  value: String(opt.value),
-                  label: t(opt.label),
-                }))}
-                value={String(identity.kind)}
-                onChange={(value) => {
-                  const next = Number(value) as TileKindValue;
-                  setField("identity.kind", next);
-                }}
-              />
 
               {/* ─── essentials ─── */}
               <div className="pt-2" data-testid="quick-create-essentials">
@@ -821,14 +802,14 @@ export function QuickTileCreate() {
                 <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
                   <ListChecks size={14} aria-hidden="true" />
                   <span>{t("quickCreate.completionRequires")}</span>
-                  <button
+                  <ActionIcon
                     type="button"
                     onClick={() => setActivePanel("completion")}
                     aria-label={t("quickCreate.completionRequires")}
                     className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <ChevronRight size={14} aria-hidden="true" />
-                  </button>
+                  </ActionIcon>
                 </div>
                 <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
                   {plan.completion.tasks.length > 0
@@ -854,7 +835,7 @@ export function QuickTileCreate() {
                       </span>
                       <Menu position="bottom-end" withArrow shadow="md">
                         <Menu.Target>
-                          <button
+                          <ActionIcon
                             type="button"
                             aria-label={t("quickCreate.taskMoreAria")}
                             aria-haspopup="menu"
@@ -862,7 +843,7 @@ export function QuickTileCreate() {
                             className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <MoreHorizontal size={14} aria-hidden="true" />
-                          </button>
+                          </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>
                           <Menu.Item
@@ -909,7 +890,7 @@ export function QuickTileCreate() {
                       </Menu>
                     </div>
                   ))}
-                  <button
+                  <UnstyledButton
                     type="button"
                     onClick={() => {
                       setField("plan.completion.tasks", [
@@ -931,7 +912,7 @@ export function QuickTileCreate() {
                     className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg bg-surface-1 text-xs font-bold text-foreground-muted hover:bg-surface-2"
                   >
                     ＋ タスクを追加
-                  </button>
+                  </UnstyledButton>
                 </div>
               </div>
 
@@ -946,7 +927,7 @@ export function QuickTileCreate() {
                     {t("quickCreate.behaviorSub")}
                   </small>
                 </div>
-                <button
+                <UnstyledButton
                   type="button"
                   onClick={() => setActivePanel("meta")}
                   aria-label={t("quickCreate.behaviorEdit")}
@@ -974,7 +955,7 @@ export function QuickTileCreate() {
                   <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
                     {t("quickCreate.behaviorEdit")}
                   </span>
-                </button>
+                </UnstyledButton>
               </div>
             </section>
 
@@ -1004,14 +985,14 @@ export function QuickTileCreate() {
                           <strong className="text-[11px] font-semibold text-foreground">
                             {t("quickCreate.conditionGroupWindow")}
                           </strong>
-                          <button
+                          <UnstyledButton
                             type="button"
                             onClick={() => setActivePanel("time")}
                             className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <Pencil className="h-3 w-3" aria-hidden />
                             編集
-                          </button>
+                          </UnstyledButton>
                         </div>
                         <div className="space-y-1">
                           {windows.map((w, i) => (
@@ -1029,7 +1010,7 @@ export function QuickTileCreate() {
                                   ? `${w.bounds.start} → ${w.bounds.end}`
                                   : t("quickCreate.conditionWindowOpen")}
                               </span>
-                              <button
+                              <ActionIcon
                                 type="button"
                                 onClick={() => {
                                   const next = windows.filter((_, idx) => idx !== i);
@@ -1039,7 +1020,7 @@ export function QuickTileCreate() {
                                 className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
                               >
                                 <MoreHorizontal size={12} aria-hidden="true" />
-                              </button>
+                              </ActionIcon>
                             </div>
                           ))}
                         </div>
@@ -1055,14 +1036,14 @@ export function QuickTileCreate() {
                           <strong className="text-[11px] font-semibold text-foreground">
                             {t("quickCreate.conditionGroupFrame")}
                           </strong>
-                          <button
+                          <UnstyledButton
                             type="button"
                             onClick={() => setActivePanel("recurring")}
                             className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                           >
                             <Pencil className="h-3 w-3" aria-hidden />
                             編集
-                          </button>
+                          </UnstyledButton>
                         </div>
                         <div className="space-y-1">
                           {recurring.frameRules.map((r, i) => (
@@ -1080,7 +1061,7 @@ export function QuickTileCreate() {
                                   ? t("quickCreate.conditionFrameStep")
                                   : t("quickCreate.conditionFrameOpen")}
                               </span>
-                              <button
+                              <ActionIcon
                                 type="button"
                                 onClick={() => {
                                   const next = recurring.frameRules.filter((_, idx) => idx !== i);
@@ -1090,7 +1071,7 @@ export function QuickTileCreate() {
                                 className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
                               >
                                 <MoreHorizontal size={12} aria-hidden="true" />
-                              </button>
+                              </ActionIcon>
                             </div>
                           ))}
                         </div>
@@ -1099,7 +1080,7 @@ export function QuickTileCreate() {
                   </div>
                 )}
               </div>
-              <button
+              <UnstyledButton
                 type="button"
                 onClick={() => setActivePanel("intent")}
                 data-testid="quick-create-condition-add"
@@ -1107,7 +1088,7 @@ export function QuickTileCreate() {
               >
                 <Plus size={14} aria-hidden="true" />
                 {t("quickCreate.addConditionOrGroup")}
-              </button>
+              </UnstyledButton>
             </section>
 
             {/* simple note */}
@@ -1128,13 +1109,13 @@ export function QuickTileCreate() {
             <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button
+            <UnstyledButton
               type="button"
               className="flex h-[37px] items-center gap-1.5 rounded-lg border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
             >
               <Save size={14} aria-hidden="true" />
               下書き保存
-            </button>
+            </UnstyledButton>
             <Button
               type="button"
               variant="primary"
@@ -1143,7 +1124,7 @@ export function QuickTileCreate() {
               onClick={handleSubmit}
               loading={submitting}
               disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-              iconLeft={submitting ? undefined : <Check size={16} aria-hidden="true" />}
+              leftSection={submitting ? undefined : <Check size={16} aria-hidden="true" />}
               className="h-10 bg-primary text-primary-fg hover:bg-primary/90"
             >
               {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
@@ -1169,13 +1150,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "intent"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.addConditionOrGroup")}
@@ -1190,7 +1171,7 @@ export function QuickTileCreate() {
             {t("quickCreate.intentDescription")}
           </p>
           <div className="grid grid-cols-2 gap-2">
-            <button
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("time")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1202,8 +1183,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentNarrowTimeSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("references")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1215,8 +1196,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentReferenceTileSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("recurring")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1228,8 +1209,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentNestStructureSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("meta")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1241,8 +1222,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentAdjustPlacementSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("completion")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1254,8 +1235,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentCombineConditionsSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("completion")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1267,8 +1248,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentAddCompletionSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               onClick={() => setActivePanel("meta")}
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1280,8 +1261,8 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentDefineOnSuccessSub")}
               </small>
-            </button>
-            <button
+            </UnstyledButton>
+            <UnstyledButton
               type="button"
               disabled
               className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60"
@@ -1293,7 +1274,7 @@ export function QuickTileCreate() {
               <small className="text-[10px] text-foreground-muted">
                 {t("quickCreate.intentTextConditionSub")}
               </small>
-            </button>
+            </UnstyledButton>
           </div>
         </div>
       </section>
@@ -1305,13 +1286,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "time"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.timeNavTitle")}
@@ -1342,13 +1323,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "duration"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.durationTitle")}
@@ -1359,7 +1340,7 @@ export function QuickTileCreate() {
           </div>
         </div>
         <div className="flex-1 overflow-auto p-4">
-          <button
+          <UnstyledButton
             type="button"
             onClick={() => {
               setField("time.durationMinMax.minMs", null);
@@ -1381,7 +1362,7 @@ export function QuickTileCreate() {
                 {t("quickCreate.durationNoneSub")}
               </small>
             </div>
-          </button>
+          </UnstyledButton>
 
           <div className="mb-4">
             <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
@@ -1429,12 +1410,12 @@ export function QuickTileCreate() {
                 {t("quickCreate.durationUseCompletionSub")}
               </small>
             </div>
-            <button
+            <UnstyledButton
               type="button"
               className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors"
             >
               <div className="h-5 w-5 translate-x-5 rounded-full bg-white transition-transform" />
-            </button>
+            </UnstyledButton>
           </div>
 
           <div className="flex items-center gap-2">
@@ -1442,7 +1423,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="ghost"
-              iconLeft={<X size={12} aria-hidden="true" />}
+              leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.cancel")}
@@ -1452,7 +1433,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="default"
-              iconLeft={<Check size={12} aria-hidden="true" />}
+              leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.metaApply")}
@@ -1468,13 +1449,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "recurring"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.repeatChip")}
@@ -1491,13 +1472,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "references"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.referencesNavTitle")}
@@ -1631,7 +1612,7 @@ export function QuickTileCreate() {
                       type="button"
                       size="small"
                       variant="ghost"
-                      iconLeft={<Trash2 size={12} aria-hidden="true" />}
+                      leftSection={<Trash2 size={12} aria-hidden="true" />}
                       onClick={() => {
                         const next = plan.references.slice();
                         next.splice(i, 1);
@@ -1646,7 +1627,7 @@ export function QuickTileCreate() {
                       type="button"
                       size="small"
                       variant="default"
-                      iconLeft={<X size={12} aria-hidden="true" />}
+                      leftSection={<X size={12} aria-hidden="true" />}
                       onClick={() => setActivePanel("base")}
                     >
                       {t("quickCreate.referenceCancelLabel")}
@@ -1655,7 +1636,7 @@ export function QuickTileCreate() {
                       type="button"
                       size="small"
                       variant="primary"
-                      iconLeft={<Check size={12} aria-hidden="true" />}
+                      leftSection={<Check size={12} aria-hidden="true" />}
                       onClick={() => setActivePanel("base")}
                     >
                       {t("quickCreate.referenceApplyLabel")}
@@ -1668,8 +1649,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="default"
-              rounded
-              iconLeft={<Plus size={12} aria-hidden="true" />}
+              leftSection={<Plus size={12} aria-hidden="true" />}
               onClick={() => {
                 setField("plan.references", [
                   ...plan.references,
@@ -1695,13 +1675,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "completion"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.completionNavTitle")}
@@ -1802,7 +1782,7 @@ export function QuickTileCreate() {
                       type="button"
                       size="icon-xs"
                       variant="ghost"
-                      icon={<Trash2 size={12} aria-hidden="true" />}
+                      leftSection={<Trash2 size={12} aria-hidden="true" />}
                       onClick={() => {
                         const next = plan.completion.timeRequirements.slice();
                         next.splice(i, 1);
@@ -1874,7 +1854,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="ghost"
-              iconLeft={<Trash2 size={12} aria-hidden="true" />}
+              leftSection={<Trash2 size={12} aria-hidden="true" />}
               onClick={() =>
                 setField("plan.completion.root", {
                   kind: ConditionKind.ALL,
@@ -1891,7 +1871,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="default"
-              iconLeft={<X size={12} aria-hidden="true" />}
+              leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.completionCancelLabel")}
@@ -1900,7 +1880,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="primary"
-              iconLeft={<Check size={12} aria-hidden="true" />}
+              leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
               data-testid="completion-apply"
             >
@@ -1917,13 +1897,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "meta"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.metaNavTitle")}
@@ -2003,7 +1983,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="ghost"
-              iconLeft={<Trash2 size={12} aria-hidden="true" />}
+              leftSection={<Trash2 size={12} aria-hidden="true" />}
               onClick={() => {
                 setField("meta.ownerSubjectId", null);
                 setField("meta.tags", []);
@@ -2018,7 +1998,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="default"
-              iconLeft={<X size={12} aria-hidden="true" />}
+              leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.completionCancelLabel")}
@@ -2026,8 +2006,8 @@ export function QuickTileCreate() {
             <Button
               type="button"
               size="small"
-              variant="primary"
-              iconLeft={<Check size={12} aria-hidden="true" />}
+              variant="default"
+              leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.metaApply")}
@@ -2043,13 +2023,13 @@ export function QuickTileCreate() {
         aria-hidden={activePanel !== "behavior"}
       >
         <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <button
+          <ActionIcon
             type="button"
             onClick={() => setActivePanel("base")}
             className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
           >
             <ChevronLeft size={16} aria-hidden="true" />
-          </button>
+          </ActionIcon>
           <div className="flex-1 min-w-0">
             <strong className="block truncate text-sm font-semibold">
               {t("quickCreate.behaviorTitle")}
@@ -2113,7 +2093,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="ghost"
-              iconLeft={<X size={12} aria-hidden="true" />}
+              leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.cancel")}
@@ -2123,7 +2103,7 @@ export function QuickTileCreate() {
               type="button"
               size="small"
               variant="default"
-              iconLeft={<Check size={12} aria-hidden="true" />}
+              leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
               {t("quickCreate.metaApply")}
@@ -2205,7 +2185,7 @@ function V4EssentialRow({
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </div>
-      <button
+      <UnstyledButton
         type="button"
         onClick={onClick}
         aria-label={editAria ?? `${label} を編集`}
@@ -2213,10 +2193,10 @@ function V4EssentialRow({
       >
         <div className="select-none text-[11px] font-bold text-foreground-muted">{label}</div>
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">{chip}</div>
-      </button>
+      </UnstyledButton>
       <div className="flex items-center gap-1">
         {canClear ? (
-          <button
+          <UnstyledButton
             type="button"
             onClick={handleClearClick}
             aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
@@ -2237,9 +2217,9 @@ function V4EssentialRow({
             ) : (
               <X className="h-4 w-4" aria-hidden />
             )}
-          </button>
+          </UnstyledButton>
         ) : null}
-        <button
+        <ActionIcon
           type="button"
           onClick={onClick}
           aria-hidden="true"
@@ -2247,7 +2227,7 @@ function V4EssentialRow({
           className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted group-hover:text-foreground hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
         >
           <ChevronRight className="h-4 w-4" aria-hidden />
-        </button>
+        </ActionIcon>
       </div>
     </div>
   );
@@ -2765,7 +2745,7 @@ function ConditionEditor({
                 type="button"
                 size="icon-xs"
                 variant="ghost"
-                icon={<Trash2 size={14} aria-hidden="true" />}
+                leftSection={<Trash2 size={14} aria-hidden="true" />}
                 onClick={() => {
                   const children = node.children.slice();
                   children.splice(i, 1);
@@ -2780,8 +2760,7 @@ function ConditionEditor({
             type="button"
             size="small"
             variant="default"
-            rounded
-            iconLeft={<Plus size={12} aria-hidden="true" />}
+            leftSection={<Plus size={12} aria-hidden="true" />}
             onClick={() =>
               onChange({
                 ...node,

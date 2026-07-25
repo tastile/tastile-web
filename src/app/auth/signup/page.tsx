@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
@@ -50,7 +51,7 @@ export default async function SignupPage({
             autoComplete="email"
             required
             defaultValue={email}
-            className="mt-2 w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-2 w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             placeholder="you@example.com"
           />
         </div>
@@ -65,17 +66,17 @@ export default async function SignupPage({
             autoComplete="new-password"
             required
             minLength={12}
-            className="mt-2 w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-2 w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             placeholder="12 文字以上、大文字小文字数字を含む"
           />
         </div>
-        <button
+        <Button
           type="submit"
           className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
           <UserPlus className="h-4 w-4" aria-hidden="true" />
           確認コードを送信
-        </button>
+        </Button>
       </form>
       <p className="mt-5 text-sm text-foreground-muted">
         すでにアカウントがある場合は{" "}

@@ -1,5 +1,6 @@
 "use client";
 
+import { Button, SegmentedControl } from "@mantine/core";
 import { type QueryFunctionContext, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
@@ -92,7 +93,7 @@ export function SubscriptionSection() {
 
   return (
     <div className="space-y-6">
-      <section className="border border-border bg-surface-0 rounded-md p-6">
+      <section>
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-semibold text-foreground">
@@ -131,21 +132,22 @@ export function SubscriptionSection() {
 
         <div className="flex gap-3">
           {isPro ? (
-            <button
-              type="button"
+            <Button
+              component="button"
               onClick={handleManage}
               disabled={opening}
               className="rounded-full bg-surface-3 px-4 py-2.5 text-sm font-semibold text-foreground"
             >
               {opening ? t("account.subscription.loading") : t("account.subscription.manage")}
-            </button>
+            </Button>
           ) : (
-            <Link
+            <Button
+              component={Link}
               href="/pricing"
               className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
             >
               {t("account.subscription.upgrade")}
-            </Link>
+            </Button>
           )}
         </div>
       </section>
@@ -184,20 +186,19 @@ export function SubscriptionSection() {
             )}
           </div>
           <div className="flex gap-2 mb-3">
-            <button
-              type="button"
-              onClick={() => setIntervalChoice("monthly")}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
-            >
-              {subDict.monthly}
-            </button>
-            <button
-              type="button"
-              onClick={() => setIntervalChoice("yearly")}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${proInterval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
-            >
-              {subDict.yearly} <span className="text-success">{subDict.yearHint}</span>
-            </button>
+            <SegmentedControl
+              onChange={(value) => setIntervalChoice(value as "monthly" | "yearly")}
+              value={proInterval}
+              data={[
+                { label: subDict.monthly, value: "monthly" },
+                { label: subDict.yearly, value: "yearly" },
+              ]}
+              className="bg-surface-2 text-foreground-subtle"
+            />
+            <p>
+              {" "}
+              <span className="text-success">{subDict.yearHint}</span>
+            </p>
           </div>
           <p className="text-2xl font-bold text-foreground mb-4">
             {proInterval === "monthly" ? subDict.priceMonthly : subDict.priceYearly}
@@ -215,12 +216,13 @@ export function SubscriptionSection() {
           </ul>
           {!isPro && (
             <div className="mt-4">
-              <Link
+              <Button
+                component={Link}
                 href="/pricing"
                 className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover w-full block text-center"
               >
                 {subDict.upgrade}
-              </Link>
+              </Button>
             </div>
           )}
         </section>

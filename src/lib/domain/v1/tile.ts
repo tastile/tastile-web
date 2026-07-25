@@ -184,6 +184,3 @@ export interface RecurringRule {
   rank: number;
   outputs: RecurringOutput[];
 }
-
-// ---------- Convenience: Window re-export (anchor for tile.ts consumers) ----------
-export type { Window };

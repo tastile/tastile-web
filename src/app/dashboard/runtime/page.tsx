@@ -1,12 +1,13 @@
 "use client";
 
-import { Activity, AlertTriangle, CheckCircle2, Loader2, Network, RefreshCw } from "lucide-react";
+import { Alert, Badge, Button, Loader, Text } from "@mantine/core";
+import { IconAlertTriangle } from "@tabler/icons-react";
+import { Activity, CheckCircle2, Network, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
-import { Pill, StatusDot } from "@/components/ui/StatusDot";
+import { StatusDot } from "@/components/ui/StatusDot";
 import { ENDPOINTS, getCoreClient, type Result } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
@@ -110,24 +111,43 @@ export default function RuntimePage() {
         description="Live health, version, and storage paths of the local tastile-core daemon. The same data the engine uses to verify itself."
         meta={
           <>
-            <Pill variant={health?.ok ? "active" : "default"}>
-              <StatusDot
-                status={health?.ok ? "active" : health ? "danger" : "pending"}
-                pulse={health?.ok}
-                size="xs"
-              />
+            <Badge
+              variant="light"
+              color={health?.ok ? "green" : health ? "red" : "gray"}
+              size="sm"
+              radius="xl"
+              leftSection={
+                <StatusDot
+                  status={health?.ok ? "active" : health ? "danger" : "pending"}
+                  pulse={health?.ok}
+                  size="xs"
+                />
+              }
+            >
               {health?.ok ? "Healthy" : health ? "Error" : "Loading"}
-            </Pill>
-            <Pill variant="default">{version?.ok ? `v${version.data.version}` : "—"}</Pill>
-            <Pill variant="default">
-              <Network className="h-3 w-3" />
+            </Badge>
+            <Badge variant="light" color="gray" size="sm" radius="xl">
+              {version?.ok ? `v${version.data.version}` : "—"}
+            </Badge>
+            <Badge
+              variant="light"
+              color="gray"
+              size="sm"
+              radius="xl"
+              leftSection={<Network size={12} />}
+            >
               {coreBaseUrl()}
-            </Pill>
+            </Badge>
           </>
         }
         actions={
-          <Button variant="secondary" size="medium" onClick={load} loading={loading}>
-            <RefreshCw className="h-3.5 w-3.5" />
+          <Button
+            variant="default"
+            size="sm"
+            onClick={load}
+            loading={loading}
+            leftSection={<RefreshCw size={14} />}
+          >
             Refresh
           </Button>
         }
@@ -275,14 +295,19 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
       </div>
       <div className="flex items-center gap-2">
         {result ? (
-          <Pill variant={result.ok ? "active" : "danger"}>
+          <Badge variant="light" color={result.ok ? "green" : "red"} size="sm" radius="xl">
             {result.ok
               ? `${result.status} ${result.latencyMs}ms`
               : `${result.error.status} ${result.error.kind}`}
-          </Pill>
+          </Badge>
         ) : null}
-        <Button variant="secondary" size="small" onClick={run} loading={loading}>
-          {loading ? null : <Activity className="h-3 w-3" />}
+        <Button
+          variant="default"
+          size="compact-sm"
+          onClick={run}
+          loading={loading}
+          leftSection={!loading ? <Activity size={12} /> : undefined}
+        >
           Probe
         </Button>
       </div>
@@ -320,7 +345,7 @@ function EnvRow({ label, value }: { label: string; value: string }) {
 function LoadingRow({ label }: { label: string }) {
   return (
     <div className="flex items-center gap-2 text-xs text-ink-3">
-      <Loader2 className="h-3 w-3 animate-spin" />
+      <Loader size="xs" />
       {label}
     </div>
   );
@@ -328,15 +353,16 @@ function LoadingRow({ label }: { label: string }) {
 
 function ErrorRow({ error }: { error: { kind: string; message: string; status: number } }) {
   return (
-    <div className="flex items-start gap-2 rounded-md border border-status-danger/30 bg-status-danger-soft p-2.5 text-xs text-status-danger">
-      <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-      <div className="min-w-0">
-        <div className="font-semibold">
-          {error.kind} · {error.status}
-        </div>
-        <div className="truncate">{error.message}</div>
-      </div>
-    </div>
+    <Alert
+      icon={<IconAlertTriangle size={16} />}
+      title={`${error.kind} · ${error.status}`}
+      color="red"
+      variant="light"
+    >
+      <Text size="xs" truncate>
+        {error.message}
+      </Text>
+    </Alert>
   );
 }
 

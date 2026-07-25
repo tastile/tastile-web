@@ -20,7 +20,7 @@
  * read-only defaults.
  */
 
-import { SegmentedControl, Switch } from "@mantine/core";
+import { Button, SegmentedControl, Switch } from "@mantine/core";
 import { Calendar, Repeat } from "lucide-react";
 
 import { FormPanel } from "@/components/ui/form";
@@ -80,7 +80,7 @@ function WeekdayRow({
       {WEEKDAY_LABELS[locale].map((label, bit) => {
         const active = (mask & (1 << bit)) !== 0;
         return (
-          <button
+          <Button
             key={bit}
             type="button"
             role="switch"
@@ -96,9 +96,11 @@ function WeekdayRow({
                 ? "bg-accent-soft text-accent-ink"
                 : "bg-surface-1 text-foreground-muted hover:bg-surface-2 disabled:hover:bg-surface-1",
             )}
+            variant="subtle"
+            size="compact-sm"
           >
             {label}
-          </button>
+          </Button>
         );
       })}
     </div>

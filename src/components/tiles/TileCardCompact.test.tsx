@@ -1,10 +1,11 @@
 /** @vitest-environment jsdom */
 
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { Tile } from "@/lib/domain/tile";
 import { TileId } from "@/lib/domain/ids";
 import type { TileListView } from "@/lib/hooks/use-tile-list";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { TileCardCompact } from "./TileCardCompact";
 
 vi.mock("@/lib/i18n/use-translation", () => ({
@@ -103,7 +104,7 @@ const baseSource = {
 
 describe("TileCardCompact", () => {
   it("shows the fixed_start time when lifecycle is READY and a temporal anchor exists", () => {
-    render(<TileCardCompact tile={baseTile} />);
+    renderWithMantine(<TileCardCompact tile={baseTile} />);
     expect(screen.queryByText("tiles.unscheduled")).toBeNull();
     // formatFriendlyDateTime returns either "Today HH:MM" (diffDays == 0)
     // or "Mon DD HH:MM" for other days. Either way, it must produce some
@@ -116,7 +117,7 @@ describe("TileCardCompact", () => {
       ...baseTile,
       temporal: { ...emptyTemporal },
     };
-    render(<TileCardCompact tile={tile} />);
+    renderWithMantine(<TileCardCompact tile={tile} />);
     expect(screen.getByText("tiles.unscheduled")).toBeTruthy();
   });
 
@@ -126,7 +127,7 @@ describe("TileCardCompact", () => {
       source: { ...baseSource, kind: 0 as const },
     };
 
-    render(<TileCardCompact tile={baseTile} listView={listView} />);
+    renderWithMantine(<TileCardCompact tile={baseTile} listView={listView} />);
 
     const chip = screen.getByText("tiles.source.break");
     expect(chip.getAttribute("data-source-kind")).toBe("0");
@@ -138,7 +139,7 @@ describe("TileCardCompact", () => {
       source: { ...baseSource, kind: null },
     };
 
-    render(<TileCardCompact tile={baseTile} listView={listView} />);
+    renderWithMantine(<TileCardCompact tile={baseTile} listView={listView} />);
 
     const chip = screen.getByText("tiles.source.legacy");
     expect(chip.getAttribute("data-source-kind")).toBe("legacy");
@@ -150,7 +151,7 @@ describe("TileCardCompact", () => {
       core: { ...baseTile.core, lifecycle: "started", startedAt: null },
       temporal: { ...emptyTemporal },
     };
-    render(<TileCardCompact tile={tile} />);
+    renderWithMantine(<TileCardCompact tile={tile} />);
     // Lifecycle takes precedence over null-check: a STARTED tile with no
     // temporal anchor is a data error, not an "unscheduled" badge.
     expect(screen.queryByText("tiles.unscheduled")).toBeNull();

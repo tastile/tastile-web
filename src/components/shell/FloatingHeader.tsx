@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon, Button, UnstyledButton } from "@mantine/core";
 import {
   Bell,
   CalendarDays,
@@ -130,34 +131,38 @@ export function FloatingHeader({
         <div className="flex items-center gap-1 pr-3">
           <V1ExecutionControls />
 
-          <button
+          <ActionIcon
             type="button"
+            variant="subtle"
+            size="sm"
             aria-label={t("shell.floatingHeader.openSearch")}
             onClick={onOpenSearch}
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
             <Search className="h-4 w-4" />
-          </button>
+          </ActionIcon>
 
-          <button
+          <ActionIcon
             ref={notificationsButtonRef}
             type="button"
+            variant="subtle"
+            size="sm"
             aria-label={t("shell.floatingHeader.openNotifications")}
             onClick={onOpenNotifications}
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
             <Bell className="h-4 w-4" />
-          </button>
+          </ActionIcon>
 
           <FloatingMenu>
             <FloatingMenuTrigger asChild>
-              <button
+              <UnstyledButton
                 type="button"
                 aria-label={t("shell.floatingHeader.userMenu")}
                 className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-fg hover:bg-primary-hover ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {userName.charAt(0)}
-              </button>
+              </UnstyledButton>
             </FloatingMenuTrigger>
             <FloatingMenuContent align="end" className="w-56 mt-1">
               <FloatingMenuLabel className="font-normal">
@@ -204,14 +209,16 @@ export function FloatingHeader({
           </FloatingMenu>
 
           {/* モバイルメニューボタン (md未満でのみ表示、右端) */}
-          <button
+          <ActionIcon
             type="button"
+            variant="subtle"
+            size="sm"
             aria-label={t("shell.floatingHeader.openNavMenu")}
             onClick={() => setMenuOpen(true)}
             className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground md:hidden ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <Menu className="h-5 w-5" />
-          </button>
+          </ActionIcon>
         </div>
       </header>
 
@@ -223,8 +230,10 @@ export function FloatingHeader({
         <div className="flex flex-col gap-4">
           {/* クイックアクション (Search / Notifications) */}
           <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
-            <button
+            <Button
               type="button"
+              variant="subtle"
+              size="compact-sm"
               onClick={() => {
                 setMenuOpen(false);
                 onOpenSearch();
@@ -233,9 +242,11 @@ export function FloatingHeader({
             >
               <Search className="h-4 w-4" />
               <span>{t("shell.floatingHeader.search")}</span>
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="subtle"
+              size="compact-sm"
               onClick={() => {
                 setMenuOpen(false);
                 onOpenNotifications();
@@ -244,7 +255,7 @@ export function FloatingHeader({
             >
               <Bell className="h-4 w-4" />
               <span>{t("shell.floatingHeader.notifications")}</span>
-            </button>
+            </Button>
           </div>
 
           {/* ナビゲーション項目 */}

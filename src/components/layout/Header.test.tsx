@@ -1,8 +1,9 @@
 /** @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, waitFor } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderWithMantine } from "@/test/render-with-mantine";
 import { Header } from "./Header";
 
 vi.mock("@/components/execution/ActiveExecutionBar", () => ({
@@ -47,7 +48,7 @@ describe("Header identity fetch", () => {
     const fetchMock = buildFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    renderWithMantine(
       <QueryClientProvider client={new QueryClient()}>
         <Header />
       </QueryClientProvider>,
@@ -65,7 +66,7 @@ describe("Header identity fetch", () => {
     const fetchMock = buildFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    renderWithMantine(
       <QueryClientProvider client={new QueryClient()}>
         <Header />
       </QueryClientProvider>,
@@ -83,7 +84,7 @@ describe("Header identity fetch", () => {
     const fetchMock = buildFetchMock();
     vi.stubGlobal("fetch", fetchMock);
 
-    render(
+    renderWithMantine(
       <QueryClientProvider client={new QueryClient()}>
         <Header />
       </QueryClientProvider>,

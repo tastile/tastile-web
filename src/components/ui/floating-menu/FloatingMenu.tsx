@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { cn } from "@/lib/utils/cn";
@@ -139,7 +140,7 @@ const FloatingMenuTrigger = React.forwardRef<HTMLElement, FloatingMenuTriggerPro
     }
 
     return (
-      <button
+      <UnstyledButton
         ref={setRefs as unknown as React.Ref<HTMLButtonElement>}
         type="button"
         data-floating-menu-trigger=""
@@ -152,7 +153,7 @@ const FloatingMenuTrigger = React.forwardRef<HTMLElement, FloatingMenuTriggerPro
         {...props}
       >
         {children}
-      </button>
+      </UnstyledButton>
     );
   },
 );
@@ -416,7 +417,7 @@ const FloatingMenuItem = React.forwardRef<HTMLElement, FloatingMenuItemProps>(
     }
 
     return (
-      <button
+      <UnstyledButton
         ref={ref as React.Ref<HTMLButtonElement>}
         type="button"
         role="menuitem"
@@ -431,7 +432,7 @@ const FloatingMenuItem = React.forwardRef<HTMLElement, FloatingMenuItemProps>(
         {...props}
       >
         {children}
-      </button>
+      </UnstyledButton>
     );
   },
 );

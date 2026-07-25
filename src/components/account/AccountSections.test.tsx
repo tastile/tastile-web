@@ -1,12 +1,13 @@
 /** @vitest-environment jsdom */
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import * as ts from "typescript";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
+import { renderWithMantine } from "@/test/render-with-mantine";
 
 vi.mock("@/lib/i18n/use-translation", () => {
   const translate = (key: string) => key;
@@ -35,7 +36,7 @@ function renderSubscriptionSection() {
       },
     },
   });
-  render(
+  renderWithMantine(
     <QueryClientProvider client={client}>
       <SubscriptionSection />
     </QueryClientProvider>,
@@ -93,7 +94,7 @@ describe("AccessTokenSection", () => {
   it("shows the translated fallback and stops loading when the token request rejects", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValueOnce("offline"));
 
-    render(<AccessTokenSection />);
+    renderWithMantine(<AccessTokenSection />);
 
     expect(await screen.findByText("account.tokens.error.loadFallback")).toBeTruthy();
     await waitFor(() => {
@@ -108,7 +109,7 @@ describe("AccessTokenSection", () => {
       .mockRejectedValueOnce("offline");
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<AccessTokenSection />);
+    renderWithMantine(<AccessTokenSection />);
     await screen.findByText("account.tokens.empty");
 
     fireEvent.change(screen.getByLabelText("account.tokens.nameLabel"), {

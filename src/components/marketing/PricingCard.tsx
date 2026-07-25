@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@mantine/core";
 import { Check } from "lucide-react";
 import { useState } from "react";
 import { translations } from "@/lib/i18n/translations";
@@ -38,21 +39,25 @@ export function PricingCard() {
       <h2 className="text-2xl font-[590] text-foreground">{t("marketing.pricing.proPlan")}</h2>
       <p className="mt-2 text-foreground-muted">{t("marketing.pricing.proDesc")}</p>
       <div className="mt-3 flex gap-2">
-        <button
+        <Button
           type="button"
+          variant="subtle"
+          size="compact-sm"
           onClick={() => setSelectedInterval("monthly")}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${selectedInterval === "monthly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
         >
           {t("marketing.pricing.monthly")}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="subtle"
+          size="compact-sm"
           onClick={() => setSelectedInterval("yearly")}
           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${selectedInterval === "yearly" ? "bg-primary text-primary-fg" : "bg-surface-2 text-foreground-subtle hover:text-foreground"}`}
         >
           {t("marketing.pricing.yearly")}{" "}
           <span className="text-success">{t("marketing.pricing.yearlySave")}</span>
-        </button>
+        </Button>
       </div>
       <div className="mt-4 flex items-baseline">
         <span className="text-4xl font-[590] text-foreground">
@@ -78,14 +83,16 @@ export function PricingCard() {
       </ul>
 
       <div className="mt-auto pt-8">
-        <button
+        <Button
           type="button"
+          variant="subtle"
+          size="compact-sm"
           onClick={handleUpgrade}
           disabled={isLoading}
           className="block w-full rounded-full bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-50 transition-colors"
         >
           {isLoading ? t("marketing.pricing.loading") : t("marketing.pricing.upgrade")}
-        </button>
+        </Button>
       </div>
     </div>
   );

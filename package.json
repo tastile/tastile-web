@@ -29,7 +29,8 @@
     "test": "vitest",
     "test:unit": "node scripts/run-vitest.mjs",
     "test:e2e": "playwright test",
-    "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run test:unit",
+    "knip": "knip --no-config-hints",
+    "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run knip && bun run test:unit",
     "check:release": "bun run check && bun audit --production && bun run build:prod",
     "doctor": "npx react-doctor@latest"
   },
@@ -37,6 +38,7 @@
     "@mantine/core": "^8.3.18",
     "@mantine/dates": "^8.3.18",
     "@mantine/hooks": "^8.3.18",
+    "@tabler/icons-react": "^3.45.0",
     "@tanstack/react-query": "^5.101.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

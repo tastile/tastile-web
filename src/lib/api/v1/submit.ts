@@ -202,11 +202,3 @@ export async function submitCreateTile(options: SubmitV1Options): Promise<Submit
 
   return { ok: true, tileId };
 }
-
-/** Re-export `Result` so consumers don't need a second import. */
-export type { Result };
-
-// Re-export constants so consumers (e.g. submit test fixtures) can pull
-// them from a single import path without crossing the v1/api and v1/domain
-// boundaries separately.
-export { PlanRole, RecurringState, TileKind };

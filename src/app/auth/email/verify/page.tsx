@@ -1,3 +1,4 @@
+import { Button } from "@mantine/core";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { AuthShell } from "../../auth-shell";
 
@@ -32,17 +33,20 @@ export default async function VerifyPage({
             name="code"
             type="text"
             inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            pattern="[0-9]{6}"
             required
-            className="mt-2 w-full rounded-md bg-surface-0 px-3 py-3 text-foreground outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-2 w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
             placeholder="6 桁のコード"
           />
         </div>
-        <button
+        <Button
           type="submit"
           className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
           確認する
-        </button>
+        </Button>
       </form>
     </AuthShell>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { ActionIcon } from "@mantine/core";
 import { PanelLeftDashed } from "lucide-react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
@@ -144,14 +145,17 @@ function MobileSidePanelFab({ onClick }: { onClick: () => void }) {
   const hasContent = useSidePanelContent() != null;
   if (!hasContent) return null;
   return (
-    <button
-      type="button"
+    <ActionIcon
+      variant="filled"
+      size="xl"
+      radius="xl"
       aria-label={t("dashboard.sidePanelOpenAria")}
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-fg shadow-lg hover:bg-primary-hover transition-transform active:scale-95 md:hidden animate-in fade-in zoom-in duration-200"
+      className="fixed bottom-6 right-6 z-40 flex md:!hidden"
+      style={{ boxShadow: "var(--mantine-shadow-lg)" }}
     >
-      <PanelLeftDashed className="h-5 w-5" />
-    </button>
+      <PanelLeftDashed size={20} />
+    </ActionIcon>
   );
 }
 

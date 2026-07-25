@@ -1,5 +1,6 @@
 "use client";
 
+import { UnstyledButton } from "@mantine/core";
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -45,9 +46,9 @@ export function AccountMenu({
   return (
     <FloatingMenu>
       <FloatingMenuTrigger asChild>
-        <button
+        <UnstyledButton
           type="button"
-          className="shrink-0 flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-foreground/20"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-foreground/20"
         >
           {avatarUrl ? (
             <Image
@@ -69,7 +70,7 @@ export function AccountMenu({
             className="text-foreground-muted transition-transform duration-200 data-[state=open]:rotate-0 data-[state=closed]:rotate-180"
             aria-hidden
           />
-        </button>
+        </UnstyledButton>
       </FloatingMenuTrigger>
       <FloatingMenuContent align="end" side={side} className="w-64">
         <FloatingMenuLabel className="font-normal">

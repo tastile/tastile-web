@@ -1,7 +1,7 @@
 "use client";
 
-import { KeyRound, Mail, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
-import Link from "next/link";
+import { Alert, Button, Modal, TextInput } from "@mantine/core";
+import { AlertCircle, Edit, Mail, MailIcon, RefreshCw, UserRound } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { AccessTokenSection } from "@/components/account/AccessTokenSection";
@@ -91,6 +91,7 @@ function AccountPageInner() {
   }, [t]);
 
   const accountId = useMemo(() => profile?.sub ?? profile?.username ?? "-", [profile]);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
   async function handleEmailStart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -152,18 +153,19 @@ function AccountPageInner() {
             </div>
 
             {notice && (
-              <div
+              <Alert
                 className={`rounded-md px-4 py-3 text-sm ${
                   notice.tone === "success"
                     ? "bg-success/10 text-success"
                     : "bg-danger/10 text-danger"
                 }`}
-              >
-                {notice.text}
-              </div>
+                color="red"
+                title={notice.text}
+                icon={<AlertCircle className="h-4 w-4" />}
+              />
             )}
 
-            <section className="border border-border bg-surface-0 rounded-md p-6">
+            <section>
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <UserRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
@@ -171,14 +173,17 @@ function AccountPageInner() {
                     {t("preferences.account.accountHeading")}
                   </h3>
                 </div>
-                <button
-                  type="button"
+                <Button
+                  component="button"
+                  radius="xl"
+                  size="xs"
+                  variant="subtle"
+                  className="bg-surface-3 text-foreground hover:bg-surface-2"
+                  title={t("preferences.account.refresh")}
                   onClick={() => void loadProfile()}
-                  className="inline-flex items-center gap-2 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-foreground"
                 >
                   <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                  {t("preferences.account.refresh")}
-                </button>
+                </Button>
               </div>
 
               {loading ? (
@@ -186,7 +191,13 @@ function AccountPageInner() {
               ) : (
                 <dl className="grid gap-4 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-foreground-subtle">{t("preferences.account.email")}</dt>
+                    <div className="flex items-center justify-between gap-4">
+                      <dt className="text-foreground-subtle">{t("preferences.account.email")}</dt>
+                      <Button onClick={() => setIsEmailModalOpen(true)} variant="subtle">
+                        <Edit className="h-4 w-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+
                     <dd className="mt-1 font-medium text-foreground">{profile?.email ?? "-"}</dd>
                   </div>
                   <div>
@@ -209,7 +220,11 @@ function AccountPageInner() {
               )}
             </section>
 
-            <section className="border border-border bg-surface-0 rounded-md p-6">
+            <Modal
+              opened={isEmailModalOpen}
+              onClose={() => setIsEmailModalOpen(false)}
+              title={t("preferences.account.changeEmailHeading")}
+            >
               <div className="mb-4 flex items-center gap-3">
                 <Mail className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
                 <h3 className="font-semibold text-foreground">
@@ -217,81 +232,61 @@ function AccountPageInner() {
                 </h3>
               </div>
               <form onSubmit={handleEmailStart} className="grid gap-3 sm:grid-cols-[1fr_auto]">
-                <label className="text-sm">
-                  <span className="mb-2 block font-medium text-foreground">
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="preferences-account-new-email"
+                    className="text-sm font-medium text-foreground"
+                  >
                     {t("preferences.account.newEmail")}
-                  </span>
-                  <input
+                  </label>
+                  <TextInput
+                    id="preferences-account-new-email"
                     name="email"
                     type="email"
                     autoComplete="email"
                     required
                     value={pendingEmail}
+                    rightSection={<MailIcon className="h-4 w-4 text-foreground-subtle" />}
                     onChange={(event) => setPendingEmail(event.target.value)}
-                    className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary"
                   />
-                </label>
-                <button
+                </div>
+                <Button
                   type="submit"
                   disabled={submitting}
                   className="self-end rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover disabled:opacity-60"
                 >
                   {t("preferences.account.sendCode")}
-                </button>
+                </Button>
               </form>
 
               <form
                 onSubmit={handleEmailVerify}
                 className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
               >
-                <label className="text-sm">
-                  <span className="mb-2 block font-medium text-foreground">
+                <div className="flex flex-col gap-2">
+                  <label
+                    htmlFor="preferences-account-verify-code"
+                    className="text-sm font-medium text-foreground"
+                  >
                     {t("preferences.account.code")}
-                  </span>
-                  <input
+                  </label>
+                  <TextInput
+                    id="preferences-account-verify-code"
                     name="code"
                     inputMode="numeric"
                     autoComplete="one-time-code"
+                    maxLength={6}
+                    pattern="[0-9]{6}"
                     required
                     value={verificationCode}
-                    onChange={(event) => setVerificationCode(event.target.value)}
-                    className="w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary"
+                    onChange={(event) => setVerificationCode(event.currentTarget.value)}
                   />
-                </label>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="self-end rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground disabled:opacity-60"
-                >
+                </div>
+                <Button type="submit" disabled={submitting}>
                   {t("preferences.account.verifyCode")}
-                </button>
+                </Button>
               </form>
-            </section>
-
-            <section className="border border-border bg-surface-0 rounded-md p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <KeyRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
-                <h3 className="font-semibold text-foreground">
-                  {t("preferences.account.loginMethods")}
-                </h3>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/auth/cognito/login?next=/dashboard/account"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
-                >
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                  {t("preferences.account.passkey")}
-                </Link>
-                <Link
-                  href="/auth/email"
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-surface-3 px-4 py-3 text-sm font-semibold text-foreground"
-                >
-                  <Mail className="h-4 w-4" aria-hidden="true" />
-                  {t("preferences.account.emailOtpRelogin")}
-                </Link>
-              </div>
-            </section>
+            </Modal>
           </div>
         )}
 
