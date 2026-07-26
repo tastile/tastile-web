@@ -5,85 +5,12 @@
     "src/app/**/{page,layout,route,loading,error,not-found,template,default,icon,opengraph-image,twitter-image}.{ts,tsx}",
     "scripts/configure-cognito-social-idps.ps1"
   ],
-  "project": ["src/**/*.{ts,tsx,js,jsx,mjs}"],
-  "ignore": [
-    // Short-form imports (`@/components/ui/...`) sometimes resolve via
-    // alias paths that knip's import-tracking does not pick up. The kit
-    // is wired into the auth/cognito SSR surface and Tailwind tokens.
-    "src/components/ui/**",
-    // Pair kept for the scroll-progress UX (useScrollProgress + ScrollPage).
-    // Neither is rendered today because v1 mobile timeline prefers
-    // snap-scrolling, but removing either breaks the design WIP tracked
-    // in docs/plans/2026-07-23-react-doctor-remediation.md.
-    "src/components/ScrollPage.tsx",
-    "src/hooks/useScrollProgress.ts",
-    // Tests-only reference: NavControls is exercised by SiteHeader.test
-    // and marketing-layout.test, which are excluded from `project` to
-    // keep the production graph clean.
-    "src/components/NavControls.tsx",
-    // Strangler-fig components preserved while v1 QuickCreate ships a
-    // single-panel flow. Each is a per-action dialog or alternative
-    // tile card from the v0 era; keeping the diff against desktop
-    // parity small until v1 lands those surfaces.
-    "src/components/tiles/dialogs/DeferTileDialog.tsx",
-    "src/components/tiles/dialogs/DeleteTileDialog.tsx",
-    "src/components/tiles/editor/CompletionPanel.tsx",
-    "src/components/tiles/editor/ReferencePicker.tsx",
-    "src/components/tiles/editor/RelationshipsPanel.tsx",
-    "src/components/tiles/shared/TileActionButtons.tsx",
-    "src/components/tiles/TileCardExpandable.tsx",
-    "src/components/calendar/TileBlock.tsx",
-    "src/components/execution/ActiveExecutionBadge.tsx",
-    "src/components/LanguageToggle.tsx",
-    "src/components/shell/CommandPalette.tsx",
-    // Avatar + Profile surfaces. The dashboard doesn't render them
-    // directly; they are loaded by the legacy /settings route which is
-    // not yet reachable on the v1 build path. Will be re-evaluated
-    // when the desktop parity sweep restores profile editing.
-    "src/features/avatar/UploadAvatar.tsx",
-    "src/features/profile/ProfilePanel.tsx",
-    "src/lib/avatar/FallbackChain.ts",
-    // Reading-side helpers consumed by v1 calendar/timeline per-cell
-    // projectors, where the projections re-export the helpers' symbols
-    // so knip correctly sees a use but reports "unused export" for
-    // the originals.
-    "src/lib/projection/label-grouping.ts",
-    "src/lib/projection/calendar-projection.ts",
-    "src/lib/hooks/use-calendar-projection.ts",
-    // v0 stores kept for the desktop Phase-C state model. The v1
-    // reducers don't reach into them but downstream paths may.
-    "src/lib/stores/dialog-store.ts",
-    "src/lib/stores/labels-store.ts",
-    "src/lib/stores/reference-overlay-store.ts",
-    // Execution engine + SSE helpers reached only via the
-    // `execution-engine-context` provider, which knip's static
-    // traversal sometimes loses when the provider exports a
-    // memoized wrapper.
-    "src/lib/hooks/use-execution-engine.ts",
-    "src/lib/hooks/use-sse-sync.ts",
-    // Tile formatters + tile-id normalizers re-exported from wrappers
-    // under different names. Suppressing the original here would lose
-    // signal about dead branches, so we keep the originals in source
-    // and let knip surface them at the wrapper level instead.
-    "src/lib/utils/tile-formatters.ts",
-    "src/lib/domain/ids.ts",
-    // Animation + button-style primitives. These used to be wired
-    // into a Now uniform stack that has since moved to Tailwind
-    // utility classes; the originals remain for the few consumers
-    // (see src/components/execution/V1ExecutionControls.test) that
-    // import the named functions directly.
-    "src/lib/animate.ts",
-    "src/lib/styles/button-styles.ts",
-    // v1 domain snapshot + interface for the legacy execution reducer.
-    // v1 work currently lands via the bridge client; this file is the
-    // legacy type kept around for migration parity tests.
-    "src/lib/domain/v1/execution.ts",
-    "src/lib/domain/execution.ts",
-    // Cognito session helper retained for the v1 bridge auth where the
-    // helper is reached through `cognito/account-session`. Static
-    // import tracing loses the indirection; the helper itself is sound.
-    "src/lib/cognito/session.ts"
+  "project": [
+    "src/**/*.{ts,tsx,js,jsx,mjs}"
   ],
-  "ignoreDependencies": ["tailwindcss", "@typescript-eslint/typescript-estree"],
+  "ignoreDependencies": [
+    "tailwindcss",
+    "@typescript-eslint/typescript-estree"
+  ],
   "ignoreExportsUsedInFile": true
 }

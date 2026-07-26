@@ -1,12 +1,11 @@
 "use client";
 
-import { Button } from "@mantine/core";
+import { Button, Skeleton } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Input } from "@/components/ui/Input";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { updateWorkspace, useProjects, type Workspace } from "@/lib/hooks/use-projects";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";

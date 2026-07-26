@@ -62,28 +62,8 @@ export interface ExecutionSyncStatus {
   lastResult: ExecutionSyncResult | null;
 }
 
-export type PromptQueueStatus = "pending" | "acknowledged" | "completed" | "dismissed";
 export type TimelineItemType = "work" | "break" | "fixed";
 export type TimelineItemStatus = "done" | "active" | "scheduled";
-
-export interface InProgressTileSnapshot {
-  tileId: TileId;
-  title: string;
-  phaseKind: PhaseKind;
-  startedAt: Date;
-  phaseEndsAt: Date | null;
-  /** IANA timezone name (e.g. "Asia/Tokyo") for displaying this snapshot's
-   *  instants. `null`/missing means the source tile has no tz; the UI
-   *  MUST NOT fall back to the browser's local timezone. */
-  tz?: string | null;
-}
-
-export interface PromptQueueItemSnapshot extends PendingPrompt {
-  status: PromptQueueStatus;
-  /** IANA timezone name from the source tile. UI MUST NOT consult the
-   *  browser's local timezone. */
-  tz?: string | null;
-}
 
 export interface TimelineItemSnapshot {
   id: string;
@@ -98,13 +78,6 @@ export interface TimelineItemSnapshot {
    *  MUST NOT consult the browser's local timezone when rendering. */
   tz?: string | null;
 }
-
-export interface ExecutionSnapshot {
-  inProgressTiles: InProgressTileSnapshot[];
-  promptQueue: PromptQueueItemSnapshot[];
-  timeline: TimelineItemSnapshot[];
-}
-
 export const Execution = {
   initial: (): Execution => ({
     activeTileId: null,

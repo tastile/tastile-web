@@ -68,26 +68,4 @@ const TextareaBase = forwardRef<HTMLTextAreaElement, TextareaProps>(
 );
 TextareaBase.displayName = "Textarea";
 
-function FieldLabel({
-  htmlFor,
-  children,
-  hint,
-  required,
-}: {
-  htmlFor?: string;
-  children: React.ReactNode;
-  hint?: string;
-  required?: boolean;
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-foreground">
-        {children}
-        {required ? <span className="ml-0.5 text-danger">*</span> : null}
-      </label>
-      {hint ? <span className="text-xs text-foreground-muted">{hint}</span> : null}
-    </div>
-  );
-}
-
-export { FieldLabel, Input, TextareaBase as Textarea };
+export { Input, TextareaBase as Textarea };

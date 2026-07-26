@@ -4,13 +4,13 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { makeClient } from "@/lib/api/v1/submit";
 import { startTileExecutionCommand } from "@/lib/api/v1/tile-commands";
 import type { TileId } from "@/lib/domain/ids";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
+import { Skeleton } from "@mantine/core"
 
 export function TasksMain() {
   const searchParams = useSearchParams();

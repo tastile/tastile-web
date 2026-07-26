@@ -75,18 +75,3 @@ const pillVariant: Record<NonNullable<PillProps["variant"]>, string> = {
   done: "bg-status-done-soft text-status-done border-status-done/30",
   pending: "bg-status-pending-soft text-status-pending border-status-pending/30",
 };
-
-export function Pill({ children, variant = "default", size = "sm", className }: PillProps) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full border font-medium",
-        size === "sm" ? "h-5 px-1.5 text-[10px] uppercase tracking-wide" : "h-6 px-2 text-xs",
-        pillVariant[variant],
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
-}

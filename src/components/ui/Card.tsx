@@ -46,15 +46,3 @@ export function CardHeader({
     </div>
   );
 }
-
-export function CardContent({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("px-4 py-4", className)}>{children}</div>;
-}
-
-export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn("border-t border-border bg-surface-1", className)}>
-      <div className="flex h-12 items-center px-4">{children}</div>
-    </div>
-  );
-}

@@ -1,12 +1,11 @@
 "use client";
 
-import { Alert, Button } from "@mantine/core";
+import { Alert, Button, Skeleton } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useCandidates, usePlacements } from "@/lib/hooks/use-placements";
 import { useRecurringTemplates } from "@/lib/hooks/use-recurring-templates";
 import { useTileList } from "@/lib/hooks/use-tile-list";

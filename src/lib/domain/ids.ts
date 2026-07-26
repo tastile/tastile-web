@@ -34,13 +34,3 @@ export const SegmentId = {
   new: () => makeId<SegmentId>(),
   fromString: (value: string) => value as SegmentId,
 };
-
-export function normalizeTileId(value: string | null | undefined): TileId | null {
-  if (typeof value !== "string") return null;
-  const raw = value.trim();
-  const unprefixed = raw.toLowerCase().startsWith("urn:uuid:")
-    ? raw.slice("urn:uuid:".length)
-    : raw;
-  if (!isUuid(unprefixed)) return null;
-  return TileId.fromString(unprefixed.toLowerCase());
-}
