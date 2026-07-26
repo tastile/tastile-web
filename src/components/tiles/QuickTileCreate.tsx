@@ -34,6 +34,7 @@ import {
   SegmentedControl,
   Select,
   TagsInput,
+  TextInput,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
@@ -610,8 +611,7 @@ export function QuickTileCreate() {
             {/* ── main card ── */}
             <section className="py-2">
               {/* title input */}
-              <input
-                type="text"
+              <TextInput
                 value={identity.title}
                 onChange={(e) => {
                   setField("identity.title", e.target.value);
@@ -622,7 +622,19 @@ export function QuickTileCreate() {
                 aria-required="true"
                 aria-invalid={invalidField === "title" ? "true" : "false"}
                 aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
-                className="w-full border-0 bg-transparent pb-3 text-2xl font-bold tracking-tight text-foreground placeholder:text-foreground-muted focus:outline-hidden"
+                variant="unstyled"
+                size="xl"
+                fw={700}
+                styles={{
+                  input: {
+                    fontSize: "1.5rem",
+                    lineHeight: "2rem",
+                    fontWeight: 700,
+                    letterSpacing: "-0.025em",
+                    padding: 0,
+                    paddingBottom: "0.75rem",
+                  },
+                }}
               />
 
               {/* organize row: project + tags + add button */}
@@ -1479,8 +1491,7 @@ export function QuickTileCreate() {
                         </span>
                       </div>
                     </div>
-                    <input
-                      type="text"
+                    <TextInput
                       aria-label={t("quickCreate.referenceIdPlaceholder")}
                       placeholder={t("quickCreate.referenceIdPlaceholder")}
                       value={ref.target.referenceId ?? ""}
@@ -1492,7 +1503,9 @@ export function QuickTileCreate() {
                         };
                         setField("plan.references", next);
                       }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      size="sm"
+                      variant="filled"
+                      styles={{ input: { backgroundColor: "var(--surface-2)" } }}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
