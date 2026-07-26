@@ -845,16 +845,12 @@ export function QuickTileCreate() {
                 </div>
                 <div className="space-y-1.5">
                   {plan.completion.tasks.map((tk, i) => (
-                    <Paper
+                    <div
                       key={tk.id}
                       data-testid="quick-create-task-row"
-                      p="sm"
-                      radius="lg"
-                      withBorder
-                      bg="var(--surface-0)"
+                      className="flex min-h-[32px] items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1 text-xs"
                     >
-                      <Group gap="sm" wrap="nowrap" mih={38}>
-                      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
+                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-0" />
                       <span
                         className={
                           tk.content?.title
@@ -868,17 +864,16 @@ export function QuickTileCreate() {
                         <Menu.Target>
                           <ActionIcon
                             type="button"
+                            variant="subtle"
+                            size="xs"
                             aria-label={t("quickCreate.taskMoreAria")}
-                            aria-haspopup="menu"
-                            title={t("quickCreate.taskMoreTitle")}
-                            className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
                           >
-                            <MoreHorizontal size={14} aria-hidden="true" />
+                            <MoreHorizontal size={12} />
                           </ActionIcon>
                         </Menu.Target>
                         <Menu.Dropdown>
                           <Menu.Item
-                            leftSection={<ChevronUp size={14} aria-hidden="true" />}
+                            leftSection={<ChevronUp size={14} />}
                             disabled={i === 0}
                             onClick={() => {
                               const target = i - 1;
@@ -892,7 +887,7 @@ export function QuickTileCreate() {
                             {t("quickCreate.taskMoveUp")}
                           </Menu.Item>
                           <Menu.Item
-                            leftSection={<ChevronDown size={14} aria-hidden="true" />}
+                            leftSection={<ChevronDown size={14} />}
                             disabled={i === plan.completion.tasks.length - 1}
                             onClick={() => {
                               const target = i + 1;
@@ -907,7 +902,7 @@ export function QuickTileCreate() {
                           </Menu.Item>
                           <Menu.Divider />
                           <Menu.Item
-                            leftSection={<Trash2 size={14} aria-hidden="true" />}
+                            leftSection={<Trash2 size={14} />}
                             color="red"
                             onClick={() => {
                               const next = plan.completion.tasks.slice();
@@ -919,11 +914,13 @@ export function QuickTileCreate() {
                           </Menu.Item>
                         </Menu.Dropdown>
                       </Menu>
-                      </Group>
-                    </Paper>
+                    </div>
                   ))}
                   <Button
                     type="button"
+                    variant="subtle"
+                    size="xs"
+                    leftSection={<Plus size={12} />}
                     onClick={() => {
                       setField("plan.completion.tasks", [
                         ...plan.completion.tasks,
@@ -941,9 +938,9 @@ export function QuickTileCreate() {
                         },
                       ]);
                     }}
-                    className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg bg-surface-1 text-xs font-bold text-foreground-muted hover:bg-surface-2"
+                    className="mt-1 text-foreground-muted"
                   >
-                    ＋ タスクを追加
+                    {t("quickCreate.completionAddHint")}
                   </Button>
                 </div>
               </div>
@@ -961,19 +958,28 @@ export function QuickTileCreate() {
                 </div>
                 <Button
                   type="button"
+                  variant="outline"
+                  size="sm"
+                  leftSection={
+                    <div className="flex h-6 w-6 items-center justify-center rounded bg-surface-2">
+                      {plan.role === PlanRole.LABEL ? (
+                        <Tag size={12} />
+                      ) : (
+                        <Play size={12} />
+                      )}
+                    </div>
+                  }
+                  rightSection={
+                    <span className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-[10px] text-foreground-muted">
+                      {t("quickCreate.behaviorEdit")}
+                    </span>
+                  }
                   onClick={() => setActivePanel("meta")}
                   aria-label={t("quickCreate.behaviorEdit")}
-                  className="flex w-full min-h-[48px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-2 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  className="justify-start"
                 >
-                  <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
-                    {plan.role === PlanRole.LABEL ? (
-                      <Tag className="h-3.5 w-3.5" aria-hidden />
-                    ) : (
-                      <Play className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-foreground">
+                  <div className="text-left">
+                    <div className="text-xs font-semibold">
                       {plan.role === PlanRole.LABEL
                         ? t("quickCreate.behaviorLabel")
                         : t("quickCreate.behaviorExecutable")}
@@ -984,9 +990,6 @@ export function QuickTileCreate() {
                         : t("quickCreate.behaviorExecutableSub")}
                     </div>
                   </div>
-                  <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
-                    {t("quickCreate.behaviorEdit")}
-                  </span>
                 </Button>
               </div>
             </section>
@@ -1019,18 +1022,20 @@ export function QuickTileCreate() {
                           </strong>
                           <Button
                             type="button"
+                            variant="subtle"
+                            size="xs"
+                            leftSection={<Pencil size={10} />}
                             onClick={() => setActivePanel("time")}
-                            className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                            className="ml-auto text-foreground-muted"
                           >
-                            <Pencil className="h-3 w-3" aria-hidden />
                             編集
                           </Button>
                         </div>
                         <div className="space-y-1">
                           {windows.map((w, i) => (
-                            <Paper key={w.id ?? i} p="xs" radius="md" bg="var(--surface-0)">
-                            <Group
-                              gap="xs"
+                            <div
+                              key={w.id ?? i}
+                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
                             >
                               <Clock
                                 size={11}
@@ -1044,17 +1049,17 @@ export function QuickTileCreate() {
                               </span>
                               <ActionIcon
                                 type="button"
+                                variant="subtle"
+                                size="xs"
                                 onClick={() => {
                                   const next = windows.filter((_, idx) => idx !== i);
                                   setField("windows", next);
                                 }}
                                 aria-label={t("quickCreate.removeItem")}
-                                className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
                               >
-                                <MoreHorizontal size={12} aria-hidden="true" />
+                                <MoreHorizontal size={12} />
                               </ActionIcon>
-                            </Group>
-                            </Paper>
+                            </div>
                           ))}
                         </div>
                       </Paper>
@@ -1071,18 +1076,20 @@ export function QuickTileCreate() {
                           </strong>
                           <Button
                             type="button"
+                            variant="subtle"
+                            size="xs"
+                            leftSection={<Pencil size={10} />}
                             onClick={() => setActivePanel("recurring")}
-                            className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                            className="ml-auto text-foreground-muted"
                           >
-                            <Pencil className="h-3 w-3" aria-hidden />
                             編集
                           </Button>
                         </div>
                         <div className="space-y-1">
                           {recurring.frameRules.map((r, i) => (
-                            <Paper key={r.id ?? i} p="xs" radius="md" bg="var(--surface-0)">
-                            <Group
-                              gap="xs"
+                            <div
+                              key={r.id ?? i}
+                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
                             >
                               <Repeat
                                 size={11}
@@ -1096,17 +1103,17 @@ export function QuickTileCreate() {
                               </span>
                               <ActionIcon
                                 type="button"
+                                variant="subtle"
+                                size="xs"
                                 onClick={() => {
                                   const next = recurring.frameRules.filter((_, idx) => idx !== i);
                                   setField("recurring.frameRules", next);
                                 }}
                                 aria-label={t("quickCreate.removeItem")}
-                                className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
                               >
-                                <MoreHorizontal size={12} aria-hidden="true" />
+                                <MoreHorizontal size={12} />
                               </ActionIcon>
-                            </Group>
-                            </Paper>
+                            </div>
                           ))}
                         </div>
                       </Paper>
@@ -1116,11 +1123,13 @@ export function QuickTileCreate() {
               </div>
               <Button
                 type="button"
+                variant="subtle"
+                size="xs"
+                leftSection={<Plus size={12} />}
                 onClick={() => setActivePanel("intent")}
                 data-testid="quick-create-condition-add"
-                className="mx-2.5 mb-2.5 flex h-10 w-[calc(100%-20px)] items-center justify-center gap-1.5 rounded-lg bg-surface-1 text-[11px] font-bold text-foreground-muted hover:bg-surface-2"
+                className="mt-2 text-foreground-muted"
               >
-                <Plus size={14} aria-hidden="true" />
                 {t("quickCreate.addConditionOrGroup")}
               </Button>
             </section>
