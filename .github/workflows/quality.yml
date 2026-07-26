@@ -24,7 +24,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Prepare non-secret production build environment
-        run: cp .env.product.example .env.product
+        run: cp .env.production.example .env.production
 
       - name: Validate repository
         run: bun run check:release
