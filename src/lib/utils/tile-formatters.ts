@@ -29,7 +29,7 @@ export function formatDuration(minutes: number | null, locale: "ja" | "en" = "ja
   return `${mins}m`;
 }
 
-export function formatDateTime(
+function _formatDateTime(
   date: Date | null,
   locale: "ja" | "en" = "ja",
   timeZone?: string | null,
@@ -101,7 +101,7 @@ export function formatFriendlyDateTime(
   }
 }
 
-export function formatTimeOnly(
+function _formatTimeOnly(
   date: Date | null,
   locale: "ja" | "en" = "ja",
   timeZone?: string | null,
@@ -114,7 +114,7 @@ export function formatTimeOnly(
   }).format(date);
 }
 
-export function getCurrentLocalDate(): string {
+function _getCurrentLocalDate(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
@@ -122,14 +122,14 @@ export function getCurrentLocalDate(): string {
   return `${year}-${month}-${day}`;
 }
 
-export function getCurrentLocalTime(): string {
+function _getCurrentLocalTime(): string {
   const now = new Date();
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   return `${hours}:${minutes}`;
 }
 
-export function parseDateTimeParts(datePart: string, timePart: string): Date | null {
+function _parseDateTimeParts(datePart: string, timePart: string): Date | null {
   if (!datePart || !timePart) return null;
   const date = new Date(`${datePart}T${timePart}`);
   if (Number.isNaN(date.getTime())) return null;

@@ -1,4 +1,4 @@
-import { validate as isUuid, v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 
 export type TileId = string & { readonly __brand: "TileId" };
 export type EventId = string & { readonly __brand: "EventId" };

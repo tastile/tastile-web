@@ -58,20 +58,3 @@ export function StatusDot({ status, size = "sm", pulse, label, className }: Stat
     </span>
   );
 }
-
-interface PillProps {
-  children: React.ReactNode;
-  variant?: "default" | "accent" | "active" | "warn" | "danger" | "done" | "pending";
-  size?: "sm" | "md";
-  className?: string;
-}
-
-const pillVariant: Record<NonNullable<PillProps["variant"]>, string> = {
-  default: "bg-surface-2 text-ink-2 border-border",
-  accent: "bg-accent-soft text-accent border-accent/30",
-  active: "bg-status-active-soft text-status-active border-status-active/30",
-  warn: "bg-status-warn-soft text-status-warn border-status-warn/30",
-  danger: "bg-status-danger-soft text-status-danger border-status-danger/30",
-  done: "bg-status-done-soft text-status-done border-status-done/30",
-  pending: "bg-status-pending-soft text-status-pending border-status-pending/30",
-};

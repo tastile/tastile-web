@@ -37,9 +37,10 @@ export interface EventListViewProps {
   events: CalendarEvent[];
   loading: boolean;
   error: Error | null;
+  onEditEvent?: (event: CalendarEvent) => void;
 }
 
-export function EventListView({ events, loading }: EventListViewProps) {
+export function EventListView({ events, loading, onEditEvent }: EventListViewProps) {
   const [query, setQuery] = useState("");
   // useDeferredValue keeps the input snappy while the filter + groupByDay
   // run on a lower-priority update. Without this, typing into a long
@@ -118,6 +119,7 @@ export function EventListView({ events, loading }: EventListViewProps) {
                   <Button
                     type="button"
                     data-testid={`event-list-item-${event.id}`}
+                    onClick={onEditEvent ? () => onEditEvent(event) : undefined}
                     className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-1"
                   >
                     <span

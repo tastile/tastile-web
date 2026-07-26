@@ -6,8 +6,8 @@ export interface BrowserCognitoSession {
   ownerId: string | null;
 }
 
-let cachedSession: BrowserCognitoSession | null = null;
+let _cachedSession: BrowserCognitoSession | null = null;
 
 export function clearCachedCognitoSession() {
-  cachedSession = null;
+  _cachedSession = null;
 }

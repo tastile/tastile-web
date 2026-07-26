@@ -112,15 +112,18 @@ describe("AccessTokenSection", () => {
     renderWithMantine(<AccessTokenSection />);
     await screen.findByText("account.tokens.empty");
 
-    fireEvent.change(screen.getByLabelText("account.tokens.nameLabel"), {
-      target: { value: "CLI token" },
-    });
-    const submit = screen.getByRole("button", { name: "account.tokens.issue" });
+    fireEvent.click(screen.getByRole("button", { name: "account.tokens.issue" }));
+    fireEvent.change(
+      await screen.findByRole("textbox", { name: "account.tokens.nameLabel" }),
+      { target: { value: "CLI token" } },
+    );
+    const dialog = screen.getByRole("dialog");
+    const submit = dialog.querySelector<HTMLButtonElement>("button[type='submit']")!;
     fireEvent.click(submit);
 
     expect(await screen.findByText("account.tokens.error.createFallback")).toBeTruthy();
     await waitFor(() => {
-      expect((submit as HTMLButtonElement).disabled).toBe(false);
+      expect(submit.disabled).toBe(false);
     });
   });
 

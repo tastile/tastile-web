@@ -41,7 +41,6 @@ export function MiniCalendar({ selected, onSelect, highlight, disabled }: MiniCa
           };
         }}
         styles={{
-          calendarHeader: { display: "none" },
           month: { padding: 0 },
         }}
       />

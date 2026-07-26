@@ -23,7 +23,8 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
-import { ActionIcon, Button, SegmentedControl, Select } from "@mantine/core";
+import { ActionIcon, Button, SegmentedControl, Text } from "@mantine/core";
+import { DateTimePicker, TimeInput } from "@mantine/dates";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 
 import { FormDivider, FormRow, RowInput, RowSegmented, SectionHeader } from "@/components/ui/form";
@@ -52,9 +53,6 @@ const TIME_OF_DAY_OPTIONS: ReadonlyArray<{
   { id: "range", labelKey: "quickCreate.timeOfDayRange" },
   { id: "unspecified", labelKey: "quickCreate.timeOfDayUnspecified" },
 ];
-
-const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
-const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
 
 const QUICK_RANGES: ReadonlyArray<{
   labelKey: string;
@@ -200,76 +198,32 @@ function TimeOfDayEditor({
       {mode === "range" ? (
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <div className="flex flex-1 items-center gap-1">
-              <Select
-                aria-label={`${t("quickCreate.timeOfDayLabel")} start hour`}
-                value={start.split(":")[0] ?? null}
-                onChange={(value) => onStartChange(`${value ?? ""}:${start.split(":")[1] ?? "00"}`)}
-                data={HOURS.map((h) => ({ value: h, label: h }))}
-                placeholder="--"
-                comboboxProps={{ withinPortal: true }}
-                allowDeselect={false}
-                data-testid="time-of-day-start-hour"
-                className="flex-1"
-                size="xs"
-              />
-              <span className="text-foreground-muted">:</span>
-              <Select
-                aria-label={`${t("quickCreate.timeOfDayLabel")} start minute`}
-                value={start.split(":")[1] ?? null}
-                onChange={(value) => onStartChange(`${start.split(":")[0] ?? "00"}:${value ?? ""}`)}
-                data={MINUTES.map((m) => ({ value: m, label: m }))}
-                placeholder="--"
-                comboboxProps={{ withinPortal: true }}
-                allowDeselect={false}
-                data-testid="time-of-day-start-minute"
-                className="flex-1"
-                size="xs"
-              />
-            </div>
+            <TimeInput
+              aria-label={`${t("quickCreate.timeOfDayLabel")} start`}
+              value={start || "09:00"}
+              onChange={(e) => onStartChange(e.currentTarget.value)}
+              size="xs"
+              className="flex-1"
+            />
             <span aria-hidden="true" className="text-foreground-muted">
               →
             </span>
-            <div className="flex flex-1 items-center gap-1">
-              <Select
-                aria-label={`${t("quickCreate.timeOfDayLabel")} end hour`}
-                value={end.split(":")[0] ?? null}
-                onChange={(value) => onEndChange(`${value ?? ""}:${end.split(":")[1] ?? "00"}`)}
-                data={HOURS.map((h) => ({ value: h, label: h }))}
-                placeholder="--"
-                comboboxProps={{ withinPortal: true }}
-                allowDeselect={false}
-                data-testid="time-of-day-end-hour"
-                className="flex-1"
-                size="xs"
-              />
-              <span className="text-foreground-muted">:</span>
-              <Select
-                aria-label={`${t("quickCreate.timeOfDayLabel")} end minute`}
-                value={end.split(":")[1] ?? null}
-                onChange={(value) => onEndChange(`${end.split(":")[0] ?? "00"}:${value ?? ""}`)}
-                data={MINUTES.map((m) => ({ value: m, label: m }))}
-                placeholder="--"
-                comboboxProps={{ withinPortal: true }}
-                allowDeselect={false}
-                data-testid="time-of-day-end-minute"
-                className="flex-1"
-                size="xs"
-              />
-            </div>
+            <TimeInput
+              aria-label={`${t("quickCreate.timeOfDayLabel")} end`}
+              value={end || "18:00"}
+              onChange={(e) => onEndChange(e.currentTarget.value)}
+              size="xs"
+              className="flex-1"
+            />
           </div>
           <div className="flex flex-wrap gap-1" data-testid="time-of-day-quick-row">
             {QUICK_RANGES.map((q) => (
               <Button
                 key={q.labelKey}
                 type="button"
+                variant={start === q.start && end === q.end ? "light" : "subtle"}
+                size="xs"
                 onClick={() => onQuickPick(q.start, q.end)}
-                className={cn(
-                  "rounded-full px-3 py-1 text-[10px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-                  start === q.start && end === q.end
-                    ? "bg-accent-soft text-accent-ink"
-                    : "bg-surface-0 text-foreground-muted hover:bg-surface-1",
-                )}
                 data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
               >
                 {t(q.labelKey)}
@@ -321,29 +275,31 @@ function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
       />
       <FormRow icon={<Calendar size={20} />}>
         <div className="grid w-full grid-cols-2 gap-2">
-          <input
-            type="datetime-local"
+          <DateTimePicker
             aria-label={`${t("quickCreate.startAt")} (datetime)`}
-            value={window.bounds.start ? window.bounds.start.slice(0, 16) : ""}
-            onChange={(e) =>
+            value={window.bounds.start ? window.bounds.start : null}
+            onChange={(value) =>
               onUpdate(index, (w) => ({
                 ...w,
-                bounds: { ...w.bounds, start: e.target.value ? `${e.target.value}:00Z` : "" },
+                bounds: { ...w.bounds, start: value ?? "" },
               }))
             }
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            size="xs"
+            valueFormat="MM/DD HH:mm"
+            clearable
           />
-          <input
-            type="datetime-local"
+          <DateTimePicker
             aria-label={`${t("quickCreate.endAt")} (datetime)`}
-            value={window.bounds.end ? window.bounds.end.slice(0, 16) : ""}
-            onChange={(e) =>
+            value={window.bounds.end ? window.bounds.end : null}
+            onChange={(value) =>
               onUpdate(index, (w) => ({
                 ...w,
-                bounds: { ...w.bounds, end: e.target.value ? `${e.target.value}:00Z` : "" },
+                bounds: { ...w.bounds, end: value ?? "" },
               }))
             }
-            className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            size="xs"
+            valueFormat="MM/DD HH:mm"
+            clearable
           />
         </div>
       </FormRow>
@@ -519,6 +475,8 @@ export function SchedulePanel({
               <Button
                 key={q.id}
                 type="button"
+                variant="light"
+                size="xs"
                 onClick={() => {
                   const base = new Date();
                   base.setHours(0, 0, 0, 0);
@@ -535,7 +493,6 @@ export function SchedulePanel({
                   setField("time.span.start", start.toISOString().slice(0, 10));
                   setField("time.span.end", "");
                 }}
-                className="rounded-full border border-border bg-surface-0 px-3 py-1 text-[10px] font-semibold text-foreground-muted hover:bg-surface-1"
                 data-testid={`when-calendar-quick-${q.id}`}
               >
                 {t(q.labelKey)}
@@ -595,7 +552,7 @@ export function SchedulePanel({
       ))}
       <Button
         type="button"
-        size="small"
+        size="sm"
         variant="default"
         leftSection={<Plus size={12} aria-hidden="true" />}
         onClick={addWindow}

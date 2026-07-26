@@ -69,7 +69,6 @@ import {
   Play,
   Plus,
   Repeat,
-  Save,
   Settings2,
   SlidersHorizontal,
   Star,
@@ -107,48 +106,6 @@ import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { type RepeatChoice, useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
-
-const _PRESET_COLORS = [
-  "#5e6ad2",
-  "#0d8a72",
-  "#c08a2b",
-  "#c34141",
-  "#3b82f6",
-  "#10b981",
-  "#f59e0b",
-  "#ef4444",
-  "#8b5cf6",
-  "#6b7280",
-];
-
-const _AVAILABLE_ICONS = [
-  { name: "FileText", icon: FileText },
-  { name: "Clock", icon: Clock },
-  { name: "Repeat", icon: Repeat },
-  { name: "Tag", icon: Tag },
-  { name: "Calendar", icon: Calendar },
-  { name: "Palette", icon: Palette },
-  { name: "CheckCircle2", icon: CheckCircle2 },
-  { name: "Settings2", icon: Settings2 },
-  { name: "MessageSquare", icon: MessageSquare },
-  { name: "FolderOpen", icon: FolderOpen },
-  { name: "Flame", icon: Flame },
-  { name: "Inbox", icon: Inbox },
-  { name: "Bell", icon: Bell },
-  { name: "Coffee", icon: Coffee },
-  { name: "Heart", icon: Heart },
-  { name: "Star", icon: Star },
-];
-
-const _TILE_KIND_OPTIONS: ReadonlyArray<{ value: TileKindValue; label: string }> = [
-  { value: TileKind.PLACEMENT, label: "quickCreate.kindPlacement" },
-  { value: TileKind.RECURRING, label: "quickCreate.kindRecurring" },
-];
-
-const _PLAN_ROLE_OPTIONS: ReadonlyArray<{ value: PlanRoleValue; label: string }> = [
-  { value: PlanRole.EXECUTABLE, label: "quickCreate.roleExecutable" },
-  { value: PlanRole.LABEL, label: "quickCreate.roleLabel" },
-];
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention).
 const WEEKDAY_LABELS_SHORT: Record<"ja" | "en", readonly string[]> = {
@@ -277,7 +234,6 @@ export function QuickTileCreate() {
   const setField = useQuickCreateStore((s) => s.setField);
   const mode = useQuickCreateStore((s) => s.mode);
   const editingId = useQuickCreateStore((s) => s.editingId);
-  const _editingTileId = useQuickCreateStore((s) => s.editingTileId);
   const loadError = useQuickCreateStore((s) => s.loadError);
   const submitBlocked = useQuickCreateStore((s) => s.submitBlocked);
 
@@ -286,14 +242,11 @@ export function QuickTileCreate() {
   const time = useQuickCreateStore((s) => s.time);
   const windows = useQuickCreateStore((s) => s.windows);
   const recurring = useQuickCreateStore((s) => s.recurring);
-  const _recurrence = useQuickCreateStore((s) => s.recurrence);
-  const _advanced = useQuickCreateStore((s) => s.advanced);
   const meta = useQuickCreateStore((s) => s.meta);
 
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
 
-  const [_allDay, setAllDay] = useState(false);
   const [visualOpen, setVisualOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<
     | "base"
@@ -308,9 +261,6 @@ export function QuickTileCreate() {
   >("base");
   const projects = useProjects();
   const refreshProjects = projects.refresh;
-  // Pull a sample of existing tiles so the TagsInput can suggest labels
-  // the user has already used. Without this, the picker has no data prop
-  // and freeform entry is the only path.
   const tiles = useTileList({ limit: 200 });
   const knownTags = useMemo(() => {
     const seen = new Set<string>();
@@ -322,11 +272,9 @@ export function QuickTileCreate() {
     }
     return Array.from(seen).sort((a, b) => a.localeCompare(b, "ja"));
   }, [tiles.tiles]);
-  const _actorSubjectId = useCurrentActorSubjectId();
   useEffect(() => {
     void refreshProjects();
   }, [refreshProjects]);
-  const [_intentPickerOpen, _setIntentPickerOpen] = useState(false);
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -501,7 +449,6 @@ export function QuickTileCreate() {
       }
 
       reset();
-      setAllDay(false);
       setActivePanel("base");
       setMemoExpanded(false);
       notifyEventsChanged();
@@ -513,51 +460,29 @@ export function QuickTileCreate() {
     }
   }
 
-  async function _handleDelete() {
-    if (mode !== "edit" || !editingId) return;
-    const confirmed =
-      typeof window !== "undefined" ? window.confirm(t("quickCreate.confirmDelete")) : true;
-    if (!confirmed) return;
-    setSubmitting(true);
-    setError(null);
-    try {
-      const res = await closePlacementCommand({ client: makeClient(), placementId: editingId });
-      if (!res.ok) throw new Error(`${t("quickCreate.deleteError")} (api:v1) ${res.error.message}`);
-      reset();
-      setAllDay(false);
-      setActivePanel("base");
-      setMemoExpanded(false);
-      notifyEventsChanged();
-      close();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("quickCreate.deleteError"));
-    } finally {
-      setSubmitting(false);
-    }
-  }
 
   // --- layout classes ---
   const panelClass = isDesktop
     ? cn(
-        "fixed inset-y-0 right-0 z-[56]",
-        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-x-full opacity-0"
-          : activePanel !== "base"
-            ? "-translate-x-6"
-            : "translate-x-0",
-        "[animation:slideInFromRight_0.22s_ease-out]",
-      )
+      "fixed inset-y-0 right-0 z-[56]",
+      "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
+      isClosing
+        ? "translate-x-full opacity-0"
+        : activePanel !== "base"
+          ? "-translate-x-6"
+          : "translate-x-0",
+      "[animation:slideInFromRight_0.22s_ease-out]",
+    )
     : cn(
-        "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-y-full opacity-0"
-          : activePanel !== "base"
-            ? "translate-y-6"
-            : "translate-y-0",
-        "[animation:slideInFromBottom_0.22s_ease-out]",
-      );
+      "fixed inset-x-0 bottom-0 z-[56]",
+      "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
+      isClosing
+        ? "translate-y-full opacity-0"
+        : activePanel !== "base"
+          ? "translate-y-6"
+          : "translate-y-0",
+      "[animation:slideInFromBottom_0.22s_ease-out]",
+    );
 
   const subPanelClass = (
     panel:
@@ -572,16 +497,16 @@ export function QuickTileCreate() {
   ) =>
     isDesktop
       ? cn(
-          "fixed inset-y-0 right-0 z-[57]",
-          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
-          "transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
-        )
+        "fixed inset-y-0 right-0 z-[57]",
+        "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
+        "transition-transform duration-300 ease-out",
+        activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
+      )
       : cn(
-          "fixed inset-x-0 bottom-0 z-[57]",
-          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
-        );
+        "fixed inset-x-0 bottom-0 z-[57]",
+        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
+        activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
+      );
 
   // --- condition count ---
   const conditionCount = windows.length + recurring.frameRules.length;
@@ -664,9 +589,10 @@ export function QuickTileCreate() {
                     onClick={() => setActivePanel("meta")}
                     radius="xl"
                     size="xs"
+                    variant="light"
+                    leftSection={<FolderOpen size={12} />}
                   >
-                    <FolderOpen className="h-3 w-3" aria-hidden />
-                    <span>{currentProject.display_name}</span>
+                    {currentProject.display_name}
                   </Button>
                 )}
                 {meta.tags.map((tag) => (
@@ -676,20 +602,21 @@ export function QuickTileCreate() {
                     onClick={() => setActivePanel("meta")}
                     radius="xl"
                     size="xs"
+                    variant="light"
+                    leftSection={<Tag size={12} />}
                   >
-                    <Tag className="h-3 w-3" aria-hidden />
-                    <span>#{tag}</span>
+                    #{tag}
                   </Button>
                 ))}
                 <Button
                   type="button"
                   onClick={() => setActivePanel("meta")}
-                  leftSection={<Plus className="h-3 w-3" aria-hidden />}
-                  variant="outline"
+                  leftSection={<Plus size={12} />}
+                  variant="subtle"
                   size="xs"
                   radius="xl"
                 >
-                  <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
+                  {t("quickCreate.metaExpandLabel") || "整理"}
                 </Button>
               </div>
 
@@ -974,7 +901,7 @@ export function QuickTileCreate() {
                       {t("quickCreate.behaviorEdit")}
                     </span>
                   }
-                  onClick={() => setActivePanel("meta")}
+                  onClick={() => setActivePanel("behavior")}
                   aria-label={t("quickCreate.behaviorEdit")}
                   className="justify-start"
                 >
@@ -998,7 +925,7 @@ export function QuickTileCreate() {
             <section className="pt-3">
               <hr className="border-border mb-3" />
               <div className="flex items-center justify-between mb-2">
-                <strong className="text-xs font-semibold text-foreground">条件の組み合わせ</strong>
+                <strong className="text-xs font-semibold text-foreground">{t("quickCreate.conditionHeading")}</strong>
                 <span className="text-[10px] text-foreground-muted">{conditionCount}</span>
               </div>
               <div className="p-2.5" data-testid="quick-create-condition-tree">
@@ -1028,7 +955,7 @@ export function QuickTileCreate() {
                             onClick={() => setActivePanel("time")}
                             className="ml-auto text-foreground-muted"
                           >
-                            編集
+                            {t("quickCreate.edit")}
                           </Button>
                         </div>
                         <div className="space-y-1">
@@ -1082,7 +1009,7 @@ export function QuickTileCreate() {
                             onClick={() => setActivePanel("recurring")}
                             className="ml-auto text-foreground-muted"
                           >
-                            編集
+                            {t("quickCreate.edit")}
                           </Button>
                         </div>
                         <div className="space-y-1">
@@ -1153,17 +1080,9 @@ export function QuickTileCreate() {
           </div>
           <div className="flex items-center gap-2">
             <Button
-              leftSection={<Save size={14} />}
-              type="button"
-              variant="default"
-              size="sm"
-            >
-              下書き保存
-            </Button>
-            <Button
               type="button"
               variant="filled"
-              size="lg"
+              size="sm"
               data-testid="quick-create-submit"
               onClick={handleSubmit}
               loading={submitting}
@@ -1202,24 +1121,28 @@ export function QuickTileCreate() {
           <p className="mb-3 text-[11px] text-foreground-muted">
             {t("quickCreate.intentDescription")}
           </p>
-          <SimpleGrid cols={2} spacing="sm" data-testid="intent-grid">
+          <SimpleGrid cols={2} spacing="xs" data-testid="intent-grid">
             {INTENT_ITEMS.map((item) => (
-              <Paper key={item.key} withBorder radius="lg">
+              <Paper key={item.key} withBorder radius="md">
                 <UnstyledButton
                   onClick={() => setActivePanel(item.panel)}
-                  className="flex min-h-[91px] w-full flex-col items-start p-3 text-left focus-visible:ring-2 focus-visible:ring-primary"
+                  className="flex min-h-[64px] w-full items-center gap-2.5 px-3 py-2 text-left focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <item.icon size={16} className="mb-1.5 text-primary" />
-                  <Text size="xs" fw={600} mb={2}>{t(item.titleKey)}</Text>
-                  <Text size="10" c="var(--foreground-muted)">{t(item.subKey)}</Text>
+                  <item.icon size={14} className="shrink-0 text-primary" />
+                  <div className="min-w-0">
+                    <Text size="xs" fw={600}>{t(item.titleKey)}</Text>
+                    <Text size="10" c="var(--foreground-muted)">{t(item.subKey)}</Text>
+                  </div>
                 </UnstyledButton>
               </Paper>
             ))}
-            <Paper withBorder radius="lg" opacity={0.6}>
-              <div className="flex min-h-[91px] flex-col items-start p-3 text-left">
-                <Type size={16} className="mb-1.5" />
-                <Text size="xs" fw={600} mb={2}>{t("quickCreate.intentTextCondition")}</Text>
-                <Text size="10" c="var(--foreground-muted)">{t("quickCreate.intentTextConditionSub")}</Text>
+            <Paper withBorder radius="md" opacity={0.5}>
+              <div className="flex min-h-[64px] items-center gap-2.5 px-3 py-2">
+                <Type size={14} className="shrink-0 text-foreground-muted" />
+                <div className="min-w-0">
+                  <Text size="xs" fw={600}>{t("quickCreate.intentTextCondition")}</Text>
+                  <Text size="10" c="var(--foreground-muted)">{t("quickCreate.intentTextConditionSub")}</Text>
+                </div>
               </div>
             </Paper>
           </SimpleGrid>
@@ -1265,89 +1188,69 @@ export function QuickTileCreate() {
           subtitle={t("quickCreate.durationSub")}
         />
         <div className="flex-1 overflow-auto p-4">
-          <Button
-            type="button"
-            onClick={() => {
-              setField("time.durationMinMax.minMs", null);
-              setField("time.durationMinMax.maxMs", null);
-            }}
-            className={cn(
-              "mb-4 flex w-full items-center gap-3 rounded-xl border bg-surface-0 p-3 text-left transition-colors",
+          <Radio.Group
+            value={
               time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
-                ? "bg-accent-soft"
-                : "border-border hover:bg-surface-1",
-            )}
+                ? "none"
+                : "custom"
+            }
+            onChange={(value) => {
+              if (value === "none") {
+                setField("time.durationMinMax.minMs", null);
+                setField("time.durationMinMax.maxMs", null);
+              }
+            }}
           >
-            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-foreground-muted" />
-            <div>
-              <strong className="block text-sm font-semibold">
-                {t("quickCreate.durationNoneTitle")}
-              </strong>
-              <small className="block text-[10px] text-foreground-muted">
-                {t("quickCreate.durationNoneSub")}
-              </small>
-            </div>
-          </Button>
+            <Stack gap="sm">
+              <Radio.Card
+                value="none"
+                p="sm"
+                radius="lg"
+                withBorder
+                className="data-[checked]:border-primary data-[checked]:bg-accent-soft"
+              >
+                <Group gap="sm">
+                  <Radio.Indicator />
+                  <div>
+                    <Text size="sm" fw={600}>{t("quickCreate.durationNoneTitle")}</Text>
+                    <Text size="xs" c="var(--foreground-muted)">{t("quickCreate.durationNoneSub")}</Text>
+                  </div>
+                </Group>
+              </Radio.Card>
+            </Stack>
+          </Radio.Group>
 
           <div className="mb-4">
             <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
               {t("quickCreate.durationInputLabel")}
             </div>
-            <div className="flex items-center gap-2">
-              <NumberInput
-                min={10}
-                step={10}
-                value={
-                  time.durationMinMax.minMs !== null
-                    ? Math.round(time.durationMinMax.minMs / 60000)
-                    : 90
-                }
-                onChange={(value) => {
-                  const num = typeof value === "number" ? value : Number(value);
-                  if (!Number.isFinite(num)) return;
-                  const clamped = Math.max(10, Math.min(720, num));
-                  setField("time.durationMinMax.minMs", clamped * 60000);
-                  setField("time.durationMinMax.maxMs", clamped * 60000);
-                }}
-                size="sm"
-                aria-label={t("quickCreate.durationInputLabel")}
-                suffix={t("quickCreate.minutesUnit")}
-                styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-                className="flex-1"
-              />
-              <div className="flex rounded-lg border border-border bg-surface-0 p-0.5">
-                <span className="rounded-md bg-accent-soft px-3 py-1 text-xs font-bold text-accent-ink">
-                  {t("quickCreate.minutesUnit")}
-                </span>
-                <span className="rounded-md px-3 py-1 text-xs text-foreground-muted">
-                  {t("quickCreate.hoursUnit")}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-4 flex items-center justify-between rounded-xl border border-border bg-surface-0 p-3">
-            <div>
-              <strong className="block text-xs font-semibold">
-                {t("quickCreate.durationUseCompletionTitle")}
-              </strong>
-              <small className="block text-[10px] text-foreground-muted">
-                {t("quickCreate.durationUseCompletionSub")}
-              </small>
-            </div>
-            <Button
-              type="button"
-              className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors"
-            >
-              <div className="h-5 w-5 translate-x-5 rounded-full bg-white transition-transform" />
-            </Button>
+            <NumberInput
+              min={10}
+              step={10}
+              value={
+                time.durationMinMax.minMs !== null
+                  ? Math.round(time.durationMinMax.minMs / 60000)
+                  : 90
+              }
+              onChange={(value) => {
+                const num = typeof value === "number" ? value : Number(value);
+                if (!Number.isFinite(num)) return;
+                const clamped = Math.max(10, Math.min(720, num));
+                setField("time.durationMinMax.minMs", clamped * 60000);
+                setField("time.durationMinMax.maxMs", clamped * 60000);
+              }}
+              size="sm"
+              aria-label={t("quickCreate.durationInputLabel")}
+              suffix={t("quickCreate.minutesUnit")}
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+            />
           </div>
 
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="sm"
+              variant="subtle"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -1356,8 +1259,8 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
-              variant="default"
+              size="sm"
+              variant="filled"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -1514,8 +1417,8 @@ export function QuickTileCreate() {
                   <div className="flex items-center gap-2 border-t border-border/40 pt-2">
                     <Button
                       type="button"
-                      size="small"
-                      variant="ghost"
+                      size="sm"
+                      variant="subtle"
                       leftSection={<Trash2 size={12} aria-hidden="true" />}
                       onClick={() => {
                         const next = plan.references.slice();
@@ -1529,7 +1432,7 @@ export function QuickTileCreate() {
                     <div className="flex-1" />
                     <Button
                       type="button"
-                      size="small"
+                      size="sm"
                       variant="default"
                       leftSection={<X size={12} aria-hidden="true" />}
                       onClick={() => setActivePanel("base")}
@@ -1538,8 +1441,8 @@ export function QuickTileCreate() {
                     </Button>
                     <Button
                       type="button"
-                      size="small"
-                      variant="primary"
+                      size="sm"
+                      variant="filled"
                       leftSection={<Check size={12} aria-hidden="true" />}
                       onClick={() => setActivePanel("base")}
                     >
@@ -1551,7 +1454,7 @@ export function QuickTileCreate() {
             })}
             <Button
               type="button"
-              size="small"
+              size="sm"
               variant="default"
               leftSection={<Plus size={12} aria-hidden="true" />}
               onClick={() => {
@@ -1675,8 +1578,8 @@ export function QuickTileCreate() {
                     </span>
                     <Button
                       type="button"
-                      size="icon-xs"
-                      variant="ghost"
+                      size="xs"
+                      variant="subtle"
                       leftSection={<Trash2 size={12} aria-hidden="true" />}
                       onClick={() => {
                         const next = plan.completion.timeRequirements.slice();
@@ -1743,8 +1646,8 @@ export function QuickTileCreate() {
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="sm"
+              variant="subtle"
               leftSection={<Trash2 size={12} aria-hidden="true" />}
               onClick={() =>
                 setField("plan.completion.root", {
@@ -1760,7 +1663,7 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
+              size="sm"
               variant="default"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -1769,8 +1672,8 @@ export function QuickTileCreate() {
             </Button>
             <Button
               type="button"
-              size="small"
-              variant="primary"
+              size="sm"
+              variant="filled"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
               data-testid="completion-apply"
@@ -1863,8 +1766,8 @@ export function QuickTileCreate() {
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="sm"
+              variant="subtle"
               leftSection={<Trash2 size={12} aria-hidden="true" />}
               onClick={() => {
                 setField("meta.ownerSubjectId", null);
@@ -1878,7 +1781,7 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
+              size="sm"
               variant="default"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -1887,8 +1790,8 @@ export function QuickTileCreate() {
             </Button>
             <Button
               type="button"
-              size="small"
-              variant="default"
+              size="sm"
+              variant="filled"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -1969,8 +1872,8 @@ export function QuickTileCreate() {
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="sm"
+              variant="subtle"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -1979,8 +1882,8 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
-              variant="default"
+              size="sm"
+              variant="filled"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -2059,35 +1962,37 @@ function V4EssentialRow({
   const canClear = Boolean(clearable && onClear);
 
   return (
-    <div className="grid min-h-[56px] grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-2 py-2">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
-        <Icon className="h-3.5 w-3.5" aria-hidden />
-      </div>
+    <div className="relative min-h-[48px]">
       <UnstyledButton
         onClick={onClick}
         aria-label={editAria ?? `${label} を編集`}
-        className="group min-w-0 flex-1 cursor-pointer rounded-md px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+        className="group flex min-h-[48px] w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
       >
-        <Group gap="sm" wrap="nowrap">
-          <span className="w-[66px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
-            {label}
-          </span>
-          <Group gap="xs" wrap="nowrap" className="min-w-0 flex-1 flex-wrap">
-            {chip}
-          </Group>
-        </Group>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+          <Icon size={14} />
+        </div>
+        <span className="w-[58px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
+          {label}
+        </span>
+        <div className="min-w-0 flex-1 text-left">
+          {chip}
+        </div>
+        <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
       </UnstyledButton>
-      <div className="flex items-center gap-1">
-        {canClear ? (
+      {canClear ? (
+        <div className="absolute right-8 top-1/2 -translate-y-1/2">
           <Button
             type="button"
-            onClick={handleClearClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClearClick();
+            }}
             aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
             data-armed={armed ? "true" : undefined}
             variant="subtle"
-            size="icon-xs"
+            size="xs"
             className={cn(
-              "flex h-10 min-w-[40px] items-center justify-center gap-1 rounded-md px-2 text-[11px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
+              "transition-colors",
               armed
                 ? "animate-pulse bg-danger text-white hover:bg-danger/90"
                 : "text-foreground-muted hover:bg-danger/15 hover:text-danger",
@@ -2096,24 +2001,15 @@ function V4EssentialRow({
           >
             {armed ? (
               <>
-                <Check className="h-4 w-4" aria-hidden />
-                <span>{confirmClearLabel ?? "確定"}</span>
+                <Check size={12} />
+                {confirmClearLabel ?? "確定"}
               </>
             ) : (
-              <X className="h-4 w-4" aria-hidden />
+              <X size={12} />
             )}
           </Button>
-        ) : null}
-        <ActionIcon
-          type="button"
-          onClick={onClick}
-          aria-hidden="true"
-          tabIndex={-1}
-          variant="subtle"
-        >
-          <ChevronRight className="h-4 w-4" aria-hidden />
-        </ActionIcon>
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

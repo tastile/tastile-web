@@ -21,9 +21,10 @@ export interface MonthViewProps {
   tzOffset: number;
   events: CalendarEvent[];
   loading: boolean;
+  onEditEvent?: (event: CalendarEvent) => void;
 }
 
-export function MonthView({ anchor, mode, tzOffset, events }: MonthViewProps) {
+export function MonthView({ anchor, mode, tzOffset, events, onEditEvent }: MonthViewProps) {
   const [todayStr, setTodayStr] = useState("");
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export function MonthView({ anchor, mode, tzOffset, events }: MonthViewProps) {
 
             <div className="flex-1 overflow-y-auto space-y-1 px-0.5 no-scrollbar">
               {visible.map((event) => (
-                <MonthEventTile key={event.id} event={event} date={dateStr} />
+                <MonthEventTile key={event.id} event={event} date={dateStr} onEditEvent={onEditEvent} />
               ))}
               {overflow > 0 ? (
                 <div className="text-[10px] text-foreground-subtle px-1">+{overflow} more</div>

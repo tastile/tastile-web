@@ -45,10 +45,10 @@ describe("FloatingScheduleEditor", () => {
 
   it("starts with only the human scheduling inputs and no fixed-time implementation fields", async () => {
     render(<FloatingScheduleEditor onClose={vi.fn()} onSaved={vi.fn()} />);
-    expect(await screen.findByLabelText("タイル名")).not.toBeNull();
+    expect(await screen.findByLabelText("Tile Name")).not.toBeNull();
     expect(screen.getByLabelText("必要時間（分）")).not.toBeNull();
     expect(screen.getByLabelText("配置できる期間")).not.toBeNull();
-    expect(screen.getByRole("button", { name: "空き時間へ配置する" })).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Place in Available Time" })).not.toBeNull();
     expect(screen.queryByText(/UUID|TERM|AST/i)).toBeNull();
     expect(document.querySelector('input[type="datetime-local"]')).toBeNull();
   });
@@ -57,12 +57,12 @@ describe("FloatingScheduleEditor", () => {
     const onSaved = vi.fn();
     render(<FloatingScheduleEditor onClose={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText("タイル名"), { target: { value: "競プロ" } });
+    fireEvent.change(screen.getByLabelText("Tile Name"), { target: { value: "競プロ" } });
     fireEvent.change(screen.getByLabelText("必要時間（分）"), { target: { value: "90" } });
     const picker = await screen.findByLabelText("配置できる期間");
     fireEvent.keyDown(picker, { key: "ArrowDown" });
     fireEvent.change(picker, { target: { value: catalogEntry.placement_id } });
-    fireEvent.click(screen.getByRole("button", { name: "空き時間へ配置する" }));
+    fireEvent.click(screen.getByRole("button", { name: "Place in Available Time" }));
 
     await waitFor(() => expect(mocks.publish).toHaveBeenCalledTimes(1));
     expect(mocks.publish.mock.calls[0][0].payload).not.toHaveProperty("placement");

@@ -440,10 +440,11 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
             tzOffset={tzOffset}
             events={visibleEvents}
             loading={loading}
+            onEditEvent={handleEditEvent}
           />
         ) : null}
         {view === "list" ? (
-          <EventListView events={visibleEvents} loading={loading} error={error} />
+          <EventListView events={visibleEvents} loading={loading} error={error} onEditEvent={handleEditEvent} />
         ) : null}
       </div>
     </div>

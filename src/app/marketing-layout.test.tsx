@@ -51,10 +51,9 @@ describe("marketing page layout consistency", () => {
 		});
 		const { container: downloadContainer, unmount: unmountDownload } =
 			renderWithMantine(downloadUi);
-		expect(downloadContainer.firstElementChild?.className).toContain("flex");
-		expect(downloadContainer.firstElementChild?.className).toContain(
-			"flex-col",
-		);
+		const downloadShell = downloadContainer.querySelector<HTMLElement>(".min-h-dvh");
+		expect(downloadShell?.className).toContain("flex");
+		expect(downloadShell?.className).toContain("flex-col");
 		expect(downloadContainer.querySelector("main")?.className).toContain(
 			"flex-1",
 		);
@@ -64,8 +63,9 @@ describe("marketing page layout consistency", () => {
 			searchParams: Promise.resolve({}),
 		});
 		const pricingContainer = renderWithMantine(pricingUi).container;
-		expect(pricingContainer.firstElementChild?.className).toContain("flex");
-		expect(pricingContainer.firstElementChild?.className).toContain("flex-col");
+		const pricingShell = pricingContainer.querySelector<HTMLElement>(".min-h-dvh");
+		expect(pricingShell?.className).toContain("flex");
+		expect(pricingShell?.className).toContain("flex-col");
 		expect(pricingContainer.querySelector("main")?.className).toContain(
 			"flex-1",
 		);
@@ -73,8 +73,9 @@ describe("marketing page layout consistency", () => {
 		const privacyUi = PrivacyPage();
 		const { container: privacyContainer, unmount: unmountPrivacy } =
 			renderWithMantine(privacyUi);
-		expect(privacyContainer.firstElementChild?.className).toContain("flex");
-		expect(privacyContainer.firstElementChild?.className).toContain("flex-col");
+		const privacyShell = privacyContainer.querySelector<HTMLElement>(".min-h-dvh");
+		expect(privacyShell?.className).toContain("flex");
+		expect(privacyShell?.className).toContain("flex-col");
 		expect(privacyContainer.querySelector("main")?.className).toContain(
 			"flex-1",
 		);
@@ -82,8 +83,9 @@ describe("marketing page layout consistency", () => {
 
 		const termsUi = TermsPage();
 		const { container: termsContainer } = renderWithMantine(termsUi);
-		expect(termsContainer.firstElementChild?.className).toContain("flex");
-		expect(termsContainer.firstElementChild?.className).toContain("flex-col");
+		const termsShell = termsContainer.querySelector<HTMLElement>(".min-h-dvh");
+		expect(termsShell?.className).toContain("flex");
+		expect(termsShell?.className).toContain("flex-col");
 		expect(termsContainer.querySelector("main")?.className).toContain("flex-1");
 	});
 
@@ -96,7 +98,7 @@ describe("marketing page layout consistency", () => {
 
 		expect(container.querySelector("header")).toBeNull();
 		expect(container.querySelector("footer")).toBeNull();
-		expect(screen.getByRole("heading", { name: "ログイン" })).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "にログイン" })).toBeTruthy();
 		expect(screen.queryByText("実行制御を、すぐ始める")).toBeNull();
 		expect(screen.getByRole("link", { name: "Google で続行" })).toBeTruthy();
 		expect(screen.queryByText("Apple で続行")).toBeNull();

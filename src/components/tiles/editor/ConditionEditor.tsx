@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Button, NumberInput } from "@mantine/core";
+import { Button, NumberInput, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import { GitBranch, ListChecks, Plus, Trash2 } from "lucide-react";
 
@@ -272,16 +272,15 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.momentReferenceId")}
             </span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-referenceId`}
-              type="text"
               value={term.value.referenceId ?? ""}
               onChange={(e) =>
                 onChange(
                   updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value),
                 )
               }
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-offsetMs`} className="space-y-1">
@@ -303,12 +302,11 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.relationReferenceId")}
             </span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-referenceId`}
-              type="text"
               value={term.value.referenceId}
               onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-relation`} className="space-y-1">
@@ -340,12 +338,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-taskId`} className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskId")}</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-taskId`}
-              type="text"
               value={term.value.taskId}
               onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -365,12 +362,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-requirementId`} className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementId")}</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-requirementId`}
-              type="text"
               value={term.value.requirementId}
               onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -393,13 +389,13 @@ function TermFields({
         term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <label className="space-y-1">
+          <label htmlFor={`${fieldIdBase}-id`} className="space-y-1">
             <span className="block text-foreground-muted">ID</span>
-            <input
-              type="text"
+            <TextInput
+              id={`${fieldIdBase}-id`}
               value={String(v[idKey] ?? "")}
               onChange={(e) => onChange(updateValue(term, idKey, e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-op`} className="space-y-1">
@@ -414,9 +410,8 @@ function TermFields({
           </label>
           <label htmlFor={`${fieldIdBase}-value`} className="space-y-1">
             <span className="block text-foreground-muted">value</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-value`}
-              type="text"
               value={v.value === null || v.value === undefined ? "" : String(v.value)}
               onChange={(e) => {
                 const raw = e.target.value;
@@ -429,7 +424,7 @@ function TermFields({
                   updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw),
                 );
               }}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
         </div>
@@ -440,12 +435,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-target`} className="space-y-1">
             <span className="block text-foreground-muted">target</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-target`}
-              type="text"
               value={term.value.target}
               onChange={(e) => onChange(updateLife(term, "target", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -535,8 +529,8 @@ export function ConditionEditor({
               />
               <Button
                 type="button"
-                size="icon-xs"
-                variant="ghost"
+                size="xs"
+                variant="subtle"
                 leftSection={<Trash2 size={14} aria-hidden="true" />}
                 onClick={() => {
                   const children = node.children.slice();
@@ -550,7 +544,7 @@ export function ConditionEditor({
           ))}
           <Button
             type="button"
-            size="small"
+            size="sm"
             variant="default"
             leftSection={<Plus size={12} aria-hidden="true" />}
             onClick={() =>

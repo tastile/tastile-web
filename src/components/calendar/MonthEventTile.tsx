@@ -8,6 +8,7 @@ import type { CalendarEvent } from "@/lib/domain/calendar";
 export interface MonthEventTileProps {
   event: CalendarEvent;
   date: string;
+  onEditEvent?: (event: CalendarEvent) => void;
 }
 
 function _pad(n: number): string {
@@ -26,7 +27,7 @@ function formatTime(iso: string): string {
  * through month cells), only the chips whose `event` reference
  * actually changed repaint.
  */
-function MonthEventTileImpl({ event, date }: MonthEventTileProps) {
+function MonthEventTileImpl({ event, date, onEditEvent }: MonthEventTileProps) {
   const tile = monthEventStyle(event.color);
   const start = event.start.slice(0, 10);
   const last = new Date(new Date(event.end).getTime() - 1).toISOString().slice(0, 10);
@@ -36,6 +37,7 @@ function MonthEventTileImpl({ event, date }: MonthEventTileProps) {
     <Button
       type="button"
       data-testid={`month-event-${event.id}`}
+      onClick={onEditEvent ? () => onEditEvent(event) : undefined}
       className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
       style={{
         backgroundColor: tile.backgroundColor,

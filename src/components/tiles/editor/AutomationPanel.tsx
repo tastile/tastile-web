@@ -20,13 +20,12 @@
  * read-only defaults.
  */
 
-import { Button, SegmentedControl, Switch } from "@mantine/core";
+import { Button, Chip, SegmentedControl, Switch } from "@mantine/core";
+import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
 
 import { FormPanel } from "@/components/ui/form";
 import { TileKind } from "@/lib/domain/v1/constants";
-import { cn } from "@/lib/utils/cn";
-
 import type { EditorLocale } from "./date-utils";
 import { SEGMENT_STYLES } from "./panel-styles";
 
@@ -75,27 +74,17 @@ function WeekdayRow({
       {WEEKDAY_LABELS[locale].map((label, bit) => {
         const active = (mask & (1 << bit)) !== 0;
         return (
-          <Button
+          <Chip
             key={bit}
-            type="button"
-            role="switch"
-            aria-checked={active}
-            aria-label={label}
-            data-testid={`recurring-weekday-${bit}`}
+            checked={active}
             disabled={disabled}
-            onClick={() => onToggle(bit)}
-            className={cn(
-              "flex h-8 w-9 items-center justify-center rounded-md text-xs font-medium transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-              "disabled:cursor-not-allowed disabled:opacity-50",
-              active
-                ? "bg-accent-soft text-accent-ink"
-                : "bg-surface-1 text-foreground-muted hover:bg-surface-2 disabled:hover:bg-surface-1",
-            )}
-            variant="subtle"
-            size="compact-sm"
+            onChange={() => onToggle(bit)}
+            size="xs"
+            variant="light"
+            data-testid={`recurring-weekday-${bit}`}
           >
             {label}
-          </Button>
+          </Chip>
         );
       })}
     </div>
@@ -149,12 +138,12 @@ function EndDateToggle({
         />
       </div>
       {hasEndDate ? (
-        <input
-          type="date"
+        <DatePickerInput
           aria-label={t("quickCreate.repeatEndLabel")}
-          value={endDate ? endDate.slice(0, 10) : ""}
-          onChange={(e) => onChange(e.target.value)}
-          className="themed-datetime-input w-full rounded-md bg-surface-2 px-control py-control text-sm outline-none focus:ring-2 focus:ring-primary/40"
+          value={endDate ? endDate.slice(0, 10) : null}
+          onChange={(value) => onChange(value ? `${value}T00:00:00.000Z` : "")}
+          clearable
+          size="xs"
         />
       ) : null}
     </div>

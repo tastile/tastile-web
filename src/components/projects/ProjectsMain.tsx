@@ -155,7 +155,7 @@ function ProjectEditForm({
         </span>
         <div className="flex items-center gap-2">
           {error && <span className="text-status-danger">{error}</span>}
-          <Button onClick={save} disabled={saving || !name.trim()} size="small">
+          <Button onClick={save} disabled={saving || !name.trim()} size="sm">
             {saving ? "Saving..." : "Save"}
           </Button>
         </div>

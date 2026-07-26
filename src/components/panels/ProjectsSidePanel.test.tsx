@@ -89,7 +89,7 @@ describe("ProjectsSidePanel create flow", () => {
 
 		fireEvent.click(screen.getByTestId("project-create"));
 
-		fireEvent.change(screen.getByTestId("project-create-name"), {
+		fireEvent.change(await screen.findByTestId("project-create-name"), {
 			target: { value: "Demo project" },
 		});
 
@@ -123,7 +123,7 @@ describe("ProjectsSidePanel create flow", () => {
 
 		fireEvent.click(screen.getByTestId("project-create"));
 
-		fireEvent.change(screen.getByTestId("project-create-name"), {
+		fireEvent.change(await screen.findByTestId("project-create-name"), {
 			target: { value: "Demo project" },
 		});
 
