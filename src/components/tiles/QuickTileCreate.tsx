@@ -42,7 +42,6 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   ChevronUp,
   Clock,
@@ -75,6 +74,7 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
+import { SEGMENT_STYLES } from "@/components/tiles/editor/panel-styles";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { SubPanelHeader } from "@/components/tiles/editor/SubPanelHeader";
 import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
@@ -1518,11 +1518,7 @@ export function QuickTileCreate() {
                         { value: "0", label: t("quickCreate.referenceRelationAll") },
                       ]}
                       data-testid={`reference-relation-tabs-${i}`}
-                      styles={{
-                        root: { backgroundColor: "var(--surface-2)" },
-                        indicator: { backgroundColor: "var(--surface-1)" },
-                        label: { color: "var(--foreground)" },
-                      }}
+                      styles={SEGMENT_STYLES}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -1781,11 +1777,7 @@ export function QuickTileCreate() {
                 { value: "relation", label: t("quickCreate.completionBuilderTabTile") },
                 { value: "metric", label: t("quickCreate.completionBuilderTabRecord") },
               ]}
-              styles={{
-                root: { backgroundColor: "var(--surface-2)" },
-                indicator: { backgroundColor: "var(--surface-1)" },
-                label: { color: "var(--foreground)" },
-              }}
+              styles={SEGMENT_STYLES}
             />
           </div>
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">

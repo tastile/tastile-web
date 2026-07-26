@@ -33,12 +33,7 @@ import type { TimeOfDayMode, WhenMode } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
-
-const SEGMENT_STYLES = {
-  root: { backgroundColor: "var(--surface-2)" },
-  indicator: { backgroundColor: "var(--surface-1)" },
-  label: { color: "var(--foreground)" },
-} as const;
+import { SEGMENT_STYLES } from "./panel-styles";
 
 const WHEN_MODE_OPTIONS: ReadonlyArray<{
   id: WhenMode;

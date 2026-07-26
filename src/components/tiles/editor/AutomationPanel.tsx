@@ -28,12 +28,7 @@ import { TileKind } from "@/lib/domain/v1/constants";
 import { cn } from "@/lib/utils/cn";
 
 import type { EditorLocale } from "./date-utils";
-
-const SEGMENT_STYLES = {
-  root: { backgroundColor: "var(--surface-2)" },
-  indicator: { backgroundColor: "var(--surface-1)" },
-  label: { color: "var(--foreground)" },
-} as const;
+import { SEGMENT_STYLES } from "./panel-styles";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention
 // that already exists in this repo).
