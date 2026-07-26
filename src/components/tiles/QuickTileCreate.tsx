@@ -76,6 +76,7 @@ import {
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
+import { SubPanelHeader } from "@/components/tiles/editor/SubPanelHeader";
 import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
 import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
@@ -1147,23 +1148,12 @@ export function QuickTileCreate() {
         className={subPanelClass("intent")}
         aria-hidden={activePanel !== "intent"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.addConditionOrGroup")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.intentSubTitle")}
-            </small>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.addConditionOrGroup")}
+          subtitle={t("quickCreate.intentSubTitle")}
+        />
         <div className="flex-1 overflow-auto p-4">
           <p className="mb-3 text-[11px] text-foreground-muted">
             {t("quickCreate.intentDescription")}
@@ -1283,23 +1273,12 @@ export function QuickTileCreate() {
         className={subPanelClass("time")}
         aria-hidden={activePanel !== "time"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.timeNavTitle")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.timeNavSub")}
-            </small>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.timeNavTitle")}
+          subtitle={t("quickCreate.timeNavSub")}
+        />
         <FormPanel>
           <SchedulePanel
             time={time}
@@ -1320,23 +1299,12 @@ export function QuickTileCreate() {
         className={subPanelClass("duration")}
         aria-hidden={activePanel !== "duration"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.durationTitle")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.durationSub")}
-            </small>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.durationTitle")}
+          subtitle={t("quickCreate.durationSub")}
+        />
         <div className="flex-1 overflow-auto p-4">
           <Button
             type="button"
@@ -1446,20 +1414,11 @@ export function QuickTileCreate() {
         className={subPanelClass("recurring")}
         aria-hidden={activePanel !== "recurring"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.repeatChip")}
-            </strong>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.repeatChip")}
+        />
         <AutomationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
       </section>
 
@@ -1469,20 +1428,11 @@ export function QuickTileCreate() {
         className={subPanelClass("references")}
         aria-hidden={activePanel !== "references"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.referencesNavTitle")}
-            </strong>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.referencesNavTitle")}
+        />
         <FormPanel>
           <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
           {plan.references.length === 0 ? (
@@ -1672,20 +1622,11 @@ export function QuickTileCreate() {
         className={subPanelClass("completion")}
         aria-hidden={activePanel !== "completion"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.completionNavTitle")}
-            </strong>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.completionNavTitle")}
+        />
         <FormPanel>
           <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
           <div
@@ -1894,20 +1835,11 @@ export function QuickTileCreate() {
         className={subPanelClass("meta")}
         aria-hidden={activePanel !== "meta"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.metaNavTitle")}
-            </strong>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.metaNavTitle")}
+        />
         <FormPanel>
           <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
           <div className="flex flex-col gap-1.5">
@@ -2020,23 +1952,12 @@ export function QuickTileCreate() {
         className={subPanelClass("behavior")}
         aria-hidden={activePanel !== "behavior"}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.behaviorTitle")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.behaviorSub")}
-            </small>
-          </div>
-        </div>
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.behaviorTitle")}
+          subtitle={t("quickCreate.behaviorSub")}
+        />
         <div className="flex-1 overflow-auto p-4">
           <Radio.Group
             value={String(plan.role)}
