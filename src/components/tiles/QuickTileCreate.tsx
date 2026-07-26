@@ -27,13 +27,15 @@
 import {
   ActionIcon,
   Button,
-  CloseButton,
   Menu,
   NumberInput,
   Radio,
   SegmentedControl,
   Select,
+  SimpleGrid,
+  Switch,
   TagsInput,
+  TextInput,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
@@ -42,7 +44,6 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   ChevronUp,
   Clock,
@@ -73,8 +74,17 @@ import {
   Type,
   X,
 } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
+import {
+  QuickCreateChoiceCard,
+  QuickCreateContent,
+  QuickCreateDrawer,
+  QuickCreateFooter,
+  QuickCreateHeader,
+  type QuickCreatePanelId,
+  QuickCreateSubPanel,
+} from "@/components/tiles/editor/QuickTileCreateShell";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
@@ -92,7 +102,6 @@ import {
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { Window } from "@/lib/domain/v1/window";
 import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
-import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTileList } from "@/lib/hooks/use-tile-list";
@@ -259,7 +268,6 @@ export function QuickTileCreate() {
   const setField = useQuickCreateStore((s) => s.setField);
   const mode = useQuickCreateStore((s) => s.mode);
   const editingId = useQuickCreateStore((s) => s.editingId);
-  const _editingTileId = useQuickCreateStore((s) => s.editingTileId);
   const loadError = useQuickCreateStore((s) => s.loadError);
   const submitBlocked = useQuickCreateStore((s) => s.submitBlocked);
 
@@ -268,26 +276,13 @@ export function QuickTileCreate() {
   const time = useQuickCreateStore((s) => s.time);
   const windows = useQuickCreateStore((s) => s.windows);
   const recurring = useQuickCreateStore((s) => s.recurring);
-  const _recurrence = useQuickCreateStore((s) => s.recurrence);
-  const _advanced = useQuickCreateStore((s) => s.advanced);
   const meta = useQuickCreateStore((s) => s.meta);
 
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
 
-  const [_allDay, setAllDay] = useState(false);
-  const [visualOpen, setVisualOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<
-    | "base"
-    | "intent"
-    | "time"
-    | "duration"
-    | "recurring"
-    | "references"
-    | "completion"
-    | "meta"
-    | "behavior"
-  >("base");
+  const [, setAllDay] = useState(false);
+  const [activePanel, setActivePanel] = useState<QuickCreatePanelId>("base");
   const projects = useProjects();
   const refreshProjects = projects.refresh;
   // Pull a sample of existing tiles so the TagsInput can suggest labels
@@ -304,12 +299,10 @@ export function QuickTileCreate() {
     }
     return Array.from(seen).sort((a, b) => a.localeCompare(b, "ja"));
   }, [tiles.tiles]);
-  const _actorSubjectId = useCurrentActorSubjectId();
   useEffect(() => {
     void refreshProjects();
   }, [refreshProjects]);
-  const [_intentPickerOpen, _setIntentPickerOpen] = useState(false);
-  const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
+  const [, setMemoExpanded] = useState(meta.memo.trim().length > 0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
@@ -326,71 +319,11 @@ export function QuickTileCreate() {
     return t(isEdit ? "quickCreate.titleEditTask" : "quickCreate.titleCreateTask");
   })();
 
-  const [mounted, setMounted] = useState(isOpen);
-  const [isClosing, setIsClosing] = useState(false);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (isOpen) {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-      setMounted(true);
-      setIsClosing(false);
-    } else if (mounted) {
-      setIsClosing(true);
-      closeTimerRef.current = setTimeout(() => {
-        setMounted(false);
-        setIsClosing(false);
-        closeTimerRef.current = null;
-      }, 220);
-    }
-    return () => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    };
-  }, [isOpen, mounted]);
-
-  const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setVisualOpen(false);
-      }
-    }
-    if (visualOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [visualOpen]);
-
-  useEffect(() => {
-    if (activePanel === "base") return;
-    function handleSubPanelOutsideClick(event: MouseEvent) {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const subPanel = document.querySelector(`[data-subpanel="${activePanel}"]`);
-      if (subPanel?.contains(target)) return;
-      setActivePanel("base");
-    }
-    document.addEventListener("mousedown", handleSubPanelOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleSubPanelOutsideClick);
-    };
-  }, [activePanel]);
-
   useEffect(() => {
     if (identity.externalId === null) {
       setField("identity.externalId", uuidv7());
     }
   }, [identity.externalId, setField]);
-
-  if (!mounted) return null;
 
   // --- validity ---
   const titleOk = identity.title.trim().length > 0;
@@ -403,32 +336,6 @@ export function QuickTileCreate() {
     time.durationMinMax.maxMs === null ||
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
   const canSubmit = titleOk && spanOrderValid && durationValid && !submitBlocked;
-
-  // --- completion root summary ---
-  function countConditionChildren(node: ConditionNode | null): number {
-    if (!node) return 0;
-    if (node.kind === ConditionKind.TERM) return 1;
-    let total = 1;
-    for (const child of node.children) total += countConditionChildren(child);
-    return total;
-  }
-  const completionRootNode = plan.completion.root;
-  const _completionRootLabel = (() => {
-    if (!completionRootNode) return t("quickCreate.completionNoRoot");
-    switch (completionRootNode.kind) {
-      case ConditionKind.ALL:
-        return t("quickCreate.completionAll");
-      case ConditionKind.ANY:
-        return t("quickCreate.completionAny");
-      case ConditionKind.NOT:
-        return t("quickCreate.completionNot");
-      case ConditionKind.TERM:
-        return t("quickCreate.completionTerm");
-      default:
-        return t("quickCreate.completionNoRoot");
-    }
-  })();
-  const _completionRootCount = countConditionChildren(completionRootNode);
 
   // --- windows array helpers ---
   function addWindow() {
@@ -518,788 +425,629 @@ export function QuickTileCreate() {
     }
   }
 
-  // --- layout classes ---
-  const panelClass = isDesktop
-    ? cn(
-        "fixed inset-y-0 right-0 z-[56]",
-        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-x-full opacity-0"
-          : activePanel !== "base"
-            ? "-translate-x-6"
-            : "translate-x-0",
-        "[animation:slideInFromRight_0.22s_ease-out]",
-      )
-    : cn(
-        "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-y-full opacity-0"
-          : activePanel !== "base"
-            ? "translate-y-6"
-            : "translate-y-0",
-        "[animation:slideInFromBottom_0.22s_ease-out]",
-      );
-
-  const subPanelClass = (
-    panel:
-      | "intent"
-      | "time"
-      | "duration"
-      | "recurring"
-      | "references"
-      | "completion"
-      | "meta"
-      | "behavior",
-  ) =>
-    isDesktop
-      ? cn(
-          "fixed inset-y-0 right-0 z-[57]",
-          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
-          "transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
-        )
-      : cn(
-          "fixed inset-x-0 bottom-0 z-[57]",
-          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
-        );
-
   // --- condition count ---
   const conditionCount = windows.length + recurring.frameRules.length;
   const ownerId = meta.ownerSubjectId;
   const currentProject = ownerId ? projects.workspaces.find((w) => w.id === ownerId) : null;
 
   return (
-    <>
-      {/* backdrop */}
-      <div
-        data-testid="quick-create-backdrop"
-        className={cn(
-          "fixed inset-0 z-[55] bg-foreground/10 backdrop-blur-[1px] transition-opacity duration-300 ease-out",
-          isClosing ? "opacity-0 pointer-events-none" : "opacity-100",
-        )}
-        onClick={() => {
-          if (activePanel !== "base") setActivePanel("base");
-          else close();
-        }}
-        aria-hidden
-      />
+    <QuickCreateDrawer
+      opened={isOpen}
+      isDesktop={isDesktop}
+      onClose={() => {
+        if (activePanel !== "base") setActivePanel("base");
+        else close();
+      }}
+      header={
+        <QuickCreateHeader title={headingLabel} closeLabel={t("tiles.closePanel")} icon={Layers} />
+      }
+    >
+      <QuickCreateContent>
+        {/* ── main card ── */}
+        <section className="py-2">
+          {/* title input */}
+          <TextInput
+            value={identity.title}
+            onChange={(event) => {
+              setField("identity.title", event.currentTarget.value);
+              if (invalidField === "title") setInvalidField(null);
+            }}
+            placeholder={t("quickCreate.titlePlaceholder")}
+            aria-label={t("quickCreate.titlePlaceholder")}
+            required
+            error={invalidField === "title" ? t("quickCreate.titleRequired") : undefined}
+            variant="unstyled"
+            size="xl"
+            styles={{
+              input: {
+                paddingInline: 0,
+                paddingBottom: 12,
+                color: "var(--foreground)",
+                fontSize: "var(--mantine-font-size-xl)",
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+              },
+              error: { fontSize: "var(--mantine-font-size-xs)" },
+            }}
+          />
 
-      {/* main panel */}
-      <section className={panelClass} aria-label={headingLabel}>
-        {/* ─── composer head ─── */}
-        <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
-            <Layers className="h-4 w-4" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[15px] font-semibold leading-tight text-foreground">
-              {headingLabel}
-            </h2>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <CloseButton onClick={close} aria-label={t("tiles.closePanel")} />
-          </div>
-        </div>
-
-        {/* ─── composer body ─── */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mx-auto max-w-[640px]">
-            {/* ── main card ── */}
-            <section className="py-2">
-              {/* title input */}
-              <input
-                type="text"
-                value={identity.title}
-                onChange={(e) => {
-                  setField("identity.title", e.target.value);
-                  if (invalidField === "title") setInvalidField(null);
-                }}
-                placeholder={t("quickCreate.titlePlaceholder")}
-                aria-label={t("quickCreate.titlePlaceholder")}
-                aria-required="true"
-                aria-invalid={invalidField === "title" ? "true" : "false"}
-                aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
-                className="w-full border-0 bg-transparent pb-3 text-2xl font-bold tracking-tight text-foreground placeholder:text-foreground-muted focus:outline-hidden"
-              />
-
-              {/* organize row: project + tags + add button */}
-              <div
-                className="flex flex-wrap items-center gap-1.5 pb-3"
-                data-testid="quick-create-organize-row"
+          {/* organize row: project + tags + add button */}
+          <div
+            className="flex flex-wrap items-center gap-1.5 pb-3"
+            data-testid="quick-create-organize-row"
+          >
+            {currentProject && (
+              <Button type="button" onClick={() => setActivePanel("meta")} radius="xl" size="xs">
+                <FolderOpen className="h-3 w-3" aria-hidden />
+                <span>{currentProject.display_name}</span>
+              </Button>
+            )}
+            {meta.tags.map((tag) => (
+              <Button
+                key={tag}
+                type="button"
+                onClick={() => setActivePanel("meta")}
+                radius="xl"
+                size="xs"
               >
-                {currentProject && (
-                  <Button
-                    type="button"
-                    onClick={() => setActivePanel("meta")}
-                    radius="xl"
-                    size="xs"
-                  >
-                    <FolderOpen className="h-3 w-3" aria-hidden />
-                    <span>{currentProject.display_name}</span>
-                  </Button>
-                )}
-                {meta.tags.map((tag) => (
-                  <Button
-                    key={tag}
-                    type="button"
-                    onClick={() => setActivePanel("meta")}
-                    radius="xl"
-                    size="xs"
-                  >
-                    <Tag className="h-3 w-3" aria-hidden />
-                    <span>#{tag}</span>
-                  </Button>
-                ))}
-                <Button
-                  type="button"
-                  onClick={() => setActivePanel("meta")}
-                  leftSection={<Plus className="h-3 w-3" aria-hidden />}
-                  variant="outline"
-                  size="xs"
-                  radius="xl"
-                >
-                  <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
-                </Button>
-              </div>
+                <Tag className="h-3 w-3" aria-hidden />
+                <span>#{tag}</span>
+              </Button>
+            ))}
+            <Button
+              type="button"
+              onClick={() => setActivePanel("meta")}
+              leftSection={<Plus className="h-3 w-3" aria-hidden />}
+              variant="outline"
+              size="xs"
+              radius="xl"
+            >
+              <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
+            </Button>
+          </div>
 
-              {/* ─── essentials ─── */}
-              <div className="pt-2" data-testid="quick-create-essentials">
-                <hr className="border-border mb-2" />
-                <V4EssentialRow
-                  icon={Calendar}
-                  label={t("quickCreate.timeNavTitle")}
-                  chip={
-                    time.whenMode === "none" ? (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
-                        {t("quickCreate.whenNoneTitle")}
-                      </span>
-                    ) : time.whenMode === "reference" ? (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                        {t("quickCreate.referenceRangeTitle")}
-                      </span>
-                    ) : time.span.start || time.span.end ? (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                        {time.whenMode === "day"
-                          ? formatDisplayDate(time.span.start, true, locale, t)
-                          : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : t("quickCreate.spanUnset")} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : t("quickCreate.spanUnset")}`}
-                      </span>
-                    ) : (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
-                        {t("tiles.notSet")}
-                      </span>
-                    )
-                  }
-                  clearable={
-                    time.whenMode === "reference"
-                      ? Boolean(time.referenceId)
-                      : time.whenMode !== "none"
-                        ? Boolean(time.span.start || time.span.end)
-                        : false
-                  }
-                  onClear={() => {
-                    if (time.whenMode === "reference") {
-                      setField("time.referenceId", null);
-                      setField("time.referenceLabel", "");
-                    } else {
-                      setField("time.span.start", "");
-                      setField("time.span.end", "");
-                    }
-                  }}
-                  onClick={() => setActivePanel("time")}
-                  editAria={t("quickCreate.essentialRowEditAria")}
-                  clearAria={t("quickCreate.essentialRowClearAria")}
-                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
-                />
-                <V4EssentialRow
-                  icon={Clock}
-                  label={t("quickCreate.duration")}
-                  chip={
-                    time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                          {time.durationMinMax.minMs !== null
-                            ? `${Math.round(time.durationMinMax.minMs / 60000)}分`
-                            : "—"}
-                          {time.durationMinMax.maxMs !== null
-                            ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)}分`
-                            : ""}
-                        </span>
-                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted">
-                          <Link2 size={10} aria-hidden="true" />
-                          {t("quickCreate.durationLinkedNote")}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
-                        {t("tiles.notSet")}
-                      </span>
-                    )
-                  }
-                  clearable={
-                    time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null
-                  }
-                  onClear={() => {
-                    setField("time.durationMinMax.minMs", null);
-                    setField("time.durationMinMax.maxMs", null);
-                  }}
-                  onClick={() => setActivePanel("duration")}
-                  editAria={t("quickCreate.essentialRowEditAria")}
-                  clearAria={t("quickCreate.essentialRowClearAria")}
-                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
-                />
-                <V4EssentialRow
-                  icon={Repeat}
-                  label={t("quickCreate.repeatChip")}
-                  chip={
-                    recurring.repeatMode === "once" ? (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
-                        {t("tiles.notSet")}
-                      </span>
-                    ) : (
-                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
-                        <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
-                        {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
-                          <span className="text-foreground-muted">
-                            (
-                            {WEEKDAY_LABELS_SHORT[locale]
-                              .filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0)
-                              .join(", ")}
-                            )
-                          </span>
-                        ) : null}
-                        {recurring.repeatMode !== "condition" && recurring.endDate ? (
-                          <span className="text-foreground-muted">
-                            ~ {recurring.endDate.slice(0, 10)}
-                          </span>
-                        ) : null}
-                      </span>
-                    )
-                  }
-                  clearable={recurring.repeatMode !== "once" || Boolean(recurring.endDate)}
-                  onClear={() => {
-                    setField("recurring.repeatMode", "once");
-                    setField("recurring.weekdayMask", 0);
-                    setField("recurring.endDate", "");
-                  }}
-                  onClick={() => setActivePanel("recurring")}
-                  editAria={t("quickCreate.essentialRowEditAria")}
-                  clearAria={t("quickCreate.essentialRowClearAria")}
-                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
-                />
-              </div>
-
-              {/* ─── tasks block ─── */}
-              <div className="pt-3">
-                <hr className="border-border mb-3" />
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-                  <ListChecks size={14} aria-hidden="true" />
-                  <span>{t("quickCreate.completionRequires")}</span>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    onClick={() => setActivePanel("completion")}
-                    aria-label={t("quickCreate.completionRequires")}
-                    className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    <ChevronRight size={14} aria-hidden="true" />
-                  </ActionIcon>
-                </div>
-                <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-                  {plan.completion.tasks.length > 0
-                    ? `${plan.completion.tasks.length}${t("quickCreate.completionItemsHint")}`
-                    : t("quickCreate.completionAddHint")}
-                </div>
-                <div className="space-y-1.5">
-                  {plan.completion.tasks.map((tk, i) => (
-                    <div
-                      key={tk.id}
-                      data-testid="quick-create-task-row"
-                      className="flex min-h-[38px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-1.5 text-xs"
-                    >
-                      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
-                      <span
-                        className={
-                          tk.content?.title
-                            ? "min-w-0 flex-1 truncate text-foreground"
-                            : "min-w-0 flex-1 truncate text-foreground-muted"
-                        }
-                      >
-                        {tk.content?.title || t("quickCreate.taskUntitled")}
-                      </span>
-                      <Menu position="bottom-end" withArrow shadow="md">
-                        <Menu.Target>
-                          <ActionIcon
-                            type="button"
-                            aria-label={t("quickCreate.taskMoreAria")}
-                            aria-haspopup="menu"
-                            title={t("quickCreate.taskMoreTitle")}
-                            className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <MoreHorizontal size={14} aria-hidden="true" />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item
-                            leftSection={<ChevronUp size={14} aria-hidden="true" />}
-                            disabled={i === 0}
-                            onClick={() => {
-                              const target = i - 1;
-                              if (target < 0) return;
-                              const next = plan.completion.tasks.slice();
-                              const [moved] = next.splice(i, 1);
-                              next.splice(target, 0, moved);
-                              setField("plan.completion.tasks", next);
-                            }}
-                          >
-                            {t("quickCreate.taskMoveUp")}
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<ChevronDown size={14} aria-hidden="true" />}
-                            disabled={i === plan.completion.tasks.length - 1}
-                            onClick={() => {
-                              const target = i + 1;
-                              if (target >= plan.completion.tasks.length) return;
-                              const next = plan.completion.tasks.slice();
-                              const [moved] = next.splice(i, 1);
-                              next.splice(target, 0, moved);
-                              setField("plan.completion.tasks", next);
-                            }}
-                          >
-                            {t("quickCreate.taskMoveDown")}
-                          </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item
-                            leftSection={<Trash2 size={14} aria-hidden="true" />}
-                            color="red"
-                            onClick={() => {
-                              const next = plan.completion.tasks.slice();
-                              next.splice(i, 1);
-                              setField("plan.completion.tasks", next);
-                            }}
-                          >
-                            {t("quickCreate.taskMoreTitle")}
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      setField("plan.completion.tasks", [
-                        ...plan.completion.tasks,
-                        {
-                          id: `tk_${Math.random().toString(36).slice(2, 9)}`,
-                          content: { title: "", note: null },
-                          show: null,
-                          complete: {
-                            id: `c_${Math.random().toString(36).slice(2, 9)}`,
-                            kind: 0,
-                            children: [],
-                            term: null,
-                          },
-                          order: [],
-                        },
-                      ]);
-                    }}
-                    className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg bg-surface-1 text-xs font-bold text-foreground-muted hover:bg-surface-2"
-                  >
-                    ＋ タスクを追加
-                  </Button>
-                </div>
-              </div>
-
-              {/* ─── behavior block ─── */}
-              <div className="mt-3 pt-3" data-testid="quick-create-behavior-block">
-                <hr className="border-border mb-3" />
-                <div className="mb-2 flex items-baseline justify-between">
-                  <strong className="text-xs font-semibold text-foreground">
-                    {t("quickCreate.behaviorTitle")}
-                  </strong>
-                  <small className="text-[10px] text-foreground-muted">
-                    {t("quickCreate.behaviorSub")}
-                  </small>
-                </div>
-                <Button
-                  type="button"
-                  onClick={() => setActivePanel("meta")}
-                  aria-label={t("quickCreate.behaviorEdit")}
-                  className="flex w-full min-h-[48px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-2 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
-                    {plan.role === PlanRole.LABEL ? (
-                      <Tag className="h-3.5 w-3.5" aria-hidden />
-                    ) : (
-                      <Play className="h-3.5 w-3.5" aria-hidden />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-semibold text-foreground">
-                      {plan.role === PlanRole.LABEL
-                        ? t("quickCreate.behaviorLabel")
-                        : t("quickCreate.behaviorExecutable")}
-                    </div>
-                    <div className="text-[10px] text-foreground-muted">
-                      {plan.role === PlanRole.LABEL
-                        ? t("quickCreate.behaviorLabelSub")
-                        : t("quickCreate.behaviorExecutableSub")}
-                    </div>
-                  </div>
-                  <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
-                    {t("quickCreate.behaviorEdit")}
+          {/* ─── essentials ─── */}
+          <div className="pt-2" data-testid="quick-create-essentials">
+            <hr className="border-border mb-2" />
+            <V4EssentialRow
+              icon={Calendar}
+              label={t("quickCreate.timeNavTitle")}
+              chip={
+                time.whenMode === "none" ? (
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                    {t("quickCreate.whenNoneTitle")}
                   </span>
-                </Button>
-              </div>
-            </section>
-
-            {/* ── condition card ── */}
-            <section className="pt-3">
-              <hr className="border-border mb-3" />
-              <div className="flex items-center justify-between mb-2">
-                <strong className="text-xs font-semibold text-foreground">条件の組み合わせ</strong>
-                <span className="text-[10px] text-foreground-muted">{conditionCount}</span>
-              </div>
-              <div className="p-2.5" data-testid="quick-create-condition-tree">
-                {windows.length + recurring.frameRules.length === 0 ? (
-                  <p
-                    data-testid="quick-create-condition-empty"
-                    className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
-                  >
-                    {t("quickCreate.conditionEmpty")}
-                  </p>
+                ) : time.whenMode === "reference" ? (
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                    {t("quickCreate.referenceRangeTitle")}
+                  </span>
+                ) : time.span.start || time.span.end ? (
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                    {time.whenMode === "day"
+                      ? formatDisplayDate(time.span.start, true, locale, t)
+                      : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : t("quickCreate.spanUnset")} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : t("quickCreate.spanUnset")}`}
+                  </span>
                 ) : (
-                  <div className="space-y-2">
-                    {windows.length > 0 && (
-                      <div className="rounded-lg bg-surface-1 px-2 py-1.5">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                            ALL
-                          </span>
-                          <strong className="text-[11px] font-semibold text-foreground">
-                            {t("quickCreate.conditionGroupWindow")}
-                          </strong>
-                          <Button
-                            type="button"
-                            onClick={() => setActivePanel("time")}
-                            className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Pencil className="h-3 w-3" aria-hidden />
-                            編集
-                          </Button>
-                        </div>
-                        <div className="space-y-1">
-                          {windows.map((w, i) => (
-                            <div
-                              key={w.id ?? i}
-                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
-                            >
-                              <Clock
-                                size={11}
-                                className="shrink-0 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="min-w-0 flex-1 truncate text-foreground">
-                                {w.bounds.start && w.bounds.end
-                                  ? `${w.bounds.start} → ${w.bounds.end}`
-                                  : t("quickCreate.conditionWindowOpen")}
-                              </span>
-                              <ActionIcon
-                                type="button"
-                                onClick={() => {
-                                  const next = windows.filter((_, idx) => idx !== i);
-                                  setField("windows", next);
-                                }}
-                                aria-label={t("quickCreate.removeItem")}
-                                className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
-                              >
-                                <MoreHorizontal size={12} aria-hidden="true" />
-                              </ActionIcon>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                    {t("tiles.notSet")}
+                  </span>
+                )
+              }
+              clearable={
+                time.whenMode === "reference"
+                  ? Boolean(time.referenceId)
+                  : time.whenMode !== "none"
+                    ? Boolean(time.span.start || time.span.end)
+                    : false
+              }
+              onClear={() => {
+                if (time.whenMode === "reference") {
+                  setField("time.referenceId", null);
+                  setField("time.referenceLabel", "");
+                } else {
+                  setField("time.span.start", "");
+                  setField("time.span.end", "");
+                }
+              }}
+              onClick={() => setActivePanel("time")}
+              editAria={t("quickCreate.essentialRowEditAria")}
+              clearAria={t("quickCreate.essentialRowClearAria")}
+              confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+              confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+            />
+            <V4EssentialRow
+              icon={Clock}
+              label={t("quickCreate.duration")}
+              chip={
+                time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                      {time.durationMinMax.minMs !== null
+                        ? `${Math.round(time.durationMinMax.minMs / 60000)}分`
+                        : "—"}
+                      {time.durationMinMax.maxMs !== null
+                        ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)}分`
+                        : ""}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted">
+                      <Link2 size={10} aria-hidden="true" />
+                      {t("quickCreate.durationLinkedNote")}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                    {t("tiles.notSet")}
+                  </span>
+                )
+              }
+              clearable={time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null}
+              onClear={() => {
+                setField("time.durationMinMax.minMs", null);
+                setField("time.durationMinMax.maxMs", null);
+              }}
+              onClick={() => setActivePanel("duration")}
+              editAria={t("quickCreate.essentialRowEditAria")}
+              clearAria={t("quickCreate.essentialRowClearAria")}
+              confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+              confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+            />
+            <V4EssentialRow
+              icon={Repeat}
+              label={t("quickCreate.repeatChip")}
+              chip={
+                recurring.repeatMode === "once" ? (
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                    {t("tiles.notSet")}
+                  </span>
+                ) : (
+                  <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                    <span>{t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}</span>
+                    {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
+                      <span className="text-foreground-muted">
+                        (
+                        {WEEKDAY_LABELS_SHORT[locale]
+                          .filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0)
+                          .join(", ")}
+                        )
+                      </span>
+                    ) : null}
+                    {recurring.repeatMode !== "condition" && recurring.endDate ? (
+                      <span className="text-foreground-muted">
+                        ~ {recurring.endDate.slice(0, 10)}
+                      </span>
+                    ) : null}
+                  </span>
+                )
+              }
+              clearable={recurring.repeatMode !== "once" || Boolean(recurring.endDate)}
+              onClear={() => {
+                setField("recurring.repeatMode", "once");
+                setField("recurring.weekdayMask", 0);
+                setField("recurring.endDate", "");
+              }}
+              onClick={() => setActivePanel("recurring")}
+              editAria={t("quickCreate.essentialRowEditAria")}
+              clearAria={t("quickCreate.essentialRowClearAria")}
+              confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
+              confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+            />
+          </div>
 
-                    {recurring.frameRules.length > 0 && (
-                      <div className="rounded-lg bg-surface-1 px-2 py-1.5">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                            ALL
-                          </span>
-                          <strong className="text-[11px] font-semibold text-foreground">
-                            {t("quickCreate.conditionGroupFrame")}
-                          </strong>
-                          <Button
-                            type="button"
-                            onClick={() => setActivePanel("recurring")}
-                            className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                          >
-                            <Pencil className="h-3 w-3" aria-hidden />
-                            編集
-                          </Button>
-                        </div>
-                        <div className="space-y-1">
-                          {recurring.frameRules.map((r, i) => (
-                            <div
-                              key={r.id ?? i}
-                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
-                            >
-                              <Repeat
-                                size={11}
-                                className="shrink-0 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="min-w-0 flex-1 truncate text-foreground">
-                                {r.generator?.kind === "step"
-                                  ? t("quickCreate.conditionFrameStep")
-                                  : t("quickCreate.conditionFrameOpen")}
-                              </span>
-                              <ActionIcon
-                                type="button"
-                                onClick={() => {
-                                  const next = recurring.frameRules.filter((_, idx) => idx !== i);
-                                  setField("recurring.frameRules", next);
-                                }}
-                                aria-label={t("quickCreate.removeItem")}
-                                className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
-                              >
-                                <MoreHorizontal size={12} aria-hidden="true" />
-                              </ActionIcon>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+          {/* ─── tasks block ─── */}
+          <div className="pt-3">
+            <hr className="border-border mb-3" />
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
+              <ListChecks size={14} aria-hidden="true" />
+              <span>{t("quickCreate.completionRequires")}</span>
+              <ActionIcon
+                type="button"
+                variant="subtle"
+                onClick={() => setActivePanel("completion")}
+                aria-label={t("quickCreate.completionRequires")}
+                className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <ChevronRight size={14} aria-hidden="true" />
+              </ActionIcon>
+            </div>
+            <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
+              {plan.completion.tasks.length > 0
+                ? `${plan.completion.tasks.length}${t("quickCreate.completionItemsHint")}`
+                : t("quickCreate.completionAddHint")}
+            </div>
+            <div className="space-y-1.5">
+              {plan.completion.tasks.map((tk, i) => (
+                <div
+                  key={tk.id}
+                  data-testid="quick-create-task-row"
+                  className="flex min-h-[38px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-1.5 text-xs"
+                >
+                  <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
+                  <span
+                    className={
+                      tk.content?.title
+                        ? "min-w-0 flex-1 truncate text-foreground"
+                        : "min-w-0 flex-1 truncate text-foreground-muted"
+                    }
+                  >
+                    {tk.content?.title || t("quickCreate.taskUntitled")}
+                  </span>
+                  <Menu position="bottom-end" withArrow shadow="md">
+                    <Menu.Target>
+                      <ActionIcon
+                        type="button"
+                        aria-label={t("quickCreate.taskMoreAria")}
+                        aria-haspopup="menu"
+                        title={t("quickCreate.taskMoreTitle")}
+                        className="flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <MoreHorizontal size={14} aria-hidden="true" />
+                      </ActionIcon>
+                    </Menu.Target>
+                    <Menu.Dropdown>
+                      <Menu.Item
+                        leftSection={<ChevronUp size={14} aria-hidden="true" />}
+                        disabled={i === 0}
+                        onClick={() => {
+                          const target = i - 1;
+                          if (target < 0) return;
+                          const next = plan.completion.tasks.slice();
+                          const [moved] = next.splice(i, 1);
+                          next.splice(target, 0, moved);
+                          setField("plan.completion.tasks", next);
+                        }}
+                      >
+                        {t("quickCreate.taskMoveUp")}
+                      </Menu.Item>
+                      <Menu.Item
+                        leftSection={<ChevronDown size={14} aria-hidden="true" />}
+                        disabled={i === plan.completion.tasks.length - 1}
+                        onClick={() => {
+                          const target = i + 1;
+                          if (target >= plan.completion.tasks.length) return;
+                          const next = plan.completion.tasks.slice();
+                          const [moved] = next.splice(i, 1);
+                          next.splice(target, 0, moved);
+                          setField("plan.completion.tasks", next);
+                        }}
+                      >
+                        {t("quickCreate.taskMoveDown")}
+                      </Menu.Item>
+                      <Menu.Divider />
+                      <Menu.Item
+                        leftSection={<Trash2 size={14} aria-hidden="true" />}
+                        color="red"
+                        onClick={() => {
+                          const next = plan.completion.tasks.slice();
+                          next.splice(i, 1);
+                          setField("plan.completion.tasks", next);
+                        }}
+                      >
+                        {t("quickCreate.taskMoreTitle")}
+                      </Menu.Item>
+                    </Menu.Dropdown>
+                  </Menu>
+                </div>
+              ))}
               <Button
                 type="button"
-                onClick={() => setActivePanel("intent")}
-                data-testid="quick-create-condition-add"
-                className="mx-2.5 mb-2.5 flex h-10 w-[calc(100%-20px)] items-center justify-center gap-1.5 rounded-lg bg-surface-1 text-[11px] font-bold text-foreground-muted hover:bg-surface-2"
+                onClick={() => {
+                  setField("plan.completion.tasks", [
+                    ...plan.completion.tasks,
+                    {
+                      id: `tk_${Math.random().toString(36).slice(2, 9)}`,
+                      content: { title: "", note: null },
+                      show: null,
+                      complete: {
+                        id: `c_${Math.random().toString(36).slice(2, 9)}`,
+                        kind: 0,
+                        children: [],
+                        term: null,
+                      },
+                      order: [],
+                    },
+                  ]);
+                }}
+                className="mt-2 flex h-[35px] w-full items-center justify-center rounded-lg bg-surface-1 text-xs font-bold text-foreground-muted hover:bg-surface-2"
               >
-                <Plus size={14} aria-hidden="true" />
-                {t("quickCreate.addConditionOrGroup")}
+                ＋ タスクを追加
               </Button>
-            </section>
-
-            {/* simple note */}
-            <p
-              className="flex items-start gap-1.5 text-[10px] text-foreground-muted"
-              data-testid="quick-create-simple-note"
-            >
-              <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
-              <span>{t("quickCreate.simpleNote")}</span>
-            </p>
+            </div>
           </div>
-        </div>
 
-        {/* ─── composer foot ─── */}
-        <div className="flex h-[62px] shrink-0 items-center justify-between border-t border-border bg-surface-0 px-4">
-          <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
-            <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
-            <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              leftSection={<Save size={14} aria-hidden="true" />}
-              type="button"
-              className="flex h-[37px] items-center gap-1.5 rounded-lg border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
-            >
-              下書き保存
-            </Button>
+          {/* ─── behavior block ─── */}
+          <div className="mt-3 pt-3" data-testid="quick-create-behavior-block">
+            <hr className="border-border mb-3" />
+            <div className="mb-2 flex items-baseline justify-between">
+              <strong className="text-xs font-semibold text-foreground">
+                {t("quickCreate.behaviorTitle")}
+              </strong>
+              <small className="text-[10px] text-foreground-muted">
+                {t("quickCreate.behaviorSub")}
+              </small>
+            </div>
             <Button
               type="button"
-              variant="primary"
-              size="large"
-              data-testid="quick-create-submit"
-              onClick={handleSubmit}
-              loading={submitting}
-              disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-              leftSection={submitting ? undefined : <Check size={16} aria-hidden="true" />}
-              className="h-10 bg-primary text-primary-fg hover:bg-primary/90"
+              onClick={() => setActivePanel("meta")}
+              aria-label={t("quickCreate.behaviorEdit")}
+              className="flex w-full min-h-[48px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-2 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
             >
-              {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
+              <div className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                {plan.role === PlanRole.LABEL ? (
+                  <Tag className="h-3.5 w-3.5" aria-hidden />
+                ) : (
+                  <Play className="h-3.5 w-3.5" aria-hidden />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-foreground">
+                  {plan.role === PlanRole.LABEL
+                    ? t("quickCreate.behaviorLabel")
+                    : t("quickCreate.behaviorExecutable")}
+                </div>
+                <div className="text-[10px] text-foreground-muted">
+                  {plan.role === PlanRole.LABEL
+                    ? t("quickCreate.behaviorLabelSub")
+                    : t("quickCreate.behaviorExecutableSub")}
+                </div>
+              </div>
+              <span className="rounded-md border border-border bg-surface-0 px-2 py-1 text-[10px] font-bold text-foreground-muted">
+                {t("quickCreate.behaviorEdit")}
+              </span>
             </Button>
           </div>
-        </div>
-        {error ? <p className="px-4 pb-2 text-center text-xs text-danger">{error}</p> : null}
-        {loadError ? (
-          <p
-            role="alert"
-            data-testid="quick-create-load-error"
-            className="px-4 pb-2 text-center text-xs text-warning"
+        </section>
+
+        {/* ── condition card ── */}
+        <section className="pt-3">
+          <hr className="border-border mb-3" />
+          <div className="flex items-center justify-between mb-2">
+            <strong className="text-xs font-semibold text-foreground">条件の組み合わせ</strong>
+            <span className="text-[10px] text-foreground-muted">{conditionCount}</span>
+          </div>
+          <div className="p-2.5" data-testid="quick-create-condition-tree">
+            {windows.length + recurring.frameRules.length === 0 ? (
+              <p
+                data-testid="quick-create-condition-empty"
+                className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
+              >
+                {t("quickCreate.conditionEmpty")}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {windows.length > 0 && (
+                  <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
+                        ALL
+                      </span>
+                      <strong className="text-[11px] font-semibold text-foreground">
+                        {t("quickCreate.conditionGroupWindow")}
+                      </strong>
+                      <Button
+                        type="button"
+                        onClick={() => setActivePanel("time")}
+                        className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <Pencil className="h-3 w-3" aria-hidden />
+                        編集
+                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      {windows.map((w, i) => (
+                        <div
+                          key={w.id ?? i}
+                          className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                        >
+                          <Clock size={11} className="shrink-0 text-primary" aria-hidden="true" />
+                          <span className="min-w-0 flex-1 truncate text-foreground">
+                            {w.bounds.start && w.bounds.end
+                              ? `${w.bounds.start} → ${w.bounds.end}`
+                              : t("quickCreate.conditionWindowOpen")}
+                          </span>
+                          <ActionIcon
+                            type="button"
+                            onClick={() => {
+                              const next = windows.filter((_, idx) => idx !== i);
+                              setField("windows", next);
+                            }}
+                            aria-label={t("quickCreate.removeItem")}
+                            className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
+                          >
+                            <MoreHorizontal size={12} aria-hidden="true" />
+                          </ActionIcon>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {recurring.frameRules.length > 0 && (
+                  <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
+                        ALL
+                      </span>
+                      <strong className="text-[11px] font-semibold text-foreground">
+                        {t("quickCreate.conditionGroupFrame")}
+                      </strong>
+                      <Button
+                        type="button"
+                        onClick={() => setActivePanel("recurring")}
+                        className="ml-auto inline-flex items-center gap-1 text-[10px] font-bold text-foreground-muted hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <Pencil className="h-3 w-3" aria-hidden />
+                        編集
+                      </Button>
+                    </div>
+                    <div className="space-y-1">
+                      {recurring.frameRules.map((r, i) => (
+                        <div
+                          key={r.id ?? i}
+                          className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                        >
+                          <Repeat size={11} className="shrink-0 text-primary" aria-hidden="true" />
+                          <span className="min-w-0 flex-1 truncate text-foreground">
+                            {r.generator?.kind === "step"
+                              ? t("quickCreate.conditionFrameStep")
+                              : t("quickCreate.conditionFrameOpen")}
+                          </span>
+                          <ActionIcon
+                            type="button"
+                            onClick={() => {
+                              const next = recurring.frameRules.filter((_, idx) => idx !== i);
+                              setField("recurring.frameRules", next);
+                            }}
+                            aria-label={t("quickCreate.removeItem")}
+                            className="flex h-5 w-5 items-center justify-center rounded text-foreground-muted hover:text-danger"
+                          >
+                            <MoreHorizontal size={12} aria-hidden="true" />
+                          </ActionIcon>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <Button
+            type="button"
+            onClick={() => setActivePanel("intent")}
+            data-testid="quick-create-condition-add"
+            className="mx-2.5 mb-2.5 flex h-10 w-[calc(100%-20px)] items-center justify-center gap-1.5 rounded-lg bg-surface-1 text-[11px] font-bold text-foreground-muted hover:bg-surface-2"
           >
-            {loadError}
-          </p>
-        ) : null}
-      </section>
+            <Plus size={14} aria-hidden="true" />
+            {t("quickCreate.addConditionOrGroup")}
+          </Button>
+        </section>
+
+        {/* simple note */}
+        <p
+          className="flex items-start gap-1.5 text-[10px] text-foreground-muted"
+          data-testid="quick-create-simple-note"
+        >
+          <Info className="mt-0.5 h-3 w-3 shrink-0" aria-hidden />
+          <span>{t("quickCreate.simpleNote")}</span>
+        </p>
+      </QuickCreateContent>
+
+      {/* ─── composer foot ─── */}
+      <QuickCreateFooter>
+        <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
+          <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
+          <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            leftSection={<Save size={14} aria-hidden="true" />}
+            type="button"
+            variant="default"
+            size="sm"
+          >
+            下書き保存
+          </Button>
+          <Button
+            type="button"
+            variant="filled"
+            size="md"
+            data-testid="quick-create-submit"
+            onClick={handleSubmit}
+            loading={submitting}
+            disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
+            leftSection={submitting ? undefined : <Check size={16} aria-hidden="true" />}
+          >
+            {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
+          </Button>
+        </div>
+      </QuickCreateFooter>
+      {error ? <p className="px-4 pb-2 text-center text-xs text-danger">{error}</p> : null}
+      {loadError ? (
+        <p
+          role="alert"
+          data-testid="quick-create-load-error"
+          className="px-4 pb-2 text-center text-xs text-warning"
+        >
+          {loadError}
+        </p>
+      ) : null}
 
       {/* ─── intent sub-panel ─── */}
-      <section
-        data-subpanel="intent"
-        className={subPanelClass("intent")}
-        aria-hidden={activePanel !== "intent"}
+      <QuickCreateSubPanel
+        id="intent"
+        opened={activePanel === "intent"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.addConditionOrGroup")}
+        subtitle={t("quickCreate.intentSubTitle")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.addConditionOrGroup")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.intentSubTitle")}
-            </small>
-          </div>
-        </div>
         <div className="flex-1 overflow-auto p-4">
           <p className="mb-3 text-[11px] text-foreground-muted">
             {t("quickCreate.intentDescription")}
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
+          <SimpleGrid cols={2} spacing="xs">
+            <QuickCreateChoiceCard
+              icon={Calendar}
+              title={t("quickCreate.intentNarrowTime")}
+              description={t("quickCreate.intentNarrowTimeSub")}
               onClick={() => setActivePanel("time")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Calendar size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentNarrowTime")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentNarrowTimeSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={Link2}
+              title={t("quickCreate.intentReferenceTile")}
+              description={t("quickCreate.intentReferenceTileSub")}
               onClick={() => setActivePanel("references")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Link2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentReferenceTile")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentReferenceTileSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={Layers}
+              title={t("quickCreate.intentNestStructure")}
+              description={t("quickCreate.intentNestStructureSub")}
               onClick={() => setActivePanel("recurring")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Layers size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentNestStructure")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentNestStructureSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={SlidersHorizontal}
+              title={t("quickCreate.intentAdjustPlacement")}
+              description={t("quickCreate.intentAdjustPlacementSub")}
               onClick={() => setActivePanel("meta")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <SlidersHorizontal size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentAdjustPlacement")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentAdjustPlacementSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={ListChecks}
+              title={t("quickCreate.intentCombineConditions")}
+              description={t("quickCreate.intentCombineConditionsSub")}
               onClick={() => setActivePanel("completion")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ListChecks size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentCombineConditions")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentCombineConditionsSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={CheckCircle2}
+              title={t("quickCreate.intentAddCompletion")}
+              description={t("quickCreate.intentAddCompletionSub")}
               onClick={() => setActivePanel("completion")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <CheckCircle2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentAddCompletion")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentAddCompletionSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={Play}
+              title={t("quickCreate.intentDefineOnSuccess")}
+              description={t("quickCreate.intentDefineOnSuccessSub")}
               onClick={() => setActivePanel("meta")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Play size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentDefineOnSuccess")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentDefineOnSuccessSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
+            />
+            <QuickCreateChoiceCard
+              icon={Type}
+              title={t("quickCreate.intentTextCondition")}
+              description={t("quickCreate.intentTextConditionSub")}
               disabled
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60"
-            >
-              <Type size={16} className="mb-1.5" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentTextCondition")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentTextConditionSub")}
-              </small>
-            </Button>
-          </div>
+            />
+          </SimpleGrid>
         </div>
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── time sub-panel ─── */}
-      <section
-        data-subpanel="time"
-        className={subPanelClass("time")}
-        aria-hidden={activePanel !== "time"}
+      <QuickCreateSubPanel
+        id="time"
+        opened={activePanel === "time"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.timeNavTitle")}
+        subtitle={t("quickCreate.timeNavSub")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.timeNavTitle")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.timeNavSub")}
-            </small>
-          </div>
-        </div>
         <FormPanel>
           <SchedulePanel
             time={time}
@@ -1312,31 +1060,18 @@ export function QuickTileCreate() {
             t={t}
           />
         </FormPanel>
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── duration sub-panel ─── */}
-      <section
-        data-subpanel="duration"
-        className={subPanelClass("duration")}
-        aria-hidden={activePanel !== "duration"}
+      <QuickCreateSubPanel
+        id="duration"
+        opened={activePanel === "duration"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.durationTitle")}
+        subtitle={t("quickCreate.durationSub")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.durationTitle")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.durationSub")}
-            </small>
-          </div>
-        </div>
         <div className="flex-1 overflow-auto p-4">
           <Button
             type="button"
@@ -1408,19 +1143,19 @@ export function QuickTileCreate() {
                 {t("quickCreate.durationUseCompletionSub")}
               </small>
             </div>
-            <Button
-              type="button"
-              className="h-6 w-11 rounded-full bg-primary p-0.5 transition-colors"
-            >
-              <div className="h-5 w-5 translate-x-5 rounded-full bg-white transition-transform" />
-            </Button>
+            <Switch
+              checked
+              readOnly
+              size="sm"
+              aria-label={t("quickCreate.durationUseCompletionTitle")}
+            />
           </div>
 
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="xs"
+              variant="subtle"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -1429,7 +1164,7 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
+              size="xs"
               variant="default"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -1438,51 +1173,29 @@ export function QuickTileCreate() {
             </Button>
           </div>
         </div>
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── recurring sub-panel ─── */}
-      <section
-        data-subpanel="recurring"
-        className={subPanelClass("recurring")}
-        aria-hidden={activePanel !== "recurring"}
+      <QuickCreateSubPanel
+        id="recurring"
+        opened={activePanel === "recurring"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.repeatChip")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.repeatChip")}
-            </strong>
-          </div>
-        </div>
         <AutomationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── references sub-panel ─── */}
-      <section
-        data-subpanel="references"
-        className={subPanelClass("references")}
-        aria-hidden={activePanel !== "references"}
+      <QuickCreateSubPanel
+        id="references"
+        opened={activePanel === "references"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.referencesNavTitle")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.referencesNavTitle")}
-            </strong>
-          </div>
-        </div>
         <FormPanel>
           <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
           {plan.references.length === 0 ? (
@@ -1529,20 +1242,21 @@ export function QuickTileCreate() {
                         </span>
                       </div>
                     </div>
-                    <input
-                      type="text"
+                    <TextInput
                       aria-label={t("quickCreate.referenceIdPlaceholder")}
                       placeholder={t("quickCreate.referenceIdPlaceholder")}
                       value={ref.target.referenceId ?? ""}
-                      onChange={(e) => {
+                      onChange={(event) => {
                         const next = plan.references.slice();
                         next[i] = {
                           ...ref,
-                          target: { ...ref.target, referenceId: e.target.value || null },
+                          target: { ...ref.target, referenceId: event.currentTarget.value || null },
                         };
                         setField("plan.references", next);
                       }}
-                      className="w-full rounded-md bg-surface-2 px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+                      size="xs"
+                      variant="filled"
+                      styles={{ input: { backgroundColor: "var(--surface-2)" } }}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -1608,8 +1322,8 @@ export function QuickTileCreate() {
                   <div className="flex items-center gap-2 border-t border-border/40 pt-2">
                     <Button
                       type="button"
-                      size="small"
-                      variant="ghost"
+                      size="xs"
+                      variant="subtle"
                       leftSection={<Trash2 size={12} aria-hidden="true" />}
                       onClick={() => {
                         const next = plan.references.slice();
@@ -1623,7 +1337,7 @@ export function QuickTileCreate() {
                     <div className="flex-1" />
                     <Button
                       type="button"
-                      size="small"
+                      size="xs"
                       variant="default"
                       leftSection={<X size={12} aria-hidden="true" />}
                       onClick={() => setActivePanel("base")}
@@ -1632,8 +1346,8 @@ export function QuickTileCreate() {
                     </Button>
                     <Button
                       type="button"
-                      size="small"
-                      variant="primary"
+                      size="xs"
+                      variant="filled"
                       leftSection={<Check size={12} aria-hidden="true" />}
                       onClick={() => setActivePanel("base")}
                     >
@@ -1645,7 +1359,7 @@ export function QuickTileCreate() {
             })}
             <Button
               type="button"
-              size="small"
+              size="xs"
               variant="default"
               leftSection={<Plus size={12} aria-hidden="true" />}
               onClick={() => {
@@ -1664,28 +1378,17 @@ export function QuickTileCreate() {
             </Button>
           </div>
         </FormPanel>
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── completion sub-panel ─── */}
-      <section
-        data-subpanel="completion"
-        className={subPanelClass("completion")}
-        aria-hidden={activePanel !== "completion"}
+      <QuickCreateSubPanel
+        id="completion"
+        opened={activePanel === "completion"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.completionNavTitle")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.completionNavTitle")}
-            </strong>
-          </div>
-        </div>
         <FormPanel>
           <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
           <div
@@ -1776,19 +1479,20 @@ export function QuickTileCreate() {
                     <span className="text-xs text-foreground-muted">
                       {t("quickCreate.minutesUnit")}
                     </span>
-                    <Button
+                    <ActionIcon
                       type="button"
-                      size="icon-xs"
-                      variant="ghost"
-                      leftSection={<Trash2 size={12} aria-hidden="true" />}
+                      size="sm"
+                      variant="subtle"
+                      color="red"
                       onClick={() => {
                         const next = plan.completion.timeRequirements.slice();
                         next.splice(i, 1);
                         setField("plan.completion.timeRequirements", next);
                       }}
                       aria-label={t("quickCreate.removeItem")}
-                      className="text-foreground-muted hover:text-danger"
-                    />
+                    >
+                      <Trash2 size={12} aria-hidden="true" />
+                    </ActionIcon>
                   </div>
                 ))}
               </div>
@@ -1850,8 +1554,8 @@ export function QuickTileCreate() {
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="xs"
+              variant="subtle"
               leftSection={<Trash2 size={12} aria-hidden="true" />}
               onClick={() =>
                 setField("plan.completion.root", {
@@ -1867,7 +1571,7 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
+              size="xs"
               variant="default"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -1876,8 +1580,8 @@ export function QuickTileCreate() {
             </Button>
             <Button
               type="button"
-              size="small"
-              variant="primary"
+              size="xs"
+              variant="filled"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
               data-testid="completion-apply"
@@ -1886,28 +1590,17 @@ export function QuickTileCreate() {
             </Button>
           </div>
         </FormPanel>
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── meta sub-panel ─── */}
-      <section
-        data-subpanel="meta"
-        className={subPanelClass("meta")}
-        aria-hidden={activePanel !== "meta"}
+      <QuickCreateSubPanel
+        id="meta"
+        opened={activePanel === "meta"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.metaNavTitle")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.metaNavTitle")}
-            </strong>
-          </div>
-        </div>
         <FormPanel>
           <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
           <div className="flex flex-col gap-1.5">
@@ -1979,8 +1672,8 @@ export function QuickTileCreate() {
           <div className="flex items-center gap-2 border-t border-border/40 pt-3">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="xs"
+              variant="subtle"
               leftSection={<Trash2 size={12} aria-hidden="true" />}
               onClick={() => {
                 setField("meta.ownerSubjectId", null);
@@ -1994,7 +1687,7 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
+              size="xs"
               variant="default"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -2003,7 +1696,7 @@ export function QuickTileCreate() {
             </Button>
             <Button
               type="button"
-              size="small"
+              size="xs"
               variant="default"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -2012,31 +1705,18 @@ export function QuickTileCreate() {
             </Button>
           </div>
         </FormPanel>
-      </section>
+      </QuickCreateSubPanel>
 
       {/* ─── behavior sub-panel ─── */}
-      <section
-        data-subpanel="behavior"
-        className={subPanelClass("behavior")}
-        aria-hidden={activePanel !== "behavior"}
+      <QuickCreateSubPanel
+        id="behavior"
+        opened={activePanel === "behavior"}
+        isDesktop={isDesktop}
+        title={t("quickCreate.behaviorTitle")}
+        subtitle={t("quickCreate.behaviorSub")}
+        backLabel={t("quickCreate.cancel")}
+        onBack={() => setActivePanel("base")}
       >
-        <div className="flex h-[62px] items-center gap-2 border-b border-border px-3 shrink-0 bg-surface-0">
-          <ActionIcon
-            type="button"
-            onClick={() => setActivePanel("base")}
-            className="flex h-[34px] w-[34px] items-center justify-center rounded-lg text-foreground-muted hover:bg-surface-1"
-          >
-            <ChevronLeft size={16} aria-hidden="true" />
-          </ActionIcon>
-          <div className="flex-1 min-w-0">
-            <strong className="block truncate text-sm font-semibold">
-              {t("quickCreate.behaviorTitle")}
-            </strong>
-            <small className="block truncate text-[10px] text-foreground-muted">
-              {t("quickCreate.behaviorSub")}
-            </small>
-          </div>
-        </div>
         <div className="flex-1 overflow-auto p-4">
           <Radio.Group
             value={String(plan.role)}
@@ -2089,8 +1769,8 @@ export function QuickTileCreate() {
           <div className="flex items-center gap-2">
             <Button
               type="button"
-              size="small"
-              variant="ghost"
+              size="xs"
+              variant="subtle"
               leftSection={<X size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
             >
@@ -2099,7 +1779,7 @@ export function QuickTileCreate() {
             <div className="flex-1" />
             <Button
               type="button"
-              size="small"
+              size="xs"
               variant="default"
               leftSection={<Check size={12} aria-hidden="true" />}
               onClick={() => setActivePanel("base")}
@@ -2108,8 +1788,8 @@ export function QuickTileCreate() {
             </Button>
           </div>
         </div>
-      </section>
-    </>
+      </QuickCreateSubPanel>
+    </QuickCreateDrawer>
   );
 }
 
@@ -2131,7 +1811,7 @@ function V4EssentialRow({
 }: {
   icon: typeof Calendar;
   label: string;
-  chip: React.ReactNode;
+  chip: ReactNode;
   clearable?: boolean;
   onClear?: () => void;
   onClick: () => void;
@@ -2200,7 +1880,7 @@ function V4EssentialRow({
             aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
             data-armed={armed ? "true" : undefined}
             variant="subtle"
-            size="icon-xs"
+            size="compact-xs"
             className={cn(
               "flex h-10 min-w-[40px] items-center justify-center gap-1 rounded-md px-2 text-[11px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
               armed
@@ -2484,16 +2164,21 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.momentReferenceId")}
             </span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-referenceId`}
-              type="text"
               value={term.value.referenceId ?? ""}
-              onChange={(e) =>
+              onChange={(event) =>
                 onChange(
-                  updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value),
+                  updateMoment(
+                    term,
+                    "referenceId",
+                    event.currentTarget.value === "" ? null : event.currentTarget.value,
+                  ),
                 )
               }
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-offsetMs`} className="space-y-1">
@@ -2515,12 +2200,15 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.relationReferenceId")}
             </span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-referenceId`}
-              type="text"
               value={term.value.referenceId}
-              onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              onChange={(event) =>
+                onChange(updateRelation(term, "referenceId", event.currentTarget.value))
+              }
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-relation`} className="space-y-1">
@@ -2552,12 +2240,13 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-taskId`} className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskId")}</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-taskId`}
-              type="text"
               value={term.value.taskId}
-              onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              onChange={(event) => onChange(updateTask(term, "taskId", event.currentTarget.value))}
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -2577,12 +2266,15 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-requirementId`} className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementId")}</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-requirementId`}
-              type="text"
               value={term.value.requirementId}
-              onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              onChange={(event) =>
+                onChange(updateRequirement(term, "requirementId", event.currentTarget.value))
+              }
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -2605,13 +2297,15 @@ function TermFields({
         term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
-          <label className="space-y-1">
+          <label htmlFor={`${fieldIdBase}-id`} className="space-y-1">
             <span className="block text-foreground-muted">ID</span>
-            <input
-              type="text"
+            <TextInput
+              id={`${fieldIdBase}-id`}
               value={String(v[idKey] ?? "")}
-              onChange={(e) => onChange(updateValue(term, idKey, e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              onChange={(event) => onChange(updateValue(term, idKey, event.currentTarget.value))}
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-op`} className="space-y-1">
@@ -2626,12 +2320,11 @@ function TermFields({
           </label>
           <label htmlFor={`${fieldIdBase}-value`} className="space-y-1">
             <span className="block text-foreground-muted">value</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-value`}
-              type="text"
               value={v.value === null || v.value === undefined ? "" : String(v.value)}
-              onChange={(e) => {
-                const raw = e.target.value;
+              onChange={(event) => {
+                const raw = event.currentTarget.value;
                 if (raw === "") {
                   onChange(updateValue(term, "value", null));
                   return;
@@ -2641,7 +2334,9 @@ function TermFields({
                   updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw),
                 );
               }}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
         </div>
@@ -2652,12 +2347,13 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-target`} className="space-y-1">
             <span className="block text-foreground-muted">target</span>
-            <input
+            <TextInput
               id={`${fieldIdBase}-target`}
-              type="text"
               value={term.value.target}
-              onChange={(e) => onChange(updateLife(term, "target", e.target.value))}
-              className="w-full rounded-md bg-surface-2 px-2 py-1 outline-none focus:ring-2 focus:ring-primary/40"
+              onChange={(event) => onChange(updateLife(term, "target", event.currentTarget.value))}
+              size="xs"
+              variant="filled"
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -2741,24 +2437,26 @@ function ConditionEditor({
                 }}
                 t={t}
               />
-              <Button
+              <ActionIcon
                 type="button"
-                size="icon-xs"
-                variant="ghost"
-                leftSection={<Trash2 size={14} aria-hidden="true" />}
+                size="sm"
+                variant="subtle"
+                color="red"
                 onClick={() => {
                   const children = node.children.slice();
                   children.splice(i, 1);
                   onChange({ ...node, children });
                 }}
                 aria-label={t("quickCreate.conditionRemoveChild")}
-                className="self-start text-foreground-muted hover:text-danger"
-              />
+                className="self-start"
+              >
+                <Trash2 size={14} aria-hidden="true" />
+              </ActionIcon>
             </div>
           ))}
           <Button
             type="button"
-            size="small"
+            size="xs"
             variant="default"
             leftSection={<Plus size={12} aria-hidden="true" />}
             onClick={() =>
