@@ -31,9 +31,11 @@ import {
   Group,
   Menu,
   NumberInput,
+  Paper,
   Radio,
   SegmentedControl,
   Select,
+  Stack,
   TagsInput,
   TextInput,
   UnstyledButton,
@@ -831,11 +833,15 @@ export function QuickTileCreate() {
                 </div>
                 <div className="space-y-1.5">
                   {plan.completion.tasks.map((tk, i) => (
-                    <div
+                    <Paper
                       key={tk.id}
                       data-testid="quick-create-task-row"
-                      className="flex min-h-[38px] items-center gap-2 rounded-lg border border-border bg-surface-0 px-2.5 py-1.5 text-xs"
+                      p="sm"
+                      radius="lg"
+                      withBorder
+                      bg="var(--surface-0)"
                     >
+                      <Group gap="sm" wrap="nowrap" mih={38}>
                       <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border border-border bg-surface-0" />
                       <span
                         className={
@@ -901,7 +907,8 @@ export function QuickTileCreate() {
                           </Menu.Item>
                         </Menu.Dropdown>
                       </Menu>
-                    </div>
+                      </Group>
+                    </Paper>
                   ))}
                   <Button
                     type="button"
@@ -988,9 +995,9 @@ export function QuickTileCreate() {
                     {t("quickCreate.conditionEmpty")}
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <Stack gap="sm">
                     {windows.length > 0 && (
-                      <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                      <Paper p="sm" radius="lg" bg="var(--surface-1)">
                         <div className="mb-1 flex items-center gap-2">
                           <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
                             ALL
@@ -1009,9 +1016,9 @@ export function QuickTileCreate() {
                         </div>
                         <div className="space-y-1">
                           {windows.map((w, i) => (
-                            <div
-                              key={w.id ?? i}
-                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                            <Paper key={w.id ?? i} p="xs" radius="md" bg="var(--surface-0)">
+                            <Group
+                              gap="xs"
                             >
                               <Clock
                                 size={11}
@@ -1034,14 +1041,15 @@ export function QuickTileCreate() {
                               >
                                 <MoreHorizontal size={12} aria-hidden="true" />
                               </ActionIcon>
-                            </div>
+                            </Group>
+                            </Paper>
                           ))}
                         </div>
-                      </div>
+                      </Paper>
                     )}
 
                     {recurring.frameRules.length > 0 && (
-                      <div className="rounded-lg bg-surface-1 px-2 py-1.5">
+                      <Paper p="sm" radius="lg" bg="var(--surface-1)">
                         <div className="mb-1 flex items-center gap-2">
                           <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
                             ALL
@@ -1060,9 +1068,9 @@ export function QuickTileCreate() {
                         </div>
                         <div className="space-y-1">
                           {recurring.frameRules.map((r, i) => (
-                            <div
-                              key={r.id ?? i}
-                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
+                            <Paper key={r.id ?? i} p="xs" radius="md" bg="var(--surface-0)">
+                            <Group
+                              gap="xs"
                             >
                               <Repeat
                                 size={11}
@@ -1085,12 +1093,13 @@ export function QuickTileCreate() {
                               >
                                 <MoreHorizontal size={12} aria-hidden="true" />
                               </ActionIcon>
-                            </div>
+                            </Group>
+                            </Paper>
                           ))}
                         </div>
-                      </div>
+                      </Paper>
                     )}
-                  </div>
+                  </Stack>
                 )}
               </div>
               <Button
