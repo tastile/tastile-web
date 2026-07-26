@@ -10,6 +10,7 @@ import {
   Tree,
   Button,
   useTree,
+  ColorInput
 } from "@mantine/core";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -112,17 +113,15 @@ export function ProjectsSidePanel() {
         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
           {t("panels.projects.projects")}
         </span>
-        {!creating ? (
-          <Button
-            type="button"
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-foreground-muted hover:bg-surface-1 hover:text-foreground"
-            data-testid="project-create"
-          >
-            <Plus className="h-3 w-3" aria-hidden />
-            New
-          </Button>
-        ) : null}
+        <ActionIcon
+          type="button"
+          variant="outline"
+          radius="xl"
+          onClick={() => setCreating(true)}
+          data-testid="project-create"
+        >
+          <Plus className="h-3 w-3" aria-hidden />
+        </ActionIcon>
       </div>
 
       <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
@@ -162,13 +161,11 @@ export function ProjectsSidePanel() {
             >
               Color
             </label>
-            <input
+            <ColorInput
               id="project-color"
-              type="color"
               value={color}
-              onChange={(e) => setColor(e.target.value)}
+              onChange={setColor}
               aria-label="Project color"
-              className="h-8 w-12 cursor-pointer rounded border border-border"
               data-testid="project-create-color"
             />
           </div>
@@ -194,24 +191,18 @@ export function ProjectsSidePanel() {
             comboboxProps={{ withinPortal: true }}
             data-testid="project-create-parent"
           />
-          <div className="flex items-center gap-2">
-            <UIButton
+          <div className="flex items-center gap-2 justify-end">
+            <Button title="Cancel" onClick={resetForm} disabled={creatingBusy} variant="outline">
+              Cancel
+            </Button>
+            <Button
               type="submit"
-              size="small"
               disabled={creatingBusy || !name.trim()}
               data-testid="project-create-submit"
             >
               {creatingBusy ? "Creating..." : "Create"}
-            </UIButton>
-            <UIButton
-              type="button"
-              size="small"
-              variant="ghost"
-              onClick={resetForm}
-              disabled={creatingBusy}
-            >
-              Cancel
-            </UIButton>
+            </Button>
+
             {createError && <span className="text-[10px] text-status-danger">{createError}</span>}
           </div>
         </form>
@@ -220,6 +211,8 @@ export function ProjectsSidePanel() {
       <div className="px-2">
         <div className="flex flex-col space-y-0.5">
           <Button
+            size="xs"
+            variant="outline"
             type="button"
             onClick={() => handleSelect(null)}
             className={cn(
@@ -229,8 +222,7 @@ export function ProjectsSidePanel() {
                 : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
             )}
           >
-            <span aria-hidden className="h-2.5 w-2.5 shrink-0 rounded-full bg-border" />
-            <span className="min-w-0 flex-1 truncate">{t("panels.projects.allProjects")}</span>
+            {t("panels.projects.allProjects")}
           </Button>
 
           {loading && (

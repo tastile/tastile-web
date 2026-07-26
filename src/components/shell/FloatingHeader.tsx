@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon, Button } from "@mantine/core";
+import { ActionIcon, Button, Avatar, Burger } from "@mantine/core";
 import {
   Bell,
   CalendarDays,
@@ -156,13 +156,11 @@ export function FloatingHeader({
 
           <FloatingMenu>
             <FloatingMenuTrigger asChild>
-              <Button
-                type="button"
+              <Avatar
                 aria-label={t("shell.floatingHeader.userMenu")}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-fg hover:bg-primary-hover ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 {userName.charAt(0)}
-              </Button>
+              </Avatar>
             </FloatingMenuTrigger>
             <FloatingMenuContent align="end" className="w-56 mt-1">
               <FloatingMenuLabel className="font-normal">
@@ -209,16 +207,12 @@ export function FloatingHeader({
           </FloatingMenu>
 
           {/* モバイルメニューボタン (md未満でのみ表示、右端) */}
-          <ActionIcon
-            type="button"
-            variant="subtle"
+          <Burger
+            opened={menuOpen}
             size="sm"
             aria-label={t("shell.floatingHeader.openNavMenu")}
             onClick={() => setMenuOpen(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-subtle hover:bg-surface-2 hover:text-foreground md:hidden ml-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            <Menu className="h-5 w-5" />
-          </ActionIcon>
+          />
         </div>
       </header>
 
@@ -231,8 +225,8 @@ export function FloatingHeader({
           {/* クイックアクション (Search / Notifications) */}
           <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
             <Button
-              type="button"
               variant="subtle"
+              type="button"
               size="compact-sm"
               onClick={() => {
                 setMenuOpen(false);

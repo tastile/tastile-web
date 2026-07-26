@@ -33,6 +33,7 @@ import {
   SegmentedControl,
   Select,
   TagsInput,
+  CloseButton,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
@@ -598,14 +599,10 @@ export function QuickTileCreate() {
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ActionIcon
-              type="button"
+            <CloseButton
               onClick={close}
-              className="flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface-0 text-foreground-muted transition-colors hover:bg-surface-1 hover:text-foreground"
               aria-label={t("tiles.closePanel")}
-            >
-              <X className="h-4 w-4" />
-            </ActionIcon>
+            />
           </div>
         </div>
 
@@ -639,7 +636,8 @@ export function QuickTileCreate() {
                   <Button
                     type="button"
                     onClick={() => setActivePanel("meta")}
-                    className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-[#eef3fb] px-2.5 text-[11px] font-bold text-[#37689e] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                    radius="xl"
+                    size="xs"
                   >
                     <FolderOpen className="h-3 w-3" aria-hidden />
                     <span>{currentProject.display_name}</span>
@@ -650,7 +648,8 @@ export function QuickTileCreate() {
                     key={tag}
                     type="button"
                     onClick={() => setActivePanel("meta")}
-                    className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-[#f2effc] px-2.5 text-[11px] font-bold text-[#6754a8] hover:opacity-90 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                    radius="xl"
+                    size="xs"
                   >
                     <Tag className="h-3 w-3" aria-hidden />
                     <span>#{tag}</span>
@@ -659,9 +658,11 @@ export function QuickTileCreate() {
                 <Button
                   type="button"
                   onClick={() => setActivePanel("meta")}
-                  className="inline-flex h-[29px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-[11px] font-bold text-foreground-muted hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+                  leftSection={<Plus className="h-3 w-3" aria-hidden />}
+                  variant="outline"
+                  size="xs"
+                  radius="xl"
                 >
-                  <Plus className="h-3 w-3" aria-hidden />
                   <span>{t("quickCreate.metaExpandLabel") || "整理"}</span>
                 </Button>
               </div>
@@ -803,6 +804,7 @@ export function QuickTileCreate() {
                   <span>{t("quickCreate.completionRequires")}</span>
                   <ActionIcon
                     type="button"
+                    variant="subtle"
                     onClick={() => setActivePanel("completion")}
                     aria-label={t("quickCreate.completionRequires")}
                     className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
@@ -1109,10 +1111,10 @@ export function QuickTileCreate() {
           </div>
           <div className="flex items-center gap-2">
             <Button
+              leftSection={<Save size={14} aria-hidden="true" />}
               type="button"
               className="flex h-[37px] items-center gap-1.5 rounded-lg border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
             >
-              <Save size={14} aria-hidden="true" />
               下書き保存
             </Button>
             <Button
@@ -2200,6 +2202,8 @@ function V4EssentialRow({
             onClick={handleClearClick}
             aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
             data-armed={armed ? "true" : undefined}
+            variant="subtle"
+            size="icon-xs"
             className={cn(
               "flex h-10 min-w-[40px] items-center justify-center gap-1 rounded-md px-2 text-[11px] font-semibold transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
               armed
@@ -2223,7 +2227,7 @@ function V4EssentialRow({
           onClick={onClick}
           aria-hidden="true"
           tabIndex={-1}
-          className="flex h-10 w-10 items-center justify-center rounded-md text-foreground-muted group-hover:text-foreground hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+          variant="subtle"
         >
           <ChevronRight className="h-4 w-4" aria-hidden />
         </ActionIcon>

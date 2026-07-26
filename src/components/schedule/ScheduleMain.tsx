@@ -3,6 +3,7 @@
 import { Alert, Button } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
+import { AlertCircle } from "lucide-react"
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -113,7 +114,7 @@ export function ScheduleMain() {
         )}
         {view === "recurring" && recurring.error && (
           <Alert
-            className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+            icon={<AlertCircle className="h-4 w-4" />}
             title="Failed to load recurring templates"
           >
             {recurring.error.message}
@@ -121,7 +122,7 @@ export function ScheduleMain() {
         )}
         {view === "placements" && placementsState.error && (
           <Alert
-            className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger"
+            icon={<AlertCircle className="h-4 w-4" />}
             title="Failed to load placements"
           >
             {placementsState.error.message}
@@ -129,7 +130,7 @@ export function ScheduleMain() {
         )}
         {view === "recurring" && !recurring.loading && recurring.templates.length === 0 && (
           <Alert
-            className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1"
+            icon={<AlertCircle className="h-4 w-4" />}
             title="No recurring templates found"
           >
             <p className="text-sm">No recurring templates found in the source database.</p>
@@ -139,20 +140,26 @@ export function ScheduleMain() {
           view !== "placements" &&
           !loading &&
           filteredTiles.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
+            <Alert
+              icon={<AlertCircle className="h-4 w-4" />}
+              title="No tiles found"
+            >
               <p className="text-sm">No tiles found for this schedule view.</p>
-            </div>
+            </Alert>
           )}
         {view === "placements" &&
           !placementsLoading &&
           placementsCount === 0 &&
           candidatesCount === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
+            <Alert
+              icon={<AlertCircle className="h-4 w-4" />}
+              title="No placements found"
+            >
               <p className="text-sm">
                 No placements yet. Create a work tile with an estimated duration to see it scheduled
                 here.
               </p>
-            </div>
+            </Alert>
           )}
 
         {/* Placements + candidates view */}

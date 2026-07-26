@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { translations } from "@/lib/i18n/translations";
+import { Button, Pill } from "@mantine/core"
+import { ArrowUpRight, Download } from "lucide-react";
 import type { Locale } from "@/lib/stores/locale-store";
+import { TastileLogo } from "@/components/TastileLogo";
 
 export const metadata = {
   title: "Download Tastile — Execution Control",
@@ -28,49 +30,36 @@ export default async function DownloadPage({
       <main className="flex-1">
         <div className="layout-shell max-w-4xl py-20">
           <div>
-            <h1 className="text-4xl font-[510] tracking-[-0.03em] text-foreground">{t.title}</h1>
+            <div className="flex items-center gap-4">
+              <TastileLogo className="h-10 w-auto text-foreground" />
+              <h1 className="text-4xl font-[510] tracking-[-0.03em] text-foreground">{t.title}</h1>
+            </div>
+
             <p className="mt-4 text-lg text-foreground-muted">{t.subtitle}</p>
           </div>
 
           <div className="mt-12 flex flex-col items-start">
             {/* Direct Download */}
-            <a
+            <Button
+              component="a"
               href="/api/download/windows"
               download
+              radius="xl"
+              leftSection={<Download size={16} />}
               className="flex items-center gap-3 rounded-full bg-primary px-8 py-4 text-lg font-medium text-primary-fg hover:bg-primary-hover"
             >
-              <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                <title>Windows</title>
-                <path d="M3 20h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18v-2H3v2zm0-4h18V6H3v2zm0-6v2h18V2H3z" />
-              </svg>
               {t.downloadButton}
-            </a>
-            <p className="mt-3 text-sm text-foreground-muted">
-              {t.version} {version}
-            </p>
-
-            {/* Microsoft Store Badge */}
-            <div className="mt-8">
-              <p className="mb-4 text-sm text-foreground-muted">{t.alsoAvailable}</p>
-              <a
-                href="#microsoft-store"
-                className="inline-block opacity-50 cursor-not-allowed"
-                title={t.comingSoon}
-                aria-disabled="true"
-              >
-                <div className="flex items-center gap-2 rounded-full bg-surface-elevated px-6 py-3 text-foreground">
-                  <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <title>Microsoft Store</title>
-                    <path d="M0 0h11.377v11.372H0zm12.623 0H24v11.372H12.623zM0 12.623h11.377V24H0zm12.623 0H24V24H12.623z" />
-                  </svg>
-                  <span className="font-semibold">{t.microsoftStore}</span>
-                </div>
-              </a>
+            </Button>
+            <div>
+              <p className="mt-3 text-sm text-foreground-muted">
+                {t.version}
+              </p>
+              <Pill className="mt-2 bg-surface-1 text-foreground-subtle"> {version}</Pill>
             </div>
           </div>
 
           {/* System Requirements */}
-          <div className="mt-16 rounded-xl bg-surface-elevated p-8">
+          <div className="mt-16">
             <h2 className="mb-4 text-xl font-[590] text-foreground">{t.systemRequirements}</h2>
             <ul className="space-y-2 text-foreground-muted">
               {t.requirements.map((req) => (
@@ -98,16 +87,64 @@ export default async function DownloadPage({
           {/* Web Alternative */}
           <div className="mt-8">
             <p className="text-foreground-muted">{t.webAlternative}</p>
-            <Link
+            <Button
+              variant="outline"
+              radius="xl"
+              rightSection={<ArrowUpRight size={16} />}
+              component="a"
               href="/login"
               className="mt-4 inline-block rounded-full bg-surface-1 px-6 py-2 text-sm font-medium text-foreground hover:bg-surface-2"
             >
               {t.openWebApp}
-            </Link>
+            </Button>
           </div>
-        </div>
-      </main>
+        </div >
+      </main >
       <SiteFooter translations={getFooterTranslations(lang)} />
-    </div>
+    </div >
   );
 }
+
+const WindowsIcon = ({
+  size = undefined,
+  color = '#000000',
+  strokeWidth = 2,
+  background = 'transparent',
+  opacity = 1,
+  rotation = 0,
+  shadow = 0,
+  flipHorizontal = false,
+  flipVertical = false,
+  padding = 0
+}) => {
+  const transforms = [];
+  if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
+  if (flipHorizontal) transforms.push('scaleX(-1)');
+  if (flipVertical) transforms.push('scaleY(-1)');
+
+  const viewBoxSize = 24 + (padding * 2);
+  const viewBoxOffset = -padding;
+  const viewBox = `${viewBoxOffset} ${viewBoxOffset} ${viewBoxSize} ${viewBoxSize}`;
+
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox={viewBox}
+      width={size}
+      height={size}
+      fill="none"
+      stroke={color}
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={{
+        opacity,
+        transform: transforms.join(' ') || undefined,
+        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
+        backgroundColor: background !== 'transparent' ? background : undefined
+      }}
+    >
+      <path fill="currentColor" d="M682 878v651L0 1435V878zm0-743v659H0V229zm982 743v786l-907-125V878zm0-878v794H757V125z" />
+    </svg>
+  );
+};
