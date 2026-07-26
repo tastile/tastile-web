@@ -28,6 +28,7 @@ import {
   ActionIcon,
   Button,
   CloseButton,
+  Group,
   Menu,
   NumberInput,
   Radio,
@@ -35,6 +36,7 @@ import {
   Select,
   TagsInput,
   TextInput,
+  UnstyledButton,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
@@ -2109,15 +2111,20 @@ function V4EssentialRow({
       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
         <Icon className="h-3.5 w-3.5" aria-hidden />
       </div>
-      <Button
-        type="button"
+      <UnstyledButton
         onClick={onClick}
         aria-label={editAria ?? `${label} を編集`}
-        className="group grid min-w-0 grid-cols-[66px_minmax(0,1fr)] items-center gap-3 rounded-md px-2 py-1.5 -my-1.5 -mx-1 cursor-pointer text-left transition-colors hover:bg-surface-2 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
+        className="group min-w-0 flex-1 cursor-pointer rounded-md px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
       >
-        <div className="select-none text-[11px] font-bold text-foreground-muted">{label}</div>
-        <div className="flex min-w-0 flex-wrap items-center gap-1.5">{chip}</div>
-      </Button>
+        <Group gap="sm" wrap="nowrap">
+          <span className="w-[66px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
+            {label}
+          </span>
+          <Group gap="xs" wrap="nowrap" className="min-w-0 flex-1 flex-wrap">
+            {chip}
+          </Group>
+        </Group>
+      </UnstyledButton>
       <div className="flex items-center gap-1">
         {canClear ? (
           <Button
