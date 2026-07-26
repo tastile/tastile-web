@@ -37,6 +37,7 @@ import {
   Select,
   Stack,
   TagsInput,
+  Text,
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
@@ -1980,38 +1981,45 @@ export function QuickTileCreate() {
             onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
             data-testid="behavior-role"
           >
-            <div className="mb-3 flex items-start gap-3 rounded-xl border border-border bg-surface-0 p-3 transition-colors hover:bg-surface-1 has-[input:checked]:border-primary has-[input:checked]:bg-accent-soft">
-              <Radio
+            <Stack gap="sm">
+              <Radio.Card
                 value={String(PlanRole.EXECUTABLE)}
-                label={
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <Play size={14} aria-hidden className="text-foreground-muted" />
-                    {t("quickCreate.behaviorExecutable")}
-                  </span>
-                }
-                description={t("quickCreate.behaviorExecutableSub")}
-                classNames={{
-                  labelWrapper: "w-full",
-                  description: "text-[10px] text-foreground-muted",
-                }}
-              />
-            </div>
-            <div className="mb-4 flex items-start gap-3 rounded-xl border border-border bg-surface-0 p-3 transition-colors hover:bg-surface-1 has-[input:checked]:border-primary has-[input:checked]:bg-accent-soft">
-              <Radio
+                p="md"
+                radius="xl"
+                withBorder
+                className="transition-colors hover:var(--surface-1) data-[checked]:border-primary data-[checked]:bg-accent-soft"
+              >
+                <Group gap="sm" wrap="nowrap">
+                  <Radio.Indicator />
+                  <div>
+                    <Group gap="xs">
+                      <Play size={14} className="text-foreground-muted" />
+                      <Text size="sm" fw={600}>{t("quickCreate.behaviorExecutable")}</Text>
+                    </Group>
+                    <Text size="xs" c="var(--foreground-muted)">{t("quickCreate.behaviorExecutableSub")}</Text>
+                  </div>
+                </Group>
+              </Radio.Card>
+
+              <Radio.Card
                 value={String(PlanRole.LABEL)}
-                label={
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <Tag size={14} aria-hidden className="text-foreground-muted" />
-                    {t("quickCreate.behaviorLabel")}
-                  </span>
-                }
-                description={t("quickCreate.behaviorLabelSub")}
-                classNames={{
-                  labelWrapper: "w-full",
-                  description: "text-[10px] text-foreground-muted",
-                }}
-              />
-            </div>
+                p="md"
+                radius="xl"
+                withBorder
+                className="transition-colors hover:var(--surface-1) data-[checked]:border-primary data-[checked]:bg-accent-soft"
+              >
+                <Group gap="sm" wrap="nowrap">
+                  <Radio.Indicator />
+                  <div>
+                    <Group gap="xs">
+                      <Tag size={14} className="text-foreground-muted" />
+                      <Text size="sm" fw={600}>{t("quickCreate.behaviorLabel")}</Text>
+                    </Group>
+                    <Text size="xs" c="var(--foreground-muted)">{t("quickCreate.behaviorLabelSub")}</Text>
+                  </div>
+                </Group>
+              </Radio.Card>
+            </Stack>
           </Radio.Group>
 
           <div className="mb-4 rounded-lg border border-border bg-surface-0 p-3">
