@@ -1125,34 +1125,34 @@ export function QuickTileCreate() {
         </div>
 
         {/* ─── composer foot ─── */}
-        <div className="flex h-[62px] shrink-0 items-center justify-between border-t border-border bg-surface-0 px-4">
+        <Group h={62} justify="space-between" px="md" className="shrink-0 border-t border-border bg-surface-0">
           <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
             <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
             <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
           </div>
           <div className="flex items-center gap-2">
             <Button
-              leftSection={<Save size={14} aria-hidden="true" />}
+              leftSection={<Save size={14} />}
               type="button"
-              className="flex h-[37px] items-center gap-1.5 rounded-lg border border-border bg-surface-0 px-3 text-xs font-semibold text-foreground-muted hover:bg-surface-1"
+              variant="default"
+              size="sm"
             >
               下書き保存
             </Button>
             <Button
               type="button"
-              variant="primary"
-              size="large"
+              variant="filled"
+              size="lg"
               data-testid="quick-create-submit"
               onClick={handleSubmit}
               loading={submitting}
               disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-              leftSection={submitting ? undefined : <Check size={16} aria-hidden="true" />}
-              className="h-10 bg-primary text-primary-fg hover:bg-primary/90"
+              leftSection={submitting ? undefined : <Check size={16} />}
             >
               {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
             </Button>
           </div>
-        </div>
+        </Group>
         {error ? <p className="px-4 pb-2 text-center text-xs text-danger">{error}</p> : null}
         {loadError ? (
           <p
