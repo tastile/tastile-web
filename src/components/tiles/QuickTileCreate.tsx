@@ -34,6 +34,7 @@ import {
   Paper,
   Radio,
   SegmentedControl,
+  SimpleGrid,
   Select,
   Stack,
   TagsInput,
@@ -162,6 +163,16 @@ const REPEAT_MODE_LABEL_KEY: Record<RepeatChoice, string> = {
   interval: "quickCreate.repeatInterval",
   condition: "quickCreate.repeatCondition",
 };
+
+const INTENT_ITEMS = [
+  { key: "time", icon: Calendar, panel: "time" as const, titleKey: "quickCreate.intentNarrowTime", subKey: "quickCreate.intentNarrowTimeSub" },
+  { key: "references", icon: Link2, panel: "references" as const, titleKey: "quickCreate.intentReferenceTile", subKey: "quickCreate.intentReferenceTileSub" },
+  { key: "recurring", icon: Layers, panel: "recurring" as const, titleKey: "quickCreate.intentNestStructure", subKey: "quickCreate.intentNestStructureSub" },
+  { key: "placement", icon: SlidersHorizontal, panel: "meta" as const, titleKey: "quickCreate.intentAdjustPlacement", subKey: "quickCreate.intentAdjustPlacementSub" },
+  { key: "completion", icon: ListChecks, panel: "completion" as const, titleKey: "quickCreate.intentCombineConditions", subKey: "quickCreate.intentCombineConditionsSub" },
+  { key: "addCompletion", icon: CheckCircle2, panel: "completion" as const, titleKey: "quickCreate.intentAddCompletion", subKey: "quickCreate.intentAddCompletionSub" },
+  { key: "onSuccess", icon: Play, panel: "meta" as const, titleKey: "quickCreate.intentDefineOnSuccess", subKey: "quickCreate.intentDefineOnSuccessSub" },
+] as const;
 
 function _localDateTimeToIso(value: string): string | null {
   if (!value) return null;
@@ -1182,112 +1193,27 @@ export function QuickTileCreate() {
           <p className="mb-3 text-[11px] text-foreground-muted">
             {t("quickCreate.intentDescription")}
           </p>
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              type="button"
-              onClick={() => setActivePanel("time")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Calendar size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentNarrowTime")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentNarrowTimeSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setActivePanel("references")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Link2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentReferenceTile")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentReferenceTileSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setActivePanel("recurring")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Layers size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentNestStructure")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentNestStructureSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setActivePanel("meta")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <SlidersHorizontal size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentAdjustPlacement")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentAdjustPlacementSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setActivePanel("completion")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <ListChecks size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentCombineConditions")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentCombineConditionsSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setActivePanel("completion")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <CheckCircle2 size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentAddCompletion")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentAddCompletionSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              onClick={() => setActivePanel("meta")}
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left hover:bg-surface-1 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Play size={16} className="mb-1.5 text-primary" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentDefineOnSuccess")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentDefineOnSuccessSub")}
-              </small>
-            </Button>
-            <Button
-              type="button"
-              disabled
-              className="flex min-h-[91px] flex-col items-start rounded-[10px] border border-border bg-surface-0 p-3 text-left opacity-60"
-            >
-              <Type size={16} className="mb-1.5" aria-hidden="true" />
-              <strong className="mb-0.5 text-xs font-semibold">
-                {t("quickCreate.intentTextCondition")}
-              </strong>
-              <small className="text-[10px] text-foreground-muted">
-                {t("quickCreate.intentTextConditionSub")}
-              </small>
-            </Button>
-          </div>
+          <SimpleGrid cols={2} spacing="sm" data-testid="intent-grid">
+            {INTENT_ITEMS.map((item) => (
+              <Paper key={item.key} withBorder radius="lg">
+                <UnstyledButton
+                  onClick={() => setActivePanel(item.panel)}
+                  className="flex min-h-[91px] w-full flex-col items-start p-3 text-left focus-visible:ring-2 focus-visible:ring-primary"
+                >
+                  <item.icon size={16} className="mb-1.5 text-primary" />
+                  <Text size="xs" fw={600} mb={2}>{t(item.titleKey)}</Text>
+                  <Text size="10" c="var(--foreground-muted)">{t(item.subKey)}</Text>
+                </UnstyledButton>
+              </Paper>
+            ))}
+            <Paper withBorder radius="lg" opacity={0.6}>
+              <div className="flex min-h-[91px] flex-col items-start p-3 text-left">
+                <Type size={16} className="mb-1.5" />
+                <Text size="xs" fw={600} mb={2}>{t("quickCreate.intentTextCondition")}</Text>
+                <Text size="10" c="var(--foreground-muted)">{t("quickCreate.intentTextConditionSub")}</Text>
+              </div>
+            </Paper>
+          </SimpleGrid>
         </div>
       </section>
 
