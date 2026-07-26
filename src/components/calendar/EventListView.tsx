@@ -1,6 +1,6 @@
 "use client";
 
-import { TextInput, Button } from "@mantine/core";
+import { Button, TextInput } from "@mantine/core";
 import { Calendar, Clock, MapPin, Search } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
@@ -39,7 +39,7 @@ export interface EventListViewProps {
   error: Error | null;
 }
 
-export function EventListView({ events, loading, error }: EventListViewProps) {
+export function EventListView({ events, loading }: EventListViewProps) {
   const [query, setQuery] = useState("");
   // useDeferredValue keeps the input snappy while the filter + groupByDay
   // run on a lower-priority update. Without this, typing into a long
@@ -49,11 +49,11 @@ export function EventListView({ events, loading, error }: EventListViewProps) {
     const q = deferredQuery.trim().toLowerCase();
     const filtered = q
       ? events.filter(
-        (e) =>
-          e.title.toLowerCase().includes(q) ||
-          (e.location ?? "").toLowerCase().includes(q) ||
-          (e.description ?? "").toLowerCase().includes(q),
-      )
+          (e) =>
+            e.title.toLowerCase().includes(q) ||
+            (e.location ?? "").toLowerCase().includes(q) ||
+            (e.description ?? "").toLowerCase().includes(q),
+        )
       : events;
     return groupByDay(filtered);
   }, [events, deferredQuery]);

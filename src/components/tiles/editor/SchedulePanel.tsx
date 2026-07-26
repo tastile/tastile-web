@@ -23,7 +23,7 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
-import { ActionIcon, SegmentedControl, Select, Button } from "@mantine/core";
+import { ActionIcon, Button, SegmentedControl, Select } from "@mantine/core";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 
 import { FormDivider, FormRow, RowInput, RowSegmented, SectionHeader } from "@/components/ui/form";
@@ -44,19 +44,19 @@ const WHEN_MODE_OPTIONS: ReadonlyArray<{
   id: WhenMode;
   labelKey: string;
 }> = [
-    { id: "day", labelKey: "quickCreate.whenModeDay" },
-    { id: "range", labelKey: "quickCreate.whenModeRange" },
-    { id: "reference", labelKey: "quickCreate.whenModeReference" },
-  ];
+  { id: "day", labelKey: "quickCreate.whenModeDay" },
+  { id: "range", labelKey: "quickCreate.whenModeRange" },
+  { id: "reference", labelKey: "quickCreate.whenModeReference" },
+];
 
 const TIME_OF_DAY_OPTIONS: ReadonlyArray<{
   id: TimeOfDayMode;
   labelKey: string;
 }> = [
-    { id: "all-day", labelKey: "quickCreate.timeOfDayAllDay" },
-    { id: "range", labelKey: "quickCreate.timeOfDayRange" },
-    { id: "unspecified", labelKey: "quickCreate.timeOfDayUnspecified" },
-  ];
+  { id: "all-day", labelKey: "quickCreate.timeOfDayAllDay" },
+  { id: "range", labelKey: "quickCreate.timeOfDayRange" },
+  { id: "unspecified", labelKey: "quickCreate.timeOfDayUnspecified" },
+];
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const MINUTES = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"];
@@ -66,10 +66,10 @@ const QUICK_RANGES: ReadonlyArray<{
   start: string;
   end: string;
 }> = [
-    { labelKey: "quickCreate.quickMorning", start: "06:00", end: "10:00" },
-    { labelKey: "quickCreate.quickMidday", start: "09:00", end: "18:00" },
-    { labelKey: "quickCreate.quickNight", start: "18:00", end: "24:00" },
-  ];
+  { labelKey: "quickCreate.quickMorning", start: "06:00", end: "10:00" },
+  { labelKey: "quickCreate.quickMidday", start: "09:00", end: "18:00" },
+  { labelKey: "quickCreate.quickNight", start: "18:00", end: "24:00" },
+];
 
 const WINDOW_KIND_OPTIONS = [
   { value: "0", label: "quickCreate.windowKindCalendar" },
@@ -278,7 +278,7 @@ function TimeOfDayEditor({
                 data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
               >
                 {t(q.labelKey)}
-              </  Button>
+              </Button>
             ))}
           </div>
         </div>

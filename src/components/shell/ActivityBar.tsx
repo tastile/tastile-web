@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { forwardRef, useState, type ComponentPropsWithoutRef } from "react";
+import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { type SidebarBehavior, useShellStore } from "@/lib/stores/shell-store";
@@ -42,10 +42,10 @@ const SIDEBAR_BEHAVIORS: {
   value: SidebarBehavior;
   labelKey: string;
 }[] = [
-    { value: "open", labelKey: "shell.activityBar.expanded" },
-    { value: "closed", labelKey: "shell.activityBar.collapsed" },
-    { value: "expandable", labelKey: "shell.activityBar.expandOnHover" },
-  ];
+  { value: "open", labelKey: "shell.activityBar.expanded" },
+  { value: "closed", labelKey: "shell.activityBar.collapsed" },
+  { value: "expandable", labelKey: "shell.activityBar.expandOnHover" },
+];
 
 export function ActivityBar() {
   const pathname = usePathname();
@@ -217,9 +217,7 @@ function ActivityContent({ label, Icon, expanded, active = false }: ActivityCont
         className={cn(
           "min-w-0 whitespace-nowrap text-left text-sm",
           "transition-[opacity,transform] duration-200 ease-in-out",
-          expanded
-            ? "translate-x-0 opacity-100"
-            : "pointer-events-none -translate-x-2 opacity-0",
+          expanded ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0",
         )}
         style={{
           display: "block",
@@ -233,37 +231,32 @@ function ActivityContent({ label, Icon, expanded, active = false }: ActivityCont
   );
 }
 
-const ActivityButton = forwardRef<HTMLButtonElement, ActivityButtonProps>(
-  function ActivityButton(
-    { label, Icon, expanded, ariaLabel, withTooltip = false, className, ...props },
-    ref,
-  ) {
-    const button = (
-      <Button
-        ref={ref}
-        type="button"
-        variant="subtle"
-        aria-label={ariaLabel ?? label}
-        className={cn(
-          "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-          className,
-        )}
-        styles={activityButtonStyles}
-        {...props}
-      >
-        <ActivityContent label={label} Icon={Icon} expanded={expanded} />
-      </Button>
-    );
+const ActivityButton = forwardRef<HTMLButtonElement, ActivityButtonProps>(function ActivityButton(
+  { label, Icon, expanded, ariaLabel, withTooltip = false, className, ...props },
+  ref,
+) {
+  const button = (
+    <Button
+      ref={ref}
+      type="button"
+      variant="subtle"
+      aria-label={ariaLabel ?? label}
+      className={cn("text-foreground-subtle hover:bg-surface-2 hover:text-foreground", className)}
+      styles={activityButtonStyles}
+      {...props}
+    >
+      <ActivityContent label={label} Icon={Icon} expanded={expanded} />
+    </Button>
+  );
 
-    if (!withTooltip) return button;
+  if (!withTooltip) return button;
 
-    return (
-      <Tooltip label={label} position="right" withArrow openDelay={300} disabled={expanded}>
-        {button}
-      </Tooltip>
-    );
-  },
-);
+  return (
+    <Tooltip label={label} position="right" withArrow openDelay={300} disabled={expanded}>
+      {button}
+    </Tooltip>
+  );
+});
 
 interface ActivityLinkProps {
   href: string;
@@ -288,12 +281,7 @@ function ActivityLink({ href, label, Icon, active, expanded }: ActivityLinkProps
         )}
         styles={activityButtonStyles}
       >
-        <ActivityContent
-          label={label}
-          Icon={Icon}
-          expanded={expanded}
-          active={active}
-        />
+        <ActivityContent label={label} Icon={Icon} expanded={expanded} active={active} />
       </Button>
     </Tooltip>
   );

@@ -4,9 +4,9 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 
 const root = path.resolve(import.meta.dirname, "..")
-const productFile = path.join(root, ".env.product")
+const productFile = path.join(root, ".env.production")
 if (!existsSync(productFile)) {
-  throw new Error(".env.product is required for a production build")
+  throw new Error(".env.production is required for a production build")
 }
 
 const candidates = [".env", ".env.local", ".env.production", ".env.production.local"]
@@ -30,7 +30,7 @@ try {
     backups.push({ source, destination })
   }
 
-  const result = spawnSync("bun", ["--env-file=.env.product", "next", "build"], {
+  const result = spawnSync("bun", ["--env-file=.env.production", "next", "build"], {
     cwd: root,
     env,
     stdio: "inherit",

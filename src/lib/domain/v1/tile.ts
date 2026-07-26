@@ -11,7 +11,7 @@ import type { ConditionNode } from "./condition";
 import type { PlanRoleValue } from "./constants";
 import type { Metric } from "./metric";
 import type { Reference } from "./reference";
-import type { DurationRange, Moment, Window } from "./window";
+import type { DurationRange, Moment } from "./window";
 
 // ---------- Planning (rules & flows) ----------
 

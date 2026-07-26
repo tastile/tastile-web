@@ -3,19 +3,18 @@
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
 import {
   ActionIcon,
+  Button,
+  ColorInput,
   getTreeExpandedState,
   Modal,
   Select,
   TextInput,
   Tree,
-  Button,
   useTree,
-  ColorInput
 } from "@mantine/core";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { Button as UIButton } from "@/components/ui/Button";
 import {
   createWorkspace,
   deleteWorkspace,

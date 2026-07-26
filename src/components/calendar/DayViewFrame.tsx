@@ -76,9 +76,9 @@ function DayViewFrameImpl({
               onClick={
                 onCreateAtSlot
                   ? // For around/future we anchor slot creation to the
-                  // start of the displayed window so the new tile
-                  // lands inside the visible range.
-                  () => onCreateAtSlot(effectiveDay, h)
+                    // start of the displayed window so the new tile
+                    // lands inside the visible range.
+                    () => onCreateAtSlot(effectiveDay, h)
                   : undefined
               }
               className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"

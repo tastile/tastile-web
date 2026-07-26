@@ -75,11 +75,11 @@ export function LabelSpanPicker({
           onChange(
             item
               ? {
-                placementId: item.placement_id,
-                title: item.title,
-                start: item.span_start,
-                end: item.span_end,
-              }
+                  placementId: item.placement_id,
+                  title: item.title,
+                  start: item.span_start,
+                  end: item.span_end,
+                }
               : null,
           );
         }}

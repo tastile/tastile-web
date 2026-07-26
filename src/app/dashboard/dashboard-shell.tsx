@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon, NavLink, Button } from "@mantine/core";
+import { ActionIcon, Button, NavLink } from "@mantine/core";
 import {
   BarChart3,
   ChevronDown,

@@ -129,7 +129,7 @@ function CalendarToolbar({
         className={cn(
           "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
           navDisabled &&
-          "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
+            "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
         )}
       >
         <ChevronLeft className="h-4 w-4" />
@@ -155,7 +155,7 @@ function CalendarToolbar({
         className={cn(
           "rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
           navDisabled &&
-          "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
+            "opacity-40 cursor-not-allowed hover:bg-transparent hover:text-foreground-subtle",
         )}
       >
         <ChevronRight className="h-4 w-4" />
@@ -406,7 +406,7 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
               variant="light"
               color="red"
               icon={<AlertCircle className="h-4 w-4" />}
-              title={"Couldn’t load events" + ": " + error.message}
+              title={`Couldn’t load events: ${error.message}`}
               data-testid="cal-error"
               className="pointer-events-auto w-full max-w-2xl"
             />

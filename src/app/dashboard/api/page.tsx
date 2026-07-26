@@ -1,15 +1,6 @@
 "use client";
 
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Chip,
-  Text,
-  Textarea,
-  TextInput,
-  Button,
-} from "@mantine/core";
+import { ActionIcon, Alert, Badge, Button, Chip, Text, Textarea, TextInput } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -457,10 +448,10 @@ function EndpointDetail({
           <pre className="min-h-[12rem] overflow-auto rounded-md border border-border bg-surface-0 p-2 font-mono text-[11px] text-ink-1">
             {response
               ? JSON.stringify(
-                response.ok ? response.data : (response.error.body ?? response.error),
-                null,
-                2,
-              )
+                  response.ok ? response.data : (response.error.body ?? response.error),
+                  null,
+                  2,
+                )
               : "// Click Run request to invoke this endpoint."}
           </pre>
           {response && !response.ok ? (

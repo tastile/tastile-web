@@ -32,7 +32,7 @@
     "knip": "knip --no-config-hints",
     "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run knip && bun run test:unit",
     "check:release": "bun run check && bun audit --production && bun run build:prod",
-    "doctor": "npx react-doctor@latest"
+    "doctor": "bunx react-doctor@latest"
   },
   "dependencies": {
     "@mantine/core": "^9.4.2",

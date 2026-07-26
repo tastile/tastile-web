@@ -1,12 +1,12 @@
+import { Button, Pill } from "@mantine/core";
+import { ArrowUpRight, Download } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { TastileLogo } from "@/components/TastileLogo";
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { translations } from "@/lib/i18n/translations";
-import { Button, Pill } from "@mantine/core"
-import { ArrowUpRight, Download } from "lucide-react";
 import type { Locale } from "@/lib/stores/locale-store";
-import { TastileLogo } from "@/components/TastileLogo";
 
 export const metadata = {
   title: "Download Tastile — Execution Control",
@@ -51,9 +51,7 @@ export default async function DownloadPage({
               {t.downloadButton}
             </Button>
             <div>
-              <p className="mt-3 text-sm text-foreground-muted">
-                {t.version}
-              </p>
+              <p className="mt-3 text-sm text-foreground-muted">{t.version}</p>
               <Pill className="mt-2 bg-surface-1 text-foreground-subtle"> {version}</Pill>
             </div>
           </div>
@@ -98,53 +96,9 @@ export default async function DownloadPage({
               {t.openWebApp}
             </Button>
           </div>
-        </div >
-      </main >
+        </div>
+      </main>
       <SiteFooter translations={getFooterTranslations(lang)} />
-    </div >
+    </div>
   );
 }
-
-const WindowsIcon = ({
-  size = undefined,
-  color = '#000000',
-  strokeWidth = 2,
-  background = 'transparent',
-  opacity = 1,
-  rotation = 0,
-  shadow = 0,
-  flipHorizontal = false,
-  flipVertical = false,
-  padding = 0
-}) => {
-  const transforms = [];
-  if (rotation !== 0) transforms.push(`rotate(${rotation}deg)`);
-  if (flipHorizontal) transforms.push('scaleX(-1)');
-  if (flipVertical) transforms.push('scaleY(-1)');
-
-  const viewBoxSize = 24 + (padding * 2);
-  const viewBoxOffset = -padding;
-  const viewBox = `${viewBoxOffset} ${viewBoxOffset} ${viewBoxSize} ${viewBoxSize}`;
-
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={viewBox}
-      width={size}
-      height={size}
-      fill="none"
-      stroke={color}
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      style={{
-        opacity,
-        transform: transforms.join(' ') || undefined,
-        filter: shadow > 0 ? `drop-shadow(0 ${shadow}px ${shadow * 2}px rgba(0,0,0,0.3))` : undefined,
-        backgroundColor: background !== 'transparent' ? background : undefined
-      }}
-    >
-      <path fill="currentColor" d="M682 878v651L0 1435V878zm0-743v659H0V229zm982 743v786l-907-125V878zm0-878v794H757V125z" />
-    </svg>
-  );
-};

@@ -1,9 +1,9 @@
 "use client";
 
 import { Alert, Button } from "@mantine/core";
+import { AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useMemo } from "react";
-import { AlertCircle } from "lucide-react"
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -121,18 +121,12 @@ export function ScheduleMain() {
           </Alert>
         )}
         {view === "placements" && placementsState.error && (
-          <Alert
-            icon={<AlertCircle className="h-4 w-4" />}
-            title="Failed to load placements"
-          >
+          <Alert icon={<AlertCircle className="h-4 w-4" />} title="Failed to load placements">
             {placementsState.error.message}
           </Alert>
         )}
         {view === "recurring" && !recurring.loading && recurring.templates.length === 0 && (
-          <Alert
-            icon={<AlertCircle className="h-4 w-4" />}
-            title="No recurring templates found"
-          >
+          <Alert icon={<AlertCircle className="h-4 w-4" />} title="No recurring templates found">
             <p className="text-sm">No recurring templates found in the source database.</p>
           </Alert>
         )}
@@ -140,10 +134,7 @@ export function ScheduleMain() {
           view !== "placements" &&
           !loading &&
           filteredTiles.length === 0 && (
-            <Alert
-              icon={<AlertCircle className="h-4 w-4" />}
-              title="No tiles found"
-            >
+            <Alert icon={<AlertCircle className="h-4 w-4" />} title="No tiles found">
               <p className="text-sm">No tiles found for this schedule view.</p>
             </Alert>
           )}
@@ -151,10 +142,7 @@ export function ScheduleMain() {
           !placementsLoading &&
           placementsCount === 0 &&
           candidatesCount === 0 && (
-            <Alert
-              icon={<AlertCircle className="h-4 w-4" />}
-              title="No placements found"
-            >
+            <Alert icon={<AlertCircle className="h-4 w-4" />} title="No placements found">
               <p className="text-sm">
                 No placements yet. Create a work tile with an estimated duration to see it scheduled
                 here.

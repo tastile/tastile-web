@@ -17,7 +17,7 @@
  * ladder today; full EXECUTION editor lives outside Phase A scope.
  */
 
-import { ConditionKind, PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
+import { ConditionKind } from "@/lib/domain/v1/constants";
 import { type ApiError, uuidv7 } from "@/lib/domain/v1/envelope";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import {
@@ -26,7 +26,7 @@ import {
   type QuickCreateSnapshot,
   substituteTileId,
 } from "./build-command";
-import { type ApiClient, postCommand, type Result } from "./endpoints";
+import { type ApiClient, postCommand } from "./endpoints";
 
 /**
  * Dev / E2E bypass token. Returned by `getIdToken` when

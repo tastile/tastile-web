@@ -27,13 +27,13 @@
 import {
   ActionIcon,
   Button,
+  CloseButton,
   Menu,
   NumberInput,
   Radio,
   SegmentedControl,
   Select,
   TagsInput,
-  CloseButton,
 } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import {
@@ -521,25 +521,25 @@ export function QuickTileCreate() {
   // --- layout classes ---
   const panelClass = isDesktop
     ? cn(
-      "fixed inset-y-0 right-0 z-[56]",
-      "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-      isClosing
-        ? "translate-x-full opacity-0"
-        : activePanel !== "base"
-          ? "-translate-x-6"
-          : "translate-x-0",
-      "[animation:slideInFromRight_0.22s_ease-out]",
-    )
+        "fixed inset-y-0 right-0 z-[56]",
+        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
+        isClosing
+          ? "translate-x-full opacity-0"
+          : activePanel !== "base"
+            ? "-translate-x-6"
+            : "translate-x-0",
+        "[animation:slideInFromRight_0.22s_ease-out]",
+      )
     : cn(
-      "fixed inset-x-0 bottom-0 z-[56]",
-      "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-      isClosing
-        ? "translate-y-full opacity-0"
-        : activePanel !== "base"
-          ? "translate-y-6"
-          : "translate-y-0",
-      "[animation:slideInFromBottom_0.22s_ease-out]",
-    );
+        "fixed inset-x-0 bottom-0 z-[56]",
+        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
+        isClosing
+          ? "translate-y-full opacity-0"
+          : activePanel !== "base"
+            ? "translate-y-6"
+            : "translate-y-0",
+        "[animation:slideInFromBottom_0.22s_ease-out]",
+      );
 
   const subPanelClass = (
     panel:
@@ -554,16 +554,16 @@ export function QuickTileCreate() {
   ) =>
     isDesktop
       ? cn(
-        "fixed inset-y-0 right-0 z-[57]",
-        "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
-        "transition-transform duration-300 ease-out",
-        activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
-      )
+          "fixed inset-y-0 right-0 z-[57]",
+          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
+          "transition-transform duration-300 ease-out",
+          activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
+        )
       : cn(
-        "fixed inset-x-0 bottom-0 z-[57]",
-        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
-        activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
-      );
+          "fixed inset-x-0 bottom-0 z-[57]",
+          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
+          activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
+        );
 
   // --- condition count ---
   const conditionCount = windows.length + recurring.frameRules.length;
@@ -599,10 +599,7 @@ export function QuickTileCreate() {
             </h2>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <CloseButton
-              onClick={close}
-              aria-label={t("tiles.closePanel")}
-            />
+            <CloseButton onClick={close} aria-label={t("tiles.closePanel")} />
           </div>
         </div>
 
@@ -2603,7 +2600,7 @@ function TermFields({
     case "metric":
     case "fact":
     case "feedback": {
-      const v = term.value as unknown as { op: number; value: unknown;[k: string]: unknown };
+      const v = term.value as unknown as { op: number; value: unknown; [k: string]: unknown };
       const idKey =
         term.kind === "fact" ? "factId" : term.kind === "metric" ? "metricId" : "feedbackTxnId";
       return (

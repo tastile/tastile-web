@@ -97,8 +97,9 @@ export function AccountMenu({
           </div>
           <div className="mt-2">
             <span
-              className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${plan === "pro" ? "bg-primary/10 text-primary" : "bg-surface-2 text-foreground-muted"
-                }`}
+              className={`inline-block text-xs font-medium px-2 py-0.5 rounded-full ${
+                plan === "pro" ? "bg-primary/10 text-primary" : "bg-surface-2 text-foreground-muted"
+              }`}
             >
               {plan === "pro" ? "Pro" : "Free"}
             </span>

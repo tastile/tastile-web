@@ -1,13 +1,12 @@
 "use client";
 
-import { ActionIcon, Button, Avatar, Burger } from "@mantine/core";
+import { ActionIcon, Avatar, Burger, Button } from "@mantine/core";
 import {
   Bell,
   CalendarDays,
   CheckSquare,
   Layers,
   LogOut,
-  Menu,
   Repeat,
   Search,
   Settings,
@@ -156,11 +155,7 @@ export function FloatingHeader({
 
           <FloatingMenu>
             <FloatingMenuTrigger asChild>
-              <Avatar
-                aria-label={t("shell.floatingHeader.userMenu")}
-              >
-                {userName.charAt(0)}
-              </Avatar>
+              <Avatar aria-label={t("shell.floatingHeader.userMenu")}>{userName.charAt(0)}</Avatar>
             </FloatingMenuTrigger>
             <FloatingMenuContent align="end" className="w-56 mt-1">
               <FloatingMenuLabel className="font-normal">
