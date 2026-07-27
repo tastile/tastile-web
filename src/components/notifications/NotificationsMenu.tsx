@@ -6,7 +6,12 @@ import {
   FloatingMenuLabel,
   FloatingMenuSeparator,
 } from "@/components/ui/floating-menu";
-import { type NotificationItem, useNotifications } from "@/lib/hooks/use-notifications";
+import {
+  EXECUTION_PROMPT_PREFIX,
+  isExecutionPromptNotification,
+  type NotificationItem,
+  useNotifications,
+} from "@/lib/hooks/use-notifications";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface NotificationsMenuProps {
@@ -45,8 +50,8 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
   // navigation is acceptable for the once-per-click deep-link.
   function handleNotificationClick(item: NotificationItem) {
     onOpenChange(false);
-    if (item.source === "execution" && item.id.startsWith("prompt:")) {
-      const sessionId = item.id.slice("prompt:".length);
+    if (item.source === "execution" && isExecutionPromptNotification(item.id)) {
+      const sessionId = item.id.slice(EXECUTION_PROMPT_PREFIX.length);
       window.location.assign(`/app/prompt?focus=${encodeURIComponent(sessionId)}`);
       return;
     }

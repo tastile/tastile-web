@@ -16,6 +16,14 @@ import {
 const BASE_INTERVAL_MS = 15_000;
 const MAX_BACKOFF_MS = 5 * 60_000;
 
+/** Prefix for notification IDs that carry an execution pending_prompt_id. */
+export const EXECUTION_PROMPT_PREFIX = "prompt:";
+
+/** Returns true if the notification id is an execution pending-prompt id. */
+export function isExecutionPromptNotification(id: string): boolean {
+  return id.startsWith(EXECUTION_PROMPT_PREFIX);
+}
+
 /**
  * Compute the delay for the next poll based on the most recent result.
  * Successful polls reset to the base cadence. Failed polls grow the
@@ -213,7 +221,7 @@ function toExecutionNotification(
 ): NotificationItem | null {
   if (snapshot.pending_prompt_id) {
     return {
-      id: `prompt:${snapshot.pending_prompt_id}`,
+      id: `${EXECUTION_PROMPT_PREFIX}${snapshot.pending_prompt_id}`,
       message: t("notifications.promptPending"),
       timestamp: new Date(),
       readAt: null,

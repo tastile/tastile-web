@@ -15,10 +15,10 @@
  * are a documented carry-over — wrapping through a shared `BottomSheet`
  * would expand scope beyond this task's wire-up goal.
  *
- * The page accepts `?focus=<sessionId>` in the URL but does not
- * currently auto-open the matching session — that requires a future
- * `focusSessionId` prop on `DecisionPromptSheet`. Notification
- * deep-links still land here and the user clicks the card to open it.
+ * TODO(focus-prop): once DecisionPromptSheet exposes focusSessionId,
+ * read `searchParams.focus` here and pass it through so deep-linked
+ * users land on the right card. Until then the param is accepted but a
+ * no-op.
  */
 
 import { DecisionPromptSheet } from "@/components/execution/DecisionPromptSheet";
