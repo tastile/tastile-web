@@ -13,9 +13,10 @@ import {
   useTree,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
+import { useForm } from "@mantine/form";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import {
   createWorkspace,
   deleteWorkspace,
@@ -25,6 +26,14 @@ import {
 } from "@/lib/hooks/use-projects";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { cn } from "@/lib/utils/cn";
+
+const DEFAULT_COLOR = "#6b7280";
+
+type CreateFormValues = {
+  name: string;
+  slug: string;
+  color: string;
+};
 
 export function ProjectsSidePanel() {
   const router = useRouter();
@@ -37,12 +46,18 @@ export function ProjectsSidePanel() {
   const currentOwner = searchParams.get("owner") ?? null;
 
   const [creating, { open: openCreating, close: closeCreating }] = useDisclosure(false);
-  const [name, setName] = useState("");
-  const [slug, setSlug] = useState("");
-  const [color, setColor] = useState("#6b7280");
   const [parentId, setParentId] = useState<string | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
   const [creatingBusy, setCreatingBusy] = useState(false);
+  const submittingRef = useRef(false);
+
+  const form = useForm<CreateFormValues>({
+    mode: "uncontrolled",
+    initialValues: { name: "", slug: "", color: DEFAULT_COLOR },
+    validate: {
+      name: (value) => (value.trim().length === 0 ? "Name is required" : null),
+    },
+  });
 
   function handleSelect(id: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -54,28 +69,21 @@ export function ProjectsSidePanel() {
   }
 
   function resetForm() {
-    setName("");
-    setSlug("");
-    setColor("#6b7280");
+    form.reset();
     setParentId(null);
     setCreateError(null);
     closeCreating();
   }
 
-  function handleCreate() {
-    if (!name.trim()) {
-      setCreateError("name required");
-      return;
-    }
+  function handleCreate(values: CreateFormValues) {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setCreatingBusy(true);
     setCreateError(null);
-    // Promise chain instead of try/catch/finally in the render path so the
-    // React Compiler sees a supported pattern. busy flag is reset via
-    // .finally() on both success and failure paths.
     void createWorkspace({
-      display_name: name.trim(),
-      slug: slug.trim() || null,
-      color,
+      display_name: values.name.trim(),
+      slug: values.slug.trim() || null,
+      color: values.color,
       parent_subject_id: parentId,
     })
       .then(async (ws) => {
@@ -87,6 +95,7 @@ export function ProjectsSidePanel() {
         setCreateError((e as Error).message);
       })
       .finally(() => {
+        submittingRef.current = false;
         setCreatingBusy(false);
       });
   }
@@ -94,7 +103,6 @@ export function ProjectsSidePanel() {
   function handleDelete(id: string, displayName: string) {
     if (typeof window !== "undefined" && !window.confirm(`Delete project "${displayName}"?`))
       return;
-    // Same Promise-chain shape: refresh + select on success, alert on failure.
     void deleteWorkspace(id)
       .then(async () => {
         await refresh();
@@ -106,6 +114,8 @@ export function ProjectsSidePanel() {
         }
       });
   }
+
+  const slugProps = form.getInputProps("slug");
 
   return (
     <div className="flex flex-col gap-2 pt-2">
@@ -126,16 +136,12 @@ export function ProjectsSidePanel() {
 
       <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void handleCreate();
-          }}
+          onSubmit={form.onSubmit((values) => handleCreate(values))}
           className="flex flex-col gap-3"
         >
           <TextInput
+            {...form.getInputProps("name")}
             placeholder="Project name"
-            value={name}
-            onChange={(e) => setName(e.currentTarget.value)}
             maxLength={80}
             required
             data-testid="project-create-name"
@@ -143,11 +149,14 @@ export function ProjectsSidePanel() {
             size="sm"
           />
           <TextInput
+            {...slugProps}
             placeholder="slug (optional)"
-            value={slug}
-            onChange={(e) =>
-              setSlug(e.currentTarget.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))
-            }
+            onChange={(event) => {
+              const normalized = event.currentTarget.value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "-");
+              form.setFieldValue("slug", normalized);
+            }}
             pattern="[a-z0-9-]+"
             maxLength={40}
             data-testid="project-create-slug"
@@ -163,8 +172,7 @@ export function ProjectsSidePanel() {
             </label>
             <ColorInput
               id="project-color"
-              value={color}
-              onChange={setColor}
+              {...form.getInputProps("color")}
               aria-label="Project color"
               data-testid="project-create-color"
             />
@@ -195,11 +203,7 @@ export function ProjectsSidePanel() {
             <Button title="Cancel" onClick={resetForm} disabled={creatingBusy} variant="outline">
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={creatingBusy || !name.trim()}
-              data-testid="project-create-submit"
-            >
+            <Button type="submit" disabled={creatingBusy} data-testid="project-create-submit">
               {creatingBusy ? "Creating..." : "Create"}
             </Button>
 

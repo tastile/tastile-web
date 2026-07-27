@@ -139,4 +139,80 @@ describe("ProjectsSidePanel create flow", () => {
 			).toBeTruthy();
 		});
 	});
+
+	it("blocks submit when name is empty without calling the API", async () => {
+		renderWithMantine(<ProjectsSidePanel />);
+
+		fireEvent.click(screen.getByTestId("project-create"));
+		await screen.findByTestId("project-create-name");
+
+		fireEvent.click(screen.getByTestId("project-create-submit"));
+
+		expect(mockCreateWorkspace).not.toHaveBeenCalled();
+	});
+
+	it("normalizes slug to lowercase and strips non-slug characters", async () => {
+		mockRefresh.mockResolvedValue(undefined);
+
+		renderWithMantine(<ProjectsSidePanel />);
+
+		fireEvent.click(screen.getByTestId("project-create"));
+
+		const nameInput = await screen.findByTestId("project-create-name");
+		fireEvent.change(nameInput, { target: { value: "Hello" } });
+		fireEvent.change(screen.getByTestId("project-create-slug"), {
+			target: { value: "Hello World!!" },
+		});
+
+		fireEvent.click(screen.getByTestId("project-create-submit"));
+
+		await waitFor(() => expect(mockCreateWorkspace).toHaveBeenCalledTimes(1));
+		expect(mockCreateWorkspace).toHaveBeenCalledWith(
+			expect.objectContaining({ slug: "hello-world--" }),
+		);
+	});
+
+	it("keeps form values when the API rejects (no clear on error)", async () => {
+		mockCreateWorkspace.mockRejectedValueOnce(new Error("nope"));
+		mockRefresh.mockResolvedValue(undefined);
+
+		renderWithMantine(<ProjectsSidePanel />);
+
+		fireEvent.click(screen.getByTestId("project-create"));
+
+		const nameInput = await screen.findByTestId("project-create-name");
+		fireEvent.change(nameInput, { target: { value: "Sticky value" } });
+
+		fireEvent.click(screen.getByTestId("project-create-submit"));
+
+		await waitFor(() => expect(mockCreateWorkspace).toHaveBeenCalledTimes(1));
+		await screen.findByText("nope");
+		// Dialog still open and value still present.
+		expect((nameInput as HTMLInputElement).value).toBe("Sticky value");
+	});
+
+	it("prevents double-submit while a request is in flight", async () => {
+		let resolveCreate: (value: { id: string }) => void = () => {};
+		mockCreateWorkspace.mockReturnValueOnce(
+			new Promise((resolve) => {
+				resolveCreate = resolve;
+			}),
+		);
+		mockRefresh.mockResolvedValue(undefined);
+
+		renderWithMantine(<ProjectsSidePanel />);
+
+		fireEvent.click(screen.getByTestId("project-create"));
+		const nameInput = await screen.findByTestId("project-create-name");
+		fireEvent.change(nameInput, { target: { value: "Demo" } });
+
+		const submit = screen.getByTestId("project-create-submit");
+		fireEvent.click(submit);
+		fireEvent.click(submit);
+
+		expect(mockCreateWorkspace).toHaveBeenCalledTimes(1);
+
+		resolveCreate({ id: "ws-new" });
+		await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
+	});
 });
