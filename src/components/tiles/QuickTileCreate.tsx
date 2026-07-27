@@ -29,7 +29,6 @@ import {
   Button,
   CloseButton,
   Group,
-  Menu,
   NumberInput,
   Paper,
   SegmentedControl,
@@ -62,7 +61,6 @@ import {
   Link2,
   ListChecks,
   MessageSquare,
-  MoreHorizontal,
   Palette,
   Pencil,
   Play,
@@ -91,6 +89,7 @@ import {
   ConditionKind,
   HolidayKind,
   PlanRole,
+  TaskOrderRelation,
   type PlanRoleValue,
   TileKind,
   type TileKindValue,
@@ -105,7 +104,11 @@ import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { translations } from "@/lib/i18n/translations";
 import type { Locale } from "@/lib/stores/locale-store";
-import { type RepeatChoice, useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import {
+  hasTaskOrderCycle,
+  type RepeatChoice,
+  useQuickCreateStore,
+} from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention).
@@ -234,6 +237,9 @@ export function QuickTileCreate() {
   const close = useQuickCreateStore((s) => s.close);
   const reset = useQuickCreateStore((s) => s.reset);
   const setField = useQuickCreateStore((s) => s.setField);
+  const addTask = useQuickCreateStore((s) => s.addTask);
+  const removeTask = useQuickCreateStore((s) => s.removeTask);
+  const setTaskField = useQuickCreateStore((s) => s.setTaskField);
   const mode = useQuickCreateStore((s) => s.mode);
   const editingId = useQuickCreateStore((s) => s.editingId);
   const loadError = useQuickCreateStore((s) => s.loadError);
@@ -259,7 +265,9 @@ export function QuickTileCreate() {
     | "references"
     | "completion"
     | "meta"
+    | "task"
   >("base");
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const projects = useProjects();
   const refreshProjects = projects.refresh;
   const tiles = useTileList({ limit: 200 });
@@ -341,23 +349,6 @@ export function QuickTileCreate() {
   }, [visualOpen]);
 
   useEffect(() => {
-    if (activePanel === "base") return;
-    function handleSubPanelOutsideClick(event: MouseEvent) {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      const subPanel = document.querySelector(`[data-subpanel="${activePanel}"]`);
-      if (subPanel?.contains(target)) return;
-      if (target.closest("[data-mantine-portal]")) return;
-      if (target.closest("[data-subpanel]")) return;
-      setActivePanel("base");
-    }
-    document.addEventListener("mousedown", handleSubPanelOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleSubPanelOutsideClick);
-    };
-  }, [activePanel]);
-
-  useEffect(() => {
     if (identity.externalId === null) {
       setField("identity.externalId", uuidv7());
     }
@@ -375,7 +366,8 @@ export function QuickTileCreate() {
     time.durationMinMax.minMs === null ||
     time.durationMinMax.maxMs === null ||
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
-  const canSubmit = titleOk && spanOrderValid && durationValid && !submitBlocked;
+  const taskOrderValid = !hasTaskOrderCycle(plan.completion.tasks);
+  const canSubmit = titleOk && spanOrderValid && durationValid && taskOrderValid && !submitBlocked;
 
   // --- completion root summary ---
   function countConditionChildren(node: ConditionNode | null): number {
@@ -499,7 +491,8 @@ export function QuickTileCreate() {
       | "recurring"
       | "references"
       | "completion"
-      | "meta",
+      | "meta"
+      | "task",
   ) =>
     isDesktop
       ? cn(
@@ -777,110 +770,81 @@ export function QuickTileCreate() {
                     : t("quickCreate.completionAddHint")}
                 </div>
                 <div className="space-y-1.5">
-                  {plan.completion.tasks.map((tk, i) => (
-                    <div
-                      key={tk.id}
-                      data-testid="quick-create-task-row"
-                      className="flex min-h-[32px] items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1 text-xs"
+                  {plan.completion.tasks.length === 0 ? (
+                    <p
+                      data-testid="quick-create-tasks-empty"
+                      className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
                     >
-                      <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-0" />
-                      <TextInput
-                        value={tk.content?.title ?? ""}
-                        onChange={(e) => {
-                          const next = plan.completion.tasks.slice();
-                          next[i] = {
-                            ...tk,
-                            content: { ...tk.content, title: e.target.value },
-                          };
-                          setField("plan.completion.tasks", next);
-                        }}
-                        placeholder={t("quickCreate.taskUntitled")}
-                        variant="unstyled"
-                        size="xs"
-                        className="min-w-0 flex-1"
-                        styles={{ input: { padding: 0, height: 20, minHeight: 20 } }}
-                      />
-                      <Menu position="bottom-end" withArrow shadow="md">
-                        <Menu.Target>
-                          <ActionIcon
-                            type="button"
-                            variant="subtle"
-                            size="xs"
-                            aria-label={t("quickCreate.taskMoreAria")}
+                      {t("quickCreate.taskNoTasksHint")}
+                    </p>
+                  ) : (
+                    plan.completion.tasks.map((tk) => (
+                      <div
+                        key={tk.id}
+                        data-testid="quick-create-task-row"
+                        className="flex min-h-[32px] items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1 text-xs"
+                      >
+                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-0" />
+                        <TextInput
+                          value={tk.content?.title ?? ""}
+                          onChange={(e) =>
+                            setTaskField(tk.id, "content.title", e.target.value)
+                          }
+                          placeholder={t("quickCreate.taskUntitled")}
+                          variant="unstyled"
+                          size="xs"
+                          className="min-w-0 flex-1"
+                          styles={{ input: { padding: 0, height: 20, minHeight: 20 } }}
+                        />
+                        {tk.content?.note && (
+                          <span
+                            aria-label={t("quickCreate.taskHasNote")}
+                            title={t("quickCreate.taskHasNote")}
+                            className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-foreground-muted"
                           >
-                            <MoreHorizontal size={12} />
-                          </ActionIcon>
-                        </Menu.Target>
-                        <Menu.Dropdown>
-                          <Menu.Item
-                            leftSection={<ChevronUp size={14} />}
-                            disabled={i === 0}
-                            onClick={() => {
-                              const target = i - 1;
-                              if (target < 0) return;
-                              const next = plan.completion.tasks.slice();
-                              const [moved] = next.splice(i, 1);
-                              next.splice(target, 0, moved);
-                              setField("plan.completion.tasks", next);
-                            }}
+                            <MessageSquare size={10} aria-hidden="true" />
+                          </span>
+                        )}
+                        {tk.order.length > 0 && (
+                          <span
+                            aria-label={t("quickCreate.taskHasOrder", { count: tk.order.length })}
+                            title={t("quickCreate.taskHasOrder", { count: tk.order.length })}
+                            className="inline-flex h-4 shrink-0 items-center rounded bg-surface-1 px-1 text-[9px] font-semibold text-foreground-muted"
                           >
-                            {t("quickCreate.taskMoveUp")}
-                          </Menu.Item>
-                          <Menu.Item
-                            leftSection={<ChevronDown size={14} />}
-                            disabled={i === plan.completion.tasks.length - 1}
-                            onClick={() => {
-                              const target = i + 1;
-                              if (target >= plan.completion.tasks.length) return;
-                              const next = plan.completion.tasks.slice();
-                              const [moved] = next.splice(i, 1);
-                              next.splice(target, 0, moved);
-                              setField("plan.completion.tasks", next);
-                            }}
-                          >
-                            {t("quickCreate.taskMoveDown")}
-                          </Menu.Item>
-                          <Menu.Divider />
-                          <Menu.Item
-                            leftSection={<Trash2 size={14} />}
-                            color="red"
-                            onClick={() => {
-                              const next = plan.completion.tasks.slice();
-                              next.splice(i, 1);
-                              setField("plan.completion.tasks", next);
-                            }}
-                          >
-                            {t("quickCreate.taskMoreTitle")}
-                          </Menu.Item>
-                        </Menu.Dropdown>
-                      </Menu>
-                    </div>
-                  ))}
+                            <Link2 size={9} aria-hidden="true" className="mr-0.5" />
+                            {tk.order.length}
+                          </span>
+                        )}
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          size="xs"
+                          aria-label={t("quickCreate.taskEditAria")}
+                          data-testid="quick-create-task-edit"
+                          onClick={() => {
+                            setEditingTaskId(tk.id);
+                            setActivePanel("task");
+                          }}
+                        >
+                          <ChevronRight size={12} />
+                        </ActionIcon>
+                      </div>
+                    ))
+                  )}
                   <Button
                     type="button"
                     variant="subtle"
                     size="xs"
                     leftSection={<Plus size={12} />}
                     onClick={() => {
-                      setField("plan.completion.tasks", [
-                        ...plan.completion.tasks,
-                        {
-                          id: `tk_${Math.random().toString(36).slice(2, 9)}`,
-                          content: { title: "", note: null },
-                          show: null,
-                          complete: {
-                            id: `c_${Math.random().toString(36).slice(2, 9)}`,
-                            kind: 0,
-                            children: [],
-                            term: null,
-                          },
-                          order: [],
-                        },
-                      ]);
+                      const newId = addTask();
+                      setEditingTaskId(newId);
+                      setActivePanel("task");
                     }}
                     className="mt-1 text-foreground-muted"
+                    data-testid="quick-create-task-add"
                   >
-                    {t("quickCreate.completionAddHint")}
+                    {t("quickCreate.taskAdd")}
                   </Button>
                 </div>
               </div>
@@ -1720,6 +1684,225 @@ export function QuickTileCreate() {
               {t("quickCreate.completionRemoveLabel")}
             </Button>
           </div>
+        </FormPanel>
+      </section>
+
+      {/* ─── task sub-panel ─── */}
+      <section
+        data-subpanel="task"
+        className={subPanelClass("task")}
+        aria-hidden={activePanel !== "task"}
+      >
+        <SubPanelHeader
+          onBack={() => {
+            setActivePanel("base");
+            setEditingTaskId(null);
+          }}
+          backAriaLabel={t("quickCreate.back")}
+          title={t("quickCreate.taskDetailTitle")}
+          subtitle={t("quickCreate.taskDetailSub")}
+        />
+        <FormPanel>
+          {(() => {
+            const task = plan.completion.tasks.find((tk) => tk.id === editingTaskId);
+            if (!task || !editingTaskId) {
+              return (
+                <p className="text-xs text-foreground-muted">
+                  {t("quickCreate.taskNoTasksHint")}
+                </p>
+              );
+            }
+            const otherTasks = plan.completion.tasks.filter((tk) => tk.id !== task.id);
+            const orderHasCycle = hasTaskOrderCycle(plan.completion.tasks);
+            return (
+              <div className="flex flex-col gap-4" data-testid="task-detail-panel">
+                <div className="flex flex-col gap-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                    {t("quickCreate.taskNoteLabel")}
+                  </div>
+                  <Textarea
+                    value={task.content.note ?? ""}
+                    onChange={(e) =>
+                      setTaskField(task.id, "content.note", e.target.value || null)
+                    }
+                    placeholder={t("quickCreate.taskNotePlaceholder")}
+                    aria-label={t("quickCreate.taskNoteLabel")}
+                    rows={4}
+                    className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus:ring-0"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                    <span>{t("quickCreate.taskOrderSection")}</span>
+                  </div>
+                  {task.order.length === 0 ? (
+                    <p className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted">
+                      {t("quickCreate.taskOrderEmpty")}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      {task.order.map((rule, i) => {
+                        const targetTask = plan.completion.tasks.find(
+                          (tk) => tk.id === rule.targetTaskId,
+                        );
+                        const targetTitle = targetTask?.content.title || t("quickCreate.taskUntitled");
+                        return (
+                          <div
+                            key={rule.id}
+                            data-testid={`task-order-row-${i}`}
+                            className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-surface-0 p-2"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Select
+                                aria-label={t("quickCreate.taskOrderTarget")}
+                                value={rule.targetTaskId}
+                                onChange={(value) => {
+                                  if (!value) return;
+                                  const next = task.order.slice();
+                                  next[i] = { ...rule, targetTaskId: value };
+                                  setTaskField(task.id, "order", next);
+                                }}
+                                data={otherTasks.map((tk) => ({
+                                  value: tk.id,
+                                  label: tk.content.title || t("quickCreate.taskUntitled"),
+                                }))}
+                                placeholder={t("quickCreate.taskOrderTargetPlaceholder")}
+                                size="xs"
+                                variant="filled"
+                                comboboxProps={{ withinPortal: true }}
+                                className="flex-1"
+                                styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                              />
+                              <ActionIcon
+                                type="button"
+                                variant="subtle"
+                                size="xs"
+                                aria-label={t("quickCreate.removeItem")}
+                                onClick={() => {
+                                  const next = task.order.slice();
+                                  next.splice(i, 1);
+                                  setTaskField(task.id, "order", next);
+                                }}
+                                className="text-foreground-muted hover:text-danger"
+                              >
+                                <Trash2 size={12} aria-hidden="true" />
+                              </ActionIcon>
+                            </div>
+                            <SegmentedControl
+                              fullWidth
+                              size="xs"
+                              radius="md"
+                              withItemsBorders={false}
+                              value={String(rule.relation)}
+                              onChange={(value) => {
+                                const next = task.order.slice();
+                                next[i] = {
+                                  ...rule,
+                                  relation: Number(value) as typeof TaskOrderRelation.BEFORE | typeof TaskOrderRelation.AFTER,
+                                };
+                                setTaskField(task.id, "order", next);
+                              }}
+                              data={[
+                                {
+                                  value: String(TaskOrderRelation.BEFORE),
+                                  label: t("quickCreate.referenceRelationBefore"),
+                                },
+                                {
+                                  value: String(TaskOrderRelation.AFTER),
+                                  label: t("quickCreate.referenceRelationAfter"),
+                                },
+                              ]}
+                              styles={SEGMENT_STYLES}
+                            />
+                            <p className="text-[10px] text-foreground-muted">
+                              {rule.relation === TaskOrderRelation.BEFORE
+                                ? `${task.content.title || t("quickCreate.taskUntitled")} → ${targetTitle}`
+                                : `${targetTitle} → ${task.content.title || t("quickCreate.taskUntitled")}`}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="default"
+                    leftSection={<Plus size={12} aria-hidden="true" />}
+                    onClick={() => {
+                      const fallbackTarget = otherTasks[0]?.id ?? null;
+                      if (!fallbackTarget) return;
+                      const newRule = {
+                        id: uuidv7(),
+                        targetTaskId: fallbackTarget,
+                        relation: TaskOrderRelation.BEFORE,
+                        when: null,
+                      };
+                      setTaskField(task.id, "order", [...task.order, newRule]);
+                    }}
+                    data-testid="task-order-add"
+                    disabled={otherTasks.length === 0}
+                  >
+                    {t("quickCreate.taskOrderAdd")}
+                  </Button>
+                  {orderHasCycle ? (
+                    <p
+                      role="alert"
+                      data-testid="task-order-cycle"
+                      className="rounded-md bg-danger/10 px-2 py-1 text-[10px] font-semibold text-danger"
+                    >
+                      {t("quickCreate.taskOrderCycle")}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="subtle"
+                    leftSection={<Trash2 size={12} aria-hidden="true" />}
+                    onClick={() => {
+                      removeTask(task.id);
+                      setEditingTaskId(null);
+                      setActivePanel("base");
+                    }}
+                    data-testid="task-remove"
+                    className="text-danger hover:bg-danger/10"
+                  >
+                    {t("quickCreate.taskRemoveLabel")}
+                  </Button>
+                  <div className="flex-1" />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="default"
+                    leftSection={<X size={12} aria-hidden="true" />}
+                    onClick={() => {
+                      setEditingTaskId(null);
+                      setActivePanel("base");
+                    }}
+                  >
+                    {t("quickCreate.completionCancelLabel")}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="filled"
+                    leftSection={<Check size={12} aria-hidden="true" />}
+                    onClick={() => {
+                      setEditingTaskId(null);
+                      setActivePanel("base");
+                    }}
+                    data-testid="task-apply"
+                  >
+                    {t("quickCreate.referenceApplyLabel")}
+                  </Button>
+                </div>
+              </div>
+            );
+          })()}
         </FormPanel>
       </section>
     </>

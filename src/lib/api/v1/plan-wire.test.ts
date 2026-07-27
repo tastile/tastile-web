@@ -624,6 +624,8 @@ describe("toWireSetPlanBody (id normalisation)", () => {
     expect(taskId).toMatch(UUIDV7_RE);
     expect(wire.completion.tasks[0].order[0].id).toMatch(UUIDV7_RE);
     expect(wire.completion.tasks[0].order[0].target_task_id).toBe(taskId);
+    expect(wire.completion.tasks[0].order[0].relation).toBe(0);
+    expect(wire.completion.tasks[0]).not.toHaveProperty("children");
     expect(wire.completion.tasks[0].complete).toEqual({
       Term: { Task: { task_id: taskId, state: "Completed" } },
     });

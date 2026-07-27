@@ -19,7 +19,7 @@
 
 import { ConditionKind } from "@/lib/domain/v1/constants";
 import { type ApiError, uuidv7 } from "@/lib/domain/v1/envelope";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { useQuickCreateStore, tasksForSubmission } from "@/lib/stores/quick-create-store";
 import {
   type BuiltEnvelope,
   buildCreateTileCommand,
@@ -97,7 +97,7 @@ function storeToSnapshot(): QuickCreateSnapshot {
       completion: {
         root: completionRoot,
         timeRequirements: state.plan.completion.timeRequirements,
-        tasks: state.plan.completion.tasks,
+        tasks: tasksForSubmission(state.plan.completion.tasks),
       },
       planning: state.plan.planning,
       metrics: state.plan.metrics,

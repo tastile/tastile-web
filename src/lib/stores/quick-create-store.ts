@@ -30,11 +30,13 @@ import {
   ConditionKind,
   PlanRole,
   RecurringState,
+  TaskOrderRelation,
   type RecurringStateValue,
   TileKind,
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
 import type { FrameRule, Plan, RecurringRule } from "@/lib/domain/v1/tile";
+import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { DateRange, DurationRange, Span, Window } from "@/lib/domain/v1/window";
 
 /**
@@ -197,6 +199,9 @@ export interface QuickCreateState {
    * Array-index path segments are intentionally unsupported.
    */
   setField: (path: string, value: unknown) => void;
+  addTask: (title?: string) => string;
+  removeTask: (taskId: string) => void;
+  setTaskField: (taskId: string, path: string, value: unknown) => void;
   /** Convenience: flips `plan.role` between EXECUTABLE / LABEL in sync with `meta.isLabelOnly`. */
   setLabelOnly: (isLabelOnly: boolean) => void;
   /**
@@ -241,11 +246,51 @@ function defaultTimeRequirement(): TimeRequirement {
   };
 }
 
-function defaultTask(): TaskDefinition {
-  const id = "task_default";
+
+export function hasTaskOrderCycle(tasks: TaskDefinition[]): boolean {
+  const edges = new Map<string, string[]>();
+  for (const task of tasks) edges.set(task.id, []);
+  for (const task of tasks) {
+    for (const rule of task.order) {
+      if (!edges.has(rule.targetTaskId)) continue;
+      const next = rule.relation === TaskOrderRelation.BEFORE ? rule.targetTaskId : task.id;
+      const from = rule.relation === TaskOrderRelation.BEFORE ? task.id : rule.targetTaskId;
+      edges.get(from)?.push(next);
+    }
+  }
+
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+  const visit = (id: string): boolean => {
+    if (visiting.has(id)) return true;
+    if (visited.has(id)) return false;
+    visiting.add(id);
+    for (const next of edges.get(id) ?? []) if (visit(next)) return true;
+    visiting.delete(id);
+    visited.add(id);
+    return false;
+  };
+  return [...edges.keys()].some(visit);
+}
+
+export function tasksForSubmission(tasks: TaskDefinition[]): TaskDefinition[] {
+  const titled = tasks.filter((task) => task.content.title.trim().length > 0);
+  const ids = new Set(titled.map((task) => task.id));
+  return titled.map((task) => ({
+    ...task,
+    order: task.order.filter((rule) => ids.has(rule.targetTaskId)),
+  }));
+}
+
+function taskWithField(task: TaskDefinition, path: string, value: unknown): TaskDefinition {
+  return setDeepPath(task as unknown as QuickCreateState, path, value) as unknown as TaskDefinition;
+}
+
+function defaultTask(title = ""): TaskDefinition {
+  const id = uuidv7();
   return {
     id,
-    content: { title: "Mark done", note: null },
+    content: { title, note: null },
     show: null,
     complete: {
       kind: ConditionKind.TERM,
@@ -263,7 +308,7 @@ function defaultPlan(): Plan {
     completion: {
       root: defaultConditionRoot(),
       timeRequirements: [defaultTimeRequirement()],
-      tasks: [defaultTask()],
+      tasks: [defaultTask("Mark done")],
     },
     planning: {
       placementRules: [],
@@ -413,6 +458,46 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
     set({ isOpen: false, mode: "create", editingId: null, editingTileId: null, loadError: null }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setField: (path, value) => set((state) => setDeepPath(state, path, value)),
+  addTask: (title = "") => {
+    const task = defaultTask(title);
+    set((state) => ({
+      plan: {
+        ...state.plan,
+        completion: {
+          ...state.plan.completion,
+          tasks: [...state.plan.completion.tasks, task],
+        },
+      },
+    }));
+    return task.id;
+  },
+  removeTask: (taskId) =>
+    set((state) => ({
+      plan: {
+        ...state.plan,
+        completion: {
+          ...state.plan.completion,
+          tasks: state.plan.completion.tasks
+            .filter((task) => task.id !== taskId)
+            .map((task) => ({
+              ...task,
+              order: task.order.filter((rule) => rule.targetTaskId !== taskId),
+            })),
+        },
+      },
+    })),
+  setTaskField: (taskId, path, value) =>
+    set((state) => ({
+      plan: {
+        ...state.plan,
+        completion: {
+          ...state.plan.completion,
+          tasks: state.plan.completion.tasks.map((task) =>
+            task.id === taskId ? taskWithField(task, path, value) : task,
+          ),
+        },
+      },
+    })),
   setLabelOnly: (isLabelOnly) =>
     set(() => ({
       meta: { ...useQuickCreateStore.getState().meta, isLabelOnly },

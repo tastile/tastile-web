@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { useQuickCreateStore } from "./quick-create-store";
+import { hasTaskOrderCycle, tasksForSubmission, useQuickCreateStore } from "./quick-create-store";
 import { PlanRole, RecurringState, TileKind } from "@/lib/domain/v1/constants";
 
 const reset = () => useQuickCreateStore.getState().reset();
@@ -117,7 +117,36 @@ describe("useQuickCreateStore", () => {
     });
   });
 
-  // Plan ref: docs/plans/2026-07-04-tile-panel-create-flow.md §B refinement
+  describe("structured tasks", () => {
+    it("adds UUIDv7 tasks and updates them by id", () => {
+      const id = useQuickCreateStore.getState().addTask();
+      expect(id).toMatch(/^[0-9a-f-]{36}$/i);
+      useQuickCreateStore.getState().setTaskField(id, "content.title", "Draft");
+      useQuickCreateStore.getState().setTaskField(id, "content.note", "A note");
+      const task = useQuickCreateStore.getState().plan.completion.tasks.find((t) => t.id === id);
+      expect(task?.content).toEqual({ title: "Draft", note: "A note" });
+    });
+
+    it("removes dangling order rules when deleting a task", () => {
+      const store = useQuickCreateStore.getState();
+      const first = store.addTask("First");
+      const second = store.addTask("Second");
+      store.setTaskField(first, "order", [{ id: "rule", targetTaskId: second, relation: 0, when: null }]);
+      store.removeTask(second);
+      expect(useQuickCreateStore.getState().plan.completion.tasks.find((t) => t.id === first)?.order).toEqual([]);
+    });
+    it("detects cyclic rules and drops empty titles for submission", () => {
+      const store = useQuickCreateStore.getState();
+      const first = store.addTask("First");
+      const second = store.addTask("Second");
+      store.setTaskField(first, "order", [{ id: "r1", targetTaskId: second, relation: 0, when: null }]);
+      store.setTaskField(second, "order", [{ id: "r2", targetTaskId: first, relation: 0, when: null }]);
+      const tasks = useQuickCreateStore.getState().plan.completion.tasks;
+      expect(hasTaskOrderCycle(tasks)).toBe(true);
+      expect(tasksForSubmission([...tasks, { ...tasks[0], id: "empty", content: { title: " ", note: "discard" } }])).toHaveLength(tasks.length);
+    });
+  });
+
   //
   // Step 6 made GET optional by falling back to create mode on failure.
   // TODO#2 splits that further into two separate functions so the
