@@ -51,7 +51,7 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [pinnedOpen, { open: openPinned, close: closePinned, toggle: togglePinned }] =
+  const [pinnedOpen, { open: openPinned, close: closePinned }] =
     useDisclosure(readPinnedPreference());
   const [hoverOpen, { open: openHover, close: closeHover }] = useDisclosure(false);
   const [mobileOpen, { open: openMobile, close: closeMobile, toggle: toggleMobile }] =
