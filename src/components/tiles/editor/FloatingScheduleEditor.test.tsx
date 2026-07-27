@@ -44,6 +44,7 @@ describe("FloatingScheduleEditor", () => {
   });
 
   it("starts with only the human scheduling inputs and no fixed-time implementation fields", async () => {
+    mocks.catalog.mockReset().mockResolvedValue({ ok: true, data: [], status: 200 });
     render(<FloatingScheduleEditor onClose={vi.fn()} onSaved={vi.fn()} />);
     expect(await screen.findByLabelText("Tile Name")).not.toBeNull();
     expect(screen.getByLabelText("Required time (min)")).not.toBeNull();

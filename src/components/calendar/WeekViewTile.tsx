@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { type KeyboardEvent, memo } from "react";
 import { eventTileStyle, formatLocalTimeOfDay } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 
@@ -34,6 +34,18 @@ function WeekViewTileImpl({
   const widthPct = 100 / laneCount;
   const leftPct = widthPct * laneIndex;
 
+  const interactiveProps = onEditEvent
+    ? {
+        onClick: () => onEditEvent(event),
+        onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onEditEvent(event);
+          }
+        },
+      }
+    : {};
+
   return (
     <div
       role={onEditEvent ? "button" : undefined}
@@ -41,17 +53,7 @@ function WeekViewTileImpl({
       data-testid={`week-event-${event.id}`}
       data-lane={laneIndex}
       data-lane-count={laneCount}
-      onClick={onEditEvent ? () => onEditEvent(event) : undefined}
-      onKeyDown={
-        onEditEvent
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onEditEvent(event);
-              }
-            }
-          : undefined
-      }
+      {...interactiveProps}
       className="absolute overflow-hidden rounded-sm px-1 py-0.5 text-left hover:brightness-95"
       style={{
         top: `${top}px`,

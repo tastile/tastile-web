@@ -82,31 +82,33 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     }
     setLoading(true);
     setError(null);
-    try {
-      const qs = new URLSearchParams();
-      qs.set("start", start);
-      qs.set("end", end);
-      qs.set("min_minutes", String(minMinutes ?? 0));
-      qs.set("include_recurring", String(includeRecurring ?? true));
-      if (ownerIds?.length) qs.set("owner_ids", ownerIds.join(","));
-      const res = await fetch(`${OCC_BASE}?${qs.toString()}`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
-      const data = (await res.json()) as
-        | { events: CalendarEvent[] }
-        | { occurrences: CalendarEvent[] };
-      const list =
-        "events" in data ? data.events : (data as { occurrences: CalendarEvent[] }).occurrences;
-      setEvents(list ?? []);
-    } catch (err) {
-      // Stable Error reference: a poll that fails repeatedly with the same
-      // message must not create a new Error object every cycle, or
-      // consumers (CalendarMain's banner, EventListView) re-render on
-      // every tick and the calendar appears to shake.
-      const msg = err instanceof Error ? err.message : String(err);
-      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
-    } finally {
-      setLoading(false);
-    }
+    const qs = new URLSearchParams();
+    qs.set("start", start);
+    qs.set("end", end);
+    qs.set("min_minutes", String(minMinutes ?? 0));
+    qs.set("include_recurring", String(includeRecurring ?? true));
+    if (ownerIds?.length) qs.set("owner_ids", ownerIds.join(","));
+    await fetch(`${OCC_BASE}?${qs.toString()}`, { cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
+        const data = (await res.json()) as
+          | { events: CalendarEvent[] }
+          | { occurrences: CalendarEvent[] };
+        const list =
+          "events" in data ? data.events : (data as { occurrences: CalendarEvent[] }).occurrences;
+        setEvents(list ?? []);
+      })
+      .catch((err: unknown) => {
+        // Stable Error reference: a poll that fails repeatedly with the same
+        // message must not create a new Error object every cycle, or
+        // consumers (CalendarMain's banner, EventListView) re-render on
+        // every tick and the calendar appears to shake.
+        const msg = err instanceof Error ? err.message : String(err);
+        setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds]);
 
   const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
@@ -181,7 +183,12 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
   );
 
   useEffect(() => {
-    void reload();
+    // Defer the initial reload by a microtask so the first reload call
+    // doesn't run synchronously inside the effect body. The fetch chain
+    // still drives every state update.
+    Promise.resolve().then(() => {
+      void reload();
+    });
   }, [reload]);
 
   useEffect(() => {

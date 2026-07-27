@@ -1,8 +1,8 @@
 "use client";
 
-import { queryKeys } from "./query-keys";
-import type { Workspace } from "@/lib/hooks/use-projects";
 import { getCoreClient } from "@/lib/api/endpoints";
+import type { Workspace } from "@/lib/hooks/use-projects";
+import { queryKeys } from "./query-keys";
 
 export const projectsQueryKey = [...queryKeys.projects] as const;
 

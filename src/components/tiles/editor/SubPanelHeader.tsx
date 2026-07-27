@@ -13,12 +13,7 @@ interface SubPanelHeaderProps {
 
 export function SubPanelHeader({ onBack, backAriaLabel, title, subtitle }: SubPanelHeaderProps) {
   return (
-    <Group
-      h={62}
-      gap="sm"
-      px="sm"
-      className="shrink-0 border-b border-border bg-surface-0"
-    >
+    <Group h={62} gap="sm" px="sm" className="shrink-0 border-b border-border bg-surface-0">
       <ActionIcon
         type="button"
         onClick={onBack}

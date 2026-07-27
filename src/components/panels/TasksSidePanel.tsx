@@ -3,9 +3,39 @@
 import { Button, NumberInput, Slider, Switch, TextInput } from "@mantine/core";
 import { Clock, Flame, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { useTranslation } from "@/lib/i18n/use-translation";
+
+type RangeUnit = "d" | "w" | "m";
+const VALID_RANGE_UNITS: RangeUnit[] = ["d", "w", "m"];
+const DEFAULT_RANGE = { val: 7, unit: "d" as RangeUnit };
+
+function parseRangeParam(raw: string): { val: number; unit: RangeUnit } {
+  const num = parseInt(raw, 10);
+  const unit = raw.slice(-1) as RangeUnit;
+  if (!Number.isNaN(num) && VALID_RANGE_UNITS.includes(unit)) return { val: num, unit };
+  return DEFAULT_RANGE;
+}
+
+function parseGranularityParam(raw: string): {
+  minDuration: number;
+  highPriorityOnly: boolean;
+  excludeLowPriority: boolean;
+} {
+  const parts = raw.split(",");
+  const minPart = parts.find((p) => p.startsWith("min_"));
+  let minDuration = 0;
+  if (minPart) {
+    const minutes = parseInt(minPart.replace("min_", "").replace("m", ""), 10);
+    if (!Number.isNaN(minutes)) minDuration = minutes;
+  }
+  return {
+    minDuration,
+    highPriorityOnly: parts.includes("important_only"),
+    excludeLowPriority: parts.includes("no_low_priority"),
+  };
+}
 
 export function TasksSidePanel() {
   const { t } = useTranslation();
@@ -19,48 +49,22 @@ export function TasksSidePanel() {
   const rawRange = searchParams.get("range") ?? "7d"; // default 7 days
   const rawGranularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
 
-  // Internal state for the range (number and unit kept separate for parsing).
-  const [rangeVal, setRangeVal] = useState<number>(7);
-  const [rangeUnit, setRangeUnit] = useState<"d" | "w" | "m">("d");
+  // Parse the URL params once via lazy state initializers — the first render
+  // already reflects the URL, no effect, no extra render. The URL is the
+  // source of truth: applyFilters() pushes values back into the URL, and the
+  // state mirrors them via the controlled inputs.
+  const initialRange = parseRangeParam(rawRange);
+  const initialGranularity = parseGranularityParam(rawGranularity);
 
-  // Internal state for the min-duration filter.
-  const [minDuration, setMinDuration] = useState<number>(0);
+  const [rangeVal, setRangeVal] = useState<number>(initialRange.val);
+  const [rangeUnit, setRangeUnit] = useState<"d" | "w" | "m">(initialRange.unit);
 
-  // Internal state for the priority filters.
-  const [highPriorityOnly, setHighPriorityOnly] = useState<boolean>(false);
-  const [excludeLowPriority, setExcludeLowPriority] = useState<boolean>(false);
+  const [minDuration, setMinDuration] = useState<number>(initialGranularity.minDuration);
 
-  // Sync from URL params on initial mount and on every change.
-  useEffect(() => {
-    // Range sync.
-    const num = parseInt(rawRange, 10);
-    const unit = rawRange.slice(-1) as "d" | "w" | "m";
-    if (!Number.isNaN(num) && ["d", "w", "m"].includes(unit)) {
-      setRangeVal(num);
-      setRangeUnit(unit);
-    } else {
-      setRangeVal(7);
-      setRangeUnit("d");
-    }
-
-    // Granularity sync.
-    const gParts = rawGranularity.split(",");
-
-    // min_Xm sync.
-    const minPart = gParts.find((p) => p.startsWith("min_"));
-    if (minPart) {
-      const minutes = parseInt(minPart.replace("min_", "").replace("m", ""), 10);
-      if (!Number.isNaN(minutes)) {
-        setMinDuration(minutes);
-      }
-    } else {
-      setMinDuration(0);
-    }
-
-    // Priority sync.
-    setHighPriorityOnly(gParts.includes("important_only"));
-    setExcludeLowPriority(gParts.includes("no_low_priority"));
-  }, [rawRange, rawGranularity]);
+  const [highPriorityOnly, setHighPriorityOnly] = useState<boolean>(initialGranularity.highPriorityOnly);
+  const [excludeLowPriority, setExcludeLowPriority] = useState<boolean>(
+    initialGranularity.excludeLowPriority,
+  );
 
   // Shared helper that mirrors filters into the URL — always writes all values.
   function applyFilters(updates: {

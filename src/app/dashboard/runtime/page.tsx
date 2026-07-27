@@ -81,21 +81,22 @@ export default function RuntimePage() {
   );
   useSidePanel(sidePanel);
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     setLoading(true);
     const client = getCoreClient();
-    try {
-      const [h, v, p] = await Promise.all([
-        client.call<HealthData>("getHealth"),
-        client.call<VersionData>("getVersion"),
-        client.call<RuntimePaths>("getRuntimePaths"),
-      ]);
-      setHealth(h);
-      setVersion(v);
-      setPaths(p);
-    } finally {
-      setLoading(false);
-    }
+    return Promise.all([
+      client.call<HealthData>("getHealth"),
+      client.call<VersionData>("getVersion"),
+      client.call<RuntimePaths>("getRuntimePaths"),
+    ])
+      .then(([h, v, p]) => {
+        setHealth(h);
+        setVersion(v);
+        setPaths(p);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
@@ -278,11 +279,14 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
   async function run() {
     setLoading(true);
     setResult(null);
-    try {
-      setResult(await getCoreClient().call(k));
-    } finally {
-      setLoading(false);
-    }
+    await getCoreClient()
+      .call(k)
+      .then((data) => {
+        setResult(data);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }
   const meta = ENDPOINTS[k];
   return (

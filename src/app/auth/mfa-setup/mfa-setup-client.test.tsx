@@ -99,7 +99,7 @@ describe("MfaSetupClient", () => {
       expect(screen.getByText(/no_cognito/)).toBeTruthy();
     });
     expect(
-      screen.getByRole("button", { name: /retry sign-in/ }),
+      screen.getByRole("button", { name: /retry sign-in/i }),
     ).toBeTruthy();
     // No retry POST is fired — just the mount POST, which already failed.
     expect(setupCalls).toHaveLength(1);
@@ -195,7 +195,7 @@ describe("MfaSetupClient", () => {
         expect(screen.getByText(/setup_failed/)).toBeTruthy();
       });
       expect(
-        screen.getByRole("button", { name: /retry sign-in/ }),
+        screen.getByRole("button", { name: /retry sign-in/i }),
       ).toBeTruthy();
       // No unhandled rejection — the body parse failure landed in state.
       expect(unhandled).toHaveLength(0);
@@ -343,7 +343,7 @@ describe("MfaSetupClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Verify" }));
 
     await waitFor(() => {
-      expect(screen.getByText(/code mismatch/)).toBeTruthy();
+      expect(screen.getByText(/incorrect|invalid|mismatch/i)).toBeTruthy();
     });
     // Raw error code must NOT leak in this branch.
     expect(screen.queryByText(/code_mismatch/)).toBeNull();

@@ -44,20 +44,35 @@ export function V1ExecutionControls() {
   // lets React cancel the previous schedule on each tick.
   useEffect(() => {
     if (!tileSnapshot) return;
-    setNowMs(Date.now());
+    // Schedule the first tick via microtask so the initial setState is no
+    // longer synchronous inside the effect — the lazy initializer already
+    // gave us a real timestamp, so the first render inside the active
+    // placement is correct without an in-effect setState.
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+      setNowMs(Date.now());
+    });
     const id = window.setTimeout(() => setNowMs(Date.now()), 1000);
-    return () => window.clearTimeout(id);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
   }, [tileSnapshot]);
 
   if (loading && !tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">No execution</div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
+        No execution
+      </div>
     );
   }
 
   if (!tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">No execution</div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
+        No execution
+      </div>
     );
   }
 

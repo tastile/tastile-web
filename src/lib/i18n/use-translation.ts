@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useLocaleStore, FALLBACK_LOCALE } from "../stores/locale-store";
+import { FALLBACK_LOCALE, useLocaleStore } from "../stores/locale-store";
 import { translations } from "./translations";
 
 type Dict = Record<string, unknown>;

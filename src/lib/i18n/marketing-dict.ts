@@ -251,9 +251,7 @@ function reshape(flat: FlatMarketingLanding): Dict {
   }
 
   // Pricing features
-  function buildFeatures(
-    prefix: "free" | "pro"
-  ): Array<{ title: string; detail: string }> {
+  function buildFeatures(prefix: "free" | "pro"): Array<{ title: string; detail: string }> {
     const out: Array<{ title: string; detail: string }> = [];
     for (let i = 0; i < PRICING_FEATURE_COUNT; i += 1) {
       const title = pickString(pricing, `${prefix}Feature${i}Title`);

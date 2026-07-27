@@ -23,7 +23,7 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
-import { ActionIcon, Button, SegmentedControl, Switch, Text } from "@mantine/core";
+import { ActionIcon, Button, SegmentedControl, Switch } from "@mantine/core";
 import { DateTimePicker, TimeInput } from "@mantine/dates";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 
@@ -31,7 +31,6 @@ import { FormDivider, FormRow, RowInput, RowSegmented, SectionHeader } from "@/c
 import { MiniCalendar } from "@/components/ui/MiniCalendar";
 import type { Window } from "@/lib/domain/v1/window";
 import type { TimeOfDayMode, WhenMode } from "@/lib/stores/quick-create-store";
-import { cn } from "@/lib/utils/cn";
 
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
 import { SEGMENT_STYLES } from "./panel-styles";

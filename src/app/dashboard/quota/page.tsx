@@ -69,19 +69,17 @@ export default function QuotaPage() {
   );
   useSidePanel(sidePanel);
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     setLoading(true);
     const client = getCoreClient();
-    try {
-      const [q, s] = await Promise.all([
-        client.call<QuotaData>("getTileQuota"),
-        client.call("getSession"),
-      ]);
-      setData(q);
-      setSession(s);
-    } finally {
-      setLoading(false);
-    }
+    return Promise.all([client.call<QuotaData>("getTileQuota"), client.call("getSession")])
+      .then(([q, s]) => {
+        setData(q);
+        setSession(s);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {

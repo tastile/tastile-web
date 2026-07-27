@@ -18,18 +18,20 @@ export default async function PricingPage({
 }) {
   const params = await searchParams;
   const lang = params.lang === "en" ? "en" : "ja";
-  const dict = (translations[lang] as unknown as {
-    marketing: {
-      pricing: {
-        title: string;
-        subtitle: string;
-        freePlan: string;
-        freeDesc: string;
-        freeFeatures: { title: string; desc: string }[];
-        getStarted: string;
+  const dict = (
+    translations[lang] as unknown as {
+      marketing: {
+        pricing: {
+          title: string;
+          subtitle: string;
+          freePlan: string;
+          freeDesc: string;
+          freeFeatures: { title: string; desc: string }[];
+          getStarted: string;
+        };
       };
-    };
-  }).marketing.pricing;
+    }
+  ).marketing.pricing;
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">

@@ -8,9 +8,9 @@ import { AccountMenu } from "@/app/app/account-menu";
 import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
 import { pickDisplayLabel } from "@/lib/auth/display-label";
-import { profileQueryOptions, safeSessionQueryOptions } from "@/lib/query/auth-query-options";
 import type { ExecutionSyncStatus } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { profileQueryOptions, safeSessionQueryOptions } from "@/lib/query/auth-query-options";
 
 interface HeaderProps {
   executionState?: {
@@ -112,4 +112,3 @@ export function Header({ executionState }: HeaderProps) {
     </header>
   );
 }
-

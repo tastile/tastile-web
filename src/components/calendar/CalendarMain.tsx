@@ -222,18 +222,13 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   const [view, setViewState] = useState<CalendarView>(urlView);
   const [mode, setModeState] = useState<DisplayMode>(urlMode);
   const [anchor, setAnchor] = useState(() => localIsoDate());
-  const [tzOffset, setTzOffset] = useState(0);
+  const [tzOffset, setTzOffset] = useState<number>(
+    () => new Date().getTimezoneOffset() * -1,
+  );
   const [minDuration, setMinDuration] = useState(0);
-  // Capture Date.now() once on mount so listRange only refreshes when
-  // tzOffset changes, never during render. Held in state (not a ref)
-  // because the linter treats ref.current reads inside render as
-  // side-channel state.
-  const [nowMs, setNowMs] = useState<number>(0);
-
-  useEffect(() => {
-    setNowMs(Date.now());
-    setTzOffset(new Date().getTimezoneOffset() * -1);
-  }, []);
+  // Capture Date.now() lazily so the first render already has a real
+  // timestamp — no effect, no extra render.
+  const [nowMs, setNowMs] = useState<number>(() => Date.now());
 
   // Effective anchor for date math — in around/future modes the anchor
   // is always today, regardless of what the user has previously selected.
@@ -248,8 +243,8 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   // returns 400.  We bias the window 14d past / 17d future so the user can
   // still see the upcoming two weeks when they open the list view.
   const listRange = useMemo((): UseEventsRange => {
-    // Before the mount effect has run, nowMs is 0 — render with a sentinel
-    // window rather than touching Date during render.
+    // nowMs is initialized lazily to Date.now(), so the first render already
+    // has a real timestamp — no need to wait for a mount effect.
     const adjusted = nowMs - tzOffset * 60_000;
     return {
       start: new Date(adjusted - 14 * 24 * 60 * 60 * 1000).toISOString(),
@@ -444,7 +439,12 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
           />
         ) : null}
         {view === "list" ? (
-          <EventListView events={visibleEvents} loading={loading} error={error} onEditEvent={handleEditEvent} />
+          <EventListView
+            events={visibleEvents}
+            loading={loading}
+            error={error}
+            onEditEvent={handleEditEvent}
+          />
         ) : null}
       </div>
     </div>

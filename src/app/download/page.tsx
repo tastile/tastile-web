@@ -31,9 +31,11 @@ export default async function DownloadPage({
 }) {
   const params = await searchParams;
   const lang: Locale = params.lang === "en" ? "en" : "ja";
-  const t = (translations[lang] as {
-    marketing: { download: MarketingDownload };
-  }).marketing.download;
+  const t = (
+    translations[lang] as {
+      marketing: { download: MarketingDownload };
+    }
+  ).marketing.download;
   const release = await fetchDesktopReleaseInfo();
   const version = release?.latestVersion ?? "latest";
 

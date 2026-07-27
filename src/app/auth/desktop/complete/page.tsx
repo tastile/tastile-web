@@ -38,7 +38,9 @@ export default function DesktopAuthCompletePage() {
             <TastileLogo size={64} className="text-foreground" />
             <div>
               <p className="text-sm font-medium text-primary">Tastile Desktop</p>
-              <h1 className="mt-1 text-3xl font-semibold text-foreground">Authentication complete</h1>
+              <h1 className="mt-1 text-3xl font-semibold text-foreground">
+                Authentication complete
+              </h1>
             </div>
           </div>
 

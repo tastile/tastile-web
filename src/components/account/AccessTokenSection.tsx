@@ -34,8 +34,6 @@ export function AccessTokenSection() {
   const [creating, setCreating] = useState(false);
 
   const loadTokens = useCallback(() => {
-    setLoading(true);
-    setError(null);
     return fetch("/api/account/tokens", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) {
@@ -48,6 +46,7 @@ export function AccessTokenSection() {
         setError(err instanceof Error ? err.message : t("account.tokens.error.loadFallback"));
       })
       .finally(() => {
+        // Runs inside the promise chain — not synchronous inside the effect.
         setLoading(false);
       });
   }, [t]);

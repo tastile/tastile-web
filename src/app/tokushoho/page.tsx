@@ -19,7 +19,8 @@ export default function TokushohoPage() {
 
           <div className="prose dark:prose-invert max-w-none">
             <p className="mb-6 text-foreground-muted">
-              Disclosed in accordance with Article 11 of the Act on Specified Commercial Transactions.
+              Disclosed in accordance with Article 11 of the Act on Specified Commercial
+              Transactions.
             </p>
 
             <table className="w-full border-collapse text-sm">
@@ -40,17 +41,13 @@ export default function TokushohoPage() {
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     Address
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    Disclosed promptly upon request.
-                  </td>
+                  <td className="py-3 text-foreground-muted">Disclosed promptly upon request.</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     Phone
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    Disclosed promptly upon request.
-                  </td>
+                  <td className="py-3 text-foreground-muted">Disclosed promptly upon request.</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
@@ -76,9 +73,7 @@ export default function TokushohoPage() {
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
                     Payment methods
                   </th>
-                  <td className="py-3 text-foreground-muted">
-                    Credit card, Apple Pay, Google Pay
-                  </td>
+                  <td className="py-3 text-foreground-muted">Credit card, Apple Pay, Google Pay</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">

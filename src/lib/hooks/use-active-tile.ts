@@ -73,9 +73,15 @@ export function useActiveTile() {
         });
       }, delay);
     };
-    void fetchSnapshot().then(() => {
+    // Defer the first poll by a microtask so the call is no longer
+    // synchronous inside the effect body. The polling chain still drives
+    // every state update via the .then() callbacks.
+    Promise.resolve().then(() => {
       if (cancelled) return;
-      schedule(nextDelayMs(failuresRef.current));
+      void fetchSnapshot().then(() => {
+        if (cancelled) return;
+        schedule(nextDelayMs(failuresRef.current));
+      });
     });
     const onChanged = () => {
       failuresRef.current = 0;

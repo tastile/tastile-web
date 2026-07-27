@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type ReactNode, type Ref } from "react";
+import { type KeyboardEvent, memo, type ReactNode, type Ref } from "react";
 
 function pad(n: number): string {
   return n.toString().padStart(2, "0");
@@ -66,32 +66,31 @@ function DayViewFrameImpl({
           className="relative flex-1 bg-[linear-gradient(to_bottom,color-mix(in_oklab,var(--color-surface-2)_70%,transparent)_1px,transparent_1px)]"
           style={{ backgroundSize: `100% ${hourHeight}px` }}
         >
-          {hours.map((h, idx) => (
-            <div
-              key={`slot-${h}-${idx}`}
-              role={onCreateAtSlot ? "button" : undefined}
-              tabIndex={onCreateAtSlot ? 0 : undefined}
-              data-testid={`day-slot-${effectiveDay}-${pad(h)}`}
-              data-slot-anchor={effectiveDay}
-              onClick={
-                onCreateAtSlot
-                  ? () => onCreateAtSlot(effectiveDay, h)
-                  : undefined
-              }
-              onKeyDown={
-                onCreateAtSlot
-                  ? (e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
-                        onCreateAtSlot(effectiveDay, h);
-                      }
+          {hours.map((h, idx) => {
+            const interactiveProps = onCreateAtSlot
+              ? {
+                  onClick: () => onCreateAtSlot(effectiveDay, h),
+                  onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onCreateAtSlot(effectiveDay, h);
                     }
-                  : undefined
-              }
-              className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"
-              style={{ height: `${hourHeight}px` }}
-            />
-          ))}
+                  },
+                }
+              : {};
+            return (
+              <div
+                key={`slot-${h}-${idx}`}
+                role={onCreateAtSlot ? "button" : undefined}
+                tabIndex={onCreateAtSlot ? 0 : undefined}
+                data-testid={`day-slot-${effectiveDay}-${pad(h)}`}
+                data-slot-anchor={effectiveDay}
+                {...interactiveProps}
+                className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"
+                style={{ height: `${hourHeight}px` }}
+              />
+            );
+          })}
           {eventsArea}
         </div>
       </div>

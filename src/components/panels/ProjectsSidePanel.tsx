@@ -12,8 +12,8 @@ import {
   Tree,
   useTree,
 } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
+import { useDisclosure } from "@mantine/hooks";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
@@ -136,6 +136,7 @@ export function ProjectsSidePanel() {
 
       <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
         <form
+          // eslint-disable-next-line react-hooks/refs -- Mantine `form.onSubmit` is the documented submit wiring
           onSubmit={form.onSubmit((values) => handleCreate(values))}
           className="flex flex-col gap-3"
         >

@@ -105,7 +105,7 @@ button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer}.i
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const icon=id=>`<svg class="icon"><use href="#${id}"></use></svg>`;
-const clone=x=>JSON.parse(JSON.stringify(x));
+const clone=x=>structuredClone(x);
 const presets={
  task:{title:'数学の課題',project:'学校',tags:['課題','数学'],role:'executable',whenMode:'range',when:['今日','09:00–18:00'],duration:90,repeat:'1回',tasks:['問1〜3を解く','見直し','提出'],parentPath:['学校','授業外'],groups:[{id:'placement',name:'配置候補',logic:'ALL',terms:[{icon:'i-calendar',title:'平日の09:00〜18:00',sub:'Calendar / Window',path:'すべて'},{icon:'i-folder',title:'「授業外」の内側',sub:'NestingRule / HOST',path:'すべて'},{icon:'i-layers',title:'30〜60分、最大3回に分割',sub:'SplitPolicy / LimitSpan',path:'すべて'}]}]},
  unbounded:{title:'いつか読む資料',project:'個人',tags:['読み物'],role:'executable',whenMode:'none',when:[],duration:null,repeat:'1回',tasks:['読み終える'],parentPath:[],groups:[]},

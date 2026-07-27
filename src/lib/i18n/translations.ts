@@ -1133,10 +1133,7 @@ export const translations = {
 
     // Locale-aware weekday / month labels (used by date formatters in panels).
     weekdays: ["日", "月", "火", "水", "木", "金", "土"],
-    months: [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ],
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   },
 
   en: {
@@ -2275,10 +2272,7 @@ export const translations = {
 
     // Locale-aware weekday / month labels (used by date formatters in panels).
     weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-    months: [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ],
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   },
 
   // Placeholder locales — fall back to English (useTranslation() resolves any
@@ -2293,4 +2287,3 @@ export const translations = {
   ko: {} as unknown as (typeof translations)["en"],
   "zh-CN": {} as unknown as (typeof translations)["en"],
 } as Record<string, unknown>;
-

@@ -29,12 +29,13 @@ export function LabelSpanPicker({
   onChange: (label: FloatingLabel | null) => void;
 }) {
   const ownerId = useCurrentActorSubjectId();
-  const [state, setState] = useState<LoadState>({ status: "idle" });
+  const [state, setState] = useState<LoadState>(() =>
+    ownerId ? { status: "loading" } : { status: "idle" },
+  );
 
   useEffect(() => {
     if (!ownerId) return;
     let current = true;
-    setState({ status: "loading" });
     void listReferenceCatalog(makeClient(), ownerId, ScheduleReferenceUsage.LABEL_SPAN)
       .then((result) => {
         if (!current) return;
@@ -88,7 +89,8 @@ export function LabelSpanPicker({
         <option value="">Choose a window</option>
         {items.map((item) => (
           <option key={item.placement_id} value={item.placement_id}>
-            {item.title} ({new Date(item.span_start).toLocaleDateString("en-US", { timeZone: "UTC" })} –{" "}
+            {item.title} (
+            {new Date(item.span_start).toLocaleDateString("en-US", { timeZone: "UTC" })} –{" "}
             {new Date(item.span_end).toLocaleDateString("en-US", { timeZone: "UTC" })})
           </option>
         ))}

@@ -3,7 +3,7 @@
 import { ActionIcon, Alert, Badge, Button, Chip, Text, Textarea, TextInput } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -30,8 +30,18 @@ const methodStyle: Record<Method, string> = {
 
 export default function ApiExplorerPage() {
   const [query, setQuery] = useState("");
-  const [filterTag, setFilterTag] = useState<ApiTag | "All">("All");
-  const [focus, setFocus] = useState<EndpointKey | null>(null);
+  // Read ?focus=… and ?tag=… once via lazy state initializers so the first
+  // render already reflects the URL — no extra render after mount.
+  const [focus, setFocus] = useState<EndpointKey | null>(() => {
+    if (typeof window === "undefined") return null;
+    const focusParam = new URL(window.location.href).searchParams.get("focus");
+    return focusParam && focusParam in ENDPOINTS ? (focusParam as EndpointKey) : null;
+  });
+  const [filterTag, setFilterTag] = useState<ApiTag | "All">(() => {
+    if (typeof window === "undefined") return "All";
+    const tagParam = new URL(window.location.href).searchParams.get("tag") as ApiTag | null;
+    return tagParam && TAG_ORDER.includes(tagParam) ? tagParam : "All";
+  });
 
   const sidePanel = useMemo(
     () => (
@@ -61,18 +71,6 @@ export default function ApiExplorerPage() {
     [filterTag],
   );
   useSidePanel(sidePanel);
-  // Read ?focus=… and ?tag=… once on mount
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    const focusParam = url.searchParams.get("focus");
-    const tagParam = url.searchParams.get("tag") as ApiTag | null;
-    if (focusParam && focusParam in ENDPOINTS) {
-      setFocus(focusParam as EndpointKey);
-    } else if (tagParam && TAG_ORDER.includes(tagParam)) {
-      setFilterTag(tagParam);
-    }
-  }, []);
 
   const keys = useMemo(() => {
     const all = Object.keys(ENDPOINTS) as EndpointKey[];

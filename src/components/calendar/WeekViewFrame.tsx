@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, type ReactNode, type Ref } from "react";
+import { type KeyboardEvent, memo, type ReactNode, type Ref } from "react";
 import { cn } from "@/lib/utils/cn";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -115,27 +115,30 @@ function WeekViewFrameImpl({
             data-testid={`week-day-${d}`}
             className="relative border-r border-surface-2 last:border-r-0"
           >
-            {HOURS.map((h) => (
-              <div
-                key={h}
-                role={onCreateAtSlot ? "button" : undefined}
-                tabIndex={onCreateAtSlot ? 0 : undefined}
-                data-testid={`week-slot-${d}-${pad(h)}`}
-                onClick={onCreateAtSlot ? () => onCreateAtSlot(d, h) : undefined}
-                onKeyDown={
-                  onCreateAtSlot
-                    ? (e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          onCreateAtSlot(d, h);
-                        }
+            {HOURS.map((h) => {
+              const interactiveProps = onCreateAtSlot
+                ? {
+                    onClick: () => onCreateAtSlot(d, h),
+                    onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onCreateAtSlot(d, h);
                       }
-                    : undefined
-                }
-                className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"
-                style={{ height: `${hourHeight}px` }}
-              />
-            ))}
+                    },
+                  }
+                : {};
+              return (
+                <div
+                  key={h}
+                  role={onCreateAtSlot ? "button" : undefined}
+                  tabIndex={onCreateAtSlot ? 0 : undefined}
+                  data-testid={`week-slot-${d}-${pad(h)}`}
+                  {...interactiveProps}
+                  className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"
+                  style={{ height: `${hourHeight}px` }}
+                />
+              );
+            })}
             {eventsArea(d)}
           </div>
         ))}

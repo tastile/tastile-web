@@ -89,10 +89,12 @@ async function requestPlatformUnlock() {
 }
 
 export function SecurityLockGate({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<LockState>("checking");
-  const [message, setMessage] = useState("");
-
-  useEffect(() => {
+  // Resolve the lock state from localStorage lazily so the first render
+  // already reflects whether the lock is required — no effect, no extra
+  // render. SSR falls back to "checking" because localStorage is unavailable
+  // on the server; the client picks up the real value on hydration.
+  const [state, setState] = useState<LockState>(() => {
+    if (typeof window === "undefined") return "checking";
     const enabled = getSecurityLockEnabled(localStorage);
     const timeoutMinutes = getSecurityLockTimeoutMinutes(localStorage);
     const lastLeftAt = Number.parseInt(localStorage.getItem(SECURITY_LOCK_LEFT_AT_KEY) ?? "0", 10);
@@ -102,8 +104,9 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
       lastLeftAt,
       now: Date.now(),
     });
-    setState(needsLock ? "locked" : "unlocked");
-  }, []);
+    return needsLock ? "locked" : "unlocked";
+  });
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const markLeft = () => {

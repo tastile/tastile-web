@@ -1,12 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { createContext, useContext, useEffect } from "react";
 import {
   profileQueryOptions,
+  type SafeSession,
   safeSessionQueryOptions,
   sessionToAuthValue,
-  type SafeSession,
 } from "@/lib/query/auth-query-options";
 
 interface AuthSession {
@@ -41,7 +41,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [profileQuery.error, sessionQuery.error]);
 
-  const session = sessionToAuthValue(sessionQuery.data as SafeSession | null | undefined, profileQuery.data);
+  const session = sessionToAuthValue(
+    sessionQuery.data as SafeSession | null | undefined,
+    profileQuery.data,
+  );
   return (
     <AuthContext.Provider
       value={{

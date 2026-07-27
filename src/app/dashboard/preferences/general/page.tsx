@@ -2,7 +2,7 @@
 
 import { Button, NumberInput, Switch } from "@mantine/core";
 import { Bell, Languages, Palette } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { RowSegmented } from "@/components/ui/form";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -25,20 +25,25 @@ export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
   const { locale, setLocale } = useLocaleStore();
   const { t } = useTranslation();
-  // SSR-safe defaults so server and first client render agree;
-  // localStorage is read once after mount.
-  const [securityLock, setSecurityLock] = useState(false);
-  const [securityLockMinutes, setSecurityLockMinutes] = useState(10);
+  // Read from localStorage / Notification API lazily so the first render
+  // already reflects the user's stored prefs — no effect, no extra render.
+  // typeof window guards SSR; the lazy initializer runs after hydration on
+  // the client, where the browser APIs are available.
+  const [securityLock, setSecurityLock] = useState<boolean>(() =>
+    typeof window === "undefined" ? false : getSecurityLockEnabled(localStorage),
+  );
+  const [securityLockMinutes, setSecurityLockMinutes] = useState<number>(() =>
+    typeof window === "undefined" ? 10 : getSecurityLockTimeoutMinutes(localStorage),
+  );
   const [notificationPermission, setNotificationPermission] = useState<
     NotificationPermission | "unsupported"
-  >("unsupported");
+  >(() =>
+    typeof window === "undefined" || !notificationsSupported()
+      ? "unsupported"
+      : Notification.permission,
+  );
   const [notificationStatus, setNotificationStatus] = useState("");
   const [notificationPreview, setNotificationPreview] = useState("");
-  useEffect(() => {
-    setSecurityLock(getSecurityLockEnabled(localStorage));
-    setSecurityLockMinutes(getSecurityLockTimeoutMinutes(localStorage));
-    setNotificationPermission(notificationsSupported() ? Notification.permission : "unsupported");
-  }, []);
 
   // Memoize to avoid creating a new JSX value on every render, which would
   // re-enter useSidePanel → setContent → parent re-render → page re-render

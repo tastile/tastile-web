@@ -408,12 +408,11 @@ function WeekGrid({ blocks }: { blocks: CalendarBlock[] }) {
 }
 
 function MonthGrid({ blocks }: { blocks: CalendarBlock[] }) {
-  const [monthAnchor, setMonthAnchor] = useState<Date | null>(null);
-  useEffect(() => {
+  const [monthAnchor, setMonthAnchor] = useState<Date | null>(() => {
     const first = new Date();
     first.setDate(1);
-    setMonthAnchor(first);
-  }, []);
+    return first;
+  });
   const days = useMemo(() => {
     if (!monthAnchor) return [];
     return Array.from({ length: 35 }, (_, i) => {

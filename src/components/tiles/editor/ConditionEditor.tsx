@@ -1,9 +1,9 @@
 "use client";
 
-import { useId } from "react";
 import { Button, NumberInput, Select, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import { GitBranch, ListChecks, Plus, Trash2 } from "lucide-react";
+import { useId } from "react";
 
 import { RowSegmented } from "@/components/ui/form";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
@@ -277,9 +277,7 @@ function TermFields({
             <Select
               id={`${fieldIdBase}-referenceId`}
               value={term.value.referenceId ?? ""}
-              onChange={(v) =>
-                onChange(updateMoment(term, "referenceId", v === "" ? null : v))
-              }
+              onChange={(v) => onChange(updateMoment(term, "referenceId", v === "" ? null : v))}
               data={tileOptions ?? []}
               searchable
               clearable

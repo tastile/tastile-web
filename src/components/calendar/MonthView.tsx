@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { type DisplayMode, eventSpansDay, getMonthViewDates } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { cn } from "@/lib/utils/cn";
@@ -25,11 +25,15 @@ export interface MonthViewProps {
 }
 
 export function MonthView({ anchor, mode, tzOffset, events, onEditEvent }: MonthViewProps) {
-  const [todayStr, setTodayStr] = useState("");
-
-  useEffect(() => {
-    setTodayStr(new Date(Date.now() + tzOffset * 60_000).toISOString().slice(0, 10));
-  }, [tzOffset]);
+  // Compute todayStr once via lazy state initializer. Returning "" on the
+  // server keeps SSR markup identical to the initial client render so the
+  // lazy initializer can run with the client's clock on hydration without
+  // a hydration mismatch.
+  const [todayStr] = useState(() =>
+    typeof window === "undefined"
+      ? ""
+      : new Date(Date.now() + tzOffset * 60_000).toISOString().slice(0, 10),
+  );
 
   const weeks = useMemo(
     () => chunkWeeks(getMonthViewDates(mode, anchor, tzOffset)),
@@ -74,7 +78,12 @@ export function MonthView({ anchor, mode, tzOffset, events, onEditEvent }: Month
 
             <div className="flex-1 overflow-y-auto space-y-1 px-0.5 no-scrollbar">
               {visible.map((event) => (
-                <MonthEventTile key={event.id} event={event} date={dateStr} onEditEvent={onEditEvent} />
+                <MonthEventTile
+                  key={event.id}
+                  event={event}
+                  date={dateStr}
+                  onEditEvent={onEditEvent}
+                />
               ))}
               {overflow > 0 ? (
                 <div className="text-[10px] text-foreground-subtle px-1">+{overflow} more</div>

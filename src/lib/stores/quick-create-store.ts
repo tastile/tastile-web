@@ -30,13 +30,13 @@ import {
   ConditionKind,
   PlanRole,
   RecurringState,
-  TaskOrderRelation,
   type RecurringStateValue,
+  TaskOrderRelation,
   TileKind,
   type TileKindValue,
 } from "@/lib/domain/v1/constants";
-import type { FrameRule, Plan, RecurringRule } from "@/lib/domain/v1/tile";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
+import type { FrameRule, Plan, RecurringRule } from "@/lib/domain/v1/tile";
 import type { DateRange, DurationRange, Span, Window } from "@/lib/domain/v1/window";
 
 /**
@@ -245,7 +245,6 @@ function defaultTimeRequirement(): TimeRequirement {
     preferred: null,
   };
 }
-
 
 export function hasTaskOrderCycle(tasks: TaskDefinition[]): boolean {
   const edges = new Map<string, string[]>();

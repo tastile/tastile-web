@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { type KeyboardEvent, memo } from "react";
 import { monthEventStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 
@@ -32,22 +32,23 @@ function MonthEventTileImpl({ event, date, onEditEvent }: MonthEventTileProps) {
   const last = new Date(new Date(event.end).getTime() - 1).toISOString().slice(0, 10);
   const isStart = !event.allDay || date === start;
   const isEnd = !event.allDay || date === last;
+  const interactiveProps = onEditEvent
+    ? {
+        onClick: () => onEditEvent(event),
+        onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onEditEvent(event);
+          }
+        },
+      }
+    : {};
   return (
     <div
       role={onEditEvent ? "button" : undefined}
       tabIndex={onEditEvent ? 0 : undefined}
       data-testid={`month-event-${event.id}`}
-      onClick={onEditEvent ? () => onEditEvent(event) : undefined}
-      onKeyDown={
-        onEditEvent
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onEditEvent(event);
-              }
-            }
-          : undefined
-      }
+      {...interactiveProps}
       className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
       style={{
         backgroundColor: tile.backgroundColor,

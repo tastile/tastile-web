@@ -27,10 +27,7 @@ export function useCurrentActorSubjectId(): string | null {
   );
 
   useEffect(() => {
-    if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") {
-      setActorId(DEV_ACTOR_SUBJECT_ID);
-      return;
-    }
+    if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") return;
     let alive = true;
     fetch("/api/auth/session", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))

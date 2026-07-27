@@ -576,11 +576,6 @@ export interface CreatePlacementCommandOptions {
   end: string;
 }
 
-export interface ClosePlacementCommandOptions {
-  client: ApiClient;
-  placementId: string;
-}
-
 const emptySourceRef = () => ({
   created: null,
   recurring: null,
@@ -632,18 +627,6 @@ export function createPlacementCommand(
         inside: null,
       },
     }),
-  );
-}
-
-/** Soft-close a placement.  POST /v1/placements/{id}/close. */
-export function closePlacementCommand(
-  options: ClosePlacementCommandOptions,
-): Promise<CommandResult> {
-  return sendCommand(
-    options.client,
-    "POST",
-    `/v1/placements/${options.placementId}/close`,
-    envelope({ placement_id: options.placementId }),
   );
 }
 

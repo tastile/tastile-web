@@ -101,8 +101,8 @@ expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
 			expect(screen.queryByText("Start execution control right away")).toBeNull();
 			expect(screen.getByRole("link", { name: "Continue with Google" })).toBeTruthy();
 			expect(screen.queryByText("Continue with Apple")).toBeNull();
-			expect(screen.getByRole("link", { name: "Continue with Passkey / email" })).toBeTruthy();
-			expect(screen.getByRole("link", { name: "Create an account" })).toBeTruthy();
+			expect(screen.getByRole("link", { name: "Continue with passkey or email" })).toBeTruthy();
+			expect(screen.getByRole("link", { name: "Create account" })).toBeTruthy();
 	});
 
 	it("preserves native auth query values in compact provider links", async () => {

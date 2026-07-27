@@ -8,6 +8,7 @@ const useLocaleStoreMock = create<{ locale: Locale }>(() => ({ locale: "ja" as L
 
 vi.mock("../stores/locale-store", () => ({
   useLocaleStore: useLocaleStoreMock,
+  FALLBACK_LOCALE: "en" as Locale,
 }));
 
 const { useTranslation } = await import("./use-translation");

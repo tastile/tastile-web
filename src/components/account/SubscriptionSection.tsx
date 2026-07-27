@@ -49,21 +49,27 @@ function formatDate(unixSeconds: number): string {
 export function SubscriptionSection() {
   const { t } = useTranslation();
   const { locale } = useLocaleStore();
-  const subDict = (translations[locale] as { account: { subscription: {
-    freePlanName: string;
-    freePlanPrice: string;
-    proPlanName: string;
-    proPlanPrice: string;
-    monthly: string;
-    yearly: string;
-    perMonth: string;
-    perYear: string;
-    priceMonthly: string;
-    priceYearly: string;
-    yearHint: string;
-    upgrade: string;
-    features: { free: string[]; pro: string[] };
-  } } }).account.subscription;
+  const subDict = (
+    translations[locale] as {
+      account: {
+        subscription: {
+          freePlanName: string;
+          freePlanPrice: string;
+          proPlanName: string;
+          proPlanPrice: string;
+          monthly: string;
+          yearly: string;
+          perMonth: string;
+          perYear: string;
+          priceMonthly: string;
+          priceYearly: string;
+          yearHint: string;
+          upgrade: string;
+          features: { free: string[]; pro: string[] };
+        };
+      };
+    }
+  ).account.subscription;
   const subscriptionQuery = useQuery({
     queryKey: subscriptionQueryKey,
     queryFn: fetchSubscription,

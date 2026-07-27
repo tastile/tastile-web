@@ -13,7 +13,8 @@ const ERROR_MESSAGES: Record<string, string> = {
   missing_code: "Authentication code not found. Please try again.",
   state_mismatch: "Could not verify the authentication state. Please try again.",
   auth_failed: "Authentication failed. Please try again.",
-  cognito_not_configured: "The authentication service is misconfigured. Please contact an administrator.",
+  cognito_not_configured:
+    "The authentication service is misconfigured. Please contact an administrator.",
   unsupported_provider: "This sign-in method is not enabled yet.",
   provider_not_configured:
     "This sign-in method is not enabled yet. Continue with passkey or email.",

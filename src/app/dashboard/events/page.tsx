@@ -41,17 +41,17 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     setLoading(true);
     setEvents(null);
-    try {
-      const result = await getCoreClient().call<
-        { events: DebugEvent[]; count: number } | DebugEvent[]
-      >("getDebugEvents");
-      setEvents(result);
-    } finally {
-      setLoading(false);
-    }
+    return getCoreClient()
+      .call<{ events: DebugEvent[]; count: number } | DebugEvent[]>("getDebugEvents")
+      .then((result) => {
+        setEvents(result);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   useEffect(() => {
