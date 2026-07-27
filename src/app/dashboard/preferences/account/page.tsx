@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Modal, TextInput } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { AlertCircle, Edit, Mail, MailIcon, RefreshCw, UserRound } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
@@ -91,7 +92,7 @@ function AccountPageInner() {
   }, [t]);
 
   const accountId = useMemo(() => profile?.sub ?? profile?.username ?? "-", [profile]);
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isEmailModalOpen, { open: openEmailModal, close: closeEmailModal }] = useDisclosure(false);
 
   async function handleEmailStart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -193,7 +194,7 @@ function AccountPageInner() {
                   <div>
                     <div className="flex items-center justify-between gap-4">
                       <dt className="text-foreground-subtle">{t("preferences.account.email")}</dt>
-                      <Button onClick={() => setIsEmailModalOpen(true)} variant="subtle">
+                      <Button onClick={openEmailModal} variant="subtle">
                         <Edit className="h-4 w-4" aria-hidden="true" />
                       </Button>
                     </div>
@@ -222,7 +223,7 @@ function AccountPageInner() {
 
             <Modal
               opened={isEmailModalOpen}
-              onClose={() => setIsEmailModalOpen(false)}
+              onClose={closeEmailModal}
               title={t("preferences.account.changeEmailHeading")}
             >
               <div className="mb-4 flex items-center gap-3">

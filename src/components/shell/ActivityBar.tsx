@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Divider, Menu, Tooltip } from "@mantine/core";
+import { useDisclosure, useHover } from "@mantine/hooks";
 import {
   CalendarDays,
   CheckSquare,
@@ -13,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ComponentPropsWithoutRef, forwardRef, useState } from "react";
+import { type ComponentPropsWithoutRef, forwardRef } from "react";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { type SidebarBehavior, useShellStore } from "@/lib/stores/shell-store";
@@ -52,8 +53,8 @@ export function ActivityBar() {
   const { t } = useTranslation();
   const sidebarBehavior = useShellStore((s) => s.sidebarBehavior);
   const setSidebarBehavior = useShellStore((s) => s.setSidebarBehavior);
-  const [hovered, setHovered] = useState(false);
-  const [menuOpened, setMenuOpened] = useState(false);
+  const { hovered, ref: navHoverRef } = useHover();
+  const [menuOpened, { open: openMenu, close: closeMenu }] = useDisclosure(false);
 
   const expanded = sidebarBehavior === "open" || (sidebarBehavior === "expandable" && hovered);
 
@@ -69,14 +70,13 @@ export function ActivityBar() {
       )}
     >
       <nav
+        ref={navHoverRef}
         aria-label={t("shell.activityBar.ariaLabel")}
         className={cn(
           "absolute inset-y-0 left-0 flex flex-col items-stretch overflow-hidden bg-surface-0",
           "transition-[width] duration-200 ease-in-out",
           expanded ? "w-48" : "w-12",
         )}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
       >
         <div className="px-1 pt-1">
           <ActivityButton
@@ -115,7 +115,7 @@ export function ActivityBar() {
         <div className="px-1 pb-1">
           <Menu
             opened={menuOpened}
-            onChange={setMenuOpened}
+            onChange={(next) => (next ? openMenu() : closeMenu())}
             position="top-start"
             offset={4}
             width={176}

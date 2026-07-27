@@ -12,6 +12,7 @@ import {
   Tree,
   useTree,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
@@ -35,7 +36,7 @@ export function ProjectsSidePanel() {
 
   const currentOwner = searchParams.get("owner") ?? null;
 
-  const [creating, setCreating] = useState(false);
+  const [creating, { open: openCreating, close: closeCreating }] = useDisclosure(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [color, setColor] = useState("#6b7280");
@@ -58,7 +59,7 @@ export function ProjectsSidePanel() {
     setColor("#6b7280");
     setParentId(null);
     setCreateError(null);
-    setCreating(false);
+    closeCreating();
   }
 
   function handleCreate() {
@@ -116,7 +117,7 @@ export function ProjectsSidePanel() {
           type="button"
           variant="outline"
           radius="xl"
-          onClick={() => setCreating(true)}
+          onClick={openCreating}
           data-testid="project-create"
         >
           <Plus className="h-3 w-3" aria-hidden />

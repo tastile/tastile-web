@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionIcon, Button, NavLink } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   BarChart3,
   ChevronDown,
@@ -15,7 +16,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { clearCachedCognitoSession } from "@/lib/cognito/session";
 
 type DashboardShellProps = {
@@ -50,10 +51,13 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [pinnedOpen, setPinnedOpen] = useState(readPinnedPreference);
-  const [hoverOpen, setHoverOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [accountOpen, setAccountOpen] = useState(false);
+  const [pinnedOpen, { open: openPinned, close: closePinned, toggle: togglePinned }] =
+    useDisclosure(readPinnedPreference());
+  const [hoverOpen, { open: openHover, close: closeHover }] = useDisclosure(false);
+  const [mobileOpen, { open: openMobile, close: closeMobile, toggle: toggleMobile }] =
+    useDisclosure(false);
+  const [accountOpen, { open: openAccount, close: closeAccount, toggle: toggleAccount }] =
+    useDisclosure(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -66,7 +70,7 @@ export function DashboardShell({
     function handlePointerDown(event: PointerEvent) {
       if (!accountMenuRef.current) return;
       if (!accountMenuRef.current.contains(event.target as Node)) {
-        setAccountOpen(false);
+        closeAccount();
       }
     }
 
@@ -74,7 +78,7 @@ export function DashboardShell({
     return () => {
       window.removeEventListener("pointerdown", handlePointerDown);
     };
-  }, []);
+  }, [closeAccount]);
 
   const initials = displayName
     .split(" ")
@@ -90,22 +94,22 @@ export function DashboardShell({
 
   function handleAccountToggle() {
     if (!desktopExpanded && typeof window !== "undefined" && window.innerWidth >= 1024) {
-      setPinnedOpen(true);
-      setAccountOpen(true);
+      openPinned();
+      openAccount();
       return;
     }
 
-    setAccountOpen((prev) => !prev);
+    toggleAccount();
   }
 
   return (
     <div className="min-h-dvh bg-background text-foreground">
       <div className="flex min-h-dvh">
         <aside
-          onMouseEnter={() => setHoverOpen(true)}
+          onMouseEnter={openHover}
           onMouseLeave={() => {
-            setHoverOpen(false);
-            setAccountOpen(false);
+            closeHover();
+            closeAccount();
           }}
           className={[
             "fixed inset-y-0 left-0 z-40 bg-surface-1 transition-[width,transform] duration-300 ease-out",
@@ -121,12 +125,13 @@ export function DashboardShell({
               size="lg"
               onClick={() => {
                 if (window.innerWidth < 1024) {
-                  setMobileOpen((prev) => !prev);
+                  toggleMobile();
                 } else {
-                  const next = !pinnedOpen;
-                  setPinnedOpen(next);
-                  if (!next) {
-                    setAccountOpen(false);
+                  if (pinnedOpen) {
+                    closePinned();
+                    closeAccount();
+                  } else {
+                    openPinned();
                   }
                 }
               }}
@@ -147,7 +152,7 @@ export function DashboardShell({
                     leftSection={<Icon size={18} />}
                     label={desktopExpanded ? item.label : undefined}
                     active={active}
-                    onClick={() => setMobileOpen(false)}
+                    onClick={closeMobile}
                     className="mb-1"
                     title={item.label}
                     styles={{
@@ -176,7 +181,7 @@ export function DashboardShell({
                     <div className="min-h-0 space-y-1 overflow-hidden">
                       <Link
                         href="/dashboard/settings"
-                        onClick={() => setAccountOpen(false)}
+                        onClick={closeAccount}
                         className={[
                           "flex h-9 items-center gap-2 rounded-md px-3 text-sm",
                           pathname === "/dashboard/settings"
@@ -192,7 +197,7 @@ export function DashboardShell({
 
                       <Link
                         href={plan === "pro" ? "/dashboard/billing" : "/pricing"}
-                        onClick={() => setAccountOpen(false)}
+                        onClick={closeAccount}
                         className="flex h-9 items-center gap-2 rounded-md px-3 text-sm text-foreground-muted hover:bg-surface-2 hover:text-foreground"
                       >
                         <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center">
@@ -204,7 +209,7 @@ export function DashboardShell({
                       <Button
                         type="button"
                         onClick={() => {
-                          setAccountOpen(false);
+                          closeAccount();
                           void handleSignOut();
                         }}
                         className="flex h-9 w-full items-center gap-2 rounded-md px-3 text-sm text-danger hover:bg-danger/10"
@@ -284,9 +289,9 @@ export function DashboardShell({
           <button
             type="button"
             className="fixed inset-0 z-30 cursor-default border-none bg-black/20 lg:hidden"
-            onClick={() => setMobileOpen(false)}
+            onClick={closeMobile}
             onKeyDown={(e) => {
-              if (e.key === "Escape") setMobileOpen(false);
+              if (e.key === "Escape") closeMobile();
             }}
             aria-label="Close navigation rail"
           />
@@ -299,7 +304,7 @@ export function DashboardShell({
                 variant="subtle"
                 color="gray"
                 size="sm"
-                onClick={() => setMobileOpen(true)}
+                onClick={openMobile}
                 aria-label="Open navigation rail"
                 className="lg:hidden"
               >

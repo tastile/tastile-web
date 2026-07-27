@@ -1,10 +1,11 @@
 "use client";
 
 import { ActionIcon } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { PanelLeftDashed } from "lucide-react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { SecurityLockGate } from "@/components/security/SecurityLockGate";
@@ -56,9 +57,11 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // own. The mobile floating button below reads its own subscription
   // through a small dedicated component instead.
   const _pathname = usePathname();
-  const [mobileSidePanelOpen, setMobileSidePanelOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [mobileSidePanelOpen, { open: openMobileSidePanel, close: closeMobileSidePanel }] =
+    useDisclosure(false);
+  const [searchOpen, { open: openSearch, close: closeSearch }] = useDisclosure(false);
+  const [notificationsOpen, { open: openNotifications, close: closeNotifications }] =
+    useDisclosure(false);
   // Bell button lives inside FloatingHeader but the notifications
   // panel is mounted here as a sibling overlay. Without sharing the
   // ref, NotificationsMenu's anchorRef is undefined and the panel's
@@ -69,7 +72,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setSearchOpen(true);
+        openSearch();
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault();
@@ -78,7 +81,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [openQuickCreate]);
+  }, [openSearch, openQuickCreate]);
 
   useEffect(() => {
     closeQuickCreate();
@@ -88,8 +91,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="flex h-dvh flex-col bg-background">
       <FloatingHeader
         userName={session?.displayName ?? "Loading..."}
-        onOpenSearch={() => setSearchOpen(true)}
-        onOpenNotifications={() => setNotificationsOpen(true)}
+        onOpenSearch={openSearch}
+        onOpenNotifications={openNotifications}
         notificationsButtonRef={notificationsButtonRef}
       />
 
@@ -109,22 +112,22 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Global overlays */}
-      <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <SearchOverlay open={searchOpen} onClose={closeSearch} />
       <NotificationsMenu
         open={notificationsOpen}
-        onOpenChange={setNotificationsOpen}
+        onOpenChange={(next) => (next ? openNotifications() : closeNotifications())}
         anchorRef={notificationsButtonRef}
       />
       {/* QuickTileCreate: desktop = right slide, mobile = bottom slide-up */}
       <QuickTileCreate />
 
       {/* Mobile side-panel floating action button (only when below md and content exists) */}
-      <MobileSidePanelFab onClick={() => setMobileSidePanelOpen(true)} />
+      <MobileSidePanelFab onClick={openMobileSidePanel} />
 
       {/* Mobile side-panel drawer */}
       <BottomSheet
         open={mobileSidePanelOpen}
-        onOpenChange={setMobileSidePanelOpen}
+        onOpenChange={(next) => (next ? openMobileSidePanel() : closeMobileSidePanel())}
         title={t("dashboard.sidePanelDetailsTitle")}
       >
         <div className="py-2">
