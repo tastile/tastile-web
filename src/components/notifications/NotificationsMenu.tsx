@@ -6,7 +6,7 @@ import {
   FloatingMenuLabel,
   FloatingMenuSeparator,
 } from "@/components/ui/floating-menu";
-import { useNotifications } from "@/lib/hooks/use-notifications";
+import { type NotificationItem, useNotifications } from "@/lib/hooks/use-notifications";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface NotificationsMenuProps {
@@ -31,6 +31,28 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
   const { t, locale } = useTranslation();
   const { notifications, loading, error } = useNotifications();
 
+  // Deep-link to /app/prompt for execution notifications carrying a
+  // pending-decision id (`prompt:<pending_prompt_id>`). Other notifications
+  // route to /app/prompt without a focus param — DecisionPromptSheet on the
+  // page renders the full list and the user picks.
+  //
+  // `window.location.assign()` is used in place of `useRouter()` because the
+  // call site must work whether or not the component is rendered inside an
+  // App Router context (the existing NotificationsMenu test mounts it
+  // without one — `useRouter()` throws "invariant expected app router to be
+  // mounted"). Using the function form (rather than assignment to `.href`)
+  // also keeps `react-hooks/immutability` happy. The reload cost on `/app/*`
+  // navigation is acceptable for the once-per-click deep-link.
+  function handleNotificationClick(item: NotificationItem) {
+    onOpenChange(false);
+    if (item.source === "execution" && item.id.startsWith("prompt:")) {
+      const sessionId = item.id.slice("prompt:".length);
+      window.location.assign(`/app/prompt?focus=${encodeURIComponent(sessionId)}`);
+      return;
+    }
+    window.location.assign("/app/prompt");
+  }
+
   return (
     <FloatingMenu open={open} onOpenChange={onOpenChange} triggerRef={anchorRef}>
       <FloatingMenuContent align="end" sideOffset={8} className="w-80 p-0">
@@ -46,7 +68,13 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
         ) : (
           <div className="max-h-80 overflow-y-auto">
             {notifications.map((n) => (
-              <div key={n.id} className="border-b border-surface-2 px-4 py-3 last:border-b-0">
+              <button
+                type="button"
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                data-testid={`notification-${n.id}`}
+                className="block w-full cursor-pointer border-b border-surface-2 px-4 py-3 text-left last:border-b-0 hover:bg-surface-1"
+              >
                 <div className="text-xs text-foreground">{n.message}</div>
                 <div className="mt-1 font-mono text-[10px] text-foreground-subtle">
                   {n.timestamp.toLocaleTimeString(locale === "ja" ? "ja-JP" : "en-US", {
@@ -55,7 +83,7 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
                     timeZone: "UTC",
                   })}
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         )}
