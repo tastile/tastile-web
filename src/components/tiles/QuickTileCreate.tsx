@@ -798,6 +798,7 @@ export function QuickTileCreate() {
                         />
                         {tk.content?.note && (
                           <span
+                            role="img"
                             aria-label={t("quickCreate.taskHasNote")}
                             title={t("quickCreate.taskHasNote")}
                             className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-foreground-muted"
@@ -807,6 +808,7 @@ export function QuickTileCreate() {
                         )}
                         {tk.order.length > 0 && (
                           <span
+                            role="img"
                             aria-label={t("quickCreate.taskHasOrder", { count: tk.order.length })}
                             title={t("quickCreate.taskHasOrder", { count: tk.order.length })}
                             className="inline-flex h-4 shrink-0 items-center rounded bg-surface-1 px-1 text-[9px] font-semibold text-foreground-muted"
