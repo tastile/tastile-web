@@ -8,8 +8,8 @@
  * The UX is intentionally a faithful re-implementation of the recurrence
  * controls that already live in `AutomationPanel.tsx`:
  *   - Occurrence: 5-way choice tab (once / daily / weekly / interval / condition)
- *   - Weekday: chip row with bit-0 = Sunday … bit-6 = Saturday, only shown
- *     when repeatMode === "weekly"
+ *   - Weekday: chip row with bit-0 = Sunday … bit-6 = Saturday, shown when
+ *     repeatMode === "weekly" (matches the AutomationPanel precedent)
  *   - End: explicit Switch (off = no end; on reveals a date picker)
  *
  * The panel is store-agnostic: it does NOT call `useQuickCreateStore`
@@ -181,14 +181,6 @@ export interface SourceGenerationPanelProps {
   locale: EditorLocale;
   /** Translation lookup. */
   t: (key: string) => string;
-  /**
-   * Optional local-time offset (minutes) editor. When provided, an
-   * additional `NumberInput` is rendered after the end-date controls.
-   * The default Task 2 flow does not supply it; the QuickTileCreate
-   * orchestrator wires `time.span.offsetMin` separately.
-   */
-  offsetMin?: number;
-  onOffsetChange?: (next: number) => void;
 }
 
 export function SourceGenerationPanel({
@@ -196,8 +188,6 @@ export function SourceGenerationPanel({
   setField,
   locale,
   t,
-  offsetMin,
-  onOffsetChange,
 }: SourceGenerationPanelProps) {
   const weekdayEnabled = recurring.repeatMode === "weekly";
   const intervalEnabled = recurring.repeatMode === "interval";
@@ -268,18 +258,6 @@ export function SourceGenerationPanel({
           t={t}
         />
       </div>
-      {onOffsetChange ? (
-        <NumberInput
-          label={t("quickCreate.offsetMin") ?? "Local offset (min)"}
-          value={offsetMin ?? 0}
-          onChange={(v) => onOffsetChange(typeof v === "number" ? v : 0)}
-          min={-720}
-          max={840}
-          step={15}
-          size="sm"
-          suffix="min"
-        />
-      ) : null}
     </div>
   );
 }

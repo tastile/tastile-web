@@ -1,14 +1,14 @@
 // @vitest-environment jsdom
 import { fireEvent, screen } from "@testing-library/react";
 import { renderWithMantine as render } from "@/test/render-with-mantine";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { SourceGenerationPanel } from "./SourceGenerationPanel";
 
 describe("SourceGenerationPanel", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  // The panel is prop-driven and store-agnostic (does not import
+  // useQuickCreateStore), so there is no module-level state to reset
+  // between tests. Each render constructs fresh mocks via vi.fn().
 
   it("renders the recurrence authoring surface without crashing", () => {
     const setField = vi.fn();
