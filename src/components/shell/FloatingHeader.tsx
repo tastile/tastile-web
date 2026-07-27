@@ -1,6 +1,7 @@
 "use client";
 
 import { ActionIcon, Avatar, Burger, Button } from "@mantine/core";
+import { useDisclosure, useInterval } from "@mantine/hooks";
 import {
   Bell,
   CalendarDays,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { V1ExecutionControls } from "@/components/execution/V1ExecutionControls";
 import { TastileLogo } from "@/components/TastileLogo";
 import { BottomSheet } from "@/components/ui/BottomSheet";
@@ -55,7 +56,7 @@ export function FloatingHeader({
 }: FloatingHeaderProps) {
   const pathname = usePathname();
   const { t } = useTranslation();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen, { open: openMenu, close: closeMenu }] = useDisclosure(false);
   const { snapshot } = useActiveTile();
   const [nowMs, setNowMs] = useState(() => Date.now());
 
@@ -64,12 +65,9 @@ export function FloatingHeader({
   // re-renders every second on every page, producing sustained CPU load.
   const ends = snapshot?.main_tile_ends_at ? new Date(snapshot.main_tile_ends_at) : null;
   const ticking = Boolean(snapshot?.is_working && ends);
-
-  useEffect(() => {
-    if (!ticking) return;
-    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
-    return () => window.clearInterval(id);
-  }, [ticking]);
+  const interval = useInterval(() => setNowMs(Date.now()), 1000);
+  if (ticking) interval.start();
+  else interval.stop();
 
   const main = snapshot?.main_tile;
   const remainingSec = ends ? Math.max(0, Math.round((ends.getTime() - nowMs) / 1000)) : 0;
@@ -206,14 +204,14 @@ export function FloatingHeader({
             opened={menuOpen}
             size="sm"
             aria-label={t("shell.floatingHeader.openNavMenu")}
-            onClick={() => setMenuOpen(true)}
+            onClick={openMenu}
           />
         </div>
       </header>
 
       <BottomSheet
         open={menuOpen}
-        onOpenChange={setMenuOpen}
+        onOpenChange={(next) => (next ? openMenu() : closeMenu())}
         title={t("shell.floatingHeader.menu")}
       >
         <div className="flex flex-col gap-4">
@@ -224,7 +222,7 @@ export function FloatingHeader({
               type="button"
               size="compact-sm"
               onClick={() => {
-                setMenuOpen(false);
+                closeMenu();
                 onOpenSearch();
               }}
               className="flex h-10 items-center justify-center gap-2 rounded-md bg-surface-2 text-sm font-medium text-foreground-subtle hover:bg-surface-hover hover:text-foreground transition-colors"
@@ -237,7 +235,7 @@ export function FloatingHeader({
               variant="subtle"
               size="compact-sm"
               onClick={() => {
-                setMenuOpen(false);
+                closeMenu();
                 onOpenNotifications();
               }}
               className="flex h-10 items-center justify-center gap-2 rounded-md bg-surface-2 text-sm font-medium text-foreground-subtle hover:bg-surface-hover hover:text-foreground transition-colors"
@@ -255,7 +253,7 @@ export function FloatingHeader({
                 <Link
                   key={path}
                   href={path}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={closeMenu}
                   className={cn(
                     "flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors",
                     active
