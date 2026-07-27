@@ -14,7 +14,7 @@ export function PricingCard() {
   // the rule disappears without an eslint suppression.
   const [selectedInterval, setSelectedInterval] = useState<"monthly" | "yearly">("monthly");
   const { t, locale } = useTranslation();
-  const dict = translations[locale].marketing.pricing;
+  const dict = (translations[locale] as unknown as { marketing: { pricing: { proFeatures: { title: string; desc: string }[] } } }).marketing.pricing;
 
   const handleUpgrade = () => {
     setIsLoading(true);
