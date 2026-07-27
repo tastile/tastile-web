@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@mantine/core";
+import { useUncontrolled } from "@mantine/hooks";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import { cn } from "@/lib/utils/cn";
@@ -63,20 +64,15 @@ function FloatingMenu({
   onOpenChange,
   triggerRef: externalTriggerRef,
 }: FloatingMenuProps) {
-  const isControlled = open !== undefined;
-  const [internalOpen, setInternalOpen] = React.useState(defaultOpen ?? false);
-  const actualOpen = isControlled ? open : internalOpen;
+  const [actualOpen, setOpen] = useUncontrolled({
+    value: open,
+    defaultValue: defaultOpen ?? false,
+    finalValue: false,
+    onChange: onOpenChange,
+  });
   const internalTriggerRef = React.useRef<HTMLElement | null>(null);
   const triggerRef = externalTriggerRef ?? internalTriggerRef;
   const contentId = React.useId();
-
-  const setOpen = React.useCallback(
-    (next: boolean) => {
-      if (!isControlled) setInternalOpen(next);
-      onOpenChange?.(next);
-    },
-    [isControlled, onOpenChange],
-  );
 
   const value = React.useMemo<FloatingMenuContextValue>(
     () => ({ open: actualOpen, setOpen, triggerRef, contentId }),

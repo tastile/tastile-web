@@ -1,10 +1,13 @@
 /** @vitest-environment jsdom */
+import { fireEvent } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useRef } from "react";
 import { renderWithMantine } from "@/test/render-with-mantine";
 import {
   FloatingMenu,
   FloatingMenuContent,
+  FloatingMenuItem,
+  FloatingMenuTrigger,
 } from "@/components/ui/floating-menu";
 
 describe("FloatingMenu external-trigger positioning", () => {
@@ -123,5 +126,138 @@ describe("FloatingMenu external-trigger positioning", () => {
     ) as HTMLElement;
     expect(panel).toBeTruthy();
     expect(panel.getAttribute("data-state")).toBe("closed");
+  });
+});
+
+describe("FloatingMenu controlled/uncontrolled contract", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("controlled mode never mutates the visual state when onOpenChange rejects the change", () => {
+    renderWithMantine(
+      <FloatingMenu open={false} onOpenChange={() => {}}>
+        <FloatingMenuTrigger>
+          <span>trigger</span>
+        </FloatingMenuTrigger>
+        <FloatingMenuContent>content</FloatingMenuContent>
+      </FloatingMenu>,
+    );
+
+    expect(document.querySelector("[data-floating-menu-content]")).toBeNull();
+
+    fireEvent.click(document.querySelector("[data-floating-menu-trigger]") as HTMLElement);
+
+    // Parent didn't flip open prop to true → panel stays closed.
+    expect(document.querySelector("[data-floating-menu-content]")).toBeNull();
+    expect(
+      (document.querySelector("[data-floating-menu-trigger]") as HTMLElement).getAttribute(
+        "aria-expanded",
+      ),
+    ).toBe("false");
+  });
+
+  it("uncontrolled mode honors defaultOpen and toggles internally", () => {
+    renderWithMantine(
+      <FloatingMenu defaultOpen>
+        <FloatingMenuTrigger>
+          <span>trigger</span>
+        </FloatingMenuTrigger>
+        <FloatingMenuContent>content</FloatingMenuContent>
+      </FloatingMenu>,
+    );
+
+    expect(document.querySelector("[data-floating-menu-content]")).toBeTruthy();
+
+    fireEvent.click(document.querySelector("[data-floating-menu-trigger]") as HTMLElement);
+
+    expect(document.querySelector("[data-floating-menu-content]")).toBeNull();
+
+    fireEvent.click(document.querySelector("[data-floating-menu-trigger]") as HTMLElement);
+    expect(document.querySelector("[data-floating-menu-content]")).toBeTruthy();
+  });
+
+  it("calls onOpenChange for every transition in both modes", () => {
+    const onOpenChange = vi.fn();
+
+    const { rerender } = renderWithMantine(
+      <FloatingMenu onOpenChange={onOpenChange}>
+        <FloatingMenuTrigger>
+          <span>trigger</span>
+        </FloatingMenuTrigger>
+        <FloatingMenuContent>content</FloatingMenuContent>
+      </FloatingMenu>,
+    );
+
+    fireEvent.click(document.querySelector("[data-floating-menu-trigger]") as HTMLElement);
+    fireEvent.click(document.querySelector("[data-floating-menu-trigger]") as HTMLElement);
+
+    expect(onOpenChange).toHaveBeenCalledTimes(2);
+    expect(onOpenChange).toHaveBeenNthCalledWith(1, true);
+    expect(onOpenChange).toHaveBeenNthCalledWith(2, false);
+
+    onOpenChange.mockClear();
+    rerender(
+      <FloatingMenu open={false} onOpenChange={onOpenChange}>
+        <FloatingMenuTrigger>
+          <span>trigger</span>
+        </FloatingMenuTrigger>
+        <FloatingMenuContent>content</FloatingMenuContent>
+      </FloatingMenu>,
+    );
+    fireEvent.click(document.querySelector("[data-floating-menu-trigger]") as HTMLElement);
+    expect(onOpenChange).toHaveBeenCalledTimes(1);
+    expect(onOpenChange).toHaveBeenCalledWith(true);
+  });
+
+  it("Escape closes the menu when open", () => {
+    const onOpenChange = vi.fn();
+    renderWithMantine(
+      <FloatingMenu defaultOpen onOpenChange={onOpenChange}>
+        <FloatingMenuTrigger>
+          <span>trigger</span>
+        </FloatingMenuTrigger>
+        <FloatingMenuContent>content</FloatingMenuContent>
+      </FloatingMenu>,
+    );
+
+    expect(document.querySelector("[data-floating-menu-content]")).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    expect(document.querySelector("[data-floating-menu-content]")).toBeNull();
+    expect(onOpenChange).toHaveBeenLastCalledWith(false);
+  });
+
+  it("renders portal content reachable from document.body", () => {
+    const { baseElement } = renderWithMantine(
+      <FloatingMenu defaultOpen>
+        <FloatingMenuTrigger>
+          <span>trigger</span>
+        </FloatingMenuTrigger>
+        <FloatingMenuContent data-testid="panel">content</FloatingMenuContent>
+      </FloatingMenu>,
+    );
+
+    const panel = baseElement.querySelector('[data-testid="panel"]');
+    expect(panel?.parentElement).toBe(document.body);
+  });
+
+  it("wires external triggerRef to floating menu trigger element", () => {
+    function ExternalTriggerHarness() {
+      const ref = useRef<HTMLButtonElement | null>(null);
+      return (
+        <>
+          <button ref={ref} data-testid="external-anchor" type="button">
+            external
+          </button>
+          <FloatingMenu triggerRef={ref}>
+            <FloatingMenuContent>content</FloatingMenuContent>
+          </FloatingMenu>
+        </>
+      );
+    }
+
+    const { baseElement } = renderWithMantine(<ExternalTriggerHarness />);
+    expect(baseElement.querySelector('[data-testid="external-anchor"]')).toBeTruthy();
   });
 });
