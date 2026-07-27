@@ -108,6 +108,7 @@ export function V1ExecutionControls() {
           disabled={state.busy !== null}
           className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
           aria-label="Start execution"
+          data-testid="execution-start"
           variant="subtle"
           size="compact-sm"
         >
@@ -144,6 +145,7 @@ export function V1ExecutionControls() {
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-status-warn px-2 text-[11px] font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             aria-label="Finish execution"
+            data-testid="execution-finish"
             variant="subtle"
             size="compact-sm"
           >
