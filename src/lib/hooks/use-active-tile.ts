@@ -43,18 +43,17 @@ export function useActiveTile() {
   const [error, setError] = useState<Error | null>(null);
   const mountedRef = useRef(true);
   const failuresRef = useRef(0);
+  const requestIdRef = useRef(0);
   const fetchSnapshot = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     const res = await getCoreClient().call<ExecutionViewSnapshot>("getExecutionView");
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || requestId !== requestIdRef.current) return;
     if (res.ok) {
       failuresRef.current = 0;
       setSnapshot(res.data);
       setError(null);
     } else {
       failuresRef.current += 1;
-      // Keep the same Error instance when the message is unchanged so the
-      // poll failure cycle doesn't create a new identity every tick and
-      // re-render every consumer (FloatingHeader, ActivityBar, …).
       const msg = res.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }

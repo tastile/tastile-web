@@ -62,9 +62,11 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const seenSystemNotifications = useRef<Set<string>>(new Set());
+  const requestIdRef = useRef(0);
   const { t } = useTranslation();
 
   const refresh = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
     const client = getCoreClient();
     const [access, execution] = await Promise.all([
       fetchAccessNotifications(t),
@@ -73,6 +75,7 @@ export function useNotifications() {
       // it here instead of crashing when /v1/active-tile returns null.
       client.call<ExecutionSnapshot | null>("getExecutionView"),
     ]);
+    if (requestId !== requestIdRef.current) return { failed: false };
 
     let failed = false;
 
