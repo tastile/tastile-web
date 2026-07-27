@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
 import { memo } from "react";
 import { eventTileStyle, formatLocalTimeOfDay } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -36,12 +35,23 @@ function WeekViewTileImpl({
   const leftPct = widthPct * laneIndex;
 
   return (
-    <Button
-      type="button"
+    <div
+      role={onEditEvent ? "button" : undefined}
+      tabIndex={onEditEvent ? 0 : undefined}
       data-testid={`week-event-${event.id}`}
       data-lane={laneIndex}
       data-lane-count={laneCount}
       onClick={onEditEvent ? () => onEditEvent(event) : undefined}
+      onKeyDown={
+        onEditEvent
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onEditEvent(event);
+              }
+            }
+          : undefined
+      }
       className="absolute overflow-hidden rounded-sm px-1 py-0.5 text-left hover:brightness-95"
       style={{
         top: `${top}px`,
@@ -58,7 +68,7 @@ function WeekViewTileImpl({
       <div className="truncate font-mono text-[9px] opacity-80">
         {formatLocalTimeOfDay(event.start, tzOffset)} – {formatLocalTimeOfDay(event.end, tzOffset)}
       </div>
-    </Button>
+    </div>
   );
 }
 

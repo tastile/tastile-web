@@ -66,8 +66,8 @@ describe("callbackHtmlResponse", () => {
   it("preserves a normal destination path", async () => {
     const destination = "/dashboard/calendar?date=2026-07-23";
     const response = callbackHtmlResponse({
-      title: "ようこそ",
-      message: "読み込み中…",
+      title: "Welcome",
+      message: "Loading…",
       destination,
       tone: "success",
     });
@@ -79,7 +79,7 @@ describe("callbackHtmlResponse", () => {
     const scriptJson = extractScriptJson(html);
     expect(JSON.parse(unescapeHtml(scriptJson))).toBe(destination);
 
-    expect(html).toContain("ようこそ");
+    expect(html).toContain("Welcome");
     expect(html).not.toContain("<script>alert");
   });
 });

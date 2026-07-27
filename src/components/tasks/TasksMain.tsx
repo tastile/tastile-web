@@ -15,7 +15,7 @@ import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 export function TasksMain() {
   const searchParams = useSearchParams();
   const search = searchParams.get("q") ?? "";
-  const range = searchParams.get("range") ?? "7d"; // デフォルト7日
+  const range = searchParams.get("range") ?? "7d"; // default 7 days
   const granularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
   const openEdit = useQuickCreateStore((s) => s.loadFromRecurringTile);
   const [startingTileId, setStartingTileId] = useState<string | null>(null);
@@ -101,7 +101,7 @@ export function TasksMain() {
     <PageContainer>
       <PageHeader title="Tasks" description="Manage and view your actionable items" />
 
-      {/* スコープ情報バー */}
+      {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
         <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
           {filterDesc}

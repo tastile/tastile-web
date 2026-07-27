@@ -14,7 +14,7 @@ globalThis.fetch = fetchMock as unknown as typeof fetch;
 
 const client: ApiClient = { baseUrl: "https://api.example.com", getIdToken: async () => "token" };
 const payload: PublishScheduleDefinitionPayload = {
-  tile: { title: "競プロ", description: null, color: null, icon: null, external_id: null },
+  tile: { title: "Practice", description: null, color: null, icon: null, external_id: null },
   plan: {
     role: 0,
     references: [],

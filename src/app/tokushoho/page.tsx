@@ -3,124 +3,124 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 
 export const metadata = {
-  title: "特定商取引法に基づく表記 — Tastile",
-  description: "特定商取引に関する法律第11条に基づき、以下のとおり表記致します。",
+  title: "Commercial Disclosure (Tokushoho) - Tastile",
+  description: "Disclosed under Article 11 of the Act on Specified Commercial Transactions.",
 };
 
 export default function TokushohoPage() {
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader showFeatureLink translations={getHeaderTranslations("ja")} />
+      <SiteHeader showFeatureLink translations={getHeaderTranslations("en")} />
       <main className="flex-1">
         <div className="layout-shell max-w-3xl py-12">
           <h1 className="mb-8 text-3xl font-[510] tracking-[-0.02em] text-foreground">
-            特定商取引法に基づく表記
+            Commercial Disclosure (Tokushoho)
           </h1>
 
           <div className="prose dark:prose-invert max-w-none">
             <p className="mb-6 text-foreground-muted">
-              「特定商取引に関する法律」第11条に基づき、以下のとおり表記致します。
+              Disclosed in accordance with Article 11 of the Act on Specified Commercial Transactions.
             </p>
 
             <table className="w-full border-collapse text-sm">
               <tbody>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    販売事業者
+                    Seller
                   </th>
-                  <td className="py-3 text-foreground-muted">木村 友亮（きむら ゆうすけ）</td>
+                  <td className="py-3 text-foreground-muted">Yusuke Kimura</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    運営統括責任者
+                    Operating Manager
                   </th>
-                  <td className="py-3 text-foreground-muted">木村 友亮</td>
+                  <td className="py-3 text-foreground-muted">Yusuke Kimura</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    所在地
+                    Address
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    請求があった場合には速やかに開示いたします。
+                    Disclosed promptly upon request.
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    電話番号
+                    Phone
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    請求があった場合には速やかに開示いたします。
+                    Disclosed promptly upon request.
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    メールアドレス
+                    Email
                   </th>
                   <td className="py-3 text-foreground-muted">support@tastile.app</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    販売価格
+                    Price
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    各プランページに記載の金額（消費税込）
+                    Amounts listed on each plan page (tax included).
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    商品代金以外の必要料金
+                    Other charges
                   </th>
-                  <td className="py-3 text-foreground-muted">なし</td>
+                  <td className="py-3 text-foreground-muted">None</td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    支払い方法
+                    Payment methods
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    クレジットカード、Apple Pay、Google Pay
+                    Credit card, Apple Pay, Google Pay
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    支払い時期
+                    Payment timing
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    クレジットカード決済はただちに処理されます。
+                    Credit card payments are processed immediately.
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    サービスの提供時期
+                    Service delivery
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    お支払い確認後、すぐにサービスをご利用いただけます。
+                    The service is available immediately after payment is confirmed.
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    返品・返金に関する事項
+                    Returns & refunds
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    デジタルコンテンツの性質上、お客様都合による返品・返金はお受けしておりません。
-                    サービスに技術的な問題がある場合は、support@tastile.app
-                    までお問い合わせください。確認のうえ、対応いたします。
+                    Due to the nature of digital content, returns and refunds are not accepted for
+                    customer convenience. If there is a technical issue with the service, please
+                    contact support@tastile.app. We will investigate and respond accordingly.
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    申込期間
+                    Sign-up period
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    特に制限はございません。継続的にサービスをご利用いただけます。
+                    No particular restriction. The service can be used continuously.
                   </td>
                 </tr>
                 <tr className="border-b border-border">
                   <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    動作環境
+                    System requirements
                   </th>
                   <td className="py-3 text-foreground-muted">
-                    インターネット接続が必要です。推奨ブラウザ: Google
-                    Chrome、Safari、Firefox、Microsoft Edge。モバイル: 最新版の iOS / Android。
+                    An internet connection is required. Recommended browsers: Google Chrome, Safari,
+                    Firefox, Microsoft Edge. Mobile: latest iOS / Android.
                   </td>
                 </tr>
               </tbody>
@@ -128,7 +128,7 @@ export default function TokushohoPage() {
           </div>
         </div>
       </main>
-      <SiteFooter translations={getFooterTranslations("ja")} />
+      <SiteFooter translations={getFooterTranslations("en")} />
     </div>
   );
 }

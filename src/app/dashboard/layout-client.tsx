@@ -94,9 +94,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       />
 
       <div className="flex min-h-0 flex-1 pt-12">
-        {/* ActivityBar: Supabase風の開閉サイドバー */}
+        {/* ActivityBar: Supabase-style collapsible sidebar */}
         <ActivityBar />
-        {/* SideToolPanel: 各ページが useSidePanel() で登録したコンテンツを表示 */}
+        {/* SideToolPanel: renders content registered by each page via useSidePanel() */}
         <SideToolPanel />
         <main className="min-w-0 flex-1 overflow-y-auto bg-surface-0">
           {/* `h-full` (not `min-h-full`) so children's percentage heights
@@ -108,20 +108,20 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
-      {/* グローバルオーバーレイ */}
+      {/* Global overlays */}
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       <NotificationsMenu
         open={notificationsOpen}
         onOpenChange={setNotificationsOpen}
         anchorRef={notificationsButtonRef}
       />
-      {/* QuickTileCreate: デスクトップ=右スライド / モバイル=下スライドアップ */}
+      {/* QuickTileCreate: desktop = right slide, mobile = bottom slide-up */}
       <QuickTileCreate />
 
-      {/* モバイル用サイドパネルフローティングボタン (md未満かつコンテンツが存在する場合のみ) */}
+      {/* Mobile side-panel floating action button (only when below md and content exists) */}
       <MobileSidePanelFab onClick={() => setMobileSidePanelOpen(true)} />
 
-      {/* モバイル用サイドパネルドロワー */}
+      {/* Mobile side-panel drawer */}
       <BottomSheet
         open={mobileSidePanelOpen}
         onOpenChange={setMobileSidePanelOpen}

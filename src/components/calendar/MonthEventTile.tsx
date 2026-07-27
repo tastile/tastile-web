@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
 import { memo } from "react";
 import { monthEventStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -34,11 +33,22 @@ function MonthEventTileImpl({ event, date, onEditEvent }: MonthEventTileProps) {
   const isStart = !event.allDay || date === start;
   const isEnd = !event.allDay || date === last;
   return (
-    <Button
-      type="button"
+    <div
+      role={onEditEvent ? "button" : undefined}
+      tabIndex={onEditEvent ? 0 : undefined}
       data-testid={`month-event-${event.id}`}
       onClick={onEditEvent ? () => onEditEvent(event) : undefined}
-      className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
+      onKeyDown={
+        onEditEvent
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onEditEvent(event);
+              }
+            }
+          : undefined
+      }
+      className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 cursor-pointer ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
       style={{
         backgroundColor: tile.backgroundColor,
         color: tile.color,
@@ -46,7 +56,7 @@ function MonthEventTileImpl({ event, date, onEditEvent }: MonthEventTileProps) {
     >
       {event.allDay ? "" : `${formatTime(event.start)} `}
       {event.allDay && !isStart ? "" : event.title}
-    </Button>
+    </div>
   );
 }
 

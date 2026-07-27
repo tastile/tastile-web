@@ -52,7 +52,7 @@ export function RowSubPanel({
         <span
           className={isEmpty ? "text-xs text-foreground-muted" : "text-sm text-foreground-muted"}
         >
-          {isEmpty ? (emptyLabel ?? "未追加") : value}
+          {isEmpty ? (emptyLabel ?? "Not set") : value}
         </span>
       </Button>
     </FormRow>

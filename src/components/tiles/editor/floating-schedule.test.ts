@@ -5,11 +5,11 @@ import { buildFloatingSchedulePayload, formatFloatingScheduleSummary } from "./f
 describe("buildFloatingSchedulePayload", () => {
   it("creates a flexible aggregate with a time requirement and no placement baseline", () => {
     const payload = buildFloatingSchedulePayload({
-      title: "競プロ",
+      title: "Practice",
       requiredMinutes: 90,
       label: {
         placementId: "018f0000-0000-7000-8000-000000000001",
-        title: "一学期",
+        title: "Term 1",
         start: "2026-04-01T00:00:00Z",
         end: "2026-07-31T23:59:59Z",
       },
@@ -60,8 +60,8 @@ describe("buildFloatingSchedulePayload", () => {
 describe("formatFloatingScheduleSummary", () => {
   it("describes an unresolved availability without exposing implementation names", () => {
     expect(formatFloatingScheduleSummary({ requiredMinutes: 60, label: null })).toEqual([
-      "必要時間: 60分",
-      "配置できる時間: 未設定",
+      "Required time: 60 min",
+      "Available window: Not set",
     ]);
   });
 });

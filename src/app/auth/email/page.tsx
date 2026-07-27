@@ -19,18 +19,18 @@ export default async function EmailPage({
 
   return (
     <AuthShell
-      title="メールでログイン"
-      subtitle="メールアドレスを入力してください。パスワードまたは確認コードをお送りします。"
+      title="Sign in with email"
+      subtitle="Enter your email address. We will send a password or verification code."
       message={error ? decodeURIComponent(error) : null}
-      headerTranslations={getHeaderTranslations("ja")}
-      footerTranslations={getFooterTranslations("ja")}
+      headerTranslations={getHeaderTranslations("en")}
+      footerTranslations={getFooterTranslations("en")}
     >
       <form action="/auth/email/start" method="post" className="space-y-5">
         {redirectUri ? <input type="hidden" name="redirect_uri" value={redirectUri} /> : null}
         {state ? <input type="hidden" name="state" value={state} /> : null}
         <div>
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            メールアドレス
+            Email address
           </label>
           <input
             id="email"
@@ -43,7 +43,7 @@ export default async function EmailPage({
           />
         </div>
         <Button type="submit" className="w-full">
-          続行
+          Continue
         </Button>
       </form>
     </AuthShell>

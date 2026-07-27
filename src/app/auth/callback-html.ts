@@ -5,11 +5,12 @@ export function callbackHtmlResponse(args: {
   message: string;
   destination: string;
   tone: "success" | "error";
+  locale?: string;
 }) {
   const accent = args.tone === "success" ? "#5e6ad2" : "#ef4444";
   const escapedDestination = escapeHtml(args.destination);
   const html = `<!doctype html>
-<html lang="ja">
+<html lang="${args.locale ?? "en"}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -106,7 +107,7 @@ export function callbackHtmlResponse(args: {
     <h1>${escapeHtml(args.title)}</h1>
     <p class="muted">${escapeHtml(args.message)}</p>
     <div class="bar" aria-hidden="true"><span></span></div>
-    <p class="muted" style="margin-top:18px;font-size:14px;">自動で移動しない場合は <a href="${escapedDestination}">こちら</a> を開いてください。</p>
+    <p class="muted" style="margin-top:18px;font-size:14px;">If you are not redirected automatically, open <a href="${escapedDestination}">this link</a>.</p>
   </main>
   <script type="application/json" id="auth-callback-destination">${escapeHtml(JSON.stringify(args.destination))}</script>
   <script>(function(){var d=JSON.parse(document.getElementById("auth-callback-destination").textContent);setTimeout(function(){window.location.replace(d);},900);})();</script>

@@ -40,9 +40,9 @@ export default function GeneralPage() {
     setNotificationPermission(notificationsSupported() ? Notification.permission : "unsupported");
   }, []);
 
-  // メモ化しないと毎レンダーで新規 JSX が作られ useSidePanel → setContent
-  // → 親再描画 → ページ再描画のループが "Maximum update depth exceeded"
-  // を起こす
+  // Memoize to avoid creating a new JSX value on every render, which would
+  // re-enter useSidePanel → setContent → parent re-render → page re-render
+  // and trigger a "Maximum update depth exceeded" loop.
   const sidePanel = useMemo(() => <PreferencesSidePanel />, []);
   useSidePanel(sidePanel);
 

@@ -20,7 +20,7 @@ afterEach(() => vi.restoreAllMocks());
 
 const sourceDefinition: SourceTileCreatePayload = {
   tile: {
-    title: "朝食",
+    title: "Breakfast",
     description: null,
     color: null,
     icon: null,
@@ -63,7 +63,7 @@ const nonEmptySourceDefinition: SourceTileCreatePayload = {
     completion: {
       root: { All: [{ Term: { Task: { task_id: wireId, state: "Completed" } } }] },
       time_requirements: [{ id: wireId, observation: { scope: 1, source: 0, aggregate: 0, quantifier: null, reference: null }, required: { min: 900000, max: null }, preferred: null }],
-      tasks: [{ id: wireId, content: { title: "Discordを開く", description: null }, show: null, complete: { Term: { Requirement: { time_requirement: wireId, state: "Met" } } }, order: [] }],
+      tasks: [{ id: wireId, content: { title: "Open Discord", description: null }, show: null, complete: { Term: { Requirement: { time_requirement: wireId, state: "Met" } } }, order: [] }],
     },
     planning: {
       placement_rules: [{ id: wireId, when: null, rank: 0, effect: { kind: 0, scope: null, span: null, score: null, record: null } }],
@@ -81,7 +81,7 @@ const nonEmptySourceDefinition: SourceTileCreatePayload = {
         source: "All",
         apply: [],
       }],
-      dialog: { id: wireId, visible: null, view: { title: "確認", body: null }, inputs: [], children: [] },
+      dialog: { id: wireId, visible: null, view: { title: "Confirm", body: null }, inputs: [], children: [] },
     }],
   },
   flows: [{

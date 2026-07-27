@@ -5,6 +5,7 @@ import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Locale } from "@/lib/stores/locale-store";
 
 interface RightSidebarProps {
   onClose?: () => void;
@@ -151,15 +152,21 @@ export function RightSidebar({
   );
 }
 
-const timelineRangeFormatters: Record<"ja" | "en", Intl.DateTimeFormat> = {
+const timelineRangeFormatters: Record<Locale, Intl.DateTimeFormat> = {
   ja: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric" }),
   en: new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" }),
+  de: new Intl.DateTimeFormat("de-DE", { month: "numeric", day: "numeric" }),
+  es: new Intl.DateTimeFormat("es-ES", { month: "numeric", day: "numeric" }),
+  "pt-BR": new Intl.DateTimeFormat("pt-BR", { month: "numeric", day: "numeric" }),
+  fr: new Intl.DateTimeFormat("fr-FR", { month: "numeric", day: "numeric" }),
+  ko: new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric" }),
+  "zh-CN": new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }),
 };
 
 function formatTimelineRangeLabel(
   start: Date | null,
   end: Date | null,
-  locale: "ja" | "en",
+  locale: Locale,
 ): string | null {
   if (!start || !end) return null;
   // Day-scale windows are [00:00, 24:00) — treat as a single day for display.

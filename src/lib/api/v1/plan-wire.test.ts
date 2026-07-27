@@ -328,7 +328,7 @@ describe("toWireSetPlanBody (full plan rewrite)", () => {
         tasks: [
           {
             id: TASK_DEFAULT_ID,
-            content: { title: "作業完了", note: null },
+            content: { title: "Work complete", note: null },
             show: null,
             complete: {
               kind: 3,
@@ -375,7 +375,7 @@ describe("toWireSetPlanBody (full plan rewrite)", () => {
         tasks: [
           {
             id: TASK_DEFAULT_ID,
-            content: { title: "作業完了", description: null },
+            content: { title: "Work complete", description: null },
             show: null,
             complete: {
               Term: { Task: { task_id: TASK_DEFAULT_ID, state: "Completed" } },
@@ -500,7 +500,7 @@ describe("toWireSetPlanBody (id normalisation)", () => {
         tasks: [
           {
             id: "task_default",
-            content: { title: "作業完了", note: null },
+            content: { title: "Work complete", note: null },
             show: null,
             complete: {
               kind: 3,

@@ -16,22 +16,22 @@ export function RequiredTimePanel({
     <div className="space-y-1">
       <span className="flex items-center gap-1.5 text-sm text-foreground">
         <Timer size={14} aria-hidden className="text-foreground-muted" />
-        必要時間
+        Required time
       </span>
       <NumberInput
-        aria-label="必要時間（分）"
+        aria-label="Required time (min)"
         min={MIN_MINUTES}
         step={5}
         value={minutes}
         onChange={(value) => onChange(Math.max(MIN_MINUTES, Number(value) || MIN_MINUTES))}
-        suffix=" 分"
+        suffix=" min"
         size="xs"
         styles={{
           input: { backgroundColor: "var(--surface-2)" },
         }}
       />
       <p className="text-xs text-foreground-muted">
-        実際の開始・終了時刻は、空き時間からあとで決まります。
+        Actual start and end times are decided later from available time.
       </p>
     </div>
   );

@@ -1,24 +1,37 @@
 import { useCallback } from "react";
-import { useLocaleStore } from "../stores/locale-store";
+import { useLocaleStore, FALLBACK_LOCALE } from "../stores/locale-store";
 import { translations } from "./translations";
+
+type Dict = Record<string, unknown>;
+
+function lookup(tree: unknown, segments: string[]): string | undefined {
+  let value: unknown = tree;
+  for (const k of segments) {
+    if (value && typeof value === "object" && k in (value as Dict)) {
+      value = (value as Dict)[k];
+    } else {
+      return undefined;
+    }
+  }
+  return typeof value === "string" ? value : undefined;
+}
 
 export function useTranslation() {
   const { locale } = useLocaleStore();
 
   const t = useCallback(
-    (key: string): string => {
-      const keys = key.split(".");
-      let value: unknown = translations[locale];
+    (key: string, params?: Record<string, string | number>): string => {
+      const segments = key.split(".");
+      const primary =
+        lookup(translations[locale], segments) ??
+        lookup(translations[FALLBACK_LOCALE], segments) ??
+        "";
 
-      for (const k of keys) {
-        if (value && typeof value === "object" && k in value) {
-          value = (value as Record<string, unknown>)[k];
-        } else {
-          return key;
-        }
-      }
-
-      return typeof value === "string" ? value : key;
+      if (!params) return primary;
+      return primary.replace(/\{(\w+)\}/g, (_, name: string) => {
+        const v = params[name];
+        return v === undefined ? `{${name}}` : String(v);
+      });
     },
     [locale],
   );

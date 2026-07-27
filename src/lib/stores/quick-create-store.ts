@@ -245,7 +245,7 @@ function defaultTask(): TaskDefinition {
   const id = "task_default";
   return {
     id,
-    content: { title: "作業完了", note: null },
+    content: { title: "Mark done", note: null },
     show: null,
     complete: {
       kind: ConditionKind.TERM,
@@ -283,7 +283,7 @@ function defaultIdentity(): TileIdentitySlice {
     // externalId is generated on the client after mount (uuidv7() uses
     // Date.now(), which would diverge between SSR and client and break
     // hydration). The UI also regenerates it on demand via the
-    // "再生成" button.
+    // "Regenerate" button.
     externalId: null,
     visual: { color: "#3b82f6", icon: "check-circle" },
   };

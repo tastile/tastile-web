@@ -5,11 +5,11 @@
  *
  * v4 design (parity with `docs/tastile_tile_creation_panel_demo_v4.html`
  * `when` view, lines 184–187 + `calendarHtml`/`timeEditorHtml` at 204/208):
- *   1. null-card "日付・時間を指定しない" → clears span / whenMode="none"
- *   2. "日付" builder section: choice-tabs 1日 / 期間 / 参照範囲
+ *   1. Null card "Do not specify a date or time" → clears span / whenMode="none"
+ *   2. "Date" builder section: choice tabs day / range / reference range
  *   3. Calendar widget when mode is day or range
  *   4. Catalog item when mode is reference (static v1 gap: opens as detail panel later)
- *   5. "時間帯" builder section: 3-choice tab 終日 / 範囲 / 指定なし + hint
+ *   5. "Time of day" builder section: 3-choice tab all day / range / unspecified + hint
  *   6. HH:MM time pickers when timeOfDayMode === "range"
  *   7. Quick pills 6–10 / 9–18 / 18–24 that snap timeOfDay range
  *   8. Legacy Windows section is preserved at the bottom (edit entry from the
@@ -23,7 +23,7 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
-import { ActionIcon, Button, SegmentedControl, Text } from "@mantine/core";
+import { ActionIcon, Button, SegmentedControl, Switch, Text } from "@mantine/core";
 import { DateTimePicker, TimeInput } from "@mantine/dates";
 import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
 
@@ -117,7 +117,7 @@ function ChoiceTabs<T extends string>({
 
 interface NullCardProps {
   active: boolean;
-  onActivate: () => void;
+  onActivate: (mode: WhenMode) => void;
   title: string;
   sub: string;
   testId: string;
@@ -125,28 +125,18 @@ interface NullCardProps {
 
 function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
   return (
-    <Button
-      type="button"
-      data-testid={testId}
-      aria-pressed={active}
-      onClick={onActivate}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-xl bg-surface-0 p-3 text-left transition-colors focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary",
-        active ? "bg-accent-soft" : "hover:bg-surface-1",
-      )}
-    >
-      <span
-        aria-hidden="true"
-        className={cn(
-          "h-3 w-3 shrink-0 rounded-full border-2",
-          active ? "border-accent bg-accent" : "border-foreground-muted",
-        )}
-      />
+    <div className="flex items-center justify-between rounded-lg border border-border bg-surface-0 p-3">
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-foreground">{title}</div>
         <div className="text-[10px] text-foreground-muted">{sub}</div>
       </div>
-    </Button>
+      <Switch
+        checked={active}
+        onChange={(e) => onActivate(e.currentTarget.checked ? "none" : "day")}
+        size="md"
+        data-testid={testId}
+      />
+    </div>
   );
 }
 
@@ -287,6 +277,7 @@ function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
             size="xs"
             valueFormat="MM/DD HH:mm"
             clearable
+            popoverProps={{ withinPortal: false }}
           />
           <DateTimePicker
             aria-label={`${t("quickCreate.endAt")} (datetime)`}
@@ -300,6 +291,7 @@ function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
             size="xs"
             valueFormat="MM/DD HH:mm"
             clearable
+            popoverProps={{ withinPortal: false }}
           />
         </div>
       </FormRow>
@@ -439,7 +431,7 @@ export function SchedulePanel({
     <>
       <NullCard
         active={time.whenMode === "none"}
-        onActivate={() => applyWhenMode("none")}
+        onActivate={(mode) => applyWhenMode(mode)}
         title={t("quickCreate.whenNoneTitle")}
         sub={t("quickCreate.whenNoneSub")}
         testId="when-none-toggle"

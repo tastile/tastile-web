@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
 import { memo, type ReactNode, type Ref } from "react";
 import { cn } from "@/lib/utils/cn";
 
@@ -117,13 +116,24 @@ function WeekViewFrameImpl({
             className="relative border-r border-surface-2 last:border-r-0"
           >
             {HOURS.map((h) => (
-              <Button
+              <div
                 key={h}
-                type="button"
+                role={onCreateAtSlot ? "button" : undefined}
+                tabIndex={onCreateAtSlot ? 0 : undefined}
                 data-testid={`week-slot-${d}-${pad(h)}`}
                 onClick={onCreateAtSlot ? () => onCreateAtSlot(d, h) : undefined}
+                onKeyDown={
+                  onCreateAtSlot
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onCreateAtSlot(d, h);
+                        }
+                      }
+                    : undefined
+                }
                 className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"
-                style={{ height: `${hourHeight}px`, padding: 0 }}
+                style={{ height: `${hourHeight}px` }}
               />
             ))}
             {eventsArea(d)}

@@ -75,7 +75,7 @@ describe("v1 numeric constants", () => {
   });
 
   describe("ChangeLayer", () => {
-    it("matches v1/04 §層", () => {
+    it("matches v1/04 §Layer", () => {
       expect(ChangeLayer.RECURRING).toBe(0);
       expect(ChangeLayer.PLACEMENT).toBe(1);
       expect(ChangeLayer.EXECUTION).toBe(2);

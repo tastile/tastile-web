@@ -8,15 +8,15 @@ import {
 } from "@/lib/cognito/login-url";
 
 const ERROR_MESSAGES: Record<string, string> = {
-  no_session: "サインインが必要です。",
-  session_expired: "セッションが切れました。もう一度サインインしてください。",
-  missing_code: "認証コードが見つかりませんでした。もう一度お試しください。",
-  state_mismatch: "認証状態の確認に失敗しました。もう一度お試しください。",
-  auth_failed: "認証に失敗しました。もう一度お試しください。",
-  cognito_not_configured: "認証サービスの設定に問題があります。管理者にご連絡ください。",
-  unsupported_provider: "このログイン方法はまだ有効化されていません。",
+  no_session: "Sign-in is required.",
+  session_expired: "Your session has expired. Please sign in again.",
+  missing_code: "Authentication code not found. Please try again.",
+  state_mismatch: "Could not verify the authentication state. Please try again.",
+  auth_failed: "Authentication failed. Please try again.",
+  cognito_not_configured: "The authentication service is misconfigured. Please contact an administrator.",
+  unsupported_provider: "This sign-in method is not enabled yet.",
   provider_not_configured:
-    "このログイン方法はまだ有効化されていません。Passkey / メールで続行してください。",
+    "This sign-in method is not enabled yet. Continue with passkey or email.",
 };
 
 export default async function LoginPage({
@@ -33,7 +33,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const errorKey = typeof params?.error === "string" ? params.error : null;
   const errorMessage = errorKey
-    ? (ERROR_MESSAGES[errorKey] ?? `サインインに失敗しました: ${errorKey}`)
+    ? (ERROR_MESSAGES[errorKey] ?? `Sign-in failed: ${errorKey}`)
     : null;
   const configuredProviders = getConfiguredCognitoIdentityProviders();
   const googleEnabled = configuredProviders.has("Google");
@@ -62,7 +62,7 @@ export default async function LoginPage({
             <TastileLogo size={36} />
             <span className="text-lg font-semibold leading-none tracking-tight">tastile</span>
             <h1 className="font-[family-name:var(--font-jp-heading)] text-xl font-semibold leading-none text-foreground">
-              にログイン
+              Sign in
             </h1>
           </div>
 
@@ -83,7 +83,7 @@ export default async function LoginPage({
                 leftSection={<Globe className="h-4 w-4" aria-hidden="true" />}
                 fullWidth
               >
-                Google で続行
+                Continue with Google
               </Button>
             ) : null}
             {appleEnabled ? (
@@ -93,7 +93,7 @@ export default async function LoginPage({
                 leftSection={<Apple className="h-4 w-4" aria-hidden="true" />}
                 fullWidth
               >
-                Apple で続行
+                Continue with Apple
               </Button>
             ) : null}
             <Button
@@ -102,7 +102,7 @@ export default async function LoginPage({
               leftSection={<Fingerprint className="h-4 w-4" aria-hidden="true" />}
               fullWidth
             >
-              Passkey / メールで続行
+              Continue with passkey or email
             </Button>
           </div>
           <hr className="mx-1 opacity-20" />
@@ -113,19 +113,19 @@ export default async function LoginPage({
             className="my-2"
             variant="outline"
           >
-            アカウントを作成
+            Create account
           </Button>
           <section className="mx-4 text-center text-sm leading-5 text-foreground-subtle">
             <p className="text-center text-[11px] leading-4 text-foreground-subtle">
-              続行すると、
+              By continuing, you agree to our{" "}
               <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
-                利用規約
-              </Link>
-              と
+                Terms of Service
+              </Link>{" "}
+              and{" "}
               <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
-                プライバシーポリシー
+                Privacy Policy
               </Link>
-              に同意したものとみなされます。
+              .
             </p>
           </section>
         </section>

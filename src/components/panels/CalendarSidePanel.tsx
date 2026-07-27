@@ -25,29 +25,28 @@ type CalendarSidePanelView = "day" | "week" | "month" | "year" | "list";
 // Calendar Side Panel
 // ─────────────────────────────────────────────
 interface CalendarSidePanelProps {
-  /** 選択中の日付 (YYYY-MM-DD) */
+  /** Currently selected date (YYYY-MM-DD) */
   anchor: string;
-  /** 現在表示中のビュー。範囲ハイライト判定に使う。 */
+  /** Current view — used to determine the highlight range. */
   view?: CalendarSidePanelView;
-  /** Timeline の表示モード。網掛け範囲の調整に使う。 */
+  /** Timeline display mode — used to adjust the highlight range. */
   mode?: DisplayMode;
   minDuration?: number;
-  /** 日付クリック時 */
+  /** Called when the user picks a date. */
   onSelectDate?: (date: string) => void;
   onModeChange?: (mode: DisplayMode) => void;
   onMinDurationChange?: (minutes: number) => void;
 }
 
-// anchor (YYYY-MM-DD) と view から、ミニカレンダーで網掛けする
-// 日付リストを返す。Day / List ビューは selected 単体で十分、Year
-// ビューは日数が多すぎるため網掛けしない方針。
+// Given anchor (YYYY-MM-DD) and view, return the list of dates to shade on
+// the mini calendar. Day / List views only need the single selected date;
+// the Year view has too many days to highlight.
 //
-// DisplayMode (around / future) では「範囲が前後/未来に伸びる」が
-// ミニカレンダーの網掛けは日単位でしか意味を持たないため,
-//   around → 今日のみ (current position indicator)
-//   future → 今日 ~ 範囲末日
-//   scope  → 既存のスコープ網掛け
-// と落とし込む。
+// DisplayMode (around / future) makes the range extend past the boundaries,
+// but the mini calendar only operates in day-resolution, so:
+//   around → today only (current position indicator)
+//   future → today through the last day of the range
+//   scope  → existing per-view scope shading
 function _getHighlightDates(
   view: CalendarSidePanelView | undefined,
   mode: DisplayMode | undefined,
@@ -113,7 +112,7 @@ export function CalendarSidePanel({
 
   return (
     <div className="flex flex-col gap-4 pt-2 overflow-hidden">
-      {/* ミニカレンダー */}
+      {/* Mini calendar */}
       <div className="px-3">
         <DatePicker
           aria-label="Select date"

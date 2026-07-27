@@ -51,13 +51,13 @@ export function V1ExecutionControls() {
 
   if (loading && !tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">実行なし</div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">No execution</div>
     );
   }
 
   if (!tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">実行なし</div>
+      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">No execution</div>
     );
   }
 

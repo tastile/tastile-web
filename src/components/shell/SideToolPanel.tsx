@@ -4,9 +4,9 @@ import { useSidePanelContent } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
 
 /**
- * ActivityBar の右に表示されるサイドツールパネル。
- * 各ページが useSidePanel() でコンテンツを登録した場合のみ表示される。
- * Supabase の LayoutSidebar に相当する。
+ * Side tool panel that renders to the right of the activity bar.
+ * Only shown when a page has registered content via useSidePanel().
+ * Equivalent to Supabase's LayoutSidebar.
  */
 export function SideToolPanel() {
   const content = useSidePanelContent();

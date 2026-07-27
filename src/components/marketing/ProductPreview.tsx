@@ -1,18 +1,13 @@
 import { AlarmClock, Check, CheckCircle2, Circle, MapPin, Pause } from "lucide-react";
 import type { Dict, Lang } from "./LandingPage";
 
-const axisLabels = {
-  ja: ["期限", "場所", "状態", "変形", "完了", "超過"],
-  en: ["Due", "Place", "State", "Shape", "Done", "Spill"],
-} as const;
-
 export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
   const isJa = lang === "ja";
   const display = isJa
     ? "font-[family-name:var(--font-zen-kaku)]"
     : "font-[family-name:var(--font-outfit)]";
   const body = isJa ? "font-[family-name:var(--font-jp)]" : "";
-  const labels = axisLabels[lang];
+  const labels = t.previewAxisLabels;
   const activeAxes = new Set([0, 1]);
 
   return (
@@ -24,7 +19,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
             <span
               className={`text-[11px] font-medium uppercase tracking-[0.18em] text-foreground-muted ${display}`}
             >
-              {isJa ? "今日" : "Today"}
+              {t.previewTodayLabel}
             </span>
           </div>
           <span className="font-[family-name:var(--font-geist-mono)] text-xs text-foreground-subtle">

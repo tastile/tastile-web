@@ -3,7 +3,7 @@ import { CtaSection } from "./CtaSection";
 import { Faq } from "./Faq";
 import { Hero } from "./Hero";
 import { LifecycleLoop } from "./LifecycleLoop";
-import type { Dict, Lang } from "./landing-dict";
+import type { Dict, Lang } from "@/lib/i18n/marketing-dict";
 import { Manifesto } from "./Manifesto";
 import { PricingTeaser } from "./PricingTeaser";
 import "./marketing.css";

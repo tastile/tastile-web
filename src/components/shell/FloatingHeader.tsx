@@ -84,7 +84,7 @@ export function FloatingHeader({
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center bg-surface-0 border-b border-border">
-        {/* 左: ロゴ */}
+        {/* Left: logo */}
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link
             href="/dashboard"
@@ -95,7 +95,7 @@ export function FloatingHeader({
           </Link>
         </div>
 
-        {/* 中央: 実行ステータス */}
+        {/* Center: execution status */}
         <div className="flex flex-1 items-center justify-center">
           <div className="flex items-center gap-2 font-mono text-[11px] text-foreground-muted">
             <span
@@ -126,7 +126,7 @@ export function FloatingHeader({
           </div>
         </div>
 
-        {/* 右: アクション */}
+        {/* Right: actions */}
         <div className="flex items-center gap-1 pr-3">
           <V1ExecutionControls />
 
@@ -201,7 +201,7 @@ export function FloatingHeader({
             </FloatingMenuContent>
           </FloatingMenu>
 
-          {/* モバイルメニューボタン (md未満でのみ表示、右端) */}
+          {/* Mobile menu button (only visible below md, at the right edge) */}
           <Burger
             opened={menuOpen}
             size="sm"
@@ -217,7 +217,7 @@ export function FloatingHeader({
         title={t("shell.floatingHeader.menu")}
       >
         <div className="flex flex-col gap-4">
-          {/* クイックアクション (Search / Notifications) */}
+          {/* Quick actions (Search / Notifications) */}
           <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
             <Button
               variant="subtle"
@@ -247,7 +247,7 @@ export function FloatingHeader({
             </Button>
           </div>
 
-          {/* ナビゲーション項目 */}
+          {/* Navigation items */}
           <nav className="flex flex-col gap-1">
             {NAV_ITEMS.map(({ path, labelKey, Icon }) => {
               const active = pathname === path || pathname.startsWith(`${path}/`);

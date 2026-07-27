@@ -40,12 +40,13 @@ export default function CalendarViewPage() {
     : "day";
   const endpoint = endpointByView[view];
 
-  // anchor: カレンダーの選択日 (YYYY-MM-DD)
+  // anchor: selected date on the calendar (YYYY-MM-DD)
   const [anchor, setAnchor] = useState(() => new Date().toISOString().slice(0, 10));
 
-  // サイドパネルを登録 — content をメモ化しないと毎レンダーで新規 JSX が
-  // 作られ、useSidePanel → setContent → 親再描画 → ページ再描画のループが
-  // "Maximum update depth exceeded" を起こす
+  // Register the side panel — content must be memoized to avoid creating a
+  // new JSX value on every render, which would re-enter the
+  // useSidePanel → setContent → parent re-render → page re-render loop and
+  // throw "Maximum update depth exceeded".
   const sidePanel = useMemo(
     () => <CalendarSidePanel anchor={anchor} view={view} onSelectDate={setAnchor} />,
     [anchor, view],

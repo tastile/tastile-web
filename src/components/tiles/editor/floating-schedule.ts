@@ -150,7 +150,7 @@ export function formatFloatingScheduleSummary(
   input: Pick<FloatingScheduleInput, "requiredMinutes" | "label">,
 ) {
   return [
-    `必要時間: ${input.requiredMinutes}分`,
-    `配置できる時間: ${input.label?.title ?? "未設定"}`,
+    `Required time: ${input.requiredMinutes} min`,
+    `Available window: ${input.label?.title ?? "Not set"}`,
   ];
 }

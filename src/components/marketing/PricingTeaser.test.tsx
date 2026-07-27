@@ -13,6 +13,7 @@ const teaserDict: Dict["pricing"] = {
 	monthly: "Monthly",
 	yearly: "Yearly",
 	yearlyNote: "save 17%",
+	forLabel: "For",
 	free: {
 		name: "Free",
 		price: "$0",

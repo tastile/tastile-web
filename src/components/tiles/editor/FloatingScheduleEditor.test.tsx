@@ -25,7 +25,7 @@ const catalogEntry = {
   placement_id: "018f0000-0000-7000-8000-000000000001",
   tile_id: "tile",
   plan_id: "plan",
-  title: "一学期",
+  title: "Term 1",
   span_start: "2026-04-01T00:00:00Z",
   span_end: "2026-07-31T23:59:59Z",
   role: 1,
@@ -46,8 +46,8 @@ describe("FloatingScheduleEditor", () => {
   it("starts with only the human scheduling inputs and no fixed-time implementation fields", async () => {
     render(<FloatingScheduleEditor onClose={vi.fn()} onSaved={vi.fn()} />);
     expect(await screen.findByLabelText("Tile Name")).not.toBeNull();
-    expect(screen.getByLabelText("必要時間（分）")).not.toBeNull();
-    expect(screen.getByLabelText("配置できる期間")).not.toBeNull();
+    expect(screen.getByLabelText("Required time (min)")).not.toBeNull();
+    expect(screen.getByLabelText("Available window")).not.toBeNull();
     expect(screen.getByRole("button", { name: "Place in Available Time" })).not.toBeNull();
     expect(screen.queryByText(/UUID|TERM|AST/i)).toBeNull();
     expect(document.querySelector('input[type="datetime-local"]')).toBeNull();
@@ -57,9 +57,9 @@ describe("FloatingScheduleEditor", () => {
     const onSaved = vi.fn();
     render(<FloatingScheduleEditor onClose={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText("Tile Name"), { target: { value: "競プロ" } });
-    fireEvent.change(screen.getByLabelText("必要時間（分）"), { target: { value: "90" } });
-    const picker = await screen.findByLabelText("配置できる期間");
+    fireEvent.change(screen.getByLabelText("Tile Name"), { target: { value: "Practice" } });
+    fireEvent.change(screen.getByLabelText("Required time (min)"), { target: { value: "90" } });
+    const picker = await screen.findByLabelText("Available window");
     fireEvent.keyDown(picker, { key: "ArrowDown" });
     fireEvent.change(picker, { target: { value: catalogEntry.placement_id } });
     fireEvent.click(screen.getByRole("button", { name: "Place in Available Time" }));
@@ -79,9 +79,9 @@ describe("FloatingScheduleEditor", () => {
       .mockResolvedValueOnce({ ok: true, data: [catalogEntry], status: 200 });
     render(<FloatingScheduleEditor onClose={vi.fn()} onSaved={vi.fn()} />);
 
-    expect((await screen.findByRole("alert")).textContent).toContain("読み込めませんでした");
-    fireEvent.click(screen.getByRole("button", { name: "再試行" }));
+    expect((await screen.findByRole("alert")).textContent).toContain("Could not load");
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     await waitFor(() => expect(mocks.catalog).toHaveBeenCalledTimes(2));
-    expect(await screen.findByRole("option", { name: /一学期/ })).not.toBeNull();
+    expect(await screen.findByRole("option", { name: /Term 1/ })).not.toBeNull();
   });
 });

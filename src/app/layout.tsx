@@ -15,6 +15,7 @@ const zenKakuGothicNew = Zen_Kaku_Gothic_New({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
   display: "swap",
+  variable: "--font-zen-kaku-loaded",
 });
 
 export const metadata: Metadata = {
@@ -42,13 +43,13 @@ export default function RootLayout({
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
   return (
-    <html lang="en" {...mantineHtmlProps}>
+    <html lang="en" className={zenKakuGothicNew.variable} {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript defaultColorScheme="auto" />
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme-init must run inline before paint to prevent FOUC — cannot be ref'd to a JS file */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${zenKakuGothicNew.className} font-sans antialiased`}>
+      <body className="font-sans antialiased">
         <GoogleAnalytics measurementId={gaMeasurementId} />
         <AppProviders>{children}</AppProviders>
       </body>

@@ -40,9 +40,8 @@ describe("marketing page layout consistency", () => {
 		);
 		expect(rootLayout).not.toContain("Mock font variables");
 		expect(rootLayout).toContain('from "next/font/google"');
-		expect(rootLayout).toContain(
-			'className={`${zenKakuGothicNew.className} font-sans antialiased`}',
-		);
+		expect(rootLayout).toContain('className="font-sans antialiased"');
+		expect(rootLayout).toContain("variable");
 	});
 
 	it("keeps footer pinned to viewport bottom with shared flex column shell", async () => {
@@ -98,12 +97,12 @@ describe("marketing page layout consistency", () => {
 
 		expect(container.querySelector("header")).toBeNull();
 		expect(container.querySelector("footer")).toBeNull();
-		expect(screen.getByRole("heading", { name: "にログイン" })).toBeTruthy();
-		expect(screen.queryByText("実行制御を、すぐ始める")).toBeNull();
-		expect(screen.getByRole("link", { name: "Google で続行" })).toBeTruthy();
-		expect(screen.queryByText("Apple で続行")).toBeNull();
-		expect(screen.getByRole("link", { name: "Passkey / メールで続行" })).toBeTruthy();
-		expect(screen.getByRole("link", { name: "アカウントを作成" })).toBeTruthy();
+expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
+			expect(screen.queryByText("Start execution control right away")).toBeNull();
+			expect(screen.getByRole("link", { name: "Continue with Google" })).toBeTruthy();
+			expect(screen.queryByText("Continue with Apple")).toBeNull();
+			expect(screen.getByRole("link", { name: "Continue with Passkey / email" })).toBeTruthy();
+			expect(screen.getByRole("link", { name: "Create an account" })).toBeTruthy();
 	});
 
 	it("preserves native auth query values in compact provider links", async () => {

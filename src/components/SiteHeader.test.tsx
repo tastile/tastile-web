@@ -9,11 +9,11 @@ vi.mock("@/components/NavControls", () => ({
 }));
 
 const mockTranslations = {
-	features: "機能",
-	pricing: "料金",
-	download: "ダウンロード",
-	login: "ログイン",
-	getStarted: "始める",
+	features: "Features",
+	pricing: "Pricing",
+	download: "Download",
+	login: "Sign in",
+	getStarted: "Get started",
 };
 
 describe("SiteHeader", () => {
@@ -21,13 +21,13 @@ describe("SiteHeader", () => {
 		render(<SiteHeader translations={mockTranslations} />);
 
 		expect(
-			screen.getByRole("link", { name: "料金" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Pricing" }).getAttribute("href"),
 		).toBe("/pricing");
 		expect(
-			screen.getByRole("link", { name: "ダウンロード" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Download" }).getAttribute("href"),
 		).toBe("/download");
 		expect(
-			screen.getByRole("link", { name: "ログイン" }).getAttribute("href"),
+			screen.getByRole("link", { name: "Sign in" }).getAttribute("href"),
 		).toBe("/login");
 	});
 });

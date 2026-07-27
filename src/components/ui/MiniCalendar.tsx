@@ -4,13 +4,13 @@ import { Calendar } from "@mantine/dates";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
 interface MiniCalendarProps {
-  /** 選択中の日付 (YYYY-MM-DD) */
+  /** Currently selected date (YYYY-MM-DD) */
   selected?: string;
-  /** 日付クリック時コールバック */
+  /** Called when the user clicks a date. */
   onSelect?: (date: string) => void;
-  /** 表示中の範囲 (YYYY-MM-DD) を薄い背景で網掛け */
+  /** Dates in this range (YYYY-MM-DD) are tinted in the background. */
   highlight?: readonly string[];
-  /** true にするとクリックを無効化し、視覚的にもロック表示 */
+  /** When true, clicks are disabled and the calendar is visually locked. */
   disabled?: boolean;
 }
 

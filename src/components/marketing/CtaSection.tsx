@@ -32,7 +32,7 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
       <div className="relative z-10">
         <div className="max-w-3xl">
           <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
-            {isJa ? "ここから" : "Start here"}
+            {t.startHereLabel}
           </p>
           <h2 className={`mt-4 mkt-display-1 text-foreground ${display}`}>
             <span className="block">{t.title[0]}</span>
@@ -74,11 +74,11 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
 
         {/* Footer micro-info. */}
         <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-surface-2 pt-6 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle">
-          <span className={display}>{isJa ? "無料 / 無料枠あり" : "Free / Free tier"}</span>
+          <span className={display}>{t.freeTierNote}</span>
           <span className={`${mono} text-foreground-muted`}>·</span>
-          <span className={display}>{isJa ? "いつでも解約可能" : "Cancel anytime"}</span>
+          <span className={display}>{t.cancelNote}</span>
           <span className={`${mono} text-foreground-muted`}>·</span>
-          <span className={display}>{isJa ? "Web / Desktop / iOS" : "Web / Desktop / iOS"}</span>
+          <span className={display}>{t.platformNote}</span>
         </div>
       </div>
     </section>

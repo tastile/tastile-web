@@ -106,7 +106,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               <p
                 className={`text-[11px] font-medium uppercase tracking-[0.18em] text-foreground-subtle ${display}`}
               >
-                {isJa ? "対象" : "For"}
+                {t.forLabel}
               </p>
               <p className={`mt-2 text-base text-foreground-muted ${body}`}>{t.free.tagline}</p>
             </div>
@@ -168,7 +168,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               <p
                 className={`text-[11px] font-medium uppercase tracking-[0.18em] text-primary ${display}`}
               >
-                {isJa ? "対象" : "For"}
+                {t.forLabel}
               </p>
               <p className={`mt-2 text-base text-foreground ${body}`}>{t.pro.tagline}</p>
             </div>

@@ -40,7 +40,7 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
               <span
                 className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
               >
-                {isJa ? "6つの軸 / 6 conditions" : "6 conditions / 6軸"}
+                {t.axisLabel}
               </span>
             </div>
           </div>
@@ -79,7 +79,7 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
                 </p>
                 <div className={`mt-4 border-l-2 border-primary/40 pl-4 ${body}`}>
                   <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
-                    {isJa ? "例 / example" : "Example"}
+                    {t.exampleLabel}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-foreground">{row.example}</p>
                 </div>

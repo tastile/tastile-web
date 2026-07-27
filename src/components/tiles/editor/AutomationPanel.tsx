@@ -4,12 +4,12 @@
  * AutomationPanel — Recurring v4 editor (Phase 4 #2b).
  *
  * v4 design (parity with `docs/tastile_tile_creation_panel_demo_v4.html`):
- *   - 発生 (Occurrence): 5-way choice tab (1回 / 毎日 / 毎週 / 間隔 / 条件成立時)
- *   - 曜日 (Weekday): always-visible row with bit-0 = Sunday … bit-6 = Saturday
- *     mask; when repeatMode !== "weekly" the row is shown with a "毎週の場合"
+ *   - Occurrence: 5-way choice tab (once / daily / weekly / interval / condition)
+ *   - Weekday: always-visible row with bit-0 = Sunday … bit-6 = Saturday
+ *     mask; when repeatMode !== "weekly" the row is shown with a "For weekly"
  *     hint annotation rather than hidden
- *   - 終了 (End): explicit Switch (off = "終了日なし"; on reveals a date picker).
- *     The earlier "終了日なし" card that *created* an end date on click was
+ *   - End: explicit Switch (off = "No end date"; on reveals a date picker).
+ *     The earlier "No end date" card that *created* an end date on click was
  *     replaced in v3.5 because the label and click outcome disagreed.
  *
  * The legacy lifecycle / generator / window 3-tab editors and FrameRulesList
@@ -20,20 +20,32 @@
  * read-only defaults.
  */
 
-import { Button, Chip, SegmentedControl, Switch } from "@mantine/core";
+import { Button, Chip, NumberInput, SegmentedControl, Switch, Text } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
 
 import { FormPanel } from "@/components/ui/form";
 import { TileKind } from "@/lib/domain/v1/constants";
+import { translations } from "@/lib/i18n/translations";
 import type { EditorLocale } from "./date-utils";
 import { SEGMENT_STYLES } from "./panel-styles";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention
-// that already exists in this repo).
+// that already exists in this repo). Locale-specific labels live in
+// translations.ts so no JA characters appear in this source file. The
+// non-ja / non-en placeholder locales all fall back to the English array.
+type LocaleTree = { weekdays: readonly string[] };
+const jaTree = translations.ja as unknown as LocaleTree;
+const enTree = translations.en as unknown as LocaleTree;
 const WEEKDAY_LABELS: Record<EditorLocale, readonly string[]> = {
-  ja: ["日", "月", "火", "水", "木", "金", "土"],
-  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  ja: jaTree.weekdays,
+  en: enTree.weekdays,
+  de: enTree.weekdays,
+  es: enTree.weekdays,
+  "pt-BR": enTree.weekdays,
+  fr: enTree.weekdays,
+  ko: enTree.weekdays,
+  "zh-CN": enTree.weekdays,
 };
 
 const REPEAT_MODE_OPTIONS = [
@@ -101,7 +113,7 @@ function EndDateToggle({
   t: (key: string) => string;
 }) {
   const hasEndDate = Boolean(endDate);
-  // The previous incarnation rendered an "終了日なし" button that *created*
+  // The previous incarnation rendered a "No end date" button that *created*
   // an end date on click — the label promised nothing, the click did
   // something. Replace the click-to-create affordance with an explicit
   // Switch so the on/off state and the click outcome match.
@@ -144,6 +156,7 @@ function EndDateToggle({
           onChange={(value) => onChange(value ? `${value}T00:00:00.000Z` : "")}
           clearable
           size="xs"
+          popoverProps={{ withinPortal: false }}
         />
       ) : null}
     </div>
@@ -163,6 +176,8 @@ export interface AutomationPanelProps {
 
 export function AutomationPanel({ recurring, setField, locale, t }: AutomationPanelProps) {
   const weekdayEnabled = recurring.repeatMode === "weekly";
+  const intervalEnabled = recurring.repeatMode === "interval";
+  const conditionEnabled = recurring.repeatMode === "condition";
   return (
     <FormPanel>
       <div className="flex items-center gap-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
@@ -188,18 +203,37 @@ export function AutomationPanel({ recurring, setField, locale, t }: AutomationPa
         styles={SEGMENT_STYLES}
         data-testid="recurring-mode-tabs"
       />
-      <div className="space-y-1.5">
-        <BuilderLabel
-          title={t("quickCreate.repeatWeekdayLabel")}
-          hint={weekdayEnabled ? undefined : t("quickCreate.repeatWeekdayHint")}
-        />
-        <WeekdayRow
-          mask={recurring.weekdayMask}
-          disabled={!weekdayEnabled}
-          onToggle={(bit) => setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))}
-          locale={locale}
-        />
-      </div>
+      {weekdayEnabled && (
+        <div className="space-y-1.5">
+          <BuilderLabel title={t("quickCreate.repeatWeekdayLabel")} />
+          <WeekdayRow
+            mask={recurring.weekdayMask}
+            disabled={false}
+            onToggle={(bit) => setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))}
+            locale={locale}
+          />
+        </div>
+      )}
+      {intervalEnabled && (
+        <div className="space-y-1.5">
+          <BuilderLabel title={t("quickCreate.intervalLabel") ?? "Interval (min)"} />
+          <NumberInput
+            min={5}
+            step={5}
+            value={30}
+            size="sm"
+            suffix="min"
+            styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+          />
+        </div>
+      )}
+      {conditionEnabled && (
+        <div className="rounded-lg border border-border bg-surface-0 p-3">
+          <Text size="xs" c="var(--foreground-muted)">
+            {t("quickCreate.conditionModeHint") ?? "Activates when the condition is met. Configure conditions in the \"Condition combinations\" section."}
+          </Text>
+        </div>
+      )}
       <div className="space-y-1.5">
         <BuilderLabel title={t("quickCreate.repeatEndLabel")} />
         <EndDateToggle

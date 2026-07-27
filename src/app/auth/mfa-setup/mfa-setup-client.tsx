@@ -140,7 +140,7 @@ export function MfaSetupClient({ email }: { email: string }) {
   if (state.kind === "loading" || state.kind === "submitting") {
     return (
       <main className="mx-auto max-w-md p-6">
-        <p className="text-foreground-muted">読み込み中…</p>
+        <p className="text-foreground-muted">{t("common.loading")}…</p>
       </main>
     );
   }

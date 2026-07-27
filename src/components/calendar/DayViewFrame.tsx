@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
 import { memo, type ReactNode, type Ref } from "react";
 
 function pad(n: number): string {
@@ -68,21 +67,29 @@ function DayViewFrameImpl({
           style={{ backgroundSize: `100% ${hourHeight}px` }}
         >
           {hours.map((h, idx) => (
-            <Button
+            <div
               key={`slot-${h}-${idx}`}
-              type="button"
+              role={onCreateAtSlot ? "button" : undefined}
+              tabIndex={onCreateAtSlot ? 0 : undefined}
               data-testid={`day-slot-${effectiveDay}-${pad(h)}`}
               data-slot-anchor={effectiveDay}
               onClick={
                 onCreateAtSlot
-                  ? // For around/future we anchor slot creation to the
-                    // start of the displayed window so the new tile
-                    // lands inside the visible range.
-                    () => onCreateAtSlot(effectiveDay, h)
+                  ? () => onCreateAtSlot(effectiveDay, h)
+                  : undefined
+              }
+              onKeyDown={
+                onCreateAtSlot
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onCreateAtSlot(effectiveDay, h);
+                      }
+                    }
                   : undefined
               }
               className="block w-full border-b border-surface-2/60 text-left hover:bg-surface-1/40 focus:outline-hidden focus-visible:bg-surface-1/40"
-              style={{ height: `${hourHeight}px`, padding: 0 }}
+              style={{ height: `${hourHeight}px` }}
             />
           ))}
           {eventsArea}

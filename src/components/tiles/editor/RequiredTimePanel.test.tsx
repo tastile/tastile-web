@@ -10,7 +10,7 @@ describe("RequiredTimePanel", () => {
     const onChange = vi.fn();
     render(<RequiredTimePanel minutes={60} onChange={onChange} />);
 
-    fireEvent.change(screen.getByLabelText("必要時間（分）"), { target: { value: "90" } });
+    fireEvent.change(screen.getByLabelText("Required time (min)"), { target: { value: "90" } });
 
     expect(onChange).toHaveBeenCalledWith(90);
     expect(document.querySelector('input[type="datetime-local"]')).toBeNull();

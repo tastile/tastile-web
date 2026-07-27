@@ -15,12 +15,6 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
     overflow: "text-primary",
     break: "text-foreground-muted",
   };
-  const kindLabelJa: Record<string, string> = {
-    tile: "TILE",
-    adjust: "ADJUST",
-    overflow: "OVERFLOW",
-    break: "BREAK",
-  };
 
   return (
     <section className="relative overflow-hidden py-24 lg:py-32">
@@ -48,7 +42,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
           {/* Left — old way. */}
           <div className="grid gap-6 border-b border-surface-2 pb-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
             <div className="flex items-start gap-3">
-              <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>旧</span>
+              <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>OLD</span>
               <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>× 47</span>
             </div>
             <div>
@@ -77,7 +71,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
           {/* Right — Tastile. Active, primary accent, no card border but emphasized. */}
           <div className="grid gap-6 pt-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
             <div className="flex items-start gap-3">
-              <span className={`${mono} text-sm text-primary tabular-nums`}>新</span>
+              <span className={`${mono} text-sm text-primary tabular-nums`}>NEW</span>
               <span className="mkt-pulse-dot inline-block h-2 w-2 translate-y-1.5 rounded-full bg-primary" />
             </div>
             <div>
@@ -98,11 +92,11 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
                 <div className="flex items-center gap-3">
                   <span className={`${mono} text-[11px] text-foreground-muted`}>09:00 / 60m</span>
                   <span className={`${mono} text-[10px] uppercase tracking-[0.22em] text-primary`}>
-                    {isJa ? "実行中" : "Running"}
+                    {t.timelineKindLabel}
                   </span>
                 </div>
                 <p className={`mt-2 text-lg font-semibold text-foreground ${display}`}>
-                  {isJa ? "資料を仕上げる" : "Finish the deck"}
+                  {t.timelineLiveTitle}
                 </p>
                 <div className="mt-3 h-1.5 w-full max-w-md overflow-hidden rounded-full bg-surface-2">
                   <div className="h-full w-[58%] rounded-full bg-primary" />
@@ -135,7 +129,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
                   <span
                     className={`${mono} text-[10px] uppercase tracking-[0.18em] ${kindColor[event.kind] ?? "text-foreground-muted"}`}
                   >
-                    {isJa ? kindLabelJa[event.kind] : event.kind.toUpperCase()}
+                    {event.kind.toUpperCase()}
                   </span>
                 </div>
                 <div className="min-w-0">

@@ -25,7 +25,7 @@ function makeEvent(start: string, end: string): CalendarEvent {
   };
 }
 
-describe("eventSpansDay tzOffset handling (Week view 睡眠 regression)", () => {
+describe("eventSpansDay tzOffset handling (Week view sleep regression)", () => {
   it("lands a 01:00-JST placement on the JST day when tzOffset=540", () => {
     // JST 2026-07-14 01:00 — 07:30 = 2026-07-13T16:00..22:30 UTC.
     const sleep = makeEvent("2026-07-13T16:00:00Z", "2026-07-13T22:30:00Z");

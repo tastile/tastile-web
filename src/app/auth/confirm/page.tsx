@@ -18,16 +18,16 @@ export default async function ConfirmPage({
 
   return (
     <AuthShell
-      title="アカウントを確認"
-      subtitle="メールに送信された確認コードを入力してください。"
+      title="Verify your account"
+      subtitle="Enter the verification code we sent to your email."
       message={error ? decodeURIComponent(error) : null}
-      headerTranslations={getHeaderTranslations("ja")}
-      footerTranslations={getFooterTranslations("ja")}
+      headerTranslations={getHeaderTranslations("en")}
+      footerTranslations={getFooterTranslations("en")}
     >
       <form action="/auth/email/confirm" method="post" className="space-y-5">
         <div>
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            メールアドレス
+            Email address
           </label>
           <input
             id="email"
@@ -42,7 +42,7 @@ export default async function ConfirmPage({
         </div>
         <div>
           <label htmlFor="code" className="text-sm font-medium text-foreground">
-            確認コード
+            Verification code
           </label>
           <input
             id="code"
@@ -54,14 +54,14 @@ export default async function ConfirmPage({
             pattern="[0-9]{6}"
             required
             className="mt-2 w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
-            placeholder="6 桁のコード"
+            placeholder="6-digit code"
           />
         </div>
         <Button
           type="submit"
           className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
-          確認する
+          Verify
         </Button>
       </form>
     </AuthShell>

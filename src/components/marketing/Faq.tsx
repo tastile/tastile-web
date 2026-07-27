@@ -39,7 +39,7 @@ export function Faq({ t, lang }: { t: Dict["faq"]; lang: Lang }) {
               <span className={`${mono} tabular-nums`}>
                 {String(t.items.length).padStart(2, "0")}
               </span>
-              <span>{isJa ? "件の質問" : "questions"}</span>
+              <span>{t.countSuffix}</span>
             </div>
           </div>
 

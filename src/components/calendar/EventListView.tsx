@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, TextInput } from "@mantine/core";
+import { TextInput } from "@mantine/core";
 import { Calendar, Clock, MapPin, Search } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
 import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
@@ -116,11 +116,22 @@ export function EventListView({ events, loading, onEditEvent }: EventListViewPro
             <ul className="divide-y divide-border rounded-md border border-border bg-surface-0">
               {items.map((event) => (
                 <li key={event.id}>
-                  <Button
-                    type="button"
+                  <div
+                    role="button"
+                    tabIndex={0}
                     data-testid={`event-list-item-${event.id}`}
                     onClick={onEditEvent ? () => onEditEvent(event) : undefined}
-                    className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-1"
+                    onKeyDown={
+                      onEditEvent
+                        ? (e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              onEditEvent(event);
+                            }
+                          }
+                        : undefined
+                    }
+                    className="flex w-full items-start gap-3 px-3 py-2.5 text-left transition-colors hover:bg-surface-1 cursor-pointer"
                   >
                     <span
                       aria-hidden
@@ -150,7 +161,7 @@ export function EventListView({ events, loading, onEditEvent }: EventListViewPro
                         ) : null}
                       </div>
                     </div>
-                  </Button>
+                  </div>
                 </li>
               ))}
             </ul>

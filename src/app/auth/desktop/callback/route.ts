@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
 
   if (!code || !returnedState) {
     return callbackHtmlResponse({
-      title: "認証を開始してください",
-      message: "認証コードが見つかりませんでした。アカウント画面からもう一度続行してください。",
+      title: "Start authentication",
+      message: "Authentication code not found. Please retry from the account page.",
       destination: `${origin}/login?error=missing_code`,
       tone: "error",
     });
@@ -41,8 +41,8 @@ export async function GET(request: NextRequest) {
 
   if (!expectedState || expectedState !== returnedState || !codeVerifier) {
     return callbackHtmlResponse({
-      title: "認証セッションを確認できませんでした",
-      message: "認証の状態が一致しませんでした。アカウント画面からもう一度続行してください。",
+      title: "Authentication session mismatch",
+      message: "The authentication state did not match. Please retry from the account page.",
       destination: `${origin}/login?error=state_mismatch`,
       tone: "error",
     });
@@ -56,8 +56,8 @@ export async function GET(request: NextRequest) {
     });
     if (!userSub) throw new Error("Cognito access token verification failed");
     const response = callbackHtmlResponse({
-      title: "Tastile に接続しました",
-      message: "認証が完了しました。Desktop アプリへ戻しています。",
+      title: "Connected to Tastile",
+      message: "Authentication complete. Returning you to the Desktop app.",
       destination: `${origin}/auth/desktop/complete?next=${encodeURIComponent(next === "/dashboard" ? cookieNext : next)}`,
       tone: "success",
     });
@@ -97,8 +97,8 @@ export async function GET(request: NextRequest) {
   } catch (e) {
     console.error("Cognito desktop callback failed", e);
     return callbackHtmlResponse({
-      title: "認証を完了できませんでした",
-      message: "セッションを確定できませんでした。もう一度アカウント画面から続行してください。",
+      title: "Could not complete authentication",
+      message: "Could not finalize the session. Please retry from the account page.",
       destination: `${origin}/login?error=auth_failed`,
       tone: "error",
     });

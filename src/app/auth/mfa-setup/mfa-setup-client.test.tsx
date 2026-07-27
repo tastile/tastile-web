@@ -13,7 +13,7 @@ vi.mock("next/navigation", () => ({
 
 // Stub the locale store so the test does not need a Zustand persist boundary.
 vi.mock("@/lib/stores/locale-store", () => ({
-  useLocaleStore: vi.fn(() => ({ locale: "ja", setLocale: vi.fn() })),
+  useLocaleStore: vi.fn(() => ({ locale: "en", setLocale: vi.fn() })),
 }));
 
 const setupCalls: Array<{ url: string; init?: RequestInit }> = [];
@@ -99,7 +99,7 @@ describe("MfaSetupClient", () => {
       expect(screen.getByText(/no_cognito/)).toBeTruthy();
     });
     expect(
-      screen.getByRole("button", { name: /サインインをやり直す/ }),
+      screen.getByRole("button", { name: /retry sign-in/ }),
     ).toBeTruthy();
     // No retry POST is fired — just the mount POST, which already failed.
     expect(setupCalls).toHaveLength(1);
@@ -125,8 +125,8 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
-    const button = screen.getByRole("button", { name: "検証" }) as HTMLButtonElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
+    const button = screen.getByRole("button", { name: "Verify" }) as HTMLButtonElement;
 
     fireEvent.change(input, { target: { value: "12" } });
     expect(button.disabled).toBe(true);
@@ -152,12 +152,12 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
     // Letters must be stripped — the input only retains digits and caps at 6.
     fireEvent.change(input, { target: { value: "abc1234567890" } });
     expect(input.value).toBe("123456");
 
-    const button = screen.getByRole("button", { name: "検証" }) as HTMLButtonElement;
+    const button = screen.getByRole("button", { name: "Verify" }) as HTMLButtonElement;
     expect(button.disabled).toBe(false);
     fireEvent.click(button);
 
@@ -195,7 +195,7 @@ describe("MfaSetupClient", () => {
         expect(screen.getByText(/setup_failed/)).toBeTruthy();
       });
       expect(
-        screen.getByRole("button", { name: /サインインをやり直す/ }),
+        screen.getByRole("button", { name: /retry sign-in/ }),
       ).toBeTruthy();
       // No unhandled rejection — the body parse failure landed in state.
       expect(unhandled).toHaveLength(0);
@@ -261,9 +261,9 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "検証" }));
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
 
     await waitFor(() => {
       expect(screen.getByText(/expired_session/)).toBeTruthy();
@@ -287,9 +287,9 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "検証" }));
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
 
     await waitFor(() => {
       expect(screen.getByText(/verify_failed/)).toBeTruthy();
@@ -312,9 +312,9 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "検証" }));
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
 
     await waitFor(() => {
       expect(screen.getByText(/verify_failed/)).toBeTruthy();
@@ -338,12 +338,12 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "検証" }));
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
 
     await waitFor(() => {
-      expect(screen.getByText(/コードが違います/)).toBeTruthy();
+      expect(screen.getByText(/code mismatch/)).toBeTruthy();
     });
     // Raw error code must NOT leak in this branch.
     expect(screen.queryByText(/code_mismatch/)).toBeNull();
@@ -364,9 +364,9 @@ describe("MfaSetupClient", () => {
     await renderClient();
     await waitFor(() => expect(screen.getByTestId("secret")).toBeTruthy());
 
-    const input = screen.getByLabelText("6 桁コード") as HTMLInputElement;
+    const input = screen.getByLabelText("6-digit code") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "123456" } });
-    fireEvent.click(screen.getByRole("button", { name: "検証" }));
+    fireEvent.click(screen.getByRole("button", { name: "Verify" }));
 
     await waitFor(() => {
       expect(screen.getByText(/verify_failed/)).toBeTruthy();

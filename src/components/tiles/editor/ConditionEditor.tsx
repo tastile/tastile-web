@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { Button, NumberInput, TextInput } from "@mantine/core";
+import { Button, NumberInput, Select, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
 import { GitBranch, ListChecks, Plus, Trash2 } from "lucide-react";
 
@@ -187,10 +187,12 @@ function TermFields({
   term,
   onChange,
   t,
+  tileOptions,
 }: {
   term: Term;
   onChange: (next: Term) => void;
   t: (k: string) => string;
+  tileOptions?: { value: string; label: string }[];
 }) {
   const fieldIdBase = useId();
   switch (term.kind) {
@@ -272,15 +274,18 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.momentReferenceId")}
             </span>
-            <TextInput
+            <Select
               id={`${fieldIdBase}-referenceId`}
               value={term.value.referenceId ?? ""}
-              onChange={(e) =>
-                onChange(
-                  updateMoment(term, "referenceId", e.target.value === "" ? null : e.target.value),
-                )
+              onChange={(v) =>
+                onChange(updateMoment(term, "referenceId", v === "" ? null : v))
               }
+              data={tileOptions ?? []}
+              searchable
+              clearable
+              placeholder={t("quickCreate.selectTile")}
               size="xs"
+              comboboxProps={{ withinPortal: false }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-offsetMs`} className="space-y-1">
@@ -302,11 +307,16 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.relationReferenceId")}
             </span>
-            <TextInput
+            <Select
               id={`${fieldIdBase}-referenceId`}
               value={term.value.referenceId}
-              onChange={(e) => onChange(updateRelation(term, "referenceId", e.target.value))}
+              onChange={(v) => onChange(updateRelation(term, "referenceId", v ?? ""))}
+              data={tileOptions ?? []}
+              searchable
+              clearable
+              placeholder={t("quickCreate.selectTile")}
               size="xs"
+              comboboxProps={{ withinPortal: false }}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-relation`} className="space-y-1">
@@ -469,10 +479,12 @@ export function ConditionEditor({
   node,
   onChange,
   t,
+  tileOptions,
 }: {
   node: ConditionNode;
   onChange: (next: ConditionNode) => void;
   t: (k: string) => string;
+  tileOptions?: { value: string; label: string }[];
 }) {
   const isTerm = node.kind === ConditionKind.TERM;
   return (
@@ -511,6 +523,7 @@ export function ConditionEditor({
               term={node.term}
               onChange={(next) => onChange({ kind: ConditionKind.TERM, children: [], term: next })}
               t={t}
+              tileOptions={tileOptions}
             />
           ) : null}
         </>
@@ -526,6 +539,7 @@ export function ConditionEditor({
                   onChange({ ...node, children });
                 }}
                 t={t}
+                tileOptions={tileOptions}
               />
               <Button
                 type="button"

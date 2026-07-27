@@ -6,6 +6,7 @@ import type { TileId } from "@/lib/domain/ids";
 import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
 import type { TileListView } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import type { Locale } from "@/lib/stores/locale-store";
 import { cn } from "@/lib/utils/cn";
 import { formatDuration, formatFriendlyDateTime } from "@/lib/utils/tile-formatters";
 import { LoadingCard } from "./shared/LoadingCard";
@@ -91,14 +92,14 @@ export function TileCardCompact({
 
   const cardContent = (
     <>
-      {/* ステータス */}
+      {/* Status */}
       <TileStatusIcon
         lifecycle={lifecycle}
         onClick={onStart ? handleStatusClick : undefined}
         size={18}
       />
 
-      {/* タイトルとバッジ */}
+      {/* Title and badges */}
       <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
         <h4
           className={cn(
@@ -109,7 +110,7 @@ export function TileCardCompact({
           {tile.core.title}
         </h4>
 
-        {/* ラベル・プロジェクトバッジ */}
+        {/* Label and project badges */}
         <div className="flex flex-wrap gap-1 shrink-0">
           {tile.annotation.labels.map((label) => {
             const isProject = label.startsWith("project:");
@@ -155,16 +156,16 @@ export function TileCardCompact({
         </div>
       </div>
 
-      {/* 時間関連のメタデータ列 */}
+      {/* Time-related metadata column */}
       <div className="flex items-center gap-4 shrink-0 text-xs text-foreground-subtle select-none">
-        {/* 所要時間 */}
+        {/* Required duration */}
         {tile.objective.targetWorkMin || tile.objective.targetRestMin ? (
           <div className="font-mono text-right min-w-[48px] bg-surface-3/50 border border-border px-1.5 py-0.5 rounded text-[10px] text-foreground-subtle">
             {durationText}
           </div>
         ) : null}
 
-        {/* 開始/期限日時 */}
+        {/* Start / due datetime */}
         {showUnscheduledBadge ? (
           <div className="text-right min-w-[90px] text-[11px] text-foreground-lighter italic">
             {t("tiles.unscheduled")}
@@ -176,7 +177,7 @@ export function TileCardCompact({
         ) : null}
       </div>
 
-      {/* アクション */}
+      {/* Actions */}
       {onEdit ? (
         <ActionIcon
           type="button"
@@ -212,7 +213,7 @@ export function TileCardCompact({
   return <div className={cardClassName}>{cardContent}</div>;
 }
 
-function resolveDurationText(tile: Tile, locale: "ja" | "en"): string {
+function resolveDurationText(tile: Tile, locale: Locale): string {
   if (typeof tile.objective.targetWorkMin === "number" && tile.objective.targetWorkMin > 0) {
     return formatDuration(tile.objective.targetWorkMin, locale);
   }

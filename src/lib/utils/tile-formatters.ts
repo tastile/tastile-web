@@ -1,4 +1,6 @@
-type Locale = "ja" | "en";
+import type { Locale } from "@/lib/stores/locale-store";
+import { DEFAULT_LOCALE } from "@/lib/stores/locale-store";
+
 type FmtOptions = Intl.DateTimeFormatOptions;
 
 const dtFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -6,22 +8,38 @@ function getDtFormatter(locale: Locale, opts: FmtOptions): Intl.DateTimeFormat {
   const key = `${locale}|${JSON.stringify(opts)}`;
   let fmt = dtFormatters.get(key);
   if (!fmt) {
-    fmt = new Intl.DateTimeFormat(locale === "ja" ? "ja-JP" : "en-US", opts);
+    const intlLocale =
+      locale === "ja"
+        ? "ja-JP"
+        : locale === "de"
+          ? "de-DE"
+          : locale === "es"
+            ? "es-ES"
+            : locale === "fr"
+              ? "fr-FR"
+              : locale === "ko"
+                ? "ko-KR"
+                : locale === "zh-CN"
+                  ? "zh-CN"
+                  : locale === "pt-BR"
+                    ? "pt-BR"
+                    : "en-US";
+    fmt = new Intl.DateTimeFormat(intlLocale, opts);
     dtFormatters.set(key, fmt);
   }
   return fmt;
 }
 
-export function formatDuration(minutes: number | null, locale: "ja" | "en" = "ja"): string {
-  if (minutes === null || minutes === undefined) return locale === "ja" ? "未設定" : "unspecified";
+export function formatDuration(minutes: number | null, locale: Locale = DEFAULT_LOCALE): string {
+  if (minutes === null || minutes === undefined) return locale === "ja" ? "Not set" : "unspecified";
 
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
 
   if (locale === "ja") {
-    if (hours > 0 && mins > 0) return `${hours}時間${mins}分`;
-    if (hours > 0) return `${hours}時間`;
-    return `${mins}分`;
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+    if (hours > 0) return `${hours}h`;
+    return `${mins}m`;
   }
 
   if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
@@ -34,7 +52,7 @@ function _formatDateTime(
   locale: "ja" | "en" = "ja",
   timeZone?: string | null,
 ): string {
-  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
+  if (!date) return locale === "ja" ? "Not set" : "unscheduled";
 
   return getDtFormatter(locale, {
     month: "numeric",
@@ -47,10 +65,10 @@ function _formatDateTime(
 
 export function formatFriendlyDateTime(
   date: Date | null,
-  locale: "ja" | "en" = "ja",
+  locale: Locale = DEFAULT_LOCALE,
   timeZone?: string | null,
 ): string {
-  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
+  if (!date) return locale === "ja" ? "Not set" : "unscheduled";
 
   const now = new Date();
   const targetDate = new Date(date);
@@ -73,9 +91,9 @@ export function formatFriendlyDateTime(
   }).format(targetDate);
 
   if (locale === "ja") {
-    if (diffDays === 0) return `今日 ${timeStr}`;
-    if (diffDays === 1) return `明日 ${timeStr}`;
-    if (diffDays === -1) return `昨日 ${timeStr}`;
+    if (diffDays === 0) return `Today ${timeStr}`;
+    if (diffDays === 1) return `Tomorrow ${timeStr}`;
+    if (diffDays === -1) return `Yesterday ${timeStr}`;
 
     const dayOfWeek = getDtFormatter("ja", {
       weekday: "short",
@@ -103,10 +121,10 @@ export function formatFriendlyDateTime(
 
 function _formatTimeOnly(
   date: Date | null,
-  locale: "ja" | "en" = "ja",
+  locale: Locale = DEFAULT_LOCALE,
   timeZone?: string | null,
 ): string {
-  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
+  if (!date) return locale === "ja" ? "Not set" : "unscheduled";
   return getDtFormatter(locale, {
     hour: "2-digit",
     minute: "2-digit",

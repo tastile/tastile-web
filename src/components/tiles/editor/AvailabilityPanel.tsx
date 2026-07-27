@@ -14,7 +14,7 @@ export function AvailabilityPanel({
     <section className="space-y-2">
       <LabelSpanPicker value={label} onChange={onChange} />
       <p className="text-xs text-foreground-muted">
-        選んだ期間の中で、必要時間を満たせる空き時間へ配置します。
+        Place into available time within the selected label span that satisfies the required time.
       </p>
     </section>
   );

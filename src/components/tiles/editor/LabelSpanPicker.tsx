@@ -19,7 +19,7 @@ type LoadState =
   | { status: "error"; items: ReferenceCatalogItem[] }
   | { status: "ready"; items: ReferenceCatalogItem[] };
 
-const ERROR_MESSAGE = "期間ラベルを読み込めませんでした。";
+const ERROR_MESSAGE = "Could not load label spans.";
 
 export function LabelSpanPicker({
   value,
@@ -66,9 +66,9 @@ export function LabelSpanPicker({
 
   return (
     <label className="block space-y-1">
-      <span className="text-sm text-foreground">配置できる期間</span>
+      <span className="text-sm text-foreground">Available window</span>
       <select
-        aria-label="配置できる期間"
+        aria-label="Available window"
         value={value?.placementId ?? ""}
         onChange={(event) => {
           const item = items.find((candidate) => candidate.placement_id === event.target.value);
@@ -85,26 +85,25 @@ export function LabelSpanPicker({
         }}
         className="w-full rounded-md bg-surface-2 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
       >
-        <option value="">期間を選ぶ</option>
+        <option value="">Choose a window</option>
         {items.map((item) => (
           <option key={item.placement_id} value={item.placement_id}>
-            {item.title}（
-            {new Date(item.span_start).toLocaleDateString("ja-JP", { timeZone: "UTC" })} –{" "}
-            {new Date(item.span_end).toLocaleDateString("ja-JP", { timeZone: "UTC" })}）
+            {item.title} ({new Date(item.span_start).toLocaleDateString("en-US", { timeZone: "UTC" })} –{" "}
+            {new Date(item.span_end).toLocaleDateString("en-US", { timeZone: "UTC" })})
           </option>
         ))}
       </select>
-      {loading ? <p className="text-xs text-foreground-muted">期間を読み込み中…</p> : null}
+      {loading ? <p className="text-xs text-foreground-muted">Loading label spans…</p> : null}
       {error ? (
         <div role="alert" className="flex items-center justify-between gap-2 text-xs text-danger">
           <span>{error}</span>
           <Button type="button" onClick={reload} className="underline">
-            再試行
+            Retry
           </Button>
         </div>
       ) : null}
       {!loading && !error && items.length === 0 ? (
-        <p className="text-xs text-foreground-muted">使える期間ラベルを先に作成してください。</p>
+        <p className="text-xs text-foreground-muted">Create a usable label span first.</p>
       ) : null}
     </label>
   );

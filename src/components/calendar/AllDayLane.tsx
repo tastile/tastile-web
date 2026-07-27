@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
 import { memo } from "react";
 import { eventTileStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -13,18 +12,29 @@ interface AllDayChipProps {
 function AllDayChipImpl({ event, onClick }: AllDayChipProps) {
   const tile = eventTileStyle(event.color);
   return (
-    <Button
-      type="button"
+    <div
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
       data-event-id={event.id}
       onClick={onClick ? () => onClick(event) : undefined}
-      className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-medium hover:brightness-95"
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick(event);
+              }
+            }
+          : undefined
+      }
+      className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-medium hover:brightness-95 cursor-pointer"
       style={{
         backgroundColor: tile.backgroundColor,
         color: tile.color,
       }}
     >
       {event.title}
-    </Button>
+    </div>
   );
 }
 

@@ -14,25 +14,25 @@ export function TasksSidePanel() {
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  // URLパラメータからの初期値取得（無ければデフォルト値を設定）
+  // Pull initial values from URL params; fall back to defaults when absent.
   const search = searchParams.get("q") ?? "";
-  const rawRange = searchParams.get("range") ?? "7d"; // デフォルト7日
+  const rawRange = searchParams.get("range") ?? "7d"; // default 7 days
   const rawGranularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
 
-  // Range の内部状態 (数値と単位の分離パース)
+  // Internal state for the range (number and unit kept separate for parsing).
   const [rangeVal, setRangeVal] = useState<number>(7);
   const [rangeUnit, setRangeUnit] = useState<"d" | "w" | "m">("d");
 
-  // Min Duration の内部状態
+  // Internal state for the min-duration filter.
   const [minDuration, setMinDuration] = useState<number>(0);
 
-  // Priority の内部状態
+  // Internal state for the priority filters.
   const [highPriorityOnly, setHighPriorityOnly] = useState<boolean>(false);
   const [excludeLowPriority, setExcludeLowPriority] = useState<boolean>(false);
 
-  // パラメータ変更 of 初期同期
+  // Sync from URL params on initial mount and on every change.
   useEffect(() => {
-    // Rangeの同期
+    // Range sync.
     const num = parseInt(rawRange, 10);
     const unit = rawRange.slice(-1) as "d" | "w" | "m";
     if (!Number.isNaN(num) && ["d", "w", "m"].includes(unit)) {
@@ -43,10 +43,10 @@ export function TasksSidePanel() {
       setRangeUnit("d");
     }
 
-    // Granularityの同期
+    // Granularity sync.
     const gParts = rawGranularity.split(",");
 
-    // min_Xm の同期
+    // min_Xm sync.
     const minPart = gParts.find((p) => p.startsWith("min_"));
     if (minPart) {
       const minutes = parseInt(minPart.replace("min_", "").replace("m", ""), 10);
@@ -57,12 +57,12 @@ export function TasksSidePanel() {
       setMinDuration(0);
     }
 
-    // Priorityの同期
+    // Priority sync.
     setHighPriorityOnly(gParts.includes("important_only"));
     setExcludeLowPriority(gParts.includes("no_low_priority"));
   }, [rawRange, rawGranularity]);
 
-  // パラメータをURLに反映する共通関数 (常にすべての値を乗せる)
+  // Shared helper that mirrors filters into the URL — always writes all values.
   function applyFilters(updates: {
     range?: { val: number; unit: "d" | "w" | "m" };
     duration?: { val: number };
@@ -71,17 +71,17 @@ export function TasksSidePanel() {
   }) {
     const params = new URLSearchParams(searchParams.toString());
 
-    // 検索クエリ
+    // Search query.
     if (updates.q !== undefined) {
       if (updates.q) params.set("q", updates.q);
       else params.delete("q");
     }
 
-    // Time Range (常に設定)
+    // Time range (always set).
     const targetRange = updates.range ?? { val: rangeVal, unit: rangeUnit };
     params.set("range", `${targetRange.val}${targetRange.unit}`);
 
-    // Granularity (Duration + Priority - 常に設定)
+    // Granularity (Duration + Priority — always set).
     const targetDuration = updates.duration ?? { val: minDuration };
     const targetPriority = updates.priority ?? {
       high: highPriorityOnly,
@@ -89,7 +89,7 @@ export function TasksSidePanel() {
     };
 
     const parts = ["no_breaks"];
-    // 0分であっても常に min_0m を明示的に設定する（無効という選択肢を廃止）
+    // Always set min_0m explicitly, even when 0, since "disabled" is no longer an option.
     parts.push(`min_${targetDuration.val}m`);
 
     if (targetPriority.high) {
@@ -106,7 +106,7 @@ export function TasksSidePanel() {
     });
   }
 
-  // デフォルト状態にリセット
+  // Reset to the default filter state.
   function resetToDefaults() {
     const params = new URLSearchParams();
     if (search) params.set("q", search);

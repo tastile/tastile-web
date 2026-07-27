@@ -5,13 +5,13 @@ import { persist } from "zustand/middleware";
 
 export type SidePanel = "references" | "tasks" | "projects" | "schedule";
 
-/** Supabase と同等の3モード */
+/** Equivalent to the three Supabase modes */
 export type SidebarBehavior = "expandable" | "open" | "closed";
 
 interface ShellState {
   panel: SidePanel;
   sideBarOpen: boolean;
-  /** サイドバーの挙動モード（localStorage に永続化） */
+  /** Sidebar behavior mode (persisted to localStorage) */
   sidebarBehavior: SidebarBehavior;
   setPanel: (p: SidePanel) => void;
   toggleSideBar: () => void;

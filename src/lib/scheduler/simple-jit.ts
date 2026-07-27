@@ -29,7 +29,7 @@ export function selectNextTile(state: AppState): NextTileSuggestion | null {
   return {
     tile: picked,
     reason: picked.core.nextAction
-      ? "次の具体アクションが定義されているため"
-      : "未完了タイルの中で次に着手しやすいため",
+      ? "Has a concrete next action defined"
+      : "Easiest unfinished tile to start next",
   };
 }

@@ -27,11 +27,11 @@ export default async function SignupPage({
 
   return (
     <AuthShell
-      title="アカウントを作成"
-      subtitle="メールアドレスとパスワード (12 文字以上) を設定してください。"
+      title="Create your account"
+      subtitle="Set your email and a password of 12+ characters."
       message={message}
-      headerTranslations={getHeaderTranslations("ja")}
-      footerTranslations={getFooterTranslations("ja")}
+      headerTranslations={getHeaderTranslations("en")}
+      footerTranslations={getFooterTranslations("en")}
     >
       <form action="/auth/email/signup" method="post" className="space-y-5">
         {isNative ? (
@@ -42,7 +42,7 @@ export default async function SignupPage({
         ) : null}
         <div>
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            メールアドレス
+            Email address
           </label>
           <input
             id="email"
@@ -57,7 +57,7 @@ export default async function SignupPage({
         </div>
         <div>
           <label htmlFor="password" className="text-sm font-medium text-foreground">
-            パスワード
+            Password
           </label>
           <input
             id="password"
@@ -67,7 +67,7 @@ export default async function SignupPage({
             required
             minLength={12}
             className="mt-2 w-full rounded-md border border-border bg-surface-0 px-3 py-3 text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/30"
-            placeholder="12 文字以上、大文字小文字数字を含む"
+            placeholder="At least 12 characters, with upper/lower case and digits"
           />
         </div>
         <Button
@@ -75,18 +75,18 @@ export default async function SignupPage({
           className="flex w-full items-center justify-center gap-3 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
           <UserPlus className="h-4 w-4" aria-hidden="true" />
-          確認コードを送信
+          Send verification code
         </Button>
       </form>
       <p className="mt-5 text-sm text-foreground-muted">
-        すでにアカウントがある場合は{" "}
+        Already have an account?{" "}
         <Link
           className="underline hover:text-foreground"
           href={`/auth/email${isNative ? `?redirect_uri=${encodeURIComponent(redirectUri)}&state=${encodeURIComponent(state)}` : ""}`}
         >
-          ログイン
-        </Link>{" "}
-        へ。
+          Sign in
+        </Link>
+        .
       </p>
     </AuthShell>
   );

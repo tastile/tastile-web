@@ -1,6 +1,6 @@
 // Thin wrapper around the browser Notification API. Falls back to a no-op
 // outside secure contexts (production) or when the user has denied permission.
-// Tastile uses this in addition to the in-app "通知" button — the internal
+// Tastile uses this in addition to the in-app notifications button — the internal
 // prompt card already surfaces state changes, but the system tray is the
 // only way the user notices when they have the dashboard in a background
 // tab.

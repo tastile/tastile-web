@@ -110,7 +110,7 @@ export function useSidePanel(content: ReactNode) {
 }
 
 // ─────────────────────────────────────────────
-// Consumer Hook — layout 側が使う。購読は version のみ。
+// Consumer Hook — used by the layout. Subscribes to version only.
 // ─────────────────────────────────────────────
 export function useSidePanelContent(): ReactNode | null {
   useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);

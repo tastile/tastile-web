@@ -6,7 +6,9 @@
  * importing from the shell. Pure functions only — no hooks, no state.
  */
 
-export type EditorLocale = "ja" | "en";
+import type { Locale } from "@/lib/stores/locale-store";
+
+export type EditorLocale = Locale;
 
 export function isoToLocalDate(iso: string | null | undefined): string {
   if (!iso) return "";

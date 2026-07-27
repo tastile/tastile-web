@@ -30,7 +30,7 @@ export default function DesktopAuthCompletePage() {
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader hideAuth translations={getHeaderTranslations("ja")} />
+      <SiteHeader hideAuth translations={getHeaderTranslations("en")} />
 
       <main className="layout-shell flex flex-1 items-center justify-center py-12">
         <div className="w-full max-w-xl rounded-lg bg-surface-elevated p-8">
@@ -38,7 +38,7 @@ export default function DesktopAuthCompletePage() {
             <TastileLogo size={64} className="text-foreground" />
             <div>
               <p className="text-sm font-medium text-primary">Tastile Desktop</p>
-              <h1 className="mt-1 text-3xl font-semibold text-foreground">認証が完了しました</h1>
+              <h1 className="mt-1 text-3xl font-semibold text-foreground">Authentication complete</h1>
             </div>
           </div>
 
@@ -46,13 +46,13 @@ export default function DesktopAuthCompletePage() {
             <div className="flex gap-3 rounded-lg bg-surface-0 p-4">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <p className="text-sm leading-6 text-foreground-muted">
-                アカウント認証に成功しました。Desktop アプリへ戻してセッションを保存しています。
+                Your account has been verified. Returning to the Desktop app to save the session.
               </p>
             </div>
             <div className="flex gap-3 rounded-lg bg-surface-0 p-4">
               <Laptop className="mt-0.5 h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
               <p className="text-sm leading-6 text-foreground-muted">
-                ブラウザが確認を求めた場合は Tastile を開く操作を許可してください。
+                If your browser asks for confirmation, please allow it to open Tastile.
               </p>
             </div>
           </div>
@@ -62,19 +62,19 @@ export default function DesktopAuthCompletePage() {
             href="tastile://auth/callback"
             className="mt-8 flex w-full items-center justify-center rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
           >
-            Desktop アプリを開く
+            Open the Desktop app
           </a>
           <p className="mt-4 text-center text-xs leading-5 text-foreground-subtle">
-            アプリに戻れない場合は{" "}
+            If the app does not open, you can manage your account from the{" "}
             <Link className="underline hover:text-foreground" href="/dashboard/preferences/account">
-              Web アカウント設定
-            </Link>{" "}
-            を開けます。
+              web account settings
+            </Link>
+            .
           </p>
         </div>
       </main>
 
-      <SiteFooter translations={getFooterTranslations("ja")} />
+      <SiteFooter translations={getFooterTranslations("en")} />
       {/* biome-ignore lint/security/noDangerouslySetInnerHtml: deeplink-redirect reads URL fragment and must run inline before paint — cannot be ref'd to a JS file */}
       <script dangerouslySetInnerHTML={{ __html: script }} />
     </div>

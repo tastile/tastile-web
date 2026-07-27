@@ -378,6 +378,7 @@ export const translations = {
         "同じ値は、入力行・条件要約・配置結果の複数箇所から確認できます。詳細な構造は必要な時だけ開きます。",
       completionEmptyHint: "完了条件はまだありません",
       taskUntitled: "(無題のタスク)",
+      selectTile: "タイルを選択",
       intentPickerTitle: "配置",
       intentPickerSub: "何を制御するかを選ぶ",
       intentNarrowTime: "時間・日付を絞る",
@@ -900,6 +901,13 @@ export const translations = {
         previewNextLabel: "次の予定",
         previewNextAt: "11:20",
         previewNextAction: "完了にする",
+        previewTodayLabel: "今日",
+        previewAxis0: "期限",
+        previewAxis1: "場所",
+        previewAxis2: "状態",
+        previewAxis3: "変形",
+        previewAxis4: "完了",
+        previewAxis5: "超過",
         previewTile0Time: "09:00",
         previewTile0Duration: "60m",
         previewTile0Title: "資料を仕上げる",
@@ -1105,6 +1113,13 @@ export const translations = {
         platformNote: "Web / Desktop / iOS",
       },
     },
+
+    // Locale-aware weekday / month labels (used by date formatters in panels).
+    weekdays: ["日", "月", "火", "水", "木", "金", "土"],
+    months: [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ],
   },
 
   en: {
@@ -1485,6 +1500,7 @@ export const translations = {
         "The same values appear in multiple places: input rows, condition summary, and placement results. Open detailed structure only when needed.",
       completionEmptyHint: "No completion conditions yet",
       taskUntitled: "(untitled task)",
+      selectTile: "Select a tile",
       intentPickerTitle: "Placement",
       intentPickerSub: "Pick what to control",
       intentNarrowTime: "Narrow time/date",
@@ -2009,6 +2025,13 @@ export const translations = {
         previewNextLabel: "Next",
         previewNextAt: "11:20",
         previewNextAction: "Mark done",
+        previewTodayLabel: "Today",
+        previewAxis0: "Due",
+        previewAxis1: "Place",
+        previewAxis2: "State",
+        previewAxis3: "Shape",
+        previewAxis4: "Done",
+        previewAxis5: "Spill",
         previewTile0Time: "09:00",
         previewTile0Duration: "60m",
         previewTile0Title: "Finish the deck",
@@ -2215,5 +2238,25 @@ export const translations = {
         platformNote: "Web / Desktop / iOS",
       },
     },
+
+    // Locale-aware weekday / month labels (used by date formatters in panels).
+    weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    months: [
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    ],
   },
-} as const;
+
+  // Placeholder locales — fall back to English (useTranslation() resolves any
+  // missing key against the `en` tree before returning an empty string). This
+  // keeps the locale switcher honest about which locales are advertised and
+  // gives the type system a precise `Locale` key set without us having to
+  // hand-translate every section into seven languages up-front.
+  de: {} as unknown as (typeof translations)["en"],
+  es: {} as unknown as (typeof translations)["en"],
+  "pt-BR": {} as unknown as (typeof translations)["en"],
+  fr: {} as unknown as (typeof translations)["en"],
+  ko: {} as unknown as (typeof translations)["en"],
+  "zh-CN": {} as unknown as (typeof translations)["en"],
+} as Record<string, unknown>;
+

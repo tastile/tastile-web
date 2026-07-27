@@ -1,5 +1,5 @@
 /**
- * QuickTileCreate — v1 構造エディタ.
+ * QuickTileCreate — v1 structure editor.
  *
  * Single panel with seven sections, each 1:1 with a v1 spec chapter:
  *   §1 Identity   — Tile.Base (title, description, kind, visual, externalId)
@@ -14,7 +14,7 @@
  * (`@/lib/api/v1/submit`) reads the store directly and posts the v1
  * envelope sequence — there is no v7-shaped intermediate form state.
  *
- * Phase scope per HARNESS.md "Phase A: 核":
+ * Phase scope per HARNESS.md "Phase A: Core":
  *   Phase A (live): Tile.Base (Visual + Description) / Plan.role / Span /
  *     DurationRange / Window / Recurring.life / FrameRule kind picker
  *   Phase B (stub): Condition tree editor (completion.root, timeRequirements, tasks)
@@ -32,7 +32,6 @@ import {
   Menu,
   NumberInput,
   Paper,
-  Radio,
   SegmentedControl,
   SimpleGrid,
   Select,
@@ -104,14 +103,23 @@ import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { translations } from "@/lib/i18n/translations";
+import type { Locale } from "@/lib/stores/locale-store";
 import { type RepeatChoice, useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask convention).
-const WEEKDAY_LABELS_SHORT: Record<"ja" | "en", readonly string[]> = {
-  ja: ["日", "月", "火", "水", "木", "金", "土"],
-  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-};
+// Locale-specific weekday labels live in translations.ts. Placeholder locales
+// fall back to the English list (Intl.DateTimeFormat drives richer output for
+// ja via the active Intl context, but the masked-chip display here is just a
+// short abbreviation).
+type LocaleTree = { weekdays: readonly string[] };
+const jaTree = translations.ja as unknown as LocaleTree;
+const enTree = translations.en as unknown as LocaleTree;
+function weekdayLabelsFor(locale: Locale): readonly string[] {
+  if (locale === "ja") return jaTree.weekdays;
+  return enTree.weekdays;
+}
 
 const REPEAT_MODE_LABEL_KEY: Record<RepeatChoice, string> = {
   once: "quickCreate.repeatOnce",
@@ -180,43 +188,37 @@ function _hexToEventColorName(hex: string | null | undefined): string | null {
 function formatDisplayDate(
   iso: string | null | undefined,
   allDay: boolean,
-  locale: "ja" | "en",
+  locale: Locale,
   t: (key: string) => string,
 ): string {
   if (!iso) return t("tiles.notSet");
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return t("tiles.notSet");
 
-  const weekdaysJa = ["日", "月", "火", "水", "木", "金", "土"];
-  const weekdaysEn = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthsEn = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  const localeTree = translations[locale] as unknown as {
+    weekdays: readonly string[];
+    months: readonly string[];
+  };
+  const weekdays = localeTree.weekdays;
+  const months = localeTree.months;
 
-  const month = date.getMonth() + 1;
   const day = date.getDate();
   const weekday = date.getDay();
   const hours = String(date.getHours()).padStart(2, "0");
   const minutes = String(date.getMinutes()).padStart(2, "0");
 
   if (locale === "ja") {
-    const dayStr = `${month}月${day}日 (${weekdaysJa[weekday]})`;
+    const dayStr = new Intl.DateTimeFormat("ja-JP", {
+      month: "numeric",
+      day: "numeric",
+      weekday: "short",
+    }).format(date);
     return allDay ? dayStr : `${dayStr} ${hours}:${minutes}`;
-  } else {
-    const dayStr = `${monthsEn[date.getMonth()]} ${day} (${weekdaysEn[weekday]})`;
-    return allDay ? dayStr : `${dayStr}, ${hours}:${minutes}`;
   }
+  // Non-ja placeholder locales route through the English label table; the
+  // existing translations.ts already provides weekday / month abbreviations.
+  const dayStr = `${months[date.getMonth()]} ${day} (${weekdays[weekday]})`;
+  return allDay ? dayStr : `${dayStr}, ${hours}:${minutes}`;
 }
 
 function _normalizeHexColor(value: string): string {
@@ -257,7 +259,6 @@ export function QuickTileCreate() {
     | "references"
     | "completion"
     | "meta"
-    | "behavior"
   >("base");
   const projects = useProjects();
   const refreshProjects = projects.refresh;
@@ -272,6 +273,10 @@ export function QuickTileCreate() {
     }
     return Array.from(seen).sort((a, b) => a.localeCompare(b, "ja"));
   }, [tiles.tiles]);
+  const tilePickerData = useMemo(
+    () => tiles.tiles.map((t) => ({ value: t.id, label: t.title || t.id })),
+    [tiles.tiles],
+  );
   useEffect(() => {
     void refreshProjects();
   }, [refreshProjects]);
@@ -342,6 +347,8 @@ export function QuickTileCreate() {
       if (!(target instanceof Element)) return;
       const subPanel = document.querySelector(`[data-subpanel="${activePanel}"]`);
       if (subPanel?.contains(target)) return;
+      if (target.closest("[data-mantine-portal]")) return;
+      if (target.closest("[data-subpanel]")) return;
       setActivePanel("base");
     }
     document.addEventListener("mousedown", handleSubPanelOutsideClick);
@@ -492,8 +499,7 @@ export function QuickTileCreate() {
       | "recurring"
       | "references"
       | "completion"
-      | "meta"
-      | "behavior",
+      | "meta",
   ) =>
     isDesktop
       ? cn(
@@ -616,7 +622,7 @@ export function QuickTileCreate() {
                   size="xs"
                   radius="xl"
                 >
-                  {t("quickCreate.metaExpandLabel") || "整理"}
+                  {t("quickCreate.metaExpandLabel") || "Refine"}
                 </Button>
               </div>
 
@@ -677,10 +683,10 @@ export function QuickTileCreate() {
                       <span className="inline-flex items-center gap-1.5">
                         <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
                           {time.durationMinMax.minMs !== null
-                            ? `${Math.round(time.durationMinMax.minMs / 60000)}分`
+                            ? `${Math.round(time.durationMinMax.minMs / 60000)} min`
                             : "—"}
                           {time.durationMinMax.maxMs !== null
-                            ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)}分`
+                            ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)} min`
                             : ""}
                         </span>
                         <span className="inline-flex items-center gap-1 text-[10px] font-medium text-foreground-muted">
@@ -721,7 +727,7 @@ export function QuickTileCreate() {
                         {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
                           <span className="text-foreground-muted">
                             (
-                            {WEEKDAY_LABELS_SHORT[locale]
+                            {weekdayLabelsFor(locale)
                               .filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0)
                               .join(", ")}
                             )
@@ -778,15 +784,22 @@ export function QuickTileCreate() {
                       className="flex min-h-[32px] items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1 text-xs"
                     >
                       <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-0" />
-                      <span
-                        className={
-                          tk.content?.title
-                            ? "min-w-0 flex-1 truncate text-foreground"
-                            : "min-w-0 flex-1 truncate text-foreground-muted"
-                        }
-                      >
-                        {tk.content?.title || t("quickCreate.taskUntitled")}
-                      </span>
+                      <TextInput
+                        value={tk.content?.title ?? ""}
+                        onChange={(e) => {
+                          const next = plan.completion.tasks.slice();
+                          next[i] = {
+                            ...tk,
+                            content: { ...tk.content, title: e.target.value },
+                          };
+                          setField("plan.completion.tasks", next);
+                        }}
+                        placeholder={t("quickCreate.taskUntitled")}
+                        variant="unstyled"
+                        size="xs"
+                        className="min-w-0 flex-1"
+                        styles={{ input: { padding: 0, height: 20, minHeight: 20 } }}
+                      />
                       <Menu position="bottom-end" withArrow shadow="md">
                         <Menu.Target>
                           <ActionIcon
@@ -879,45 +892,26 @@ export function QuickTileCreate() {
                   <strong className="text-xs font-semibold text-foreground">
                     {t("quickCreate.behaviorTitle")}
                   </strong>
-                  <small className="text-[10px] text-foreground-muted">
-                    {t("quickCreate.behaviorSub")}
-                  </small>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
+                <SegmentedControl
+                  fullWidth
                   size="sm"
-                  leftSection={
-                    <div className="flex h-6 w-6 items-center justify-center rounded bg-surface-2">
-                      {plan.role === PlanRole.LABEL ? (
-                        <Tag size={12} />
-                      ) : (
-                        <Play size={12} />
-                      )}
-                    </div>
-                  }
-                  rightSection={
-                    <span className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-[10px] text-foreground-muted">
-                      {t("quickCreate.behaviorEdit")}
-                    </span>
-                  }
-                  onClick={() => setActivePanel("behavior")}
-                  aria-label={t("quickCreate.behaviorEdit")}
-                  className="justify-start"
-                >
-                  <div className="text-left">
-                    <div className="text-xs font-semibold">
-                      {plan.role === PlanRole.LABEL
-                        ? t("quickCreate.behaviorLabel")
-                        : t("quickCreate.behaviorExecutable")}
-                    </div>
-                    <div className="text-[10px] text-foreground-muted">
-                      {plan.role === PlanRole.LABEL
-                        ? t("quickCreate.behaviorLabelSub")
-                        : t("quickCreate.behaviorExecutableSub")}
-                    </div>
-                  </div>
-                </Button>
+                  radius="md"
+                  value={String(plan.role)}
+                  onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
+                  data-testid="behavior-role-inline"
+                  data={[
+                    {
+                      value: String(PlanRole.EXECUTABLE),
+                      label: t("quickCreate.behaviorExecutable"),
+                    },
+                    {
+                      value: String(PlanRole.LABEL),
+                      label: t("quickCreate.behaviorLabel"),
+                    },
+                  ]}
+                  styles={SEGMENT_STYLES}
+                />
               </div>
             </section>
 
@@ -937,114 +931,84 @@ export function QuickTileCreate() {
                     {t("quickCreate.conditionEmpty")}
                   </p>
                 ) : (
-                  <Stack gap="sm">
-                    {windows.length > 0 && (
-                      <Paper p="sm" radius="lg" bg="var(--surface-1)">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                            ALL
-                          </span>
-                          <strong className="text-[11px] font-semibold text-foreground">
-                            {t("quickCreate.conditionGroupWindow")}
-                          </strong>
-                          <Button
-                            type="button"
-                            variant="subtle"
-                            size="xs"
-                            leftSection={<Pencil size={10} />}
-                            onClick={() => setActivePanel("time")}
-                            className="ml-auto text-foreground-muted"
-                          >
-                            {t("quickCreate.edit")}
-                          </Button>
-                        </div>
-                        <div className="space-y-1">
-                          {windows.map((w, i) => (
-                            <div
-                              key={w.id ?? i}
-                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
-                            >
-                              <Clock
-                                size={11}
-                                className="shrink-0 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="min-w-0 flex-1 truncate text-foreground">
-                                {w.bounds.start && w.bounds.end
-                                  ? `${w.bounds.start} → ${w.bounds.end}`
-                                  : t("quickCreate.conditionWindowOpen")}
-                              </span>
-                              <ActionIcon
-                                type="button"
-                                variant="subtle"
-                                size="xs"
-                                onClick={() => {
-                                  const next = windows.filter((_, idx) => idx !== i);
-                                  setField("windows", next);
-                                }}
-                                aria-label={t("quickCreate.removeItem")}
-                              >
-                                <MoreHorizontal size={12} />
-                              </ActionIcon>
-                            </div>
-                          ))}
-                        </div>
-                      </Paper>
-                    )}
+                  <Stack gap="xs">
+                    {windows.map((w, i) => (
+                      <div
+                        key={w.id ?? i}
+                        className="flex items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1.5 text-xs"
+                      >
+                        <Clock
+                          size={12}
+                          className="shrink-0 text-foreground-muted"
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-foreground">
+                          {w.bounds.start && w.bounds.end
+                            ? `${w.bounds.start} → ${w.bounds.end}`
+                            : t("quickCreate.conditionWindowOpen")}
+                        </span>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          size="xs"
+                          onClick={() => setActivePanel("time")}
+                          aria-label={t("quickCreate.edit")}
+                        >
+                          <Pencil size={12} />
+                        </ActionIcon>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          size="xs"
+                          onClick={() => {
+                            const next = windows.filter((_, idx) => idx !== i);
+                            setField("windows", next);
+                          }}
+                          aria-label={t("quickCreate.removeItem")}
+                        >
+                          <Trash2 size={12} />
+                        </ActionIcon>
+                      </div>
+                    ))}
 
-                    {recurring.frameRules.length > 0 && (
-                      <Paper p="sm" radius="lg" bg="var(--surface-1)">
-                        <div className="mb-1 flex items-center gap-2">
-                          <span className="rounded-full bg-accent-soft px-1.5 py-0.5 text-[10px] font-bold text-accent-ink">
-                            ALL
-                          </span>
-                          <strong className="text-[11px] font-semibold text-foreground">
-                            {t("quickCreate.conditionGroupFrame")}
-                          </strong>
-                          <Button
-                            type="button"
-                            variant="subtle"
-                            size="xs"
-                            leftSection={<Pencil size={10} />}
-                            onClick={() => setActivePanel("recurring")}
-                            className="ml-auto text-foreground-muted"
-                          >
-                            {t("quickCreate.edit")}
-                          </Button>
-                        </div>
-                        <div className="space-y-1">
-                          {recurring.frameRules.map((r, i) => (
-                            <div
-                              key={r.id ?? i}
-                              className="flex items-center gap-2 rounded bg-surface-0 px-2 py-1 text-[11px]"
-                            >
-                              <Repeat
-                                size={11}
-                                className="shrink-0 text-primary"
-                                aria-hidden="true"
-                              />
-                              <span className="min-w-0 flex-1 truncate text-foreground">
-                                {r.generator?.kind === "step"
-                                  ? t("quickCreate.conditionFrameStep")
-                                  : t("quickCreate.conditionFrameOpen")}
-                              </span>
-                              <ActionIcon
-                                type="button"
-                                variant="subtle"
-                                size="xs"
-                                onClick={() => {
-                                  const next = recurring.frameRules.filter((_, idx) => idx !== i);
-                                  setField("recurring.frameRules", next);
-                                }}
-                                aria-label={t("quickCreate.removeItem")}
-                              >
-                                <MoreHorizontal size={12} />
-                              </ActionIcon>
-                            </div>
-                          ))}
-                        </div>
-                      </Paper>
-                    )}
+                    {recurring.frameRules.map((r, i) => (
+                      <div
+                        key={r.id ?? i}
+                        className="flex items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1.5 text-xs"
+                      >
+                        <Repeat
+                          size={12}
+                          className="shrink-0 text-foreground-muted"
+                          aria-hidden="true"
+                        />
+                        <span className="min-w-0 flex-1 truncate text-foreground">
+                          {r.generator?.kind === "step"
+                            ? t("quickCreate.conditionFrameStep")
+                            : t("quickCreate.conditionFrameOpen")}
+                        </span>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          size="xs"
+                          onClick={() => setActivePanel("recurring")}
+                          aria-label={t("quickCreate.edit")}
+                        >
+                          <Pencil size={12} />
+                        </ActionIcon>
+                        <ActionIcon
+                          type="button"
+                          variant="subtle"
+                          size="xs"
+                          onClick={() => {
+                            const next = recurring.frameRules.filter((_, idx) => idx !== i);
+                            setField("recurring.frameRules", next);
+                          }}
+                          aria-label={t("quickCreate.removeItem")}
+                        >
+                          <Trash2 size={12} />
+                        </ActionIcon>
+                      </div>
+                    ))}
                   </Stack>
                 )}
               </div>
@@ -1076,7 +1040,7 @@ export function QuickTileCreate() {
         <Group h={62} justify="space-between" px="md" className="shrink-0 border-t border-border bg-surface-0">
           <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
             <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
-            <span id="validationText">{t("quickCreate.validationOk") || "作成できます"}</span>
+            <span id="validationText">{t("quickCreate.validationOk") || "Ready to create"}</span>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -1188,85 +1152,54 @@ export function QuickTileCreate() {
           subtitle={t("quickCreate.durationSub")}
         />
         <div className="flex-1 overflow-auto p-4">
-          <Radio.Group
-            value={
-              time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
-                ? "none"
-                : "custom"
-            }
-            onChange={(value) => {
-              if (value === "none") {
-                setField("time.durationMinMax.minMs", null);
-                setField("time.durationMinMax.maxMs", null);
-              }
-            }}
-          >
-            <Stack gap="sm">
-              <Radio.Card
-                value="none"
-                p="sm"
-                radius="lg"
-                withBorder
-                className="data-[checked]:border-primary data-[checked]:bg-accent-soft"
-              >
-                <Group gap="sm">
-                  <Radio.Indicator />
-                  <div>
-                    <Text size="sm" fw={600}>{t("quickCreate.durationNoneTitle")}</Text>
-                    <Text size="xs" c="var(--foreground-muted)">{t("quickCreate.durationNoneSub")}</Text>
-                  </div>
-                </Group>
-              </Radio.Card>
-            </Stack>
-          </Radio.Group>
-
           <div className="mb-4">
             <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
               {t("quickCreate.durationInputLabel")}
             </div>
-            <NumberInput
-              min={10}
-              step={10}
+            <SegmentedControl
+              fullWidth
+              size="sm"
+              radius="md"
+              data={[
+                { value: "none", label: t("quickCreate.durationNoneTitle") },
+                { value: "custom", label: t("quickCreate.durationInputLabel") },
+              ]}
               value={
-                time.durationMinMax.minMs !== null
-                  ? Math.round(time.durationMinMax.minMs / 60000)
-                  : 90
+                time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
+                  ? "none"
+                  : "custom"
               }
               onChange={(value) => {
-                const num = typeof value === "number" ? value : Number(value);
-                if (!Number.isFinite(num)) return;
-                const clamped = Math.max(10, Math.min(720, num));
-                setField("time.durationMinMax.minMs", clamped * 60000);
-                setField("time.durationMinMax.maxMs", clamped * 60000);
+                if (value === "none") {
+                  setField("time.durationMinMax.minMs", null);
+                  setField("time.durationMinMax.maxMs", null);
+                }
               }}
-              size="sm"
-              aria-label={t("quickCreate.durationInputLabel")}
-              suffix={t("quickCreate.minutesUnit")}
-              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+              styles={SEGMENT_STYLES}
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="subtle"
-              leftSection={<X size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.cancel")}
-            </Button>
-            <div className="flex-1" />
-            <Button
-              type="button"
-              size="sm"
-              variant="filled"
-              leftSection={<Check size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.metaApply")}
-            </Button>
-          </div>
+          {time.durationMinMax.minMs !== null && (
+            <div className="mb-4">
+              <NumberInput
+                min={10}
+                step={10}
+                value={Math.round(time.durationMinMax.minMs / 60000)}
+                onChange={(value) => {
+                  const num = typeof value === "number" ? value : Number(value);
+                  if (!Number.isFinite(num)) return;
+                  const clamped = Math.max(10, Math.min(720, num));
+                  setField("time.durationMinMax.minMs", clamped * 60000);
+                  setField("time.durationMinMax.maxMs", clamped * 60000);
+                }}
+                size="sm"
+                aria-label={t("quickCreate.durationInputLabel")}
+                suffix={t("quickCreate.minutesUnit")}
+                styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+              />
+            </div>
+          )}
+
         </div>
       </section>
 
@@ -1341,21 +1274,28 @@ export function QuickTileCreate() {
                         </span>
                       </div>
                     </div>
-                    <TextInput
+                    <Select
                       aria-label={t("quickCreate.referenceIdPlaceholder")}
                       placeholder={t("quickCreate.referenceIdPlaceholder")}
-                      value={ref.target.referenceId ?? ""}
-                      onChange={(e) => {
+                      value={ref.target.referenceId ?? null}
+                      onChange={(value) => {
                         const next = plan.references.slice();
                         next[i] = {
                           ...ref,
-                          target: { ...ref.target, referenceId: e.target.value || null },
+                          target: { ...ref.target, referenceId: value || null },
                         };
                         setField("plan.references", next);
                       }}
+                      data={tiles.tiles.map((t) => ({
+                        value: t.id,
+                        label: t.title || t.id,
+                      }))}
+                      searchable
+                      clearable
                       size="sm"
                       variant="filled"
                       styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                      comboboxProps={{ withinPortal: false }}
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -1527,6 +1467,7 @@ export function QuickTileCreate() {
               node={plan.completion.root}
               onChange={(next) => setField("plan.completion.root", next)}
               t={t}
+              tileOptions={tilePickerData}
             />
             {plan.completion.timeRequirements.length > 0 && (
               <div
@@ -1778,119 +1719,8 @@ export function QuickTileCreate() {
             >
               {t("quickCreate.completionRemoveLabel")}
             </Button>
-            <div className="flex-1" />
-            <Button
-              type="button"
-              size="sm"
-              variant="default"
-              leftSection={<X size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.completionCancelLabel")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="filled"
-              leftSection={<Check size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.metaApply")}
-            </Button>
           </div>
         </FormPanel>
-      </section>
-
-      {/* ─── behavior sub-panel ─── */}
-      <section
-        data-subpanel="behavior"
-        className={subPanelClass("behavior")}
-        aria-hidden={activePanel !== "behavior"}
-      >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.behaviorTitle")}
-          subtitle={t("quickCreate.behaviorSub")}
-        />
-        <div className="flex-1 overflow-auto p-4">
-          <Radio.Group
-            value={String(plan.role)}
-            onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
-            data-testid="behavior-role"
-          >
-            <Stack gap="sm">
-              <Radio.Card
-                value={String(PlanRole.EXECUTABLE)}
-                p="md"
-                radius="xl"
-                withBorder
-                className="transition-colors hover:var(--surface-1) data-[checked]:border-primary data-[checked]:bg-accent-soft"
-              >
-                <Group gap="sm" wrap="nowrap">
-                  <Radio.Indicator />
-                  <div>
-                    <Group gap="xs">
-                      <Play size={14} className="text-foreground-muted" />
-                      <Text size="sm" fw={600}>{t("quickCreate.behaviorExecutable")}</Text>
-                    </Group>
-                    <Text size="xs" c="var(--foreground-muted)">{t("quickCreate.behaviorExecutableSub")}</Text>
-                  </div>
-                </Group>
-              </Radio.Card>
-
-              <Radio.Card
-                value={String(PlanRole.LABEL)}
-                p="md"
-                radius="xl"
-                withBorder
-                className="transition-colors hover:var(--surface-1) data-[checked]:border-primary data-[checked]:bg-accent-soft"
-              >
-                <Group gap="sm" wrap="nowrap">
-                  <Radio.Indicator />
-                  <div>
-                    <Group gap="xs">
-                      <Tag size={14} className="text-foreground-muted" />
-                      <Text size="sm" fw={600}>{t("quickCreate.behaviorLabel")}</Text>
-                    </Group>
-                    <Text size="xs" c="var(--foreground-muted)">{t("quickCreate.behaviorLabelSub")}</Text>
-                  </div>
-                </Group>
-              </Radio.Card>
-            </Stack>
-          </Radio.Group>
-
-          <div className="mb-4 rounded-lg border border-border bg-surface-0 p-3">
-            <div className="flex items-start gap-2">
-              <Info size={14} className="mt-0.5 shrink-0 text-foreground-muted" aria-hidden />
-              <span className="text-[11px] text-foreground-muted">
-                {t("quickCreate.behaviorSchemaNote")}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="subtle"
-              leftSection={<X size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.cancel")}
-            </Button>
-            <div className="flex-1" />
-            <Button
-              type="button"
-              size="sm"
-              variant="filled"
-              leftSection={<Check size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.metaApply")}
-            </Button>
-          </div>
-        </div>
       </section>
     </>
   );
@@ -1965,7 +1795,7 @@ function V4EssentialRow({
     <div className="relative min-h-[48px]">
       <UnstyledButton
         onClick={onClick}
-        aria-label={editAria ?? `${label} を編集`}
+        aria-label={editAria ?? `${label} Edit`}
         className="group flex min-h-[48px] w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
@@ -1987,7 +1817,7 @@ function V4EssentialRow({
               e.stopPropagation();
               handleClearClick();
             }}
-            aria-label={armed ? (confirmClearAria ?? "確定") : (clearAria ?? "指定を消す")}
+            aria-label={armed ? (confirmClearAria ?? "Confirm") : (clearAria ?? "Clear selection")}
             data-armed={armed ? "true" : undefined}
             variant="subtle"
             size="xs"
@@ -2002,7 +1832,7 @@ function V4EssentialRow({
             {armed ? (
               <>
                 <Check size={12} />
-                {confirmClearLabel ?? "確定"}
+                {confirmClearLabel ?? "Confirm"}
               </>
             ) : (
               <X size={12} />

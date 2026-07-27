@@ -19,7 +19,7 @@ import { TileKind, PlanRole } from "@/lib/domain/v1/constants";
 function recurringSnapshot() {
   return {
     identity: {
-      title: "毎週の英語",
+      title: "Weekly English",
       kind: TileKind.RECURRING,
       externalId: { value: null },
       visual: { color: "#5E6AD2", icon: "sun" },
@@ -49,7 +49,7 @@ function recurringSnapshot() {
 function placementSnapshot() {
   return {
     identity: {
-      title: "今日の数学",
+      title: "Math today",
       kind: TileKind.PLACEMENT,
       externalId: { value: null },
       visual: { color: "#5E6AD2", icon: "sun" },
@@ -79,7 +79,7 @@ function placementSnapshot() {
 function labelSnapshot() {
   return {
     identity: {
-      title: "学期中",
+      title: "During term",
       kind: TileKind.PLACEMENT,
       externalId: { value: null },
       visual: { color: "#999", icon: "tag" },

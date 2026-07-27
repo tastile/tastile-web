@@ -68,7 +68,7 @@ export function ScheduleMain() {
     <PageContainer>
       <PageHeader title={title} description={subtitle} />
 
-      {/* スコープ情報バー */}
+      {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
         <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
           {view === "recurring"

@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
 import { memo } from "react";
 import { eventTileStyle, formatLocalTimeOfDay } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
@@ -37,13 +36,24 @@ function DayViewTileImpl({
   const leftPct = widthPct * laneIndex;
 
   return (
-    <Button
-      type="button"
+    <div
+      role={onEditEvent ? "button" : undefined}
+      tabIndex={onEditEvent ? 0 : undefined}
       data-testid={`day-event-${event.id}`}
       data-lane={laneIndex}
       data-lane-count={laneCount}
       data-tile-id={event.id}
       onClick={onEditEvent ? () => onEditEvent(event) : undefined}
+      onKeyDown={
+        onEditEvent
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onEditEvent(event);
+              }
+            }
+          : undefined
+      }
       className="absolute overflow-hidden rounded-md px-2 py-1 text-left hover:brightness-95"
       style={{
         top: `${top}px`,
@@ -68,7 +78,7 @@ function DayViewTileImpl({
       {event.location ? (
         <div className="mt-0.5 truncate text-[10px] opacity-70">{event.location}</div>
       ) : null}
-    </Button>
+    </div>
   );
 }
 

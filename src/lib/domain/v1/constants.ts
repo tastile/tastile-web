@@ -3,8 +3,8 @@
  *
  * All values are fixed and must never be hard-coded elsewhere in the codebase.
  * Numeric constants only: 0 is NOT a sentinel — use `null` for "not set".
- * Source of truth: tastile-core/v1/HARNESS.md "重要な数値定数" and the
- * per-chapter "数値定数" tables in tastile-core/v1/02..14-*.md.
+ * Source of truth: tastile-core/v1/HARNESS.md and the per-chapter numeric
+ * constant tables in tastile-core/v1/02..14-*.md.
  */
 
 export const TileKind = {

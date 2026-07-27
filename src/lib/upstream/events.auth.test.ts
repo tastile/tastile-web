@@ -92,7 +92,7 @@ describe("events upstream authentication", () => {
         placement_id: "placement-label",
         tile_id: "tile-label",
         role: 1,
-        content: { title: "2学期" },
+        content: { title: "Term 2" },
         visual: { color: "#DB2777", icon: "calendar" },
         span: { start: "2026-06-09T15:00:00Z", end: "2026-08-10T15:00:00Z" },
         resolution: { state: 0 },
@@ -103,7 +103,7 @@ describe("events upstream authentication", () => {
     const body = (await response.json()) as { occurrences: Array<{ allDay: boolean; title: string }> };
 
     expect(body.occurrences).toHaveLength(1);
-    expect(body.occurrences[0]).toMatchObject({ title: "2学期", allDay: true });
+    expect(body.occurrences[0]).toMatchObject({ title: "Term 2", allDay: true });
   });
 
   it("keeps timed Core LABEL annotations in the hour grid", async () => {
@@ -114,7 +114,7 @@ describe("events upstream authentication", () => {
         placement_id: "placement-break",
         tile_id: "tile-break",
         role: 1,
-        content: { title: "休憩（5分）" },
+        content: { title: "Break (5 min)" },
         span: { start: "2026-07-15T12:15:00Z", end: "2026-07-15T12:20:00Z" },
       }])),
     );
@@ -122,7 +122,7 @@ describe("events upstream authentication", () => {
     const response = await upstreamListTimeline({ start: "2026-07-15", end: "2026-07-16" });
     const body = (await response.json()) as { occurrences: Array<{ allDay: boolean; title: string }> };
 
-    expect(body.occurrences[0]).toMatchObject({ title: "休憩（5分）", allDay: false });
+    expect(body.occurrences[0]).toMatchObject({ title: "Break (5 min)", allDay: false });
   });
 
   it("forwards only the Cognito-verified sub in bridge headers", async () => {
