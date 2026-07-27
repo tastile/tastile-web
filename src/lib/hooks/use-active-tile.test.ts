@@ -109,7 +109,7 @@ describe("useActiveTile", () => {
     resolveA(ok(snapshotA));
 
     await waitFor(() => {
-      expect(result.current.snapshot?.main_tile.id).toBe("tile-b");
+      expect(result.current.snapshot?.main_tile?.id).toBe("tile-b");
     });
   });
 
@@ -124,7 +124,7 @@ describe("useActiveTile", () => {
 
     await waitFor(() => expect(callMock).toHaveBeenCalledTimes(2));
     await waitFor(() => {
-      expect(result.current.snapshot?.main_tile.id).toBe("tile-b");
+      expect(result.current.snapshot?.main_tile?.id).toBe("tile-b");
     });
   });
 

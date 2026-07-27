@@ -29,7 +29,7 @@ export function useTrackVisit(path: string): void {
     key: STORAGE_KEY,
     defaultValue: path,
     getInitialValueInEffect: true,
-    deserialize: (raw) => raw,
+    deserialize: (raw) => raw ?? path,
     serialize: (value) => value,
   });
 

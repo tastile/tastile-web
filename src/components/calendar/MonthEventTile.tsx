@@ -48,7 +48,7 @@ function MonthEventTileImpl({ event, date, onEditEvent }: MonthEventTileProps) {
             }
           : undefined
       }
-      className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 cursor-pointer ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
+      className={`block w-full truncate px-1.5 py-0.5 text-left text-[10px] hover:brightness-95 ${isStart ? "rounded-l-sm" : "rounded-l-none"} ${isEnd ? "rounded-r-sm" : "rounded-r-none"}`}
       style={{
         backgroundColor: tile.backgroundColor,
         color: tile.color,

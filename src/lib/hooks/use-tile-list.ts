@@ -33,5 +33,5 @@ export function useTileList(args: UseTileListArgs = {}) {
     },
   });
   useEffect(() => { const refresh = () => { void queryClient.invalidateQueries({ queryKey: queryKeys.tiles }); }; window.addEventListener("tastile:tiles-changed", refresh); return () => window.removeEventListener("tastile:tiles-changed", refresh); }, [queryClient]);
-  return { tiles: query.data?.tiles ?? [], nextActionableTileId: query.data?.next_actionable_tile_id ?? null, nextActionableStartAt: query.data?.next_actionable_start_at ?? null, loading: query.isPending, error: query.error as Error | null, refresh: async () => { await queryClient.invalidateQueries({ queryKey: query.queryKey }); } };
+  return { tiles: query.data?.tiles ?? [], nextActionableTileId: query.data?.next_actionable_tile_id ?? null, nextActionableStartAt: query.data?.next_actionable_start_at ?? null, loading: query.isPending, error: query.error as Error | null, refresh: async () => { await queryClient.invalidateQueries({ queryKey: queryKeys.tiles }); } };
 }

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { profileQueryOptions, safeSessionQueryOptions } from "./Header";
+import { profileQueryOptions, safeSessionQueryOptions } from "@/lib/query/auth-query-options";
 
 describe("Header query options", () => {
   it("uses stable, distinct keys for session and profile metadata", () => {
     expect(safeSessionQueryOptions.queryKey).toEqual(["auth", "safe-session"]);
-    expect(profileQueryOptions.queryKey).toEqual(["account", "profile"]);
+    expect(profileQueryOptions.queryKey).toEqual(["auth", "profile"]);
   });
 
   it("does not retry failed best-effort metadata requests", () => {
