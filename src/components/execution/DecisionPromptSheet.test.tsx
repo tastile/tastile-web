@@ -22,6 +22,7 @@ vi.mock("@/lib/api/v1/submit", () => ({
 }));
 
 import { DecisionPromptSheet } from "./DecisionPromptSheet";
+import { ApiErrorKind } from "@/lib/domain/v1/constants";
 import type { SessionView } from "@/lib/api/v1/sessions";
 
 const sessionA: SessionView = {
@@ -128,5 +129,77 @@ describe("DecisionPromptSheet", () => {
       ),
     );
     expect(await screen.findByTestId("decision-empty")).not.toBeNull();
+  });
+
+  it("on NOT_FOUND, refetches and clears the active form without showing an error", async () => {
+    listMock
+      .mockResolvedValueOnce({ ok: true, data: [sessionA], status: 200 })
+      .mockResolvedValueOnce({ ok: true, data: [], status: 200 });
+    submitMock.mockResolvedValueOnce({
+      ok: false,
+      error: {
+        kind: ApiErrorKind.NOT_FOUND,
+        message: "session gone",
+        currentRevision: null,
+        violations: [],
+      },
+      status: 410,
+    });
+
+    withQueryClient(<DecisionPromptSheet />);
+
+    const card = await screen.findByTestId("decision-session-sess-a");
+    fireEvent.click(card);
+    await screen.findByTestId("interaction-node-when");
+    fireEvent.click(
+      screen.getByTestId(
+        `interaction-option-${sessionA.interactionTree.id}-mon`,
+      ),
+    );
+    fireEvent.click(
+      screen.getByTestId(`interaction-submit-${sessionA.interactionTree.id}`),
+    );
+
+    expect(await screen.findByTestId("decision-empty")).not.toBeNull();
+    expect(screen.queryByTestId("decision-feedback-error")).toBeNull();
+  });
+
+  it("on STALE_REVISION, refetches the list and re-prompts with the updated form", async () => {
+    const stale = {
+      ...sessionA,
+      baseRevision: 10,
+    };
+    listMock
+      .mockResolvedValueOnce({ ok: true, data: [sessionA], status: 200 })
+      .mockResolvedValueOnce({ ok: true, data: [stale], status: 200 });
+    submitMock.mockResolvedValueOnce({
+      ok: false,
+      error: {
+        kind: ApiErrorKind.STALE_REVISION,
+        message: "stale",
+        currentRevision: 10,
+        violations: [],
+      },
+      status: 409,
+    });
+
+    withQueryClient(<DecisionPromptSheet />);
+
+    const card = await screen.findByTestId("decision-session-sess-a");
+    fireEvent.click(card);
+    await screen.findByTestId("interaction-node-when");
+    fireEvent.click(
+      screen.getByTestId(
+        `interaction-option-${sessionA.interactionTree.id}-mon`,
+      ),
+    );
+    fireEvent.click(
+      screen.getByTestId(`interaction-submit-${sessionA.interactionTree.id}`),
+    );
+
+    const alert = await screen.findByTestId("decision-feedback-error");
+    expect(alert.textContent).toMatch(/updated/i);
+    const form = await screen.findByTestId("decision-active-form");
+    expect(form.getAttribute("data-base-revision")).toBe("10");
   });
 });

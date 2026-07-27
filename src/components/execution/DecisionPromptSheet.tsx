@@ -24,6 +24,7 @@
 import { Alert, Button, Loader, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 import { InteractionTreeForm } from "@/components/decision/InteractionTreeForm";
+import { ApiErrorKind } from "@/lib/domain/v1/constants";
 import { submitFeedback } from "@/lib/api/v1/sessions";
 import { makeClient } from "@/lib/api/v1/submit";
 import { usePendingSessions } from "@/lib/hooks/use-pending-sessions";
@@ -38,7 +39,7 @@ export function DecisionPromptSheet() {
 
   if (active) {
     return (
-      <Stack gap="md" data-testid="decision-active-form">
+      <Stack gap="md" data-testid="decision-active-form" data-base-revision={active.baseRevision}>
         <Text fw={500} size="lg">
           {active.prompt.title}
         </Text>
@@ -63,12 +64,18 @@ export function DecisionPromptSheet() {
             });
             setBusy(false);
             if (!result.ok) {
-              if (result.error.kind === 5) {
-                // CONFLICT — baseRevision was stale. Refetch and drop back to the
-                // list; never auto-overwrite.
+              const kind = result.error.kind;
+              if (
+                kind === ApiErrorKind.CONFLICT ||
+                kind === ApiErrorKind.STALE_REVISION
+              ) {
+                await refetch();
+                setError("This decision was updated. Please review and resubmit.");
+                return;
+              }
+              if (kind === ApiErrorKind.NOT_FOUND) {
                 await refetch();
                 setActiveId(null);
-                setError("This decision was updated. Please review and resubmit.");
                 return;
               }
               setError(result.error.message);

@@ -76,9 +76,11 @@ export async function submitFeedback(
       const kind =
         res.status === 409
           ? ApiErrorKind.CONFLICT
-          : res.status === 404
+          : res.status === 410
             ? ApiErrorKind.NOT_FOUND
-            : ApiErrorKind.RETRYABLE;
+            : res.status === 404
+              ? ApiErrorKind.NOT_FOUND
+              : ApiErrorKind.RETRYABLE;
       return {
         ok: false,
         error: {
