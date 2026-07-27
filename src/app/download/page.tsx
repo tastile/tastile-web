@@ -13,6 +13,17 @@ export const metadata = {
   description: "Download Tastile for Windows. Start controlling your execution today.",
 };
 
+type MarketingDownload = {
+  title: string;
+  subtitle: string;
+  downloadButton: string;
+  version: string;
+  systemRequirements: string;
+  requirements: string[];
+  webAlternative: string;
+  openWebApp: string;
+};
+
 export default async function DownloadPage({
   searchParams,
 }: {
@@ -20,7 +31,9 @@ export default async function DownloadPage({
 }) {
   const params = await searchParams;
   const lang: Locale = params.lang === "en" ? "en" : "ja";
-  const t = translations[lang].marketing.download;
+  const t = (translations[lang] as {
+    marketing: { download: MarketingDownload };
+  }).marketing.download;
   const release = await fetchDesktopReleaseInfo();
   const version = release?.latestVersion ?? "latest";
 
