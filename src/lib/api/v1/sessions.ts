@@ -31,17 +31,8 @@ export interface SessionView {
   baseRevision: number;
 }
 
-export async function listPendingSessions(
-  client: ApiClient,
-): Promise<Result<SessionView[]>> {
+export async function listPendingSessions(client: ApiClient): Promise<Result<SessionView[]>> {
   return getRead<SessionView[]>(client, "/v1/sessions?status=open");
-}
-
-export async function getSession(
-  client: ApiClient,
-  id: string,
-): Promise<Result<SessionView>> {
-  return getRead<SessionView>(client, `/v1/sessions/${encodeURIComponent(id)}`);
 }
 
 export interface FeedbackPayload {

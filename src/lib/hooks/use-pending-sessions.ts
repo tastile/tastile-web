@@ -7,8 +7,8 @@
  */
 
 import { useQuery } from "@tanstack/react-query";
-import { makeClient } from "@/lib/api/v1/submit";
 import { listPendingSessions, type SessionView } from "@/lib/api/v1/sessions";
+import { makeClient } from "@/lib/api/v1/submit";
 
 export function usePendingSessions() {
   return useQuery<SessionView[]>({
@@ -17,9 +17,7 @@ export function usePendingSessions() {
       const client = makeClient();
       const result = await listPendingSessions(client);
       if (!result.ok) {
-        throw new Error(
-          `listPendingSessions failed: ${result.error.kind} ${result.error.message}`,
-        );
+        throw new Error(`listPendingSessions failed: ${result.error.kind} ${result.error.message}`);
       }
       return result.data;
     },

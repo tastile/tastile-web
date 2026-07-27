@@ -10,7 +10,6 @@ const submitMock = vi.fn();
 vi.mock("@/lib/api/v1/sessions", () => ({
   listPendingSessions: (...args: unknown[]) => listMock(...args),
   submitFeedback: (...args: unknown[]) => submitMock(...args),
-  getSession: vi.fn(),
 }));
 
 vi.mock("@/lib/api/v1/submit", () => ({

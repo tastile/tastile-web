@@ -24,9 +24,9 @@
 import { Alert, Button, Loader, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 import { InteractionTreeForm } from "@/components/decision/InteractionTreeForm";
-import { ApiErrorKind } from "@/lib/domain/v1/constants";
 import { submitFeedback } from "@/lib/api/v1/sessions";
 import { makeClient } from "@/lib/api/v1/submit";
+import { ApiErrorKind } from "@/lib/domain/v1/constants";
 import { usePendingSessions } from "@/lib/hooks/use-pending-sessions";
 
 export function DecisionPromptSheet() {
@@ -65,10 +65,7 @@ export function DecisionPromptSheet() {
             setBusy(false);
             if (!result.ok) {
               const kind = result.error.kind;
-              if (
-                kind === ApiErrorKind.CONFLICT ||
-                kind === ApiErrorKind.STALE_REVISION
-              ) {
+              if (kind === ApiErrorKind.CONFLICT || kind === ApiErrorKind.STALE_REVISION) {
                 await refetch();
                 setError("This decision was updated. Please review and resubmit.");
                 return;
