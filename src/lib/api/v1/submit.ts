@@ -17,9 +17,8 @@
  * ladder today; full EXECUTION editor lives outside Phase A scope.
  */
 
-import { ConditionKind } from "@/lib/domain/v1/constants";
 import { type ApiError, uuidv7 } from "@/lib/domain/v1/envelope";
-import { useQuickCreateStore, tasksForSubmission } from "@/lib/stores/quick-create-store";
+import { tasksForSubmission, useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import {
   type BuiltEnvelope,
   buildCreateTileCommand,
@@ -71,15 +70,7 @@ export function makeClient(): ApiClient {
 function storeToSnapshot(): QuickCreateSnapshot {
   const state = useQuickCreateStore.getState();
 
-  // Plan.completion.root — placeholder ALL node. The Condition tree editor
-  // (Phase B) replaces this with a real AST. Today the server accepts the
-  // empty-all shape because the v1 plan schema treats `children: []` as a
-  // leaf-only condition set.
-  const completionRoot = {
-    kind: ConditionKind.ALL,
-    children: [],
-    term: null,
-  };
+  // Plan.completion.root — read directly from the store; the Condition tree editor owns this value.
 
   return {
     identity: {
@@ -95,7 +86,7 @@ function storeToSnapshot(): QuickCreateSnapshot {
       role: state.plan.role,
       references: state.plan.references,
       completion: {
-        root: completionRoot,
+        root: state.plan.completion.root,
         timeRequirements: state.plan.completion.timeRequirements,
         tasks: tasksForSubmission(state.plan.completion.tasks),
       },
