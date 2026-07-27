@@ -8,6 +8,7 @@ import { AccountMenu } from "@/app/app/account-menu";
 import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
 import { pickDisplayLabel } from "@/lib/auth/display-label";
+import { profileQueryOptions, safeSessionQueryOptions } from "@/lib/query/auth-query-options";
 import type { ExecutionSyncStatus } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
 
@@ -112,68 +113,3 @@ export function Header({ executionState }: HeaderProps) {
   );
 }
 
-/**
- * Minimal safe session shape: `{sub, exp, owner_id}`. Mirrors the public
- * response of `/api/auth/session` and intentionally excludes any Cognito
- * token material.
- */
-interface SafeSession {
-  sub: string;
-  exp: number;
-  owner_id: string | null;
-}
-
-async function fetchSafeSession(): Promise<SafeSession | null> {
-  try {
-    const res = await fetch("/api/auth/session", { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as Partial<SafeSession>;
-    if (typeof data.sub !== "string") return null;
-    return {
-      sub: data.sub,
-      exp: typeof data.exp === "number" ? data.exp : 0,
-      owner_id: typeof data.owner_id === "string" ? data.owner_id : null,
-    };
-  } catch {
-    return null;
-  }
-}
-
-interface ProfileMe {
-  email: string | null;
-  displayName: string | null;
-  avatarUrl: string | null;
-}
-
-export async function fetchProfile(): Promise<ProfileMe | null> {
-  try {
-    const res = await fetch("/api/me", { cache: "no-store" });
-    if (!res.ok) return null;
-    const data = (await res.json()) as {
-      email?: string | null;
-      display_name?: string | null;
-      avatar_url?: string | null;
-    };
-    return {
-      email: typeof data.email === "string" ? data.email : null,
-      displayName: typeof data.display_name === "string" ? data.display_name : null,
-      avatarUrl: typeof data.avatar_url === "string" ? data.avatar_url : null,
-    };
-  } catch {
-    return null;
-  }
-}
-
-export const safeSessionQueryOptions = {
-  queryKey: ["auth", "safe-session"] as const,
-  queryFn: fetchSafeSession,
-  retry: false,
-  staleTime: 60_000,
-};
-
-export const profileQueryOptions = {
-  queryKey: ["account", "profile"] as const,
-  queryFn: fetchProfile,
-  retry: false,
-  staleTime: 60_000,
-};
