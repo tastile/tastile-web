@@ -1,6 +1,7 @@
 "use client";
 
 import { Alert, Button, Modal, TextInput } from "@mantine/core";
+import { useClipboard } from "@mantine/hooks";
 import { AlertCircle, Check, Copy, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -29,7 +30,7 @@ export function AccessTokenSection() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const clipboard = useClipboard({ timeout: 2000 });
   const [creating, setCreating] = useState(false);
 
   const loadTokens = useCallback(() => {
@@ -127,11 +128,12 @@ export function AccessTokenSection() {
       });
   }
 
-  async function copyToken(value: string) {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
-  }
+  const copyToken = useCallback(
+    (value: string) => {
+      clipboard.copy(value);
+    },
+    [clipboard],
+  );
 
   return (
     <div className="space-y-5">
@@ -153,8 +155,8 @@ export function AccessTokenSection() {
               onClick={() => void copyToken(createdToken.access_token)}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
             >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? t("account.tokens.copied") : t("account.tokens.copy")}
+              {clipboard.copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {clipboard.copied ? t("account.tokens.copied") : t("account.tokens.copy")}
             </Button>
           </div>
           <code className="block break-all rounded-md border border-border bg-surface-0 p-3 font-mono text-xs text-foreground">
