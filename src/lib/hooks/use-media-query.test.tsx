@@ -3,30 +3,33 @@ import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useIsDesktop, useMediaQuery } from "./use-media-query";
 
-type MediaListener = (event: MediaQueryListEvent) => void;
+type ChangeListener = (this: MediaQueryList, ev: MediaQueryListEvent) => unknown;
 
 interface MockHandle {
   stub: MediaQueryList;
-  listeners: MediaListener[];
+  listeners: ChangeListener[];
 }
 
 function installMockMatchMedia(initial = false): MockHandle {
-  const listeners: MediaListener[] = [];
+  const listeners: ChangeListener[] = [];
   const stub: MediaQueryList = {
-    matches: initial,
+    get matches() {
+      return stubState.matches;
+    },
     media: "",
     onchange: null,
     addListener: () => {},
     removeListener: () => {},
-    addEventListener: (_type: string, cb: MediaListener) => {
-      listeners.push(cb);
+    addEventListener: (_type: string, cb: EventListener) => {
+      listeners.push(cb as unknown as ChangeListener);
     },
-    removeEventListener: (_type: string, cb: MediaListener) => {
-      const index = listeners.indexOf(cb);
+    removeEventListener: (_type: string, cb: EventListener) => {
+      const index = listeners.indexOf(cb as unknown as ChangeListener);
       if (index >= 0) listeners.splice(index, 1);
     },
     dispatchEvent: () => false,
   };
+  const stubState: { matches: boolean } = { matches: initial };
 
   Object.defineProperty(window, "matchMedia", {
     writable: true,
@@ -46,10 +49,10 @@ function DesktopProbe() {
   return <span data-testid="value">{String(isDesktop)}</span>;
 }
 
-function fireChange(listeners: MediaListener[], matches: boolean) {
+function fireChange(listeners: ChangeListener[], matches: boolean) {
   act(() => {
     for (const listener of listeners) {
-      listener({ matches } as MediaQueryListEvent);
+      listener.call({} as MediaQueryList, { matches } as MediaQueryListEvent);
     }
   });
 }
@@ -65,8 +68,7 @@ describe("useMediaQuery", () => {
   });
 
   it("returns the initial value from matchMedia", () => {
-    const { stub } = installMockMatchMedia(true);
-    stub.matches = true;
+    installMockMatchMedia(true);
     const { getByTestId } = render(<Probe query="(min-width: 1024px)" />);
     expect(getByTestId("value").textContent).toBe("true");
   });
