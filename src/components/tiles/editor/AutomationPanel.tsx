@@ -20,7 +20,7 @@
  * read-only defaults.
  */
 
-import { Button, Chip, NumberInput, SegmentedControl, Switch, Text } from "@mantine/core";
+import { Chip, NumberInput, SegmentedControl, Switch, Text } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
 
@@ -209,7 +209,9 @@ export function AutomationPanel({ recurring, setField, locale, t }: AutomationPa
           <WeekdayRow
             mask={recurring.weekdayMask}
             disabled={false}
-            onToggle={(bit) => setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))}
+            onToggle={(bit) =>
+              setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))
+            }
             locale={locale}
           />
         </div>
@@ -230,7 +232,8 @@ export function AutomationPanel({ recurring, setField, locale, t }: AutomationPa
       {conditionEnabled && (
         <div className="rounded-lg border border-border bg-surface-0 p-3">
           <Text size="xs" c="var(--foreground-muted)">
-            {t("quickCreate.conditionModeHint") ?? "Activates when the condition is met. Configure conditions in the \"Condition combinations\" section."}
+            {t("quickCreate.conditionModeHint") ??
+              'Activates when the condition is met. Configure conditions in the "Condition combinations" section.'}
           </Text>
         </div>
       )}
@@ -245,3 +248,10 @@ export function AutomationPanel({ recurring, setField, locale, t }: AutomationPa
     </FormPanel>
   );
 }
+
+/**
+ * Back-compat: existing consumers that imported `SourceGenerationPanel` from
+ * `AutomationPanel.tsx` continue to work. New code should import directly
+ * from `./SourceGenerationPanel`.
+ */
+export { SourceGenerationPanel } from "./SourceGenerationPanel";

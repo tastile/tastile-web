@@ -32,77 +32,62 @@ import {
   NumberInput,
   Paper,
   SegmentedControl,
-  SimpleGrid,
   Select,
+  SimpleGrid,
   Stack,
   TagsInput,
   Text,
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
-import { TimeInput } from "@mantine/dates";
 import {
-  Bell,
   Calendar,
   Check,
   CheckCircle2,
-  ChevronDown,
   ChevronRight,
-  ChevronUp,
   Clock,
-  Coffee,
-  FileText,
-  Flame,
   FolderOpen,
-  Heart,
-  Inbox,
   Info,
   Layers,
   Link2,
   ListChecks,
   MessageSquare,
-  Palette,
   Pencil,
   Play,
   Plus,
   Repeat,
-  Settings2,
   SlidersHorizontal,
-  Star,
   Tag,
   Trash2,
   Type,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AutomationPanel } from "@/components/tiles/editor/AutomationPanel";
-import { ConditionEditor, defaultTerm } from "@/components/tiles/editor/ConditionEditor";
+import { defaultTerm } from "@/components/tiles/editor/ConditionEditor";
+import { ConditionPanel } from "@/components/tiles/editor/ConditionPanel";
 import { SEGMENT_STYLES } from "@/components/tiles/editor/panel-styles";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
+import { SourceGenerationPanel } from "@/components/tiles/editor/SourceGenerationPanel";
 import { SubPanelHeader } from "@/components/tiles/editor/SubPanelHeader";
-import { FormPanel, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
+import { FormPanel, FormRow, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
 import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
-import { closePlacementCommand } from "@/lib/api/v1/tile-commands";
-import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
+import type { ConditionNode } from "@/lib/domain/v1/condition";
 import {
   ConditionKind,
-  HolidayKind,
   PlanRole,
-  TaskOrderRelation,
   type PlanRoleValue,
+  TaskOrderRelation,
   TileKind,
-  type TileKindValue,
 } from "@/lib/domain/v1/constants";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { Window } from "@/lib/domain/v1/window";
 import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
-import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { useProjects } from "@/lib/hooks/use-projects";
 import { useTileList } from "@/lib/hooks/use-tile-list";
-import { useTranslation } from "@/lib/i18n/use-translation";
 import { translations } from "@/lib/i18n/translations";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Locale } from "@/lib/stores/locale-store";
 import {
   hasTaskOrderCycle,
@@ -133,13 +118,55 @@ const REPEAT_MODE_LABEL_KEY: Record<RepeatChoice, string> = {
 };
 
 const INTENT_ITEMS = [
-  { key: "time", icon: Calendar, panel: "time" as const, titleKey: "quickCreate.intentNarrowTime", subKey: "quickCreate.intentNarrowTimeSub" },
-  { key: "references", icon: Link2, panel: "references" as const, titleKey: "quickCreate.intentReferenceTile", subKey: "quickCreate.intentReferenceTileSub" },
-  { key: "recurring", icon: Layers, panel: "recurring" as const, titleKey: "quickCreate.intentNestStructure", subKey: "quickCreate.intentNestStructureSub" },
-  { key: "placement", icon: SlidersHorizontal, panel: "meta" as const, titleKey: "quickCreate.intentAdjustPlacement", subKey: "quickCreate.intentAdjustPlacementSub" },
-  { key: "completion", icon: ListChecks, panel: "completion" as const, titleKey: "quickCreate.intentCombineConditions", subKey: "quickCreate.intentCombineConditionsSub" },
-  { key: "addCompletion", icon: CheckCircle2, panel: "completion" as const, titleKey: "quickCreate.intentAddCompletion", subKey: "quickCreate.intentAddCompletionSub" },
-  { key: "onSuccess", icon: Play, panel: "meta" as const, titleKey: "quickCreate.intentDefineOnSuccess", subKey: "quickCreate.intentDefineOnSuccessSub" },
+  {
+    key: "time",
+    icon: Calendar,
+    panel: "time" as const,
+    titleKey: "quickCreate.intentNarrowTime",
+    subKey: "quickCreate.intentNarrowTimeSub",
+  },
+  {
+    key: "references",
+    icon: Link2,
+    panel: "references" as const,
+    titleKey: "quickCreate.intentReferenceTile",
+    subKey: "quickCreate.intentReferenceTileSub",
+  },
+  {
+    key: "recurring",
+    icon: Layers,
+    panel: "recurring" as const,
+    titleKey: "quickCreate.intentNestStructure",
+    subKey: "quickCreate.intentNestStructureSub",
+  },
+  {
+    key: "placement",
+    icon: SlidersHorizontal,
+    panel: "meta" as const,
+    titleKey: "quickCreate.intentAdjustPlacement",
+    subKey: "quickCreate.intentAdjustPlacementSub",
+  },
+  {
+    key: "completion",
+    icon: ListChecks,
+    panel: "completion" as const,
+    titleKey: "quickCreate.intentCombineConditions",
+    subKey: "quickCreate.intentCombineConditionsSub",
+  },
+  {
+    key: "addCompletion",
+    icon: CheckCircle2,
+    panel: "completion" as const,
+    titleKey: "quickCreate.intentAddCompletion",
+    subKey: "quickCreate.intentAddCompletionSub",
+  },
+  {
+    key: "onSuccess",
+    icon: Play,
+    panel: "meta" as const,
+    titleKey: "quickCreate.intentDefineOnSuccess",
+    subKey: "quickCreate.intentDefineOnSuccessSub",
+  },
 ] as const;
 
 function _localDateTimeToIso(value: string): string | null {
@@ -241,7 +268,7 @@ export function QuickTileCreate() {
   const removeTask = useQuickCreateStore((s) => s.removeTask);
   const setTaskField = useQuickCreateStore((s) => s.setTaskField);
   const mode = useQuickCreateStore((s) => s.mode);
-  const editingId = useQuickCreateStore((s) => s.editingId);
+  const _editingId = useQuickCreateStore((s) => s.editingId);
   const loadError = useQuickCreateStore((s) => s.loadError);
   const submitBlocked = useQuickCreateStore((s) => s.submitBlocked);
 
@@ -314,8 +341,14 @@ export function QuickTileCreate() {
         clearTimeout(closeTimerRef.current);
         closeTimerRef.current = null;
       }
-      setMounted(true);
-      setIsClosing(false);
+      // Defer the open transition to a microtask so the state changes don't
+      // run synchronously inside the effect body.
+      const reset = () => {
+        setMounted(true);
+        setIsClosing(false);
+      };
+      if (typeof queueMicrotask === "function") queueMicrotask(reset);
+      else Promise.resolve().then(reset);
     } else if (mounted) {
       setIsClosing(true);
       closeTimerRef.current = setTimeout(() => {
@@ -439,49 +472,49 @@ export function QuickTileCreate() {
 
     const client = makeClient();
     setSubmitting(true);
-    try {
-      const result = await submitCreateTile({ client });
-      if (!result.ok) {
-        throw new Error(
-          `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
-        );
-      }
-
-      reset();
-      setActivePanel("base");
-      setMemoExpanded(false);
-      notifyEventsChanged();
-      close();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("quickCreate.createError"));
-    } finally {
-      setSubmitting(false);
-    }
+    await submitCreateTile({ client })
+      .then((result) => {
+        if (!result.ok) {
+          throw new Error(
+            `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
+          );
+        }
+        reset();
+        setActivePanel("base");
+        setMemoExpanded(false);
+        notifyEventsChanged();
+        close();
+      })
+      .catch((err: unknown) => {
+        setError(err instanceof Error ? err.message : t("quickCreate.createError"));
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
   }
-
 
   // --- layout classes ---
   const panelClass = isDesktop
     ? cn(
-      "fixed inset-y-0 right-0 z-[56]",
-      "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-      isClosing
-        ? "translate-x-full opacity-0"
-        : activePanel !== "base"
-          ? "-translate-x-6"
-          : "translate-x-0",
-      "[animation:slideInFromRight_0.22s_ease-out]",
-    )
+        "fixed inset-y-0 right-0 z-[56]",
+        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
+        isClosing
+          ? "translate-x-full opacity-0"
+          : activePanel !== "base"
+            ? "-translate-x-6"
+            : "translate-x-0",
+        "[animation:slideInFromRight_0.22s_ease-out]",
+      )
     : cn(
-      "fixed inset-x-0 bottom-0 z-[56]",
-      "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-      isClosing
-        ? "translate-y-full opacity-0"
-        : activePanel !== "base"
-          ? "translate-y-6"
-          : "translate-y-0",
-      "[animation:slideInFromBottom_0.22s_ease-out]",
-    );
+        "fixed inset-x-0 bottom-0 z-[56]",
+        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
+        isClosing
+          ? "translate-y-full opacity-0"
+          : activePanel !== "base"
+            ? "translate-y-6"
+            : "translate-y-0",
+        "[animation:slideInFromBottom_0.22s_ease-out]",
+      );
 
   const subPanelClass = (
     panel:
@@ -496,16 +529,16 @@ export function QuickTileCreate() {
   ) =>
     isDesktop
       ? cn(
-        "fixed inset-y-0 right-0 z-[57]",
-        "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
-        "transition-transform duration-300 ease-out",
-        activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
-      )
+          "fixed inset-y-0 right-0 z-[57]",
+          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
+          "transition-transform duration-300 ease-out",
+          activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
+        )
       : cn(
-        "fixed inset-x-0 bottom-0 z-[57]",
-        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
-        activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
-      );
+          "fixed inset-x-0 bottom-0 z-[57]",
+          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
+          activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
+        );
 
   // --- condition count ---
   const conditionCount = windows.length + recurring.frameRules.length;
@@ -787,9 +820,7 @@ export function QuickTileCreate() {
                         <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-0" />
                         <TextInput
                           value={tk.content?.title ?? ""}
-                          onChange={(e) =>
-                            setTaskField(tk.id, "content.title", e.target.value)
-                          }
+                          onChange={(e) => setTaskField(tk.id, "content.title", e.target.value)}
                           placeholder={t("quickCreate.taskUntitled")}
                           variant="unstyled"
                           size="xs"
@@ -885,7 +916,9 @@ export function QuickTileCreate() {
             <section className="pt-3">
               <hr className="border-border mb-3" />
               <div className="flex items-center justify-between mb-2">
-                <strong className="text-xs font-semibold text-foreground">{t("quickCreate.conditionHeading")}</strong>
+                <strong className="text-xs font-semibold text-foreground">
+                  {t("quickCreate.conditionHeading")}
+                </strong>
                 <span className="text-[10px] text-foreground-muted">{conditionCount}</span>
               </div>
               <div className="p-2.5" data-testid="quick-create-condition-tree">
@@ -1003,7 +1036,12 @@ export function QuickTileCreate() {
         </div>
 
         {/* ─── composer foot ─── */}
-        <Group h={62} justify="space-between" px="md" className="shrink-0 border-t border-border bg-surface-0">
+        <Group
+          h={62}
+          justify="space-between"
+          px="md"
+          className="shrink-0 border-t border-border bg-surface-0"
+        >
           <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
             <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
             <span id="validationText">{t("quickCreate.validationOk") || "Ready to create"}</span>
@@ -1060,8 +1098,12 @@ export function QuickTileCreate() {
                 >
                   <item.icon size={14} className="shrink-0 text-primary" />
                   <div className="min-w-0">
-                    <Text size="xs" fw={600}>{t(item.titleKey)}</Text>
-                    <Text size="10" c="var(--foreground-muted)">{t(item.subKey)}</Text>
+                    <Text size="xs" fw={600}>
+                      {t(item.titleKey)}
+                    </Text>
+                    <Text size="10" c="var(--foreground-muted)">
+                      {t(item.subKey)}
+                    </Text>
                   </div>
                 </UnstyledButton>
               </Paper>
@@ -1070,8 +1112,12 @@ export function QuickTileCreate() {
               <div className="flex min-h-[64px] items-center gap-2.5 px-3 py-2">
                 <Type size={14} className="shrink-0 text-foreground-muted" />
                 <div className="min-w-0">
-                  <Text size="xs" fw={600}>{t("quickCreate.intentTextCondition")}</Text>
-                  <Text size="10" c="var(--foreground-muted)">{t("quickCreate.intentTextConditionSub")}</Text>
+                  <Text size="xs" fw={600}>
+                    {t("quickCreate.intentTextCondition")}
+                  </Text>
+                  <Text size="10" c="var(--foreground-muted)">
+                    {t("quickCreate.intentTextConditionSub")}
+                  </Text>
                 </div>
               </div>
             </Paper>
@@ -1165,7 +1211,6 @@ export function QuickTileCreate() {
               />
             </div>
           )}
-
         </div>
       </section>
 
@@ -1180,7 +1225,7 @@ export function QuickTileCreate() {
           backAriaLabel={t("quickCreate.back")}
           title={t("quickCreate.repeatChip")}
         />
-        <AutomationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
+        <SourceGenerationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
       </section>
 
       {/* ─── references sub-panel ─── */}
@@ -1394,113 +1439,71 @@ export function QuickTileCreate() {
         />
         <FormPanel>
           <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
-          <div
-            className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
-            data-testid="completion-condition-box"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <strong className="text-sm font-semibold text-foreground">
-                {t("quickCreate.completionBuilderLogicLabel")}
-              </strong>
-              <Select
-                aria-label={t("quickCreate.completionBuilderLogicLabel")}
-                value={String(plan.completion.root.kind) ?? null}
-                onChange={(value) => {
-                  if (value == null) return;
-                  const nextKind = Number(value);
-                  setField("plan.completion.root", {
-                    ...plan.completion.root,
-                    kind: nextKind as never,
-                  });
-                }}
-                data-testid="completion-logic-select"
-                data={[
-                  {
-                    value: String(ConditionKind.ALL),
-                    label: t("quickCreate.completionBuilderLogicAll"),
-                  },
-                  {
-                    value: String(ConditionKind.ANY),
-                    label: t("quickCreate.completionBuilderLogicAny"),
-                  },
-                  { value: String(ConditionKind.NOT), label: t("quickCreate.completionNot") },
-                ]}
-                comboboxProps={{ withinPortal: true }}
-                allowDeselect={false}
-              />
+          <ConditionPanel
+            root={plan.completion.root}
+            setField={setField}
+            t={t}
+            tileOptions={tilePickerData}
+          />
+          {plan.completion.timeRequirements.length > 0 && (
+            <div
+              className="flex flex-col gap-1.5 border-t border-border/40 pt-2"
+              data-testid="completion-time-requirement-lines"
+            >
+              {plan.completion.timeRequirements.map((tr, i) => (
+                <div
+                  key={tr.id}
+                  className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm"
+                  data-testid={`completion-time-line-${i}`}
+                >
+                  <Clock size={16} className="shrink-0 text-foreground-muted" aria-hidden="true" />
+                  <span className="flex-1 text-foreground">
+                    {tr.required.minMs !== null
+                      ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}`
+                      : t("quickCreate.duration")}
+                  </span>
+                  <NumberInput
+                    min={5}
+                    step={5}
+                    aria-label={t("quickCreate.minutesUnit")}
+                    value={
+                      tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)
+                    }
+                    onChange={(value) => {
+                      const next = plan.completion.timeRequirements.slice();
+                      const v = value;
+                      next[i] = {
+                        ...tr,
+                        required: {
+                          ...tr.required,
+                          minMs: v === "" || v === null ? null : Number(v) * 60000,
+                        },
+                      };
+                      setField("plan.completion.timeRequirements", next);
+                    }}
+                    className="w-16"
+                    size="xs"
+                  />
+                  <span className="text-xs text-foreground-muted">
+                    {t("quickCreate.minutesUnit")}
+                  </span>
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="subtle"
+                    leftSection={<Trash2 size={12} aria-hidden="true" />}
+                    onClick={() => {
+                      const next = plan.completion.timeRequirements.slice();
+                      next.splice(i, 1);
+                      setField("plan.completion.timeRequirements", next);
+                    }}
+                    aria-label={t("quickCreate.removeItem")}
+                    className="text-foreground-muted hover:text-danger"
+                  />
+                </div>
+              ))}
             </div>
-            <ConditionEditor
-              node={plan.completion.root}
-              onChange={(next) => setField("plan.completion.root", next)}
-              t={t}
-              tileOptions={tilePickerData}
-            />
-            {plan.completion.timeRequirements.length > 0 && (
-              <div
-                className="flex flex-col gap-1.5 border-t border-border/40 pt-2"
-                data-testid="completion-time-requirement-lines"
-              >
-                {plan.completion.timeRequirements.map((tr, i) => (
-                  <div
-                    key={tr.id}
-                    className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm"
-                    data-testid={`completion-time-line-${i}`}
-                  >
-                    <Clock
-                      size={16}
-                      className="shrink-0 text-foreground-muted"
-                      aria-hidden="true"
-                    />
-                    <span className="flex-1 text-foreground">
-                      {tr.required.minMs !== null
-                        ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}`
-                        : t("quickCreate.duration")}
-                    </span>
-                    <NumberInput
-                      min={5}
-                      step={5}
-                      aria-label={t("quickCreate.minutesUnit")}
-                      value={
-                        tr.required.minMs === null
-                          ? ""
-                          : Math.round((tr.required.minMs ?? 0) / 60000)
-                      }
-                      onChange={(value) => {
-                        const next = plan.completion.timeRequirements.slice();
-                        const v = value;
-                        next[i] = {
-                          ...tr,
-                          required: {
-                            ...tr.required,
-                            minMs: v === "" || v === null ? null : Number(v) * 60000,
-                          },
-                        };
-                        setField("plan.completion.timeRequirements", next);
-                      }}
-                      className="w-16"
-                      size="xs"
-                    />
-                    <span className="text-xs text-foreground-muted">
-                      {t("quickCreate.minutesUnit")}
-                    </span>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="subtle"
-                      leftSection={<Trash2 size={12} aria-hidden="true" />}
-                      onClick={() => {
-                        const next = plan.completion.timeRequirements.slice();
-                        next.splice(i, 1);
-                        setField("plan.completion.timeRequirements", next);
-                      }}
-                      aria-label={t("quickCreate.removeItem")}
-                      className="text-foreground-muted hover:text-danger"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
               {t("quickCreate.conditionAddTitle")}
@@ -1709,9 +1712,7 @@ export function QuickTileCreate() {
             const task = plan.completion.tasks.find((tk) => tk.id === editingTaskId);
             if (!task || !editingTaskId) {
               return (
-                <p className="text-xs text-foreground-muted">
-                  {t("quickCreate.taskNoTasksHint")}
-                </p>
+                <p className="text-xs text-foreground-muted">{t("quickCreate.taskNoTasksHint")}</p>
               );
             }
             const otherTasks = plan.completion.tasks.filter((tk) => tk.id !== task.id);
@@ -1724,9 +1725,7 @@ export function QuickTileCreate() {
                   </div>
                   <Textarea
                     value={task.content.note ?? ""}
-                    onChange={(e) =>
-                      setTaskField(task.id, "content.note", e.target.value || null)
-                    }
+                    onChange={(e) => setTaskField(task.id, "content.note", e.target.value || null)}
                     placeholder={t("quickCreate.taskNotePlaceholder")}
                     aria-label={t("quickCreate.taskNoteLabel")}
                     rows={4}
@@ -1748,7 +1747,8 @@ export function QuickTileCreate() {
                         const targetTask = plan.completion.tasks.find(
                           (tk) => tk.id === rule.targetTaskId,
                         );
-                        const targetTitle = targetTask?.content.title || t("quickCreate.taskUntitled");
+                        const targetTitle =
+                          targetTask?.content.title || t("quickCreate.taskUntitled");
                         return (
                           <div
                             key={rule.id}
@@ -1801,7 +1801,9 @@ export function QuickTileCreate() {
                                 const next = task.order.slice();
                                 next[i] = {
                                   ...rule,
-                                  relation: Number(value) as typeof TaskOrderRelation.BEFORE | typeof TaskOrderRelation.AFTER,
+                                  relation: Number(value) as
+                                    | typeof TaskOrderRelation.BEFORE
+                                    | typeof TaskOrderRelation.AFTER,
                                 };
                                 setTaskField(task.id, "order", next);
                               }}
@@ -1989,9 +1991,7 @@ function V4EssentialRow({
         <span className="w-[58px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
           {label}
         </span>
-        <div className="min-w-0 flex-1 text-left">
-          {chip}
-        </div>
+        <div className="min-w-0 flex-1 text-left">{chip}</div>
         <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
       </UnstyledButton>
       {canClear ? (
@@ -2028,5 +2028,3 @@ function V4EssentialRow({
     </div>
   );
 }
-
-
