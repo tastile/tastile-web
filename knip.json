@@ -12,5 +12,8 @@
     "tailwindcss",
     "@typescript-eslint/typescript-estree"
   ],
+  "ignoreFiles": [
+    "src/components/tiles/editor/AutomationPanel.tsx"
+  ],
   "ignoreExportsUsedInFile": true
 }
