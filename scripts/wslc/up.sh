@@ -43,11 +43,13 @@ fi
 # NOTE: NEXT_PUBLIC_* values are baked into the SSR bundle at image build
 # time (Next.js standard). They come from .env.dev at build; passing them
 # here at runtime has no effect on the rendered values.
-: "${CLOUD_API_BASE:=http://tastile-v1-api:31400}"
+: "${CLOUD_API_BASE:=http://tastile-api:31400}"
 : "${TASTILE_RUST_API_URL:=$CLOUD_API_BASE}"
 : "${TASTILE_WEB_BRIDGE_SECRET:=wslc-dev-bridge-secret}"
 : "${TASTILE_USE_RUST_CORE:=1}"
 : "${E2E_BYPASS_AUTH:=1}"
+: "${NEXT_PUBLIC_APEX_HOST:=localhost}"
+: "${NEXT_PUBLIC_APP_HOST:=localhost}"
 
 echo "== web =="
 wslc run -d --name "$CONTAINER" --network "$NETWORK" \
@@ -57,6 +59,8 @@ wslc run -d --name "$CONTAINER" --network "$NETWORK" \
   -e "TASTILE_WEB_BRIDGE_SECRET=$TASTILE_WEB_BRIDGE_SECRET" \
   -e "TASTILE_USE_RUST_CORE=$TASTILE_USE_RUST_CORE" \
   -e "E2E_BYPASS_AUTH=$E2E_BYPASS_AUTH" \
+  -e "NEXT_PUBLIC_APEX_HOST=$NEXT_PUBLIC_APEX_HOST" \
+  -e "NEXT_PUBLIC_APP_HOST=$NEXT_PUBLIC_APP_HOST" \
   "$IMAGE"
 
 sleep 2
