@@ -53,7 +53,7 @@ jobs:
           NEXT_PUBLIC_COGNITO_ISSUER: ${{ secrets.NEXT_PUBLIC_COGNITO_ISSUER }}
           NEXT_PUBLIC_COGNITO_JWKS_URL: ${{ secrets.NEXT_PUBLIC_COGNITO_JWKS_URL }}
         run: |
-          cat > .env.product <<ENVEOF
+          cat > .env.production <<ENVEOF
           NEXT_PUBLIC_APP_URL=https://app.tastile.app
           NEXT_PUBLIC_APEX_HOST=tastile.app
           NEXT_PUBLIC_APP_HOST=app.tastile.app
