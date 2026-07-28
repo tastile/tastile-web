@@ -11,6 +11,7 @@ export const COOKIE_OAUTH_STATE = "tastile_oauth_state";
 export const COOKIE_OAUTH_NEXT = "tastile_oauth_next";
 export const COOKIE_EMAIL_AUTH_SESSION = "tastile_email_auth_session";
 export const COOKIE_EMAIL_AUTH_USERNAME = "tastile_email_auth_username";
+export const COOKIE_DIRECT_DAEMON = "tastile_direct_daemon";
 
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
