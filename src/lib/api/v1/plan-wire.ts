@@ -328,10 +328,22 @@ function convertCompletion(c: StoreCompletion): WireCompletion {
 function convertReferences(refs: StoreReference[]): unknown[] {
   return refs.map((r) => ({
     id: r.id,
-    target: camelToSnakeDeep(r.target),
-    pick: camelToSnakeDeep(r.pick),
+    target:
+      isPlainObject(r.target) && typeof r.target.kind === "number" ? r.target.kind : r.target,
+    pick: isPlainObject(r.pick)
+      ? { kind: r.pick.kind, at: (r.pick as { at?: unknown }).at ?? null }
+      : r.pick,
     when: r.when ? convertCondition(r.when) : null,
   }));
+}
+
+function convertConditionalRecord(value: unknown): unknown {
+  if (!isPlainObject(value)) return camelToSnakeDeep(value);
+  const converted = camelToSnakeDeep(value) as Record<string, unknown>;
+  if ("when" in value) {
+    converted.when = value.when ? convertCondition(value.when) : null;
+  }
+  return converted;
 }
 
 /**
@@ -366,12 +378,12 @@ export function toWireSetPlanBody(storePlan: StorePlanInput): WireSetPlanBody {
     references: convertReferences(normalised.references ?? []),
     completion: convertCompletion(normalised.completion),
     planning: {
-      placement_rules: camelToSnakeDeep(normalised.planning?.placementRules ?? []) as unknown[],
-      nesting_rules: camelToSnakeDeep(normalised.planning?.nestingRules ?? []) as unknown[],
+      placement_rules: (normalised.planning?.placementRules ?? []).map(convertConditionalRecord),
+      nesting_rules: (normalised.planning?.nestingRules ?? []).map(convertConditionalRecord),
       flows: camelToSnakeDeep(normalised.planning?.flows ?? []) as unknown[],
     },
     metrics: camelToSnakeDeep(normalised.metrics ?? []) as unknown[],
-    decisions: camelToSnakeDeep(normalised.decisions ?? []) as unknown[],
+    decisions: (normalised.decisions ?? []).map(convertConditionalRecord),
   };
 }
 

@@ -1,31 +1,16 @@
 /**
  * submitCreateTile — v1 API submit for QuickTileCreate.
  *
- * Reads `useQuickCreateStore` directly (the single source of truth for the
- * 7-section v1 structured editor), converts the store state into the v1
- * envelope sequence via `buildCreateTileCommand`, then POSTs each
- * envelope through `postCommand`. No React, no v7-shaped intermediate
- * form state — only the v1 store + the v1 envelope contract.
- *
- * Revision ladder for RECURRING:
- *   0 → CREATE_TILE
- *   1 → SET_PLAN
- *   2 → APPEND_FRAMES
- *   3 → APPEND_RULES
- *
- * For PLACEMENT only steps 0–1 are emitted. EXECUTION is also a 2-step
- * ladder today; full EXECUTION editor lives outside Phase A scope.
+ * Reads the QuickCreate store directly and publishes Tile, Plan,
+ * SourceScheduleDefinition, Window and Flow definitions in one transaction.
+ * The legacy multi-command revision ladder is deliberately not used.
  */
 
-import { type ApiError, uuidv7 } from "@/lib/domain/v1/envelope";
-import { tasksForSubmission, useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import {
-  type BuiltEnvelope,
-  buildCreateTileCommand,
-  type QuickCreateSnapshot,
-  substituteTileId,
-} from "./build-command";
-import { type ApiClient, postCommand } from "./endpoints";
+import type { ApiError } from "@/lib/domain/v1/envelope";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import type { ApiClient } from "./endpoints";
+import { buildQuickCreateSchedulePayload } from "./quick-create-schedule-wire";
+import { publishScheduleDefinition } from "./schedule-definition";
 
 /**
  * Dev / E2E bypass token. Returned by `getIdToken` when
@@ -61,135 +46,15 @@ export function makeClient(): ApiClient {
 }
 
 /**
- * Build the v1 snapshot from the live `useQuickCreateStore` state.
- *
- * Single point of translation between the editor and the wire format.
- * All defaults are explicit so a malformed slice cannot silently produce
- * a wrong payload.
- */
-function storeToSnapshot(): QuickCreateSnapshot {
-  const state = useQuickCreateStore.getState();
-
-  // Plan.completion.root — read directly from the store; the Condition tree editor owns this value.
-
-  return {
-    identity: {
-      title: state.identity.title.trim(),
-      kind: state.identity.kind,
-      externalId: { value: state.identity.externalId ?? null },
-      visual: {
-        color: state.identity.visual.color ?? "",
-        icon: state.identity.visual.icon ?? "",
-      },
-    },
-    plan: {
-      role: state.plan.role,
-      references: state.plan.references,
-      completion: {
-        root: state.plan.completion.root,
-        timeRequirements: state.plan.completion.timeRequirements,
-        tasks: tasksForSubmission(state.plan.completion.tasks),
-      },
-      planning: state.plan.planning,
-      metrics: state.plan.metrics,
-    },
-    time: {
-      // The store keeps ISO strings; the builder expects start string,
-      // end string | null. An empty `start` is preserved as "" — the
-      // server treats "" + null end as "no temporal constraint".
-      span: {
-        start: state.time.span.start,
-        end: state.time.span.end ? state.time.span.end : null,
-        offsetMin: 0,
-      },
-      durationMinMax: {
-        min: state.time.durationMinMax.minMs,
-        max: state.time.durationMinMax.maxMs,
-      },
-    },
-    windows: state.windows,
-    recurring: {
-      life: {
-        state: state.recurring.life.state,
-        activeStart: state.recurring.life.active.startDate
-          ? state.recurring.life.active.startDate
-          : null,
-        activeEnd: state.recurring.life.active.endDate ? state.recurring.life.active.endDate : null,
-      },
-      frameRules: state.recurring.frameRules,
-      recurringRules: state.recurring.rules,
-    },
-    advanced: {
-      changeSets: state.advanced.changeSets,
-      rules: state.advanced.rules,
-    },
-    meta: {
-      project: state.meta.project,
-      tags: [...state.meta.tags],
-      memo: state.meta.memo.trim(),
-      isLabelOnly: state.meta.isLabelOnly,
-    },
-  };
-}
-
-/**
  * Submit a new tile to the v1 API.
  *
- * 1. Read the v1 store directly.
- * 2. Build the envelope sequence (CREATE_TILE, SET_PLAN, optionally
- *    APPEND_FRAMES + APPEND_RULES).
- * 3. POST CREATE_TILE; on success, substitute the returned tileId into
- *    the remaining envelopes and POST each in order.
- * 4. Abort the sequence on the first failure; the resulting ApiError is
- *    surfaced for structured error rendering (8-way ApiErrorKind).
+ * The API either commits the complete authored definition or leaves no
+ * partial Tile/Plan rows behind.
  */
 export async function submitCreateTile(options: SubmitV1Options): Promise<SubmitV1Result> {
-  const { client } = options;
-  const snapshot = storeToSnapshot();
-
-  const idempotencyKey = uuidv7();
-  const envelopes = buildCreateTileCommand(snapshot, idempotencyKey);
-
-  const first = envelopes[0];
-  if (!first) {
-    return {
-      ok: false,
-      error: {
-        kind: 7, // RETRYABLE — empty envelope list is a client bug.
-        message: "no envelopes to submit",
-        currentRevision: null,
-        violations: [],
-      },
-    };
-  }
-
-  const createResult = await postCommand(client, first.path, first.request);
-  if (!createResult.ok) {
-    return { ok: false, error: createResult.error };
-  }
-
-  const aggregate = createResult.data.aggregate;
-  if (!aggregate) {
-    return {
-      ok: false,
-      error: {
-        kind: 7, // RETRYABLE — server must return aggregate on CREATE.
-        message: "create response missing aggregate",
-        currentRevision: null,
-        violations: [],
-      },
-    };
-  }
-
-  const tileId = aggregate.id;
-  const remaining: BuiltEnvelope<unknown>[] = substituteTileId(envelopes.slice(1), tileId);
-
-  for (const envelope of remaining) {
-    const step = await postCommand(client, envelope.path, envelope.request);
-    if (!step.ok) {
-      return { ok: false, error: step.error };
-    }
-  }
-
-  return { ok: true, tileId };
+  const result = await publishScheduleDefinition({
+    client: options.client,
+    payload: buildQuickCreateSchedulePayload(useQuickCreateStore.getState()),
+  });
+  return result.ok ? { ok: true, tileId: result.tileId } : result;
 }

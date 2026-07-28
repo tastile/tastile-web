@@ -55,6 +55,31 @@ export interface WindowRule {
 }
 
 export interface PublishScheduleDefinitionPayload {
+  source_client_local_id?: string | null;
+  source_schedule?: {
+    required_duration_ms: number;
+    generation: {
+      kind: 0 | 1 | 2;
+      at?: string | null;
+      starts_at?: string | null;
+      interval_ms?: number | null;
+      ends_at?: string | null;
+      weekday_mask: number | null;
+      date_range_start: string | null;
+      date_range_end: string | null;
+      excluded_dates: string[];
+      offset_min: number | null;
+    };
+    window: { start_offset_ms: number; end_offset_ms: number };
+    split_policy: {
+      kind: 0 | 1;
+      min_segment_ms: number | null;
+      max_segment_ms: number | null;
+      max_segments: number | null;
+    };
+    priority: number;
+  } | null;
+  source_horizon?: { start: string; end: string } | null;
   tile: {
     title: string;
     description: string | null;
@@ -73,7 +98,18 @@ export interface PublishScheduleDefinitionPayload {
     completion: {
       root: Condition;
       time_requirements: TimeRequirement[];
-      tasks: unknown[];
+      tasks: Array<{
+        id: string;
+        content: { title: string; description: string | null };
+        show: Condition | null;
+        complete: Condition;
+        order: Array<{
+          id: string;
+          target_task_id: string;
+          relation: number;
+          when: Condition | null;
+        }>;
+      }>;
     };
     planning: { placement_rules: unknown[]; nesting_rules: unknown[] };
     metrics: unknown[];
@@ -97,6 +133,25 @@ export interface PublishScheduleDefinitionPayload {
       rank: number;
       outputs: Array<{ ProposeNewPlanPlacement: { span: { start: string; end: string } } }>;
     }>;
+  }>;
+  relations?: Array<{
+    client_local_id: string;
+    subject_source_ref:
+      | { kind: "local"; client_local_id: string }
+      | { kind: "existing"; source_tile_id: string };
+    referenced_source_ref:
+      | { kind: "local"; client_local_id: string }
+      | { kind: "existing"; source_tile_id: string };
+    kind: number;
+    point: number;
+    offset_ms: number;
+    ordering: number;
+    duration_expression: unknown;
+    split_policy: number;
+    correlation_scope: number;
+    lifecycle_filter: number;
+    eligible_through_revision: number;
+    summary_priority: number;
   }>;
 }
 

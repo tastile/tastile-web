@@ -296,6 +296,39 @@ describe("convertCondition (internally-tagged → externally-tagged wire form)",
 });
 
 describe("toWireSetPlanBody (full plan rewrite)", () => {
+  it("converts authored conditions inside planning rules and decisions", () => {
+    const condition = {
+      kind: 3,
+      children: [],
+      term: { kind: "calendar", value: { weekdayMask: 0b0101010 } },
+    };
+    const storePlan: StorePlanInput = {
+      role: 0,
+      references: [],
+      completion: {
+        root: { kind: 0, children: [], term: null },
+        timeRequirements: [],
+        tasks: [],
+      },
+      planning: {
+        placementRules: [{ id: "rule", when: condition, rank: 2, effect: {} }],
+        nestingRules: [],
+        flows: [],
+      },
+      metrics: [],
+      decisions: [{ id: "decision", when: condition, prompt: "Choose", options: [] }],
+    };
+
+    const wire = toWireSetPlanBody(storePlan);
+
+    expect(wire.planning.placement_rules[0]).toMatchObject({
+      when: { Term: { Calendar: { weekday_mask: 0b0101010 } } },
+    });
+    expect(wire.decisions[0]).toMatchObject({
+      when: { Term: { Calendar: { weekday_mask: 0b0101010 } } },
+    });
+  });
+
   it("converts the default QuickCreate plan to wire format", () => {
     const storePlan: StorePlanInput = {
       role: 0,
@@ -460,7 +493,7 @@ describe("toWireSetPlanBody (full plan rewrite)", () => {
     expect(wire.references).toEqual([
       {
         id: REF_ID,
-        target: { kind: 0 },
+        target: 0,
         pick: { kind: 0, at: null },
         when: { Term: { Task: { task_id: TASK_DEFAULT_ID, state: "Completed" } } },
       },

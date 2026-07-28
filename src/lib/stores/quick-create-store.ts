@@ -456,7 +456,32 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   close: () =>
     set({ isOpen: false, mode: "create", editingId: null, editingTileId: null, loadError: null }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
-  setField: (path, value) => set((state) => setDeepPath(state, path, value)),
+  setField: (path, value) =>
+    set((state) => {
+      const next = setDeepPath(state, path, value);
+      if (!path.startsWith("time.durationMinMax.")) return next;
+      const [first, ...remaining] = next.plan.completion.timeRequirements;
+      if (!first) return next;
+      return {
+        ...next,
+        plan: {
+          ...next.plan,
+          completion: {
+            ...next.plan.completion,
+            timeRequirements: [
+              {
+                ...first,
+                required: {
+                  minMs: next.time.durationMinMax.minMs,
+                  maxMs: next.time.durationMinMax.maxMs,
+                },
+              },
+              ...remaining,
+            ],
+          },
+        },
+      };
+    }),
   addTask: (title = "") => {
     const task = defaultTask(title);
     set((state) => ({

@@ -309,7 +309,10 @@ export function QuickTileCreate() {
     return Array.from(seen).sort((a, b) => a.localeCompare(b, "ja"));
   }, [tiles.tiles]);
   const tilePickerData = useMemo(
-    () => tiles.tiles.map((t) => ({ value: t.id, label: t.title || t.id })),
+    () =>
+      tiles.tiles
+        .filter((tile) => tile.plan_id)
+        .map((tile) => ({ value: tile.plan_id as string, label: tile.title || tile.id })),
     [tiles.tiles],
   );
   useEffect(() => {

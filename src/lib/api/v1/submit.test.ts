@@ -34,7 +34,7 @@ describe("makeClient (api/v1/submit.ts)", () => {
   });
 });
 
-describe("submitCreateTile — plan.completion.root passthrough", () => {
+describe("submitCreateTile — atomic schedule definition publish", () => {
   const mockFetch = vi.fn();
 
   beforeEach(() => {
@@ -43,7 +43,7 @@ describe("submitCreateTile — plan.completion.root passthrough", () => {
     globalThis.fetch = mockFetch as unknown as typeof fetch;
   });
 
-  it("POSTs plan.completion.root from the store", async () => {
+  it("POSTs one atomic payload containing plan.completion.root", async () => {
     const customRoot = {
       kind: 0,
       children: [
@@ -64,15 +64,14 @@ describe("submitCreateTile — plan.completion.root passthrough", () => {
         status: 200,
         json: async () => body,
       }) as unknown as Response;
-    mockFetch
-      .mockResolvedValueOnce(
-        okResponse({
-          commandId: "c1",
-          acceptedAt: "t1",
-          aggregate: { id: "tile-1" },
-        }),
-      )
-      .mockResolvedValueOnce(okResponse({ commandId: "c2", acceptedAt: "t2" }));
+    mockFetch.mockResolvedValueOnce(
+      okResponse({
+        commandId: "c1",
+        acceptedAt: "t1",
+        aggregate: { id: "tile-1" },
+        aggregate_meta: { plan_id: "plan-1", window_ids: [], flow_ids: [] },
+      }),
+    );
 
     const result = await submitCreateTile({
       client: {
@@ -82,7 +81,12 @@ describe("submitCreateTile — plan.completion.root passthrough", () => {
     });
 
     expect(result.ok).toBe(true);
-    const secondRequest = JSON.parse(mockFetch.mock.calls[1][1].body as string);
-    expect(secondRequest.payload.completion.root).toEqual(customRoot);
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+    expect(mockFetch.mock.calls[0][0]).toBe("https://api.example.com/v1/schedule-definitions");
+    const request = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+    expect(request.payload.plan.completion.root).toEqual({
+      All: [{ Term: { Calendar: { weekday_mask: 31 } } }],
+    });
+    expect(request.payload.recurrence).toBeNull();
   });
 });

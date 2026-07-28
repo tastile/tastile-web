@@ -75,6 +75,16 @@ describe("useQuickCreateStore", () => {
       });
     });
 
+    it("keeps the authored duration range represented by the completion requirement", () => {
+      useQuickCreateStore.getState().setField("time.durationMinMax.minMs", 45 * 60_000);
+      useQuickCreateStore.getState().setField("time.durationMinMax.maxMs", 75 * 60_000);
+
+      expect(useQuickCreateStore.getState().plan.completion.timeRequirements[0].required).toEqual({
+        minMs: 45 * 60_000,
+        maxMs: 75 * 60_000,
+      });
+    });
+
     it("sets meta.memo", () => {
       useQuickCreateStore.getState().setField("meta.memo", "remember this");
       expect(useQuickCreateStore.getState().meta.memo).toBe("remember this");
