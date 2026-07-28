@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { projectsQueryOptions } from "@/lib/query/projects-query-options";
 
@@ -25,14 +26,16 @@ interface UseProjectsState {
 }
 
 export function useProjects(): UseProjectsState {
-  const query = useQuery(projectsQueryOptions);
+  const { data, isPending, error, refetch } = useQuery(projectsQueryOptions);
+  const refresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
+
   return {
-    workspaces: query.data ?? [],
-    loading: query.isPending,
-    error: query.error as Error | null,
-    refresh: async () => {
-      await query.refetch();
-    },
+    workspaces: data ?? EMPTY_WORKSPACES,
+    loading: isPending,
+    error: error as Error | null,
+    refresh,
   };
 }
 
@@ -42,6 +45,7 @@ export interface CreateWorkspaceInput {
   color?: string | null;
   parent_subject_id?: string | null;
 }
+const EMPTY_WORKSPACES: Workspace[] = [];
 async function createWorkspaceRequest(input: CreateWorkspaceInput): Promise<Workspace> {
   const res = await getCoreClient().call<Workspace>("createWorkspace", {
     body: {
