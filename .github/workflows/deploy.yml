@@ -81,11 +81,19 @@ jobs:
         run: bun run check:release
 
       - name: Package standalone build
+        # Mirrors `verify-web-artifact.ts` which rejects any `.env*` path
+        # segment. Next.js standalone mode copies `.env.production` (and any
+        # other `.env*` files present at build time) into `.next/standalone/`,
+        # which would otherwise leak secrets into the deployed artifact and
+        # trip the verifier. Strip them here, before zipping, so production
+        # runtime env vars continue to come from the systemd EnvironmentFile
+        # (per docs/production/v1-core-release.md), not from a bundled file.
         run: |
           mkdir -p dist
           cp -r .next/standalone/. dist/
           cp -r .next/static        dist/.next/
           cp -r public               dist/
+          find dist -maxdepth 2 -type f -name '.env*' -delete
           (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
           bun scripts/verify-web-artifact.ts "tastile-web-${{ steps.version.outputs.version }}.zip"
 
