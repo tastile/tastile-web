@@ -32,7 +32,12 @@ for (const key of [
   delete testEnv[key];
 }
 
-const child = spawn(process.execPath, [vitestEntry, "run"], {
+const runtimeArgs =
+  path.basename(process.execPath).startsWith("bun")
+    ? ["--no-env-file", vitestEntry, "run"]
+    : [vitestEntry, "run"];
+
+const child = spawn(process.execPath, runtimeArgs, {
   stdio: "inherit",
   cwd: repoRoot,
   env: testEnv,
