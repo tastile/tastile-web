@@ -21,10 +21,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "not authenticated" }, { status: 401 });
   }
   const response = NextResponse.json({ ok: true });
-  response.headers.append(
-    "Set-Cookie",
-    `${COOKIE_DIRECT_DAEMON}=1; ${cookieAttributes()}`,
-  );
+  response.headers.append("Set-Cookie", `${COOKIE_DIRECT_DAEMON}=1; ${cookieAttributes()}`);
   return response;
 }
 
@@ -36,9 +33,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
   const parts = ["Path=/", "SameSite=Lax", "Max-Age=0"];
   if (isProd) parts.push("Secure");
   const response = NextResponse.json({ ok: true });
-  response.headers.append(
-    "Set-Cookie",
-    `${COOKIE_DIRECT_DAEMON}=; ${parts.join("; ")}`,
-  );
+  response.headers.append("Set-Cookie", `${COOKIE_DIRECT_DAEMON}=; ${parts.join("; ")}`);
   return response;
 }

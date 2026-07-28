@@ -71,14 +71,30 @@ describe("CoreClient", () => {
     expect(authHeader(fetchImpl)).toBeUndefined();
   });
 
-  it("does not call tokenProvider when the proxy bridge is used", async () => {
+  it("calls tokenProvider and attaches bearer when proxy bridge is used", async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ status: "ok" })));
-    const tokenProvider = vi.fn(async () => "should-never-be-read");
+    const tokenProvider = vi.fn(async () => "my-bearer");
     const client = new CoreClient({
       baseUrl: "/api/proxy",
       tokenProvider,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       useProxyBridge: true,
+    });
+
+    await client.call("getSession");
+
+    expect(tokenProvider).toHaveBeenCalled();
+    expect(authHeader(fetchImpl)).toBe("Bearer my-bearer");
+  });
+
+  it("does not call tokenProvider when the proxy bridge is NOT used", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ status: "ok" })));
+    const tokenProvider = vi.fn(async () => "should-never-be-read");
+    const client = new CoreClient({
+      baseUrl: "http://localhost:31400",
+      tokenProvider,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: false,
     });
 
     await client.call("getSession");

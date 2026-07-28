@@ -17,7 +17,7 @@
  * null in browser code.
  */
 
-import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookie-names";
+import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookies";
 import { MissingCloudApiBaseError } from "@/lib/upstream/cloud-api-base";
 
 export type ApiErrorKind =
@@ -842,11 +842,13 @@ export class CoreClient {
     const headers: Record<string, string> = {
       accept: "application/json",
     };
-    if (options.body !== undefined) {
+    if (meta.method !== "GET" && options.body !== undefined) {
       headers["content-type"] = "application/json";
     }
-    // Legacy tokenProvider is no-op in browser code; auth is handled
-    // server-side by the proxy bridge or via credentials:include for direct mode.
+    if (meta.auth && this.useProxyBridge) {
+      const token = await this.tokenProvider();
+      if (token) headers.authorization = `Bearer ${token}`;
+    }
 
     let response: Response;
     try {
