@@ -9,17 +9,22 @@ if (!existsSync(productFile)) {
   throw new Error(".env.production is required for a production build")
 }
 
-const candidates = [".env", ".env.local", ".env.production", ".env.production.local"]
+// Renamed candidates prevent Next.js from auto-loading ambient .env* files
+// during the build. `.env.production` itself must NOT be renamed: the
+// spawned `bun --env-file=.env.production` reads it from disk, and renaming
+// before spawn makes the file lookup fail silently (no error, just no
+// values inlined). Keep `.env.production` on disk so bun can read it.
+const renameCandidates = [".env", ".env.local", ".env.production.local"]
 const backups = []
 const env = { ...process.env, NODE_ENV: "production" }
 
-for (const file of [productFile, ...candidates.map((name) => path.join(root, name))]) {
+for (const file of [productFile, ...renameCandidates.map((name) => path.join(root, name))]) {
   if (!existsSync(file)) continue
   for (const key of dotenvKeys(readFileSync(file, "utf8"))) delete env[key]
 }
 
 try {
-  for (const name of candidates) {
+  for (const name of renameCandidates) {
     const source = path.join(root, name)
     if (!existsSync(source)) continue
     const destination = path.join(
