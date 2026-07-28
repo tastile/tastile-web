@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
+import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/lib/cognito/cookies";
 
 function getCloudApiBase(): string {
   const value = process.env.CLOUD_API_BASE;
@@ -32,7 +32,8 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     headers.set("x-actor-id", DEV_ACTOR_SUBJECT_ID);
   } else {
     const apiToken = request.cookies.get(COOKIE_API_TOKEN)?.value;
-    if (!apiToken) {
+    const userSub = request.cookies.get(COOKIE_USER_SUB)?.value;
+    if (!apiToken && !userSub) {
       const accept = request.headers.get("accept") ?? "";
       if (accept.includes("text/html")) {
         const loginUrl = new URL("/login", request.url);
@@ -41,7 +42,20 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       }
       return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
     }
-    headers.set("authorization", `Bearer ${apiToken}`);
+    if (apiToken) {
+      headers.set("authorization", `Bearer ${apiToken}`);
+    }
+    if (userSub) {
+      const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
+      if (!bridgeSecret) {
+        console.warn(
+          "[proxy] TASTILE_WEB_BRIDGE_SECRET is unset; cannot forward bridge headers",
+        );
+      } else {
+        headers.set("x-tastile-web-bridge-secret", bridgeSecret);
+        headers.set("x-tastile-web-session-user", userSub);
+      }
+    }
   }
 
   const contentType = request.headers.get("content-type");
