@@ -93,6 +93,54 @@ describe("api proxy v1 path compatibility", () => {
     expect(upstreamHeaders.get("authorization")).toBe("Bearer my-api-token-123");
   });
 
+  it("forwards bridge headers alongside Bearer when tastile_uid cookie is present", async () => {
+    process.env.CLOUD_API_BASE = "https://core.tastile.test";
+    process.env.TASTILE_WEB_BRIDGE_SECRET = "test-bridge-secret";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("[]", { status: 200 }));
+    const { GET } = await import("./[...path]/route");
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
+      headers: {
+        cookie: "tastile_api_token=my-api-token-123; tastile_uid=cognito-sub-abc",
+      },
+    });
+
+    const response = await GET(request, {
+      params: Promise.resolve({ path: ["v1", "tiles"] }),
+    });
+
+    expect(response.status).toBe(200);
+    const upstreamHeaders = fetchMock.mock.calls[0][1]?.headers as Headers;
+    expect(upstreamHeaders.get("authorization")).toBe("Bearer my-api-token-123");
+    expect(upstreamHeaders.get("x-tastile-web-bridge-secret")).toBe("test-bridge-secret");
+    expect(upstreamHeaders.get("x-tastile-web-session-user")).toBe("cognito-sub-abc");
+  });
+
+  it("forwards bridge headers without Bearer when only tastile_uid cookie is present", async () => {
+    process.env.CLOUD_API_BASE = "https://core.tastile.test";
+    process.env.TASTILE_WEB_BRIDGE_SECRET = "test-bridge-secret";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("[]", { status: 200 }));
+    const { GET } = await import("./[...path]/route");
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
+      headers: {
+        cookie: "tastile_uid=cognito-sub-abc",
+      },
+    });
+
+    const response = await GET(request, {
+      params: Promise.resolve({ path: ["v1", "tiles"] }),
+    });
+
+    expect(response.status).toBe(200);
+    const upstreamHeaders = fetchMock.mock.calls[0][1]?.headers as Headers;
+    expect(upstreamHeaders.get("authorization")).toBeNull();
+    expect(upstreamHeaders.get("x-tastile-web-bridge-secret")).toBe("test-bridge-secret");
+    expect(upstreamHeaders.get("x-tastile-web-session-user")).toBe("cognito-sub-abc");
+  });
+
   it("forwards E2E requests to core without replacing its response", async () => {
     process.env.E2E_BYPASS_AUTH = "1";
     process.env.CLOUD_API_BASE = "https://core.tastile.test";
