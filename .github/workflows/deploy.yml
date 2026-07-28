@@ -86,6 +86,7 @@ jobs:
           cp -r .next/standalone/. dist/
           cp -r .next/static        dist/.next/
           cp -r public               dist/
+          cp .env.production         dist/.env.production
           (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
           bun scripts/verify-web-artifact.ts "tastile-web-${{ steps.version.outputs.version }}.zip"
 
