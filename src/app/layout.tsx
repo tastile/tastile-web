@@ -3,20 +3,12 @@ import "@mantine/dates/styles.css";
 
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import type { Metadata } from "next";
-import { Zen_Kaku_Gothic_New } from "next/font/google";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { themeScript } from "@/lib/theme-script";
 import { AppProviders } from "./providers";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
-
-const zenKakuGothicNew = Zen_Kaku_Gothic_New({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  display: "swap",
-  variable: "--font-zen-kaku-loaded",
-});
 
 export const metadata: Metadata = {
   title: "Tastile — Execution Control",
@@ -43,7 +35,7 @@ export default function RootLayout({
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
 
   return (
-    <html lang="en" className={zenKakuGothicNew.variable} {...mantineHtmlProps}>
+    <html lang="en" {...mantineHtmlProps}>
       <head>
         <ColorSchemeScript defaultColorScheme="auto" />
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme-init must run inline before paint to prevent FOUC — cannot be ref'd to a JS file */}
