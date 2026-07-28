@@ -26,13 +26,7 @@
  *   - recurring-end-switch
  */
 
-import {
-  Chip,
-  NumberInput,
-  SegmentedControl,
-  Switch,
-  Text,
-} from "@mantine/core";
+import { Chip, NumberInput, SegmentedControl, Switch, Text } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
 

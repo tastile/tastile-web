@@ -61,7 +61,9 @@ export function TasksSidePanel() {
 
   const [minDuration, setMinDuration] = useState<number>(initialGranularity.minDuration);
 
-  const [highPriorityOnly, setHighPriorityOnly] = useState<boolean>(initialGranularity.highPriorityOnly);
+  const [highPriorityOnly, setHighPriorityOnly] = useState<boolean>(
+    initialGranularity.highPriorityOnly,
+  );
   const [excludeLowPriority, setExcludeLowPriority] = useState<boolean>(
     initialGranularity.excludeLowPriority,
   );

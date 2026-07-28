@@ -408,7 +408,7 @@ function WeekGrid({ blocks }: { blocks: CalendarBlock[] }) {
 }
 
 function MonthGrid({ blocks }: { blocks: CalendarBlock[] }) {
-  const [monthAnchor, setMonthAnchor] = useState<Date | null>(() => {
+  const [monthAnchor, _setMonthAnchor] = useState<Date | null>(() => {
     const first = new Date();
     first.setDate(1);
     return first;

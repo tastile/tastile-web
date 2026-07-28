@@ -2,7 +2,7 @@
 import { ActionIcon, Alert, Button, SegmentedControl } from "@mantine/core";
 import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { type DisplayMode, getModeRange, todayLocalIso } from "@/lib/calendar/layout";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -222,13 +222,11 @@ export function CalendarMain({ initialView = "day" }: { initialView?: CalendarVi
   const [view, setViewState] = useState<CalendarView>(urlView);
   const [mode, setModeState] = useState<DisplayMode>(urlMode);
   const [anchor, setAnchor] = useState(() => localIsoDate());
-  const [tzOffset, setTzOffset] = useState<number>(
-    () => new Date().getTimezoneOffset() * -1,
-  );
+  const [tzOffset, _setTzOffset] = useState<number>(() => new Date().getTimezoneOffset() * -1);
   const [minDuration, setMinDuration] = useState(0);
   // Capture Date.now() lazily so the first render already has a real
   // timestamp — no effect, no extra render.
-  const [nowMs, setNowMs] = useState<number>(() => Date.now());
+  const [nowMs, _setNowMs] = useState<number>(() => Date.now());
 
   // Effective anchor for date math — in around/future modes the anchor
   // is always today, regardless of what the user has previously selected.
