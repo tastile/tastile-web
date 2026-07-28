@@ -62,6 +62,14 @@ $publicTarget = Join-Path $stageDir "public"
 New-Item -ItemType Directory -Force -Path $publicTarget | Out-Null
 Copy-Item -Recurse -Force "public/*" $publicTarget
 
+# Strip .env* files: Next.js standalone mode copies them into .next/standalone/
+# at build time, but verify-web-artifact.ts rejects any .env* path segment.
+# Production runtime env vars come from the systemd EnvironmentFile at
+# /etc/tastile/tastile-web.env (per docs/production/v1-core-release.md), so
+# shipping build-time .env.production is both a secret leak and a redundant
+# configuration source. Mirrors the same step in .github/workflows/deploy.yml.
+Get-ChildItem -Path $stageDir -Filter '.env*' -File | Remove-Item -Force
+
 # 3. Zip it
 Write-Host ""
 Write-Host "== 3) Zip =="
