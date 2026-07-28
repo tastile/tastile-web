@@ -1,4 +1,4 @@
-import { z } from "zod";
+import * as z from "zod";
 import { getCoreClient, type Result } from "@/lib/api/endpoints";
 
 /**

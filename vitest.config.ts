@@ -2,6 +2,7 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 
 export default defineConfig({
+  envDir: false,
   test: {
     globals: true,
     environment: "node",
@@ -49,6 +50,8 @@ export default defineConfig({
       TASTILE_RUST_API_URL: "http://127.0.0.1:31400",
       NEXT_PUBLIC_TASTILE_CORE_URL: "http://127.0.0.1:31400",
       NEXT_PUBLIC_DAEMON_BASE_URL: "http://127.0.0.1:31400",
+      E2E_BYPASS_AUTH: "",
+      NEXT_PUBLIC_E2E_BYPASS_AUTH: "",
     },
   },
   resolve: {

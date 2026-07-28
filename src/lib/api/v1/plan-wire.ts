@@ -328,8 +328,7 @@ function convertCompletion(c: StoreCompletion): WireCompletion {
 function convertReferences(refs: StoreReference[]): unknown[] {
   return refs.map((r) => ({
     id: r.id,
-    target:
-      isPlainObject(r.target) && typeof r.target.kind === "number" ? r.target.kind : r.target,
+    target: isPlainObject(r.target) && typeof r.target.kind === "number" ? r.target.kind : r.target,
     pick: isPlainObject(r.pick)
       ? { kind: r.pick.kind, at: (r.pick as { at?: unknown }).at ?? null }
       : r.pick,

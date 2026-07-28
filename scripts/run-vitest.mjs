@@ -18,9 +18,23 @@ import url from "node:url";
 const here = path.dirname(url.fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "..");
 const vitestEntry = path.join(repoRoot, "node_modules", "vitest", "vitest.mjs");
+const testEnv = { ...process.env };
+
+// Bun loads mode-specific .env files before invoking this wrapper. Keep
+// production/development auth switches from changing unit-test semantics.
+for (const key of [
+  "E2E_BYPASS_AUTH",
+  "NEXT_PUBLIC_E2E_BYPASS_AUTH",
+  "COGNITO_SUPPORTED_IDENTITY_PROVIDERS",
+  "NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS",
+  "NEXT_PUBLIC_COGNITO_SUPPORTED_IDENTITY_PROVIDERS",
+]) {
+  delete testEnv[key];
+}
 
 const child = spawn(process.execPath, [vitestEntry, "run"], {
   stdio: "inherit",
   cwd: repoRoot,
+  env: testEnv,
 });
 child.on("exit", (code) => process.exit(code ?? 1));
