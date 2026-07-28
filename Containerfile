@@ -6,6 +6,8 @@
 # ----- build stage -----
 FROM oven/bun:1.3.14 AS build
 WORKDIR /app
+ARG NEXT_PUBLIC_E2E_BYPASS_AUTH=0
+ENV NEXT_PUBLIC_E2E_BYPASS_AUTH=$NEXT_PUBLIC_E2E_BYPASS_AUTH
 
 # Install deps first for better layer caching
 COPY package.json bun.lock ./
