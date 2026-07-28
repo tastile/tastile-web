@@ -62,7 +62,7 @@ function requiredDuration(state: QuickCreateScheduleState): number {
   return requirement?.required.minMs ?? 60_000;
 }
 
-function sourceGeneration(state: QuickCreateScheduleState) {
+function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   const start =
     authoredInstant(state, "start") ?? validInstant(state.recurring.life.active.startDate);
   const end =
@@ -87,7 +87,7 @@ function sourceGeneration(state: QuickCreateScheduleState) {
 
   return {
     kind: 1 as const,
-    starts_at: start ?? new Date().toISOString(),
+    starts_at: start ?? now.toISOString(),
     // Weekly authoring is a daily expansion filtered by weekday_mask. A
     // seven-day step would only ever visit the weekday of starts_at.
     interval_ms: state.recurring.repeatMode === "interval" ? DEFAULT_INTERVAL_MS : DAY_MS,
@@ -123,6 +123,62 @@ function windowRule(
     gap_right_condition_id: null,
     gap_size: null,
   };
+}
+
+function publishWindows(
+  state: QuickCreateScheduleState,
+): PublishScheduleDefinitionPayload["windows"] {
+  return state.windows.flatMap((window, index) => {
+    const emptyDraft =
+      !window.bounds.start &&
+      !window.bounds.end &&
+      window.rules.length === 0 &&
+      window.referenceId === null;
+    if (emptyDraft) return [];
+    if (!window.bounds.start || !window.bounds.end) {
+      throw new Error(`window ${index + 1} requires both bounds`);
+    }
+    const start = validInstant(window.bounds.start);
+    const end = validInstant(window.bounds.end);
+    if (!start || !end) {
+      throw new Error(`window ${index + 1} bounds must be valid RFC3339 timestamps`);
+    }
+    if (Date.parse(start) >= Date.parse(end)) {
+      throw new Error(`window ${index + 1} start must be before end`);
+    }
+    if ((window.kind === 1 || window.kind === 2) && !window.referenceId) {
+      throw new Error(`window ${index + 1} requires a concrete placement reference`);
+    }
+    if (window.kind === 0 && window.referenceId) {
+      throw new Error(`calendar window ${index + 1} cannot have a placement reference`);
+    }
+    if (window.kind === 3) {
+      throw new Error(`gap window ${index + 1} requires authored anchor conditions`);
+    }
+    for (const rule of window.rules) {
+      if (rule.timeStart && minuteOfDay(rule.timeStart) === null) {
+        throw new Error(`window ${index + 1} has an invalid start time`);
+      }
+      if (rule.timeEnd && minuteOfDay(rule.timeEnd) === null) {
+        throw new Error(`window ${index + 1} has an invalid end time`);
+      }
+      if (
+        rule.dateRange &&
+        (!rule.dateRange.startDate ||
+          !rule.dateRange.endDate ||
+          rule.dateRange.startDate > rule.dateRange.endDate)
+      ) {
+        throw new Error(`window ${index + 1} has an invalid date range`);
+      }
+    }
+    return [
+      {
+        kind: window.kind as 0 | 1 | 2 | 3,
+        bounds: { start, end },
+        rules: window.rules.map((rule) => windowRule(rule, window)),
+      },
+    ];
+  });
 }
 
 export function buildQuickCreateSchedulePayload(
@@ -207,7 +263,7 @@ export function buildQuickCreateSchedulePayload(
     source_client_local_id: uuidv7(),
     source_schedule: {
       required_duration_ms: duration,
-      generation: sourceGeneration(state),
+      generation: sourceGeneration(state, now),
       window: sourceWindow(state, duration),
       split_policy: {
         kind: 0,
@@ -237,18 +293,7 @@ export function buildQuickCreateSchedulePayload(
       decisions: plan.decisions,
     },
     reference_targets: referenceTargets,
-    windows: state.windows
-      .filter(
-        (window) =>
-          validInstant(window.bounds.start) !== null &&
-          validInstant(window.bounds.end) !== null &&
-          Date.parse(window.bounds.start) < Date.parse(window.bounds.end),
-      )
-      .map((window) => ({
-        kind: window.kind as 0 | 1 | 2 | 3,
-        bounds: window.bounds,
-        rules: window.rules.map((rule) => windowRule(rule, window)),
-      })),
+    windows: publishWindows(state),
     recurrence: null,
     flows: [],
     relations: [],

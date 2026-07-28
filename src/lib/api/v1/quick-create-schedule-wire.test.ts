@@ -175,4 +175,58 @@ describe("buildQuickCreateSchedulePayload", () => {
     expect(payload.source_horizon?.start).toBe(generationAt);
     expect(payload.source_horizon?.end).toMatch(/^2026-07-28T\d{2}:00:00\.000Z$/);
   });
+
+  it("omits only a completely empty window draft", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Draft window" };
+    state.windows = [
+      {
+        id: "draft",
+        owner: "self",
+        kind: 0,
+        bounds: { start: "", end: "" },
+        rules: [],
+        referenceId: null,
+      },
+    ];
+
+    expect(buildQuickCreateSchedulePayload(state).windows).toEqual([]);
+  });
+
+  it.each([
+    [{ start: "2026-07-28T01:00:00.000Z", end: "" }, "both bounds"],
+    [{ start: "not-a-date", end: "2026-07-28T02:00:00.000Z" }, "valid RFC3339"],
+    [
+      { start: "2026-07-28T03:00:00.000Z", end: "2026-07-28T02:00:00.000Z" },
+      "before end",
+    ],
+  ])("rejects an authored invalid window instead of dropping it: %j", (bounds, message) => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Invalid window" };
+    state.windows = [
+      {
+        id: "invalid",
+        owner: "self",
+        kind: 0,
+        bounds,
+        rules: [],
+        referenceId: null,
+      },
+    ];
+
+    expect(() => buildQuickCreateSchedulePayload(state)).toThrow(message);
+  });
+
+  it("uses the injected clock for recurring generation without an authored start", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Daily study" };
+    state.recurring = { ...state.recurring, repeatMode: "daily" };
+
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      new Date("2026-07-28T12:34:56.000Z"),
+    );
+
+    expect(payload.source_schedule?.generation.starts_at).toBe("2026-07-28T12:34:56.000Z");
+  });
 });
