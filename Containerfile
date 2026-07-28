@@ -4,7 +4,7 @@
 # the standalone bundle, .next/static, and public/.
 
 # ----- build stage -----
-FROM oven/bun:1.3.10 AS build
+FROM oven/bun:1.3.14 AS build
 WORKDIR /app
 
 # Install deps first for better layer caching
