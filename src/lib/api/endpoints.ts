@@ -17,6 +17,7 @@
  * null in browser code.
  */
 
+import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookie-names";
 import { MissingCloudApiBaseError } from "@/lib/upstream/cloud-api-base";
 
 export type ApiErrorKind =
@@ -841,22 +842,24 @@ export class CoreClient {
     const headers: Record<string, string> = {
       accept: "application/json",
     };
-    if (meta.method !== "GET" && options.body !== undefined) {
+    if (options.body !== undefined) {
       headers["content-type"] = "application/json";
     }
-    if (meta.auth && !this.useProxyBridge) {
-      const token = await this.tokenProvider();
-      if (token) headers.authorization = `Bearer ${token}`;
-    }
+    // Legacy tokenProvider is no-op in browser code; auth is handled
+    // server-side by the proxy bridge or via credentials:include for direct mode.
 
     let response: Response;
     try {
-      response = await this.fetchImpl(url.toString(), {
+      const fetchInit: RequestInit = {
         method: meta.method,
         headers,
         body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
         cache: "no-store",
-      });
+      };
+      if (!this.useProxyBridge) {
+        fetchInit.credentials = "include";
+      }
+      response = await this.fetchImpl(url.toString(), fetchInit);
     } catch (err) {
       return {
         ok: false,
@@ -968,6 +971,12 @@ function shouldUseProxyBridge(url: string): boolean {
   }
 }
 
+function readDirectDaemonCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  const target = `${COOKIE_DIRECT_DAEMON}=1`;
+  return document.cookie.split(/;\s*/).some((c) => c === target);
+}
+
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
   const rawBaseUrl =
@@ -980,6 +989,17 @@ export function getCoreClient(): CoreClient {
     (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1" ? "http://127.0.0.1:31400" : "");
   if (!baseUrl) {
     throw new MissingCloudApiBaseError();
+  }
+  // Cookie-driven direct mode takes precedence over the proxy heuristic.
+  // The cookie is JS-readable; it's set/cleared by /api/account/direct-mode.
+  const directMode = readDirectDaemonCookie();
+  if (directMode) {
+    _client = new CoreClient({
+      baseUrl,
+      useProxyBridge: false,
+      tokenProvider: async () => null, // Browser sends Cookie via credentials:include
+    });
+    return _client;
   }
   const usesCloudProxy = shouldUseProxyBridge(baseUrl);
   const clientBaseUrl = usesCloudProxy ? "/api/proxy" : baseUrl;

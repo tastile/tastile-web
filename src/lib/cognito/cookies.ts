@@ -1,17 +1,32 @@
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
+import {
+  COOKIE_ACCESS_TOKEN,
+  COOKIE_API_TOKEN,
+  COOKIE_DIRECT_DAEMON,
+  COOKIE_EMAIL_AUTH_SESSION,
+  COOKIE_EMAIL_AUTH_USERNAME,
+  COOKIE_ID_TOKEN,
+  COOKIE_OAUTH_NEXT,
+  COOKIE_OAUTH_STATE,
+  COOKIE_PKCE_VERIFIER,
+  COOKIE_REFRESH_TOKEN,
+  COOKIE_USER_SUB,
+} from "./cookie-names";
 
-export const COOKIE_ID_TOKEN = "tastile_id_token";
-export const COOKIE_ACCESS_TOKEN = "tastile_access_token";
-export const COOKIE_REFRESH_TOKEN = "tastile_refresh_token";
-export const COOKIE_USER_SUB = "tastile_uid";
-export const COOKIE_API_TOKEN = "tastile_api_token";
-export const COOKIE_PKCE_VERIFIER = "tastile_pkce_verifier";
-export const COOKIE_OAUTH_STATE = "tastile_oauth_state";
-export const COOKIE_OAUTH_NEXT = "tastile_oauth_next";
-export const COOKIE_EMAIL_AUTH_SESSION = "tastile_email_auth_session";
-export const COOKIE_EMAIL_AUTH_USERNAME = "tastile_email_auth_username";
-export const COOKIE_DIRECT_DAEMON = "tastile_direct_daemon";
+export {
+  COOKIE_ACCESS_TOKEN,
+  COOKIE_API_TOKEN,
+  COOKIE_DIRECT_DAEMON,
+  COOKIE_EMAIL_AUTH_SESSION,
+  COOKIE_EMAIL_AUTH_USERNAME,
+  COOKIE_ID_TOKEN,
+  COOKIE_OAUTH_NEXT,
+  COOKIE_OAUTH_STATE,
+  COOKIE_PKCE_VERIFIER,
+  COOKIE_REFRESH_TOKEN,
+  COOKIE_USER_SUB,
+};
 
 const REFRESH_MAX_AGE = 60 * 60 * 24 * 30; // 30 days
 
