@@ -136,7 +136,6 @@ export function ProjectsSidePanel() {
 
       <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
         <form
-          // eslint-disable-next-line react-hooks/refs -- Mantine `form.onSubmit` is the documented submit wiring
           onSubmit={form.onSubmit((values) => handleCreate(values))}
           className="flex flex-col gap-3"
         >
