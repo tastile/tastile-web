@@ -42,6 +42,16 @@
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 
+  --focus-ring: oklch(0.55 0.18 250 / 0.55);
+  --ring-offset: 2px;
+  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.04);
+  --shadow-2: 0 4px 8px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.04);
+  --shadow-3: 0 8px 24px rgb(0 0 0 / 0.08), 0 24px 48px rgb(0 0 0 / 0.06);
+  --surface-3: oklch(0.985 0 0);
+  --surface-inset: oklch(0.97 0 0);
+  --border-subtle: oklch(0 0 0 / 0.06);
+  --border-default: oklch(0 0 0 / 0.1);
+
   color-scheme: light;
 }
 
@@ -85,6 +95,12 @@
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+
+  --focus-ring: oklch(0.7 0.18 250 / 0.6);
+  --surface-3: oklch(0.18 0 0);
+  --surface-inset: oklch(0.15 0 0);
+  --border-subtle: oklch(1 0 0 / 0.06);
+  --border-default: oklch(1 0 0 / 0.1);
 
   color-scheme: dark;
 }
@@ -453,4 +469,19 @@ button {
 .duration-range:focus-visible::-moz-range-thumb {
   outline: 2px solid #5e6ad2;
   outline-offset: 2px;
+}
+
+@layer base {
+  :where(button, a, [role="button"], input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: var(--ring-offset);
+    border-radius: inherit;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where([data-panel-anim]) {
+    transition-property: opacity;
+    transform: none !important;
+  }
 }
