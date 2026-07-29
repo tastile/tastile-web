@@ -76,6 +76,7 @@ import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { SourceGenerationPanel } from "@/components/tiles/editor/SourceGenerationPanel";
 import { SourceWindowPanel } from "@/components/tiles/editor/SourceWindowPanel";
 import { SubPanelHeader } from "@/components/tiles/editor/SubPanelHeader";
+import { SubPanelShell } from "@/components/tiles/editor/SubPanelShell";
 import { TileReferencePicker } from "@/components/tiles/editor/TileReferencePicker";
 import { FormPanel, FormRow, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
@@ -1234,57 +1235,52 @@ export function QuickTileCreate() {
       </section>
 
       {/* ─── intent sub-panel ─── */}
-      <section
-        data-subpanel="intent"
-        className={subPanelClass("intent")}
-        aria-hidden={activePanel !== "intent"}
-        inert={activePanel !== "intent"}
+      <SubPanelShell
+        panelKey="intent"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="intent-heading"
+        title={t("quickCreate.addConditionOrGroup")}
+        description={t("quickCreate.intentSubTitle")}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.addConditionOrGroup")}
-          subtitle={t("quickCreate.intentSubTitle")}
-        />
-        <div className="flex-1 overflow-auto p-4">
-          <p className="mb-3 text-[11px] text-foreground-muted">
-            {t("quickCreate.intentDescription")}
-          </p>
-          <SimpleGrid cols={2} spacing="xs" data-testid="intent-grid">
-            {INTENT_ITEMS.map((item) => (
-              <Paper key={item.key} withBorder radius="md">
-                <UnstyledButton
-                  onClick={() => setActivePanel(item.panel)}
-                  className="flex min-h-[64px] w-full items-center gap-2.5 px-3 py-2 text-left focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <item.icon size={14} className="shrink-0 text-primary" />
-                  <div className="min-w-0">
-                    <Text size="xs" fw={600}>
-                      {t(item.titleKey)}
-                    </Text>
-                    <Text size="10" c="var(--foreground-muted)">
-                      {t(item.subKey)}
-                    </Text>
-                  </div>
-                </UnstyledButton>
-              </Paper>
-            ))}
-            <Paper withBorder radius="md" opacity={0.5}>
-              <div className="flex min-h-[64px] items-center gap-2.5 px-3 py-2">
-                <Type size={14} className="shrink-0 text-foreground-muted" />
+        <p className="mb-3 text-[11px] text-foreground-muted">
+          {t("quickCreate.intentDescription")}
+        </p>
+        <SimpleGrid cols={2} spacing="xs" data-testid="intent-grid">
+          {INTENT_ITEMS.map((item) => (
+            <Paper key={item.key} withBorder radius="md">
+              <UnstyledButton
+                onClick={() => setActivePanel(item.panel)}
+                className="flex min-h-[64px] w-full items-center gap-2.5 px-3 py-2 text-left focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <item.icon size={14} className="shrink-0 text-primary" />
                 <div className="min-w-0">
                   <Text size="xs" fw={600}>
-                    {t("quickCreate.intentTextCondition")}
+                    {t(item.titleKey)}
                   </Text>
                   <Text size="10" c="var(--foreground-muted)">
-                    {t("quickCreate.intentTextConditionSub")}
+                    {t(item.subKey)}
                   </Text>
                 </div>
-              </div>
+              </UnstyledButton>
             </Paper>
-          </SimpleGrid>
-        </div>
-      </section>
+          ))}
+          <Paper withBorder radius="md" opacity={0.5}>
+            <div className="flex min-h-[64px] items-center gap-2.5 px-3 py-2">
+              <Type size={14} className="shrink-0 text-foreground-muted" />
+              <div className="min-w-0">
+                <Text size="xs" fw={600}>
+                  {t("quickCreate.intentTextCondition")}
+                </Text>
+                <Text size="10" c="var(--foreground-muted)">
+                  {t("quickCreate.intentTextConditionSub")}
+                </Text>
+              </div>
+            </div>
+          </Paper>
+        </SimpleGrid>
+      </SubPanelShell>
 
       {/* ─── time sub-panel ─── */}
       <section

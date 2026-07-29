@@ -13,7 +13,12 @@ export type SubPanelKey =
   | "source-rules"
   | "relations"
   | "flows"
-  | "tasks";
+  | "tasks"
+  | "references"
+  | "completion"
+  | "placement-rules"
+  | "meta"
+  | "task";
 
 interface Props {
   panelKey: SubPanelKey;

@@ -77,4 +77,38 @@ describe("SubPanelShell", () => {
     const region = getRegion("intent");
     expect(region).toHaveAttribute("data-panel-anim", "");
   });
+
+  it("accepts the extended panel keys used by QuickTileCreate", () => {
+    const { rerender, container } = render(
+      <SubPanelShell
+        panelKey="references"
+        activeKey="references"
+        onClose={vi.fn()}
+        headingId="references-heading"
+        title="References"
+        layout="drawer"
+      >
+        <p>refs</p>
+      </SubPanelShell>,
+    );
+    expect(
+      container.querySelector('section[aria-labelledby="references-heading"]'),
+    ).not.toBeNull();
+    rerender(
+      <SubPanelShell
+        panelKey="references"
+        activeKey="meta"
+        onClose={vi.fn()}
+        headingId="references-heading"
+        title="References"
+        layout="drawer"
+      >
+        <p>refs</p>
+      </SubPanelShell>,
+    );
+    const region = container.querySelector(
+      'section[aria-labelledby="references-heading"]',
+    ) as HTMLElement;
+    expect(region).toHaveAttribute("aria-hidden", "true");
+  });
 });
