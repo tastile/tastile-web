@@ -104,11 +104,66 @@ export interface RecurringSlice {
   repeatMode: RepeatChoice;
   weekdayMask: number;
   endDate: string;
+  intervalValue: number;
+  intervalUnit: "min" | "hour" | "day";
 }
 
 export interface AdvancedSlice {
   changeSets: ChangeRule[];
   rules: ChangeRule[];
+}
+
+export interface SourceRelationDraft {
+  id: string;
+  referencedSourceTileId: string;
+  referencedTitle: string;
+  kind: number;
+  point: number;
+  offsetMs: number;
+  ordering: { primary: number; point: number; direction: number };
+  durationKind: "subject" | "reference" | "fixed";
+  fixedDurationMs: number | null;
+  splitPolicy: {
+    kind: "unsplit" | "split";
+    requiredTotalDurationMs: number;
+    minSegmentMs: number | null;
+    maxSegmentMs: number | null;
+  };
+  correlationScope: number;
+  lifecycleFilter: number;
+  eligibleThroughRevision: number;
+  summaryPriority: number;
+}
+
+export interface SourceAuthoringSlice {
+  offsetMin: number;
+  excludedDates: string[];
+  preferredDurationMinMax: DurationRange;
+  splitPolicy: {
+    kind: 0 | 1;
+    minSegmentMs: number | null;
+    maxSegmentMs: number | null;
+    maxSegments: number | null;
+  };
+  priority: number;
+  relations: SourceRelationDraft[];
+  flowSequences: Array<{
+    id: string;
+    observes: Array<
+      | "PlacementCreated"
+      | "PlacementUpdated"
+      | "PlacementClosed"
+      | "ExecutionStarted"
+      | "ExecutionFinished"
+      | "FactChanged"
+      | "MetricChanged"
+    >;
+    when: import("@/lib/domain/v1/condition").ConditionNode | null;
+    candidateWhen: import("@/lib/domain/v1/condition").ConditionNode | null;
+    minimumGapMs: number;
+    rank: number;
+    steps: Array<{ id: string; waitBeforeMs: number; emitDurationMs: number }>;
+  }>;
 }
 
 export interface MetaSlice {
@@ -187,6 +242,7 @@ export interface QuickCreateState {
   plan: Plan;
   time: TimeSlice;
   windows: Window[];
+  source: SourceAuthoringSlice;
   recurring: RecurringSlice;
   recurrence: RecurrenceModel | RecurrenceTemplateRecurrence | null;
   advanced: AdvancedSlice;
@@ -367,11 +423,30 @@ function defaultRecurring(): RecurringSlice {
     repeatMode: "once",
     weekdayMask: 0b0011111, // Mon–Fri
     endDate: "",
+    intervalValue: 30,
+    intervalUnit: "min",
   };
 }
 
 function defaultAdvanced(): AdvancedSlice {
   return { changeSets: [], rules: [] };
+}
+
+function defaultSourceAuthoring(): SourceAuthoringSlice {
+  return {
+    offsetMin: -new Date().getTimezoneOffset(),
+    excludedDates: [],
+    preferredDurationMinMax: { minMs: null, maxMs: null },
+    splitPolicy: {
+      kind: 0,
+      minSegmentMs: null,
+      maxSegmentMs: null,
+      maxSegments: null,
+    },
+    priority: 0,
+    relations: [],
+    flowSequences: [],
+  };
 }
 
 function defaultMeta(): MetaSlice {
@@ -397,6 +472,7 @@ export function buildDefaultQuickCreateState(): Pick<
   | "plan"
   | "time"
   | "windows"
+  | "source"
   | "recurring"
   | "recurrence"
   | "advanced"
@@ -414,6 +490,7 @@ export function buildDefaultQuickCreateState(): Pick<
     plan: defaultPlan(),
     time: defaultTime(),
     windows: [],
+    source: defaultSourceAuthoring(),
     recurring: defaultRecurring(),
     recurrence: null,
     advanced: defaultAdvanced(),
@@ -459,7 +536,9 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   setField: (path, value) =>
     set((state) => {
       const next = setDeepPath(state, path, value);
-      if (!path.startsWith("time.durationMinMax.")) return next;
+      const updatesRequired = path.startsWith("time.durationMinMax.");
+      const updatesPreferred = path.startsWith("source.preferredDurationMinMax.");
+      if (!updatesRequired && !updatesPreferred) return next;
       const [first, ...remaining] = next.plan.completion.timeRequirements;
       if (!first) return next;
       return {
@@ -471,10 +550,18 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
             timeRequirements: [
               {
                 ...first,
-                required: {
-                  minMs: next.time.durationMinMax.minMs,
-                  maxMs: next.time.durationMinMax.maxMs,
-                },
+                required: updatesRequired
+                  ? {
+                      minMs: next.time.durationMinMax.minMs,
+                      maxMs: next.time.durationMinMax.maxMs,
+                    }
+                  : first.required,
+                preferred: updatesPreferred
+                  ? {
+                      minMs: next.source.preferredDurationMinMax.minMs,
+                      maxMs: next.source.preferredDurationMinMax.maxMs,
+                    }
+                  : first.preferred,
               },
               ...remaining,
             ],

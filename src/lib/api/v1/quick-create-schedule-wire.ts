@@ -1,16 +1,26 @@
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { QuickCreateState } from "@/lib/stores/quick-create-store";
 import { tasksForSubmission } from "@/lib/stores/quick-create-store";
-import { toWireSetPlanBody } from "./plan-wire";
+import { convertCondition, toWireSetPlanBody } from "./plan-wire";
 import type { PublishScheduleDefinitionPayload, WindowRule } from "./schedule-definition";
 
 type QuickCreateScheduleState = Pick<
   QuickCreateState,
-  "identity" | "plan" | "time" | "windows" | "recurring" | "advanced" | "meta"
+  "identity" | "plan" | "time" | "windows" | "source" | "recurring" | "advanced" | "meta"
 >;
 
 const DAY_MS = 86_400_000;
 const DEFAULT_INTERVAL_MS = 30 * 60_000;
+
+const MIN_MS = 60_000;
+const HOUR_MS = 60 * MIN_MS;
+
+function intervalAuthoredMs(value: number, unit: "min" | "hour" | "day"): number {
+  if (!Number.isFinite(value) || value <= 0) return DEFAULT_INTERVAL_MS;
+  if (unit === "min") return value * MIN_MS;
+  if (unit === "hour") return value * HOUR_MS;
+  return value * DAY_MS;
+}
 
 function validInstant(value: string | null | undefined): string | null {
   if (!value) return null;
@@ -71,8 +81,8 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     weekday_mask: state.recurring.repeatMode === "weekly" ? state.recurring.weekdayMask : null,
     date_range_start: datePart(state.recurring.life.active.startDate),
     date_range_end: datePart(end),
-    excluded_dates: [] as string[],
-    offset_min: null,
+    excluded_dates: state.source.excludedDates,
+    offset_min: state.source.offsetMin,
   };
 
   if (
@@ -90,7 +100,10 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     starts_at: start ?? now.toISOString(),
     // Weekly authoring is a daily expansion filtered by weekday_mask. A
     // seven-day step would only ever visit the weekday of starts_at.
-    interval_ms: state.recurring.repeatMode === "interval" ? DEFAULT_INTERVAL_MS : DAY_MS,
+    interval_ms:
+      state.recurring.repeatMode === "interval"
+        ? intervalAuthoredMs(state.recurring.intervalValue, state.recurring.intervalUnit)
+        : DAY_MS,
     ends_at: end,
     ...common,
   };
@@ -129,12 +142,6 @@ function publishWindows(
   state: QuickCreateScheduleState,
 ): PublishScheduleDefinitionPayload["windows"] {
   return state.windows.flatMap((window, index) => {
-    const emptyDraft =
-      !window.bounds.start &&
-      !window.bounds.end &&
-      window.rules.length === 0 &&
-      window.referenceId === null;
-    if (emptyDraft) return [];
     if (!window.bounds.start || !window.bounds.end) {
       throw new Error(`window ${index + 1} requires both bounds`);
     }
@@ -181,10 +188,55 @@ function publishWindows(
   });
 }
 
+function minimumGapCondition(
+  minimumGapMs: number,
+): PublishScheduleDefinitionPayload["flows"][number]["candidates"][number]["when"] {
+  const always = { All: [] };
+  const anchor = { when: always, pick: { kind: 0, at: null } };
+  const size = { min: Math.max(0, minimumGapMs), max: Number.MAX_SAFE_INTEGER };
+  return {
+    Term: {
+      Gap: {
+        scope: {
+          kind: 2,
+          parent: null,
+          gap: { left: anchor, right: anchor, size },
+        },
+        left_anchor: anchor,
+        right_anchor: anchor,
+        size,
+      },
+    },
+  };
+}
+
 export function buildQuickCreateSchedulePayload(
   state: QuickCreateScheduleState,
   now = new Date(),
 ): PublishScheduleDefinitionPayload {
+  for (const [index, relation] of state.source.relations.entries()) {
+    if (!relation.referencedSourceTileId) {
+      throw new Error(`relation ${index + 1} requires a referenced Source`);
+    }
+    if (relation.splitPolicy.requiredTotalDurationMs <= 0) {
+      throw new Error(`relation ${index + 1} requires a positive total duration`);
+    }
+    if (
+      relation.splitPolicy.kind === "split" &&
+      ((relation.splitPolicy.minSegmentMs ?? 0) <= 0 ||
+        (relation.splitPolicy.maxSegmentMs ?? 0) < (relation.splitPolicy.minSegmentMs ?? 0))
+    ) {
+      throw new Error(`relation ${index + 1} has an invalid split range`);
+    }
+  }
+  for (const [index, flow] of state.source.flowSequences.entries()) {
+    if (flow.observes.length === 0) {
+      throw new Error(`flow ${index + 1} requires at least one observed event`);
+    }
+    if (flow.steps.length === 0 || flow.steps.some((step) => step.emitDurationMs <= 0)) {
+      throw new Error(`flow ${index + 1} requires positive sequence steps`);
+    }
+  }
   if (state.meta.project || state.meta.tags.length > 0) {
     throw new Error("projects and tags are not supported by atomic schedule publish");
   }
@@ -227,6 +279,18 @@ export function buildQuickCreateSchedulePayload(
     completion: {
       ...state.plan.completion,
       root: completionRoot,
+      timeRequirements: state.plan.completion.timeRequirements.map((requirement, index) =>
+        index === 0
+          ? {
+              ...requirement,
+              preferred:
+                state.source.preferredDurationMinMax.minMs === null &&
+                state.source.preferredDurationMinMax.maxMs === null
+                  ? null
+                  : state.source.preferredDurationMinMax,
+            }
+          : requirement,
+      ),
       tasks: submittedTasks,
     },
   });
@@ -258,20 +322,21 @@ export function buildQuickCreateSchedulePayload(
       },
     ];
   });
+  const sourceClientLocalId = uuidv7();
 
   return {
-    source_client_local_id: uuidv7(),
+    source_client_local_id: sourceClientLocalId,
     source_schedule: {
       required_duration_ms: duration,
       generation: sourceGeneration(state, now),
       window: sourceWindow(state, duration),
       split_policy: {
-        kind: 0,
-        min_segment_ms: null,
-        max_segment_ms: null,
-        max_segments: null,
+        kind: state.source.splitPolicy.kind,
+        min_segment_ms: state.source.splitPolicy.minSegmentMs,
+        max_segment_ms: state.source.splitPolicy.maxSegmentMs,
+        max_segments: state.source.splitPolicy.maxSegments,
       },
-      priority: 0,
+      priority: state.source.priority,
     },
     source_horizon: { start: horizonStart, end: horizonEnd },
     tile: {
@@ -295,7 +360,91 @@ export function buildQuickCreateSchedulePayload(
     reference_targets: referenceTargets,
     windows: publishWindows(state),
     recurrence: null,
-    flows: [],
-    relations: [],
+    flows: state.source.flowSequences.map((flow) => {
+      const firstDuration = flow.steps[0]?.emitDurationMs ?? duration;
+      const gapCondition = minimumGapCondition(flow.minimumGapMs);
+      const candidateCondition = flow.candidateWhen
+        ? ({
+            All: [
+              convertCondition(flow.candidateWhen),
+              gapCondition,
+            ] as PublishScheduleDefinitionPayload["flows"][number]["candidates"][number]["when"][],
+          } as PublishScheduleDefinitionPayload["flows"][number]["candidates"][number]["when"])
+        : gapCondition;
+      return {
+        observes: flow.observes,
+        when: flow.when
+          ? (convertCondition(
+              flow.when,
+            ) as PublishScheduleDefinitionPayload["flows"][number]["when"])
+          : null,
+        candidates: [
+          {
+            when: candidateCondition,
+            rank: flow.rank,
+            outputs: [
+              {
+                ProposeNewPlanPlacementSequence: {
+                  proposal: {
+                    span: {
+                      start: horizonStart,
+                      end: new Date(Date.parse(horizonStart) + firstDuration).toISOString(),
+                    },
+                  },
+                  sequence_steps: flow.steps.map((step) => ({
+                    wait_before_ms: step.waitBeforeMs,
+                    emit_duration_ms: step.emitDurationMs,
+                  })),
+                },
+              },
+            ],
+          },
+        ],
+      };
+    }),
+    relations: state.source.relations.map((relation) => {
+      const referenced = {
+        kind: "existing" as const,
+        source_tile_id: relation.referencedSourceTileId,
+      };
+      const duration_expression =
+        relation.durationKind === "fixed"
+          ? { Fixed: { duration_ms: relation.fixedDurationMs ?? duration } }
+          : relation.durationKind === "reference"
+            ? { ReferenceSpan: { referenced_source_ref: referenced } }
+            : ("SubjectSpan" as const);
+      const split_policy =
+        relation.splitPolicy.kind === "split"
+          ? {
+              Split: {
+                required_total_duration_ms: relation.splitPolicy.requiredTotalDurationMs,
+                min_segment_ms: relation.splitPolicy.minSegmentMs ?? duration,
+                max_segment_ms: relation.splitPolicy.maxSegmentMs ?? duration,
+              },
+            }
+          : {
+              Unsplit: {
+                required_total_duration_ms: relation.splitPolicy.requiredTotalDurationMs,
+              },
+            };
+      return {
+        client_local_id: relation.id,
+        subject_source_ref: {
+          kind: "local" as const,
+          client_local_id: sourceClientLocalId,
+        },
+        referenced_source_ref: referenced,
+        kind: relation.kind,
+        point: relation.point,
+        offset_ms: relation.offsetMs,
+        ordering: relation.ordering,
+        duration_expression,
+        split_policy,
+        correlation_scope: relation.correlationScope,
+        lifecycle_filter: relation.lifecycleFilter,
+        eligible_through_revision: relation.eligibleThroughRevision,
+        summary_priority: relation.summaryPriority,
+      };
+    }),
   };
 }

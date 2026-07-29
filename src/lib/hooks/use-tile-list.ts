@@ -54,6 +54,11 @@ interface TileResponse {
   next_actionable_start_at?: string | null;
 }
 function isTileListResponse(value: unknown): value is TileResponse {
+  // The v1/tiles endpoint returns a plain JSON array of TileListView objects,
+  // not the {tiles: [...]} wrapper this validator was originally written for.
+  // Accept both shapes so the dashboard pages (which lean on this hook) render
+  // real tile rows instead of an empty state when the daemon is reachable.
+  if (Array.isArray(value)) return true;
   return Boolean(
     value && typeof value === "object" && Array.isArray((value as { tiles?: unknown }).tiles),
   );
@@ -87,7 +92,7 @@ export function useTileList(args: UseTileListArgs = {}) {
   const query = useQuery({
     queryKey: [...queryKeys.tiles, keyArgs] as const,
     queryFn: async (): Promise<TileResponse> => {
-      const res = await getCoreClient().call<TileResponse>("getTiles", {
+      const res = await getCoreClient().call<TileResponse | TileListView[]>("getTiles", {
         query: {
           view_mode: args.viewMode,
           lifecycle: args.lifecycle,
@@ -102,6 +107,15 @@ export function useTileList(args: UseTileListArgs = {}) {
       if (!res.ok) throw new Error(res.error.message);
       if (!isTileListResponse(res.data))
         throw new Error("Unexpected /v1/tiles response shape: missing tiles array");
+      // v1/tiles returns a plain array; normalize so downstream consumers can
+      // always read .tiles / .next_actionable_tile_id uniformly.
+      if (Array.isArray(res.data)) {
+        return {
+          tiles: res.data,
+          next_actionable_tile_id: null,
+          next_actionable_start_at: null,
+        };
+      }
       return res.data;
     },
   });

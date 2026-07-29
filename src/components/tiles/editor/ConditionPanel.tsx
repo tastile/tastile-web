@@ -41,9 +41,18 @@ export interface ConditionPanelProps {
   setField: (path: string, value: unknown) => void;
   t: (k: string) => string;
   tileOptions?: { value: string; label: string }[];
+  taskOptions?: { value: string; label: string }[];
+  requirementOptions?: { value: string; label: string }[];
 }
 
-export function ConditionPanel({ root, setField, t, tileOptions }: ConditionPanelProps) {
+export function ConditionPanel({
+  root,
+  setField,
+  t,
+  tileOptions,
+  taskOptions,
+  requirementOptions,
+}: ConditionPanelProps) {
   return (
     <div
       className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
@@ -85,6 +94,8 @@ export function ConditionPanel({ root, setField, t, tileOptions }: ConditionPane
         onChange={(next) => setField("plan.completion.root", next)}
         t={t}
         tileOptions={tileOptions}
+        taskOptions={taskOptions}
+        requirementOptions={requirementOptions}
       />
     </div>
   );

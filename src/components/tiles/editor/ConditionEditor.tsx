@@ -1,13 +1,15 @@
 "use client";
 
-import { Button, NumberInput, Select, TextInput } from "@mantine/core";
+import { Button, NumberInput, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
-import { GitBranch, ListChecks, Plus, Trash2 } from "lucide-react";
-import { useId } from "react";
+import { GitBranch, ListChecks, Plus, Search, Trash2 } from "lucide-react";
+import { useId, useState } from "react";
 
 import { RowSegmented } from "@/components/ui/form";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 import { ConditionKind, HolidayKind } from "@/lib/domain/v1/constants";
+
+import { TileReferencePicker } from "./TileReferencePicker";
 
 // ============================================================
 // Internal segmented pickers
@@ -180,6 +182,67 @@ function updateValue(term: Term, key: string, value: unknown): Term {
 }
 
 // ============================================================
+// PickerButton — modal-launched replacement for inline <Select> tile pickers
+// ============================================================
+
+interface PickerButtonProps {
+  value: string | null;
+  onChange: (next: string | null) => void;
+  placeholder: string;
+  tileKindFilter?: number | number[];
+  filterPlanOnly?: boolean;
+  ariaLabel?: string;
+  testId?: string;
+  filledBackground?: boolean;
+}
+
+function PickerButton({
+  value,
+  onChange,
+  placeholder,
+  tileKindFilter,
+  filterPlanOnly,
+  ariaLabel,
+  testId,
+  filledBackground = true,
+}: PickerButtonProps) {
+  const [opened, setOpened] = useState(false);
+  const hasValue = value !== null && value !== "";
+  return (
+    <>
+      <Button
+        type="button"
+        size="xs"
+        variant={hasValue ? "light" : "filled"}
+        onClick={() => setOpened(true)}
+        leftSection={<Search size={12} aria-hidden="true" />}
+        aria-label={ariaLabel ?? placeholder}
+        data-testid={testId}
+        className="justify-start"
+        styles={{
+          root: {
+            backgroundColor: filledBackground ? "var(--surface-2)" : undefined,
+            color: hasValue ? "var(--foreground)" : "var(--foreground-muted)",
+            width: "100%",
+            fontWeight: 400,
+          },
+        }}
+      >
+        {hasValue ? value : placeholder}
+      </Button>
+      <TileReferencePicker
+        opened={opened}
+        onClose={() => setOpened(false)}
+        onSelect={onChange}
+        currentValue={value}
+        tileKindFilter={tileKindFilter}
+        filterPlanOnly={filterPlanOnly}
+      />
+    </>
+  );
+}
+
+// ============================================================
 // TermFields — renders fields for a Term based on its kind
 // ============================================================
 
@@ -187,12 +250,10 @@ function TermFields({
   term,
   onChange,
   t,
-  tileOptions,
 }: {
   term: Term;
   onChange: (next: Term) => void;
   t: (k: string) => string;
-  tileOptions?: { value: string; label: string }[];
 }) {
   const fieldIdBase = useId();
   switch (term.kind) {
@@ -274,16 +335,11 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.momentReferenceId")}
             </span>
-            <Select
-              id={`${fieldIdBase}-referenceId`}
-              value={term.value.referenceId ?? ""}
-              onChange={(v) => onChange(updateMoment(term, "referenceId", v === "" ? null : v))}
-              data={tileOptions ?? []}
-              searchable
-              clearable
+            <PickerButton
+              value={term.value.referenceId}
+              onChange={(v) => onChange(updateMoment(term, "referenceId", v))}
               placeholder={t("quickCreate.selectTile")}
-              size="xs"
-              comboboxProps={{ withinPortal: false }}
+              testId={`${fieldIdBase}-referenceId-picker`}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-offsetMs`} className="space-y-1">
@@ -305,16 +361,11 @@ function TermFields({
             <span className="block text-foreground-muted">
               {t("quickCreate.relationReferenceId")}
             </span>
-            <Select
-              id={`${fieldIdBase}-referenceId`}
+            <PickerButton
               value={term.value.referenceId}
               onChange={(v) => onChange(updateRelation(term, "referenceId", v ?? ""))}
-              data={tileOptions ?? []}
-              searchable
-              clearable
               placeholder={t("quickCreate.selectTile")}
-              size="xs"
-              comboboxProps={{ withinPortal: false }}
+              testId={`${fieldIdBase}-referenceId-picker`}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-relation`} className="space-y-1">
@@ -346,11 +397,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-taskId`} className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.taskId")}</span>
-            <TextInput
-              id={`${fieldIdBase}-taskId`}
+            <PickerButton
               value={term.value.taskId}
-              onChange={(e) => onChange(updateTask(term, "taskId", e.target.value))}
-              size="xs"
+              onChange={(v) => onChange(updateTask(term, "taskId", v ?? ""))}
+              placeholder={t("quickCreate.selectTask")}
+              testId={`${fieldIdBase}-taskId-picker`}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -370,11 +421,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-requirementId`} className="space-y-1">
             <span className="block text-foreground-muted">{t("quickCreate.requirementId")}</span>
-            <TextInput
-              id={`${fieldIdBase}-requirementId`}
+            <PickerButton
               value={term.value.requirementId}
-              onChange={(e) => onChange(updateRequirement(term, "requirementId", e.target.value))}
-              size="xs"
+              onChange={(v) => onChange(updateRequirement(term, "requirementId", v ?? ""))}
+              placeholder={t("quickCreate.selectRequirement")}
+              testId={`${fieldIdBase}-requirementId-picker`}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -443,11 +494,11 @@ function TermFields({
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-target`} className="space-y-1">
             <span className="block text-foreground-muted">target</span>
-            <TextInput
-              id={`${fieldIdBase}-target`}
+            <PickerButton
               value={term.value.target}
-              onChange={(e) => onChange(updateLife(term, "target", e.target.value))}
-              size="xs"
+              onChange={(v) => onChange(updateLife(term, "target", v ?? ""))}
+              placeholder={t("quickCreate.selectTile")}
+              testId={`${fieldIdBase}-target-picker`}
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
@@ -478,11 +529,15 @@ export function ConditionEditor({
   onChange,
   t,
   tileOptions,
+  taskOptions,
+  requirementOptions,
 }: {
   node: ConditionNode;
   onChange: (next: ConditionNode) => void;
   t: (k: string) => string;
   tileOptions?: { value: string; label: string }[];
+  taskOptions?: { value: string; label: string }[];
+  requirementOptions?: { value: string; label: string }[];
 }) {
   const isTerm = node.kind === ConditionKind.TERM;
   return (
@@ -521,7 +576,6 @@ export function ConditionEditor({
               term={node.term}
               onChange={(next) => onChange({ kind: ConditionKind.TERM, children: [], term: next })}
               t={t}
-              tileOptions={tileOptions}
             />
           ) : null}
         </>
@@ -538,6 +592,8 @@ export function ConditionEditor({
                 }}
                 t={t}
                 tileOptions={tileOptions}
+                taskOptions={taskOptions}
+                requirementOptions={requirementOptions}
               />
               <Button
                 type="button"

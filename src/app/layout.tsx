@@ -4,6 +4,7 @@ import "@mantine/dates/styles.css";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import type { Metadata } from "next";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { DemoSiteBanner } from "@/components/marketing/DemoSiteBanner";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { themeScript } from "@/lib/theme-script";
 import { AppProviders } from "./providers";
@@ -43,7 +44,10 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <GoogleAnalytics measurementId={gaMeasurementId} />
-        <AppProviders>{children}</AppProviders>
+        <AppProviders>
+          <DemoSiteBanner />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

@@ -164,6 +164,8 @@ export interface SourceGenerationPanelProps {
     repeatMode: RepeatMode;
     weekdayMask: number;
     endDate: string;
+    intervalValue: number;
+    intervalUnit: "min" | "hour" | "day";
   };
   /**
    * Patched-through store setter. The orchestrator binds this to
@@ -225,15 +227,52 @@ export function SourceGenerationPanel({
       )}
       {intervalEnabled && (
         <div className="space-y-1.5">
-          <BuilderLabel title={t("quickCreate.intervalLabel") ?? "Interval (min)"} />
-          <NumberInput
-            min={5}
-            step={5}
-            value={30}
-            size="sm"
-            suffix="min"
-            styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-          />
+          <BuilderLabel title={t("quickCreate.intervalLabel") ?? "Interval"} />
+          <div className="flex items-center gap-2">
+            <NumberInput
+              min={recurring.intervalUnit === "min" ? 5 : 1}
+              step={recurring.intervalUnit === "min" ? 5 : 1}
+              value={recurring.intervalValue}
+              onChange={(value) => {
+                const num = typeof value === "number" ? value : Number(value);
+                if (!Number.isFinite(num)) return;
+                const min = recurring.intervalUnit === "min" ? 5 : 1;
+                setField("recurring.intervalValue", Math.max(min, Math.min(365, num)));
+              }}
+              size="sm"
+              className="flex-1"
+              aria-label={t("quickCreate.intervalLabel") ?? "Interval"}
+              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+            />
+            <SegmentedControl
+              size="xs"
+              radius="md"
+              withItemsBorders={false}
+              value={recurring.intervalUnit}
+              onChange={(value) => {
+                const next = value as "min" | "hour" | "day";
+                const defaults: Record<"min" | "hour" | "day", number> = {
+                  min: 30,
+                  hour: 1,
+                  day: 1,
+                };
+                setField("recurring.intervalUnit", next);
+                if (
+                  (next === "min" && recurring.intervalValue < 5) ||
+                  (next === "hour" && recurring.intervalValue > 24) ||
+                  (next === "day" && recurring.intervalValue > 31)
+                ) {
+                  setField("recurring.intervalValue", defaults[next]);
+                }
+              }}
+              data={[
+                { value: "min", label: "min" },
+                { value: "hour", label: "h" },
+                { value: "day", label: "d" },
+              ]}
+              styles={SEGMENT_STYLES}
+            />
+          </div>
         </div>
       )}
       {conditionEnabled && (

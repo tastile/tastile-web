@@ -3,8 +3,8 @@
 import { Button, NumberInput, Switch } from "@mantine/core";
 import { Bell, Languages, Palette } from "lucide-react";
 import { useMemo, useState } from "react";
-import { DirectDaemonToggle } from "@/components/preferences/DirectDaemonToggle";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
+import { DirectDaemonToggle } from "@/components/preferences/DirectDaemonToggle";
 import { RowSegmented } from "@/components/ui/form";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useTranslation } from "@/lib/i18n/use-translation";

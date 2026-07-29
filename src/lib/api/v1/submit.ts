@@ -39,7 +39,7 @@ export function makeClient(): ApiClient {
   const explicitCoreUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_V1_URL;
   const useProxyBridge = !explicitCoreUrl;
   return {
-    baseUrl: explicitCoreUrl ?? "/api/proxy/v1",
+    baseUrl: explicitCoreUrl ?? "/api/proxy",
     useProxyBridge,
     getIdToken: async () => (e2eBypass ? E2E_DEV_TOKEN : null),
   };

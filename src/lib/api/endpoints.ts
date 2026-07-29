@@ -17,7 +17,7 @@
  * null in browser code.
  */
 
-import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookies";
+import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookie-names";
 import { MissingCloudApiBaseError } from "@/lib/upstream/cloud-api-base";
 
 export type ApiErrorKind =

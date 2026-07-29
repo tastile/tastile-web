@@ -131,7 +131,18 @@ export interface PublishScheduleDefinitionPayload {
     candidates: Array<{
       when: Condition;
       rank: number;
-      outputs: Array<{ ProposeNewPlanPlacement: { span: { start: string; end: string } } }>;
+      outputs: Array<
+        | { ProposeNewPlanPlacement: { span: { start: string; end: string } } }
+        | {
+            ProposeNewPlanPlacementSequence: {
+              proposal: { span: { start: string; end: string } };
+              sequence_steps: Array<{
+                wait_before_ms: number;
+                emit_duration_ms: number;
+              }>;
+            };
+          }
+      >;
     }>;
   }>;
   relations?: Array<{
@@ -145,9 +156,26 @@ export interface PublishScheduleDefinitionPayload {
     kind: number;
     point: number;
     offset_ms: number;
-    ordering: number;
-    duration_expression: unknown;
-    split_policy: number;
+    ordering: { primary: number; point: number; direction: number };
+    duration_expression:
+      | "SubjectSpan"
+      | {
+          ReferenceSpan: {
+            referenced_source_ref:
+              | { kind: "local"; client_local_id: string }
+              | { kind: "existing"; source_tile_id: string };
+          };
+        }
+      | { Fixed: { duration_ms: number } };
+    split_policy:
+      | { Unsplit: { required_total_duration_ms: number } }
+      | {
+          Split: {
+            required_total_duration_ms: number;
+            min_segment_ms: number;
+            max_segment_ms: number;
+          };
+        };
     correlation_scope: number;
     lifecycle_filter: number;
     eligible_through_revision: number;

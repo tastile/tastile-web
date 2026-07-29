@@ -556,6 +556,10 @@ export function getSourceTile(
   return getRead(client, `/v1/source-tiles/${sourceTileId}`);
 }
 
+export function listSourceTiles(client: ApiClient): Promise<Result<SourceTileRead[]>> {
+  return getRead(client, "/v1/source-tiles");
+}
+
 export function listSourceTilePlacements(
   client: ApiClient,
   sourceTileId: string,

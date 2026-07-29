@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookies";
+import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookie-names";
 
 afterEach(() => {
   vi.restoreAllMocks();

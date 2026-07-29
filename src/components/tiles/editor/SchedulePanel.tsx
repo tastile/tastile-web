@@ -24,16 +24,17 @@
  */
 
 import { ActionIcon, Button, SegmentedControl, Switch } from "@mantine/core";
-import { DateTimePicker, TimeInput } from "@mantine/dates";
-import { Calendar, Folder, Plus, Tag, X } from "lucide-react";
+import { DatePickerInput, DateTimePicker, TimeInput } from "@mantine/dates";
+import { Calendar, Folder, Plus, Search, Tag, X } from "lucide-react";
+import { useState } from "react";
 
-import { FormDivider, FormRow, RowInput, RowSegmented, SectionHeader } from "@/components/ui/form";
-import { MiniCalendar } from "@/components/ui/MiniCalendar";
+import { FormDivider, FormRow, RowSegmented, SectionHeader } from "@/components/ui/form";
 import type { Window } from "@/lib/domain/v1/window";
 import type { TimeOfDayMode, WhenMode } from "@/lib/stores/quick-create-store";
 
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
 import { SEGMENT_STYLES } from "./panel-styles";
+import { TileReferencePicker } from "./TileReferencePicker";
 
 const WHEN_MODE_OPTIONS: ReadonlyArray<{
   id: WhenMode;
@@ -236,6 +237,7 @@ interface WindowRowProps {
 
 function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
   const referenceKind = window.kind === 1 || window.kind === 2 || window.kind === 3;
+  const [pickerOpen, setPickerOpen] = useState(false);
   return (
     <div data-testid={`window-row-${index}`} className="space-y-2 border-l-2 border-surface-2 pl-3">
       <div className="flex items-center justify-between">
@@ -295,18 +297,40 @@ function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
         </div>
       </FormRow>
       {referenceKind ? (
-        <RowInput
-          icon={Tag}
-          placeholder={t("quickCreate.windowReferenceIdLabel")}
-          value={window.referenceId ?? ""}
-          onChange={(value) =>
-            onUpdate(index, (w) => ({
-              ...w,
-              referenceId: value.trim() ? value : null,
-            }))
-          }
-          ariaLabel={t("quickCreate.windowReferenceIdLabel")}
-        />
+        <FormRow icon={<Tag size={20} />}>
+          <Button
+            type="button"
+            size="sm"
+            variant={window.referenceId ? "light" : "filled"}
+            onClick={() => setPickerOpen(true)}
+            leftSection={<Search size={12} aria-hidden="true" />}
+            data-testid={`window-reference-picker-${index}`}
+            aria-label={t("quickCreate.windowReferenceIdLabel")}
+            className="w-full justify-start"
+            styles={{
+              root: {
+                backgroundColor: window.referenceId
+                  ? "var(--accent-soft, var(--surface-2))"
+                  : "var(--surface-2)",
+                color: window.referenceId ? "var(--foreground)" : "var(--foreground-muted)",
+                fontWeight: 400,
+              },
+            }}
+          >
+            {window.referenceId || t("quickCreate.windowReferenceIdLabel")}
+          </Button>
+          <TileReferencePicker
+            opened={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={(tileId) =>
+              onUpdate(index, (w) => ({
+                ...w,
+                referenceId: tileId ?? null,
+              }))
+            }
+            currentValue={window.referenceId ?? null}
+          />
+        </FormRow>
       ) : null}
     </div>
   );
@@ -343,48 +367,7 @@ export function SchedulePanel({
 }: SchedulePanelProps) {
   const startDay = isoToPicker(time.span.start);
   const endDay = isoToPicker(time.span.end);
-
-  // Days to highlight as a range: every day from start to end inclusive.
-  // React Compiler memoizes this automatically; no manual `useMemo` needed.
-  let highlightDays: readonly string[] | undefined;
-  if (time.whenMode === "range" && startDay && endDay) {
-    const start = new Date(startDay);
-    const end = new Date(endDay);
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
-      const days: string[] = [];
-      if (start <= end) {
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-          days.push(d.toISOString().slice(0, 10));
-        }
-      } else {
-        for (let d = new Date(end); d <= start; d.setDate(d.getDate() + 1)) {
-          days.push(d.toISOString().slice(0, 10));
-        }
-      }
-      highlightDays = days;
-    }
-  }
-
-  function applyCalendarSelect(date: string) {
-    if (time.whenMode === "day") {
-      setField("time.span.start", date);
-      setField("time.span.end", "");
-      return;
-    }
-    if (time.whenMode === "range") {
-      // First click sets start, second click sets end (with swap if needed).
-      if (!time.span.start || (time.span.start && time.span.end)) {
-        setField("time.span.start", date);
-        setField("time.span.end", "");
-      } else {
-        const cur = time.span.start;
-        const finalStart = cur <= date ? cur : date;
-        const finalEnd = cur <= date ? date : cur;
-        setField("time.span.start", finalStart);
-        setField("time.span.end", finalEnd);
-      }
-    }
-  }
+  const [referencePickerOpen, setReferencePickerOpen] = useState(false);
 
   function applyWhenMode(next: WhenMode) {
     setField("time.whenMode", next);
@@ -452,10 +435,35 @@ export function SchedulePanel({
           className="space-y-2 rounded-lg border border-border bg-surface-0 p-3"
           data-testid="when-calendar"
         >
-          <MiniCalendar
-            selected={startDay || undefined}
-            onSelect={applyCalendarSelect}
-            highlight={highlightDays ?? (startDay ? [startDay] : [])}
+          <DatePickerInput
+            type={time.whenMode === "range" ? "range" : "default"}
+            aria-label={t("quickCreate.whenDateLabel")}
+            placeholder={
+              time.whenMode === "range"
+                ? t("quickCreate.calendarRangePlaceholder")
+                : t("quickCreate.calendarDayPlaceholder")
+            }
+            value={
+              time.whenMode === "range" ? [startDay || null, endDay || null] : startDay || null
+            }
+            onChange={(value) => {
+              if (time.whenMode === "range") {
+                if (Array.isArray(value)) {
+                  const [s, e] = value;
+                  setField("time.span.start", s ?? "");
+                  setField("time.span.end", e ?? "");
+                }
+                return;
+              }
+              setField("time.span.start", value ?? "");
+              setField("time.span.end", "");
+            }}
+            size="xs"
+            variant="filled"
+            clearable
+            popoverProps={{ withinPortal: false }}
+            styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+            data-testid="when-calendar-input"
           />
           <div className="flex flex-wrap gap-1" data-testid="when-calendar-quick-row">
             {[
@@ -504,14 +512,40 @@ export function SchedulePanel({
               {t("quickCreate.referenceRangeTitle")}
             </div>
             <div className="text-[10px] text-foreground-muted">
-              {t("quickCreate.referenceRangeSub")}
+              {time.referenceId
+                ? time.referenceLabel || time.referenceId
+                : t("quickCreate.referenceRangeEmpty")}
             </div>
           </div>
-          <span className="rounded-full bg-accent-soft px-2 py-0.5 text-[10px] font-semibold text-accent-ink">
-            {t("quickCreate.referenceRangeBadge")}
-          </span>
+          <Button
+            type="button"
+            size="xs"
+            variant={time.referenceId ? "light" : "default"}
+            onClick={() => setReferencePickerOpen(true)}
+            leftSection={<Search size={12} aria-hidden="true" />}
+            data-testid="when-reference-pick"
+            aria-label={t("quickCreate.tilePickerPickAria")}
+          >
+            {t("quickCreate.referenceRangePick")}
+          </Button>
         </div>
       ) : null}
+
+      <TileReferencePicker
+        opened={referencePickerOpen}
+        onClose={() => setReferencePickerOpen(false)}
+        onSelect={(tileId) => {
+          setReferencePickerOpen(false);
+          if (!tileId) {
+            setField("time.referenceId", null);
+            setField("time.referenceLabel", "");
+            return;
+          }
+          setField("time.referenceId", tileId);
+        }}
+        currentValue={time.referenceId ?? null}
+        filterPlanOnly
+      />
 
       {time.whenMode !== "none" ? <FormDivider /> : null}
 

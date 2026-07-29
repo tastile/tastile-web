@@ -14,7 +14,7 @@ describe("SourceGenerationPanel", () => {
     const setField = vi.fn();
     const { container } = render(
       <SourceGenerationPanel
-        recurring={{ repeatMode: "once", weekdayMask: 0, endDate: "" }}
+        recurring={{ repeatMode: "once", weekdayMask: 0, endDate: "", intervalValue: 30, intervalUnit: "min" }}
         setField={setField}
         locale="en"
         t={(key) => key}
@@ -27,7 +27,7 @@ describe("SourceGenerationPanel", () => {
     const setField = vi.fn();
     render(
       <SourceGenerationPanel
-        recurring={{ repeatMode: "weekly", weekdayMask: 0, endDate: "" }}
+        recurring={{ repeatMode: "weekly", weekdayMask: 0, endDate: "", intervalValue: 30, intervalUnit: "min" }}
         setField={setField}
         locale="en"
         t={(key) => key}
@@ -46,7 +46,7 @@ describe("SourceGenerationPanel", () => {
   it("hides the weekday row when repeatMode is not weekly", () => {
     render(
       <SourceGenerationPanel
-        recurring={{ repeatMode: "daily", weekdayMask: 0, endDate: "" }}
+        recurring={{ repeatMode: "daily", weekdayMask: 0, endDate: "", intervalValue: 30, intervalUnit: "min" }}
         setField={vi.fn()}
         locale="en"
         t={(key) => key}
@@ -59,7 +59,7 @@ describe("SourceGenerationPanel", () => {
     const setField = vi.fn();
     render(
       <SourceGenerationPanel
-        recurring={{ repeatMode: "once", weekdayMask: 0, endDate: "" }}
+        recurring={{ repeatMode: "once", weekdayMask: 0, endDate: "", intervalValue: 30, intervalUnit: "min" }}
         setField={setField}
         locale="en"
         t={(key) => key}

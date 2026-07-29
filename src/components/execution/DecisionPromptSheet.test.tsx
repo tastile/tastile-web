@@ -14,7 +14,7 @@ vi.mock("@/lib/api/v1/sessions", () => ({
 
 vi.mock("@/lib/api/v1/submit", () => ({
   makeClient: () => ({
-    baseUrl: "/api/proxy/v1",
+    baseUrl: "/api/proxy",
     useProxyBridge: true,
     getIdToken: async () => null,
   }),

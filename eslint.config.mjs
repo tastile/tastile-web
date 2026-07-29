@@ -222,6 +222,7 @@ const eslintConfig = defineConfig([
   },
   globalIgnores([
     ".next/**",
+    ".next-*/**",
     ".next-turbopack-broken-*/**",
     "out/**",
     "build/**",

@@ -29,6 +29,7 @@ import {
   Button,
   CloseButton,
   Group,
+  Modal,
   NumberInput,
   Paper,
   SegmentedControl,
@@ -40,6 +41,7 @@ import {
   TextInput,
   UnstyledButton,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import {
   Calendar,
   Check,
@@ -56,6 +58,7 @@ import {
   Play,
   Plus,
   Repeat,
+  Search,
   SlidersHorizontal,
   Tag,
   Trash2,
@@ -65,10 +68,15 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultTerm } from "@/components/tiles/editor/ConditionEditor";
 import { ConditionPanel } from "@/components/tiles/editor/ConditionPanel";
+import { FlowSequencePanel } from "@/components/tiles/editor/FlowSequencePanel";
+import { PlacementRulesPanel } from "@/components/tiles/editor/PlacementRulesPanel";
 import { SEGMENT_STYLES } from "@/components/tiles/editor/panel-styles";
+import { RelationPanel } from "@/components/tiles/editor/RelationPanel";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { SourceGenerationPanel } from "@/components/tiles/editor/SourceGenerationPanel";
+import { SourceWindowPanel } from "@/components/tiles/editor/SourceWindowPanel";
 import { SubPanelHeader } from "@/components/tiles/editor/SubPanelHeader";
+import { TileReferencePicker } from "@/components/tiles/editor/TileReferencePicker";
 import { FormPanel, FormRow, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
 import { makeClient, submitCreateTile } from "@/lib/api/v1/submit";
@@ -84,7 +92,7 @@ import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { Window } from "@/lib/domain/v1/window";
 import { notifyEventsChanged } from "@/lib/hooks/calendar/use-events";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
-import { useProjects } from "@/lib/hooks/use-projects";
+import { createWorkspace, useProjects } from "@/lib/hooks/use-projects";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { translations } from "@/lib/i18n/translations";
 import { useTranslation } from "@/lib/i18n/use-translation";
@@ -276,6 +284,7 @@ export function QuickTileCreate() {
   const plan = useQuickCreateStore((s) => s.plan);
   const time = useQuickCreateStore((s) => s.time);
   const windows = useQuickCreateStore((s) => s.windows);
+  const source = useQuickCreateStore((s) => s.source);
   const recurring = useQuickCreateStore((s) => s.recurring);
   const meta = useQuickCreateStore((s) => s.meta);
 
@@ -291,6 +300,10 @@ export function QuickTileCreate() {
     | "recurring"
     | "references"
     | "completion"
+    | "source-rules"
+    | "relations"
+    | "flows"
+    | "placement-rules"
     | "meta"
     | "task"
   >("base");
@@ -315,6 +328,27 @@ export function QuickTileCreate() {
         .map((tile) => ({ value: tile.plan_id as string, label: tile.title || tile.id })),
     [tiles.tiles],
   );
+  const taskPickerData = useMemo(
+    () =>
+      plan.completion.tasks.map((task) => ({
+        value: task.id,
+        label: task.content?.title?.trim() || task.id,
+      })),
+    [plan.completion.tasks],
+  );
+  const requirementPickerData = useMemo(
+    () =>
+      plan.completion.timeRequirements.map((tr, i) => {
+        const min = tr.required.minMs;
+        const minLabel = min === null || min === undefined ? "" : `${Math.round(min / 60000)}m`;
+        const scopeLabel = tr.observation?.scope ?? "";
+        const label = minLabel
+          ? `${scopeLabel ? `${scopeLabel} · ` : ""}${minLabel} ${i + 1}`
+          : `Time req ${i + 1}`;
+        return { value: tr.id, label };
+      }),
+    [plan.completion.timeRequirements],
+  );
   useEffect(() => {
     void refreshProjects();
   }, [refreshProjects]);
@@ -323,6 +357,13 @@ export function QuickTileCreate() {
   const [error, setError] = useState<string | null>(null);
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
   const [lastConditionTab, setLastConditionTab] = useState<string | null>(null);
+  const [projectModalOpen, { open: openProjectModal, close: closeProjectModal }] =
+    useDisclosure(false);
+  const [newProjectName, setNewProjectName] = useState("");
+  const [newProjectSlug, setNewProjectSlug] = useState("");
+  const [newProjectBusy, setNewProjectBusy] = useState(false);
+  const [newProjectError, setNewProjectError] = useState<string | null>(null);
+  const [referencePickerIndex, setReferencePickerIndex] = useState<number | null>(null);
 
   const headingLabel = (() => {
     const isEdit = mode === "edit";
@@ -527,6 +568,10 @@ export function QuickTileCreate() {
       | "recurring"
       | "references"
       | "completion"
+      | "source-rules"
+      | "relations"
+      | "flows"
+      | "placement-rules"
       | "meta"
       | "task",
   ) =>
@@ -565,7 +610,7 @@ export function QuickTileCreate() {
       />
 
       {/* main panel */}
-      <section className={panelClass} aria-label={headingLabel}>
+      <section className={panelClass} aria-label={headingLabel} data-testid="quick-create-panel">
         {/* ─── composer head ─── */}
         <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
@@ -706,6 +751,7 @@ export function QuickTileCreate() {
                 />
                 <V4EssentialRow
                   icon={Clock}
+                  testId="quick-create-duration"
                   label={t("quickCreate.duration")}
                   chip={
                     time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
@@ -744,6 +790,7 @@ export function QuickTileCreate() {
                 />
                 <V4EssentialRow
                   icon={Repeat}
+                  testId="quick-create-repeat"
                   label={t("quickCreate.repeatChip")}
                   chip={
                     recurring.repeatMode === "once" ? (
@@ -759,6 +806,17 @@ export function QuickTileCreate() {
                             {weekdayLabelsFor(locale)
                               .filter((_, i) => (recurring.weekdayMask & (1 << i)) !== 0)
                               .join(", ")}
+                            )
+                          </span>
+                        ) : null}
+                        {recurring.repeatMode === "interval" ? (
+                          <span className="text-foreground-muted">
+                            ({recurring.intervalValue}
+                            {recurring.intervalUnit === "min"
+                              ? "min"
+                              : recurring.intervalUnit === "hour"
+                                ? "h"
+                                : "d"}
                             )
                           </span>
                         ) : null}
@@ -782,6 +840,95 @@ export function QuickTileCreate() {
                   confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
                   confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
                 />
+                <V4EssentialRow
+                  icon={SlidersHorizontal}
+                  label="配置・分割"
+                  chip={
+                    <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                      priority {source.priority}
+                      {source.splitPolicy.kind === 1 ? " · split" : ""}
+                    </span>
+                  }
+                  clearable={false}
+                  onClick={() => setActivePanel("source-rules")}
+                  editAria="配置・分割を編集"
+                  clearAria=""
+                  confirmClearAria=""
+                  confirmClearLabel=""
+                />
+                <V4EssentialRow
+                  icon={Link2}
+                  label="Source関係"
+                  chip={
+                    source.relations.length === 0 ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("quickCreate.essentialsNotSet")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 truncate rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                        {source.relations
+                          .slice(0, 2)
+                          .map((r) => r.referencedTitle || "—")
+                          .join(" / ")}
+                        {source.relations.length > 2 ? ` · +${source.relations.length - 2}` : ""}
+                      </span>
+                    )
+                  }
+                  clearable={false}
+                  onClick={() => setActivePanel("relations")}
+                  editAria="Source関係を編集"
+                  clearAria=""
+                  confirmClearAria=""
+                  confirmClearLabel=""
+                />
+                <V4EssentialRow
+                  icon={Layers}
+                  label="条件駆動Flow"
+                  chip={
+                    source.flowSequences.length === 0 ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("quickCreate.essentialsNotSet")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 truncate rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                        {`${source.flowSequences.length}${t("quickCreate.essentialsItemsUnit")}`}
+                        {source.flowSequences[0]?.minimumGapMs
+                          ? ` · ${Math.round(source.flowSequences[0].minimumGapMs / 60000)}m`
+                          : ""}
+                      </span>
+                    )
+                  }
+                  clearable={false}
+                  onClick={() => setActivePanel("flows")}
+                  editAria="Flow sequenceを編集"
+                  clearAria=""
+                  confirmClearAria=""
+                  confirmClearLabel=""
+                />
+                <V4EssentialRow
+                  icon={SlidersHorizontal}
+                  label="配置ルール"
+                  chip={
+                    plan.planning.placementRules.length === 0 ? (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 rounded-lg bg-surface-1 px-2.5 text-xs font-bold text-foreground-muted">
+                        {t("quickCreate.essentialsNotSet")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex h-[30px] items-center gap-1.5 truncate rounded-lg bg-accent-soft px-2.5 text-xs font-bold text-accent-ink">
+                        {`${plan.planning.placementRules.length}${t("quickCreate.essentialsItemsUnit")}`}
+                        {plan.planning.placementRules[0]?.effect
+                          ? ` · rank ${plan.planning.placementRules[0].rank}`
+                          : ""}
+                      </span>
+                    )
+                  }
+                  clearable={false}
+                  onClick={() => setActivePanel("placement-rules")}
+                  editAria="配置ルールを編集"
+                  clearAria=""
+                  confirmClearAria=""
+                  confirmClearLabel=""
+                />
               </div>
 
               {/* ─── tasks block ─── */}
@@ -801,9 +948,19 @@ export function QuickTileCreate() {
                   </ActionIcon>
                 </div>
                 <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-                  {plan.completion.tasks.length > 0
-                    ? `${plan.completion.tasks.length}${t("quickCreate.completionItemsHint")}`
-                    : t("quickCreate.completionAddHint")}
+                  {plan.completion.tasks.length === 0
+                    ? t("quickCreate.completionAddHint")
+                    : (() => {
+                        const titles = plan.completion.tasks
+                          .map((tk) => (tk.content?.title ?? "").trim())
+                          .filter((t) => t.length > 0);
+                        if (titles.length === 0) {
+                          return t("quickCreate.completionTasksUnnamed");
+                        }
+                        const preview = titles.slice(0, 2).join(" / ");
+                        const overflow = titles.length > 2 ? ` · +${titles.length - 2}` : "";
+                        return `${preview}${overflow} ${t("quickCreate.completionSummaryTail")}`;
+                      })()}
                 </div>
                 <div className="space-y-1.5">
                   {plan.completion.tasks.length === 0 ? (
@@ -1081,6 +1238,7 @@ export function QuickTileCreate() {
         data-subpanel="intent"
         className={subPanelClass("intent")}
         aria-hidden={activePanel !== "intent"}
+        inert={activePanel !== "intent"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
@@ -1133,6 +1291,7 @@ export function QuickTileCreate() {
         data-subpanel="time"
         className={subPanelClass("time")}
         aria-hidden={activePanel !== "time"}
+        inert={activePanel !== "time"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
@@ -1156,9 +1315,11 @@ export function QuickTileCreate() {
 
       {/* ─── duration sub-panel ─── */}
       <section
+        data-testid="quick-create-duration-panel"
         data-subpanel="duration"
         className={subPanelClass("duration")}
         aria-hidden={activePanel !== "duration"}
+        inert={activePanel !== "duration"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
@@ -1188,6 +1349,10 @@ export function QuickTileCreate() {
                 if (value === "none") {
                   setField("time.durationMinMax.minMs", null);
                   setField("time.durationMinMax.maxMs", null);
+                } else if (value === "custom") {
+                  const fallback = 30 * 60_000;
+                  setField("time.durationMinMax.minMs", fallback);
+                  setField("time.durationMinMax.maxMs", fallback);
                 }
               }}
               styles={SEGMENT_STYLES}
@@ -1219,16 +1384,101 @@ export function QuickTileCreate() {
 
       {/* ─── recurring sub-panel ─── */}
       <section
+        data-testid="quick-create-recurring-panel"
         data-subpanel="recurring"
         className={subPanelClass("recurring")}
         aria-hidden={activePanel !== "recurring"}
+        inert={activePanel !== "recurring"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
           backAriaLabel={t("quickCreate.back")}
           title={t("quickCreate.repeatChip")}
         />
-        <SourceGenerationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
+        <div className="flex-1 overflow-auto p-4">
+          <SourceGenerationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
+        </div>
+      </section>
+
+      <section
+        data-subpanel="source-rules"
+        className={subPanelClass("source-rules")}
+        aria-hidden={activePanel !== "source-rules"}
+        inert={activePanel !== "source-rules"}
+      >
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title="配置・分割・ローカル日付"
+        />
+        <div className="flex-1 overflow-auto">
+          <SourceWindowPanel source={source} time={time} setField={setField} />
+        </div>
+      </section>
+
+      <section
+        data-subpanel="relations"
+        className={subPanelClass("relations")}
+        aria-hidden={activePanel !== "relations"}
+        inert={activePanel !== "relations"}
+      >
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title="Source参照関係"
+        />
+        <div className="flex-1 overflow-auto">
+          <RelationPanel
+            relations={source.relations}
+            setRelations={(relations) => setField("source.relations", relations)}
+          />
+        </div>
+      </section>
+
+      <section
+        data-subpanel="flows"
+        className={subPanelClass("flows")}
+        aria-hidden={activePanel !== "flows"}
+        inert={activePanel !== "flows"}
+      >
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title="条件駆動Flow"
+        />
+        <div className="flex-1 overflow-auto">
+          <FlowSequencePanel
+            flows={source.flowSequences}
+            setFlows={(flowSequences) => setField("source.flowSequences", flowSequences)}
+            t={t}
+            tileOptions={tilePickerData}
+            taskOptions={taskPickerData}
+            requirementOptions={requirementPickerData}
+          />
+        </div>
+      </section>
+
+      <section
+        data-subpanel="placement-rules"
+        className={subPanelClass("placement-rules")}
+        aria-hidden={activePanel !== "placement-rules"}
+        inert={activePanel !== "placement-rules"}
+      >
+        <SubPanelHeader
+          onBack={() => setActivePanel("base")}
+          backAriaLabel={t("quickCreate.back")}
+          title="配置ルール"
+        />
+        <div className="flex-1 overflow-auto">
+          <PlacementRulesPanel
+            rules={plan.planning.placementRules}
+            setRules={(placementRules) => setField("plan.planning.placementRules", placementRules)}
+            t={t}
+            tileOptions={tilePickerData}
+            taskOptions={taskPickerData}
+            requirementOptions={requirementPickerData}
+          />
+        </div>
       </section>
 
       {/* ─── references sub-panel ─── */}
@@ -1236,6 +1486,7 @@ export function QuickTileCreate() {
         data-subpanel="references"
         className={subPanelClass("references")}
         aria-hidden={activePanel !== "references"}
+        inert={activePanel !== "references"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
@@ -1288,29 +1539,26 @@ export function QuickTileCreate() {
                         </span>
                       </div>
                     </div>
-                    <Select
-                      aria-label={t("quickCreate.referenceIdPlaceholder")}
-                      placeholder={t("quickCreate.referenceIdPlaceholder")}
-                      value={ref.target.referenceId ?? null}
-                      onChange={(value) => {
-                        const next = plan.references.slice();
-                        next[i] = {
-                          ...ref,
-                          target: { ...ref.target, referenceId: value || null },
-                        };
-                        setField("plan.references", next);
-                      }}
-                      data={tiles.tiles.map((t) => ({
-                        value: t.id,
-                        label: t.title || t.id,
-                      }))}
-                      searchable
-                      clearable
+                    <Button
+                      type="button"
                       size="sm"
-                      variant="filled"
-                      styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-                      comboboxProps={{ withinPortal: false }}
-                    />
+                      variant={hasTarget ? "light" : "filled"}
+                      onClick={() => setReferencePickerIndex(i)}
+                      leftSection={<Search size={14} aria-hidden="true" />}
+                      data-testid={`reference-picker-trigger-${i}`}
+                      aria-label={t("quickCreate.tilePickerPickAria")}
+                      className="justify-start"
+                      styles={{
+                        root: {
+                          backgroundColor: hasTarget
+                            ? "var(--accent-soft, var(--surface-2))"
+                            : "var(--surface-2)",
+                          color: "var(--foreground)",
+                        },
+                      }}
+                    >
+                      {hasTarget ? ref.target.referenceId : t("quickCreate.referenceIdPlaceholder")}
+                    </Button>
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
@@ -1426,6 +1674,27 @@ export function QuickTileCreate() {
               {t("quickCreate.addReference")}
             </Button>
           </div>
+          <TileReferencePicker
+            opened={referencePickerIndex !== null}
+            onClose={() => setReferencePickerIndex(null)}
+            onSelect={(tileId) => {
+              if (referencePickerIndex === null) return;
+              const idx = referencePickerIndex;
+              const ref = plan.references[idx];
+              if (!ref) return;
+              const next = plan.references.slice();
+              next[idx] = {
+                ...ref,
+                target: { ...ref.target, referenceId: tileId ?? null },
+              };
+              setField("plan.references", next);
+            }}
+            currentValue={
+              referencePickerIndex !== null
+                ? (plan.references[referencePickerIndex]?.target.referenceId ?? null)
+                : null
+            }
+          />
         </FormPanel>
       </section>
 
@@ -1434,6 +1703,7 @@ export function QuickTileCreate() {
         data-subpanel="completion"
         className={subPanelClass("completion")}
         aria-hidden={activePanel !== "completion"}
+        inert={activePanel !== "completion"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
@@ -1447,6 +1717,8 @@ export function QuickTileCreate() {
             setField={setField}
             t={t}
             tileOptions={tilePickerData}
+            taskOptions={taskPickerData}
+            requirementOptions={requirementPickerData}
           />
           {plan.completion.timeRequirements.length > 0 && (
             <div
@@ -1602,6 +1874,7 @@ export function QuickTileCreate() {
         data-subpanel="meta"
         className={subPanelClass("meta")}
         aria-hidden={activePanel !== "meta"}
+        inert={activePanel !== "meta"}
       >
         <SubPanelHeader
           onBack={() => setActivePanel("base")}
@@ -1615,31 +1888,45 @@ export function QuickTileCreate() {
               <span>{t("quickCreate.organizeProject")}</span>
             </div>
             <div className="flex flex-col gap-2" data-testid="meta-project-catalog">
-              <Select
-                size="xs"
-                variant="filled"
-                aria-label={t("quickCreate.organizeProject")}
-                placeholder={t("quickCreate.organizeProject")}
-                value={meta.ownerSubjectId ?? ""}
-                onChange={(value) => setField("meta.ownerSubjectId", value ? value : null)}
-                allowDeselect={false}
-                leftSection={<FolderOpen size={14} aria-hidden="true" />}
-                data={[
-                  {
-                    value: "",
-                    label: t("quickCreate.projectOwnerDefault"),
-                  },
-                  ...projects.workspaces.map((w) => ({
-                    value: w.id,
-                    label: w.display_name,
-                  })),
-                ]}
-                comboboxProps={{ withinPortal: true }}
-                searchable
-                styles={{
-                  input: { backgroundColor: "var(--surface-2)" },
-                }}
-              />
+              <div className="flex items-center gap-1">
+                <Select
+                  size="xs"
+                  variant="filled"
+                  aria-label={t("quickCreate.organizeProject")}
+                  placeholder={t("quickCreate.organizeProject")}
+                  value={meta.ownerSubjectId ?? ""}
+                  onChange={(value) => setField("meta.ownerSubjectId", value ? value : null)}
+                  allowDeselect={false}
+                  leftSection={<FolderOpen size={14} aria-hidden="true" />}
+                  data={[
+                    {
+                      value: "",
+                      label: t("quickCreate.projectOwnerDefault"),
+                    },
+                    ...projects.workspaces.map((w) => ({
+                      value: w.id,
+                      label: w.display_name,
+                    })),
+                  ]}
+                  comboboxProps={{ withinPortal: true }}
+                  searchable
+                  className="flex-1"
+                  styles={{
+                    input: { backgroundColor: "var(--surface-2)" },
+                  }}
+                />
+                <ActionIcon
+                  type="button"
+                  variant="outline"
+                  size="md"
+                  radius="md"
+                  aria-label={t("quickCreate.projectCreateLabel")}
+                  data-testid="meta-project-create"
+                  onClick={openProjectModal}
+                >
+                  <Plus size={14} aria-hidden="true" />
+                </ActionIcon>
+              </div>
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -1700,6 +1987,7 @@ export function QuickTileCreate() {
         data-subpanel="task"
         className={subPanelClass("task")}
         aria-hidden={activePanel !== "task"}
+        inert={activePanel !== "task"}
       >
         <SubPanelHeader
           onBack={() => {
@@ -1912,6 +2200,108 @@ export function QuickTileCreate() {
           })()}
         </FormPanel>
       </section>
+
+      <Modal
+        opened={projectModalOpen}
+        onClose={() => {
+          if (newProjectBusy) return;
+          setNewProjectName("");
+          setNewProjectSlug("");
+          setNewProjectError(null);
+          closeProjectModal();
+        }}
+        title={t("quickCreate.projectCreateModalTitle")}
+        centered
+        size="sm"
+      >
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            const trimmedName = newProjectName.trim();
+            if (!trimmedName) {
+              setNewProjectError(t("quickCreate.projectCreateNameRequired"));
+              return;
+            }
+            if (newProjectBusy) return;
+            setNewProjectBusy(true);
+            setNewProjectError(null);
+            void createWorkspace({
+              display_name: trimmedName,
+              slug: newProjectSlug.trim() || null,
+              color: null,
+              parent_subject_id: null,
+            })
+              .then(async (ws) => {
+                await refreshProjects();
+                setField("meta.ownerSubjectId", ws.id);
+                setNewProjectName("");
+                setNewProjectSlug("");
+                closeProjectModal();
+              })
+              .catch((err: unknown) => {
+                setNewProjectError((err as Error).message);
+              })
+              .finally(() => {
+                setNewProjectBusy(false);
+              });
+          }}
+          className="flex flex-col gap-3"
+        >
+          <TextInput
+            value={newProjectName}
+            onChange={(e) => setNewProjectName(e.currentTarget.value)}
+            placeholder={t("quickCreate.projectCreateNamePlaceholder")}
+            maxLength={80}
+            required
+            disabled={newProjectBusy}
+            data-testid="meta-project-create-name"
+            label={t("quickCreate.projectCreateNameLabel")}
+            size="sm"
+          />
+          <TextInput
+            value={newProjectSlug}
+            onChange={(e) => {
+              const normalized = e.currentTarget.value.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+              setNewProjectSlug(normalized);
+            }}
+            placeholder={t("quickCreate.projectCreateSlugPlaceholder")}
+            pattern="[a-z0-9-]+"
+            maxLength={40}
+            disabled={newProjectBusy}
+            data-testid="meta-project-create-slug"
+            label={t("quickCreate.projectCreateSlugLabel")}
+            size="sm"
+          />
+          <div className="flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={newProjectBusy}
+              onClick={() => {
+                setNewProjectName("");
+                setNewProjectSlug("");
+                setNewProjectError(null);
+                closeProjectModal();
+              }}
+              data-testid="meta-project-create-cancel"
+            >
+              {t("quickCreate.projectCreateCancelLabel")}
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              loading={newProjectBusy}
+              data-testid="meta-project-create-submit"
+            >
+              {t("quickCreate.projectCreateSubmitLabel")}
+            </Button>
+          </div>
+          {newProjectError && (
+            <span className="text-[11px] text-status-danger">{newProjectError}</span>
+          )}
+        </form>
+      </Modal>
     </>
   );
 }
@@ -1931,6 +2321,7 @@ function V4EssentialRow({
   clearAria,
   confirmClearAria,
   confirmClearLabel,
+  testId,
 }: {
   icon: typeof Calendar;
   label: string;
@@ -1942,6 +2333,7 @@ function V4EssentialRow({
   clearAria?: string;
   confirmClearAria?: string;
   confirmClearLabel?: string;
+  testId?: string;
 }) {
   const [armed, setArmed] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1986,6 +2378,7 @@ function V4EssentialRow({
       <UnstyledButton
         onClick={onClick}
         aria-label={editAria ?? `${label} Edit`}
+        data-testid={testId}
         className="group flex min-h-[48px] w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
       >
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">

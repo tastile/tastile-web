@@ -5,7 +5,7 @@ import {
   COOKIE_ID_TOKEN,
   COOKIE_REFRESH_TOKEN,
   COOKIE_USER_SUB,
-} from "@/lib/cognito/cookies";
+} from "@/lib/cognito/cookie-names";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { safeNextPath } from "@/lib/cognito/login-url";
 import { refreshTokens } from "@/lib/cognito/server";

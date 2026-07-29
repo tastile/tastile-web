@@ -282,6 +282,14 @@ interface WireCompletion {
 function convertTimeRequirement(
   tr: StoreTimeRequirement,
 ): WireCompletion["time_requirements"][number] {
+  const preferred =
+    isPlainObject(tr.preferred) &&
+    (Object.hasOwn(tr.preferred, "minMs") || Object.hasOwn(tr.preferred, "maxMs"))
+      ? {
+          min: typeof tr.preferred.minMs === "number" ? tr.preferred.minMs : null,
+          max: typeof tr.preferred.maxMs === "number" ? tr.preferred.maxMs : null,
+        }
+      : (tr.preferred ?? null);
   return {
     id: tr.id,
     observation: {
@@ -295,7 +303,7 @@ function convertTimeRequirement(
       min: tr.required.minMs ?? null,
       max: tr.required.maxMs ?? null,
     },
-    preferred: tr.preferred ?? null,
+    preferred,
   };
 }
 
@@ -345,6 +353,22 @@ function convertConditionalRecord(value: unknown): unknown {
   return converted;
 }
 
+function convertPlacementRule(value: unknown): unknown {
+  if (!isPlainObject(value)) return camelToSnakeDeep(value);
+  const converted = convertConditionalRecord(value) as Record<string, unknown>;
+  if (isPlainObject(value.effect)) {
+    const effect = converted.effect as Record<string, unknown>;
+    if (isPlainObject(value.effect.span)) {
+      effect.span = {
+        min: typeof value.effect.span.minMs === "number" ? value.effect.span.minMs : null,
+        max: typeof value.effect.span.maxMs === "number" ? value.effect.span.maxMs : null,
+      };
+    }
+    converted.effect = effect;
+  }
+  return converted;
+}
+
 /**
  * Wire payload for `POST /v1/tiles/{tileId}/plan`.  The whole body is
  * the inner shape; `tile_id` is added by `setPlanCommand` itself.
@@ -377,7 +401,7 @@ export function toWireSetPlanBody(storePlan: StorePlanInput): WireSetPlanBody {
     references: convertReferences(normalised.references ?? []),
     completion: convertCompletion(normalised.completion),
     planning: {
-      placement_rules: (normalised.planning?.placementRules ?? []).map(convertConditionalRecord),
+      placement_rules: (normalised.planning?.placementRules ?? []).map(convertPlacementRule),
       nesting_rules: (normalised.planning?.nestingRules ?? []).map(convertConditionalRecord),
       flows: camelToSnakeDeep(normalised.planning?.flows ?? []) as unknown[],
     },

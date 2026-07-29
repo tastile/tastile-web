@@ -29,17 +29,11 @@ export interface ScalarRange {
   maxMs: number | null;
 }
 
-export interface ScalarTarget {
-  kind: number;
-  value: number | null;
-  range: ScalarRange | null;
-}
-
 export interface TimeRequirement {
   id: string;
   observation: TimeObservation;
   required: ScalarRange;
-  preferred: ScalarTarget | null;
+  preferred: ScalarRange | null;
 }
 
 // ---------- TaskDefinition ----------

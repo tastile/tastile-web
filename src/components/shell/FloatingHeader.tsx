@@ -87,7 +87,7 @@ export function FloatingHeader({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 flex h-12 items-center bg-surface-0 border-b border-border">
+      <header className="fixed inset-x-0 top-9 z-40 flex h-12 items-center bg-surface-0 border-b border-border">
         {/* Left: logo */}
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link

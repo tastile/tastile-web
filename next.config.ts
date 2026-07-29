@@ -5,6 +5,9 @@ const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "tr
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // A dedicated dist directory lets an integration server run beside a
+  // developer's normal `next dev` process without sharing its lock or cache.
+  distDir: process.env.TASTILE_NEXT_DIST_DIR ?? ".next",
   reactCompiler: true,
   allowedDevOrigins: ['localhost', '127.0.0.1'],
   async redirects() {

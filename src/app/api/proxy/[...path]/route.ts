@@ -48,9 +48,7 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
     if (userSub) {
       const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
       if (!bridgeSecret) {
-        console.warn(
-          "[proxy] TASTILE_WEB_BRIDGE_SECRET is unset; cannot forward bridge headers",
-        );
+        console.warn("[proxy] TASTILE_WEB_BRIDGE_SECRET is unset; cannot forward bridge headers");
       } else {
         headers.set("x-tastile-web-bridge-secret", bridgeSecret);
         headers.set("x-tastile-web-session-user", userSub);
