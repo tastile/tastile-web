@@ -1,10 +1,10 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { Alert, Button, Modal, TextInput } from "@mantine/core";
 import { useClipboard } from "@mantine/hooks";
 import { AlertCircle, Check, Copy, KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useTranslation } from "@/lib/i18n/use-translation";
 
 type ApiToken = {
   token_id: string;

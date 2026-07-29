@@ -1,10 +1,19 @@
 "use client";
 
-import { ActionIcon, Button, Group, MultiSelect, NumberInput, Stack, Text } from "@mantine/core";
-import { Plus, Trash2 } from "lucide-react";
 import { ConditionKind } from "@/lib/domain/v1/constants";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { SourceAuthoringSlice } from "@/lib/stores/quick-create-store";
+import {
+  ActionIcon,
+  Button,
+  Group,
+  MultiSelect,
+  NumberInput,
+  Stack,
+  Switch,
+  Text,
+} from "@mantine/core";
+import { Plus, Trash2 } from "lucide-react";
 import { ConditionEditor, defaultTerm } from "./ConditionEditor";
 
 type FlowSequence = SourceAuthoringSlice["flowSequences"][number];
@@ -42,6 +51,8 @@ function defaultFlow(): FlowSequence {
     candidateWhen: null,
     minimumGapMs: 20 * 60_000,
     rank: 0,
+    cycle: false,
+    resetOnInterrupt: false,
     steps: [
       {
         id: uuidv7(),
@@ -102,7 +113,7 @@ export function FlowSequencePanel({
                 </Text>
                 <Button
                   size="compact-xs"
-                  variant="subtle"
+                  variant="outline"
                   color="red"
                   onClick={() => update(flow.id, { when: null })}
                 >
@@ -121,7 +132,7 @@ export function FlowSequencePanel({
           ) : (
             <Button
               size="xs"
-              variant="subtle"
+              variant="outline"
               onClick={() => update(flow.id, { when: initialCondition() })}
             >
               Flow適用条件を追加
@@ -135,7 +146,7 @@ export function FlowSequencePanel({
                 </Text>
                 <Button
                   size="compact-xs"
-                  variant="subtle"
+                  variant="outline"
                   color="red"
                   onClick={() => update(flow.id, { candidateWhen: null })}
                 >
@@ -154,7 +165,7 @@ export function FlowSequencePanel({
           ) : (
             <Button
               size="xs"
-              variant="subtle"
+              variant="outline"
               onClick={() => update(flow.id, { candidateWhen: initialCondition() })}
             >
               候補条件を追加
@@ -173,6 +184,38 @@ export function FlowSequencePanel({
               onChange={(value) => update(flow.id, { rank: Number(value) || 0 })}
             />
           </Group>
+          <Group grow>
+            <Switch
+              size="xs"
+              label="循環（最終step後先頭に戻る）"
+              checked={flow.cycle}
+              onChange={(e) => update(flow.id, { cycle: e.currentTarget.checked })}
+              data-testid={`flow-cycle-${flowIndex}`}
+            />
+            <Switch
+              size="xs"
+              label="割り込みでリセット"
+              checked={flow.resetOnInterrupt}
+              disabled={!flow.cycle}
+              onChange={(e) => update(flow.id, { resetOnInterrupt: e.currentTarget.checked })}
+              data-testid={`flow-reset-${flowIndex}`}
+            />
+          </Group>
+          {flow.cycle && (
+            <Text size="xs" c="dimmed">
+              循環時: {flow.steps.length} steps × 平均{" "}
+              {Math.round(
+                flow.steps.reduce((s, st) => s + st.waitBeforeMs + st.emitDurationMs, 0) /
+                  flow.steps.length /
+                  60000,
+              )}{" "}
+              分 / 1周{" "}
+              {Math.round(
+                flow.steps.reduce((s, st) => s + st.waitBeforeMs + st.emitDurationMs, 0) / 60000,
+              )}{" "}
+              分
+            </Text>
+          )}
           {flow.steps.map((step, stepIndex) => (
             <Group key={step.id} grow align="end">
               <NumberInput
@@ -218,7 +261,7 @@ export function FlowSequencePanel({
             </Group>
           ))}
           <Button
-            variant="subtle"
+            variant="outline"
             leftSection={<Plus size={14} />}
             onClick={() =>
               update(flow.id, {
@@ -238,7 +281,7 @@ export function FlowSequencePanel({
         </Stack>
       ))}
       <Button
-        variant="light"
+        variant="outline"
         leftSection={<Plus size={15} />}
         onClick={() => setFlows([...flows, defaultFlow()])}
       >

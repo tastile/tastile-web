@@ -1,9 +1,9 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useCallback } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { projectsQueryOptions } from "@/lib/query/projects-query-options";
+import { useQuery } from "@tanstack/react-query";
+import { useCallback } from "react";
 
 export interface Workspace {
   id: string;

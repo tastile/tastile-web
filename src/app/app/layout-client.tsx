@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
 import {
@@ -8,6 +7,7 @@ import {
   useExecutionEngineContext,
 } from "@/lib/hooks/execution-engine-context";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { useEffect } from "react";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
   return (

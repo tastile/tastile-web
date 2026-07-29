@@ -1,17 +1,17 @@
 "use client";
 
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
+import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { type Result, getCoreClient } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
+import { cn } from "@/lib/utils/cn";
 import { Alert, Badge, Button, Loader } from "@mantine/core";
 import { IconAlertCircle, IconAlertTriangle } from "@tabler/icons-react";
 import { CreditCard, Gauge, KeyRound, RefreshCw, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
-import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { StatusDot } from "@/components/ui/StatusDot";
-import { getCoreClient, type Result } from "@/lib/api/endpoints";
-import { useSidePanel } from "@/lib/context/side-panel-context";
-import { cn } from "@/lib/utils/cn";
 
 interface QuotaData {
   plan?: string;

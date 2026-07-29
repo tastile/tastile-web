@@ -1,5 +1,9 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { type SidebarBehavior, useShellStore } from "@/lib/stores/shell-store";
+import { cn } from "@/lib/utils/cn";
 import { Button, Divider, Menu, Tooltip } from "@mantine/core";
 import { useDisclosure, useHover } from "@mantine/hooks";
 import {
@@ -15,10 +19,6 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ComponentPropsWithoutRef, forwardRef } from "react";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { type SidebarBehavior, useShellStore } from "@/lib/stores/shell-store";
-import { cn } from "@/lib/utils/cn";
 
 interface NavItem {
   path: string;

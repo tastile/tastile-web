@@ -1,8 +1,8 @@
 "use client";
 
-import { type KeyboardEvent, memo } from "react";
 import { monthEventStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
+import { type KeyboardEvent, memo } from "react";
 
 export interface MonthEventTileProps {
   event: CalendarEvent;

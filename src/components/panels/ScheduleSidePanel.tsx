@@ -1,21 +1,21 @@
 "use client";
 
+import { type Workspace, useProjects } from "@/lib/hooks/use-projects";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils/cn";
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
 import {
   ActionIcon,
   Button,
   Checkbox,
-  getTreeExpandedState,
   SegmentedControl,
   Tree,
+  getTreeExpandedState,
   useTree,
 } from "@mantine/core";
 import { CalendarClock, ChevronRight, Folder, RefreshCw } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useTransition } from "react";
-import { useProjects, type Workspace } from "@/lib/hooks/use-projects";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
 
 const SEGMENT_STYLES = {
   root: { backgroundColor: "var(--surface-2)" },

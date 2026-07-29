@@ -1,12 +1,12 @@
 "use client";
 
-import { ActionIcon, Alert, Button, Group, NumberInput, Select, Stack, Text } from "@mantine/core";
-import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { listSourceTiles, type SourceTileRead } from "@/lib/api/v1/source-tiles";
+import { type SourceTileRead, listSourceTiles } from "@/lib/api/v1/source-tiles";
 import { makeClient } from "@/lib/api/v1/submit";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { SourceRelationDraft } from "@/lib/stores/quick-create-store";
+import { ActionIcon, Alert, Button, Group, NumberInput, Select, Stack, Text } from "@mantine/core";
+import { Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface RelationPanelProps {
   relations: SourceRelationDraft[];
@@ -212,7 +212,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
         </Stack>
       ))}
       <Button
-        variant="light"
+        variant="outline"
         leftSection={<Plus size={15} />}
         onClick={() => setRelations([...relations, newRelation()])}
       >

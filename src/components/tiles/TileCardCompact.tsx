@@ -1,14 +1,14 @@
 "use client";
 
-import { ActionIcon, Button } from "@mantine/core";
-import { SquarePen } from "lucide-react";
 import type { TileId } from "@/lib/domain/ids";
-import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
+import { type Tile, getTileLifecycle } from "@/lib/domain/tile";
 import type { TileListView } from "@/lib/hooks/use-tile-list";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Locale } from "@/lib/stores/locale-store";
 import { cn } from "@/lib/utils/cn";
 import { formatDuration, formatFriendlyDateTime } from "@/lib/utils/tile-formatters";
+import { ActionIcon, Button } from "@mantine/core";
+import { SquarePen } from "lucide-react";
 import { LoadingCard } from "./shared/LoadingCard";
 import { TileStatusIcon } from "./shared/TileStatusIcon";
 

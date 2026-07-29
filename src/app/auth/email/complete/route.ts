@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-import { type NextRequest, NextResponse } from "next/server";
 import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
 import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import {
@@ -12,6 +10,8 @@ import { normalizeCode, normalizeEmail } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { completeMfaChallenge } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { cookies } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const env = tryGetCognitoEnv();

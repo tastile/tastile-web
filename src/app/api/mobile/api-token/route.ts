@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { coreUrl } from "@/lib/account/api-token-session";
 import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const accessToken = bearerToken(request.headers.get("authorization"));

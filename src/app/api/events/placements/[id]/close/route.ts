@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { upstreamClosePlacement } from "@/lib/upstream/events";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 

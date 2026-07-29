@@ -1,8 +1,5 @@
 "use client";
 
-import { Skeleton } from "@mantine/core";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { makeClient } from "@/lib/api/v1/submit";
@@ -11,6 +8,9 @@ import type { TileId } from "@/lib/domain/ids";
 import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
+import { Skeleton } from "@mantine/core";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
 export function TasksMain() {
   const searchParams = useSearchParams();
@@ -32,7 +32,7 @@ export function TasksMain() {
   const filterDesc = useMemo(() => {
     const parts = [];
 
-    const num = parseInt(range, 10);
+    const num = Number.parseInt(range, 10);
     const unit = range.slice(-1);
     const unitStr = unit === "d" ? "days" : unit === "w" ? "weeks" : unit === "m" ? "months" : "";
     if (!Number.isNaN(num)) {

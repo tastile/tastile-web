@@ -142,7 +142,7 @@ describe("convertTerm (internally-tagged → externally-tagged wire form)", () =
     expect(
       convertTerm({
         kind: "requirement",
-        value: { timeRequirement: "01900000-0000-0000-0000-000000000abc", state: 0 },
+        value: { requirementId: "01900000-0000-0000-0000-000000000abc", state: 0 },
       }),
     ).toEqual({
       Requirement: {
@@ -417,7 +417,7 @@ describe("toWireSetPlanBody (full plan rewrite)", () => {
           },
         ],
       },
-      planning: { placement_rules: [], nesting_rules: [], flows: [] },
+      planning: { placement_rules: [], nesting_rules: [] },
       metrics: [],
       decisions: [],
     });

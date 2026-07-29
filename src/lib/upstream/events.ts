@@ -9,13 +9,13 @@
 //! field conversion, the v1 command envelope wrapping, and HTTP error
 //! mapping.
 
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
-import { v5 as uuidv5 } from "uuid";
 import { setAuthCookies } from "@/lib/cognito/cookies";
 import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
 import { parseIdTokenClaims } from "@/lib/cognito/server";
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { v5 as uuidv5 } from "uuid";
 
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 // Resolved at call time so tests mutating process.env after module load still see the bypass branch.
@@ -181,7 +181,7 @@ const TIMELINE_ITEM_TO_EVENT: Array<{ hex: string; name: string }> = [
 function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const m = hex.replace("#", "").match(/^([0-9a-f]{6})$/i);
   if (!m) return null;
-  const v = parseInt(m[1], 16);
+  const v = Number.parseInt(m[1], 16);
   return { r: (v >> 16) & 0xff, g: (v >> 8) & 0xff, b: v & 0xff };
 }
 

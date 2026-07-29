@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils/cn";
 import { Paper } from "@mantine/core";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils/cn";
 
 interface CardProps {
   children: ReactNode;

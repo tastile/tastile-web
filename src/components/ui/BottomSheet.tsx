@@ -1,9 +1,9 @@
 "use client";
 
-import { Drawer } from "@mantine/core";
-import type * as React from "react";
 import { PANEL_ANIM_ATTR } from "@/components/tiles/editor/panel-styles";
 import { cn } from "@/lib/utils/cn";
+import { Drawer } from "@mantine/core";
+import type * as React from "react";
 
 interface BottomSheetProps {
   open: boolean;

@@ -1,5 +1,3 @@
-import { Button, Pill } from "@mantine/core";
-import { ArrowUpRight, Download } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TastileLogo } from "@/components/TastileLogo";
@@ -7,6 +5,8 @@ import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { translations } from "@/lib/i18n/translations";
 import type { Locale } from "@/lib/stores/locale-store";
+import { Button, Pill } from "@mantine/core";
+import { ArrowUpRight, Download } from "lucide-react";
 
 export const metadata = {
   title: "Download Tastile — Execution Control",

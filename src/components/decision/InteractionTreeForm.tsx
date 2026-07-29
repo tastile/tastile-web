@@ -19,9 +19,9 @@
  * time the submit was clicked.
  */
 
+import type { InteractionNode } from "@/lib/api/v1/sessions";
 import { Button, Radio, Stack, TextInput } from "@mantine/core";
 import { useState } from "react";
-import type { InteractionNode } from "@/lib/api/v1/sessions";
 
 type AnswerMap = Record<string, string>;
 

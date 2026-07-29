@@ -1,16 +1,16 @@
 "use client";
 
-import { Alert, Badge, Button, Loader, Text } from "@mantine/core";
-import { IconAlertTriangle } from "@tabler/icons-react";
-import { Activity, CheckCircle2, Network, RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { StatusDot } from "@/components/ui/StatusDot";
-import { ENDPOINTS, getCoreClient, type Result } from "@/lib/api/endpoints";
+import { ENDPOINTS, type Result, getCoreClient } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
+import { Alert, Badge, Button, Loader, Text } from "@mantine/core";
+import { IconAlertTriangle } from "@tabler/icons-react";
+import { Activity, CheckCircle2, Network, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 interface HealthData {
   status: string;

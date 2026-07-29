@@ -1,13 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { createContext, useContext, useEffect } from "react";
 import {
-  profileQueryOptions,
   type SafeSession,
+  profileQueryOptions,
   safeSessionQueryOptions,
   sessionToAuthValue,
 } from "@/lib/query/auth-query-options";
+import { useQuery } from "@tanstack/react-query";
+import { createContext, useContext, useEffect } from "react";
 
 interface AuthSession {
   sub: string;

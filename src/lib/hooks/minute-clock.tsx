@@ -1,7 +1,7 @@
 "use client";
 
 import { useInterval } from "@mantine/hooks";
-import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
+import { type ReactNode, createContext, useContext, useEffect, useState } from "react";
 
 // One-minute wall clock shared across calendar subviews. Previously every
 // calendar component ran its own `setInterval(..., 60_000)`; this context

@@ -1,5 +1,4 @@
 "use client";
-import { useMemo, useState } from "react";
 import {
   type DisplayMode,
   eventSpansDay,
@@ -9,6 +8,7 @@ import {
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { useMinuteClock } from "@/lib/hooks/minute-clock";
 import { useZoom } from "@/lib/hooks/use-zoom";
+import { useMemo, useState } from "react";
 import { AllDayLane } from "./AllDayLane";
 import { DayViewFrame } from "./DayViewFrame";
 import { DayViewTile } from "./DayViewTile";

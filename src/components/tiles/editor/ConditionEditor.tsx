@@ -126,6 +126,7 @@ export function defaultTerm(kind: string): Term {
 
 // ============================================================
 // Pure updater helpers
+// biome-ignore format: inline import() types break when split across lines
 // ============================================================
 
 function updateCalendar(

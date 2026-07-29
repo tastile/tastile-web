@@ -181,12 +181,10 @@
   /* Fonts */
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  --font-jp:
-    "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
+  --font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
     sans-serif;
   --font-zen-kaku: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
-  --font-jp-heading:
-    "Zen Kaku Gothic New", "YakuHanJP", "Noto Sans JP", "Hiragino Sans", sans-serif;
+  --font-jp-heading: "Zen Kaku Gothic New", "YakuHanJP", "Noto Sans JP", "Hiragino Sans", sans-serif;
 }
 
 /* ============================================
@@ -229,9 +227,7 @@
 .scroll-reveal {
   opacity: 0;
   transform: translateY(20px);
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s ease;
+  transition: opacity 0.7s ease, transform 0.7s ease;
 }
 
 .scroll-reveal.revealed {
@@ -277,9 +273,7 @@ body {
 
 a,
 button {
-  transition:
-    background-color 160ms ease,
-    color 160ms ease;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .prose {
@@ -474,13 +468,5 @@ button {
     outline: 2px solid var(--focus-ring);
     outline-offset: var(--ring-offset);
     border-radius: inherit;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :where([data-panel-anim]) {
-    transition-property: opacity;
-    /* biome-ignore lint/complexity/noImportantStyles: required to override inline transforms for reduced-motion */
-    transform: none !important;
   }
 }

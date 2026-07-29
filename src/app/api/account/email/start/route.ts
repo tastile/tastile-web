@@ -1,8 +1,8 @@
-import { type NextRequest, NextResponse } from "next/server";
 import { updateCognitoUserEmail } from "@/lib/cognito/account-client";
 import { getAccountAccessToken } from "@/lib/cognito/account-session";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { normalizeEmail } from "@/lib/cognito/form";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const env = tryGetCognitoEnv();

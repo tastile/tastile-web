@@ -1,13 +1,13 @@
 "use client";
 
-import { ActionIcon } from "@mantine/core";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
 import { GlobalPromptBanner } from "@/components/execution/GlobalPromptBanner";
 import type { Command } from "@/lib/core/command";
 import { Actor } from "@/lib/domain/actor";
 import type { ExecutionSyncStatus, PendingPrompt, PromptAction } from "@/lib/domain/execution";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
+import { ActionIcon } from "@mantine/core";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Header } from "./Header";
 import { LeftTabs } from "./LeftTabs";
 import { MobileBottomTabs } from "./MobileBottomTabs";
@@ -56,7 +56,7 @@ export function AppShell({
   }, [railPinned]);
 
   return (
-    <div className="flex h-dvh flex-col bg-background pt-9">
+    <div className="flex h-dvh flex-col bg-background pb-9">
       {executionState?.pendingPrompt ? (
         <div
           className="fixed inset-0 z-[68] bg-foreground/25 backdrop-blur-[1px]"

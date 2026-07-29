@@ -14,10 +14,10 @@
  * (notably `V1ExecutionControls`) keep working unchanged.
  */
 
+import { type V1ActiveTileSnapshot, fetchV1ActiveTile } from "@/lib/api/v1/active-tile";
+import { queryKeys } from "@/lib/query/query-keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { fetchV1ActiveTile, type V1ActiveTileSnapshot } from "@/lib/api/v1/active-tile";
-import { queryKeys } from "@/lib/query/query-keys";
 
 export type { V1ActiveTileSnapshot } from "@/lib/api/v1/active-tile";
 

@@ -11,10 +11,10 @@
  * so the initial state is read from `document.cookie` synchronously.
  */
 
-import { Switch } from "@mantine/core";
-import { useCallback, useState } from "react";
 import { COOKIE_DIRECT_DAEMON } from "@/lib/cognito/cookie-names";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { Switch } from "@mantine/core";
+import { useCallback, useState } from "react";
 
 const DIRECT_MODE_ENDPOINT = "/api/account/direct-mode";
 

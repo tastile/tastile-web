@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
 import { getIdTokenFromCookies } from "@/lib/cognito/cookies";
+import { redirect } from "next/navigation";
 import { AppLayoutClient } from "./layout-client";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

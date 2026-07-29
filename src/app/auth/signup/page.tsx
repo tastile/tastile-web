@@ -1,10 +1,10 @@
-import { Button } from "@mantine/core";
-import { UserPlus } from "lucide-react";
-import Link from "next/link";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { authErrorMessage } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { Button } from "@mantine/core";
+import { UserPlus } from "lucide-react";
+import Link from "next/link";
 import { AuthShell } from "../auth-shell";
 
 export default async function SignupPage({

@@ -1,6 +1,6 @@
+import { applyThemeMode } from "@/lib/theme-mode";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { applyThemeMode } from "@/lib/theme-mode";
 
 export type Theme = "light" | "gray" | "dark";
 

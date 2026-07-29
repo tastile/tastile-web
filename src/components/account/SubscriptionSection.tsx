@@ -1,12 +1,12 @@
 "use client";
 
+import { translations } from "@/lib/i18n/translations";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { useLocaleStore } from "@/lib/stores/locale-store";
 import { Button, SegmentedControl } from "@mantine/core";
 import { type QueryFunctionContext, useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
-import { translations } from "@/lib/i18n/translations";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { useLocaleStore } from "@/lib/stores/locale-store";
 
 type SubscriptionState =
   | { status: "free" }

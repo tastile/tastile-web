@@ -1,9 +1,5 @@
 "use client";
 
-import { Alert, Button, Skeleton } from "@mantine/core";
-import { AlertCircle } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { TileCardCompact } from "@/components/tiles/TileCardCompact";
 import { useCandidates, usePlacements } from "@/lib/hooks/use-placements";
@@ -12,6 +8,10 @@ import { useTileList } from "@/lib/hooks/use-tile-list";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
 import { cn } from "@/lib/utils/cn";
 import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
+import { Alert, Button, Skeleton } from "@mantine/core";
+import { AlertCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 
 export function ScheduleMain() {
   const searchParams = useSearchParams();

@@ -1,7 +1,7 @@
-import { LandingPage } from "@/components/marketing/LandingPage";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { getMarketingDict, type Lang } from "@/lib/i18n/marketing-dict";
+import { LandingPage } from "@/components/marketing/LandingPage";
+import { type Lang, getMarketingDict } from "@/lib/i18n/marketing-dict";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {

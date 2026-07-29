@@ -1,11 +1,11 @@
 "use client";
 
-import { MantineProvider } from "@mantine/core";
-import { DatesProvider } from "@mantine/dates";
-import type { ReactNode } from "react";
 import { ThemeClassSyncer } from "@/components/theme/ThemeClassSyncer";
 import { cssVariablesResolver } from "@/lib/theme/css-variables-resolver";
 import { mantineTheme } from "@/lib/theme/mantine-theme";
+import { MantineProvider } from "@mantine/core";
+import { DatesProvider } from "@mantine/dates";
+import type { ReactNode } from "react";
 
 /**
  * Client-side provider tree for the dashboard. Wraps the app in

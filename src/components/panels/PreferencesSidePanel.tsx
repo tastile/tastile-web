@@ -1,9 +1,9 @@
 "use client";
 
+import { cn } from "@/lib/utils/cn";
 import { CreditCard, Key, Settings, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils/cn";
 
 const SECTIONS = [
   {

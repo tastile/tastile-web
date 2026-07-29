@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useQuery } from "@tanstack/react-query";
 
 export interface RecurringTemplateListItem {
   id: string;

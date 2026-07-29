@@ -1,5 +1,6 @@
 "use client";
 
+import { clearCachedCognitoSession } from "@/lib/cognito/session";
 import { ActionIcon, Button, NavLink } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -17,7 +18,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { clearCachedCognitoSession } from "@/lib/cognito/session";
 
 type DashboardShellProps = {
   children: React.ReactNode;

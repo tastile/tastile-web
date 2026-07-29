@@ -15,11 +15,11 @@
  * `/v1/active-tile` polling for live updates.
  */
 
+import { useV1ActiveTile } from "@/lib/hooks/use-v1-active-tile";
+import { snapshotFromActiveTile, useV1Execution } from "@/lib/hooks/use-v1-execution";
 import { Button } from "@mantine/core";
 import { Pause, Play, Square } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useV1ActiveTile } from "@/lib/hooks/use-v1-active-tile";
-import { snapshotFromActiveTile, useV1Execution } from "@/lib/hooks/use-v1-execution";
 
 function formatRemaining(target: Date, nowMs: number): string {
   const ms = Math.max(0, target.getTime() - nowMs);

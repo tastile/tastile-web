@@ -11,11 +11,18 @@
   "ignoreDependencies": [
     "tailwindcss",
     "@typescript-eslint/typescript-estree",
-    "axe-core"
+    "axe-core",
+    "openapi-typescript",
+    "postcss"
+  ],
+  "ignore": [
+    "src/lib/api/v1/openapi-contract.ts"
   ],
   "ignoreFiles": [
     "src/components/tiles/editor/AutomationPanel.tsx",
-    "src/components/tiles/editor/SubPanelHeader.tsx"
+    "src/components/tiles/editor/SubPanelHeader.tsx",
+    "src/lib/api/v1/openapi-generated.d.ts",
+    "src/lib/api/v1/openapi-contract.ts"
   ],
   "ignoreExportsUsedInFile": true
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import {
@@ -8,6 +7,7 @@ import {
   requestNotificationPermissionOnce,
   showNotification,
 } from "@/lib/notifications/browser";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 // Polling cadence used while the previous poll succeeded. When upstream
 // returns a 5xx or the fetch itself fails, the next poll waits longer

@@ -1,8 +1,8 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCoreClient } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/query/query-keys";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 export interface PlacementRow {
   id: string;

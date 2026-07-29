@@ -6,9 +6,9 @@
  * the result and is the only consumer in this codebase.
  */
 
-import { useQuery } from "@tanstack/react-query";
-import { listPendingSessions, type SessionView } from "@/lib/api/v1/sessions";
+import { type SessionView, listPendingSessions } from "@/lib/api/v1/sessions";
 import { makeClient } from "@/lib/api/v1/submit";
+import { useQuery } from "@tanstack/react-query";
 
 export function usePendingSessions() {
   return useQuery<SessionView[]>({

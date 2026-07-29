@@ -15,16 +15,16 @@
  truth; the UI just observes `/v1/active-tile` for the next state.
  */
 
-import { useCallback, useState } from "react";
 import {
+  type Result,
   finishExecutionCommand,
   makeClient,
   pauseExecutionCommand,
-  type Result,
   resumeExecutionCommand,
   startExecutionCommand,
 } from "@/lib/api/v1";
 import type { CommandResponse } from "@/lib/domain/v1/envelope";
+import { useCallback, useState } from "react";
 
 export interface V1ExecutionSnapshot {
   tile_id: string;

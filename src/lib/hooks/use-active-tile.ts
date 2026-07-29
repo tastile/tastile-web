@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
 import { getCoreClient } from "@/lib/api/endpoints";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface ExecutionViewSnapshot {
   is_working: boolean;

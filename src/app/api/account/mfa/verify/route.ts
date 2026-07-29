@@ -1,5 +1,3 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
 import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import {
   COOKIE_EMAIL_AUTH_SESSION,
@@ -9,6 +7,8 @@ import {
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { finalizeMfaSetup } from "@/lib/cognito/finalize-mfa-setup";
 import { verifySoftwareToken } from "@/lib/cognito/verify-software-token";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const env = tryGetCognitoEnv();

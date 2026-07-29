@@ -1,9 +1,5 @@
 "use client";
 
-import { ActionIcon, Alert, Badge, Button, Chip, Text, Textarea, TextInput } from "@mantine/core";
-import { IconAlertCircle } from "@tabler/icons-react";
-import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
-import { useMemo, useState } from "react";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -12,12 +8,16 @@ import {
   ENDPOINTS,
   ENDPOINTS_BY_TAG,
   type EndpointKey,
-  getCoreClient,
   type Result,
   TAG_ORDER,
+  getCoreClient,
 } from "@/lib/api/endpoints";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
+import { ActionIcon, Alert, Badge, Button, Chip, Text, TextInput, Textarea } from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
+import { ChevronRight, Code2, Copy, Database, Lock, PlayCircle, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 
 type Method = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 const methodStyle: Record<Method, string> = {

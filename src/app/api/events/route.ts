@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { upstreamCreateCalendarEvent } from "@/lib/upstream/events";
+import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 

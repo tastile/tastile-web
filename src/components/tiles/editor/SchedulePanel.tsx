@@ -32,9 +32,9 @@ import { FormDivider, FormRow, RowSegmented, SectionHeader } from "@/components/
 import type { Window } from "@/lib/domain/v1/window";
 import type { TimeOfDayMode, WhenMode } from "@/lib/stores/quick-create-store";
 
+import { TileReferencePicker } from "./TileReferencePicker";
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
 import { SEGMENT_STYLES } from "./panel-styles";
-import { TileReferencePicker } from "./TileReferencePicker";
 
 const WHEN_MODE_OPTIONS: ReadonlyArray<{
   id: WhenMode;

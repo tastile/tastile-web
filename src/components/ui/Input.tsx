@@ -1,7 +1,7 @@
 "use client";
 
-import { Textarea, TextInput } from "@mantine/core";
-import { forwardRef, type InputHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { TextInput, Textarea } from "@mantine/core";
+import { type InputHTMLAttributes, type TextareaHTMLAttributes, forwardRef } from "react";
 
 const SIZE_MAP = {
   tiny: "xs",

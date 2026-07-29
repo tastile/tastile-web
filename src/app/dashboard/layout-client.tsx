@@ -1,11 +1,5 @@
 "use client";
 
-import { ActionIcon } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { PanelLeftDashed } from "lucide-react";
-import dynamic from "next/dynamic";
-import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
 import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
 import { SearchOverlay } from "@/components/search/SearchOverlay";
 import { SecurityLockGate } from "@/components/security/SecurityLockGate";
@@ -18,6 +12,12 @@ import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel
 import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { ActionIcon } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { PanelLeftDashed } from "lucide-react";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 
 // QuickTileCreate is a 3000-line client component with many submodules;
 // split it out of the layout bundle so the initial dashboard load only
@@ -88,7 +88,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   }, [closeQuickCreate]);
 
   return (
-    <div className="flex h-dvh flex-col bg-background">
+    <div className="flex h-dvh flex-col bg-background pb-9">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-[var(--surface-3)] focus:px-3 focus:py-2 focus:text-sm"

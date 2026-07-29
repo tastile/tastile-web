@@ -1,12 +1,12 @@
 "use client";
 
-import { useIsomorphicEffect } from "@mantine/hooks";
 import {
-  applyThemeMode,
   LEGACY_THEME_STORAGE_KEY,
-  readPersistedThemeMode,
   THEME_MODE_STORAGE_KEY,
+  applyThemeMode,
+  readPersistedThemeMode,
 } from "@/lib/theme-mode";
+import { useIsomorphicEffect } from "@mantine/hooks";
 
 // Re-applies the `.dark` / `.theme-dark-*` classes on `<html>` after React 19
 // strips them during SSR hydration. The inline `themeScript` in `layout.tsx`

@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { getSubscriptionForUser } from "@/lib/billing/server";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { getStripe } from "@/lib/stripe";
+import { NextResponse } from "next/server";
 
 export async function POST() {
   let stripe: ReturnType<typeof getStripe>;

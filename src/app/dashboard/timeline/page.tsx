@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
 import { CalendarMain } from "@/components/calendar/CalendarMain";
 import { MinuteClockProvider } from "@/lib/hooks/minute-clock";
+import { Suspense } from "react";
 
 export default function CalendarPage() {
   return (

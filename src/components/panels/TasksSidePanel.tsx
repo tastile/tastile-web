@@ -1,18 +1,18 @@
 "use client";
 
+import { Dropdown } from "@/components/ui/Dropdown";
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { Button, NumberInput, Slider, Switch, TextInput } from "@mantine/core";
 import { Clock, Flame, RefreshCw, Search, ShieldAlert } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Dropdown } from "@/components/ui/Dropdown";
-import { useTranslation } from "@/lib/i18n/use-translation";
 
 type RangeUnit = "d" | "w" | "m";
 const VALID_RANGE_UNITS: RangeUnit[] = ["d", "w", "m"];
 const DEFAULT_RANGE = { val: 7, unit: "d" as RangeUnit };
 
 function parseRangeParam(raw: string): { val: number; unit: RangeUnit } {
-  const num = parseInt(raw, 10);
+  const num = Number.parseInt(raw, 10);
   const unit = raw.slice(-1) as RangeUnit;
   if (!Number.isNaN(num) && VALID_RANGE_UNITS.includes(unit)) return { val: num, unit };
   return DEFAULT_RANGE;
@@ -27,7 +27,7 @@ function parseGranularityParam(raw: string): {
   const minPart = parts.find((p) => p.startsWith("min_"));
   let minDuration = 0;
   if (minPart) {
-    const minutes = parseInt(minPart.replace("min_", "").replace("m", ""), 10);
+    const minutes = Number.parseInt(minPart.replace("min_", "").replace("m", ""), 10);
     if (!Number.isNaN(minutes)) minDuration = minutes;
   }
   return {

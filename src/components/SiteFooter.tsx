@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { TastileLogo } from "@/components/TastileLogo";
+import Link from "next/link";
 
 export function SiteFooter({
   translations,

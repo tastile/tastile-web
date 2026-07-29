@@ -11,7 +11,7 @@
 import { ApiErrorKind } from "@/lib/domain/v1/constants";
 import type { ApiError } from "@/lib/domain/v1/envelope";
 import type { ApiClient } from "./endpoints";
-import { getRead, type Result } from "./endpoints";
+import { type Result, getRead } from "./endpoints";
 
 export interface SessionPrompt {
   title: string;

@@ -1,28 +1,22 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.5/schema.json",
+  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
   },
   "files": {
-    "includes": [
-      "src/**/*.ts",
-      "src/**/*.tsx",
-      "src/**/*.js",
-      "src/**/*.jsx",
-      "src/**/*.css",
-      "!**/*.test.{ts,tsx}",
-      "!**/*.test-d.{ts,tsx}",
-      "!**/__tests__",
-      "!**/__mocks__",
-      "!.next"
+    "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx", "src/**/*.css"],
+    "ignore": [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/*.test-d.ts",
+      "**/*.test-d.tsx",
+      "**/__tests__/**",
+      "**/__mocks__/**",
+      "**/openapi-generated.d.ts",
+      ".next/**"
     ]
-  },
-  "css": {
-    "parser": {
-      "tailwindDirectives": true
-    }
   },
   "formatter": {
     "enabled": true,
@@ -41,7 +35,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended",
+      "recommended": true,
       "a11y": {
         "useButtonType": "error",
         "noSvgWithoutTitle": "error",
@@ -51,7 +45,6 @@
         "noImplicitAnyLet": "error",
         "noArrayIndexKey": "off",
         "noGlobalIsNan": "error",
-        "useIterableCallbackReturn": "error",
         "noExplicitAny": "error"
       },
       "security": {
@@ -66,11 +59,10 @@
       }
     }
   },
-  "assist": {
-    "actions": {
-      "source": {
-        "organizeImports": "on"
-      }
+  "overrides": [
+    {
+      "include": ["src/components/tiles/editor/ConditionEditor.tsx"],
+      "formatter": { "enabled": false }
     }
-  }
+  ]
 }

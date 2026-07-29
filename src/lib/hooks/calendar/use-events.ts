@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import type { CalendarEvent, CalendarEventInput } from "@/lib/domain/calendar";
+import { useCallback, useEffect, useState } from "react";
 
 export interface UseEventsState {
   events: CalendarEvent[];

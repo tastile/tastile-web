@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
-import type { NextRequest, NextResponse } from "next/server";
 import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
+import { cookies } from "next/headers";
+import type { NextRequest, NextResponse } from "next/server";
 
 // Name used when registering the per-login session token. The plaintext
 // `access_token` is only ever returned at this POST — afterwards the server

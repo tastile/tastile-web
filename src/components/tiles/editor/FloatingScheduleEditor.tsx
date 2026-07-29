@@ -8,12 +8,12 @@ import { publishScheduleDefinition } from "@/lib/api/v1/schedule-definition";
 import { makeClient } from "@/lib/api/v1/submit";
 
 import { AvailabilityPanel } from "./AvailabilityPanel";
+import { RequiredTimePanel } from "./RequiredTimePanel";
 import {
-  buildFloatingSchedulePayload,
   type FloatingLabel,
+  buildFloatingSchedulePayload,
   formatFloatingScheduleSummary,
 } from "./floating-schedule";
-import { RequiredTimePanel } from "./RequiredTimePanel";
 
 export function FloatingScheduleEditor({
   onClose,

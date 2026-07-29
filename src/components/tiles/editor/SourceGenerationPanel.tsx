@@ -26,12 +26,13 @@
  *   - recurring-end-switch
  */
 
-import { Chip, NumberInput, SegmentedControl, Switch, Text } from "@mantine/core";
+import type { ConditionNode } from "@/lib/domain/v1/condition";
+import { ConditionKind, TileKind } from "@/lib/domain/v1/constants";
+import { translations } from "@/lib/i18n/translations";
+import { Button, Chip, NumberInput, SegmentedControl, Switch } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
-
-import { TileKind } from "@/lib/domain/v1/constants";
-import { translations } from "@/lib/i18n/translations";
+import { ConditionEditor, defaultTerm } from "./ConditionEditor";
 import type { EditorLocale } from "./date-utils";
 import { SEGMENT_STYLES } from "./panel-styles";
 
@@ -166,6 +167,7 @@ export interface SourceGenerationPanelProps {
     endDate: string;
     intervalValue: number;
     intervalUnit: "min" | "hour" | "day";
+    condition: ConditionNode | null;
   };
   /**
    * Patched-through store setter. The orchestrator binds this to
@@ -177,6 +179,9 @@ export interface SourceGenerationPanelProps {
   locale: EditorLocale;
   /** Translation lookup. */
   t: (key: string) => string;
+  /** 現在の timeOfDay 設定（interval モード時の連携表示用） */
+  timeOfDayStart?: string;
+  timeOfDayEnd?: string;
 }
 
 export function SourceGenerationPanel({
@@ -184,6 +189,8 @@ export function SourceGenerationPanel({
   setField,
   locale,
   t,
+  timeOfDayStart,
+  timeOfDayEnd,
 }: SourceGenerationPanelProps) {
   const weekdayEnabled = recurring.repeatMode === "weekly";
   const intervalEnabled = recurring.repeatMode === "interval";
@@ -273,14 +280,54 @@ export function SourceGenerationPanel({
               styles={SEGMENT_STYLES}
             />
           </div>
+          {timeOfDayStart && recurring.intervalUnit === "day" ? (
+            <div className="rounded bg-surface-2 px-2 py-1.5 text-xs text-foreground-muted flex items-center gap-1.5">
+              <Calendar size={12} aria-hidden="true" />
+              <span>
+                時間帯: {timeOfDayStart}
+                {timeOfDayEnd ? ` → ${timeOfDayEnd}` : ""}
+              </span>
+            </div>
+          ) : null}
         </div>
       )}
       {conditionEnabled && (
-        <div className="rounded-lg border border-border bg-surface-0 p-3">
-          <Text size="xs" c="var(--foreground-muted)">
-            {t("quickCreate.conditionModeHint") ??
-              'Activates when the condition is met. Configure conditions in the "Condition combinations" section.'}
-          </Text>
+        <div className="space-y-2 rounded-lg border border-border bg-surface-0 p-3">
+          <BuilderLabel
+            title={t("quickCreate.conditionModeLabel") ?? "繰り返し条件"}
+            hint={t("quickCreate.conditionModeHint") ?? "条件が真のときだけTileを生成します"}
+          />
+          {recurring.condition ? (
+            <div className="space-y-2">
+              <Button
+                size="compact-xs"
+                variant="outline"
+                color="red"
+                onClick={() => setField("recurring.condition", null)}
+              >
+                条件を外す
+              </Button>
+              <ConditionEditor
+                node={recurring.condition}
+                onChange={(next) => setField("recurring.condition", next)}
+                t={t}
+              />
+            </div>
+          ) : (
+            <Button
+              size="xs"
+              variant="outline"
+              onClick={() =>
+                setField("recurring.condition", {
+                  kind: ConditionKind.TERM,
+                  children: [],
+                  term: defaultTerm("calendar"),
+                })
+              }
+            >
+              繰り返し条件を追加
+            </Button>
+          )}
         </div>
       )}
       <div className="space-y-1.5">

@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { TastileLogo } from "@/components/TastileLogo";
+import Link from "next/link";
 
 export function SiteHeader({
   hideAuth,
@@ -16,7 +16,7 @@ export function SiteHeader({
   };
 }) {
   return (
-    <header className="sticky top-9 z-40 bg-surface-0/90 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 bg-surface-0/90 backdrop-blur-sm">
       <div className="layout-shell flex h-16 items-center justify-between">
         <Link href="/" className="flex items-center gap-3">
           <TastileLogo size={36} className="text-foreground" />

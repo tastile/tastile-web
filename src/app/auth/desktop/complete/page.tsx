@@ -1,9 +1,9 @@
-import { Laptop, ShieldCheck } from "lucide-react";
-import Link from "next/link";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { TastileLogo } from "@/components/TastileLogo";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { Laptop, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 
 export default function DesktopAuthCompletePage() {
   const script = `

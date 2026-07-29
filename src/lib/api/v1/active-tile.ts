@@ -1,5 +1,5 @@
+import { type Result, getCoreClient } from "@/lib/api/endpoints";
 import * as z from "zod";
-import { getCoreClient, type Result } from "@/lib/api/endpoints";
 
 /**
  * Active-tile snapshot returned by `GET /v1/active-tile`.
@@ -23,12 +23,12 @@ export interface V1ActiveTileSnapshot {
  * server additions cannot break the client.
  */
 export const v1ActiveTileSchema: z.ZodType<V1ActiveTileSnapshot> = z.object({
-  tile_id: z.uuid(),
-  placement_id: z.uuid(),
-  execution_id: z.union([z.uuid(), z.null()]),
+  tile_id: z.string().uuid(),
+  placement_id: z.string().uuid(),
+  execution_id: z.union([z.string().uuid(), z.null()]),
   title: z.string(),
-  span_start: z.iso.datetime(),
-  span_end: z.iso.datetime(),
+  span_start: z.string().datetime(),
+  span_end: z.string().datetime(),
 });
 
 /**

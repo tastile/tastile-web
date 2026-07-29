@@ -1,11 +1,11 @@
-import { Button } from "@mantine/core";
-import { Apple, Fingerprint, Globe } from "lucide-react";
-import Link from "next/link";
 import { TastileLogo } from "@/components/TastileLogo";
 import {
   getConfiguredCognitoIdentityProviders,
   parseCognitoPlatform,
 } from "@/lib/cognito/login-url";
+import { Button } from "@mantine/core";
+import { Apple, Fingerprint, Globe } from "lucide-react";
+import Link from "next/link";
 
 const ERROR_MESSAGES: Record<string, string> = {
   no_session: "Sign-in is required.",

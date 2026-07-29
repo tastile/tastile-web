@@ -1,10 +1,10 @@
+import { cssVariablesResolver } from "@/lib/theme/css-variables-resolver";
+import { mantineTheme } from "@/lib/theme/mantine-theme";
 /** @vitest-environment jsdom */
 import { MantineProvider } from "@mantine/core";
 import { DatesProvider } from "@mantine/dates";
 import { type RenderOptions, render } from "@testing-library/react";
 import type { ReactElement } from "react";
-import { cssVariablesResolver } from "@/lib/theme/css-variables-resolver";
-import { mantineTheme } from "@/lib/theme/mantine-theme";
 
 // jsdom does not implement window.matchMedia. Mantine's MantineProvider calls
 // it inside its color-scheme effect, so without this polyfill the first render

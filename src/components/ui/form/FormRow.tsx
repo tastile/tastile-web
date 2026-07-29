@@ -1,6 +1,6 @@
+import { cn } from "@/lib/utils/cn";
 import { Box, Group } from "@mantine/core";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils/cn";
 
 interface FormRowProps {
   "data-testid"?: string;

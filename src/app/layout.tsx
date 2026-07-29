@@ -1,12 +1,12 @@
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
 
-import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
-import type { Metadata } from "next";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { DemoSiteBanner } from "@/components/marketing/DemoSiteBanner";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { themeScript } from "@/lib/theme-script";
+import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
+import type { Metadata } from "next";
 import { AppProviders } from "./providers";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
@@ -41,6 +41,10 @@ export default function RootLayout({
         <ColorSchemeScript defaultColorScheme="auto" />
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme-init must run inline before paint to prevent FOUC — cannot be ref'd to a JS file */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
+        />
       </head>
       <body className="font-sans antialiased">
         <GoogleAnalytics measurementId={gaMeasurementId} />

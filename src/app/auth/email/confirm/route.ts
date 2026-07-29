@@ -1,9 +1,9 @@
-import { type NextRequest, NextResponse } from "next/server";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { normalizeCode, normalizeEmail } from "@/lib/cognito/form";
 import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
 import { CognitoPublicError, confirmSignUp } from "@/lib/cognito/public-client";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   const env = tryGetCognitoEnv();

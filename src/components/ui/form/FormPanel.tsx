@@ -1,6 +1,6 @@
+import { cn } from "@/lib/utils/cn";
 import { Stack } from "@mantine/core";
 import type { ReactNode } from "react";
-import { cn } from "@/lib/utils/cn";
 
 interface FormPanelProps {
   children: ReactNode;

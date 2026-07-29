@@ -28,7 +28,7 @@ export function SubmitBar({
     <div className="flex flex-col gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
       {serverError ? <PanelErrorBanner title={serverError.title} body={serverError.body} /> : null}
       <Group justify="space-between" align="center">
-        <Button variant="default" onClick={onClose} disabled={isSubmitting}>
+        <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
           {cancelLabel}
         </Button>
         <Button onClick={onSubmit} loading={isSubmitting} disabled={!canSubmit}>

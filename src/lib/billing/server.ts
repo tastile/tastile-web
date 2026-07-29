@@ -1,5 +1,5 @@
-import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
+import type Stripe from "stripe";
 
 export type SubscriptionInterval = "monthly" | "yearly";
 
@@ -74,7 +74,7 @@ async function fetchSubscriptionFromStripe(cognitoSub: string): Promise<Subscrip
     interval: intervalForPriceId(priceId),
     priceId,
     customerId: customer.id,
-    currentPeriodEnd: sub.items.data[0]?.current_period_end ?? 0,
+    currentPeriodEnd: sub.current_period_end,
     cancelAtPeriodEnd: sub.cancel_at_period_end,
   };
 }

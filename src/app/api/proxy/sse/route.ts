@@ -1,9 +1,9 @@
-import type { NextRequest } from "next/server";
 import {
   ensureDefaultApiTokenForUser,
   getApiTokenFromRequest,
 } from "@/lib/account/api-token-session";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
+import type { NextRequest } from "next/server";
 
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
 

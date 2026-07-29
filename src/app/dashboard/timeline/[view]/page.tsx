@@ -1,19 +1,19 @@
 "use client";
 
+import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
+import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { StatusDot } from "@/components/ui/StatusDot";
+import { ENDPOINTS, type EndpointKey, type Result, getCoreClient } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
+import { useZoom } from "@/lib/hooks/use-zoom";
+import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { cn } from "@/lib/utils/cn";
 import { Alert, Badge, Button, Loader, SegmentedControl } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import { Calendar, CalendarDays, Coffee, Database, PinIcon, Timer } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
-import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { StatusDot } from "@/components/ui/StatusDot";
-import { ENDPOINTS, type EndpointKey, getCoreClient, type Result } from "@/lib/api/endpoints";
-import { useSidePanel } from "@/lib/context/side-panel-context";
-import { useZoom } from "@/lib/hooks/use-zoom";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { cn } from "@/lib/utils/cn";
 
 const VIEWS = ["day", "week", "month", "year"] as const;
 type ViewKey = (typeof VIEWS)[number];

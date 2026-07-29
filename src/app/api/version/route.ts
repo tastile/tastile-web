@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   const release = await fetchDesktopReleaseInfo();

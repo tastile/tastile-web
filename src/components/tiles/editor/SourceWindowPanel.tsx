@@ -1,7 +1,7 @@
 "use client";
 
-import { NumberInput, Select, SimpleGrid, Stack, TagsInput, Text } from "@mantine/core";
 import type { SourceAuthoringSlice, TimeSlice } from "@/lib/stores/quick-create-store";
+import { NumberInput, Select, SimpleGrid, Stack, TagsInput, Text } from "@mantine/core";
 
 interface SourceWindowPanelProps {
   source: SourceAuthoringSlice;
@@ -69,7 +69,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
 
       <TagsInput
         label="除外日"
-        description="YYYY-MM-DD。Enterで複数追加できます。"
+        description="YYYY-MM-DD。祝日・振替休日・特別日程など、このTileを生成しない日を指定。Enterで複数追加できます。"
         placeholder="2026-08-06"
         value={source.excludedDates}
         onChange={(value) => setField("source.excludedDates", value)}

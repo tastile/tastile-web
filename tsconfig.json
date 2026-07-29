@@ -47,6 +47,7 @@
     "node_modules",
     ".next",
     "dist",
-    "test-results"
+    "test-results",
+    "scripts/generate-openapi-types.ts"
   ]
 }

@@ -3,7 +3,7 @@
 import { TimelineAxis } from "@/components/execution/TimelineAxis";
 import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import type { TileId } from "@/lib/domain/ids";
-import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
+import { type Tile, getTileLifecycle } from "@/lib/domain/tile";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import type { Locale } from "@/lib/stores/locale-store";
 

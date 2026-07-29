@@ -1,14 +1,14 @@
 "use client";
 
-import { Button } from "@mantine/core";
-import { useEffect, useState } from "react";
 import {
-  getSecurityLockEnabled,
-  getSecurityLockTimeoutMinutes,
   SECURITY_LOCK_CREDENTIAL_ID_KEY,
   SECURITY_LOCK_LEFT_AT_KEY,
+  getSecurityLockEnabled,
+  getSecurityLockTimeoutMinutes,
   shouldRequireSecurityUnlock,
 } from "@/lib/security/security-lock-policy";
+import { Button } from "@mantine/core";
+import { useEffect, useState } from "react";
 
 type LockState = "checking" | "unlocked" | "locked" | "unavailable";
 

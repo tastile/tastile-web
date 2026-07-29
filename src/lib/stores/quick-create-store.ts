@@ -21,7 +21,6 @@
  * aggregate stores materialized `Frame[]` (worker output).
  */
 
-import { create } from "zustand";
 import type { RecurrenceModel } from "@/lib/domain/tile";
 import type { Stamp } from "@/lib/domain/v1/actor";
 import type { ChangeRule } from "@/lib/domain/v1/change-set";
@@ -38,6 +37,7 @@ import {
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { FrameRule, Plan, RecurringRule } from "@/lib/domain/v1/tile";
 import type { DateRange, DurationRange, Span, Window } from "@/lib/domain/v1/window";
+import { create } from "zustand";
 
 /**
  * Structural shape of a starter template row's `recurrence` field as
@@ -106,6 +106,8 @@ export interface RecurringSlice {
   endDate: string;
   intervalValue: number;
   intervalUnit: "min" | "hour" | "day";
+  /** repeatMode === "condition" のときに評価される条件木 */
+  condition: import("@/lib/domain/v1/condition").ConditionNode | null;
 }
 
 export interface AdvancedSlice {
@@ -162,6 +164,10 @@ export interface SourceAuthoringSlice {
     candidateWhen: import("@/lib/domain/v1/condition").ConditionNode | null;
     minimumGapMs: number;
     rank: number;
+    /** 最終 step の後、先頭に戻って繰り返す（汎用循環 Flow） */
+    cycle: boolean;
+    /** 割り込み発生時に step 位置を先頭にリセットする */
+    resetOnInterrupt: boolean;
     steps: Array<{ id: string; waitBeforeMs: number; emitDurationMs: number }>;
   }>;
 }
@@ -441,6 +447,7 @@ function defaultRecurring(): RecurringSlice {
     endDate: "",
     intervalValue: 30,
     intervalUnit: "min",
+    condition: null,
   };
 }
 

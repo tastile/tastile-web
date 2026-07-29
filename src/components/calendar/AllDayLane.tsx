@@ -1,8 +1,8 @@
 "use client";
 
-import { type KeyboardEvent, memo } from "react";
 import { eventTileStyle } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
+import { type KeyboardEvent, memo } from "react";
 
 interface AllDayChipProps {
   event: CalendarEvent;

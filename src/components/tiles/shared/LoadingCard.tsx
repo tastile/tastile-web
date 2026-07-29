@@ -1,8 +1,8 @@
 "use client";
 
-import { Skeleton } from "@mantine/core";
 import { TILE_CARD_STYLES } from "@/lib/styles/tile-card-styles";
 import { cn } from "@/lib/utils/cn";
+import { Skeleton } from "@mantine/core";
 
 interface LoadingCardProps {
   variant?: "compact" | "comfortable" | "detailed";

@@ -1,4 +1,3 @@
-import { type NextRequest, NextResponse } from "next/server";
 import { COOKIE_OAUTH_NEXT, COOKIE_OAUTH_STATE, COOKIE_PKCE_VERIFIER } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import {
@@ -13,6 +12,7 @@ import {
 } from "@/lib/cognito/login-url";
 import { generatePkcePair, generateState } from "@/lib/cognito/pkce";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const env = tryGetCognitoEnv();

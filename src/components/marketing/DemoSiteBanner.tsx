@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
 import { useLocaleStore } from "@/lib/stores/locale-store";
+import { AlertTriangle } from "lucide-react";
 
 const X_DM_URL = "https://twitter.com/361do_sleep";
 const REPO_URL = "https://github.com/tastile/tastile-web";
@@ -24,11 +24,9 @@ export function DemoSiteBanner() {
   const copy = locale === "ja" ? COPY.ja : COPY.en;
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
+    <output
       data-testid="demo-site-banner"
-      className="sticky top-0 left-0 right-0 z-[80] h-9 border-b border-amber-500/20 bg-amber-500/15 text-amber-900 backdrop-blur-sm dark:bg-amber-400/10 dark:text-amber-200"
+      className="fixed bottom-0 left-0 right-0 z-[80] h-9 border-t border-amber-500/20 bg-amber-500/15 text-amber-900 backdrop-blur-sm dark:bg-amber-400/10 dark:text-amber-200"
     >
       <div className="layout-shell flex h-full items-center gap-3 text-xs">
         <AlertTriangle aria-hidden className="h-3.5 w-3.5 shrink-0" />
@@ -53,6 +51,6 @@ export function DemoSiteBanner() {
           </a>
         </p>
       </div>
-    </div>
+    </output>
   );
 }

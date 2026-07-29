@@ -1,8 +1,8 @@
-import { cookies } from "next/headers";
-import { NextResponse } from "next/server";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from "@/lib/cognito/cookies";
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
 
 // Returns session metadata only after server-side Cognito verification.
 // The response intentionally excludes every credential-bearing token.

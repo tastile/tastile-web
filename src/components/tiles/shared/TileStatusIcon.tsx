@@ -1,10 +1,10 @@
 "use client";
 
-import { ActionIcon } from "@mantine/core";
-import { CheckCircle2, Circle, CircleDot } from "lucide-react";
 import type { TileLifecycle } from "@/lib/domain/tile";
 import { TILE_STATUS_COLORS } from "@/lib/styles/tile-card-styles";
 import { cn } from "@/lib/utils/cn";
+import { ActionIcon } from "@mantine/core";
+import { CheckCircle2, Circle, CircleDot } from "lucide-react";
 
 interface TileStatusIconProps {
   lifecycle: TileLifecycle;

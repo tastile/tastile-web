@@ -105,18 +105,17 @@ export function formatFriendlyDateTime(
       timeZone: timeZone ?? undefined,
     }).format(targetDate);
     return `${dateStr}(${dayOfWeek}) ${timeStr}`;
-  } else {
-    if (diffDays === 0) return `Today ${timeStr}`;
-    if (diffDays === 1) return `Tomorrow ${timeStr}`;
-    if (diffDays === -1) return `Yesterday ${timeStr}`;
-
-    const dateStr = getDtFormatter("en", {
-      month: "short",
-      day: "numeric",
-      timeZone: timeZone ?? undefined,
-    }).format(targetDate);
-    return `${dateStr} ${timeStr}`;
   }
+  if (diffDays === 0) return `Today ${timeStr}`;
+  if (diffDays === 1) return `Tomorrow ${timeStr}`;
+  if (diffDays === -1) return `Yesterday ${timeStr}`;
+
+  const dateStr = getDtFormatter("en", {
+    month: "short",
+    day: "numeric",
+    timeZone: timeZone ?? undefined,
+  }).format(targetDate);
+  return `${dateStr} ${timeStr}`;
 }
 
 function _formatTimeOnly(

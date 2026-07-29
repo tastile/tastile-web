@@ -1,16 +1,16 @@
 "use client";
 
-import { ActionIcon } from "@mantine/core";
-import { useQuery } from "@tanstack/react-query";
-import { Bell } from "lucide-react";
-import { useMemo } from "react";
 import { AccountMenu } from "@/app/app/account-menu";
-import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { TastileLogo } from "@/components/TastileLogo";
+import { ActiveExecutionBar } from "@/components/execution/ActiveExecutionBar";
 import { pickDisplayLabel } from "@/lib/auth/display-label";
 import type { ExecutionSyncStatus } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
 import { profileQueryOptions, safeSessionQueryOptions } from "@/lib/query/auth-query-options";
+import { ActionIcon } from "@mantine/core";
+import { useQuery } from "@tanstack/react-query";
+import { Bell } from "lucide-react";
+import { useMemo } from "react";
 
 interface HeaderProps {
   executionState?: {

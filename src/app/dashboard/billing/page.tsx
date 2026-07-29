@@ -1,9 +1,9 @@
 "use client";
 
-import { Card as MantineCard, Progress, Stack, Text } from "@mantine/core";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
+import { Card as MantineCard, Progress, Stack, Text } from "@mantine/core";
 
 const BILLING_SIDE_PANEL = (
   <PageSummaryPanel

@@ -1,9 +1,9 @@
 "use client";
 
-import { Button } from "@mantine/core";
-import { useState } from "react";
 import type { PendingPrompt, PromptAction } from "@/lib/domain/execution";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { Button } from "@mantine/core";
+import { useState } from "react";
 
 interface GlobalPromptBannerProps {
   prompt: PendingPrompt | null;

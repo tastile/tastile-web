@@ -1,6 +1,6 @@
 import type { TimelineItemSnapshot } from "@/lib/domain/execution";
 import type { TileId } from "@/lib/domain/ids";
-import { getTileLifecycle, type Tile } from "@/lib/domain/tile";
+import { type Tile, getTileLifecycle } from "@/lib/domain/tile";
 
 export type TimelineScale = "day" | "week" | "month" | "custom";
 

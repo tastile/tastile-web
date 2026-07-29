@@ -77,17 +77,7 @@ export function uuidv7(): string {
 
   const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 
-  return (
-    tsHex.slice(0, 8) +
-    "-" +
-    tsHex.slice(8, 12) +
-    "-" +
-    hex.slice(0, 4) +
-    "-" +
-    hex.slice(4, 8) +
-    "-" +
-    hex.slice(8, 20)
-  );
+  return `${tsHex.slice(0, 8)}-${tsHex.slice(8, 12)}-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 20)}`;
 }
 
 /**

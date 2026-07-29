@@ -45,11 +45,11 @@ describe("DemoSiteBanner", () => {
 		expect(repoLink.getAttribute("href")).toBe(REPO_URL);
 	});
 
-	it("pins itself to the top of the viewport (sticky, top-0, z-50)", () => {
+	it("pins itself to the bottom of the viewport (fixed, bottom-0, z-[80])", () => {
 		renderWithMantine(<DemoSiteBanner />);
 		const banner = screen.getByTestId("demo-site-banner");
-		expect(banner.className).toMatch(/\bsticky\b/);
-		expect(banner.className).toMatch(/\btop-0\b/);
+		expect(banner.className).toMatch(/\bfixed\b/);
+		expect(banner.className).toMatch(/\bbottom-0\b/);
 		expect(banner.className).toMatch(/\bz-\[80\]/);
 	});
 });

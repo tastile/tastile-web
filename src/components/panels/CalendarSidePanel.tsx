@@ -1,23 +1,23 @@
 "use client";
 
+import type { DisplayMode } from "@/lib/calendar/layout";
+import { type Workspace, useProjects } from "@/lib/hooks/use-projects";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils/cn";
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
 import {
   ActionIcon,
   Button,
   Checkbox,
-  getTreeExpandedState,
   Select,
   Tree,
+  getTreeExpandedState,
   useTree,
 } from "@mantine/core";
 import { DatePicker } from "@mantine/dates";
 import { ChevronRight, Clock, Filter } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useTransition } from "react";
-import type { DisplayMode } from "@/lib/calendar/layout";
-import { useProjects, type Workspace } from "@/lib/hooks/use-projects";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
 
 type CalendarSidePanelView = "day" | "week" | "month" | "year" | "list";
 

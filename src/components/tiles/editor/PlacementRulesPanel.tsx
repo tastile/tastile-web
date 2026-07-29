@@ -1,10 +1,10 @@
 "use client";
 
-import { ActionIcon, Button, Group, NumberInput, Select, Stack, Text } from "@mantine/core";
-import { Plus, Trash2 } from "lucide-react";
 import { ConditionKind } from "@/lib/domain/v1/constants";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { PlacementRule } from "@/lib/domain/v1/tile";
+import { ActionIcon, Button, Group, NumberInput, Select, Stack, Text } from "@mantine/core";
+import { Plus, Trash2 } from "lucide-react";
 import { ConditionEditor, defaultTerm } from "./ConditionEditor";
 
 interface PlacementRulesPanelProps {
@@ -104,7 +104,7 @@ export function PlacementRulesPanel({
                 </Text>
                 <Button
                   size="compact-xs"
-                  variant="subtle"
+                  variant="outline"
                   color="red"
                   onClick={() => update(rule.id, { when: null })}
                 >
@@ -123,7 +123,7 @@ export function PlacementRulesPanel({
           ) : (
             <Button
               size="xs"
-              variant="subtle"
+              variant="outline"
               onClick={() => update(rule.id, { when: initialCondition() })}
             >
               適用条件を追加
@@ -194,7 +194,7 @@ export function PlacementRulesPanel({
         </Stack>
       ))}
       <Button
-        variant="light"
+        variant="outline"
         leftSection={<Plus size={15} />}
         onClick={() => setRules([...rules, defaultRule()])}
       >

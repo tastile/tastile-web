@@ -32,6 +32,7 @@
 
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
 import { uuidv7 } from "@/lib/domain/v1/envelope";
+import type { WireCompletion, WirePlanning } from "./openapi-contract";
 
 // ---------- UUIDv7 enforcement (v1/10 §1: identifiers are UUIDv7 only) ----------
 //
@@ -176,13 +177,28 @@ function adjustTermValue(kind: string, value: unknown): unknown {
   switch (kind) {
     case "task":
       return { ...value, state: lookupEnum(TASK_STATE_KIND, value.state) };
-    case "requirement":
-      return { ...value, state: lookupEnum(REQUIREMENT_STATE, value.state) };
+    case "requirement": {
+      // Store: { requirementId, state: number } → Wire: { time_requirement, state: "Met"|"Unmet"|"Any" }
+      const { requirementId, ...rest } = value as Record<string, unknown>;
+      return {
+        ...rest,
+        time_requirement: requirementId ?? rest.requirementId,
+        state: lookupEnum(REQUIREMENT_STATE, value.state),
+      };
+    }
     case "relation":
       return {
         ...value,
         windowKind: lookupEnum(RELATION_WINDOW_KIND, value.windowKind),
       };
+    case "moment": {
+      // Store: { offsetMs } → Wire: { offset } (snake: offset_ms → must be "offset")
+      const { offsetMs, ...rest } = value as Record<string, unknown>;
+      return {
+        ...rest,
+        offset: offsetMs ?? 0,
+      };
+    }
     default:
       return value;
   }
@@ -251,7 +267,7 @@ export interface StorePlanInput {
   decisions: unknown[];
 }
 
-interface WireCompletion {
+interface LocalWireCompletion {
   root: unknown;
   time_requirements: Array<{
     id: string;
@@ -281,7 +297,7 @@ interface WireCompletion {
 
 function convertTimeRequirement(
   tr: StoreTimeRequirement,
-): WireCompletion["time_requirements"][number] {
+): LocalWireCompletion["time_requirements"][number] {
   const preferred =
     isPlainObject(tr.preferred) &&
     (Object.hasOwn(tr.preferred, "minMs") || Object.hasOwn(tr.preferred, "maxMs"))
@@ -307,7 +323,7 @@ function convertTimeRequirement(
   };
 }
 
-function convertTask(task: StoreTaskDefinition): WireCompletion["tasks"][number] {
+function convertTask(task: StoreTaskDefinition): LocalWireCompletion["tasks"][number] {
   return {
     id: task.id,
     content: {
@@ -327,9 +343,11 @@ function convertTask(task: StoreTaskDefinition): WireCompletion["tasks"][number]
 
 function convertCompletion(c: StoreCompletion): WireCompletion {
   return {
-    root: convertCondition(c.root),
-    time_requirements: (c.timeRequirements ?? []).map(convertTimeRequirement),
-    tasks: (c.tasks ?? []).map(convertTask),
+    root: convertCondition(c.root) as WireCompletion["root"],
+    time_requirements: (c.timeRequirements ?? []).map(
+      convertTimeRequirement,
+    ) as WireCompletion["time_requirements"],
+    tasks: (c.tasks ?? []).map(convertTask) as WireCompletion["tasks"],
   };
 }
 
@@ -370,18 +388,14 @@ function convertPlacementRule(value: unknown): unknown {
 }
 
 /**
- * Wire payload for `POST /v1/tiles/{tileId}/plan`.  The whole body is
- * the inner shape; `tile_id` is added by `setPlanCommand` itself.
+ * Wire payload for `POST /v1/tiles/{tileId}/plan`.  Conforms to
+ * `SchedulePlanDefinitionSchema` from tastile-core OpenAPI.
  */
 export interface WireSetPlanBody {
   role: number;
   references: unknown[];
   completion: WireCompletion;
-  planning: {
-    placement_rules: unknown[];
-    nesting_rules: unknown[];
-    flows: unknown[];
-  };
+  planning: WirePlanning;
   metrics: unknown[];
   decisions: unknown[];
 }
@@ -401,9 +415,12 @@ export function toWireSetPlanBody(storePlan: StorePlanInput): WireSetPlanBody {
     references: convertReferences(normalised.references ?? []),
     completion: convertCompletion(normalised.completion),
     planning: {
-      placement_rules: (normalised.planning?.placementRules ?? []).map(convertPlacementRule),
-      nesting_rules: (normalised.planning?.nestingRules ?? []).map(convertConditionalRecord),
-      flows: camelToSnakeDeep(normalised.planning?.flows ?? []) as unknown[],
+      placement_rules: (normalised.planning?.placementRules ?? []).map(
+        convertPlacementRule,
+      ) as WirePlanning["placement_rules"],
+      nesting_rules: (normalised.planning?.nestingRules ?? []).map(
+        convertConditionalRecord,
+      ) as WirePlanning["nesting_rules"],
     },
     metrics: camelToSnakeDeep(normalised.metrics ?? []) as unknown[],
     decisions: (normalised.decisions ?? []).map(convertConditionalRecord),

@@ -1,5 +1,12 @@
 "use client";
 
+import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
+import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { EmptyState } from "@/components/ui/Empty";
+import { type Result, getCoreClient } from "@/lib/api/endpoints";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import { Alert, Badge, Button, Loader, Text, TextInput } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import {
@@ -15,13 +22,6 @@ import {
   Terminal,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { PageSummaryPanel } from "@/components/panels/PageSummaryPanel";
-import { PageContainer, PageHeader } from "@/components/shell/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { Dropdown } from "@/components/ui/Dropdown";
-import { EmptyState } from "@/components/ui/Empty";
-import { getCoreClient, type Result } from "@/lib/api/endpoints";
-import { useSidePanel } from "@/lib/context/side-panel-context";
 
 interface DebugEvent {
   id: string;
@@ -68,9 +68,9 @@ export default function EventsPage() {
 
   const types = useMemo(() => {
     const set = new Set<string>();
-    list.forEach((e) => {
+    for (const e of list) {
       set.add(e.type);
-    });
+    }
     return ["All", ...Array.from(set).sort()];
   }, [list]);
 

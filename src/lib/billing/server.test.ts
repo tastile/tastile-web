@@ -52,11 +52,11 @@ describe("getSubscriptionForUser", () => {
           id: "sub_1",
           status: "active",
           cancel_at_period_end: false,
+          current_period_end: 1700000000,
           items: {
             data: [
               {
                 price: { id: "price_monthly_test" },
-                current_period_end: 1700000000,
               },
             ],
           },
@@ -85,11 +85,11 @@ describe("getSubscriptionForUser", () => {
           id: "sub_1",
           status: "active",
           cancel_at_period_end: true,
+          current_period_end: 1800000000,
           items: {
             data: [
               {
                 price: { id: "price_yearly_test" },
-                current_period_end: 1800000000,
               },
             ],
           },

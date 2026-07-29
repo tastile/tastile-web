@@ -1,8 +1,8 @@
 "use client";
 
+import { cn } from "@/lib/utils/cn";
 import { Button, Group } from "@mantine/core";
 import { ChevronRight, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils/cn";
 import { FormRow } from "./FormRow";
 
 interface RowSubPanelProps {

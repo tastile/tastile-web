@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { coreUrl } from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   return proxyTokens();
@@ -45,7 +45,7 @@ function normalizeRequestBody(body: string) {
     const parsed = JSON.parse(body) as { name?: unknown; label?: unknown; scopes?: unknown };
     if (typeof parsed.name === "string" && typeof parsed.label !== "string") {
       parsed.label = parsed.name;
-      delete parsed.name;
+      parsed.name = undefined;
     }
     return JSON.stringify(parsed);
   } catch {

@@ -1,4 +1,3 @@
-import { type NextRequest, NextResponse } from "next/server";
 import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
 import {
   COOKIE_ACCESS_TOKEN,
@@ -10,6 +9,7 @@ import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { safeNextPath } from "@/lib/cognito/login-url";
 import { refreshTokens } from "@/lib/cognito/server";
 import { resolveCanonicalHostRedirect } from "@/lib/host-routing";
+import { type NextRequest, NextResponse } from "next/server";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/app"];
 // Pages that should bounce an already-authenticated user to /dashboard. The

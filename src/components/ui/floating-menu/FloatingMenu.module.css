@@ -17,9 +17,7 @@
   padding: var(--spacing-control-compact);
   opacity: 0;
   transform: scale(0.95) translateY(-4px);
-  transition:
-    opacity 150ms ease,
-    transform 150ms ease;
+  transition: opacity 150ms ease, transform 150ms ease;
   pointer-events: none;
 }
 

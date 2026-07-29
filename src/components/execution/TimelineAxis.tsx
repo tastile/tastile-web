@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface TimelineItem {
   id: string;

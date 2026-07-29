@@ -1,9 +1,9 @@
 "use client";
 
+import { useTranslation } from "@/lib/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useTranslation } from "@/lib/i18n/use-translation";
 
 type SetupState =
   | { kind: "loading" }

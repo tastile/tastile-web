@@ -8,8 +8,8 @@ import {
 } from "@/components/ui/floating-menu";
 import {
   EXECUTION_PROMPT_PREFIX,
-  isExecutionPromptNotification,
   type NotificationItem,
+  isExecutionPromptNotification,
   useNotifications,
 } from "@/lib/hooks/use-notifications";
 import { useTranslation } from "@/lib/i18n/use-translation";

@@ -1,15 +1,24 @@
 "use client";
 
+import {
+  type Workspace,
+  createWorkspace,
+  deleteWorkspace,
+  orderWorkspaceTree,
+  useProjects,
+} from "@/lib/hooks/use-projects";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils/cn";
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
 import {
   ActionIcon,
   Button,
   ColorInput,
-  getTreeExpandedState,
   Modal,
   Select,
   TextInput,
   Tree,
+  getTreeExpandedState,
   useTree,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
@@ -17,15 +26,6 @@ import { useDisclosure } from "@mantine/hooks";
 import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
-import {
-  createWorkspace,
-  deleteWorkspace,
-  orderWorkspaceTree,
-  useProjects,
-  type Workspace,
-} from "@/lib/hooks/use-projects";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
 
 const DEFAULT_COLOR = "#6b7280";
 

@@ -154,7 +154,7 @@ export function layoutDayLanes(
   for (const r of raw) {
     let lane = -1;
     for (let i = 0; i < lanes.length; i++) {
-      if ((lanes[i] ?? Infinity) <= r.startMs) {
+      if ((lanes[i] ?? Number.POSITIVE_INFINITY) <= r.startMs) {
         lane = i;
         break;
       }
@@ -177,7 +177,7 @@ export function layoutDayLanes(
   const clusterOfEvent: number[] = new Array(placed.length).fill(-1);
   const clusterMaxLane: number[] = [];
   let curCluster = -1;
-  let curClusterEnd = -Infinity;
+  let curClusterEnd = Number.NEGATIVE_INFINITY;
   let curClusterMaxLane = 0;
   for (let i = 0; i < placed.length; i++) {
     const p = placed[i];

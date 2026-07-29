@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useState } from "react";
 import { useSidePanelContent } from "@/lib/context/side-panel-context";
 import { cn } from "@/lib/utils/cn";
+import { X } from "lucide-react";
+import { useState } from "react";
 
 /**
  * Side tool panel that renders to the right of the activity bar.

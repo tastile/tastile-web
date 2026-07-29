@@ -1,10 +1,10 @@
 "use client";
 
+import { cn } from "@/lib/utils/cn";
 import { Button } from "@mantine/core";
 import { useUncontrolled } from "@mantine/hooks";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { cn } from "@/lib/utils/cn";
 import styles from "./FloatingMenu.module.css";
 
 /* ---------------------------------------------------------------------------
@@ -178,19 +178,21 @@ function computePosition(
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
+  let resolvedSide: Side = side;
   let top: number;
-  if (side === "bottom") {
+  if (resolvedSide === "bottom") {
     top = triggerRect.bottom + window.scrollY + sideOffset;
     // overflow check: if content goes below viewport, flip to top
     if (triggerRect.bottom + sideOffset + contentRect.height > vh) {
       top = triggerRect.top + window.scrollY - sideOffset - contentRect.height;
-      side = "top";
+      resolvedSide = "top";
     }
   } else {
     top = triggerRect.top + window.scrollY - sideOffset - contentRect.height;
+    // overflow check: if content goes above viewport, flip to bottom
     if (top < 0) {
       top = triggerRect.bottom + window.scrollY + sideOffset;
-      side = "bottom";
+      resolvedSide = "bottom";
     }
   }
 
@@ -211,7 +213,7 @@ function computePosition(
     left = 8;
   }
 
-  return { top, left, side };
+  return { top, left, side: resolvedSide };
 }
 
 /* -------------------------------------------------------------------------- */

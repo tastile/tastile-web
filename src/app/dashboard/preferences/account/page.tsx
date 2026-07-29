@@ -1,15 +1,15 @@
 "use client";
 
-import { Alert, Button, Modal, TextInput } from "@mantine/core";
-import { useDisclosure } from "@mantine/hooks";
-import { AlertCircle, Edit, Mail, MailIcon, RefreshCw, UserRound } from "lucide-react";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
 import { AccessTokenSection } from "@/components/account/AccessTokenSection";
 import { SubscriptionSection } from "@/components/account/SubscriptionSection";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { useSidePanel } from "@/lib/context/side-panel-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { Alert, Button, Modal, TextInput } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { AlertCircle, Edit, Mail, MailIcon, RefreshCw, UserRound } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 export type TabId = "profile" | "subscription" | "tokens";
 

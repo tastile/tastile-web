@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 import { invalidateSubscriptionCache } from "@/lib/billing/server";
 import { getStripe } from "@/lib/stripe";
+import { NextResponse } from "next/server";
+import type Stripe from "stripe";
 
 function extractCognitoSub(event: Stripe.Event): string | undefined {
   const obj = event.data.object as unknown as Record<string, unknown>;

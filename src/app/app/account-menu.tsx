@@ -1,10 +1,5 @@
 "use client";
 
-import { Button } from "@mantine/core";
-import { ChevronUp } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   FloatingMenu,
   FloatingMenuContent,
@@ -13,6 +8,11 @@ import {
   FloatingMenuSeparator,
   FloatingMenuTrigger,
 } from "@/components/ui/floating-menu";
+import { Button } from "@mantine/core";
+import { ChevronUp } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface AccountMenuProps {
   displayName: string;

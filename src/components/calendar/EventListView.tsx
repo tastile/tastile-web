@@ -1,10 +1,10 @@
 "use client";
 
+import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
+import { cn } from "@/lib/utils/cn";
 import { Button, TextInput } from "@mantine/core";
 import { Calendar, Clock, MapPin, Search } from "lucide-react";
 import { useDeferredValue, useMemo, useState } from "react";
-import { type CalendarEvent, EVENT_COLOR_HEX } from "@/lib/domain/calendar";
-import { cn } from "@/lib/utils/cn";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);

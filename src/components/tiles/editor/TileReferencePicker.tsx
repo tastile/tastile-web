@@ -219,12 +219,11 @@ export function TileReferencePicker({
                     type="button"
                     onClick={() => commit(it.id)}
                     onMouseEnter={() => setActiveIndex(items.findIndex((x) => x.id === it.id))}
-                    className={
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors " +
-                      (it.active
+                    className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors ${
+                      it.active
                         ? "bg-surface-2 text-foreground"
-                        : "text-foreground-subtle hover:bg-surface-1 hover:text-foreground")
-                    }
+                        : "text-foreground-subtle hover:bg-surface-1 hover:text-foreground"
+                    }`}
                     data-testid={`tile-picker-item-${it.id}`}
                   >
                     <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
@@ -240,7 +239,7 @@ export function TileReferencePicker({
         <div className="flex items-center justify-between gap-2">
           <Button
             type="button"
-            variant="subtle"
+            variant="outline"
             size="xs"
             onClick={() => commit(null)}
             data-testid="tile-picker-clear"
@@ -249,7 +248,7 @@ export function TileReferencePicker({
           </Button>
           <Button
             type="button"
-            variant="default"
+            variant="outline"
             size="xs"
             onClick={onClose}
             data-testid="tile-picker-close"

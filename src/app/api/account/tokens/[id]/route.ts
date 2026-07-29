@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { coreUrl } from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/lib/cognito/account-session";
+import { NextResponse } from "next/server";
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -55,7 +55,7 @@ function normalizeRequestBody(body: string) {
     const parsed = JSON.parse(body) as { name?: unknown; label?: unknown };
     if (typeof parsed.name === "string" && typeof parsed.label !== "string") {
       parsed.label = parsed.name;
-      delete parsed.name;
+      parsed.name = undefined;
     }
     return JSON.stringify(parsed);
   } catch {

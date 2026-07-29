@@ -1,5 +1,19 @@
 "use client";
 
+import { TastileLogo } from "@/components/TastileLogo";
+import { V1ExecutionControls } from "@/components/execution/V1ExecutionControls";
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import {
+  FloatingMenu,
+  FloatingMenuContent,
+  FloatingMenuItem,
+  FloatingMenuLabel,
+  FloatingMenuSeparator,
+  FloatingMenuTrigger,
+} from "@/components/ui/floating-menu";
+import { useActiveTile } from "@/lib/hooks/use-active-tile";
+import { useTranslation } from "@/lib/i18n/use-translation";
+import { cn } from "@/lib/utils/cn";
 import { ActionIcon, Avatar, Burger, Button } from "@mantine/core";
 import { useDisclosure, useInterval } from "@mantine/hooks";
 import {
@@ -16,20 +30,6 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { V1ExecutionControls } from "@/components/execution/V1ExecutionControls";
-import { TastileLogo } from "@/components/TastileLogo";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import {
-  FloatingMenu,
-  FloatingMenuContent,
-  FloatingMenuItem,
-  FloatingMenuLabel,
-  FloatingMenuSeparator,
-  FloatingMenuTrigger,
-} from "@/components/ui/floating-menu";
-import { useActiveTile } from "@/lib/hooks/use-active-tile";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { cn } from "@/lib/utils/cn";
 
 interface FloatingHeaderProps {
   userName: string;
@@ -87,7 +87,7 @@ export function FloatingHeader({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-9 z-40 flex h-12 items-center bg-surface-0 border-b border-border">
+      <header className="fixed inset-x-0 top-0 z-40 flex h-12 items-center bg-surface-0 border-b border-border">
         {/* Left: logo */}
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link

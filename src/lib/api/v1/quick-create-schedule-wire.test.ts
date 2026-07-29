@@ -241,6 +241,8 @@ describe("buildQuickCreateSchedulePayload", () => {
           candidateWhen: null,
           minimumGapMs: 20 * 60_000,
           rank: 7,
+          cycle: false,
+          resetOnInterrupt: false,
           steps: [
             { id: "a", waitBeforeMs: 15 * 60_000, emitDurationMs: 5 * 60_000 },
             { id: "b", waitBeforeMs: 90 * 60_000, emitDurationMs: 30 * 60_000 },
@@ -454,6 +456,8 @@ describe("buildQuickCreateSchedulePayload", () => {
         candidateWhen: null,
         minimumGapMs: 0,
         rank: 0,
+        cycle: false,
+        resetOnInterrupt: false,
         steps: [],
       },
     ];

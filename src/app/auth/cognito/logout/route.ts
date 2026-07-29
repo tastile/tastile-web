@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { clearAuthCookies } from "@/lib/cognito/cookies";
 import { tryGetCognitoEnv } from "@/lib/cognito/env";
 import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   const env = tryGetCognitoEnv();

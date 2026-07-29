@@ -1,10 +1,10 @@
-import { Check } from "lucide-react";
-import Link from "next/link";
-import { PricingCard } from "@/components/marketing/PricingCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
+import { PricingCard } from "@/components/marketing/PricingCard";
 import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
 import { translations } from "@/lib/i18n/translations";
+import { Check } from "lucide-react";
+import Link from "next/link";
 
 export const metadata = {
   title: "Pricing — Tastile",

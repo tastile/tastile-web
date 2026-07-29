@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 
 import { fireEvent, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectsSidePanel } from "./ProjectsSidePanel";
 import { renderWithMantine } from "@/test/render-with-mantine";
@@ -154,17 +155,23 @@ describe("ProjectsSidePanel create flow", () => {
 	it("normalizes slug to lowercase and strips non-slug characters", async () => {
 		mockRefresh.mockResolvedValue(undefined);
 
+		const user = userEvent.setup();
 		renderWithMantine(<ProjectsSidePanel />);
 
-		fireEvent.click(screen.getByTestId("project-create"));
+		await user.click(screen.getByTestId("project-create"));
 
 		const nameInput = await screen.findByTestId("project-create-name");
-		fireEvent.change(nameInput, { target: { value: "Hello" } });
-		fireEvent.change(screen.getByTestId("project-create-slug"), {
-			target: { value: "Hello World!!" },
-		});
+		await user.clear(nameInput);
+		await user.type(nameInput, "Hello");
 
-		fireEvent.click(screen.getByTestId("project-create-submit"));
+		const slugInput = screen.getByTestId("project-create-slug");
+		await user.clear(slugInput);
+		await user.type(slugInput, "Hello World!!");
+
+		// Use the form element itself to trigger submit, since the button
+		// click may not propagate through Mantine's Modal portal reliably.
+		const form = slugInput.closest("form")!;
+		fireEvent.submit(form);
 
 		await waitFor(() => expect(mockCreateWorkspace).toHaveBeenCalledTimes(1));
 		expect(mockCreateWorkspace).toHaveBeenCalledWith(

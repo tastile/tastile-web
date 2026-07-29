@@ -55,8 +55,14 @@ export function SubPanelShell({
     return () => window.removeEventListener("keydown", handleKey);
   }, [isActive, onClose]);
 
-  const idleTransform = layout === "drawer" ? "translate-x-full" : "translate-y-full";
-  const activeTransform = layout === "drawer" ? "translate-x-0" : "translate-y-0";
+  const isDrawer = layout === "drawer";
+
+  const idleTransform = isDrawer ? "translate-x-full" : "translate-y-full";
+  const activeTransform = isDrawer ? "translate-x-0" : "translate-y-0";
+
+  const positioning = isDrawer
+    ? "fixed inset-y-0 right-0 z-[58] w-[36rem] border-l border-border shadow-lg"
+    : "absolute inset-0 z-[60]";
 
   return (
     <section
@@ -64,16 +70,14 @@ export function SubPanelShell({
       aria-hidden={!isActive}
       inert={!isActive}
       {...{ [PANEL_ANIM_ATTR]: "" }}
-      className={`absolute inset-0 flex flex-col bg-[var(--surface-1)] transition-transform duration-200 ${isActive ? activeTransform : idleTransform} ${isActive ? "" : "pointer-events-none"}`}
+      className={`${positioning} flex flex-col bg-surface-0 transition-transform duration-200 ${isActive ? activeTransform : idleTransform} ${isActive ? "" : "pointer-events-none"}`}
     >
-      <header className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-subtle)]">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div>
           <h2 id={headingId} className="text-sm font-semibold">
             {title}
           </h2>
-          {description ? (
-            <p className="text-xs text-[var(--foreground-muted)]">{description}</p>
-          ) : null}
+          {description ? <p className="text-xs text-foreground-muted">{description}</p> : null}
         </div>
         <CloseButton onClick={onClose} aria-label={`Close ${title}`} />
       </header>

@@ -4,9 +4,9 @@ import { Button } from "@mantine/core";
 import { useEffect, useState } from "react";
 
 import {
-  listReferenceCatalog,
   type ReferenceCatalogItem,
   ScheduleReferenceUsage,
+  listReferenceCatalog,
 } from "@/lib/api/v1/schedule-definition";
 import { makeClient } from "@/lib/api/v1/submit";
 import { useCurrentActorSubjectId } from "@/lib/hooks/use-current-actor";
@@ -99,7 +99,7 @@ export function LabelSpanPicker({
       {error ? (
         <div role="alert" className="flex items-center justify-between gap-2 text-xs text-danger">
           <span>{error}</span>
-          <Button type="button" onClick={reload} className="underline">
+          <Button type="button" onClick={reload} variant="outline" size="xs">
             Retry
           </Button>
         </div>

@@ -1,8 +1,8 @@
 "use client";
 
+import { getLastVisitedPath } from "@/lib/hooks/use-track-visit";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { getLastVisitedPath } from "@/lib/hooks/use-track-visit";
 
 const REDIRECTABLE_PATHS = [
   "/dashboard/tasks",

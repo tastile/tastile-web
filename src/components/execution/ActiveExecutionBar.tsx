@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { TileStatusIcon } from "@/components/tiles/shared/TileStatusIcon";
 import { Actor } from "@/lib/domain/actor";
 import type { PhaseKind } from "@/lib/domain/execution";
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { useTranslation } from "@/lib/i18n/use-translation";
+import { useEffect, useRef, useState } from "react";
 
 // TODO(new-shell): wire to new component
 

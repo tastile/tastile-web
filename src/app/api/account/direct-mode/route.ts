@@ -1,5 +1,5 @@
-import { type NextRequest, NextResponse } from "next/server";
 import { COOKIE_API_TOKEN, COOKIE_DIRECT_DAEMON, COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { type NextRequest, NextResponse } from "next/server";
 
 const COOKIE_MAX_AGE_30_DAYS = 60 * 60 * 24 * 30;
 
@@ -11,7 +11,7 @@ function isLoggedIn(request: NextRequest): boolean {
 
 function cookieAttributes(): string {
   const isProd = process.env.NODE_ENV === "production";
-  const parts = [`Path=/`, `SameSite=Lax`, `Max-Age=${COOKIE_MAX_AGE_30_DAYS}`];
+  const parts = ["Path=/", "SameSite=Lax", `Max-Age=${COOKIE_MAX_AGE_30_DAYS}`];
   if (isProd) parts.push("Secure");
   return parts.join("; ");
 }

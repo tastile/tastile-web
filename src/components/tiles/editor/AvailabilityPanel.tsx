@@ -1,7 +1,7 @@
 "use client";
 
-import type { FloatingLabel } from "./floating-schedule";
 import { LabelSpanPicker } from "./LabelSpanPicker";
+import type { FloatingLabel } from "./floating-schedule";
 
 export function AvailabilityPanel({
   label,

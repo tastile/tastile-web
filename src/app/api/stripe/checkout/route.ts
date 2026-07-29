@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { getPlans, getStripe } from "@/lib/stripe";
+import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   let stripe: ReturnType<typeof getStripe>;

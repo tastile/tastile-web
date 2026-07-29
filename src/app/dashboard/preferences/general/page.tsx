@@ -1,8 +1,5 @@
 "use client";
 
-import { Button, NumberInput, Switch } from "@mantine/core";
-import { Bell, Languages, Palette } from "lucide-react";
-import { useMemo, useState } from "react";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { DirectDaemonToggle } from "@/components/preferences/DirectDaemonToggle";
 import { RowSegmented } from "@/components/ui/form";
@@ -21,6 +18,9 @@ import {
 } from "@/lib/security/security-lock-policy";
 import { useLocaleStore } from "@/lib/stores/locale-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
+import { Button, NumberInput, Switch } from "@mantine/core";
+import { Bell, Languages, Palette } from "lucide-react";
+import { useMemo, useState } from "react";
 
 export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
