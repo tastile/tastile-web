@@ -68,6 +68,7 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { defaultTerm } from "@/components/tiles/editor/ConditionEditor";
 import { ConditionPanel } from "@/components/tiles/editor/ConditionPanel";
+import { FieldRow } from "@/components/tiles/editor/FieldRow";
 import { FlowSequencePanel } from "@/components/tiles/editor/FlowSequencePanel";
 import { PlacementRulesPanel } from "@/components/tiles/editor/PlacementRulesPanel";
 import { SEGMENT_STYLES } from "@/components/tiles/editor/panel-styles";
@@ -357,6 +358,10 @@ export function QuickTileCreate() {
   const submitState = useQuickCreateStore((s) => s.submitState);
   const setSubmitState = useQuickCreateStore((s) => s.setSubmitState);
   const submitBlockedReason = useQuickCreateStore((s) => s.submitBlockedReason);
+  const getFieldError = useQuickCreateStore((s) => s.getFieldError);
+  const setFieldErrors = useQuickCreateStore((s) => s.setFieldErrors);
+  const setCanSubmitFromStore = useQuickCreateStore((s) => s.setCanSubmit);
+  const setSubmitBlockedReasonFromStore = useQuickCreateStore((s) => s.setSubmitBlockedReason);
   const submitting = submitState.kind === "submitting";
   const serverError =
     submitState.kind === "error"
@@ -452,6 +457,19 @@ export function QuickTileCreate() {
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
   const taskOrderValid = !hasTaskOrderCycle(plan.completion.tasks);
   const canSubmit = titleOk && spanOrderValid && durationValid && taskOrderValid && !submitBlocked;
+
+  // --- field-level error sync ---
+  useEffect(() => {
+    const errors = new Map<string, string>();
+    if (!titleOk) errors.set("identity.title", t("quickCreate.titleRequired"));
+    if (!spanOrderValid) errors.set("time.span", t("quickCreate.invalidTemporalOrder"));
+    if (!durationValid) errors.set("time.durationMinMax", t("quickCreate.invalidDurationRange"));
+    setFieldErrors(errors);
+    setCanSubmitFromStore(errors.size === 0 && !submitBlocked);
+    setSubmitBlockedReasonFromStore(
+      errors.size > 0 ? (errors.values().next().value ?? null) : (submitBlocked ? t("quickCreate.submitBlockedHint") : null),
+    );
+  }, [titleOk, spanOrderValid, durationValid, submitBlocked, t, setFieldErrors, setCanSubmitFromStore, setSubmitBlockedReasonFromStore]);
 
   // --- completion root summary ---
   function countConditionChildren(node: ConditionNode | null): number {
@@ -613,31 +631,38 @@ export function QuickTileCreate() {
             {/* ── main card ── */}
             <section className="py-2">
               {/* title input */}
-              <TextInput
-                value={identity.title}
-                onChange={(e) => {
-                  setField("identity.title", e.target.value);
-                  if (invalidField === "title") setInvalidField(null);
-                }}
-                placeholder={t("quickCreate.titlePlaceholder")}
-                aria-label={t("quickCreate.titlePlaceholder")}
-                aria-required="true"
-                aria-invalid={invalidField === "title" ? "true" : "false"}
-                aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
-                variant="unstyled"
-                size="xl"
-                fw={700}
-                styles={{
-                  input: {
-                    fontSize: "1.5rem",
-                    lineHeight: "2rem",
-                    fontWeight: 700,
-                    letterSpacing: "-0.025em",
-                    padding: 0,
-                    paddingBottom: "0.75rem",
-                  },
-                }}
-              />
+              <FieldRow
+                label={t("quickCreate.titlePlaceholder")}
+                htmlFor="tile-title-input"
+                required
+                error={getFieldError("identity.title")}
+              >
+                <TextInput
+                  id="tile-title-input"
+                  value={identity.title}
+                  onChange={(e) => {
+                    setField("identity.title", e.target.value);
+                    if (invalidField === "title") setInvalidField(null);
+                  }}
+                  placeholder={t("quickCreate.titlePlaceholder")}
+                  aria-required="true"
+                  aria-invalid={invalidField === "title" ? "true" : "false"}
+                  aria-describedby={invalidField === "title" ? "quick-create-error" : undefined}
+                  variant="unstyled"
+                  size="xl"
+                  fw={700}
+                  styles={{
+                    input: {
+                      fontSize: "1.5rem",
+                      lineHeight: "2rem",
+                      fontWeight: 700,
+                      letterSpacing: "-0.025em",
+                      padding: 0,
+                      paddingBottom: "0.75rem",
+                    },
+                  }}
+                />
+              </FieldRow>
 
               {/* organize row: project + tags + add button */}
               <div
@@ -1316,22 +1341,28 @@ export function QuickTileCreate() {
 
             {time.durationMinMax.minMs !== null && (
               <div className="mb-4">
-                <NumberInput
-                  min={10}
-                  step={10}
-                  value={Math.round(time.durationMinMax.minMs / 60000)}
-                  onChange={(value) => {
-                    const num = typeof value === "number" ? value : Number(value);
-                    if (!Number.isFinite(num)) return;
-                    const clamped = Math.max(10, Math.min(720, num));
-                    setField("time.durationMinMax.minMs", clamped * 60000);
-                    setField("time.durationMinMax.maxMs", clamped * 60000);
-                  }}
-                  size="sm"
-                  aria-label={t("quickCreate.durationInputLabel")}
-                  suffix={t("quickCreate.minutesUnit")}
-                  styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-                />
+                <FieldRow
+                  label={t("quickCreate.durationInputLabel")}
+                  htmlFor="tile-duration-input"
+                  error={getFieldError("time.durationMinMax")}
+                >
+                  <NumberInput
+                    id="tile-duration-input"
+                    min={10}
+                    step={10}
+                    value={Math.round(time.durationMinMax.minMs / 60000)}
+                    onChange={(value) => {
+                      const num = typeof value === "number" ? value : Number(value);
+                      if (!Number.isFinite(num)) return;
+                      const clamped = Math.max(10, Math.min(720, num));
+                      setField("time.durationMinMax.minMs", clamped * 60000);
+                      setField("time.durationMinMax.maxMs", clamped * 60000);
+                    }}
+                    size="sm"
+                    suffix={t("quickCreate.minutesUnit")}
+                    styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                  />
+                </FieldRow>
               </div>
             )}
       </SubPanelShell>

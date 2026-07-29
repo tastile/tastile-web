@@ -290,6 +290,9 @@ export interface QuickCreateState {
   getFieldError: (path: string) => string | null;
   setSubmitState: (state: SubmitState) => void;
   resetSubmitState: () => void;
+  setFieldErrors: (errors: Map<string, string>) => void;
+  setCanSubmit: (v: boolean) => void;
+  setSubmitBlockedReason: (reason: string | null) => void;
 }
 
 // ---------- defaults ----------
@@ -559,11 +562,15 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       editingTileId: null,
       loadError: null,
       submitState: { kind: "idle" },
+      fieldErrors: new Map(),
     }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   getFieldError: (path) => get().fieldErrors.get(path) ?? null,
   setSubmitState: (state) => set({ submitState: state }),
   resetSubmitState: () => set({ submitState: { kind: "idle" } }),
+  setFieldErrors: (errors) => set({ fieldErrors: errors }),
+  setCanSubmit: (v) => set({ canSubmit: v }),
+  setSubmitBlockedReason: (reason) => set({ submitBlockedReason: reason }),
   setField: (path, value) =>
     set((state) => {
       const next = setDeepPath(state, path, value);
