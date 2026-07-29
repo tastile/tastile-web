@@ -165,4 +165,34 @@ describe("useQuickCreateStore", () => {
   // `at_load_from_recurring_tile_get_failure_blocks_submit` and
   // `at_load_from_template_seeds_create_mode_without_calling_get`.
 
+  describe("submit state (Task 8)", () => {
+    it("exposes submitState as idle by default", () => {
+      expect(useQuickCreateStore.getState().submitState).toEqual({ kind: "idle" });
+    });
+
+    it("exposes canSubmit and submitBlockedReason", () => {
+      const s = useQuickCreateStore.getState();
+      expect(s.canSubmit).toBe(false);
+      expect(s.submitBlockedReason).toBeNull();
+    });
+
+    it("getFieldError returns null when no error", () => {
+      expect(useQuickCreateStore.getState().getFieldError("title")).toBeNull();
+    });
+
+    it("getFieldError returns the error from fieldErrors", () => {
+      useQuickCreateStore.setState({
+        fieldErrors: new Map([["title", "Required"]]),
+      });
+      expect(useQuickCreateStore.getState().getFieldError("title")).toBe("Required");
+    });
+
+    it("resetSubmitState goes back to idle", () => {
+      useQuickCreateStore.setState({
+        submitState: { kind: "submitting" },
+      });
+      useQuickCreateStore.getState().resetSubmitState();
+      expect(useQuickCreateStore.getState().submitState).toEqual({ kind: "idle" });
+    });
+  });
 });

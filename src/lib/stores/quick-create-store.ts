@@ -179,6 +179,12 @@ export interface MetaSlice {
 
 export type QuickCreateMode = "create" | "edit";
 
+export type SubmitState =
+  | { kind: "idle" }
+  | { kind: "submitting" }
+  | { kind: "error"; reason: string; message: string }
+  | { kind: "success" };
+
 /**
  * Shape of a starter Recurring template row as produced by the proxy's
  * `toRecurringTemplateList` (see `proxy/[...path]/route.ts`). The id
@@ -277,6 +283,12 @@ export interface QuickCreateState {
   loadFromTemplate: (template: RecurringTemplateShape) => void;
   /** Reset all field state to defaults; preserves `isOpen`. */
   reset: () => void;
+  submitState: SubmitState;
+  canSubmit: boolean;
+  submitBlockedReason: string | null;
+  fieldErrors: Map<string, string>;
+  getFieldError: (path: string) => string | null;
+  resetSubmitState: () => void;
 }
 
 // ---------- defaults ----------
@@ -477,6 +489,10 @@ export function buildDefaultQuickCreateState(): Pick<
   | "recurrence"
   | "advanced"
   | "meta"
+  | "submitState"
+  | "canSubmit"
+  | "submitBlockedReason"
+  | "fieldErrors"
 > {
   return {
     isOpen: false,
@@ -495,6 +511,10 @@ export function buildDefaultQuickCreateState(): Pick<
     recurrence: null,
     advanced: defaultAdvanced(),
     meta: defaultMeta(),
+    submitState: { kind: "idle" },
+    canSubmit: false,
+    submitBlockedReason: null,
+    fieldErrors: new Map(),
   };
 }
 
@@ -518,7 +538,7 @@ function setDeepPath(state: QuickCreateState, path: string, value: unknown): Qui
 
 // ---------- store ----------
 
-export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
+export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
   ...buildDefaultQuickCreateState(),
   open: () => set({ isOpen: true }),
   openCreate: (options?: { initialAllDay?: boolean }) =>
@@ -531,8 +551,17 @@ export const useQuickCreateStore = create<QuickCreateState>()((set) => ({
   openEdit: (eventId: string, tileId?: string | null) =>
     set({ isOpen: true, mode: "edit", editingId: eventId, editingTileId: tileId ?? null }),
   close: () =>
-    set({ isOpen: false, mode: "create", editingId: null, editingTileId: null, loadError: null }),
+    set({
+      isOpen: false,
+      mode: "create",
+      editingId: null,
+      editingTileId: null,
+      loadError: null,
+      submitState: { kind: "idle" },
+    }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+  getFieldError: (path) => get().fieldErrors.get(path) ?? null,
+  resetSubmitState: () => set({ submitState: { kind: "idle" } }),
   setField: (path, value) =>
     set((state) => {
       const next = setDeepPath(state, path, value);
