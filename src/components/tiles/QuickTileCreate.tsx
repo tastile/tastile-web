@@ -76,6 +76,7 @@ import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { SourceGenerationPanel } from "@/components/tiles/editor/SourceGenerationPanel";
 import { SourceWindowPanel } from "@/components/tiles/editor/SourceWindowPanel";
 import { SubPanelShell } from "@/components/tiles/editor/SubPanelShell";
+import { SubmitBar } from "@/components/tiles/editor/SubmitBar";
 import { TileReferencePicker } from "@/components/tiles/editor/TileReferencePicker";
 import { FormPanel, FormRow, SectionHeader } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/Input";
@@ -353,8 +354,14 @@ export function QuickTileCreate() {
     void refreshProjects();
   }, [refreshProjects]);
   const [_memoExpanded, setMemoExpanded] = useState(meta.memo.trim().length > 0);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const submitState = useQuickCreateStore((s) => s.submitState);
+  const setSubmitState = useQuickCreateStore((s) => s.setSubmitState);
+  const submitBlockedReason = useQuickCreateStore((s) => s.submitBlockedReason);
+  const submitting = submitState.kind === "submitting";
+  const serverError =
+    submitState.kind === "error"
+      ? { title: t("quickCreate.createError"), body: submitState.message }
+      : null;
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
   const [lastConditionTab, setLastConditionTab] = useState<string | null>(null);
   const [projectModalOpen, { open: openProjectModal, close: closeProjectModal }] =
@@ -501,21 +508,21 @@ export function QuickTileCreate() {
 
   // --- submit ---
   async function handleSubmit() {
-    setError(null);
+    setSubmitState({ kind: "idle" });
     setInvalidField(null);
     if (!titleOk) {
-      setError(t("quickCreate.titleRequired"));
+      setSubmitState({ kind: "error", reason: "validation", message: t("quickCreate.titleRequired") });
       setInvalidField("title");
       return;
     }
     if (!spanOrderValid) {
-      setError(t("quickCreate.invalidTemporalOrder"));
+      setSubmitState({ kind: "error", reason: "validation", message: t("quickCreate.invalidTemporalOrder") });
       return;
     }
     if (!canSubmit) return;
 
     const client = makeClient();
-    setSubmitting(true);
+    setSubmitState({ kind: "submitting" });
     await submitCreateTile({ client })
       .then((result) => {
         if (!result.ok) {
@@ -523,6 +530,7 @@ export function QuickTileCreate() {
             `${t("quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
           );
         }
+        setSubmitState({ kind: "success" });
         reset();
         setActivePanel("base");
         setMemoExpanded(false);
@@ -530,10 +538,11 @@ export function QuickTileCreate() {
         close();
       })
       .catch((err: unknown) => {
-        setError(err instanceof Error ? err.message : t("quickCreate.createError"));
-      })
-      .finally(() => {
-        setSubmitting(false);
+        setSubmitState({
+          kind: "error",
+          reason: "api",
+          message: err instanceof Error ? err.message : t("quickCreate.createError"),
+        });
       });
   }
 
@@ -1168,32 +1177,19 @@ export function QuickTileCreate() {
         </div>
 
         {/* ─── composer foot ─── */}
-        <Group
-          h={62}
-          justify="space-between"
-          px="md"
-          className="shrink-0 border-t border-border bg-surface-0"
-        >
-          <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
-            <span className="h-[7px] w-[7px] rounded-full bg-green-500" />
-            <span id="validationText">{t("quickCreate.validationOk") || "Ready to create"}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="filled"
-              size="sm"
-              data-testid="quick-create-submit"
-              onClick={handleSubmit}
-              loading={submitting}
-              disabled={submitting || !canSubmit || !titleOk || !spanOrderValid || submitBlocked}
-              leftSection={submitting ? undefined : <Check size={16} />}
-            >
-              {submitting ? t("quickCreate.saving") : t("quickCreate.commit")}
-            </Button>
-          </div>
-        </Group>
-        {error ? <p className="px-4 pb-2 text-center text-xs text-danger">{error}</p> : null}
+        <SubmitBar
+          canSubmit={canSubmit}
+          blockedReason={
+            submitBlockedReason ??
+            (submitBlocked ? t("quickCreate.submitBlockedHint") : null)
+          }
+          isSubmitting={submitting}
+          serverError={serverError}
+          onClose={close}
+          onSubmit={handleSubmit}
+          submitLabel={t("quickCreate.commit")}
+          cancelLabel={t("quickCreate.cancel")}
+        />
         {loadError ? (
           <p
             role="alert"

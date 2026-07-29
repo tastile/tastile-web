@@ -288,6 +288,7 @@ export interface QuickCreateState {
   submitBlockedReason: string | null;
   fieldErrors: Map<string, string>;
   getFieldError: (path: string) => string | null;
+  setSubmitState: (state: SubmitState) => void;
   resetSubmitState: () => void;
 }
 
@@ -561,6 +562,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
     }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   getFieldError: (path) => get().fieldErrors.get(path) ?? null,
+  setSubmitState: (state) => set({ submitState: state }),
   resetSubmitState: () => set({ submitState: { kind: "idle" } }),
   setField: (path, value) =>
     set((state) => {
