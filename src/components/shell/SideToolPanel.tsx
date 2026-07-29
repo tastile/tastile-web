@@ -19,7 +19,6 @@ export function SideToolPanel() {
 
   return (
     <aside
-      role="complementary"
       aria-label="Detail panel"
       className={cn(
         "hidden md:flex w-64 shrink-0 flex-col",

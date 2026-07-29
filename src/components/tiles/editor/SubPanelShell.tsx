@@ -60,7 +60,6 @@ export function SubPanelShell({
 
   return (
     <section
-      role="region"
       aria-labelledby={headingId}
       aria-hidden={!isActive}
       inert={!isActive}

@@ -443,9 +443,7 @@ export function QuickTileCreate() {
     }
   }, [identity.externalId, setField]);
 
-  if (!mounted) return null;
-
-  // --- validity ---
+  // --- validity (must be before early return — refer to these below) ---
   const titleOk = identity.title.trim().length > 0;
   const spanHasStart = !!time.span.start;
   const spanHasEnd = !!time.span.end;
@@ -470,6 +468,8 @@ export function QuickTileCreate() {
       errors.size > 0 ? (errors.values().next().value ?? null) : (submitBlocked ? t("quickCreate.submitBlockedHint") : null),
     );
   }, [titleOk, spanOrderValid, durationValid, submitBlocked, t, setFieldErrors, setCanSubmitFromStore, setSubmitBlockedReasonFromStore]);
+
+  if (!mounted) return null;
 
   // --- completion root summary ---
   function countConditionChildren(node: ConditionNode | null): number {
