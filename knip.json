@@ -14,7 +14,8 @@
     "axe-core",
     "openapi-typescript",
     "postcss",
-    "sharp"
+    "sharp",
+    "babel-plugin-react-compiler"
   ],
   "ignore": [
     "src/lib/api/v1/openapi-contract.ts"
