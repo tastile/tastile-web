@@ -75,7 +75,6 @@ import { RelationPanel } from "@/components/tiles/editor/RelationPanel";
 import { SchedulePanel } from "@/components/tiles/editor/SchedulePanel";
 import { SourceGenerationPanel } from "@/components/tiles/editor/SourceGenerationPanel";
 import { SourceWindowPanel } from "@/components/tiles/editor/SourceWindowPanel";
-import { SubPanelHeader } from "@/components/tiles/editor/SubPanelHeader";
 import { SubPanelShell } from "@/components/tiles/editor/SubPanelShell";
 import { TileReferencePicker } from "@/components/tiles/editor/TileReferencePicker";
 import { FormPanel, FormRow, SectionHeader } from "@/components/ui/form";
@@ -560,34 +559,6 @@ export function QuickTileCreate() {
             : "translate-y-0",
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
-
-  const subPanelClass = (
-    panel:
-      | "intent"
-      | "time"
-      | "duration"
-      | "recurring"
-      | "references"
-      | "completion"
-      | "source-rules"
-      | "relations"
-      | "flows"
-      | "placement-rules"
-      | "meta"
-      | "task",
-  ) =>
-    isDesktop
-      ? cn(
-          "fixed inset-y-0 right-0 z-[57]",
-          "w-[28rem] flex flex-col bg-surface-0 border-l border-border",
-          "transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-x-0" : "translate-x-full pointer-events-none",
-        )
-      : cn(
-          "fixed inset-x-0 bottom-0 z-[57]",
-          "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-transform duration-300 ease-out",
-          activePanel === panel ? "translate-y-0" : "translate-y-full pointer-events-none",
-        );
 
   // --- condition count ---
   const conditionCount = windows.length + recurring.frameRules.length;
@@ -1283,349 +1254,836 @@ export function QuickTileCreate() {
       </SubPanelShell>
 
       {/* ─── time sub-panel ─── */}
-      <section
-        data-subpanel="time"
-        className={subPanelClass("time")}
-        aria-hidden={activePanel !== "time"}
-        inert={activePanel !== "time"}
+<SubPanelShell
+        panelKey="time"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="time-heading"
+        title={t("quickCreate.timeNavTitle")}
+        description={t("quickCreate.timeNavSub")}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.timeNavTitle")}
-          subtitle={t("quickCreate.timeNavSub")}
-        />
-        <FormPanel>
-          <SchedulePanel
-            time={time}
-            windows={windows}
-            setField={setField}
-            updateWindow={updateWindow}
-            addWindow={addWindow}
-            removeWindow={removeWindow}
-            locale={locale}
-            t={t}
-          />
-        </FormPanel>
-      </section>
+          <FormPanel>
+            <SchedulePanel
+              time={time}
+              windows={windows}
+              setField={setField}
+              updateWindow={updateWindow}
+              addWindow={addWindow}
+              removeWindow={removeWindow}
+              locale={locale}
+              t={t}
+            />
+          </FormPanel>
+      </SubPanelShell>
 
       {/* ─── duration sub-panel ─── */}
-      <section
-        data-testid="quick-create-duration-panel"
-        data-subpanel="duration"
-        className={subPanelClass("duration")}
-        aria-hidden={activePanel !== "duration"}
-        inert={activePanel !== "duration"}
+<SubPanelShell
+        panelKey="duration"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="duration-heading"
+        title={t("quickCreate.durationTitle")}
+        description={t("quickCreate.durationSub")}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.durationTitle")}
-          subtitle={t("quickCreate.durationSub")}
-        />
-        <div className="flex-1 overflow-auto p-4">
-          <div className="mb-4">
-            <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-              {t("quickCreate.durationInputLabel")}
-            </div>
-            <SegmentedControl
-              fullWidth
-              size="sm"
-              radius="md"
-              data={[
-                { value: "none", label: t("quickCreate.durationNoneTitle") },
-                { value: "custom", label: t("quickCreate.durationInputLabel") },
-              ]}
-              value={
-                time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
-                  ? "none"
-                  : "custom"
-              }
-              onChange={(value) => {
-                if (value === "none") {
-                  setField("time.durationMinMax.minMs", null);
-                  setField("time.durationMinMax.maxMs", null);
-                } else if (value === "custom") {
-                  const fallback = 30 * 60_000;
-                  setField("time.durationMinMax.minMs", fallback);
-                  setField("time.durationMinMax.maxMs", fallback);
-                }
-              }}
-              styles={SEGMENT_STYLES}
-            />
-          </div>
-
-          {time.durationMinMax.minMs !== null && (
             <div className="mb-4">
-              <NumberInput
-                min={10}
-                step={10}
-                value={Math.round(time.durationMinMax.minMs / 60000)}
-                onChange={(value) => {
-                  const num = typeof value === "number" ? value : Number(value);
-                  if (!Number.isFinite(num)) return;
-                  const clamped = Math.max(10, Math.min(720, num));
-                  setField("time.durationMinMax.minMs", clamped * 60000);
-                  setField("time.durationMinMax.maxMs", clamped * 60000);
-                }}
+              <div className="mb-2 text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                {t("quickCreate.durationInputLabel")}
+              </div>
+              <SegmentedControl
+                fullWidth
                 size="sm"
-                aria-label={t("quickCreate.durationInputLabel")}
-                suffix={t("quickCreate.minutesUnit")}
-                styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                radius="md"
+                data={[
+                  { value: "none", label: t("quickCreate.durationNoneTitle") },
+                  { value: "custom", label: t("quickCreate.durationInputLabel") },
+                ]}
+                value={
+                  time.durationMinMax.minMs === null && time.durationMinMax.maxMs === null
+                    ? "none"
+                    : "custom"
+                }
+                onChange={(value) => {
+                  if (value === "none") {
+                    setField("time.durationMinMax.minMs", null);
+                    setField("time.durationMinMax.maxMs", null);
+                  } else if (value === "custom") {
+                    const fallback = 30 * 60_000;
+                    setField("time.durationMinMax.minMs", fallback);
+                    setField("time.durationMinMax.maxMs", fallback);
+                  }
+                }}
+                styles={SEGMENT_STYLES}
               />
             </div>
-          )}
-        </div>
-      </section>
+
+            {time.durationMinMax.minMs !== null && (
+              <div className="mb-4">
+                <NumberInput
+                  min={10}
+                  step={10}
+                  value={Math.round(time.durationMinMax.minMs / 60000)}
+                  onChange={(value) => {
+                    const num = typeof value === "number" ? value : Number(value);
+                    if (!Number.isFinite(num)) return;
+                    const clamped = Math.max(10, Math.min(720, num));
+                    setField("time.durationMinMax.minMs", clamped * 60000);
+                    setField("time.durationMinMax.maxMs", clamped * 60000);
+                  }}
+                  size="sm"
+                  aria-label={t("quickCreate.durationInputLabel")}
+                  suffix={t("quickCreate.minutesUnit")}
+                  styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                />
+              </div>
+            )}
+      </SubPanelShell>
 
       {/* ─── recurring sub-panel ─── */}
-      <section
-        data-testid="quick-create-recurring-panel"
-        data-subpanel="recurring"
-        className={subPanelClass("recurring")}
-        aria-hidden={activePanel !== "recurring"}
-        inert={activePanel !== "recurring"}
+<SubPanelShell
+        panelKey="recurring"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="recurring-heading"
+        title={t("quickCreate.repeatChip")}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.repeatChip")}
-        />
-        <div className="flex-1 overflow-auto p-4">
-          <SourceGenerationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
-        </div>
-      </section>
+            <SourceGenerationPanel recurring={recurring} setField={setField} locale={locale} t={t} />
+      </SubPanelShell>
 
-      <section
-        data-subpanel="source-rules"
-        className={subPanelClass("source-rules")}
-        aria-hidden={activePanel !== "source-rules"}
-        inert={activePanel !== "source-rules"}
+<SubPanelShell
+        panelKey="source-rules"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="source-rules-heading"
+        title={"配置・分割・ローカル日付"}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title="配置・分割・ローカル日付"
-        />
-        <div className="flex-1 overflow-auto">
-          <SourceWindowPanel source={source} time={time} setField={setField} />
-        </div>
-      </section>
+            <SourceWindowPanel source={source} time={time} setField={setField} />
+      </SubPanelShell>
 
-      <section
-        data-subpanel="relations"
-        className={subPanelClass("relations")}
-        aria-hidden={activePanel !== "relations"}
-        inert={activePanel !== "relations"}
+<SubPanelShell
+        panelKey="relations"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="relations-heading"
+        title={"Source参照関係"}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title="Source参照関係"
-        />
-        <div className="flex-1 overflow-auto">
-          <RelationPanel
-            relations={source.relations}
-            setRelations={(relations) => setField("source.relations", relations)}
-          />
-        </div>
-      </section>
+            <RelationPanel
+              relations={source.relations}
+              setRelations={(relations) => setField("source.relations", relations)}
+            />
+      </SubPanelShell>
 
-      <section
-        data-subpanel="flows"
-        className={subPanelClass("flows")}
-        aria-hidden={activePanel !== "flows"}
-        inert={activePanel !== "flows"}
+<SubPanelShell
+        panelKey="flows"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="flows-heading"
+        title={"条件駆動Flow"}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title="条件駆動Flow"
-        />
-        <div className="flex-1 overflow-auto">
-          <FlowSequencePanel
-            flows={source.flowSequences}
-            setFlows={(flowSequences) => setField("source.flowSequences", flowSequences)}
-            t={t}
-            tileOptions={tilePickerData}
-            taskOptions={taskPickerData}
-            requirementOptions={requirementPickerData}
-          />
-        </div>
-      </section>
+            <FlowSequencePanel
+              flows={source.flowSequences}
+              setFlows={(flowSequences) => setField("source.flowSequences", flowSequences)}
+              t={t}
+              tileOptions={tilePickerData}
+              taskOptions={taskPickerData}
+              requirementOptions={requirementPickerData}
+            />
+      </SubPanelShell>
 
-      <section
-        data-subpanel="placement-rules"
-        className={subPanelClass("placement-rules")}
-        aria-hidden={activePanel !== "placement-rules"}
-        inert={activePanel !== "placement-rules"}
+<SubPanelShell
+        panelKey="placement-rules"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="placement-rules-heading"
+        title={"配置ルール"}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title="配置ルール"
-        />
-        <div className="flex-1 overflow-auto">
-          <PlacementRulesPanel
-            rules={plan.planning.placementRules}
-            setRules={(placementRules) => setField("plan.planning.placementRules", placementRules)}
-            t={t}
-            tileOptions={tilePickerData}
-            taskOptions={taskPickerData}
-            requirementOptions={requirementPickerData}
-          />
-        </div>
-      </section>
+            <PlacementRulesPanel
+              rules={plan.planning.placementRules}
+              setRules={(placementRules) => setField("plan.planning.placementRules", placementRules)}
+              t={t}
+              tileOptions={tilePickerData}
+              taskOptions={taskPickerData}
+              requirementOptions={requirementPickerData}
+            />
+      </SubPanelShell>
 
       {/* ─── references sub-panel ─── */}
-      <section
-        data-subpanel="references"
-        className={subPanelClass("references")}
-        aria-hidden={activePanel !== "references"}
-        inert={activePanel !== "references"}
+<SubPanelShell
+        panelKey="references"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="references-heading"
+        title={t("quickCreate.referencesNavTitle")}
+        layout={isDesktop ? "drawer" : "sheet"}
       >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.referencesNavTitle")}
-        />
-        <FormPanel>
-          <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
-          {plan.references.length === 0 ? (
-            <p className="text-xs text-foreground-muted">
-              {t("quickCreate.referenceEmptyListHint")}
-            </p>
-          ) : null}
-          <div className="flex flex-col gap-4">
-            {plan.references.map((ref, i) => {
-              const refIdDisplay = ref.id || `ref_${i + 1}`;
-              const hasTarget = ref.target.referenceId !== null && ref.target.referenceId !== "";
-              const intervalValue = (() => {
-                const m = ref.pick.momentId ? Number(ref.pick.momentId) : 10;
-                return Number.isFinite(m) && m > 0 ? m : 10;
-              })();
-              return (
-                <div
-                  key={`${refIdDisplay}-${i}`}
-                  className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
-                  data-testid={`reference-card-${i}`}
-                >
-                  <div className="flex flex-col gap-1.5">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                      {t("quickCreate.referenceTargetLabel")}
-                    </div>
-                    <div
-                      className={cn(
-                        "flex items-center gap-3 rounded-lg border bg-surface-0 p-3",
-                        hasTarget ? "bg-accent-soft" : "border-border",
-                      )}
-                      data-testid={`reference-target-card-${i}`}
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
-                        <Calendar size={18} aria-hidden="true" />
+          <FormPanel>
+            <SectionHeader icon={Link2} title={t("quickCreate.referencesNavTitle")} />
+            {plan.references.length === 0 ? (
+              <p className="text-xs text-foreground-muted">
+                {t("quickCreate.referenceEmptyListHint")}
+              </p>
+            ) : null}
+            <div className="flex flex-col gap-4">
+              {plan.references.map((ref, i) => {
+                const refIdDisplay = ref.id || `ref_${i + 1}`;
+                const hasTarget = ref.target.referenceId !== null && ref.target.referenceId !== "";
+                const intervalValue = (() => {
+                  const m = ref.pick.momentId ? Number(ref.pick.momentId) : 10;
+                  return Number.isFinite(m) && m > 0 ? m : 10;
+                })();
+                return (
+                  <div
+                    key={`${refIdDisplay}-${i}`}
+                    className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
+                    data-testid={`reference-card-${i}`}
+                  >
+                    <div className="flex flex-col gap-1.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                        {t("quickCreate.referenceTargetLabel")}
                       </div>
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-sm font-medium text-foreground">
-                          {hasTarget
-                            ? ref.target.referenceId
-                            : t("quickCreate.referenceTargetEmpty")}
-                        </span>
-                        <span className="truncate text-xs text-foreground-muted">
-                          {t("quickCreate.referenceTargetBadge")}
-                        </span>
+                      <div
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg border bg-surface-0 p-3",
+                          hasTarget ? "bg-accent-soft" : "border-border",
+                        )}
+                        data-testid={`reference-target-card-${i}`}
+                      >
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                          <Calendar size={18} aria-hidden="true" />
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-sm font-medium text-foreground">
+                            {hasTarget
+                              ? ref.target.referenceId
+                              : t("quickCreate.referenceTargetEmpty")}
+                          </span>
+                          <span className="truncate text-xs text-foreground-muted">
+                            {t("quickCreate.referenceTargetBadge")}
+                          </span>
+                        </div>
                       </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={hasTarget ? "light" : "filled"}
+                        onClick={() => setReferencePickerIndex(i)}
+                        leftSection={<Search size={14} aria-hidden="true" />}
+                        data-testid={`reference-picker-trigger-${i}`}
+                        aria-label={t("quickCreate.tilePickerPickAria")}
+                        className="justify-start"
+                        styles={{
+                          root: {
+                            backgroundColor: hasTarget
+                              ? "var(--accent-soft, var(--surface-2))"
+                              : "var(--surface-2)",
+                            color: "var(--foreground)",
+                          },
+                        }}
+                      >
+                        {hasTarget ? ref.target.referenceId : t("quickCreate.referenceIdPlaceholder")}
+                      </Button>
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={hasTarget ? "light" : "filled"}
-                      onClick={() => setReferencePickerIndex(i)}
-                      leftSection={<Search size={14} aria-hidden="true" />}
-                      data-testid={`reference-picker-trigger-${i}`}
-                      aria-label={t("quickCreate.tilePickerPickAria")}
-                      className="justify-start"
-                      styles={{
-                        root: {
-                          backgroundColor: hasTarget
-                            ? "var(--accent-soft, var(--surface-2))"
-                            : "var(--surface-2)",
-                          color: "var(--foreground)",
-                        },
-                      }}
-                    >
-                      {hasTarget ? ref.target.referenceId : t("quickCreate.referenceIdPlaceholder")}
-                    </Button>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                      {t("quickCreate.referenceRelationLabel")}
-                    </div>
-                    <SegmentedControl
-                      size="sm"
-                      fullWidth
-                      radius="md"
-                      withItemsBorders={false}
-                      value={String(ref.pick.kind)}
-                      onChange={(next) => {
-                        const updated = plan.references.slice();
-                        updated[i] = { ...ref, pick: { ...ref.pick, kind: Number(next) } };
-                        setField("plan.references", updated);
-                      }}
-                      data={[
-                        { value: "4", label: t("quickCreate.referenceRelationAfter") },
-                        { value: "3", label: t("quickCreate.referenceRelationBefore") },
-                        { value: "1", label: t("quickCreate.referenceRelationFirst") },
-                        { value: "2", label: t("quickCreate.referenceRelationLast") },
-                        { value: "0", label: t("quickCreate.referenceRelationAll") },
-                      ]}
-                      data-testid={`reference-relation-tabs-${i}`}
-                      styles={SEGMENT_STYLES}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                      {t("quickCreate.referenceIntervalLabel")}
-                    </div>
-                    <div
-                      className="flex items-center gap-2"
-                      data-testid={`reference-interval-stepper-${i}`}
-                    >
-                      <NumberInput
-                        min={5}
-                        max={120}
-                        step={5}
-                        value={intervalValue}
-                        onChange={(value) => {
-                          const num = typeof value === "number" ? value : Number(value);
-                          if (!Number.isFinite(num)) return;
-                          const next = Math.max(5, Math.min(120, num));
-                          if (next === intervalValue) return;
+                    <div className="flex flex-col gap-1.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                        {t("quickCreate.referenceRelationLabel")}
+                      </div>
+                      <SegmentedControl
+                        size="sm"
+                        fullWidth
+                        radius="md"
+                        withItemsBorders={false}
+                        value={String(ref.pick.kind)}
+                        onChange={(next) => {
                           const updated = plan.references.slice();
-                          updated[i] = { ...ref, pick: { ...ref.pick, momentId: String(next) } };
+                          updated[i] = { ...ref, pick: { ...ref.pick, kind: Number(next) } };
                           setField("plan.references", updated);
                         }}
-                        size="xs"
-                        aria-label={t("quickCreate.referenceIntervalLabel")}
-                        suffix={t("quickCreate.referenceIntervalUnitMin")}
-                        styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-                        className="flex-1"
+                        data={[
+                          { value: "4", label: t("quickCreate.referenceRelationAfter") },
+                          { value: "3", label: t("quickCreate.referenceRelationBefore") },
+                          { value: "1", label: t("quickCreate.referenceRelationFirst") },
+                          { value: "2", label: t("quickCreate.referenceRelationLast") },
+                          { value: "0", label: t("quickCreate.referenceRelationAll") },
+                        ]}
+                        data-testid={`reference-relation-tabs-${i}`}
+                        styles={SEGMENT_STYLES}
                       />
                     </div>
+                    <div className="flex flex-col gap-1.5">
+                      <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                        {t("quickCreate.referenceIntervalLabel")}
+                      </div>
+                      <div
+                        className="flex items-center gap-2"
+                        data-testid={`reference-interval-stepper-${i}`}
+                      >
+                        <NumberInput
+                          min={5}
+                          max={120}
+                          step={5}
+                          value={intervalValue}
+                          onChange={(value) => {
+                            const num = typeof value === "number" ? value : Number(value);
+                            if (!Number.isFinite(num)) return;
+                            const next = Math.max(5, Math.min(120, num));
+                            if (next === intervalValue) return;
+                            const updated = plan.references.slice();
+                            updated[i] = { ...ref, pick: { ...ref.pick, momentId: String(next) } };
+                            setField("plan.references", updated);
+                          }}
+                          size="xs"
+                          aria-label={t("quickCreate.referenceIntervalLabel")}
+                          suffix={t("quickCreate.referenceIntervalUnitMin")}
+                          styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 border-t border-border/40 pt-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="subtle"
+                        leftSection={<Trash2 size={12} aria-hidden="true" />}
+                        onClick={() => {
+                          const next = plan.references.slice();
+                          next.splice(i, 1);
+                          setField("plan.references", next);
+                        }}
+                        className="text-danger hover:bg-danger/10"
+                      >
+                        {t("quickCreate.referenceRemoveLabel")}
+                      </Button>
+                      <div className="flex-1" />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="default"
+                        leftSection={<X size={12} aria-hidden="true" />}
+                        onClick={() => setActivePanel("base")}
+                      >
+                        {t("quickCreate.referenceCancelLabel")}
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="filled"
+                        leftSection={<Check size={12} aria-hidden="true" />}
+                        onClick={() => setActivePanel("base")}
+                      >
+                        {t("quickCreate.referenceApplyLabel")}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 border-t border-border/40 pt-2">
+                );
+              })}
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                leftSection={<Plus size={12} aria-hidden="true" />}
+                onClick={() => {
+                  setField("plan.references", [
+                    ...plan.references,
+                    {
+                      id: "",
+                      target: { kind: 0, contextKind: null, referenceId: null, conditionId: null },
+                      pick: { kind: 4, momentId: "10" },
+                    },
+                  ]);
+                }}
+                data-testid="reference-add-button"
+              >
+                {t("quickCreate.addReference")}
+              </Button>
+            </div>
+            <TileReferencePicker
+              opened={referencePickerIndex !== null}
+              onClose={() => setReferencePickerIndex(null)}
+              onSelect={(tileId) => {
+                if (referencePickerIndex === null) return;
+                const idx = referencePickerIndex;
+                const ref = plan.references[idx];
+                if (!ref) return;
+                const next = plan.references.slice();
+                next[idx] = {
+                  ...ref,
+                  target: { ...ref.target, referenceId: tileId ?? null },
+                };
+                setField("plan.references", next);
+              }}
+              currentValue={
+                referencePickerIndex !== null
+                  ? (plan.references[referencePickerIndex]?.target.referenceId ?? null)
+                  : null
+              }
+            />
+          </FormPanel>
+      </SubPanelShell>
+
+      {/* ─── completion sub-panel ─── */}
+<SubPanelShell
+        panelKey="completion"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="completion-heading"
+        title={t("quickCreate.completionNavTitle")}
+        layout={isDesktop ? "drawer" : "sheet"}
+      >
+          <FormPanel>
+            <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
+            <ConditionPanel
+              root={plan.completion.root}
+              setField={setField}
+              t={t}
+              tileOptions={tilePickerData}
+              taskOptions={taskPickerData}
+              requirementOptions={requirementPickerData}
+            />
+            {plan.completion.timeRequirements.length > 0 && (
+              <div
+                className="flex flex-col gap-1.5 border-t border-border/40 pt-2"
+                data-testid="completion-time-requirement-lines"
+              >
+                {plan.completion.timeRequirements.map((tr, i) => (
+                  <div
+                    key={tr.id}
+                    className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm"
+                    data-testid={`completion-time-line-${i}`}
+                  >
+                    <Clock size={16} className="shrink-0 text-foreground-muted" aria-hidden="true" />
+                    <span className="flex-1 text-foreground">
+                      {tr.required.minMs !== null
+                        ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}`
+                        : t("quickCreate.duration")}
+                    </span>
+                    <NumberInput
+                      min={5}
+                      step={5}
+                      aria-label={t("quickCreate.minutesUnit")}
+                      value={
+                        tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)
+                      }
+                      onChange={(value) => {
+                        const next = plan.completion.timeRequirements.slice();
+                        const v = value;
+                        next[i] = {
+                          ...tr,
+                          required: {
+                            ...tr.required,
+                            minMs: v === "" || v === null ? null : Number(v) * 60000,
+                          },
+                        };
+                        setField("plan.completion.timeRequirements", next);
+                      }}
+                      className="w-16"
+                      size="xs"
+                    />
+                    <span className="text-xs text-foreground-muted">
+                      {t("quickCreate.minutesUnit")}
+                    </span>
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="subtle"
+                      leftSection={<Trash2 size={12} aria-hidden="true" />}
+                      onClick={() => {
+                        const next = plan.completion.timeRequirements.slice();
+                        next.splice(i, 1);
+                        setField("plan.completion.timeRequirements", next);
+                      }}
+                      aria-label={t("quickCreate.removeItem")}
+                      className="text-foreground-muted hover:text-danger"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-col gap-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                {t("quickCreate.conditionAddTitle")}
+              </div>
+              <SegmentedControl
+                fullWidth
+                size="sm"
+                radius="md"
+                withItemsBorders={false}
+                data-testid="completion-condition-tabs"
+                value={lastConditionTab ?? undefined}
+                onChange={(value) => {
+                  const termKind =
+                    value === "time"
+                      ? null
+                      : value === "task"
+                        ? "task"
+                        : value === "relation"
+                          ? "relation"
+                          : "metric";
+                  if (termKind === null) {
+                    const newTr = {
+                      id: `tr_${Math.random().toString(36).slice(2, 9)}`,
+                      observation: { scope: 0 as never },
+                      required: { minMs: time.durationMinMax.minMs ?? 60 * 60000 },
+                    };
+                    setField("plan.completion.timeRequirements", [
+                      ...plan.completion.timeRequirements,
+                      newTr,
+                    ]);
+                    setLastConditionTab(value);
+                    return;
+                  }
+                  const child = defaultTerm(termKind);
+                  setField("plan.completion.root", {
+                    ...plan.completion.root,
+                    children: [...plan.completion.root.children, child],
+                  });
+                  setLastConditionTab(value);
+                }}
+                data={[
+                  { value: "time", label: t("quickCreate.completionBuilderTabTime") },
+                  { value: "task", label: t("quickCreate.completionBuilderTabTask") },
+                  { value: "relation", label: t("quickCreate.completionBuilderTabTile") },
+                  { value: "metric", label: t("quickCreate.completionBuilderTabRecord") },
+                ]}
+                styles={SEGMENT_STYLES}
+              />
+            </div>
+            <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                leftSection={<Trash2 size={12} aria-hidden="true" />}
+                onClick={() =>
+                  setField("plan.completion.root", {
+                    kind: ConditionKind.ALL,
+                    children: [],
+                    term: null,
+                  })
+                }
+                className="text-danger hover:bg-danger/10"
+              >
+                {t("quickCreate.completionRemoveLabel")}
+              </Button>
+              <div className="flex-1" />
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                leftSection={<X size={12} aria-hidden="true" />}
+                onClick={() => setActivePanel("base")}
+              >
+                {t("quickCreate.completionCancelLabel")}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="filled"
+                leftSection={<Check size={12} aria-hidden="true" />}
+                onClick={() => setActivePanel("base")}
+                data-testid="completion-apply"
+              >
+                {t("quickCreate.completionBuilderApply")}
+              </Button>
+            </div>
+          </FormPanel>
+      </SubPanelShell>
+
+      {/* ─── meta sub-panel ─── */}
+<SubPanelShell
+        panelKey="meta"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="meta-heading"
+        title={t("quickCreate.metaNavTitle")}
+        layout={isDesktop ? "drawer" : "sheet"}
+      >
+          <FormPanel>
+            <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                <span>{t("quickCreate.organizeProject")}</span>
+              </div>
+              <div className="flex flex-col gap-2" data-testid="meta-project-catalog">
+                <div className="flex items-center gap-1">
+                  <Select
+                    size="xs"
+                    variant="filled"
+                    aria-label={t("quickCreate.organizeProject")}
+                    placeholder={t("quickCreate.organizeProject")}
+                    value={meta.ownerSubjectId ?? ""}
+                    onChange={(value) => setField("meta.ownerSubjectId", value ? value : null)}
+                    allowDeselect={false}
+                    leftSection={<FolderOpen size={14} aria-hidden="true" />}
+                    data={[
+                      {
+                        value: "",
+                        label: t("quickCreate.projectOwnerDefault"),
+                      },
+                      ...projects.workspaces.map((w) => ({
+                        value: w.id,
+                        label: w.display_name,
+                      })),
+                    ]}
+                    comboboxProps={{ withinPortal: true }}
+                    searchable
+                    className="flex-1"
+                    styles={{
+                      input: { backgroundColor: "var(--surface-2)" },
+                    }}
+                  />
+                  <ActionIcon
+                    type="button"
+                    variant="outline"
+                    size="md"
+                    radius="md"
+                    aria-label={t("quickCreate.projectCreateLabel")}
+                    data-testid="meta-project-create"
+                    onClick={openProjectModal}
+                  >
+                    <Plus size={14} aria-hidden="true" />
+                  </ActionIcon>
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                <span>{t("quickCreate.organizeTags")}</span>
+                <span className="text-[10px] font-normal text-foreground-muted">
+                  {t("quickCreate.organizeTagsMulti")}
+                </span>
+              </div>
+              <TagsInput
+                data-testid="meta-tag-chips"
+                value={meta.tags}
+                onChange={(values) => setField("meta.tags", values)}
+                placeholder={t("quickCreate.tagsPlaceholder")}
+                aria-label={t("quickCreate.tagsPlaceholder")}
+                size="xs"
+                variant="filled"
+                splitChars={[",", " "]}
+                clearable
+                data={knownTags}
+                styles={{
+                  input: { backgroundColor: "var(--surface-2)" },
+                  pill: { backgroundColor: "var(--accent-soft, var(--surface-2))" },
+                }}
+              />
+            </div>
+            <FormRow icon={null}>
+              <Textarea
+                value={meta.memo}
+                onChange={(e) => setField("meta.memo", e.target.value)}
+                placeholder={t("quickCreate.memoPlaceholder")}
+                aria-label={t("quickCreate.memoPlaceholder")}
+                rows={6}
+                className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
+              />
+            </FormRow>
+            <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+              <Button
+                type="button"
+                size="sm"
+                variant="subtle"
+                leftSection={<Trash2 size={12} aria-hidden="true" />}
+                onClick={() => {
+                  setField("meta.ownerSubjectId", null);
+                  setField("meta.tags", []);
+                  setField("meta.memo", "");
+                }}
+                className="text-danger hover:bg-danger/10"
+              >
+                {t("quickCreate.completionRemoveLabel")}
+              </Button>
+            </div>
+          </FormPanel>
+      </SubPanelShell>
+
+      {/* ─── task sub-panel ─── */}
+<SubPanelShell
+        panelKey="task"
+        activeKey={activePanel}
+        onClose={() => setActivePanel("base")}
+        headingId="task-heading"
+        title={t("quickCreate.taskDetailTitle")}
+        description={t("quickCreate.taskDetailSub")}
+        layout={isDesktop ? "drawer" : "sheet"}
+      >
+          <FormPanel>
+            {(() => {
+              const task = plan.completion.tasks.find((tk) => tk.id === editingTaskId);
+              if (!task || !editingTaskId) {
+                return (
+                  <p className="text-xs text-foreground-muted">{t("quickCreate.taskNoTasksHint")}</p>
+                );
+              }
+              const otherTasks = plan.completion.tasks.filter((tk) => tk.id !== task.id);
+              const orderHasCycle = hasTaskOrderCycle(plan.completion.tasks);
+              return (
+                <div className="flex flex-col gap-4" data-testid="task-detail-panel">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                      {t("quickCreate.taskNoteLabel")}
+                    </div>
+                    <Textarea
+                      value={task.content.note ?? ""}
+                      onChange={(e) => setTaskField(task.id, "content.note", e.target.value || null)}
+                      placeholder={t("quickCreate.taskNotePlaceholder")}
+                      aria-label={t("quickCreate.taskNoteLabel")}
+                      rows={4}
+                      className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus:ring-0"
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                      <span>{t("quickCreate.taskOrderSection")}</span>
+                    </div>
+                    {task.order.length === 0 ? (
+                      <p className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted">
+                        {t("quickCreate.taskOrderEmpty")}
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {task.order.map((rule, i) => {
+                          const targetTask = plan.completion.tasks.find(
+                            (tk) => tk.id === rule.targetTaskId,
+                          );
+                          const targetTitle =
+                            targetTask?.content.title || t("quickCreate.taskUntitled");
+                          return (
+                            <div
+                              key={rule.id}
+                              data-testid={`task-order-row-${i}`}
+                              className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-surface-0 p-2"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Select
+                                  aria-label={t("quickCreate.taskOrderTarget")}
+                                  value={rule.targetTaskId}
+                                  onChange={(value) => {
+                                    if (!value) return;
+                                    const next = task.order.slice();
+                                    next[i] = { ...rule, targetTaskId: value };
+                                    setTaskField(task.id, "order", next);
+                                  }}
+                                  data={otherTasks.map((tk) => ({
+                                    value: tk.id,
+                                    label: tk.content.title || t("quickCreate.taskUntitled"),
+                                  }))}
+                                  placeholder={t("quickCreate.taskOrderTargetPlaceholder")}
+                                  size="xs"
+                                  variant="filled"
+                                  comboboxProps={{ withinPortal: true }}
+                                  className="flex-1"
+                                  styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+                                />
+                                <ActionIcon
+                                  type="button"
+                                  variant="subtle"
+                                  size="xs"
+                                  aria-label={t("quickCreate.removeItem")}
+                                  onClick={() => {
+                                    const next = task.order.slice();
+                                    next.splice(i, 1);
+                                    setTaskField(task.id, "order", next);
+                                  }}
+                                  className="text-foreground-muted hover:text-danger"
+                                >
+                                  <Trash2 size={12} aria-hidden="true" />
+                                </ActionIcon>
+                              </div>
+                              <SegmentedControl
+                                fullWidth
+                                size="xs"
+                                radius="md"
+                                withItemsBorders={false}
+                                value={String(rule.relation)}
+                                onChange={(value) => {
+                                  const next = task.order.slice();
+                                  next[i] = {
+                                    ...rule,
+                                    relation: Number(value) as
+                                      | typeof TaskOrderRelation.BEFORE
+                                      | typeof TaskOrderRelation.AFTER,
+                                  };
+                                  setTaskField(task.id, "order", next);
+                                }}
+                                data={[
+                                  {
+                                    value: String(TaskOrderRelation.BEFORE),
+                                    label: t("quickCreate.referenceRelationBefore"),
+                                  },
+                                  {
+                                    value: String(TaskOrderRelation.AFTER),
+                                    label: t("quickCreate.referenceRelationAfter"),
+                                  },
+                                ]}
+                                styles={SEGMENT_STYLES}
+                              />
+                              <p className="text-[10px] text-foreground-muted">
+                                {rule.relation === TaskOrderRelation.BEFORE
+                                  ? `${task.content.title || t("quickCreate.taskUntitled")} → ${targetTitle}`
+                                  : `${targetTitle} → ${task.content.title || t("quickCreate.taskUntitled")}`}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="default"
+                      leftSection={<Plus size={12} aria-hidden="true" />}
+                      onClick={() => {
+                        const fallbackTarget = otherTasks[0]?.id ?? null;
+                        if (!fallbackTarget) return;
+                        const newRule = {
+                          id: uuidv7(),
+                          targetTaskId: fallbackTarget,
+                          relation: TaskOrderRelation.BEFORE,
+                          when: null,
+                        };
+                        setTaskField(task.id, "order", [...task.order, newRule]);
+                      }}
+                      data-testid="task-order-add"
+                      disabled={otherTasks.length === 0}
+                    >
+                      {t("quickCreate.taskOrderAdd")}
+                    </Button>
+                    {orderHasCycle ? (
+                      <p
+                        role="alert"
+                        data-testid="task-order-cycle"
+                        className="rounded-md bg-danger/10 px-2 py-1 text-[10px] font-semibold text-danger"
+                      >
+                        {t("quickCreate.taskOrderCycle")}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div className="flex items-center gap-2 border-t border-border/40 pt-3">
                     <Button
                       type="button"
                       size="sm"
                       variant="subtle"
                       leftSection={<Trash2 size={12} aria-hidden="true" />}
                       onClick={() => {
-                        const next = plan.references.slice();
-                        next.splice(i, 1);
-                        setField("plan.references", next);
+                        removeTask(task.id);
+                        setEditingTaskId(null);
+                        setActivePanel("base");
                       }}
+                      data-testid="task-remove"
                       className="text-danger hover:bg-danger/10"
                     >
-                      {t("quickCreate.referenceRemoveLabel")}
+                      {t("quickCreate.taskRemoveLabel")}
                     </Button>
                     <div className="flex-1" />
                     <Button
@@ -1633,569 +2091,32 @@ export function QuickTileCreate() {
                       size="sm"
                       variant="default"
                       leftSection={<X size={12} aria-hidden="true" />}
-                      onClick={() => setActivePanel("base")}
+                      onClick={() => {
+                        setEditingTaskId(null);
+                        setActivePanel("base");
+                      }}
                     >
-                      {t("quickCreate.referenceCancelLabel")}
+                      {t("quickCreate.completionCancelLabel")}
                     </Button>
                     <Button
                       type="button"
                       size="sm"
                       variant="filled"
                       leftSection={<Check size={12} aria-hidden="true" />}
-                      onClick={() => setActivePanel("base")}
+                      onClick={() => {
+                        setEditingTaskId(null);
+                        setActivePanel("base");
+                      }}
+                      data-testid="task-apply"
                     >
                       {t("quickCreate.referenceApplyLabel")}
                     </Button>
                   </div>
                 </div>
               );
-            })}
-            <Button
-              type="button"
-              size="sm"
-              variant="default"
-              leftSection={<Plus size={12} aria-hidden="true" />}
-              onClick={() => {
-                setField("plan.references", [
-                  ...plan.references,
-                  {
-                    id: "",
-                    target: { kind: 0, contextKind: null, referenceId: null, conditionId: null },
-                    pick: { kind: 4, momentId: "10" },
-                  },
-                ]);
-              }}
-              data-testid="reference-add-button"
-            >
-              {t("quickCreate.addReference")}
-            </Button>
-          </div>
-          <TileReferencePicker
-            opened={referencePickerIndex !== null}
-            onClose={() => setReferencePickerIndex(null)}
-            onSelect={(tileId) => {
-              if (referencePickerIndex === null) return;
-              const idx = referencePickerIndex;
-              const ref = plan.references[idx];
-              if (!ref) return;
-              const next = plan.references.slice();
-              next[idx] = {
-                ...ref,
-                target: { ...ref.target, referenceId: tileId ?? null },
-              };
-              setField("plan.references", next);
-            }}
-            currentValue={
-              referencePickerIndex !== null
-                ? (plan.references[referencePickerIndex]?.target.referenceId ?? null)
-                : null
-            }
-          />
-        </FormPanel>
-      </section>
-
-      {/* ─── completion sub-panel ─── */}
-      <section
-        data-subpanel="completion"
-        className={subPanelClass("completion")}
-        aria-hidden={activePanel !== "completion"}
-        inert={activePanel !== "completion"}
-      >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.completionNavTitle")}
-        />
-        <FormPanel>
-          <SectionHeader icon={ListChecks} title={t("quickCreate.completionNavTitle")} />
-          <ConditionPanel
-            root={plan.completion.root}
-            setField={setField}
-            t={t}
-            tileOptions={tilePickerData}
-            taskOptions={taskPickerData}
-            requirementOptions={requirementPickerData}
-          />
-          {plan.completion.timeRequirements.length > 0 && (
-            <div
-              className="flex flex-col gap-1.5 border-t border-border/40 pt-2"
-              data-testid="completion-time-requirement-lines"
-            >
-              {plan.completion.timeRequirements.map((tr, i) => (
-                <div
-                  key={tr.id}
-                  className="flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm"
-                  data-testid={`completion-time-line-${i}`}
-                >
-                  <Clock size={16} className="shrink-0 text-foreground-muted" aria-hidden="true" />
-                  <span className="flex-1 text-foreground">
-                    {tr.required.minMs !== null
-                      ? `${Math.round(tr.required.minMs / 60000)} ${t("quickCreate.minutesUnit")}`
-                      : t("quickCreate.duration")}
-                  </span>
-                  <NumberInput
-                    min={5}
-                    step={5}
-                    aria-label={t("quickCreate.minutesUnit")}
-                    value={
-                      tr.required.minMs === null ? "" : Math.round((tr.required.minMs ?? 0) / 60000)
-                    }
-                    onChange={(value) => {
-                      const next = plan.completion.timeRequirements.slice();
-                      const v = value;
-                      next[i] = {
-                        ...tr,
-                        required: {
-                          ...tr.required,
-                          minMs: v === "" || v === null ? null : Number(v) * 60000,
-                        },
-                      };
-                      setField("plan.completion.timeRequirements", next);
-                    }}
-                    className="w-16"
-                    size="xs"
-                  />
-                  <span className="text-xs text-foreground-muted">
-                    {t("quickCreate.minutesUnit")}
-                  </span>
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="subtle"
-                    leftSection={<Trash2 size={12} aria-hidden="true" />}
-                    onClick={() => {
-                      const next = plan.completion.timeRequirements.slice();
-                      next.splice(i, 1);
-                      setField("plan.completion.timeRequirements", next);
-                    }}
-                    aria-label={t("quickCreate.removeItem")}
-                    className="text-foreground-muted hover:text-danger"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-col gap-1.5">
-            <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-              {t("quickCreate.conditionAddTitle")}
-            </div>
-            <SegmentedControl
-              fullWidth
-              size="sm"
-              radius="md"
-              withItemsBorders={false}
-              data-testid="completion-condition-tabs"
-              value={lastConditionTab ?? undefined}
-              onChange={(value) => {
-                const termKind =
-                  value === "time"
-                    ? null
-                    : value === "task"
-                      ? "task"
-                      : value === "relation"
-                        ? "relation"
-                        : "metric";
-                if (termKind === null) {
-                  const newTr = {
-                    id: `tr_${Math.random().toString(36).slice(2, 9)}`,
-                    observation: { scope: 0 as never },
-                    required: { minMs: time.durationMinMax.minMs ?? 60 * 60000 },
-                  };
-                  setField("plan.completion.timeRequirements", [
-                    ...plan.completion.timeRequirements,
-                    newTr,
-                  ]);
-                  setLastConditionTab(value);
-                  return;
-                }
-                const child = defaultTerm(termKind);
-                setField("plan.completion.root", {
-                  ...plan.completion.root,
-                  children: [...plan.completion.root.children, child],
-                });
-                setLastConditionTab(value);
-              }}
-              data={[
-                { value: "time", label: t("quickCreate.completionBuilderTabTime") },
-                { value: "task", label: t("quickCreate.completionBuilderTabTask") },
-                { value: "relation", label: t("quickCreate.completionBuilderTabTile") },
-                { value: "metric", label: t("quickCreate.completionBuilderTabRecord") },
-              ]}
-              styles={SEGMENT_STYLES}
-            />
-          </div>
-          <div className="flex items-center gap-2 border-t border-border/40 pt-3">
-            <Button
-              type="button"
-              size="sm"
-              variant="subtle"
-              leftSection={<Trash2 size={12} aria-hidden="true" />}
-              onClick={() =>
-                setField("plan.completion.root", {
-                  kind: ConditionKind.ALL,
-                  children: [],
-                  term: null,
-                })
-              }
-              className="text-danger hover:bg-danger/10"
-            >
-              {t("quickCreate.completionRemoveLabel")}
-            </Button>
-            <div className="flex-1" />
-            <Button
-              type="button"
-              size="sm"
-              variant="default"
-              leftSection={<X size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-            >
-              {t("quickCreate.completionCancelLabel")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="filled"
-              leftSection={<Check size={12} aria-hidden="true" />}
-              onClick={() => setActivePanel("base")}
-              data-testid="completion-apply"
-            >
-              {t("quickCreate.completionBuilderApply")}
-            </Button>
-          </div>
-        </FormPanel>
-      </section>
-
-      {/* ─── meta sub-panel ─── */}
-      <section
-        data-subpanel="meta"
-        className={subPanelClass("meta")}
-        aria-hidden={activePanel !== "meta"}
-        inert={activePanel !== "meta"}
-      >
-        <SubPanelHeader
-          onBack={() => setActivePanel("base")}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.metaNavTitle")}
-        />
-        <FormPanel>
-          <SectionHeader icon={FolderOpen} title={t("quickCreate.metaNavTitle")} />
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-              <span>{t("quickCreate.organizeProject")}</span>
-            </div>
-            <div className="flex flex-col gap-2" data-testid="meta-project-catalog">
-              <div className="flex items-center gap-1">
-                <Select
-                  size="xs"
-                  variant="filled"
-                  aria-label={t("quickCreate.organizeProject")}
-                  placeholder={t("quickCreate.organizeProject")}
-                  value={meta.ownerSubjectId ?? ""}
-                  onChange={(value) => setField("meta.ownerSubjectId", value ? value : null)}
-                  allowDeselect={false}
-                  leftSection={<FolderOpen size={14} aria-hidden="true" />}
-                  data={[
-                    {
-                      value: "",
-                      label: t("quickCreate.projectOwnerDefault"),
-                    },
-                    ...projects.workspaces.map((w) => ({
-                      value: w.id,
-                      label: w.display_name,
-                    })),
-                  ]}
-                  comboboxProps={{ withinPortal: true }}
-                  searchable
-                  className="flex-1"
-                  styles={{
-                    input: { backgroundColor: "var(--surface-2)" },
-                  }}
-                />
-                <ActionIcon
-                  type="button"
-                  variant="outline"
-                  size="md"
-                  radius="md"
-                  aria-label={t("quickCreate.projectCreateLabel")}
-                  data-testid="meta-project-create"
-                  onClick={openProjectModal}
-                >
-                  <Plus size={14} aria-hidden="true" />
-                </ActionIcon>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-              <span>{t("quickCreate.organizeTags")}</span>
-              <span className="text-[10px] font-normal text-foreground-muted">
-                {t("quickCreate.organizeTagsMulti")}
-              </span>
-            </div>
-            <TagsInput
-              data-testid="meta-tag-chips"
-              value={meta.tags}
-              onChange={(values) => setField("meta.tags", values)}
-              placeholder={t("quickCreate.tagsPlaceholder")}
-              aria-label={t("quickCreate.tagsPlaceholder")}
-              size="xs"
-              variant="filled"
-              splitChars={[",", " "]}
-              clearable
-              data={knownTags}
-              styles={{
-                input: { backgroundColor: "var(--surface-2)" },
-                pill: { backgroundColor: "var(--accent-soft, var(--surface-2))" },
-              }}
-            />
-          </div>
-          <FormRow icon={null}>
-            <Textarea
-              value={meta.memo}
-              onChange={(e) => setField("meta.memo", e.target.value)}
-              placeholder={t("quickCreate.memoPlaceholder")}
-              aria-label={t("quickCreate.memoPlaceholder")}
-              rows={6}
-              className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
-            />
-          </FormRow>
-          <div className="flex items-center gap-2 border-t border-border/40 pt-3">
-            <Button
-              type="button"
-              size="sm"
-              variant="subtle"
-              leftSection={<Trash2 size={12} aria-hidden="true" />}
-              onClick={() => {
-                setField("meta.ownerSubjectId", null);
-                setField("meta.tags", []);
-                setField("meta.memo", "");
-              }}
-              className="text-danger hover:bg-danger/10"
-            >
-              {t("quickCreate.completionRemoveLabel")}
-            </Button>
-          </div>
-        </FormPanel>
-      </section>
-
-      {/* ─── task sub-panel ─── */}
-      <section
-        data-subpanel="task"
-        className={subPanelClass("task")}
-        aria-hidden={activePanel !== "task"}
-        inert={activePanel !== "task"}
-      >
-        <SubPanelHeader
-          onBack={() => {
-            setActivePanel("base");
-            setEditingTaskId(null);
-          }}
-          backAriaLabel={t("quickCreate.back")}
-          title={t("quickCreate.taskDetailTitle")}
-          subtitle={t("quickCreate.taskDetailSub")}
-        />
-        <FormPanel>
-          {(() => {
-            const task = plan.completion.tasks.find((tk) => tk.id === editingTaskId);
-            if (!task || !editingTaskId) {
-              return (
-                <p className="text-xs text-foreground-muted">{t("quickCreate.taskNoTasksHint")}</p>
-              );
-            }
-            const otherTasks = plan.completion.tasks.filter((tk) => tk.id !== task.id);
-            const orderHasCycle = hasTaskOrderCycle(plan.completion.tasks);
-            return (
-              <div className="flex flex-col gap-4" data-testid="task-detail-panel">
-                <div className="flex flex-col gap-1.5">
-                  <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                    {t("quickCreate.taskNoteLabel")}
-                  </div>
-                  <Textarea
-                    value={task.content.note ?? ""}
-                    onChange={(e) => setTaskField(task.id, "content.note", e.target.value || null)}
-                    placeholder={t("quickCreate.taskNotePlaceholder")}
-                    aria-label={t("quickCreate.taskNoteLabel")}
-                    rows={4}
-                    className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus:ring-0"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                    <span>{t("quickCreate.taskOrderSection")}</span>
-                  </div>
-                  {task.order.length === 0 ? (
-                    <p className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted">
-                      {t("quickCreate.taskOrderEmpty")}
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {task.order.map((rule, i) => {
-                        const targetTask = plan.completion.tasks.find(
-                          (tk) => tk.id === rule.targetTaskId,
-                        );
-                        const targetTitle =
-                          targetTask?.content.title || t("quickCreate.taskUntitled");
-                        return (
-                          <div
-                            key={rule.id}
-                            data-testid={`task-order-row-${i}`}
-                            className="flex flex-col gap-1.5 rounded-lg border border-border/60 bg-surface-0 p-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Select
-                                aria-label={t("quickCreate.taskOrderTarget")}
-                                value={rule.targetTaskId}
-                                onChange={(value) => {
-                                  if (!value) return;
-                                  const next = task.order.slice();
-                                  next[i] = { ...rule, targetTaskId: value };
-                                  setTaskField(task.id, "order", next);
-                                }}
-                                data={otherTasks.map((tk) => ({
-                                  value: tk.id,
-                                  label: tk.content.title || t("quickCreate.taskUntitled"),
-                                }))}
-                                placeholder={t("quickCreate.taskOrderTargetPlaceholder")}
-                                size="xs"
-                                variant="filled"
-                                comboboxProps={{ withinPortal: true }}
-                                className="flex-1"
-                                styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-                              />
-                              <ActionIcon
-                                type="button"
-                                variant="subtle"
-                                size="xs"
-                                aria-label={t("quickCreate.removeItem")}
-                                onClick={() => {
-                                  const next = task.order.slice();
-                                  next.splice(i, 1);
-                                  setTaskField(task.id, "order", next);
-                                }}
-                                className="text-foreground-muted hover:text-danger"
-                              >
-                                <Trash2 size={12} aria-hidden="true" />
-                              </ActionIcon>
-                            </div>
-                            <SegmentedControl
-                              fullWidth
-                              size="xs"
-                              radius="md"
-                              withItemsBorders={false}
-                              value={String(rule.relation)}
-                              onChange={(value) => {
-                                const next = task.order.slice();
-                                next[i] = {
-                                  ...rule,
-                                  relation: Number(value) as
-                                    | typeof TaskOrderRelation.BEFORE
-                                    | typeof TaskOrderRelation.AFTER,
-                                };
-                                setTaskField(task.id, "order", next);
-                              }}
-                              data={[
-                                {
-                                  value: String(TaskOrderRelation.BEFORE),
-                                  label: t("quickCreate.referenceRelationBefore"),
-                                },
-                                {
-                                  value: String(TaskOrderRelation.AFTER),
-                                  label: t("quickCreate.referenceRelationAfter"),
-                                },
-                              ]}
-                              styles={SEGMENT_STYLES}
-                            />
-                            <p className="text-[10px] text-foreground-muted">
-                              {rule.relation === TaskOrderRelation.BEFORE
-                                ? `${task.content.title || t("quickCreate.taskUntitled")} → ${targetTitle}`
-                                : `${targetTitle} → ${task.content.title || t("quickCreate.taskUntitled")}`}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="default"
-                    leftSection={<Plus size={12} aria-hidden="true" />}
-                    onClick={() => {
-                      const fallbackTarget = otherTasks[0]?.id ?? null;
-                      if (!fallbackTarget) return;
-                      const newRule = {
-                        id: uuidv7(),
-                        targetTaskId: fallbackTarget,
-                        relation: TaskOrderRelation.BEFORE,
-                        when: null,
-                      };
-                      setTaskField(task.id, "order", [...task.order, newRule]);
-                    }}
-                    data-testid="task-order-add"
-                    disabled={otherTasks.length === 0}
-                  >
-                    {t("quickCreate.taskOrderAdd")}
-                  </Button>
-                  {orderHasCycle ? (
-                    <p
-                      role="alert"
-                      data-testid="task-order-cycle"
-                      className="rounded-md bg-danger/10 px-2 py-1 text-[10px] font-semibold text-danger"
-                    >
-                      {t("quickCreate.taskOrderCycle")}
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center gap-2 border-t border-border/40 pt-3">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="subtle"
-                    leftSection={<Trash2 size={12} aria-hidden="true" />}
-                    onClick={() => {
-                      removeTask(task.id);
-                      setEditingTaskId(null);
-                      setActivePanel("base");
-                    }}
-                    data-testid="task-remove"
-                    className="text-danger hover:bg-danger/10"
-                  >
-                    {t("quickCreate.taskRemoveLabel")}
-                  </Button>
-                  <div className="flex-1" />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="default"
-                    leftSection={<X size={12} aria-hidden="true" />}
-                    onClick={() => {
-                      setEditingTaskId(null);
-                      setActivePanel("base");
-                    }}
-                  >
-                    {t("quickCreate.completionCancelLabel")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="filled"
-                    leftSection={<Check size={12} aria-hidden="true" />}
-                    onClick={() => {
-                      setEditingTaskId(null);
-                      setActivePanel("base");
-                    }}
-                    data-testid="task-apply"
-                  >
-                    {t("quickCreate.referenceApplyLabel")}
-                  </Button>
-                </div>
-              </div>
-            );
-          })()}
-        </FormPanel>
-      </section>
+            })()}
+          </FormPanel>
+      </SubPanelShell>
 
       <Modal
         opened={projectModalOpen}
