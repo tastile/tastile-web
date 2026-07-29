@@ -3,6 +3,7 @@
 import { Button, NumberInput, Switch } from "@mantine/core";
 import { Bell, Languages, Palette } from "lucide-react";
 import { useMemo, useState } from "react";
+import { DirectDaemonToggle } from "@/components/preferences/DirectDaemonToggle";
 import { PreferencesSidePanel } from "@/components/panels/PreferencesSidePanel";
 import { RowSegmented } from "@/components/ui/form";
 import { useSidePanel } from "@/lib/context/side-panel-context";
@@ -191,6 +192,12 @@ export default function GeneralPage() {
             />
           </div>
         </div>
+      </section>
+
+      {/* Network Settings */}
+      <section className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.network")}</h2>
+        <DirectDaemonToggle />
       </section>
     </div>
   );
