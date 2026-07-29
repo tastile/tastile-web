@@ -164,7 +164,9 @@ export function FloatingHeader({
             <FloatingMenuContent align="end" className="w-56 mt-1">
               <FloatingMenuLabel className="font-normal">
                 <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none text-foreground">{userName}</p>
+                  <p aria-live="polite" className="text-sm font-medium leading-none text-foreground">
+                    {userName}
+                  </p>
                   <p className="text-xs leading-none text-foreground-muted">
                     {t("shell.floatingHeader.statusLabel")}:{" "}
                     {isWorking
