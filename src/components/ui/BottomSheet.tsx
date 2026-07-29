@@ -2,6 +2,7 @@
 
 import { Drawer } from "@mantine/core";
 import type * as React from "react";
+import { PANEL_ANIM_ATTR } from "@/components/tiles/editor/panel-styles";
 import { cn } from "@/lib/utils/cn";
 
 interface BottomSheetProps {
@@ -28,10 +29,12 @@ export function BottomSheet({
       position="bottom"
       size="80vh"
       withCloseButton={!hideClose}
-      title={title}
+      title={title ? <h2 id="bottom-sheet-title">{title}</h2> : undefined}
+      aria-labelledby={title ? "bottom-sheet-title" : undefined}
       transitionProps={{ transition: "slide-up", duration: 240 }}
       overlayProps={{ backgroundOpacity: 0.4, blur: 2 }}
       classNames={{ content: cn("rounded-t-2xl", className) }}
+      {...{ [PANEL_ANIM_ATTR]: "" }}
       withOverlay
       lockScroll
       trapFocus

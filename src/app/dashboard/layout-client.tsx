@@ -89,6 +89,12 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-dvh flex-col bg-background">
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-[var(--surface-3)] focus:px-3 focus:py-2 focus:text-sm"
+      >
+        Skip to main
+      </a>
       <FloatingHeader
         userName={session?.displayName ?? "Loading..."}
         onOpenSearch={openSearch}
@@ -101,7 +107,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         <ActivityBar />
         {/* SideToolPanel: renders content registered by each page via useSidePanel() */}
         <SideToolPanel />
-        <main className="min-w-0 flex-1 overflow-y-auto bg-surface-0">
+        <main id="main" className="min-w-0 flex-1 overflow-y-auto bg-surface-0">
           {/* `h-full` (not `min-h-full`) so children's percentage heights
               resolve against a definite container — without this, the
               Month view's `flex h-full flex-col` root would size to its
