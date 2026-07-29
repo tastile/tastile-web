@@ -13,7 +13,8 @@
     "@typescript-eslint/typescript-estree",
     "axe-core",
     "openapi-typescript",
-    "postcss"
+    "postcss",
+    "sharp"
   ],
   "ignore": [
     "src/lib/api/v1/openapi-contract.ts"
