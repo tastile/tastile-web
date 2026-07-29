@@ -1,6 +1,13 @@
 "use client";
 
-import { Children, cloneElement, isValidElement, useId, type ReactElement, type ReactNode } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useId,
+} from "react";
 
 interface Props {
   label: string;
@@ -14,7 +21,8 @@ interface Props {
 export function FieldRow({ label, htmlFor, hint, error, required, children }: Props) {
   const hintId = useId();
   const errorId = useId();
-  const describedBy = [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
+  const describedBy =
+    [hint ? hintId : null, error ? errorId : null].filter(Boolean).join(" ") || undefined;
 
   const child = Children.only(children);
   const enhanced = isValidElement(child)
@@ -28,7 +36,11 @@ export function FieldRow({ label, htmlFor, hint, error, required, children }: Pr
     <div className="flex flex-col gap-1">
       <label htmlFor={htmlFor} className="text-xs font-medium flex items-center gap-1">
         {label}
-        {required ? <span aria-hidden className="text-[var(--color-danger,#dc2626)]">*</span> : null}
+        {required ? (
+          <span aria-hidden className="text-[var(--color-danger,#dc2626)]">
+            *
+          </span>
+        ) : null}
       </label>
       {hint ? (
         <span id={hintId} className="text-[11px] text-[var(--foreground-muted)]">

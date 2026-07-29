@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
 import { CloseButton } from "@mantine/core";
+import { type ReactNode, useEffect } from "react";
 import { PANEL_ANIM_ATTR } from "./panel-styles";
 
 export type SubPanelKey =

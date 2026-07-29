@@ -18,9 +18,7 @@ export function PanelErrorBanner({ title, body, onDismiss }: Props) {
         <p className="text-sm font-medium">{title}</p>
         <p className="text-xs text-[var(--foreground-muted)]">{body}</p>
       </div>
-      {onDismiss ? (
-        <CloseButton onClick={onDismiss} aria-label="Dismiss error" />
-      ) : null}
+      {onDismiss ? <CloseButton onClick={onDismiss} aria-label="Dismiss error" /> : null}
     </div>
   );
 }

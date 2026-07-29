@@ -1,7 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface Props {
   title: string;
@@ -12,14 +12,7 @@ interface Props {
   children: ReactNode;
 }
 
-export function StagedSection({
-  title,
-  required,
-  isOpen,
-  onToggle,
-  digest,
-  children,
-}: Props) {
+export function StagedSection({ title, required, isOpen, onToggle, digest, children }: Props) {
   const Icon = isOpen ? ChevronDown : ChevronRight;
   return (
     <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)]">

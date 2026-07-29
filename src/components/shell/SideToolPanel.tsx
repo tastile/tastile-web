@@ -39,9 +39,7 @@ export function SideToolPanel() {
           <X size={16} aria-hidden />
         </button>
       </header>
-      <div aria-label="Detail content" className="p-4">
-        {content}
-      </div>
+      <div className="p-4">{content}</div>
     </aside>
   );
 }

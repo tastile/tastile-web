@@ -10,10 +10,12 @@
   ],
   "ignoreDependencies": [
     "tailwindcss",
-    "@typescript-eslint/typescript-estree"
+    "@typescript-eslint/typescript-estree",
+    "axe-core"
   ],
   "ignoreFiles": [
-    "src/components/tiles/editor/AutomationPanel.tsx"
+    "src/components/tiles/editor/AutomationPanel.tsx",
+    "src/components/tiles/editor/SubPanelHeader.tsx"
   ],
   "ignoreExportsUsedInFile": true
 }
