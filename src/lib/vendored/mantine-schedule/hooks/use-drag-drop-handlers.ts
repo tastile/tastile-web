@@ -174,16 +174,7 @@ export function useDragDropHandlers<T = any>(
 
       setDropTarget(null);
     },
-    [
-      enabled,
-      dragState.state,
-      onEventDrop,
-      onExternalDrop,
-      calculateDropTarget,
-      handleDragEnd,
-      stableOnEventDrop,
-      stableOnExternalDrop,
-    ],
+    [enabled, dragState.state, onEventDrop, onExternalDrop, calculateDropTarget, handleDragEnd],
   );
 
   const isDraggableEvent = useCallback(
