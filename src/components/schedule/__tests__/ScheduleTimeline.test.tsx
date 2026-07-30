@@ -38,6 +38,14 @@ vi.mock("@/lib/stores/quick-create-store", () => ({
     selector({ openEdit: vi.fn(), openCreate: vi.fn(), loadFromRecurringTile: vi.fn() }),
 }));
 
+vi.mock("@/lib/context/side-panel-context", () => ({
+  useSidePanel: vi.fn(),
+}));
+
+vi.mock("@/components/panels/CalendarSidePanel", () => ({
+  CalendarSidePanel: () => <div data-testid="calendar-side-panel" />,
+}));
+
 describe("ScheduleTimeline view selection", () => {
   it.each([
     ["day", "day-panel"],

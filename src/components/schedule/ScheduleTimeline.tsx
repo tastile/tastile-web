@@ -5,7 +5,7 @@ import { getModeRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { useEvents } from "@/lib/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AgendaPanel } from "./AgendaPanel";
 import { DayPanel } from "./DayPanel";
 import { MonthPanel } from "./MonthPanel";
@@ -13,6 +13,8 @@ import { ScheduleToolbar } from "./ScheduleToolbar";
 import { WeekPanel } from "./WeekPanel";
 import { YearPanel } from "./YearPanel";
 import { useTimelineState } from "./useTimelineState";
+import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 
 type Props = {
   initialView: "day" | "week" | "month" | "year" | "agenda";
@@ -98,6 +100,27 @@ export function ScheduleTimeline({ initialView }: Props) {
     },
     [state],
   );
+
+  // Side panel: register CalendarSidePanel with URL-synchronised state.
+  // The element must be reference-stable across renders (useMemo).
+  // CalendarSidePanel uses "list" for what we now call "agenda".
+  const [minDuration, setMinDuration] = useState(0);
+  const panelView = state.view === "agenda" ? "list" : state.view;
+  const sidePanelElement = useMemo(
+    () => (
+      <CalendarSidePanel
+        anchor={state.anchor}
+        view={panelView}
+        mode={state.mode}
+        minDuration={minDuration}
+        onSelectDate={state.setAnchor}
+        onModeChange={state.setMode}
+        onMinDurationChange={setMinDuration}
+      />
+    ),
+    [state.anchor, panelView, state.mode, minDuration, state.setAnchor, state.setMode],
+  );
+  useSidePanel(sidePanelElement);
 
   // Base props every panel receives.
   const panelBase = {
