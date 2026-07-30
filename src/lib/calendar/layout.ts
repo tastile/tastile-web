@@ -281,7 +281,7 @@ function forwardScopeDays(view: "day" | "week" | "month"): number {
  * (today in modes around/future — caller resolves this).
  */
 export function getModeRange(
-  view: "day" | "week" | "month",
+  view: "day" | "week" | "month" | "year",
   mode: DisplayMode,
   anchor: string,
   tzOffsetMinutes: number,
@@ -290,6 +290,17 @@ export function getModeRange(
   // local midnight, then shift from there.
   const [y, m, d] = anchor.split("-").map(Number);
   const localMidnightMs = Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1) - tzOffsetMinutes * 60_000;
+
+  if (view === "year") {
+    // YearView only handles a calendar year at a time; "scope" returns the
+    // anchor's year as a [Jan 1, Jan 1 next year) date-string range.
+    // Other modes for year are not currently driven by the UI.
+    const year = parseInt(anchor.slice(0, 4), 10);
+    return {
+      start: `${year}-01-01`,
+      end: `${year + 1}-01-01`,
+    };
+  }
 
   if (view === "day") {
     if (mode === "around") {

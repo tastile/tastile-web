@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eventSpansDay, getWeekViewDates } from "./layout";
+import { eventSpansDay, getModeRange, getWeekViewDates } from "./layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 
 function makeEvent(start: string, end: string): CalendarEvent {
@@ -87,5 +87,13 @@ describe("eventSpansDay tzOffset handling (Week view sleep regression)", () => {
       "2026-07-24",
       "2026-07-25",
     ]);
+  });
+});
+
+describe("getModeRange year", () => {
+  it("returns Jan 1 → Jan 1+1 for scope mode", () => {
+    const r = getModeRange("year", "scope", "2026-07-30", 0);
+    expect(r.start).toBe("2026-01-01");
+    expect(r.end).toBe("2027-01-01");
   });
 });
