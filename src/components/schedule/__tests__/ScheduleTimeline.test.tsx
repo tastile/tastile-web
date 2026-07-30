@@ -35,7 +35,7 @@ vi.mock("@/lib/hooks/calendar/use-events", () => ({
 
 vi.mock("@/lib/stores/quick-create-store", () => ({
   useQuickCreateStore: (selector: (s: unknown) => unknown) =>
-    selector({ openEdit: vi.fn(), openCreate: vi.fn(), loadFromRecurringTile: vi.fn() }),
+    selector({ openEdit: vi.fn(), openCreate: vi.fn(), loadFromRecurringTile: vi.fn(), setField: vi.fn() }),
 }));
 
 vi.mock("@/lib/context/side-panel-context", () => ({

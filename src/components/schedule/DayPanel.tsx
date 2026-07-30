@@ -5,6 +5,7 @@ import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { DayView, MobileMonthView } from "@/lib/vendored/mantine-schedule";
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
+import { useCallback, useRef } from "react";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";
@@ -20,6 +21,7 @@ type Props = {
   error: Error | null;
   onEventClick: (event: CalendarEvent) => void;
   onSlotCreate: (start: string, end: string) => void;
+  onZoomBy: (delta: number) => void;
 };
 
 export function DayPanel({
@@ -31,9 +33,23 @@ export function DayPanel({
   error,
   onEventClick,
   onSlotCreate,
+  onZoomBy,
 }: Props) {
   const breakpoint = useResponsiveBreakpoint();
   const scheduleEvents = events.flatMap(toScheduleEvents);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Ctrl+wheel zoom
+  const onWheel = useCallback(
+    (e: React.WheelEvent) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      onZoomBy(e.deltaY < 0 ? 1 : -1);
+    },
+    [onZoomBy],
+  );
+
+  void range;
 
   if (breakpoint === "mobile") {
     const renderMobileEvent = (e: ScheduleEventData) => {
@@ -58,7 +74,7 @@ export function DayPanel({
   }
 
   return (
-    <div className="relative" data-testid="day-panel">
+    <div ref={containerRef} className="relative" data-testid="day-panel" onWheel={onWheel}>
       <style>{`:root { --day-view-slot-height: ${zoom}px; }`}</style>
       {error && <ErrorBanner error={error} />}
       <LoadingOverlay loading={loading}>

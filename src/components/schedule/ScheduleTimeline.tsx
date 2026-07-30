@@ -14,7 +14,7 @@ import { MonthPanel } from "./MonthPanel";
 import { ScheduleToolbar } from "./ScheduleToolbar";
 import { WeekPanel } from "./WeekPanel";
 import { YearPanel } from "./YearPanel";
-import { useTimelineState } from "./useTimelineState";
+import { ZOOM_STEP, useTimelineState } from "./useTimelineState";
 
 type Props = {
   initialView: "day" | "week" | "month" | "year" | "agenda";
@@ -25,33 +25,24 @@ export function ScheduleTimeline({ initialView }: Props) {
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const effectiveAnchor = state.effectiveAnchor;
   const range = useMemo(() => {
-    // getModeRange only supports {day, week, month, year}; agenda uses a
-    // day-scoped range anchored on the effective date.
     if (state.view === "agenda") {
       const day = effectiveAnchor;
       const start = new Date(`${day}T00:00:00Z`);
       start.setUTCDate(start.getUTCDate() - 3);
       const end = new Date(`${day}T00:00:00Z`);
       end.setUTCDate(end.getUTCDate() + 4);
-      return {
-        start: start.toISOString(),
-        end: end.toISOString(),
-      };
+      return { start: start.toISOString(), end: end.toISOString() };
     }
     return getModeRange(state.view, state.mode, effectiveAnchor, tzOffsetMinutes);
   }, [state.view, state.mode, effectiveAnchor, tzOffsetMinutes]);
 
-  // Pad range so events cover the full visible grid (Month = 6×7 = 42d, Year = 12mo)
   const paddedRange = useMemo(() => {
     if (state.view === "month") {
       const start = new Date(range.start);
       start.setDate(start.getDate() - 7);
       const end = new Date(range.end);
       end.setDate(end.getDate() + 7);
-      return {
-        start: start.toISOString().slice(0, 10),
-        end: end.toISOString().slice(0, 10),
-      };
+      return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
     }
     if (state.view === "year") {
       const y = Number.parseInt(range.start.slice(0, 4), 10);
@@ -68,11 +59,11 @@ export function ScheduleTimeline({ initialView }: Props) {
   const { events, loading, error } = useEvents(paddedRange);
   const openEdit = useQuickCreateStore((s) => s.openEdit);
   const openCreate = useQuickCreateStore((s) => s.openCreate);
+  const setField = useQuickCreateStore((s) => s.setField);
   const loadFromRecurringTile = useQuickCreateStore((s) => s.loadFromRecurringTile);
 
   const onEventClick = useCallback(
     (event: CalendarEvent) => {
-      // Strip ":cursor" suffix that occurrence IDs may carry (see CalendarMain.handleEditEvent:358)
       const colon = event.id.indexOf(":");
       const sourceId = colon > 0 ? event.id.slice(0, colon) : event.id;
       if (event.source?.kind === 1 && event.tileId) {
@@ -84,13 +75,15 @@ export function ScheduleTimeline({ initialView }: Props) {
     [loadFromRecurringTile, openEdit],
   );
 
+  // Slot click / drag: set the time span before opening the create panel.
   const onSlotCreate = useCallback(
     (start: string, end: string) => {
+      setField("time.span.start", start);
+      setField("time.span.end", end);
+      setField("time.whenMode", "span");
       openCreate({ initialAllDay: false });
-      void start;
-      void end;
     },
-    [openCreate],
+    [openCreate, setField],
   );
 
   const onMonthDayClick = useCallback(
@@ -101,9 +94,15 @@ export function ScheduleTimeline({ initialView }: Props) {
     [state],
   );
 
-  // Side panel: register CalendarSidePanel with URL-synchronised state.
-  // The element must be reference-stable across renders (useMemo).
-  // CalendarSidePanel uses "list" for what we now call "agenda".
+  // Ctrl+wheel zoom
+  const onZoomBy = useCallback(
+    (delta: number) => {
+      state.setZoom(state.zoom + delta * ZOOM_STEP);
+    },
+    [state],
+  );
+
+  // Side panel
   const [minDuration, setMinDuration] = useState(0);
   const panelView = state.view === "agenda" ? "list" : state.view;
   const sidePanelElement = useMemo(
@@ -122,7 +121,6 @@ export function ScheduleTimeline({ initialView }: Props) {
   );
   useSidePanel(sidePanelElement);
 
-  // Base props every panel receives.
   const panelBase = {
     range: paddedRange,
     anchor: effectiveAnchor,
@@ -133,6 +131,9 @@ export function ScheduleTimeline({ initialView }: Props) {
     onEventClick,
   };
 
+  // Nav disabled when not in scope mode (around/future are anchored on today)
+  const navDisabled = loading || state.mode !== "scope";
+
   return (
     <div className="flex h-full flex-col" data-testid="schedule-timeline">
       <ScheduleToolbar
@@ -140,7 +141,7 @@ export function ScheduleTimeline({ initialView }: Props) {
         mode={state.mode}
         anchor={state.anchor}
         zoom={state.zoom}
-        navDisabled={loading || state.mode !== "scope"}
+        navDisabled={navDisabled}
         onPrev={() => state.shiftAnchor(-1)}
         onNext={() => state.shiftAnchor(1)}
         onToday={() => state.goToToday()}
@@ -149,21 +150,18 @@ export function ScheduleTimeline({ initialView }: Props) {
         onZoomChange={state.setZoom}
       />
       <div className="flex-1 overflow-auto">
-        {state.view === "day" && <DayPanel {...panelBase} onSlotCreate={onSlotCreate} />}
-        {state.view === "week" && <WeekPanel {...panelBase} onSlotCreate={onSlotCreate} />}
+        {state.view === "day" && (
+          <DayPanel {...panelBase} onSlotCreate={onSlotCreate} onZoomBy={onZoomBy} />
+        )}
+        {state.view === "week" && (
+          <WeekPanel {...panelBase} onSlotCreate={onSlotCreate} onZoomBy={onZoomBy} />
+        )}
         {state.view === "month" && (
           <MonthPanel {...panelBase} onSlotCreate={onSlotCreate} onDayClick={onMonthDayClick} />
         )}
         {state.view === "year" && <YearPanel {...panelBase} />}
         {state.view === "agenda" && <AgendaPanel {...panelBase} />}
       </div>
-      <button
-        type="button"
-        data-testid="cal-create-fab"
-        className="hidden"
-        onClick={() => openCreate({})}
-        aria-hidden
-      />
     </div>
   );
 }
