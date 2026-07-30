@@ -2,7 +2,7 @@
 
 import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import { MonthView } from "@mantine/schedule";
+import { MonthView } from "@/lib/vendored/mantine-schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";

@@ -2,7 +2,7 @@
 "use client";
 
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import type { ScheduleEventData } from "@mantine/schedule";
+import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
 import * as Lucide from "lucide-react";
 import type { FC } from "react";
 

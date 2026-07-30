@@ -3,7 +3,7 @@
 
 import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import { YearView } from "@mantine/schedule";
+import { YearView } from "@/lib/vendored/mantine-schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";
@@ -19,7 +19,7 @@ type Props = {
 };
 
 export function YearPanel({ range, anchor, zoom, events, loading, error }: Props) {
-  // YearView in @mantine/schedule does not expose renderEventBody or
+  // YearView in @/lib/vendored/mantine-schedule does not expose renderEventBody or
   // onEventClick — it renders each day's events as up to 3 colored
   // indicator dots. Props that do not apply to this view (zoom, range,
   // onEventClick) are kept in the type contract for parity with the
@@ -31,7 +31,12 @@ export function YearPanel({ range, anchor, zoom, events, loading, error }: Props
     <div className="relative" data-testid="year-panel">
       {error && <ErrorBanner error={error} />}
       <LoadingOverlay loading={loading}>
-        <YearView data-testid="year-view" date={anchor} events={scheduleEvents} withHeader={false} />
+        <YearView
+          data-testid="year-view"
+          date={anchor}
+          events={scheduleEvents}
+          withHeader={false}
+        />
       </LoadingOverlay>
     </div>
   );

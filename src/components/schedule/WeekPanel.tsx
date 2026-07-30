@@ -3,7 +3,7 @@
 
 import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import { WeekView } from "@mantine/schedule";
+import { WeekView } from "@/lib/vendored/mantine-schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";

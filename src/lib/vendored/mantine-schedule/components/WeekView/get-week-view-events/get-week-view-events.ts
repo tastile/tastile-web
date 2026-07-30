@@ -1,0 +1,15 @@
+import type { ScheduleEventData } from "../../../types";
+import { filterWeekViewEvents } from "./filter-week-view-events";
+import {
+  type GetWeekPositionedEventsInput,
+  type GroupedWeekEvents,
+  getWeekPositionedEvents,
+} from "./get-week-positioned-events";
+
+interface GetWeekViewEventsInput extends Omit<GetWeekPositionedEventsInput, "events"> {
+  events: ScheduleEventData[] | undefined;
+}
+
+export function getWeekViewEvents(input: GetWeekViewEventsInput): GroupedWeekEvents {
+  return getWeekPositionedEvents({ ...input, events: filterWeekViewEvents(input) });
+}

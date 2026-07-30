@@ -3,8 +3,8 @@
 
 import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import { AgendaView } from "@mantine/schedule";
-import type { ScheduleEventData } from "@mantine/schedule";
+import { AgendaView } from "@/lib/vendored/mantine-schedule";
+import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";

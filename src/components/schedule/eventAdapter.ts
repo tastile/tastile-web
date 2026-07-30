@@ -1,6 +1,6 @@
 import type { CalendarEvent, EventColor } from "@/lib/domain/calendar";
 // src/components/schedule/eventAdapter.ts
-import type { ScheduleEventData } from "@mantine/schedule";
+import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
 
 const COLOR_MAP: Record<EventColor, string> = {
   blue: "blue",
@@ -108,14 +108,16 @@ export function toScheduleEvents(e: CalendarEvent): ScheduleEventData<CalendarEv
 
 /** @deprecated — use toScheduleEvents for overnight-safe conversion */
 export function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEvent> {
-  return toScheduleEvents(e)[0] ?? {
-    id: e.id,
-    title: e.title,
-    start: e.start.slice(0, 10) as ScheduleEventData["start"],
-    end: e.end.slice(0, 10) as ScheduleEventData["end"],
-    color: colorToMantine(e.color),
-    variant: "light",
-    display: "default",
-    payload: e,
-  };
+  return (
+    toScheduleEvents(e)[0] ?? {
+      id: e.id,
+      title: e.title,
+      start: e.start.slice(0, 10) as ScheduleEventData["start"],
+      end: e.end.slice(0, 10) as ScheduleEventData["end"],
+      color: colorToMantine(e.color),
+      variant: "light",
+      display: "default",
+      payload: e,
+    }
+  );
 }

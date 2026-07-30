@@ -1,0 +1,186 @@
+import {
+  Box,
+  type BoxProps,
+  type ElementProps,
+  type Factory,
+  type MantineColor,
+  type StylesApiProps,
+  createVarsResolver,
+  factory,
+  getThemeColor,
+  useProps,
+  useStyles,
+} from "@mantine/core";
+import { useDatesContext } from "@mantine/dates";
+import { useInterval } from "@mantine/hooks";
+import dayjs from "dayjs";
+import { useState } from "react";
+import type { AnyDateValue, DateLabelFormat } from "../../types";
+import { formatDate, getCurrentTimePosition, isInTimeRange } from "../../utils";
+import classes from "./CurrentTimeIndicator.module.css";
+
+export type CurrentTimeIndicatorStylesNames =
+  | "currentTimeIndicator"
+  | "currentTimeIndicatorLine"
+  | "currentTimeIndicatorThumb"
+  | "currentTimeIndicatorTimeBubble";
+
+export type CurrentTimeIndicatorCssVariables = {
+  currentTimeIndicator: "--indicator-color";
+};
+
+export interface CurrentTimeIndicatorProps
+  extends BoxProps,
+    StylesApiProps<CurrentTimeIndicatorFactory>,
+    ElementProps<"div"> {
+  __staticSelector?: string;
+
+  /** Key of `theme.colors` or any valid CSS color value @default 'red' */
+  color?: MantineColor;
+
+  /** Offset from the left side */
+  startOffset?: string;
+
+  /** Offset from the right side */
+  endOffset?: string;
+
+  /** Extra configurable offset from the top */
+  topOffset?: string;
+
+  /** Offset for the time bubble */
+  timeBubbleStartOffset?: string;
+
+  /** If set, displays a bubble with the current time @default @true */
+  withTimeBubble?: boolean;
+
+  /** If set, displays thumb next to the line @default true */
+  withThumb?: boolean;
+
+  /** Format of the time displayed in the time bubble @default 'HH:mm' */
+  currentTimeFormat?: DateLabelFormat;
+
+  /** Locale passed down to dayjs during formatting */
+  locale?: string;
+
+  /** Start time of the day */
+  startTime?: string;
+
+  /** End time of the day */
+  endTime?: string;
+
+  /** Number of minutes per time slot. Used to align the indicator to whole slots when `endTime` does not divide evenly. */
+  intervalMinutes?: number;
+
+  /** A function to get the current time, called on every tick. Can be used to display the indicator in a different timezone. @default () => dayjs() */
+  getCurrentTime?: () => AnyDateValue;
+}
+
+export type CurrentTimeIndicatorFactory = Factory<{
+  props: CurrentTimeIndicatorProps;
+  ref: HTMLDivElement;
+  stylesNames: CurrentTimeIndicatorStylesNames;
+  vars: CurrentTimeIndicatorCssVariables;
+}>;
+
+const defaultProps = {
+  __staticSelector: "CurrentTimeIndicator",
+  withTimeBubble: true,
+  withThumb: true,
+  currentTimeFormat: "HH:mm",
+  topOffset: "0rem",
+} satisfies Partial<CurrentTimeIndicatorProps>;
+
+const varsResolver = createVarsResolver<CurrentTimeIndicatorFactory>((theme, { color }) => ({
+  currentTimeIndicator: {
+    "--indicator-color": color ? getThemeColor(color, theme) : undefined,
+  },
+}));
+
+export const CurrentTimeIndicator = factory<CurrentTimeIndicatorFactory>((_props) => {
+  const props = useProps("CurrentTimeIndicator", defaultProps, _props);
+  const {
+    classNames,
+    className,
+    style,
+    styles,
+    unstyled,
+    vars,
+    attributes,
+    startOffset,
+    endOffset,
+    color,
+    withTimeBubble,
+    withThumb,
+    currentTimeFormat,
+    locale,
+    timeBubbleStartOffset,
+    __staticSelector,
+    topOffset,
+    startTime,
+    endTime,
+    intervalMinutes,
+    getCurrentTime,
+    ...others
+  } = props;
+
+  const getStyles = useStyles<CurrentTimeIndicatorFactory>({
+    name: __staticSelector,
+    classes,
+    props,
+    className,
+    style,
+    classNames,
+    styles,
+    unstyled,
+    vars,
+    varsResolver,
+    attributes,
+    rootSelector: "currentTimeIndicator",
+  });
+
+  const ctx = useDatesContext();
+  const [, setTick] = useState(0);
+  useInterval(() => setTick((tick) => tick + 1), 1000 * 60, {
+    autoInvoke: true,
+  });
+
+  const now = getCurrentTime ? dayjs(getCurrentTime()) : dayjs();
+  const offsetPercent = getCurrentTimePosition({ startTime, endTime, intervalMinutes, now });
+  const formattedTime = withTimeBubble
+    ? formatDate({ locale: ctx.getLocale(locale), date: now, format: currentTimeFormat })
+    : "";
+
+  if (!isInTimeRange({ date: now, startTime, endTime })) {
+    return null;
+  }
+
+  return (
+    <Box
+      {...getStyles("currentTimeIndicator")}
+      __vars={{
+        "--top-offset": `calc(${offsetPercent}% + ${topOffset})`,
+        "--start-offset": startOffset,
+        "--end-offset": endOffset,
+        "--time-bubble-start-offset": timeBubbleStartOffset,
+
+        // Adjust time bubble width for formats including AM/PM
+        "--time-bubble-width": formattedTime?.toString().toLowerCase().includes("m")
+          ? "64px"
+          : "46px",
+      }}
+      {...others}
+    >
+      {withTimeBubble && (
+        <div {...getStyles("currentTimeIndicatorTimeBubble")}>{formattedTime}</div>
+      )}
+
+      {withThumb && <div {...getStyles("currentTimeIndicatorThumb")} />}
+
+      <div {...getStyles("currentTimeIndicatorLine")} />
+    </Box>
+  );
+});
+
+CurrentTimeIndicator.displayName = "@/lib/vendored/mantine-schedule/CurrentTimeIndicator";
+CurrentTimeIndicator.classes = classes;
+CurrentTimeIndicator.varsResolver = varsResolver;

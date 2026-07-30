@@ -12,6 +12,7 @@ export function ErrorBanner({ error }: { error: Error | null }) {
       data-testid="cal-error-wrap"
     >
       <Alert
+        role="alert"
         variant="light"
         color="red"
         icon={<AlertCircle className="h-4 w-4" />}

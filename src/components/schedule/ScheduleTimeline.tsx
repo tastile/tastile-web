@@ -1,7 +1,9 @@
 // src/components/schedule/ScheduleTimeline.tsx
 "use client";
 
+import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
 import { getModeRange } from "@/lib/calendar/layout";
+import { useSidePanel } from "@/lib/context/side-panel-context";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { useEvents } from "@/lib/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
@@ -13,8 +15,6 @@ import { ScheduleToolbar } from "./ScheduleToolbar";
 import { WeekPanel } from "./WeekPanel";
 import { YearPanel } from "./YearPanel";
 import { useTimelineState } from "./useTimelineState";
-import { CalendarSidePanel } from "@/components/panels/CalendarSidePanel";
-import { useSidePanel } from "@/lib/context/side-panel-context";
 
 type Props = {
   initialView: "day" | "week" | "month" | "year" | "agenda";

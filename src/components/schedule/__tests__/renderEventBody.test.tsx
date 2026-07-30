@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderEventBody } from "../renderEventBody";
-import type { ScheduleEventData } from "@mantine/schedule";
+import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 
 // Stub lucide icons so tests don't try to render SVGs
