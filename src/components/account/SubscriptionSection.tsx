@@ -43,7 +43,7 @@ function statusLabel(t: (k: string) => string, status: SubscriptionState["status
 }
 
 function formatDate(unixSeconds: number): string {
-  return new Date(unixSeconds * 1000).toLocaleDateString();
+  return new Date(unixSeconds * 1000).toLocaleDateString("en-US", { timeZone: "UTC" });
 }
 
 export function SubscriptionSection() {
@@ -187,8 +187,8 @@ export function SubscriptionSection() {
             <span className="text-sm font-normal text-foreground-muted">{subDict.perMonth}</span>
           </p>
           <ul className="space-y-2">
-            {freeFeatures.map((feature, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
+            {freeFeatures.map((feature) => (
+              <li key={feature} className="flex items-start gap-2 text-sm text-foreground-muted">
                 <span className="text-success mt-0.5">✓</span>
                 <span>{feature}</span>
               </li>
@@ -227,8 +227,8 @@ export function SubscriptionSection() {
             </span>
           </p>
           <ul className="space-y-2">
-            {proFeatures.map((feature, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-foreground-muted">
+            {proFeatures.map((feature) => (
+              <li key={feature} className="flex items-start gap-2 text-sm text-foreground-muted">
                 <span className="text-primary mt-0.5">✓</span>
                 <span>{feature}</span>
               </li>

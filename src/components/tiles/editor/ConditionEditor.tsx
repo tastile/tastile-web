@@ -7,9 +7,10 @@ import { useId, useState } from "react";
 
 import { RowSegmented } from "@/components/ui/form";
 import type { ConditionNode, Term } from "@/lib/domain/v1/condition";
-import { ConditionKind, HolidayKind } from "@/lib/domain/v1/constants";
+import { ConditionKind } from "@/lib/domain/v1/constants";
 
 import { TileReferencePicker } from "./TileReferencePicker";
+import { defaultTerm } from "./default-term";
 
 // ============================================================
 // Internal segmented pickers
@@ -63,65 +64,6 @@ function TermKindSegmented({
   return (
     <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />
   );
-}
-
-// ============================================================
-// Default term factory
-// ============================================================
-
-export function defaultTerm(kind: string): Term {
-  switch (kind) {
-    case "calendar":
-      return {
-        kind: "calendar",
-        value: {
-          weekdayMask: 0,
-          timeStart: null,
-          timeEnd: null,
-          holidayKind: HolidayKind.ANY,
-          dateRange: null,
-          offsetMin: 0,
-        },
-      };
-    case "moment":
-      return { kind: "moment", value: { referenceId: null, point: null, offsetMs: 0 } };
-    case "relation":
-      return { kind: "relation", value: { referenceId: "", relation: 0, windowKind: 0 } };
-    case "gap":
-      return {
-        kind: "gap",
-        value: {
-          scope: 0,
-          leftAnchor: { referenceId: null, point: null },
-          rightAnchor: { referenceId: null, point: null },
-          size: { minMs: null, maxMs: null },
-        },
-      };
-    case "requirement":
-      return { kind: "requirement", value: { requirementId: "", state: 0 } };
-    case "task":
-      return { kind: "task", value: { taskId: "", state: 0 } };
-    case "fact":
-      return { kind: "fact", value: { factId: "", op: 0, value: null } };
-    case "metric":
-      return { kind: "metric", value: { metricId: "", op: 0, value: null } };
-    case "feedback":
-      return { kind: "feedback", value: { feedbackTxnId: "", op: 0, value: null } };
-    case "life":
-      return { kind: "life", value: { target: "", state: 0 } };
-    default:
-      return {
-        kind: "calendar",
-        value: {
-          weekdayMask: 0,
-          timeStart: null,
-          timeEnd: null,
-          holidayKind: HolidayKind.ANY,
-          dateRange: null,
-          offsetMin: 0,
-        },
-      };
-  }
 }
 
 // ============================================================
@@ -582,8 +524,11 @@ export function ConditionEditor({
         </>
       ) : (
         <>
-          {node.children.map((child, i) => (
-            <div key={i} className="flex flex-col gap-1">
+          {node.children.map((child, i) => {
+            return (
+            <div
+              // react-doctor-disable-next-line react-doctor/no-array-index-as-key
+              key={`${i}-${child.kind}-${child.term?.kind ?? "none"}`} className="flex flex-col gap-1">
               <ConditionEditor
                 node={child}
                 onChange={(next) => {
@@ -610,7 +555,8 @@ export function ConditionEditor({
                 className="self-start text-foreground-muted hover:text-danger"
               />
             </div>
-          ))}
+            );
+          })}
           <Button
             type="button"
             size="sm"

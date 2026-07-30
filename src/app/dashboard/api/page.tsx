@@ -72,7 +72,7 @@ export default function ApiExplorerPage() {
   );
   useSidePanel(sidePanel);
 
-  const keys = useMemo(() => {
+  const keys = (() => {
     const all = Object.keys(ENDPOINTS) as EndpointKey[];
     return all.filter((k) => {
       if (filterTag !== "All" && ENDPOINTS[k].tag !== filterTag) return false;
@@ -86,7 +86,7 @@ export default function ApiExplorerPage() {
         m.tag.toLowerCase().includes(q)
       );
     });
-  }, [query, filterTag]);
+  })();
 
   return (
     <PageContainer>

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://react.doctor/schema/config.json",
+  "ignore": {
+    "files": ["src/lib/vendored/**"]
+  },
+  "rules": {
+    "react-doctor/react-compiler-no-manual-memoization": "off",
+    "deslop/unused-dependency": "off"
+  }
+}

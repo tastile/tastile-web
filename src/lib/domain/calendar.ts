@@ -19,7 +19,7 @@ export type EventColor =
   | "lime"
   | "gray";
 
-export const EVENT_COLOR_HEX: Record<EventColor, string> = {
+const EVENT_COLOR_HEX: Record<EventColor, string> = {
   blue: "#3b82f6",
   green: "#22c55e",
   purple: "#a855f7",

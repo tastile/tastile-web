@@ -141,7 +141,7 @@ export function getModeRange(
 /** Get "today" as a local YYYY-MM-DD using the same convention as
  *  CalendarMain's localIsoDate. Exposed for callers that build their
  *  own anchor (e.g. mode toggles). */
-export function todayLocalIso(tzOffsetMinutes: number): string {
+function todayLocalIso(tzOffsetMinutes: number): string {
   const now = new Date(Date.now() + tzOffsetMinutes * 60_000);
   return now.toISOString().slice(0, 10);
 }
@@ -153,7 +153,7 @@ export function todayLocalIso(tzOffsetMinutes: number): string {
  * midnight. Returns hour numbers (0..23) for the grid, in render
  * order.
  */
-export function getDayViewHourOffsets(
+function getDayViewHourOffsets(
   now: Date,
   mode: DisplayMode = "future",
 ): { startHour: number; hours: number[] } {
@@ -204,11 +204,7 @@ export function getWeekViewDates(mode: DisplayMode, anchor: string): string[] {
  * dates centered on anchor (today in practice). Mode "future" →
  * today + 31 days.
  */
-export function getMonthViewDates(
-  mode: DisplayMode,
-  anchor: string,
-  tzOffsetMinutes: number,
-): string[] {
+function getMonthViewDates(mode: DisplayMode, anchor: string, tzOffsetMinutes: number): string[] {
   const [y, m, d] = anchor.split("-").map(Number);
   const localMidnightMs = Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1) - tzOffsetMinutes * 60_000;
 

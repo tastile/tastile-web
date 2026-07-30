@@ -14,7 +14,8 @@ import {
   Text,
 } from "@mantine/core";
 import { Plus, Trash2 } from "lucide-react";
-import { ConditionEditor, defaultTerm } from "./ConditionEditor";
+import { ConditionEditor } from "./ConditionEditor";
+import { defaultTerm } from "./default-term";
 
 type FlowSequence = SourceAuthoringSlice["flowSequences"][number];
 

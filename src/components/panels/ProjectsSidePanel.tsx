@@ -135,6 +135,7 @@ export function ProjectsSidePanel() {
       </div>
 
       <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
+        {/* react-doctor-disable-next-line react-hooks-js/refs */}
         <form
           onSubmit={form.onSubmit((values) => handleCreate(values))}
           className="flex flex-col gap-3"

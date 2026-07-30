@@ -32,8 +32,9 @@ import { translations } from "@/lib/i18n/translations";
 import { Button, Chip, NumberInput, SegmentedControl, Switch } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
-import { ConditionEditor, defaultTerm } from "./ConditionEditor";
+import { ConditionEditor } from "./ConditionEditor";
 import type { EditorLocale } from "./date-utils";
+import { defaultTerm } from "./default-term";
 import { SEGMENT_STYLES } from "./panel-styles";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask

@@ -46,7 +46,6 @@ export function AccessTokenSection() {
         setError(err instanceof Error ? err.message : t("account.tokens.error.loadFallback"));
       })
       .finally(() => {
-        // Runs inside the promise chain — not synchronous inside the effect.
         setLoading(false);
       });
   }, [t]);
@@ -127,12 +126,9 @@ export function AccessTokenSection() {
       });
   }
 
-  const copyToken = useCallback(
-    (value: string) => {
-      clipboard.copy(value);
-    },
-    [clipboard],
-  );
+  const copyToken = (value: string) => {
+    clipboard.copy(value);
+  };
 
   return (
     <div className="space-y-5">
@@ -248,6 +244,7 @@ export function AccessTokenSection() {
                           value={editingName}
                           onChange={(event) => setEditingName(event.target.value)}
                           maxLength={80}
+                          aria-label={t("account.tokens.nameLabel")}
                           className="min-w-0 flex-1 rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
                         />
                         <Button

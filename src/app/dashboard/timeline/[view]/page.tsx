@@ -1,7 +1,7 @@
-import { Suspense } from "react";
-import { notFound } from "next/navigation";
 import { ScheduleTimeline } from "@/components/schedule/ScheduleTimeline";
 import { MinuteClockProvider } from "@/lib/hooks/minute-clock";
+import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 const VALID_VIEWS = ["day", "week", "month", "year", "agenda"] as const;
 type View = (typeof VALID_VIEWS)[number];

@@ -70,63 +70,60 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
   );
 
   return (
+    // react-doctor-disable-next-line react-doctor/no-noninteractive-element-interactions
     <dialog
       ref={dialogRef}
       aria-label="Search pages"
       onClose={onClose}
-      onClick={handleBackdropClick}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          e.preventDefault();
-          onClose();
-        }
-      }}
+      onMouseDown={handleBackdropClick}
       className="mx-auto mt-24 max-w-[600px] w-[92vw] rounded-xl border border-border bg-surface-elevated shadow-lg text-left [&::backdrop]:bg-foreground/5 [&::backdrop]:backdrop-blur-sm p-0"
     >
-      <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-        <Search className="h-4 w-4 text-foreground-subtle" />
-        <input
-          ref={inputRef}
-          type="text"
-          placeholder="Search pages…"
-          aria-label="Search pages"
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setSelectedIndex(0);
-          }}
-          onKeyDown={handleKeyDown}
-          className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-subtle outline-none"
-        />
-        <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-foreground-subtle">
-          ESC
-        </kbd>
-      </div>
-      {results.length > 0 && (
-        <div className="max-h-80 overflow-y-auto p-2">
-          {results.map((r, i) => (
-            <Button
-              key={r.id}
-              type="button"
-              onClick={() => {
-                window.location.href = r.path;
-                onClose();
-              }}
-              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm ${
-                i === selectedIndex
-                  ? "bg-surface-2 text-foreground"
-                  : "text-foreground-muted hover:bg-surface-2"
-              }`}
-            >
-              <span className="text-foreground-subtle">→</span>
-              {r.label}
-            </Button>
-          ))}
+      <div className="flex flex-col">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <Search className="h-4 w-4 text-foreground-subtle" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Search pages…"
+            aria-label="Search pages"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
+            onKeyDown={handleKeyDown}
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-subtle outline-none"
+          />
+          <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-foreground-subtle">
+            ESC
+          </kbd>
         </div>
-      )}
-      {query && results.length === 0 && (
-        <div className="p-4 text-center text-xs text-foreground-subtle">No results</div>
-      )}
+        {results.length > 0 && (
+          <div className="max-h-80 overflow-y-auto p-2">
+            {results.map((r, i) => (
+              <Button
+                key={r.id}
+                type="button"
+                onClick={() => {
+                  window.location.href = r.path;
+                  onClose();
+                }}
+                className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm ${
+                  i === selectedIndex
+                    ? "bg-surface-2 text-foreground"
+                    : "text-foreground-muted hover:bg-surface-2"
+                }`}
+              >
+                <span className="text-foreground-subtle">→</span>
+                {r.label}
+              </Button>
+            ))}
+          </div>
+        )}
+        {query && results.length === 0 && (
+          <div className="p-4 text-center text-xs text-foreground-subtle">No results</div>
+        )}
+      </div>
     </dialog>
   );
 }

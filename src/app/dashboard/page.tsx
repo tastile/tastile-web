@@ -34,8 +34,10 @@ function DashboardPageInner() {
   useEffect(() => {
     const last = getLastVisitedPath();
     if (last && last !== "/dashboard" && REDIRECTABLE_PATHS.includes(last)) {
+      // react-doctor-disable-next-line react-doctor/nextjs-no-client-side-redirect
       router.replace(last);
     } else {
+      // react-doctor-disable-next-line react-doctor/nextjs-no-client-side-redirect
       router.replace("/dashboard/timeline");
     }
   }, [router]);

@@ -30,7 +30,14 @@ export function ProjectsMain() {
         }
       />
 
-      {project && <ProjectEditForm project={project} tileCount={tiles.length} onSaved={refresh} />}
+      {project && (
+        <ProjectEditForm
+          key={project.id}
+          project={project}
+          tileCount={tiles.length}
+          onSaved={refresh}
+        />
+      )}
 
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
         <span className="flex items-center gap-2 rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-foreground-lighter">
@@ -84,6 +91,8 @@ function ProjectEditForm({
   tileCount: number;
   onSaved: () => Promise<void>;
 }) {
+  // Keyed by project.id at the call site — state re-initializes on project change.
+  // react-doctor-disable-next-line react-doctor/no-derived-useState
   const [name, setName] = useState(project.display_name);
   const [slug, setSlug] = useState(project.slug ?? "");
   const [color, setColor] = useState(project.color ?? "#6b7280");

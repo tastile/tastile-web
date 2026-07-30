@@ -9,7 +9,7 @@ import { Alert, Button, Modal, TextInput } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { AlertCircle, Edit, Mail, MailIcon, RefreshCw, UserRound } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 export type TabId = "profile" | "subscription" | "tokens";
 
@@ -47,96 +47,111 @@ function AccountPageInner() {
   const [verificationCode, setVerificationCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const sidePanel = useMemo(() => <PreferencesSidePanel />, []);
+  const sidePanel = useMemo(
+    () => (
+      <Suspense>
+        <PreferencesSidePanel />
+      </Suspense>
+    ),
+    [],
+  );
   useSidePanel(sidePanel);
 
-  async function loadProfile() {
-    setLoading(true);
-    setNotice(null);
-    const response = await fetch("/api/account/profile", { cache: "no-store" });
-    if (!response.ok) {
-      setNotice({
-        tone: "error",
-        text: t("preferences.account.notice.loadFailed"),
-      });
-      setLoading(false);
-      return;
-    }
-    const body = (await response.json()) as { profile: Profile };
-    setProfile(body.profile);
-    setPendingEmail(body.profile.email ?? "");
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      void (async () => {
-        setLoading(true);
-        setNotice(null);
-        const response = await fetch("/api/account/profile", { cache: "no-store" });
+  const loadProfile = useCallback(() => {
+    return fetch("/api/account/profile", { cache: "no-store" })
+      .then(async (response) => {
         if (!response.ok) {
           setNotice({
             tone: "error",
             text: t("preferences.account.notice.loadFailed"),
           });
-          setLoading(false);
-          return;
+        } else {
+          const body = (await response.json()) as { profile: Profile };
+          setProfile(body.profile);
+          setPendingEmail(body.profile.email ?? "");
         }
-        const body = (await response.json()) as { profile: Profile };
-        setProfile(body.profile);
-        setPendingEmail(body.profile.email ?? "");
+      })
+      .catch(() => {
+        setNotice({
+          tone: "error",
+          text: t("preferences.account.notice.loadFailed"),
+        });
+      })
+      .finally(() => {
         setLoading(false);
-      })();
-    }, 0);
-    return () => window.clearTimeout(timer);
+      });
   }, [t]);
+
+  useEffect(() => {
+    void loadProfile();
+  }, [loadProfile]);
 
   const accountId = useMemo(() => profile?.sub ?? profile?.username ?? "-", [profile]);
   const [isEmailModalOpen, { open: openEmailModal, close: closeEmailModal }] = useDisclosure(false);
 
-  async function handleEmailStart(event: React.FormEvent<HTMLFormElement>) {
+  function handleEmailStart(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setNotice(null);
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/account/email/start", {
+    fetch("/api/account/email/start", {
       method: "POST",
       body: form,
-    });
-    setSubmitting(false);
-    if (!response.ok) {
-      setNotice({
-        tone: "error",
-        text: t("preferences.account.notice.emailStartFailed"),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          setNotice({
+            tone: "error",
+            text: t("preferences.account.notice.emailStartFailed"),
+          });
+        } else {
+          setNotice({
+            tone: "success",
+            text: t("preferences.account.notice.emailStartSent"),
+          });
+        }
+      })
+      .catch(() => {
+        setNotice({
+          tone: "error",
+          text: t("preferences.account.notice.emailStartFailed"),
+        });
+      })
+      .finally(() => {
+        setSubmitting(false);
       });
-      return;
-    }
-    setNotice({
-      tone: "success",
-      text: t("preferences.account.notice.emailStartSent"),
-    });
   }
 
-  async function handleEmailVerify(event: React.FormEvent<HTMLFormElement>) {
+  function handleEmailVerify(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
     setNotice(null);
     const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/account/email/verify", {
+    fetch("/api/account/email/verify", {
       method: "POST",
       body: form,
-    });
-    setSubmitting(false);
-    if (!response.ok) {
-      setNotice({
-        tone: "error",
-        text: t("preferences.account.notice.emailVerifyFailed"),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          setNotice({
+            tone: "error",
+            text: t("preferences.account.notice.emailVerifyFailed"),
+          });
+        } else {
+          setVerificationCode("");
+          setNotice({ tone: "success", text: t("preferences.account.notice.emailUpdated") });
+          await loadProfile();
+        }
+      })
+      .catch(() => {
+        setNotice({
+          tone: "error",
+          text: t("preferences.account.notice.emailVerifyFailed"),
+        });
+      })
+      .finally(() => {
+        setSubmitting(false);
       });
-      return;
-    }
-    setVerificationCode("");
-    setNotice({ tone: "success", text: t("preferences.account.notice.emailUpdated") });
-    await loadProfile();
   }
 
   return (

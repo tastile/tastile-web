@@ -1,5 +1,7 @@
 import "@mantine/core/styles.css";
 import "@mantine/dates/styles.css";
+import "yakuhanjp/dist/css/yakuhanjp.css";
+import "./globals.css";
 
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { DemoSiteBanner } from "@/components/marketing/DemoSiteBanner";
@@ -7,9 +9,14 @@ import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
 import { themeScript } from "@/lib/theme-script";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import type { Metadata } from "next";
+import { Zen_Kaku_Gothic_New } from "next/font/google";
 import { AppProviders } from "./providers";
-import "yakuhanjp/dist/css/yakuhanjp.css";
-import "./globals.css";
+
+const zenKaku = Zen_Kaku_Gothic_New({
+  weight: ["400", "500", "700"],
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Tastile — Execution Control",
@@ -41,12 +48,8 @@ export default function RootLayout({
         <ColorSchemeScript defaultColorScheme="auto" />
         {/* biome-ignore lint/security/noDangerouslySetInnerHtml: theme-init must run inline before paint to prevent FOUC — cannot be ref'd to a JS file */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
-        />
       </head>
-      <body className="font-sans antialiased">
+      <body className={`${zenKaku.className} font-sans antialiased`}>
         <GoogleAnalytics measurementId={gaMeasurementId} />
         <AppProviders>
           <DemoSiteBanner />

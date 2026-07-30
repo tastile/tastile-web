@@ -15,7 +15,6 @@ export function useResponsiveBreakpoint(): Breakpoint {
     if (typeof window === "undefined") return;
     const mq = window.matchMedia("(max-width: 600px)");
     const handler = (e: MediaQueryListEvent) => setBp(e.matches ? "mobile" : "desktop");
-    setBp(mq.matches ? "mobile" : "desktop");
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);

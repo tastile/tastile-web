@@ -94,3 +94,5 @@ evidence/manual-*.log
 evidence/verify-*.log
 evidence/web-verify-*.log
 /*-2026*.png
+
+.reference/*

@@ -10,7 +10,6 @@ import { profileQueryOptions, safeSessionQueryOptions } from "@/lib/query/auth-q
 import { ActionIcon } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
-import { useMemo } from "react";
 
 interface HeaderProps {
   executionState?: {
@@ -30,7 +29,7 @@ export function Header({ executionState }: HeaderProps) {
     ...profileQueryOptions,
     enabled: Boolean(sessionQuery.data),
   });
-  const identity = useMemo(() => {
+  const identity = (() => {
     const session = sessionQuery.data;
     if (!session) return null;
     const profile = profileQuery.data;
@@ -45,7 +44,7 @@ export function Header({ executionState }: HeaderProps) {
       email: profile?.email ?? "",
       plan: "free",
     };
-  }, [profileQuery.data, sessionQuery.data]);
+  })();
 
   return (
     <header className="flex h-14 items-center justify-between rounded-xl bg-surface-elevated px-4 lg:h-16">

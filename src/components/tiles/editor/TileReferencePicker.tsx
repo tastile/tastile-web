@@ -17,7 +17,7 @@
 
 import { Button, Modal, ScrollArea, TextInput } from "@mantine/core";
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { getCoreClient } from "@/lib/api/endpoints";
 import type { TileListView } from "@/lib/hooks/use-tile-list";
@@ -72,6 +72,12 @@ export function TileReferencePicker({
   const [activeIndex, setActiveIndex] = useState(0);
   const listRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const fetchIdRef = useRef(0);
+
+  // Derive effective values: when modal is closed, show empty state.
+  const effectiveQuery = opened ? query : "";
+  const effectiveError = opened ? error : null;
+  const effectiveActiveIndex = opened ? activeIndex : 0;
 
   // Debounce keystrokes before issuing a query so we don't fetch per char.
   useEffect(() => {
@@ -84,8 +90,8 @@ export function TileReferencePicker({
   useEffect(() => {
     if (!opened) return;
     let cancelled = false;
-    setLoading(true);
-    setError(null);
+    fetchIdRef.current += 1;
+    const thisFetchId = fetchIdRef.current;
     const kindParam =
       tileKindFilter === undefined
         ? undefined
@@ -101,7 +107,7 @@ export function TileReferencePicker({
         },
       })
       .then((res) => {
-        if (cancelled) return;
+        if (cancelled || thisFetchId !== fetchIdRef.current) return;
         if (!res.ok) {
           setError(res.error.message);
           setResults([]);
@@ -118,25 +124,19 @@ export function TileReferencePicker({
         setActiveIndex(0);
       })
       .catch((e: unknown) => {
-        if (!cancelled) setError((e as Error).message);
+        if (!cancelled && thisFetchId === fetchIdRef.current) {
+          setError((e as Error).message);
+        }
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && thisFetchId === fetchIdRef.current) {
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;
     };
   }, [debounced, opened, filterPlanOnly, tileKindFilter]);
-
-  // Reset state on close so the next open starts fresh.
-  useEffect(() => {
-    if (opened) return;
-    setQuery("");
-    setDebounced("");
-    setResults([]);
-    setError(null);
-    setActiveIndex(0);
-  }, [opened]);
 
   // Focus the search input when the modal opens for fast keyboard use.
   useEffect(() => {
@@ -150,20 +150,23 @@ export function TileReferencePicker({
 
   const items = useMemo(
     () =>
-      results.map((t, i) => ({
+      (opened ? results : []).map((t, i) => ({
         id: t.id,
         title: t.title || t.id,
         sub: t.plan_id ? "plan" : "—",
         kind: t.lifecycle,
-        active: i === activeIndex,
+        active: i === effectiveActiveIndex,
       })),
-    [results, activeIndex],
+    [results, effectiveActiveIndex, opened],
   );
 
-  function commit(id: string | null) {
-    onSelect(id);
-    onClose();
-  }
+  const commit = useCallback(
+    (id: string | null) => {
+      onSelect(id);
+      onClose();
+    },
+    [onSelect, onClose],
+  );
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "ArrowDown") {
@@ -174,7 +177,7 @@ export function TileReferencePicker({
       setActiveIndex((i) => Math.max(i - 1, 0));
     } else if (e.key === "Enter") {
       e.preventDefault();
-      const target = items[activeIndex];
+      const target = items[effectiveActiveIndex];
       if (target) commit(target.id);
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -187,8 +190,12 @@ export function TileReferencePicker({
       <div className="flex flex-col gap-3">
         <TextInput
           ref={inputRef}
-          value={query}
-          onChange={(e) => setQuery(e.currentTarget.value)}
+          value={effectiveQuery}
+          onChange={(e) => {
+            setQuery(e.currentTarget.value);
+            setLoading(true);
+            setError(null);
+          }}
           onKeyDown={handleKeyDown}
           placeholder={resolvedPlaceholder}
           leftSection={<Search size={14} aria-hidden="true" />}
@@ -196,7 +203,7 @@ export function TileReferencePicker({
           autoComplete="off"
           data-testid="tile-picker-search"
         />
-        {error && <div className="text-[11px] text-status-danger">{error}</div>}
+        {effectiveError && <div className="text-[11px] text-status-danger">{effectiveError}</div>}
         {currentValue && (
           <div className="text-[10px] text-foreground-muted">
             {t("quickCreate.tilePickerCurrent")}: <span className="font-mono">{currentValue}</span>

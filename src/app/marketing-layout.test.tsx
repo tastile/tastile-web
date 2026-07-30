@@ -39,8 +39,9 @@ describe("marketing page layout consistency", () => {
 			'--font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;',
 		);
 		expect(rootLayout).not.toContain("Mock font variables");
-		expect(rootLayout).not.toContain('from "next/font/google"');
-		expect(rootLayout).toContain('className="font-sans antialiased"');
+		expect(rootLayout).toContain('from "next/font/google"');
+		expect(rootLayout).toContain('Zen_Kaku_Gothic_New');
+		expect(rootLayout).toContain('className={`${zenKaku.className} font-sans antialiased`}');
 	});
 
 	it("keeps footer pinned to viewport bottom with shared flex column shell", async () => {

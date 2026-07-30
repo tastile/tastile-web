@@ -5,7 +5,8 @@ import { uuidv7 } from "@/lib/domain/v1/envelope";
 import type { PlacementRule } from "@/lib/domain/v1/tile";
 import { ActionIcon, Button, Group, NumberInput, Select, Stack, Text } from "@mantine/core";
 import { Plus, Trash2 } from "lucide-react";
-import { ConditionEditor, defaultTerm } from "./ConditionEditor";
+import { ConditionEditor } from "./ConditionEditor";
+import { defaultTerm } from "./default-term";
 
 interface PlacementRulesPanelProps {
   rules: PlacementRule[];

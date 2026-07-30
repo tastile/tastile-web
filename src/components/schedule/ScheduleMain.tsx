@@ -11,16 +11,15 @@ import { mapListViewToTile } from "@/lib/utils/map-list-view-to-tile";
 import { Alert, Button, Skeleton } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useMemo } from "react";
 
 export function ScheduleMain() {
   const searchParams = useSearchParams();
   const view = searchParams.get("view") ?? "recurring";
-  const ownerIdsFromUrl = useMemo(() => {
+  const ownerIdsFromUrl = (() => {
     const raw = searchParams.get("projects");
     if (!raw) return undefined;
     return raw.split(",").filter(Boolean);
-  }, [searchParams]);
+  })();
   const recurring = useRecurringTemplates();
   const placementsState = usePlacements();
   const candidatesState = useCandidates();
@@ -33,7 +32,7 @@ export function ScheduleMain() {
     ownerIds: ownerIdsFromUrl,
   });
 
-  const filteredTiles = useMemo(() => {
+  const filteredTiles = (() => {
     if (view === "upcoming") {
       return tiles
         .filter(
@@ -45,7 +44,7 @@ export function ScheduleMain() {
         });
     }
     return tiles;
-  }, [tiles, view]);
+  })();
 
   const title =
     view === "recurring"

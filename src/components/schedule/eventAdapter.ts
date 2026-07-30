@@ -107,7 +107,7 @@ export function toScheduleEvents(e: CalendarEvent): ScheduleEventData<CalendarEv
 }
 
 /** @deprecated — use toScheduleEvents for overnight-safe conversion */
-export function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEvent> {
+function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEvent> {
   return (
     toScheduleEvents(e)[0] ?? {
       id: e.id,

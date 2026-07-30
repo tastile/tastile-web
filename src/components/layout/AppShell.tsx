@@ -7,7 +7,7 @@ import type { ExecutionSyncStatus, PendingPrompt, PromptAction } from "@/lib/dom
 import { useExecutionEngineContext } from "@/lib/hooks/execution-engine-context";
 import { ActionIcon } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Header } from "./Header";
 import { LeftTabs } from "./LeftTabs";
 import { MobileBottomTabs } from "./MobileBottomTabs";
@@ -40,7 +40,10 @@ export function AppShell({
 }: AppShellProps) {
   const { execute } = useExecutionEngineContext();
   const [showSidebar, setShowSidebar] = useState(true);
-  const [handlingPromptAction, setHandlingPromptAction] = useState(false);
+  const handlingPromptActionRef = useRef(false);
+  const setHandlingPromptAction = (v: boolean) => {
+    handlingPromptActionRef.current = v;
+  };
   const [startupRecoveryStopAt, setStartupRecoveryStopAt] = useState(() =>
     toLocalDateTimeValue(new Date()),
   );
@@ -79,11 +82,11 @@ export function AppShell({
         }}
         onAction={(action, payload) => {
           const prompt = executionState?.pendingPrompt;
-          if (!prompt || handlingPromptAction) return;
+          if (!prompt || handlingPromptActionRef.current) return;
           // Fire-and-forget the prompt-action sequence; chain .then() instead
           // of try/finally so the React Compiler sees a supported pattern in
           // the render path.
-          setHandlingPromptAction(true);
+          handlingPromptActionRef.current = true;
           void runPromptAction(
             execute,
             action,
@@ -91,7 +94,7 @@ export function AppShell({
             startupRecoveryStopAt,
             payload?.deferMinutes,
           ).finally(() => {
-            setHandlingPromptAction(false);
+            handlingPromptActionRef.current = false;
           });
         }}
       />

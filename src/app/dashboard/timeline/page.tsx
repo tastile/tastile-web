@@ -1,6 +1,6 @@
-import { Suspense } from "react";
 import { ScheduleTimeline } from "@/components/schedule/ScheduleTimeline";
 import { MinuteClockProvider } from "@/lib/hooks/minute-clock";
+import { Suspense } from "react";
 
 export default function TimelinePage() {
   return (

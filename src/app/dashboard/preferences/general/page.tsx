@@ -20,7 +20,7 @@ import { useLocaleStore } from "@/lib/stores/locale-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
 import { Button, NumberInput, Switch } from "@mantine/core";
 import { Bell, Languages, Palette } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 
 export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
@@ -46,10 +46,14 @@ export default function GeneralPage() {
   const [notificationStatus, setNotificationStatus] = useState("");
   const [notificationPreview, setNotificationPreview] = useState("");
 
-  // Memoize to avoid creating a new JSX value on every render, which would
-  // re-enter useSidePanel → setContent → parent re-render → page re-render
-  // and trigger a "Maximum update depth exceeded" loop.
-  const sidePanel = useMemo(() => <PreferencesSidePanel />, []);
+  const sidePanel = useMemo(
+    () => (
+      <Suspense>
+        <PreferencesSidePanel />
+      </Suspense>
+    ),
+    [],
+  );
   useSidePanel(sidePanel);
 
   function updateSecurityLock(enabled: boolean) {

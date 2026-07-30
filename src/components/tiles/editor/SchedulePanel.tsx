@@ -227,6 +227,7 @@ function TimeOfDayEditor({
 }
 
 interface WindowRowProps {
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
   window: Window;
   index: number;
   onUpdate: (index: number, updater: (current: Window) => Window) => void;

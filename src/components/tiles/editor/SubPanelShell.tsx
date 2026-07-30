@@ -1,7 +1,7 @@
 "use client";
 
 import { CloseButton } from "@mantine/core";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { PANEL_ANIM_ATTR } from "./panel-styles";
 
 export type SubPanelKey =
@@ -43,17 +43,24 @@ export function SubPanelShell({
 }: Props) {
   const isActive = activeKey === panelKey;
 
+  const onCloseRef = useRef(onClose);
+
+  // Sync ref in an effect to avoid ref mutation during render.
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
   useEffect(() => {
     if (!isActive) return;
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
       }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [isActive, onClose]);
+  }, [isActive]);
 
   const isDrawer = layout === "drawer";
 

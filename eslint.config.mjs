@@ -239,6 +239,8 @@ const eslintConfig = defineConfig([
     "src/lib/api/v1/openapi-generated.d.ts",
     // Type generation script uses bun APIs (import.meta.dir) that tsc doesn't typecheck.
     "scripts/generate-openapi-types.ts",
+    // Vendored Mantine schedule code — external source, not our lint surface.
+    "src/lib/vendored/**",
     // One-off manual walkthrough scripts. They are scratch space for the
     // operator and not part of the lint surface (their names start with
     // `_manual_`/`_zoom*` to signal that explicitly).

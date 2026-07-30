@@ -18,13 +18,20 @@
     "babel-plugin-react-compiler"
   ],
   "ignore": [
-    "src/lib/api/v1/openapi-contract.ts"
+    "src/lib/api/v1/openapi-contract.ts",
+    ".reference/**",
+    "src/lib/vendored/mantine-schedule/**"
   ],
   "ignoreFiles": [
-    "src/components/tiles/editor/AutomationPanel.tsx",
-    "src/components/tiles/editor/SubPanelHeader.tsx",
+    "src/components/__probe__.tsx",
+    "src/lib/__probe__.ts",
+    "src/lib/hooks/use-__probe__.ts",
+    "src/lib/domain/v1/__probe__.ts",
     "src/lib/api/v1/openapi-generated.d.ts",
-    "src/lib/api/v1/openapi-contract.ts"
+    "src/lib/api/v1/openapi-contract.ts",
+    "src/lib/vendored/mantine-schedule/hooks/index.ts",
+    "src/components/schedule/eventAdapter.ts",
+    "src/components/ui/ProjectTree.tsx"
   ],
   "ignoreExportsUsedInFile": true
 }

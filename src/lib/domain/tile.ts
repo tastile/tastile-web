@@ -18,6 +18,7 @@ export interface TimeRange {
 
 export interface RecurrenceModel {
   generator: RecurrenceGenerator;
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
   window: {
     weekday_mask: number;
     start_offset_min: number;

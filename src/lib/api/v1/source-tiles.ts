@@ -382,6 +382,7 @@ export interface SourceGenerationWire {
 export interface SourceScheduleWire {
   required_duration_ms: number;
   generation: SourceGenerationWire;
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
   window: { start_offset_ms: number; end_offset_ms: number };
   split_policy: {
     kind: number;
@@ -417,6 +418,7 @@ export interface SourceScheduleRead {
     date_range_end: string | null;
     excluded_dates: string[];
   };
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
   window: { start_offset_ms: number; end_offset_ms: number };
   split_policy: {
     kind: number;

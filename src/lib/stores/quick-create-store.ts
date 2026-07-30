@@ -52,6 +52,7 @@ export interface RecurrenceTemplateRecurrence {
     focus_block_based?: { phases: Array<{ focus_min: number; break_min: number }> };
     step_min?: number;
   };
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
   window: {
     weekday_mask: number;
     start_offset_min: number;
@@ -633,12 +634,17 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         ...state.plan,
         completion: {
           ...state.plan.completion,
-          tasks: state.plan.completion.tasks
-            .filter((task) => task.id !== taskId)
-            .map((task) => ({
-              ...task,
-              order: task.order.filter((rule) => rule.targetTaskId !== taskId),
-            })),
+          tasks: state.plan.completion.tasks.reduce(
+            (acc, task) => {
+              if (task.id === taskId) return acc;
+              acc.push({
+                ...task,
+                order: task.order.filter((rule) => rule.targetTaskId !== taskId),
+              });
+              return acc;
+            },
+            [] as typeof state.plan.completion.tasks,
+          ),
         },
       },
     })),

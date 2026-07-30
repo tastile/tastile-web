@@ -1,6 +1,6 @@
 "use client";
 import { Dropdown } from "@/components/ui/Dropdown";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface TimelineItem {
   id: string;
@@ -73,7 +73,7 @@ export function TimelineAxis({
     };
   }, []);
 
-  const effective = useMemo(() => {
+  const effective = (() => {
     const source = blocks.length > 0 ? blocks : [];
     if (scope === "day") return source;
     const now = new Date();
@@ -82,10 +82,10 @@ export function TimelineAxis({
     return source.filter(
       (block) => block.endAt.getTime() >= start && block.startAt.getTime() <= end,
     );
-  }, [blocks, scope]);
+  })();
 
   const limit = maxVisibleBlocks ?? (compact ? 18 : 60);
-  const visible = useMemo(() => {
+  const visible = (() => {
     if (effective.length <= limit) return effective;
     const sorted = [...effective].sort((a, b) => a.startAt.getTime() - b.startAt.getTime());
     let focusIndex = sorted.findIndex((block) => block.status === "active");
@@ -94,7 +94,7 @@ export function TimelineAxis({
     const lead = Math.floor(limit * 0.3);
     const start = Math.max(0, Math.min(sorted.length - limit, focusIndex - lead));
     return sorted.slice(start, start + limit);
-  }, [effective, limit]);
+  })();
 
   if (visible.length === 0 && legacyItems.length === 0) {
     return <p className="text-sm text-foreground-muted">No upcoming timeline items</p>;

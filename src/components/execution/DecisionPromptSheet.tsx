@@ -58,28 +58,30 @@ export function DecisionPromptSheet() {
           onSubmit={async (answers) => {
             setBusy(true);
             setError(null);
-            const result = await submitFeedback(makeClient(), active.id, {
-              answers,
-              baseRevision: active.baseRevision,
-            });
-            setBusy(false);
-            if (!result.ok) {
-              const kind = result.error.kind;
-              if (kind === ApiErrorKind.CONFLICT || kind === ApiErrorKind.STALE_REVISION) {
-                await refetch();
-                setError("This decision was updated. Please review and resubmit.");
-                return;
-              }
-              if (kind === ApiErrorKind.NOT_FOUND) {
-                await refetch();
+            try {
+              const result = await submitFeedback(makeClient(), active.id, {
+                answers,
+                baseRevision: active.baseRevision,
+              });
+              if (!result.ok) {
+                const kind = result.error.kind;
+                if (kind === ApiErrorKind.CONFLICT || kind === ApiErrorKind.STALE_REVISION) {
+                  await refetch();
+                  setError("This decision was updated. Please review and resubmit.");
+                } else if (kind === ApiErrorKind.NOT_FOUND) {
+                  await refetch();
+                  setActiveId(null);
+                } else {
+                  setError(result.error.message);
+                }
+              } else {
                 setActiveId(null);
-                return;
+                await refetch();
               }
-              setError(result.error.message);
-              return;
+            } catch {
+              setError("An unexpected error occurred.");
             }
-            setActiveId(null);
-            await refetch();
+            setBusy(false);
           }}
         />
       </Stack>
