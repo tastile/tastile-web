@@ -31,11 +31,13 @@ describe("toScheduleEvent", () => {
     expect(out.payload).toBe(baseEvent);
   });
 
-  it("converts timed start/end to Date", () => {
+  it("converts timed start/end to local datetime strings", () => {
     const out = toScheduleEvent(baseEvent);
-    expect(out.start).toBeInstanceOf(Date);
-    expect((out.start as Date).toISOString()).toBe("2026-07-30T09:00:00.000Z");
-    expect(out.end).toBeInstanceOf(Date);
+    // Returns YYYY-MM-DD HH:mm:ss in browser local time
+    expect(typeof out.start).toBe("string");
+    expect((out.start as string)).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
+    expect(typeof out.end).toBe("string");
+    expect((out.end as string)).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/);
   });
 
   it("keeps all-day start/end as YYYY-MM-DD strings", () => {
