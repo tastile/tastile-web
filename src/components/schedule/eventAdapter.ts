@@ -22,14 +22,27 @@ export function colorToMantine(c: EventColor): string {
 }
 
 export function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEvent> {
+  const isAllDay = e.allDay;
+  const start = isAllDay ? (e.start.slice(0, 10) as ScheduleEventData["start"]) : toDateTimeString(e.start);
+  const end = isAllDay ? (e.end.slice(0, 10) as ScheduleEventData["end"]) : toDateTimeString(e.end);
+
+  if (typeof window !== "undefined" && (e.title?.includes("sleep") || e.title?.includes("睡眠") || isAllDay)) {
+    console.debug("[toScheduleEvent]", {
+      id: e.id,
+      title: e.title,
+      allDay: e.allDay,
+      rawStart: e.start,
+      rawEnd: e.end,
+      convertedStart: start,
+      convertedEnd: end,
+    });
+  }
+
   return {
     id: e.id,
     title: e.title,
-    // For all-day events: pass YYYY-MM-DD date strings (Mantine infers all-day).
-    // For timed events: pass YYYY-MM-DD HH:mm:ss datetime strings so Mantine's
-    // isAllDayEvent() never falsely matches (it checks start===00:00:00 && end===23:59:59).
-    start: e.allDay ? (e.start.slice(0, 10) as ScheduleEventData["start"]) : toDateTimeString(e.start),
-    end: e.allDay ? (e.end.slice(0, 10) as ScheduleEventData["end"]) : toDateTimeString(e.end),
+    start,
+    end,
     color: colorToMantine(e.color),
     variant: "light",
     display: "default",
