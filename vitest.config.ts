@@ -11,6 +11,7 @@ export default defineConfig({
       "node_modules/**",
       "dist/**",
       ".next/**",
+      ".reference/**",
       ".doctor-cache/**",
       ".claude/worktrees/**",
     ],
