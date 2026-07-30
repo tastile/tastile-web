@@ -48,7 +48,7 @@ export function getModeRange(
     // YearView only handles a calendar year at a time; "scope" returns the
     // anchor's year as a [Jan 1, Jan 1 next year) date-string range.
     // Other modes for year are not currently driven by the UI.
-    const year = parseInt(anchor.slice(0, 4), 10);
+    const year = Number.parseInt(anchor.slice(0, 4), 10);
     return {
       start: `${year}-01-01`,
       end: `${year + 1}-01-01`,
