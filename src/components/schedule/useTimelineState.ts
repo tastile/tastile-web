@@ -22,15 +22,13 @@ function parseMode(s: string | null): DisplayMode {
   return VALID_MODES.includes(s as DisplayMode) ? (s as DisplayMode) : "scope";
 }
 function parseZoom(s: string | null): number {
-  const n = s ? Number(s) : NaN;
+  const n = s ? Number(s) : Number.NaN;
   if (Number.isNaN(n)) return ZOOM_DEFAULT;
   return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, n));
 }
 
 function todayLocalIso(): string {
-  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 10);
+  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
 }
 
 function shiftDate(date: string, view: ScheduleView, delta: -1 | 1): string {

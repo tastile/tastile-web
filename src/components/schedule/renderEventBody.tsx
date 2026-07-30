@@ -1,9 +1,9 @@
 // src/components/schedule/renderEventBody.tsx
 "use client";
 
+import type { CalendarEvent } from "@/lib/domain/calendar";
 import type { ScheduleEventData } from "@mantine/schedule";
 import * as Lucide from "lucide-react";
-import type { CalendarEvent } from "@/lib/domain/calendar";
 import type { FC } from "react";
 
 export type EventScope = "day" | "week" | "month" | "agenda";
@@ -15,10 +15,7 @@ const SCOPE_TESTID: Record<EventScope, string> = {
   agenda: "agenda-event",
 };
 
-export function renderEventBody(
-  event: ScheduleEventData<CalendarEvent>,
-  scope: EventScope,
-) {
+export function renderEventBody(event: ScheduleEventData<CalendarEvent>, scope: EventScope) {
   const e = event.payload;
   if (!e) return null;
   const rawIcon = e.icon?.trim();

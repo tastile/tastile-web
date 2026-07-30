@@ -1,18 +1,18 @@
 // src/components/schedule/ScheduleTimeline.tsx
 "use client";
 
-import { useCallback, useMemo } from "react";
-import { useTimelineState } from "./useTimelineState";
+import { getModeRange } from "@/lib/calendar/layout";
+import type { CalendarEvent } from "@/lib/domain/calendar";
 import { useEvents } from "@/lib/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { getModeRange } from "@/lib/calendar/layout";
-import { ScheduleToolbar } from "./ScheduleToolbar";
-import { DayPanel } from "./DayPanel";
-import { WeekPanel } from "./WeekPanel";
-import { MonthPanel } from "./MonthPanel";
-import { YearPanel } from "./YearPanel";
+import { useCallback, useMemo } from "react";
 import { AgendaPanel } from "./AgendaPanel";
-import type { CalendarEvent } from "@/lib/domain/calendar";
+import { DayPanel } from "./DayPanel";
+import { MonthPanel } from "./MonthPanel";
+import { ScheduleToolbar } from "./ScheduleToolbar";
+import { WeekPanel } from "./WeekPanel";
+import { YearPanel } from "./YearPanel";
+import { useTimelineState } from "./useTimelineState";
 
 type Props = {
   initialView: "day" | "week" | "month" | "year" | "agenda";
@@ -52,7 +52,7 @@ export function ScheduleTimeline({ initialView }: Props) {
       };
     }
     if (state.view === "year") {
-      const y = parseInt(range.start.slice(0, 4), 10);
+      const y = Number.parseInt(range.start.slice(0, 4), 10);
       return { start: `${y - 1}-01-01`, end: `${y + 2}-01-01` };
     }
     if (state.view === "agenda") {
@@ -68,27 +68,36 @@ export function ScheduleTimeline({ initialView }: Props) {
   const openCreate = useQuickCreateStore((s) => s.openCreate);
   const loadFromRecurringTile = useQuickCreateStore((s) => s.loadFromRecurringTile);
 
-  const onEventClick = useCallback((event: CalendarEvent) => {
-    // Strip ":cursor" suffix that occurrence IDs may carry (see CalendarMain.handleEditEvent:358)
-    const colon = event.id.indexOf(":");
-    const sourceId = colon > 0 ? event.id.slice(0, colon) : event.id;
-    if (event.source?.kind === 1 && event.tileId) {
-      loadFromRecurringTile(event.tileId);
-      return;
-    }
-    openEdit(sourceId, event.tileId ?? null);
-  }, [loadFromRecurringTile, openEdit]);
+  const onEventClick = useCallback(
+    (event: CalendarEvent) => {
+      // Strip ":cursor" suffix that occurrence IDs may carry (see CalendarMain.handleEditEvent:358)
+      const colon = event.id.indexOf(":");
+      const sourceId = colon > 0 ? event.id.slice(0, colon) : event.id;
+      if (event.source?.kind === 1 && event.tileId) {
+        loadFromRecurringTile(event.tileId);
+        return;
+      }
+      openEdit(sourceId, event.tileId ?? null);
+    },
+    [loadFromRecurringTile, openEdit],
+  );
 
-  const onSlotCreate = useCallback((start: string, end: string) => {
-    openCreate({ initialAllDay: false });
-    void start;
-    void end;
-  }, [openCreate]);
+  const onSlotCreate = useCallback(
+    (start: string, end: string) => {
+      openCreate({ initialAllDay: false });
+      void start;
+      void end;
+    },
+    [openCreate],
+  );
 
-  const onMonthDayClick = useCallback((date: string) => {
-    state.setView("day");
-    state.setAnchor(date);
-  }, [state]);
+  const onMonthDayClick = useCallback(
+    (date: string) => {
+      state.setView("day");
+      state.setAnchor(date);
+    },
+    [state],
+  );
 
   // Base props every panel receives.
   const panelBase = {

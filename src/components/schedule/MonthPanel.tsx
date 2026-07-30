@@ -1,12 +1,12 @@
 "use client";
 
-import { MonthView } from "@mantine/schedule";
-import type { CalendarEvent } from "@/lib/domain/calendar";
 import type { DisplayRange } from "@/lib/calendar/layout";
+import type { CalendarEvent } from "@/lib/domain/calendar";
+import { MonthView } from "@mantine/schedule";
+import { ErrorBanner } from "./ErrorBanner";
+import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvent } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
-import { LoadingOverlay } from "./LoadingOverlay";
-import { ErrorBanner } from "./ErrorBanner";
 
 type Props = {
   range: DisplayRange;
@@ -21,7 +21,15 @@ type Props = {
 };
 
 export function MonthPanel({
-  range, anchor, zoom, events, loading, error, onEventClick, onSlotCreate, onDayClick,
+  range,
+  anchor,
+  zoom,
+  events,
+  loading,
+  error,
+  onEventClick,
+  onSlotCreate,
+  onDayClick,
 }: Props) {
   const scheduleEvents = events.map(toScheduleEvent);
   return (

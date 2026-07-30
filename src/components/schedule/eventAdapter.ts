@@ -1,6 +1,6 @@
+import type { CalendarEvent, EventColor } from "@/lib/domain/calendar";
 // src/components/schedule/eventAdapter.ts
 import type { ScheduleEventData } from "@mantine/schedule";
-import type { CalendarEvent, EventColor } from "@/lib/domain/calendar";
 
 const COLOR_MAP: Record<EventColor, string> = {
   blue: "blue",

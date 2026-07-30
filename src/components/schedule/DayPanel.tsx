@@ -1,15 +1,15 @@
 // src/components/schedule/DayPanel.tsx
 "use client";
 
+import type { DisplayRange } from "@/lib/calendar/layout";
+import type { CalendarEvent } from "@/lib/domain/calendar";
 import { DayView, MobileMonthView } from "@mantine/schedule";
 import type { ScheduleEventData } from "@mantine/schedule";
-import type { CalendarEvent } from "@/lib/domain/calendar";
-import type { DisplayRange } from "@/lib/calendar/layout";
+import { ErrorBanner } from "./ErrorBanner";
+import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvent } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 import { useResponsiveBreakpoint } from "./useResponsiveBreakpoint";
-import { LoadingOverlay } from "./LoadingOverlay";
-import { ErrorBanner } from "./ErrorBanner";
 
 type Props = {
   range: DisplayRange;
@@ -23,12 +23,25 @@ type Props = {
 };
 
 export function DayPanel({
-  range, anchor, zoom, events, loading, error, onEventClick, onSlotCreate,
+  range,
+  anchor,
+  zoom,
+  events,
+  loading,
+  error,
+  onEventClick,
+  onSlotCreate,
 }: Props) {
   const breakpoint = useResponsiveBreakpoint();
   const scheduleEvents = events.map(toScheduleEvent);
 
   if (breakpoint === "mobile") {
+    const renderMobileEvent = (e: ScheduleEventData) => {
+      const body = renderEventBody(e as ScheduleEventData<CalendarEvent>, "month");
+      // biome-ignore lint/complexity/noUselessFragments: RenderEvent contract requires ReactElement, not null
+      return (body as React.ReactElement) ?? <></>;
+    };
+
     return (
       <div className="relative" data-testid="day-panel-mobile">
         {error && <ErrorBanner error={error} />}
@@ -37,7 +50,7 @@ export function DayPanel({
             date={anchor}
             events={scheduleEvents}
             onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
-            renderEvent={(e) => renderEventBody(e as ScheduleEventData<CalendarEvent>, "month") ?? <></>}
+            renderEvent={renderMobileEvent}
           />
         </LoadingOverlay>
       </div>

@@ -1,13 +1,13 @@
 // src/components/schedule/WeekPanel.tsx
 "use client";
 
-import { WeekView } from "@mantine/schedule";
-import type { CalendarEvent } from "@/lib/domain/calendar";
 import type { DisplayRange } from "@/lib/calendar/layout";
+import type { CalendarEvent } from "@/lib/domain/calendar";
+import { WeekView } from "@mantine/schedule";
+import { ErrorBanner } from "./ErrorBanner";
+import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvent } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
-import { LoadingOverlay } from "./LoadingOverlay";
-import { ErrorBanner } from "./ErrorBanner";
 
 type Props = {
   range: DisplayRange;
@@ -21,7 +21,14 @@ type Props = {
 };
 
 export function WeekPanel({
-  range, anchor, zoom, events, loading, error, onEventClick, onSlotCreate,
+  range,
+  anchor,
+  zoom,
+  events,
+  loading,
+  error,
+  onEventClick,
+  onSlotCreate,
 }: Props) {
   const scheduleEvents = events.map(toScheduleEvent);
   return (

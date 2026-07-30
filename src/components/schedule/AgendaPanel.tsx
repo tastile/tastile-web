@@ -1,14 +1,14 @@
 // src/components/schedule/AgendaPanel.tsx
 "use client";
 
+import type { DisplayRange } from "@/lib/calendar/layout";
+import type { CalendarEvent } from "@/lib/domain/calendar";
 import { AgendaView } from "@mantine/schedule";
 import type { ScheduleEventData } from "@mantine/schedule";
-import type { CalendarEvent } from "@/lib/domain/calendar";
-import type { DisplayRange } from "@/lib/calendar/layout";
+import { ErrorBanner } from "./ErrorBanner";
+import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvent } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
-import { LoadingOverlay } from "./LoadingOverlay";
-import { ErrorBanner } from "./ErrorBanner";
 
 type Props = {
   range: DisplayRange;
@@ -25,9 +25,7 @@ type Props = {
 const AGENDA_WINDOW_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export function AgendaPanel({
-  range, anchor, zoom, events, loading, error, onEventClick,
-}: Props) {
+export function AgendaPanel({ range, anchor, zoom, events, loading, error, onEventClick }: Props) {
   void range;
   void zoom;
   const scheduleEvents = events.map(toScheduleEvent);
