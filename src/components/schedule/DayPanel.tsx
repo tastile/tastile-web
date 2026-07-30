@@ -5,7 +5,7 @@ import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { DayView, MobileMonthView } from "@/lib/vendored/mantine-schedule";
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";
@@ -39,15 +39,19 @@ export function DayPanel({
   const scheduleEvents = events.flatMap(toScheduleEvents);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Ctrl+wheel zoom
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
+  // Native wheel listener (not React synthetic) so we can call preventDefault()
+  // and stop the browser from zooming the page on Ctrl+wheel.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       onZoomBy(e.deltaY < 0 ? 1 : -1);
-    },
-    [onZoomBy],
-  );
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, [onZoomBy]);
 
   void range;
 
@@ -74,7 +78,7 @@ export function DayPanel({
   }
 
   return (
-    <div ref={containerRef} className="relative" data-testid="day-panel" onWheel={onWheel}>
+    <div ref={containerRef} className="relative" data-testid="day-panel">
       <style>{`:root { --day-view-slot-height: ${zoom}px; }`}</style>
       {error && <ErrorBanner error={error} />}
       <LoadingOverlay loading={loading}>

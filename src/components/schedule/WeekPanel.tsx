@@ -4,7 +4,7 @@
 import type { DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { WeekView } from "@/lib/vendored/mantine-schedule";
-import { useCallback, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
 import { toScheduleEvents } from "./eventAdapter";
@@ -36,19 +36,22 @@ export function WeekPanel({
   const scheduleEvents = events.flatMap(toScheduleEvents);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const onWheel = useCallback(
-    (e: React.WheelEvent) => {
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const handler = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
       e.preventDefault();
       onZoomBy(e.deltaY < 0 ? 1 : -1);
-    },
-    [onZoomBy],
-  );
+    };
+    el.addEventListener("wheel", handler, { passive: false });
+    return () => el.removeEventListener("wheel", handler);
+  }, [onZoomBy]);
 
   void range;
 
   return (
-    <div ref={containerRef} className="relative" data-testid="week-panel" onWheel={onWheel}>
+    <div ref={containerRef} className="relative" data-testid="week-panel">
       <style>{`:root { --week-view-slot-height: ${zoom}px; }`}</style>
       {error && <ErrorBanner error={error} />}
       <LoadingOverlay loading={loading}>
