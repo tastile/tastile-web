@@ -31,7 +31,7 @@ export function YearPanel({ range, anchor, zoom, events, loading, error }: Props
     <div className="relative" data-testid="year-panel">
       {error && <ErrorBanner error={error} />}
       <LoadingOverlay loading={loading}>
-        <YearView data-testid="year-view" date={anchor} events={scheduleEvents} />
+        <YearView data-testid="year-view" date={anchor} events={scheduleEvents} withHeader={false} />
       </LoadingOverlay>
     </div>
   );

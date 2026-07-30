@@ -40,6 +40,7 @@ export function WeekPanel({
           data-testid="week-view"
           date={anchor}
           events={scheduleEvents}
+          withHeader={false}
           firstDayOfWeek={1}
           withWeekendDays
           canDragEvent={() => false}

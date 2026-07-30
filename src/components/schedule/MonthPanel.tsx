@@ -40,6 +40,7 @@ export function MonthPanel({
           data-testid="month-view"
           date={anchor}
           events={scheduleEvents}
+          withHeader={false}
           firstDayOfWeek={1}
           withWeekendDays
           maxEventsPerDay={3}

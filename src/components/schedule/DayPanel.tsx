@@ -65,6 +65,7 @@ export function DayPanel({
         <DayView
           date={anchor}
           events={scheduleEvents}
+          withHeader={false}
           canDragEvent={() => false}
           canResizeEvent={() => false}
           withDragSlotSelect
