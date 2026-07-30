@@ -28,7 +28,7 @@ test.describe("calendar event flow", () => {
     await expect(page.getByTestId("calendar-main")).toBeVisible();
     await expect(page.getByTestId("cal-title")).toBeVisible();
 
-    await page.getByTestId("cal-view-list").click();
+    await page.getByTestId("cal-view-agenda").click();
     await expect(page.getByTestId("event-list")).toBeVisible();
     await expect(page.getByTestId("event-list")).toContainText(
       "No events yet. Click + to create one.",
