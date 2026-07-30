@@ -25,12 +25,12 @@ export function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEve
   return {
     id: e.id,
     title: e.title,
-    start: e.allDay ? e.start.slice(0, 10) : new Date(e.start),
-    end: e.allDay ? e.end.slice(0, 10) : new Date(e.end),
+    // Mantine infers all-day events from YYYY-MM-DD date strings vs Date objects
+    start: e.allDay ? (e.start.slice(0, 10) as ScheduleEventData["start"]) : new Date(e.start),
+    end: e.allDay ? (e.end.slice(0, 10) as ScheduleEventData["end"]) : new Date(e.end),
     color: colorToMantine(e.color),
     variant: "light",
     display: "default",
-    allDay: e.allDay,
     payload: e,
   };
 }

@@ -43,7 +43,6 @@ describe("toScheduleEvent", () => {
     const out = toScheduleEvent(ad);
     expect(out.start).toBe("2026-07-30");
     expect(out.end).toBe("2026-07-31");
-    expect(out.allDay).toBe(true);
   });
 
   it("sets variant=light, display=default", () => {
@@ -53,10 +52,10 @@ describe("toScheduleEvent", () => {
   });
 
   it("never sets recurrence-related fields", () => {
-    const out = toScheduleEvent(baseEvent) as Record<string, unknown>;
-    expect(out.recurrence).toBeUndefined();
-    expect(out.recurringEventId).toBeUndefined();
-    expect(out.recurrenceId).toBeUndefined();
+    const out = toScheduleEvent(baseEvent);
+    expect("recurrence" in out ? out.recurrence : undefined).toBeUndefined();
+    expect("recurringEventId" in out ? (out as unknown as Record<string, unknown>).recurringEventId : undefined).toBeUndefined();
+    expect("recurrenceId" in out ? (out as unknown as Record<string, unknown>).recurrenceId : undefined).toBeUndefined();
   });
 
   it("maps every Tastile EventColor", () => {

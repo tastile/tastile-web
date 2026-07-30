@@ -34,10 +34,10 @@ const baseEvent: CalendarEvent = {
   updatedAt: "2026-07-30T00:00:00Z",
 };
 
-function ev(scope: "day" | "week" | "month" | "agenda"): ScheduleEventData<CalendarEvent> {
+function ev(_scope: "day" | "week" | "month" | "agenda"): ScheduleEventData<CalendarEvent> {
   return { id: baseEvent.id, title: baseEvent.title, start: new Date(baseEvent.start),
            end: new Date(baseEvent.end), color: "blue", variant: "light", display: "default",
-           allDay: false, payload: baseEvent };
+           payload: baseEvent };
 }
 
 describe("renderEventBody", () => {
