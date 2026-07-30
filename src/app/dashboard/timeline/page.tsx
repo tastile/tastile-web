@@ -1,16 +1,12 @@
-"use client";
-
-import { CalendarMain } from "@/components/calendar/CalendarMain";
-import { MinuteClockProvider } from "@/lib/hooks/minute-clock";
 import { Suspense } from "react";
+import { ScheduleTimeline } from "@/components/schedule/ScheduleTimeline";
+import { MinuteClockProvider } from "@/lib/hooks/minute-clock";
 
-export default function CalendarPage() {
+export default function TimelinePage() {
   return (
-    <Suspense
-      fallback={<div className="p-6 text-xs text-foreground-subtle">Loading calendar...</div>}
-    >
+    <Suspense fallback={null}>
       <MinuteClockProvider>
-        <CalendarMain initialView="day" />
+        <ScheduleTimeline initialView="day" />
       </MinuteClockProvider>
     </Suspense>
   );
