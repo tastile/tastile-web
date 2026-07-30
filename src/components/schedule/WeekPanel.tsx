@@ -6,7 +6,7 @@ import type { CalendarEvent } from "@/lib/domain/calendar";
 import { WeekView } from "@mantine/schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
-import { toScheduleEvent } from "./eventAdapter";
+import { toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 
 type Props = {
@@ -30,7 +30,7 @@ export function WeekPanel({
   onEventClick,
   onSlotCreate,
 }: Props) {
-  const scheduleEvents = events.map(toScheduleEvent);
+  const scheduleEvents = events.flatMap(toScheduleEvents);
   return (
     <div className="relative" data-testid="week-panel">
       <style>{`:root { --week-view-slot-height: ${zoom}px; }`}</style>

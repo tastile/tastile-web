@@ -5,7 +5,7 @@ import type { CalendarEvent } from "@/lib/domain/calendar";
 import { MonthView } from "@mantine/schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
-import { toScheduleEvent } from "./eventAdapter";
+import { toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 
 type Props = {
@@ -31,7 +31,7 @@ export function MonthPanel({
   onSlotCreate,
   onDayClick,
 }: Props) {
-  const scheduleEvents = events.map(toScheduleEvent);
+  const scheduleEvents = events.flatMap(toScheduleEvents);
   return (
     <div className="relative" data-testid="month-panel">
       {error && <ErrorBanner error={error} />}

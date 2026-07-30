@@ -6,7 +6,7 @@ import type { CalendarEvent } from "@/lib/domain/calendar";
 import { YearView } from "@mantine/schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
-import { toScheduleEvent } from "./eventAdapter";
+import { toScheduleEvents } from "./eventAdapter";
 
 type Props = {
   range: DisplayRange;
@@ -26,7 +26,7 @@ export function YearPanel({ range, anchor, zoom, events, loading, error }: Props
   // other panels but ignored here.
   void range;
   void zoom;
-  const scheduleEvents = events.map(toScheduleEvent);
+  const scheduleEvents = events.flatMap(toScheduleEvents);
   return (
     <div className="relative" data-testid="year-panel">
       {error && <ErrorBanner error={error} />}

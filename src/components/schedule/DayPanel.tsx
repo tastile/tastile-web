@@ -7,7 +7,7 @@ import { DayView, MobileMonthView } from "@mantine/schedule";
 import type { ScheduleEventData } from "@mantine/schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
-import { toScheduleEvent } from "./eventAdapter";
+import { toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 import { useResponsiveBreakpoint } from "./useResponsiveBreakpoint";
 
@@ -33,7 +33,7 @@ export function DayPanel({
   onSlotCreate,
 }: Props) {
   const breakpoint = useResponsiveBreakpoint();
-  const scheduleEvents = events.map(toScheduleEvent);
+  const scheduleEvents = events.flatMap(toScheduleEvents);
 
   if (breakpoint === "mobile") {
     const renderMobileEvent = (e: ScheduleEventData) => {

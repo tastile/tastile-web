@@ -21,44 +21,101 @@ export function colorToMantine(c: EventColor): string {
   return COLOR_MAP[c] ?? "blue";
 }
 
-export function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEvent> {
-  const isAllDay = e.allDay;
-  const start = isAllDay ? (e.start.slice(0, 10) as ScheduleEventData["start"]) : toDateTimeString(e.start);
-  const end = isAllDay ? (e.end.slice(0, 10) as ScheduleEventData["end"]) : toDateTimeString(e.end);
-
-  if (typeof window !== "undefined" && (e.title?.includes("sleep") || e.title?.includes("睡眠") || isAllDay)) {
-    console.debug("[toScheduleEvent]", {
-      id: e.id,
-      title: e.title,
-      allDay: e.allDay,
-      rawStart: e.start,
-      rawEnd: e.end,
-      convertedStart: start,
-      convertedEnd: end,
-    });
+/**
+ * Convert a single CalendarEvent into one or more Mantine ScheduleEventData
+ * entries. Overnight events (spanning midnight in local time) are split at
+ * day boundaries so Mantine's WeekView/MonthView don't classify them as
+ * multi-day → all-day.
+ */
+export function toScheduleEvents(e: CalendarEvent): ScheduleEventData<CalendarEvent>[] {
+  if (e.allDay) {
+    return [
+      {
+        id: e.id,
+        title: e.title,
+        start: e.start.slice(0, 10) as ScheduleEventData["start"],
+        end: e.end.slice(0, 10) as ScheduleEventData["end"],
+        color: colorToMantine(e.color),
+        variant: "light",
+        display: "default",
+        payload: e,
+      },
+    ];
   }
 
-  return {
+  const startDate = new Date(e.start);
+  const endDate = new Date(e.end);
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return [];
+  }
+
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+
+  // Same day in local time — single event
+  if (
+    startDate.getFullYear() === endDate.getFullYear() &&
+    startDate.getMonth() === endDate.getMonth() &&
+    startDate.getDate() === endDate.getDate()
+  ) {
+    return [
+      {
+        id: e.id,
+        title: e.title,
+        start: fmt(startDate) as ScheduleEventData["start"],
+        end: fmt(endDate) as ScheduleEventData["end"],
+        color: colorToMantine(e.color),
+        variant: "light",
+        display: "default",
+        payload: e,
+      },
+    ];
+  }
+
+  // Overnight event: split at each midnight boundary between start and end
+  const results: ScheduleEventData<CalendarEvent>[] = [];
+  let current = new Date(startDate);
+  let segmentIndex = 0;
+
+  while (current < endDate) {
+    // End of this segment = 23:59:59 of current day, clamped to actual endDate
+    const dayEnd = new Date(current);
+    dayEnd.setHours(23, 59, 59, 999);
+    const segmentEnd = dayEnd < endDate ? dayEnd : endDate;
+
+    const segStart = new Date(current);
+    results.push({
+      id: `${e.id}_d${segmentIndex}`,
+      title: e.title,
+      start: fmt(segStart) as ScheduleEventData["start"],
+      end: fmt(segmentEnd) as ScheduleEventData["end"],
+      color: colorToMantine(e.color),
+      variant: "light",
+      display: "default",
+      payload: e,
+    });
+
+    // Next segment starts at 00:00:00 of the next day
+    current = new Date(dayEnd);
+    current.setHours(0, 0, 0, 0);
+    current.setDate(current.getDate() + 1);
+    segmentIndex++;
+  }
+
+  return results;
+}
+
+/** @deprecated — use toScheduleEvents for overnight-safe conversion */
+export function toScheduleEvent(e: CalendarEvent): ScheduleEventData<CalendarEvent> {
+  return toScheduleEvents(e)[0] ?? {
     id: e.id,
     title: e.title,
-    start,
-    end,
+    start: e.start.slice(0, 10) as ScheduleEventData["start"],
+    end: e.end.slice(0, 10) as ScheduleEventData["end"],
     color: colorToMantine(e.color),
     variant: "light",
     display: "default",
     payload: e,
   };
-}
-
-/**
- * Convert an ISO 8601 timestamp to a Mantine DateTimeStringValue
- * (YYYY-MM-DD HH:mm:ss). We do NOT use `new Date(s).toISOString().replace('T',' ')`
- * because that would stay in UTC; Mantine's dayjs parser interprets
- * `YYYY-MM-DD HH:mm:ss` in the browser's local timezone, which is what we want.
- */
-function toDateTimeString(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso.slice(0, 10);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 }

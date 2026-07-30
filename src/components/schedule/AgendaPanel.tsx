@@ -7,7 +7,7 @@ import { AgendaView } from "@mantine/schedule";
 import type { ScheduleEventData } from "@mantine/schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
-import { toScheduleEvent } from "./eventAdapter";
+import { toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 
 type Props = {
@@ -28,7 +28,7 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 export function AgendaPanel({ range, anchor, zoom, events, loading, error, onEventClick }: Props) {
   void range;
   void zoom;
-  const scheduleEvents = events.map(toScheduleEvent);
+  const scheduleEvents = events.flatMap(toScheduleEvents);
   const rangeStart = new Date(anchor);
   const rangeEnd = new Date(rangeStart.getTime() + AGENDA_WINDOW_DAYS * MS_PER_DAY);
   return (
