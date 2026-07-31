@@ -18,13 +18,15 @@ import {
 } from "@/lib/security/security-lock-policy";
 import { useLocaleStore } from "@/lib/stores/locale-store";
 import { useThemeStore } from "@/lib/stores/theme-store";
+import { type WeekStartDay, useWeekStartStore } from "@/lib/stores/week-start-store";
 import { Button, NumberInput, Switch } from "@mantine/core";
-import { Bell, Languages, Palette } from "lucide-react";
+import { Bell, CalendarDays, Languages, Palette } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 
 export default function GeneralPage() {
   const { theme, setTheme } = useThemeStore();
   const { locale, setLocale } = useLocaleStore();
+  const { weekStart, setWeekStart } = useWeekStartStore();
   const { t } = useTranslation();
   // Read from localStorage / Notification API lazily so the first render
   // already reflects the user's stored prefs — no effect, no extra render.
@@ -133,6 +135,20 @@ export default function GeneralPage() {
           options={[
             { value: "ja", label: t("settings.languageJa") },
             { value: "en", label: t("settings.languageEn") },
+          ]}
+        />
+      </section>
+
+      {/* Week Start Settings */}
+      <section className="mt-8">
+        <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.weekStart")}</h2>
+        <RowSegmented
+          icon={CalendarDays}
+          value={weekStart}
+          onChange={(v) => setWeekStart(v as WeekStartDay)}
+          options={[
+            { value: "sunday", label: t("settings.weekStartSunday") },
+            { value: "monday", label: t("settings.weekStartMonday") },
           ]}
         />
       </section>

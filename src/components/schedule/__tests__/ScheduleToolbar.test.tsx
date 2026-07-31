@@ -15,7 +15,6 @@ const handlers = {
   onToday: vi.fn(),
   onViewChange: vi.fn(),
   onModeChange: vi.fn(),
-  onZoomChange: vi.fn(),
 };
 
 beforeEach(() => {
@@ -26,7 +25,6 @@ const baseProps = {
   view: "day" as const,
   mode: "scope" as const,
   anchor: "2026-07-30",
-  zoom: 56,
   navDisabled: false,
   ...handlers,
 };
@@ -67,24 +65,5 @@ describe("ScheduleToolbar", () => {
     expect(screen.getByTestId("cal-mode-scope")).toBeInTheDocument();
     expect(screen.getByTestId("cal-mode-around")).toBeInTheDocument();
     expect(screen.getByTestId("cal-mode-future")).toBeInTheDocument();
-  });
-
-  it("calls onZoomChange when zoom +/- clicked", async () => {
-    const user = userEvent.setup();
-    renderWithMantine(<ScheduleToolbar {...baseProps} />);
-    await user.click(screen.getByTestId("cal-zoom-in"));
-    expect(handlers.onZoomChange).toHaveBeenCalledWith(64);
-    await user.click(screen.getByTestId("cal-zoom-out"));
-    expect(handlers.onZoomChange).toHaveBeenCalledWith(48);
-  });
-
-  it("clamps zoom within [24, 160]", async () => {
-    const user = userEvent.setup();
-    const { rerender } = renderWithMantine(<ScheduleToolbar {...baseProps} zoom={160} />);
-    await user.click(screen.getByTestId("cal-zoom-in"));
-    expect(handlers.onZoomChange).not.toHaveBeenCalled();
-    rerender(<ScheduleToolbar {...baseProps} zoom={24} />);
-    await user.click(screen.getByTestId("cal-zoom-out"));
-    expect(handlers.onZoomChange).not.toHaveBeenCalled();
   });
 });

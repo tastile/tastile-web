@@ -2,9 +2,8 @@
 "use client";
 
 import { ActionIcon, Button, SegmentedControl } from "@mantine/core";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DisplayMode, ScheduleView } from "./useTimelineState";
-import { ZOOM_MAX, ZOOM_MIN, ZOOM_STEP } from "./useTimelineState";
 
 const VIEW_OPTIONS: { value: ScheduleView; label: string }[] = [
   { value: "day", label: "Day" },
@@ -62,28 +61,24 @@ export interface ScheduleToolbarProps {
   view: ScheduleView;
   mode: DisplayMode;
   anchor: string;
-  zoom: number;
   navDisabled: boolean;
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
   onViewChange: (v: ScheduleView) => void;
   onModeChange: (m: DisplayMode) => void;
-  onZoomChange: (z: number) => void;
 }
 
 export function ScheduleToolbar({
   view,
   mode,
   anchor,
-  zoom,
   navDisabled,
   onPrev,
   onNext,
   onToday,
   onViewChange,
   onModeChange,
-  onZoomChange,
 }: ScheduleToolbarProps) {
   const titlePrefix = modeLabel(view, mode);
   return (
@@ -132,23 +127,25 @@ export function ScheduleToolbar({
         Today
       </Button>
       <div className="ml-auto flex items-center gap-2">
-        <SegmentedControl
-          size="xs"
-          radius="md"
-          withItemsBorders={false}
-          value={mode}
-          onChange={(v) => onModeChange(v as DisplayMode)}
-          data={MODE_OPTIONS.map((m) => ({
-            value: m.value,
-            label: <span data-testid={`cal-mode-${m.value}`}>{m.label}</span>,
-          }))}
-          styles={{
-            root: { backgroundColor: "var(--surface-1)" },
-            indicator: { backgroundColor: "var(--surface-2)" },
-            label: { color: "var(--foreground)" },
-          }}
-          data-testid="cal-mode-switcher"
-        />
+        {view !== "month" && view !== "year" && view !== "agenda" && (
+          <SegmentedControl
+            size="xs"
+            radius="md"
+            withItemsBorders={false}
+            value={mode}
+            onChange={(v) => onModeChange(v as DisplayMode)}
+            data={MODE_OPTIONS.map((m) => ({
+              value: m.value,
+              label: <span data-testid={`cal-mode-${m.value}`}>{m.label}</span>,
+            }))}
+            styles={{
+              root: { backgroundColor: "var(--surface-1)" },
+              indicator: { backgroundColor: "var(--surface-2)" },
+              label: { color: "var(--foreground)" },
+            }}
+            data-testid="cal-mode-switcher"
+          />
+        )}
         <SegmentedControl
           size="xs"
           radius="md"
@@ -166,30 +163,6 @@ export function ScheduleToolbar({
           }}
           data-testid="cal-view-switcher"
         />
-        <ActionIcon
-          type="button"
-          variant="subtle"
-          size="sm"
-          onClick={() => zoom < ZOOM_MAX && onZoomChange(zoom + ZOOM_STEP)}
-          aria-label="Zoom in"
-          data-testid="cal-zoom-in"
-          disabled={zoom >= ZOOM_MAX}
-          className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
-        >
-          <ZoomIn className="h-4 w-4" />
-        </ActionIcon>
-        <ActionIcon
-          type="button"
-          variant="subtle"
-          size="sm"
-          onClick={() => zoom > ZOOM_MIN && onZoomChange(zoom - ZOOM_STEP)}
-          aria-label="Zoom out"
-          data-testid="cal-zoom-out"
-          disabled={zoom <= ZOOM_MIN}
-          className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
-        >
-          <ZoomOut className="h-4 w-4" />
-        </ActionIcon>
       </div>
     </div>
   );

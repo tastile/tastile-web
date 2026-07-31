@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
 import { DayPanel } from "../DayPanel";
 import type { CalendarEvent } from "@/lib/domain/calendar";
-import type { DisplayRange } from "@/lib/calendar/layout";
+import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
 
 // Stub out the vendored Mantine views
 vi.mock("@/lib/vendored/mantine-schedule", () => ({
@@ -113,6 +113,7 @@ describe("DayPanel", () => {
         onEventClick={vi.fn()}
         onSlotCreate={vi.fn()}
         onZoomBy={vi.fn()}
+        displayMode="scope"
       />,
     );
     expect(screen.getByTestId("day-view")).toBeInTheDocument();
@@ -132,6 +133,7 @@ describe("DayPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
@@ -153,6 +155,7 @@ describe("DayPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
@@ -174,6 +177,7 @@ describe("DayPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
@@ -195,6 +199,7 @@ describe("DayPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
@@ -218,6 +223,7 @@ describe("DayPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={onSlotCreate}
           onZoomBy={vi.fn()}
+          displayMode="scope"
         />,
       );
 
@@ -239,6 +245,7 @@ describe("DayPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={onSlotCreate}
           onZoomBy={vi.fn()}
+          displayMode="scope"
         />,
       );
 
@@ -260,6 +267,7 @@ describe("DayPanel", () => {
         onEventClick={vi.fn()}
         onSlotCreate={vi.fn()}
         onZoomBy={vi.fn()}
+        displayMode="scope"
       />,
     );
     expect(screen.getByTestId("error-banner")).toHaveTextContent("boom");
@@ -277,6 +285,7 @@ describe("DayPanel", () => {
         onEventClick={vi.fn()}
         onSlotCreate={vi.fn()}
         onZoomBy={vi.fn()}
+        displayMode="scope"
       />,
     );
     expect(screen.getByTestId("day-loading")).toBeInTheDocument();

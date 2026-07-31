@@ -1,7 +1,9 @@
+// src/components/schedule/MonthPanel.tsx
 "use client";
 
-import type { DisplayRange } from "@/lib/calendar/layout";
+import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
 import type { CalendarEvent } from "@/lib/domain/calendar";
+import { getFirstDayOfWeek, useWeekStartStore } from "@/lib/stores/week-start-store";
 import { MonthView } from "@/lib/vendored/mantine-schedule";
 import { ErrorBanner } from "./ErrorBanner";
 import { LoadingOverlay } from "./LoadingOverlay";
@@ -12,6 +14,7 @@ type Props = {
   range: DisplayRange;
   anchor: string;
   zoom: number;
+  displayMode: DisplayMode;
   events: CalendarEvent[];
   loading: boolean;
   error: Error | null;
@@ -24,6 +27,7 @@ export function MonthPanel({
   range,
   anchor,
   zoom,
+  displayMode,
   events,
   loading,
   error,
@@ -32,8 +36,15 @@ export function MonthPanel({
   onDayClick,
 }: Props) {
   const scheduleEvents = events.flatMap(toScheduleEvents);
+  const weekStartPref = useWeekStartStore((s) => s.weekStart);
+  const firstDayOfWeek = getFirstDayOfWeek(weekStartPref);
+
+  void zoom;
+  void displayMode;
+  void range;
+
   return (
-    <div className="relative" data-testid="month-panel">
+    <div className="relative h-full" data-testid="month-panel">
       {error && <ErrorBanner error={error} />}
       <LoadingOverlay loading={loading}>
         <MonthView
@@ -41,7 +52,7 @@ export function MonthPanel({
           date={anchor}
           events={scheduleEvents}
           withHeader={false}
-          firstDayOfWeek={1}
+          firstDayOfWeek={firstDayOfWeek}
           withWeekendDays
           maxEventsPerDay={3}
           withOutsideDays

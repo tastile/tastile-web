@@ -1,10 +1,10 @@
 .weekView {
   --week-view-week-day-height: 58px;
   --week-view-all-day-slots-height: 48px;
-  --week-view-radius: var(--schedule-radius, var(--mantine-radius-default));
   --week-view-slots-label-width: 80px;
   --week-view-min-slot-width: 80px;
   --week-view-slot-height: 64px;
+  height: 100%;
 
   @mixin where-light {
     --week-view-border-color: var(--mantine-color-gray-3);
@@ -21,10 +21,9 @@
 
 .weekViewRoot {
   --indicator-labels-offset: calc(var(--week-view-slots-label-width) / var(--number-of-days));
-
-  border: 1px solid var(--week-view-border-color);
-  border-radius: var(--week-view-radius);
-  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .weekViewInner {
@@ -34,6 +33,9 @@
 }
 
 .weekViewScrollArea {
+  flex: 1;
+  min-height: 0;
+
   :where(:global(.mantine-ScrollArea-scrollbar)) {
     z-index: 4;
   }
@@ -41,17 +43,8 @@
 
 .weekViewHeader {
   display: flex;
-  position: sticky;
-  top: 0;
-  z-index: 4;
+  flex-shrink: 0;
   background-color: var(--mantine-color-body);
-  border-bottom: 1px solid var(--week-view-border-color);
-  margin-bottom: -1px;
-  transition: box-shadow 100ms ease;
-
-  &:where([data-scrolled]) {
-    box-shadow: var(--mantine-shadow-sm);
-  }
 }
 
 .weekViewCorner {
@@ -72,7 +65,6 @@
 }
 
 .weekViewSlotLabel {
-  border-top: 1px solid var(--week-view-border-color);
   text-align: right;
   height: var(--week-view-slot-height);
   padding: 4px;
@@ -94,7 +86,6 @@
 
 .weekViewDay {
   flex: 1;
-  border-inline-start: 1px solid var(--week-view-border-color);
 }
 
 .weekViewDayLabel {
@@ -108,7 +99,6 @@
   user-select: none;
   cursor: pointer;
   flex: 1;
-  border-inline-start: 1px solid var(--week-view-border-color);
   padding-inline-start: 5px;
 
   &:where([data-weekend]) {
@@ -301,6 +291,7 @@
 .weekViewAllDaySlots {
   display: flex;
   height: var(--week-view-all-day-slots-height);
+  flex-shrink: 0;
 }
 
 .weekViewAllDaySlotsLabel {
@@ -325,7 +316,6 @@
 
   & > .weekViewDaySlot {
     flex: 1;
-    border-inline-start: 1px solid var(--week-view-border-color);
     height: 100%;
   }
 

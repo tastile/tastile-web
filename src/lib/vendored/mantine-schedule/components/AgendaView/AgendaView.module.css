@@ -1,8 +1,7 @@
 .agendaView {
-  --agenda-view-radius: var(--schedule-radius, var(--mantine-radius-default));
-
   display: flex;
   flex-direction: column;
+  height: 100%;
 
   @mixin where-light {
     --agenda-view-border-color: var(--mantine-color-gray-3);
@@ -18,7 +17,6 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--mantine-spacing-sm);
-  border-bottom: 1px solid var(--agenda-view-border-color);
 }
 
 .agendaViewHeaderLabel {
@@ -33,12 +31,11 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow-y: auto;
 }
 
 .agendaViewDateGroup {
-  &:where(:not(:last-child)) {
-    border-bottom: 1px solid var(--agenda-view-border-color);
-  }
+  display: block;
 }
 
 .agendaViewDateHeader {
@@ -61,10 +58,6 @@
   width: 100%;
   text-align: start;
   cursor: pointer;
-
-  &:where(:not(:last-child)) {
-    border-bottom: 1px solid var(--agenda-view-border-color);
-  }
 
   @mixin hover {
     @mixin where-light {

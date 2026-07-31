@@ -1,8 +1,10 @@
 .yearView {
-  --year-view-radius: var(--schedule-radius, var(--mantine-radius-default));
   --year-view-font-size: var(--mantine-font-size-sm);
   --year-view-columns: 7;
   container-type: inline-size;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 
   @mixin where-light {
     --year-view-border-color: var(--mantine-color-gray-3);
@@ -16,6 +18,9 @@
 .yearViewMonths {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  flex: 1;
+  overflow-y: auto;
+  align-content: start;
 
   @container (width <= 850px) {
     --year-view-font-size: calc(var(--mantine-font-size-sm) - 2px);
@@ -46,39 +51,10 @@
   }
 
   min-width: 0;
-  border: 1px solid var(--year-view-border-color);
   padding: var(--mantine-spacing-md);
-  margin-top: -1px;
-  margin-inline-start: -1px;
-
-  &:where(:nth-child(3n + 1)) {
-    margin-inline-start: 0;
-  }
-
-  &:where(:nth-child(-n + 3)) {
-    margin-top: 0;
-  }
-
-  &:where(:nth-child(1)) {
-    border-start-start-radius: var(--year-view-radius);
-  }
-
-  &:where(:nth-child(3)) {
-    border-start-end-radius: var(--year-view-radius);
-  }
-
-  &:where(:nth-last-child(3)) {
-    border-end-start-radius: var(--year-view-radius);
-  }
-
-  &:where(:nth-last-child(1)) {
-    border-end-end-radius: var(--year-view-radius);
-  }
 
   @container (width <= 750px) {
-    border: 0;
     padding: 8px;
-    margin: 0;
 
     &:where([data-with-week-numbers]) {
       --week-numbers-offset: 14px;
@@ -257,5 +233,4 @@
   height: 8px;
   border-radius: 100%;
   margin-inline-start: -2px;
-  border: 1px solid var(--mantine-color-body);
 }

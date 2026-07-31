@@ -1,21 +1,24 @@
+// src/components/shell/SideToolPanel.tsx
 "use client";
 
 import { useSidePanelContent } from "@/lib/context/side-panel-context";
+import { useShellStore } from "@/lib/stores/shell-store";
 import { cn } from "@/lib/utils/cn";
 import { X } from "lucide-react";
-import { useState } from "react";
 
 /**
  * Side tool panel that renders to the right of the activity bar.
  * Only shown when a page has registered content via useSidePanel().
- * Equivalent to Supabase's LayoutSidebar.
+ * Open/close state is managed by the shell store so both the panel's
+ * close button and the ActivityBar's toggle button can control it.
  */
 export function SideToolPanel() {
   const content = useSidePanelContent();
-  const [closed, setClosed] = useState(false);
+  const sidePanelOpen = useShellStore((s) => s.sidePanelOpen);
+  const setSidePanel = useShellStore((s) => s.setSidePanel);
 
   if (!content) return null;
-  if (closed) return null;
+  if (!sidePanelOpen) return null;
 
   return (
     <aside
@@ -31,7 +34,7 @@ export function SideToolPanel() {
           Details
         </span>
         <button
-          onClick={() => setClosed(true)}
+          onClick={() => setSidePanel(false)}
           aria-label="Close detail panel"
           type="button"
           className="rounded-md p-1 hover:bg-[var(--surface-2)]"

@@ -7,7 +7,7 @@ import { useSidePanel } from "@/lib/context/side-panel-context";
 import type { CalendarEvent } from "@/lib/domain/calendar";
 import { useEvents } from "@/lib/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { AgendaPanel } from "./AgendaPanel";
 import { DayPanel } from "./DayPanel";
 import { MonthPanel } from "./MonthPanel";
@@ -20,10 +20,17 @@ type Props = {
   initialView: "day" | "week" | "month" | "year" | "agenda";
 };
 
+/** Ensure a date string is in RFC3339 format with time component. */
+function toRFC3339(dateStr: string): string {
+  if (dateStr.includes("T")) return dateStr;
+  return `${dateStr}T00:00:00.000Z`;
+}
+
 export function ScheduleTimeline({ initialView }: Props) {
   const state = useTimelineState(initialView);
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
   const effectiveAnchor = state.effectiveAnchor;
+
   const range = useMemo(() => {
     if (state.view === "agenda") {
       const day = effectiveAnchor;
@@ -38,25 +45,38 @@ export function ScheduleTimeline({ initialView }: Props) {
 
   const paddedRange = useMemo(() => {
     if (state.view === "month") {
-      const start = new Date(range.start);
-      start.setDate(start.getDate() - 7);
-      const end = new Date(range.end);
-      end.setDate(end.getDate() + 7);
-      return { start: start.toISOString().slice(0, 10), end: end.toISOString().slice(0, 10) };
+      return {
+        start: toRFC3339(range.start),
+        end: toRFC3339(range.end),
+      };
     }
     if (state.view === "year") {
-      const y = Number.parseInt(range.start.slice(0, 4), 10);
-      return { start: `${y - 1}-01-01`, end: `${y + 2}-01-01` };
+      const y = effectiveAnchor.slice(0, 4);
+      return {
+        start: `${y}-01-01T00:00:00.000Z`,
+        end: `${Number(y) + 1}-01-01T00:00:00.000Z`,
+      };
     }
     if (state.view === "agenda") {
       const end = new Date(range.end);
       end.setDate(end.getDate() + 90);
-      return { start: range.start, end: end.toISOString().slice(0, 10) };
+      return {
+        start: toRFC3339(range.start),
+        end: toRFC3339(end.toISOString().slice(0, 10)),
+      };
     }
     return range;
-  }, [range, state.view]);
+  }, [range, state.view, effectiveAnchor]);
 
-  const { events, loading, error } = useEvents(paddedRange);
+  const [minDuration, setMinDuration] = useState(0);
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[] | undefined>(undefined);
+
+  const { events, loading, error } = useEvents({
+    ...paddedRange,
+    minMinutes: minDuration,
+    ownerIds: selectedOwnerIds,
+  });
+
   const openEdit = useQuickCreateStore((s) => s.openEdit);
   const openCreate = useQuickCreateStore((s) => s.openCreate);
   const setField = useQuickCreateStore((s) => s.setField);
@@ -75,7 +95,6 @@ export function ScheduleTimeline({ initialView }: Props) {
     [loadFromRecurringTile, openEdit],
   );
 
-  // Slot click / drag: set the time span before opening the create panel.
   const onSlotCreate = useCallback(
     (start: string, end: string) => {
       setField("time.span.start", start);
@@ -94,16 +113,16 @@ export function ScheduleTimeline({ initialView }: Props) {
     [state],
   );
 
-  // Ctrl+wheel zoom
+  const zoomRef = useRef(state.zoom);
+  zoomRef.current = state.zoom;
   const onZoomBy = useCallback(
     (delta: number) => {
-      state.setZoom(state.zoom + delta * ZOOM_STEP);
+      state.setZoom(zoomRef.current + delta * ZOOM_STEP);
     },
-    [state],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- state.setZoom is stable; zoom value read via ref
+    [state.setZoom],
   );
 
-  // Side panel
-  const [minDuration, setMinDuration] = useState(0);
   const panelView = state.view === "agenda" ? "list" : state.view;
   const sidePanelElement = useMemo(
     () => (
@@ -115,6 +134,7 @@ export function ScheduleTimeline({ initialView }: Props) {
         onSelectDate={state.setAnchor}
         onModeChange={state.setMode}
         onMinDurationChange={setMinDuration}
+        onOwnerIdsChange={setSelectedOwnerIds}
       />
     ),
     [state.anchor, panelView, state.mode, minDuration, state.setAnchor, state.setMode],
@@ -125,13 +145,13 @@ export function ScheduleTimeline({ initialView }: Props) {
     range: paddedRange,
     anchor: effectiveAnchor,
     zoom: state.zoom,
+    displayMode: state.mode,
     events,
     loading,
     error,
     onEventClick,
   };
 
-  // Nav disabled when not in scope mode (around/future are anchored on today)
   const navDisabled = loading || state.mode !== "scope";
 
   return (
@@ -140,16 +160,14 @@ export function ScheduleTimeline({ initialView }: Props) {
         view={state.view}
         mode={state.mode}
         anchor={state.anchor}
-        zoom={state.zoom}
         navDisabled={navDisabled}
         onPrev={() => state.shiftAnchor(-1)}
         onNext={() => state.shiftAnchor(1)}
         onToday={() => state.goToToday()}
         onViewChange={state.setView}
         onModeChange={state.setMode}
-        onZoomChange={state.setZoom}
       />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-hidden">
         {state.view === "day" && (
           <DayPanel {...panelBase} onSlotCreate={onSlotCreate} onZoomBy={onZoomBy} />
         )}

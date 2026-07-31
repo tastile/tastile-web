@@ -631,6 +631,9 @@ export const translations = {
         "有効にするとページ表示が速くなりますが、Cookie の SameSite 設定によっては一部ブラウザで失敗します",
       directModeSaved: "保存しました",
       directModeSaveFailed: "保存に失敗しました",
+      weekStart: "週の開始日",
+      weekStartSunday: "日曜日",
+      weekStartMonday: "月曜日",
     },
 
     // Common
@@ -1799,6 +1802,9 @@ export const translations = {
         "Speeds up page rendering, but may fail in some browsers depending on the Cookie SameSite setting",
       directModeSaved: "Saved",
       directModeSaveFailed: "Failed to save",
+      weekStart: "Week Start Day",
+      weekStartSunday: "Sunday",
+      weekStartMonday: "Monday",
     },
 
     // Common

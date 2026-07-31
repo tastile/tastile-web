@@ -2,9 +2,9 @@
   --slot-height: var(--day-view-slot-height, 64px); /* total height of 1 hour slot */
   --all-day-slot-height: var(--day-view-all-day-slot-height, 44px); /* height of all day slot */
   --day-view-slot-labels-width: 80px;
-  --day-view-radius: var(--schedule-radius, var(--mantine-radius-default));
-  border-radius: var(--day-view-radius);
-  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 
   @mixin where-light {
     --day-view-border-color: var(--mantine-color-gray-3);
@@ -30,9 +30,8 @@
 }
 
 .dayViewScrollArea {
-  border: 1px solid var(--day-view-border-color);
-  border-radius: var(--day-view-radius);
-  overflow: hidden;
+  flex: 1;
+  min-height: 0;
 
   :where(:global(.mantine-ScrollArea-scrollbar)) {
     z-index: 4;
@@ -209,6 +208,8 @@
 .dayViewAllDay {
   position: relative;
   height: var(--all-day-slot-height);
+  display: flex;
+  flex-shrink: 0;
 }
 
 .dayViewAllDayEvents {

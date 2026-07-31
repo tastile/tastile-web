@@ -208,7 +208,7 @@ function mapTimelineColor(hex: string | null | undefined): string {
 
 function toUtcIso(value: string): string {
   if (!value) return value;
-  if (/[zZ]$|[+-]d{2}:?d{2}$/.test(value)) return value;
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(value)) return value;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value;
   return d.toISOString();

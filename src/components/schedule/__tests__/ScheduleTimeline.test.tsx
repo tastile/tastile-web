@@ -95,15 +95,13 @@ describe("ScheduleTimeline", () => {
   });
 
   describe("toolbar", () => {
-    it("renders ScheduleToolbar with nav/zoom controls", () => {
+    it("renders ScheduleToolbar with nav controls", () => {
       renderWithMantine(<ScheduleTimeline initialView="day" />);
       expect(screen.getByTestId("cal-prev")).toBeInTheDocument();
       expect(screen.getByTestId("cal-next")).toBeInTheDocument();
       expect(screen.getByTestId("cal-today")).toBeInTheDocument();
       expect(screen.getByTestId("cal-view-switcher")).toBeInTheDocument();
       expect(screen.getByTestId("cal-mode-switcher")).toBeInTheDocument();
-      expect(screen.getByTestId("cal-zoom-in")).toBeInTheDocument();
-      expect(screen.getByTestId("cal-zoom-out")).toBeInTheDocument();
     });
   });
 
@@ -170,18 +168,8 @@ describe("ScheduleTimeline", () => {
   });
 
   describe("zoom propagation", () => {
-    it("toolbar zoom+ calls setZoom via onZoomChange", () => {
-      mockSearchParams = new URLSearchParams("zoom=56");
-      renderWithMantine(<ScheduleTimeline initialView="day" />);
-      const zoomIn = screen.getByTestId("cal-zoom-in");
-      expect(zoomIn).not.toBeDisabled();
-    });
-
     it("panel zoom propagates through onZoomBy", () => {
       renderWithMantine(<ScheduleTimeline initialView="day" />);
-      // Click the zoom trigger in DayPanel mock — it calls onZoomBy(1)
-      // which calls state.setZoom(state.zoom + ZOOM_STEP)
-      // This should update the URL
       screen.getByTestId("trigger-zoom").click();
       expect(replaceFn).toHaveBeenCalledWith(expect.stringContaining("zoom=64"), { scroll: false });
     });

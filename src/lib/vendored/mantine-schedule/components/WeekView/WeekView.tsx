@@ -1090,6 +1090,35 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
             "event-interaction": eventResize.isResizing || dragDrop.dragContextValue.isDragging,
           }}
         >
+          <Box {...getStyles("weekViewHeader")} mod={{ scrolled }}>
+            <div {...getStyles("weekViewCorner")} key="corner">
+              {withWeekNumber && (
+                <>
+                  <div {...getStyles("weekViewWeekLabel")}>{getLabel("week", labels)}</div>
+                  <div {...getStyles("weekViewWeekNumber")}>{getWeekNumber(date)}</div>
+                </>
+              )}
+            </div>
+
+            {weekdaysLabels}
+          </Box>
+
+          {withAllDaySlots && (
+            <div {...getStyles("weekViewAllDaySlots")}>
+              <div {...getStyles("weekViewAllDaySlotsLabel")}>{getLabel("allDay", labels)}</div>
+              <div {...getStyles("weekViewAllDaySlotsList")}>
+                {allDayBackgroundEventNodes}
+                <Box
+                  {...getStyles("weekViewAllDaySlotsEvents")}
+                  __vars={{ "--extra-rows": `${extraRows}` }}
+                >
+                  {allDayEvents}
+                </Box>
+                {allDaySlots}
+              </div>
+            </div>
+          )}
+
           <ScrollArea.Autosize
             scrollbarSize={4}
             {...scrollAreaProps}
@@ -1103,35 +1132,6 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
             }}
             viewportRef={mergedViewportRef}
           >
-            <Box {...getStyles("weekViewHeader")} mod={{ scrolled }}>
-              <div {...getStyles("weekViewCorner")} key="corner">
-                {withWeekNumber && (
-                  <>
-                    <div {...getStyles("weekViewWeekLabel")}>{getLabel("week", labels)}</div>
-                    <div {...getStyles("weekViewWeekNumber")}>{getWeekNumber(date)}</div>
-                  </>
-                )}
-              </div>
-
-              {weekdaysLabels}
-            </Box>
-
-            {withAllDaySlots && (
-              <div {...getStyles("weekViewAllDaySlots")}>
-                <div {...getStyles("weekViewAllDaySlotsLabel")}>{getLabel("allDay", labels)}</div>
-                <div {...getStyles("weekViewAllDaySlotsList")}>
-                  {allDayBackgroundEventNodes}
-                  <Box
-                    {...getStyles("weekViewAllDaySlotsEvents")}
-                    __vars={{ "--extra-rows": `${extraRows}` }}
-                  >
-                    {allDayEvents}
-                  </Box>
-                  {allDaySlots}
-                </div>
-              </div>
-            )}
-
             <div {...getStyles("weekViewInner")}>
               <div {...getStyles("weekViewSlotLabels")}>{timeValues}</div>
 

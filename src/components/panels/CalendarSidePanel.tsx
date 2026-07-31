@@ -36,6 +36,7 @@ interface CalendarSidePanelProps {
   onSelectDate?: (date: string) => void;
   onModeChange?: (mode: DisplayMode) => void;
   onMinDurationChange?: (minutes: number) => void;
+  onOwnerIdsChange?: (ids: string[] | undefined) => void;
 }
 
 // Given anchor (YYYY-MM-DD) and view, return the list of dates to shade on
@@ -104,6 +105,7 @@ export function CalendarSidePanel({
   onSelectDate,
   onModeChange,
   onMinDurationChange,
+  onOwnerIdsChange,
 }: CalendarSidePanelProps) {
   // Around / future modes always anchor to today; the mini calendar
   // is read-only so the user can't pick a date the main view will
@@ -173,7 +175,7 @@ export function CalendarSidePanel({
       <div className="mx-3 h-px bg-border" />
 
       {/* Projects checkbox section */}
-      <ProjectsCheckboxSection />
+      <ProjectsCheckboxSection onOwnerIdsChange={onOwnerIdsChange} />
     </div>
   );
 }
@@ -231,7 +233,9 @@ function buildDescendantMap(workspaces: Workspace[]): Map<string, string[]> {
   return map;
 }
 
-function ProjectsCheckboxSection() {
+function ProjectsCheckboxSection({
+  onOwnerIdsChange,
+}: { onOwnerIdsChange?: (ids: string[] | undefined) => void }) {
   const { workspaces, loading } = useProjects();
   const { t } = useTranslation();
 
@@ -244,12 +248,15 @@ function ProjectsCheckboxSection() {
   }
   if (workspaces.length === 0) return null;
 
-  return <ProjectsTree workspaces={workspaces} />;
+  return <ProjectsTree workspaces={workspaces} onOwnerIdsChange={onOwnerIdsChange} />;
 }
 
 // Inner component so useTree() sees the loaded workspace data at mount
 // (getTreeExpandedState needs the full tree to expand everything up front).
-function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
+function ProjectsTree({
+  workspaces,
+  onOwnerIdsChange,
+}: { workspaces: Workspace[]; onOwnerIdsChange?: (ids: string[] | undefined) => void }) {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -274,13 +281,18 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
   const commit = useCallback(
     (next: Set<string>) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (next.size === allIds.length) params.delete("projects");
-      else params.set("projects", [...next].join(","));
+      if (next.size === allIds.length) {
+        params.delete("projects");
+        onOwnerIdsChange?.(undefined);
+      } else {
+        params.set("projects", [...next].join(","));
+        onOwnerIdsChange?.([...next]);
+      }
       startTransition(() => {
         router.replace(`${pathname}?${params.toString()}`);
       });
     },
-    [searchParams, router, pathname, allIds],
+    [searchParams, router, pathname, allIds, onOwnerIdsChange],
   );
 
   const toggleCascade = useCallback(

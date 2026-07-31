@@ -74,10 +74,10 @@ describe("useTimelineState", () => {
   });
 
   it("shiftAnchor moves day by 1 day for day view", () => {
-    mockSearch = new URLSearchParams("date=2026-07-30");
+    mockSearch = new URLSearchParams("date=2026-01-14");
     const { result } = renderHook(() => useTimelineState());
     act(() => result.current.shiftAnchor(1));
-    expect(replace).toHaveBeenCalledWith(expect.stringContaining("date=2026-07-31"), { scroll: false });
+    expect(replace).toHaveBeenCalledWith(expect.stringContaining("date=2026-01-15"), { scroll: false });
   });
 
   it("todayLocal returns YYYY-MM-DD", () => {
@@ -86,7 +86,7 @@ describe("useTimelineState", () => {
   });
 
   it("goToToday writes empty ? (no date param)", () => {
-    mockSearch = new URLSearchParams("date=2026-07-30");
+    mockSearch = new URLSearchParams("date=2026-01-14");
     const { result } = renderHook(() => useTimelineState());
     act(() => result.current.goToToday());
     expect(replace).toHaveBeenCalledWith(expect.stringMatching(/^[^?]*$/), { scroll: false });

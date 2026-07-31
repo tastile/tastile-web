@@ -12,6 +12,7 @@ import {
   Layers,
   type LucideIcon,
   PanelLeftDashed,
+  PanelLeftOpen,
   Plus,
   Repeat,
   Settings,
@@ -53,6 +54,8 @@ export function ActivityBar() {
   const { t } = useTranslation();
   const sidebarBehavior = useShellStore((s) => s.sidebarBehavior);
   const setSidebarBehavior = useShellStore((s) => s.setSidebarBehavior);
+  const sidePanelOpen = useShellStore((s) => s.sidePanelOpen);
+  const toggleSidePanel = useShellStore((s) => s.toggleSidePanel);
   const { hovered, ref: navHoverRef } = useHover();
   const [menuOpened, { open: openMenu, close: closeMenu }] = useDisclosure(false);
 
@@ -146,6 +149,13 @@ export function ActivityBar() {
               </Menu.RadioGroup>
             </Menu.Dropdown>
           </Menu>
+          <ActivityButton
+            label={sidePanelOpen ? "Close detail panel" : "Open detail panel"}
+            ariaLabel={sidePanelOpen ? "Close detail panel" : "Open detail panel"}
+            Icon={PanelLeftOpen}
+            expanded={expanded}
+            onClick={toggleSidePanel}
+          />
         </div>
       </nav>
     </div>

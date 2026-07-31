@@ -76,11 +76,12 @@ describe("WeekPanel", () => {
         events={[]}
         loading={false}
         error={null}
-        onEventClick={vi.fn()}
-        onSlotCreate={vi.fn()}
-        onZoomBy={vi.fn()}
-      />,
-    );
+          onEventClick={vi.fn()}
+          onSlotCreate={vi.fn()}
+          onZoomBy={vi.fn()}
+          displayMode="scope"
+        />,
+      );
     expect(screen.getByTestId("week-view")).toBeInTheDocument();
   });
 
@@ -98,6 +99,7 @@ describe("WeekPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
@@ -119,6 +121,7 @@ describe("WeekPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
@@ -140,6 +143,7 @@ describe("WeekPanel", () => {
           onEventClick={vi.fn()}
           onSlotCreate={vi.fn()}
           onZoomBy={onZoomBy}
+          displayMode="scope"
         />,
       );
 
