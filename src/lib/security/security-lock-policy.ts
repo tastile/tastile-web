@@ -3,26 +3,26 @@ export const SECURITY_LOCK_TIMEOUT_MINUTES_KEY = "tastile.securityLock.timeoutMi
 export const SECURITY_LOCK_LEFT_AT_KEY = "tastile.securityLock.leftAt";
 export const SECURITY_LOCK_CREDENTIAL_ID_KEY = "tastile.securityLock.credentialId";
 
-export function getSecurityLockEnabled(storage: Storage): boolean {
+export function getEnabled(storage: Storage): boolean {
   // Default is OFF. Returns true only when the user explicitly stored "true".
   // null / unset / "false" / any other value → false.
   return storage.getItem(SECURITY_LOCK_ENABLED_KEY) === "true";
 }
 
-export function setSecurityLockEnabled(storage: Storage, enabled: boolean) {
+export function setEnabled(storage: Storage, enabled: boolean) {
   storage.setItem(SECURITY_LOCK_ENABLED_KEY, enabled ? "true" : "false");
 }
 
-export function getSecurityLockTimeoutMinutes(storage: Storage): number {
+export function getTimeoutMinutes(storage: Storage): number {
   const parsed = Number.parseInt(storage.getItem(SECURITY_LOCK_TIMEOUT_MINUTES_KEY) ?? "10", 10);
   return Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 240) : 10;
 }
 
-export function setSecurityLockTimeoutMinutes(storage: Storage, minutes: number) {
+export function setTimeoutMinutes(storage: Storage, minutes: number) {
   storage.setItem(SECURITY_LOCK_TIMEOUT_MINUTES_KEY, String(Math.min(Math.max(minutes, 1), 240)));
 }
 
-export function shouldRequireSecurityUnlock({
+export function shouldRequireUnlock({
   enabled,
   timeoutMinutes,
   lastLeftAt,

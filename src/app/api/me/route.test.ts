@@ -9,11 +9,11 @@ vi.mock("next/headers", () => ({
 }));
 
 const mockCall = vi.fn();
-vi.mock("@/lib/api/endpoints", () => ({
+vi.mock("@/shared/api/endpoints", () => ({
   getCoreClient: () => ({ call: mockCall }),
 }));
 
-import { COOKIE_ID_TOKEN } from "@/lib/cognito/cookies";
+import { COOKIE_ID_TOKEN } from "@/shared/auth/cookies";
 import { GET } from "./route";
 
 function makeIdToken(claims: Record<string, unknown>): string {

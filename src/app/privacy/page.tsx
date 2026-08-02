@@ -1,6 +1,6 @@
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
+import { SiteFooter } from "@/shared/ui/SiteFooter";
+import { SiteHeader } from "@/shared/ui/SiteHeader";
 
 export const metadata = {
   title: "Privacy Policy — Tastile",

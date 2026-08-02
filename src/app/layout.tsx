@@ -3,10 +3,10 @@ import "@mantine/dates/styles.css";
 import "yakuhanjp/dist/css/yakuhanjp.css";
 import "./globals.css";
 
-import { GoogleAnalytics } from "@/components/GoogleAnalytics";
-import { DemoSiteBanner } from "@/components/marketing/DemoSiteBanner";
-import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { DemoSiteBanner } from "@/features/marketing/ui/DemoSiteBanner";
 import { themeScript } from "@/lib/theme-script";
+import { getCognitoPublicOrigin } from "@/shared/auth/public-origin";
+import { GoogleAnalytics } from "@/shared/ui/GoogleAnalytics";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import type { Metadata } from "next";
 import { Zen_Kaku_Gothic_New } from "next/font/google";

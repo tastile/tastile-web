@@ -1,6 +1,6 @@
-import { associateSoftwareToken } from "@/lib/cognito/associate-software-token";
-import { COOKIE_EMAIL_AUTH_SESSION, COOKIE_EMAIL_AUTH_USERNAME } from "@/lib/cognito/cookies";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { associateSoftwareToken } from "@/shared/auth/associate-software-token";
+import { COOKIE_EMAIL_AUTH_SESSION, COOKIE_EMAIL_AUTH_USERNAME } from "@/shared/auth/cookies";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 

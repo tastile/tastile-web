@@ -1,8 +1,8 @@
-import { TastileLogo } from "@/components/TastileLogo";
 import {
   getConfiguredCognitoIdentityProviders,
   parseCognitoPlatform,
-} from "@/lib/cognito/login-url";
+} from "@/shared/auth/login-url";
+import { TastileLogo } from "@/shared/ui/TastileLogo";
 import { Button } from "@mantine/core";
 import { Apple, Fingerprint, Globe } from "lucide-react";
 import Link from "next/link";

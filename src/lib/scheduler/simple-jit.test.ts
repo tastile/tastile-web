@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { AppState } from "../core/state";
-import { TileId } from "../domain/ids";
-import { Tile } from "../domain/tile";
+import { AppState } from "@/execution/model/state";
+import { TileId } from '@/shared/model/ids';
+import { Tile } from "@/tile/model/tile";
 import { selectNextTile } from "./simple-jit";
 
 describe("selectNextTile", () => {

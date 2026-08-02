@@ -1,7 +1,7 @@
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { authErrorMessage } from "@/lib/cognito/form";
-import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { authErrorMessage } from "@/shared/auth/form";
+import { safeOAuthRedirectUri, safePkceValue } from "@/shared/auth/login-url";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
 import { Button } from "@mantine/core";
 import { UserPlus } from "lucide-react";
 import Link from "next/link";

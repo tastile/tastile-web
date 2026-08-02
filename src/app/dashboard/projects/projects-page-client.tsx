@@ -1,9 +1,9 @@
 "use client";
 
-import { ProjectsSidePanel } from "@/components/panels/ProjectsSidePanel";
-import { ProjectsMain } from "@/components/projects/ProjectsMain";
-import { useSidePanel } from "@/lib/context/side-panel-context";
-import { useTrackVisit } from "@/lib/hooks/use-track-visit";
+import { ProjectsMain } from "@/features/manage-projects/ui/ProjectsMain";
+import { ProjectsSidePanel } from "@/features/manage-projects/ui/ProjectsSidePanel";
+import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTrackVisit } from "@/shared/hooks/use-track-visit";
 
 const PROJECTS_SIDE_PANEL = <ProjectsSidePanel />;
 

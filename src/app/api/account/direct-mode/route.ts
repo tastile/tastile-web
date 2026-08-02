@@ -1,4 +1,4 @@
-import { COOKIE_API_TOKEN, COOKIE_DIRECT_DAEMON, COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { COOKIE_API_TOKEN, COOKIE_DIRECT_DAEMON, COOKIE_USER_SUB } from "@/shared/auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
 const COOKIE_MAX_AGE_30_DAYS = 60 * 60 * 24 * 30;

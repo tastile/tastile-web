@@ -1,10 +1,10 @@
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { TastileLogo } from "@/components/TastileLogo";
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
-import { translations } from "@/lib/i18n/translations";
-import type { Locale } from "@/lib/stores/locale-store";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
+import { translations } from "@/shared/i18n/translations";
+import type { Locale } from "@/shared/stores/locale-store";
+import { SiteFooter } from "@/shared/ui/SiteFooter";
+import { SiteHeader } from "@/shared/ui/SiteHeader";
+import { TastileLogo } from "@/shared/ui/TastileLogo";
 import { Button, Pill } from "@mantine/core";
 import { ArrowUpRight, Download } from "lucide-react";
 

@@ -2,18 +2,18 @@
 
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import ApiExplorerPage from "./page";
+import ApiExplorer from "./page";
 import { renderWithMantine } from "@/test/render-with-mantine";
 
-vi.mock("@/lib/i18n/use-translation", () => ({
+vi.mock("@/shared/i18n/use-translation", () => ({
 	useTranslation: () => ({ t: (key: string) => key, locale: "ja" as const }),
 }));
 
 const callMock = vi.fn();
 
-vi.mock("@/lib/api/endpoints", async () => {
-	const actual = await vi.importActual<typeof import("@/lib/api/endpoints")>(
-		"@/lib/api/endpoints",
+vi.mock("@/shared/api/endpoints", async () => {
+	const actual = await vi.importActual<typeof import("@/shared/api/endpoints")>(
+		"@/shared/api/endpoints",
 	);
 	return {
 		...actual,
@@ -42,9 +42,9 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe("ApiExplorerPage run flow", () => {
+describe("ApiExplorer run flow", () => {
 	it("calls the core client with the selected endpoint and renders the response", async () => {
-		renderWithMantine(<ApiExplorerPage />);
+		renderWithMantine(<ApiExplorer />);
 
 		// Click the first row to focus a GET endpoint (listMyWorkspaces is GET, no body needed).
 		const rows = document.querySelectorAll("tbody tr");
@@ -66,7 +66,7 @@ describe("ApiExplorerPage run flow", () => {
 	});
 
 	it("captures the failed response and resets the running flag", async () => {
-		renderWithMantine(<ApiExplorerPage />);
+		renderWithMantine(<ApiExplorer />);
 
 		// Focus createWorkspace (POST) by searching for it. The endpoint
 		// summary rendered in the row is "Create workspace".

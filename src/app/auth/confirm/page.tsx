@@ -1,4 +1,4 @@
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
 import { Button } from "@mantine/core";
 import { AuthShell } from "../auth-shell";
 

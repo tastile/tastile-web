@@ -1,5 +1,5 @@
-import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { getPlans, getStripe } from "@/lib/stripe";
+import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {

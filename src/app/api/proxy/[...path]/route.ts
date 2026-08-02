@@ -1,4 +1,4 @@
-import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/lib/cognito/cookies";
+import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/shared/auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
 
 function getCloudApiBase(): string {

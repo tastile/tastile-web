@@ -1,8 +1,8 @@
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { LandingPage } from "@/components/marketing/LandingPage";
-import { type Lang, getMarketingDict } from "@/lib/i18n/marketing-dict";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { LandingPage } from "@/features/marketing/ui/LandingPage";
+import { type Lang, getMarketingDict } from "@/shared/i18n/marketing-dict";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
+import { SiteFooter } from "@/shared/ui/SiteFooter";
+import { SiteHeader } from "@/shared/ui/SiteHeader";
 
 export default async function Home({ searchParams }: { searchParams: Promise<{ lang?: string }> }) {
   const params = await searchParams;

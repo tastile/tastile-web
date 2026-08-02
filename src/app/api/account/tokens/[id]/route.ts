@@ -1,5 +1,5 @@
 import { coreUrl } from "@/lib/account/api-token-session";
-import { getAccountUserSub } from "@/lib/cognito/account-session";
+import { getAccountUserSub } from "@/shared/auth/account-session";
 import { NextResponse } from "next/server";
 
 type Context = {

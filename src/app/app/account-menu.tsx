@@ -7,7 +7,7 @@ import {
   FloatingMenuLabel,
   FloatingMenuSeparator,
   FloatingMenuTrigger,
-} from "@/components/ui/floating-menu";
+} from "@/shared/ui/floating-menu";
 import { Button } from "@mantine/core";
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";

@@ -1,4 +1,4 @@
-import { getIdTokenFromCookies } from "@/lib/cognito/cookies";
+import { getIdTokenFromCookies } from "@/shared/auth/cookies";
 import { redirect } from "next/navigation";
 import { AppLayoutClient } from "./layout-client";
 

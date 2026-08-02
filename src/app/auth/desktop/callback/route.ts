@@ -1,13 +1,13 @@
 import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
-import { verifyCognitoAccessToken } from "@/lib/cognito/authenticated-session";
+import { verifyCognitoAccessToken } from "@/shared/auth/authenticated-session";
 import {
   COOKIE_OAUTH_NEXT,
   COOKIE_OAUTH_STATE,
   COOKIE_PKCE_VERIFIER,
   setAuthCookies,
-} from "@/lib/cognito/cookies";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { exchangeCodeForTokens } from "@/lib/cognito/server";
+} from "@/shared/auth/cookies";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { exchangeCodeForTokens } from "@/shared/auth/server";
 import { cookies } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { callbackHtmlResponse } from "../../callback-html";

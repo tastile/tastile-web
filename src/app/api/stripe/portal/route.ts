@@ -1,6 +1,6 @@
 import { getSubscriptionForUser } from "@/lib/billing/server";
-import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
 import { getStripe } from "@/lib/stripe";
+import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import { NextResponse } from "next/server";
 
 export async function POST() {

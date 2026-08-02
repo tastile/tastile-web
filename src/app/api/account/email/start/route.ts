@@ -1,7 +1,7 @@
-import { updateCognitoUserEmail } from "@/lib/cognito/account-client";
-import { getAccountAccessToken } from "@/lib/cognito/account-session";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { normalizeEmail } from "@/lib/cognito/form";
+import { updateCognitoUserEmail } from "@/shared/auth/account-client";
+import { getAccountAccessToken } from "@/shared/auth/account-session";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { normalizeEmail } from "@/shared/auth/form";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

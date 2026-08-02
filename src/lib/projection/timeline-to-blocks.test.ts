@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { timelineResponseToBlocks } from "./timeline-to-blocks";
-import type { TimelineItem } from "@/lib/domain/v1/timeline-item";
-import { PlanRole, ResolutionState } from "@/lib/domain/v1/constants";
+import type { TimelineItem } from "@/tile/model/v1/timeline-item";
+import { PlanRole, ResolutionState } from "@/tile/model/v1/constants";
 
 const item = (overrides: Partial<TimelineItem> = {}): TimelineItem => ({
   placement_id: "p1",

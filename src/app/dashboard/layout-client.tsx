@@ -1,17 +1,17 @@
 "use client";
 
-import { NotificationsMenu } from "@/components/notifications/NotificationsMenu";
-import { SearchOverlay } from "@/components/search/SearchOverlay";
-import { SecurityLockGate } from "@/components/security/SecurityLockGate";
-import { ActivityBar } from "@/components/shell/ActivityBar";
-import { FloatingHeader } from "@/components/shell/FloatingHeader";
-import { SideToolPanel } from "@/components/shell/SideToolPanel";
-import { BottomSheet } from "@/components/ui/BottomSheet";
-import { AuthProvider, useAuth } from "@/lib/context/auth-context";
-import { SidePanelProvider, useSidePanelContent } from "@/lib/context/side-panel-context";
-import { ExecutionEngineProvider } from "@/lib/hooks/execution-engine-context";
-import { useTranslation } from "@/lib/i18n/use-translation";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+import { NotificationsMenu } from "@/features/view-notifications/ui/NotificationsMenu";
+import { AuthProvider, useAuth } from "@/shared/context/auth-context";
+import { SidePanelProvider, useSidePanelContent } from "@/shared/context/side-panel-context";
+import { ExecutionEngineProvider } from "@/shared/hooks/execution-engine-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
+import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
+import { BottomSheet } from "@/shared/ui/BottomSheet";
+import { SearchOverlay } from "@/shared/ui/SearchOverlay";
+import { SecurityLockGate } from "@/shared/ui/SecurityLockGate";
+import { ActivityBar } from "@/widgets/activity-bar/ui/ActivityBar";
+import { FloatingHeader } from "@/widgets/floating-header/ui/FloatingHeader";
+import { SideToolPanel } from "@/widgets/side-tool-panel/ui/SideToolPanel";
 import { ActionIcon } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { PanelLeftDashed } from "lucide-react";
@@ -19,13 +19,13 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-// QuickTileCreate is a 3000-line client component with many submodules;
+// QuickCreate is a 3000-line client component with many submodules;
 // split it out of the layout bundle so the initial dashboard load only
 // pays for the dialog when the user actually opens it. Rendered through
 // a Zustand store internally — keeping it always-mounted (no `loading`
 // placeholder) so the store subscription is wired before open.
-const QuickTileCreate = dynamic(
-  () => import("@/components/tiles/QuickTileCreate").then((m) => m.QuickTileCreate),
+const QuickCreate = dynamic(
+  () => import("@/features/create-tile/ui/QuickCreate").then((m) => m.QuickCreate),
   { ssr: false },
 );
 
@@ -124,8 +124,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         onOpenChange={(next) => (next ? openNotifications() : closeNotifications())}
         anchorRef={notificationsButtonRef}
       />
-      {/* QuickTileCreate: desktop = right slide, mobile = bottom slide-up */}
-      <QuickTileCreate />
+      {/* QuickCreate: desktop = right slide, mobile = bottom slide-up */}
+      <QuickCreate />
 
       {/* Mobile side-panel floating action button (only when below md and content exists) */}
       <MobileSidePanelFab onClick={openMobileSidePanel} />

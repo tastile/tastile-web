@@ -112,6 +112,9 @@ export interface WeekViewProps
   /** Week to display, Date object or date string in `YYYY-MM-DD` format */
   date: Date | string;
 
+  /** Override the list of dates to display (7 date strings). When provided, skips internal week calculation based on `date`. */
+  weekDates?: DateStringValue[];
+
   /** Called with the new date value when a date is selected */
   onDateChange?: (value: DateStringValue) => void;
 
@@ -405,6 +408,7 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
     recurrenceExpansionLimit,
     getTimeSlotProps,
     withAgenda,
+    weekDates: weekDatesProp,
     ...others
   } = props;
 
@@ -556,12 +560,14 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
     });
   };
 
-  const weekdays = getWeekDays({
-    week: date,
-    withWeekendDays,
-    weekendDays: ctx.getWeekendDays(weekendDays),
-    firstDayOfWeek: ctx.getFirstDayOfWeek(firstDayOfWeek),
-  });
+  const weekdays =
+    weekDatesProp ??
+    getWeekDays({
+      week: date,
+      withWeekendDays,
+      weekendDays: ctx.getWeekendDays(weekendDays),
+      firstDayOfWeek: ctx.getFirstDayOfWeek(firstDayOfWeek),
+    });
 
   const expandedEvents = expandRecurringEvents({
     events,
@@ -573,7 +579,7 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
   });
 
   const weekEvents = getWeekViewEvents({
-    date,
+    date: weekDatesProp ? (weekdays[0] ?? date) : date,
     events: expandedEvents,
     startTime,
     endTime,

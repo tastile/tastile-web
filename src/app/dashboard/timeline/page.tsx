@@ -1,5 +1,5 @@
-import { ScheduleTimeline } from "@/components/schedule/ScheduleTimeline";
-import { MinuteClockProvider } from "@/lib/hooks/minute-clock";
+import { ScheduleTimeline } from "@/features/manage-schedule/ui/ScheduleTimeline";
+import { MinuteClockProvider } from "@/shared/hooks/minute-clock";
 import { Suspense } from "react";
 
 export default function TimelinePage() {

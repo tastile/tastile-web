@@ -1,6 +1,6 @@
-import { clearAuthCookies } from "@/lib/cognito/cookies";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { clearAuthCookies } from "@/shared/auth/cookies";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { getCognitoPublicOrigin } from "@/shared/auth/public-origin";
 import { NextResponse } from "next/server";
 
 export async function GET() {

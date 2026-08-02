@@ -1,6 +1,6 @@
-import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
-import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from "@/lib/cognito/cookies";
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
+import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
+import { COOKIE_ID_TOKEN, COOKIE_REFRESH_TOKEN } from "@/shared/auth/cookies";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 

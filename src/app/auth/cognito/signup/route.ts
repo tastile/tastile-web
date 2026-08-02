@@ -1,5 +1,5 @@
-import { COOKIE_OAUTH_NEXT, COOKIE_OAUTH_STATE, COOKIE_PKCE_VERIFIER } from "@/lib/cognito/cookies";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { COOKIE_OAUTH_NEXT, COOKIE_OAUTH_STATE, COOKIE_PKCE_VERIFIER } from "@/shared/auth/cookies";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
 import {
   buildCognitoSignupUrl,
   isConfiguredCognitoIdentityProvider,
@@ -7,9 +7,9 @@ import {
   safeNextPath,
   safeOAuthRedirectUri,
   safePkceValue,
-} from "@/lib/cognito/login-url";
-import { generatePkcePair, generateState } from "@/lib/cognito/pkce";
-import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+} from "@/shared/auth/login-url";
+import { generatePkcePair, generateState } from "@/shared/auth/pkce";
+import { getCognitoPublicOrigin } from "@/shared/auth/public-origin";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {

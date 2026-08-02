@@ -1,5 +1,5 @@
-import { PlanRole, ResolutionState } from "@/lib/domain/v1/constants";
-import type { TimelineItem } from "@/lib/domain/v1/timeline-item";
+import { PlanRole, ResolutionState } from "@/tile/model/v1/constants";
+import type { TimelineItem } from "@/tile/model/v1/timeline-item";
 
 export type CalendarBlockKind = "work" | "break" | "label" | "scheduled";
 export type SemanticRole = "work" | "break" | "label";

@@ -147,23 +147,44 @@ function todayLocalIso(tzOffsetMinutes: number): string {
 }
 
 /**
- * DayView in mode "around" needs a 24-cell hour grid centered on
- * `now` — first slot is `currentHour - 12`. Mode "future" starts at
- * `currentHour` and wraps to the next day. Mode "scope" starts at
- * midnight. Returns hour numbers (0..23) for the grid, in render
- * order.
+ * Compute startTime / endTime for the DayView grid based on display mode.
+ *
+ * - scope:  full 24 h  (00:00:00 – 23:59:59)
+ * - around: 24 h centred on now, clipped to same-day bounds
+ * - future: from now to end of day
+ *
+ * The vendored DayView generates slots within a single day, so the
+ * range must always satisfy startTime < endTime on the same day.
+ * Cross-midnight visualisation is achieved via scroll + event overlap
+ * in getDayViewEvents.
  */
-function getDayViewHourOffsets(
-  now: Date,
-  mode: DisplayMode = "future",
-): { startHour: number; hours: number[] } {
-  const currentHour = now.getHours();
-  const startHour = mode === "around" ? (currentHour - 12 + 24) % 24 : currentHour;
-  const hours: number[] = [];
-  for (let i = 0; i < 24; i++) {
-    hours.push((startHour + i) % 24);
+export function getDayViewTimeRange(mode: DisplayMode): { startTime: string; endTime: string } {
+  if (mode === "scope") {
+    return { startTime: "00:00:00", endTime: "23:59:59" };
   }
-  return { startHour, hours };
+
+  const currentHour = new Date().getHours();
+
+  if (mode === "around") {
+    // 24 h centred on now, but clipped to [0, 23] so slots are always
+    // within the same day.  When clipping shortens the window, the
+    // scroll position (getScrollTimeForMode) still centres on "now".
+    const startHour = Math.max(0, currentHour - 12);
+    const endHour = Math.min(23, currentHour + 12);
+    if (startHour >= endHour) {
+      return { startTime: "00:00:00", endTime: "23:59:59" };
+    }
+    return {
+      startTime: `${String(startHour).padStart(2, "0")}:00:00`,
+      endTime: `${String(endHour).padStart(2, "0")}:59:59`,
+    };
+  }
+
+  // future: from current hour to end of day
+  return {
+    startTime: `${String(currentHour).padStart(2, "0")}:00:00`,
+    endTime: "23:59:59",
+  };
 }
 
 /**

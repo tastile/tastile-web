@@ -1,37 +1,62 @@
 {
-  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "$schema": "https://knip.dev/schema.json",
   "entry": [
-    "next.config.*",
-    "src/app/**/{page,layout,route,loading,error,not-found,template,default,icon,opengraph-image,twitter-image}.{ts,tsx}",
-    "scripts/configure-cognito-social-idps.ps1"
-  ],
-  "project": [
-    "src/**/*.{ts,tsx,js,jsx,mjs}"
-  ],
-  "ignoreDependencies": [
-    "tailwindcss",
-    "@typescript-eslint/typescript-estree",
-    "axe-core",
-    "openapi-typescript",
-    "postcss",
-    "sharp",
-    "babel-plugin-react-compiler"
+    "src/app/**/*.{ts,tsx}",
+    "src/shared/i18n/index.ts",
+    "src/shared/ui/index.ts",
+    "src/tile/ui/index.ts",
+    "src/execution/model/index.ts",
+    "src/calendar/model/index.ts",
+    "src/widgets/*/ui/index.ts",
+    "src/features/*/ui/index.ts",
+    "src/views/dashboard/index.ts",
+    "src/shared/hooks/index.ts",
+    "src/shared/stores/index.ts",
+    "src/shared/context/index.ts",
+    "src/shared/query/index.ts",
+    "src/shared/auth/index.ts"
   ],
   "ignore": [
-    "src/lib/api/v1/openapi-contract.ts",
-    ".reference/**",
-    "src/lib/vendored/mantine-schedule/**"
+    "node_modules/**",
+    ".next/**",
+    "coverage/**",
+    "src/lib/vendored/**",
+    "*.config.*",
+    "scripts/**",
+    "e2e/_manual_walkthrough*.js",
+    "e2e/_zoom*.js",
+    "src/execution/model/reducer.ts",
+    "src/features/create-tile/ui/AvailabilityPanel.tsx",
+    "src/features/create-tile/ui/LabelSpanPicker.tsx",
+    "src/shared/hooks/use-current-actor.ts"
   ],
-  "ignoreFiles": [
-    "src/components/__probe__.tsx",
-    "src/lib/__probe__.ts",
-    "src/lib/hooks/use-__probe__.ts",
-    "src/lib/domain/v1/__probe__.ts",
-    "src/lib/api/v1/openapi-generated.d.ts",
-    "src/lib/api/v1/openapi-contract.ts",
-    "src/lib/vendored/mantine-schedule/hooks/index.ts",
-    "src/components/schedule/eventAdapter.ts",
-    "src/components/ui/ProjectTree.tsx"
+  "ignoreDependencies": [
+    "@types/node",
+    "@types/react",
+    "@types/react-dom",
+    "typescript",
+    "eslint",
+    "eslint-config-next",
+    "@eslint/eslintrc",
+    "vitest",
+    "@vitest/coverage-v8",
+    "@vitest/ui",
+    "jsdom",
+    "testing-library",
+    "@testing-library/*",
+    "sharp"
   ],
-  "ignoreExportsUsedInFile": true
+  "ignoreExportsUsedInFile": true,
+  "rules": {
+    "files": "error",
+    "dependencies": "warn",
+    "unlisted": "warn",
+    "unresolved": "warn",
+    "exports": "warn",
+    "types": "warn",
+    "nsExports": "warn",
+    "nsTypes": "warn",
+    "duplicated": "warn",
+    "enumMembers": "warn"
+  }
 }

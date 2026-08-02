@@ -1,12 +1,12 @@
-import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
+import { verifyCognitoAccessToken } from "@/shared/auth/access-token-verification";
 import {
   COOKIE_EMAIL_AUTH_SESSION,
   COOKIE_EMAIL_AUTH_USERNAME,
   setAuthCookies,
-} from "@/lib/cognito/cookies";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { finalizeMfaSetup } from "@/lib/cognito/finalize-mfa-setup";
-import { verifySoftwareToken } from "@/lib/cognito/verify-software-token";
+} from "@/shared/auth/cookies";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { finalizeMfaSetup } from "@/shared/auth/finalize-mfa-setup";
+import { verifySoftwareToken } from "@/shared/auth/verify-software-token";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 

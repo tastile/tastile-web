@@ -403,7 +403,7 @@ button {
   }
 }
 
-/* Dual-range slider for QuickTileCreate DurationRow.
+/* Dual-range slider for QuickCreate DurationRow.
    Two <input type="range"> are stacked, each shows a single thumb.
    pointer-events-none on the inputs lets the track click pass to
    the *other* input on the opposite side of the active thumb. */

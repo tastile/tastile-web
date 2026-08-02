@@ -1,6 +1,6 @@
-import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
-import { getAccountAccessToken, getAccountIdTokenClaims } from "@/lib/cognito/account-session";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { verifyCognitoAccessToken } from "@/shared/auth/access-token-verification";
+import { getAccountAccessToken, getAccountIdTokenClaims } from "@/shared/auth/account-session";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
 import { NextResponse } from "next/server";
 
 export async function GET() {

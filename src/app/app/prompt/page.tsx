@@ -21,7 +21,7 @@
  * no-op.
  */
 
-import { DecisionPromptSheet } from "@/components/execution/DecisionPromptSheet";
+import { DecisionPromptSheet } from "@/features/execute-tile/ui/DecisionPromptSheet";
 
 export default function PromptPage() {
   return (

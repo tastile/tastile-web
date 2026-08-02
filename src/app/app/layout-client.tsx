@@ -1,12 +1,12 @@
 "use client";
 
-import { AppShell } from "@/components/layout/AppShell";
-import { QuickTileCreate } from "@/components/tiles/QuickTileCreate";
+import { QuickCreate } from "@/features/create-tile/ui/QuickCreate";
 import {
   ExecutionEngineProvider,
   useExecutionEngineContext,
-} from "@/lib/hooks/execution-engine-context";
-import { useQuickCreateStore } from "@/lib/stores/quick-create-store";
+} from "@/shared/hooks/execution-engine-context";
+import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
+import { AppShell } from "@/widgets/app-shell/ui/AppShell";
 import { useEffect } from "react";
 
 export function AppLayoutClient({ children }: { children: React.ReactNode }) {
@@ -34,13 +34,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
+  const activeTile = state.execution.activeTileId
+    ? state.tiles.get(state.execution.activeTileId as import("@/shared/model/ids").TileId)
+    : null;
+
   return (
     <AppShell
-      quickCreatePanel={<QuickTileCreate />}
+      quickCreatePanel={<QuickCreate />}
       executionState={{
-        activeTileTitle: state.execution.activeTileId
-          ? (state.tiles.get(state.execution.activeTileId)?.core.title ?? null)
-          : null,
+        activeTileTitle: activeTile?.core.title ?? null,
         phaseKind: state.execution.phaseKind,
         phaseStartedAt: state.execution.phaseStartedAt,
         phaseEndsAt: state.execution.phaseEndsAt,

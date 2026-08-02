@@ -1,9 +1,9 @@
 "use client";
 
-import { TasksSidePanel } from "@/components/panels/TasksSidePanel";
-import { TasksMain } from "@/components/tasks/TasksMain";
-import { useSidePanel } from "@/lib/context/side-panel-context";
-import { useTrackVisit } from "@/lib/hooks/use-track-visit";
+import { TasksMain } from "@/features/manage-tasks/ui/TasksMain";
+import { TasksSidePanel } from "@/features/manage-tasks/ui/TasksSidePanel";
+import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTrackVisit } from "@/shared/hooks/use-track-visit";
 
 const TASKS_SIDE_PANEL = <TasksSidePanel />;
 

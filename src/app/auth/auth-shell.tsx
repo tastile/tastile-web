@@ -1,6 +1,6 @@
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { TastileLogo } from "@/components/TastileLogo";
+import { SiteFooter } from "@/shared/ui/SiteFooter";
+import { SiteHeader } from "@/shared/ui/SiteHeader";
+import { TastileLogo } from "@/shared/ui/TastileLogo";
 
 export function AuthShell({
   title,

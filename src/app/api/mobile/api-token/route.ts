@@ -1,6 +1,6 @@
 import { coreUrl } from "@/lib/account/api-token-session";
-import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
+import { verifyCognitoAccessToken } from "@/shared/auth/access-token-verification";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {

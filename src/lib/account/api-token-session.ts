@@ -1,5 +1,5 @@
-import { COOKIE_API_TOKEN } from "@/lib/cognito/cookies";
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
+import { COOKIE_API_TOKEN } from "@/shared/auth/cookies";
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
 

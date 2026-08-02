@@ -1,14 +1,14 @@
-import { verifyCognitoAccessToken } from "@/lib/cognito/access-token-verification";
+import { resolveCanonicalHostRedirect } from "@/lib/host-routing";
+import { verifyCognitoAccessToken } from "@/shared/auth/access-token-verification";
 import {
   COOKIE_ACCESS_TOKEN,
   COOKIE_ID_TOKEN,
   COOKIE_REFRESH_TOKEN,
   COOKIE_USER_SUB,
-} from "@/lib/cognito/cookie-names";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { safeNextPath } from "@/lib/cognito/login-url";
-import { refreshTokens } from "@/lib/cognito/server";
-import { resolveCanonicalHostRedirect } from "@/lib/host-routing";
+} from "@/shared/auth/cookie-names";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { safeNextPath } from "@/shared/auth/login-url";
+import { refreshTokens } from "@/shared/auth/server";
 import { type NextRequest, NextResponse } from "next/server";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/app"];

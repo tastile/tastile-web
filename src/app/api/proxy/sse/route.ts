@@ -2,7 +2,7 @@ import {
   ensureDefaultApiTokenForUser,
   getApiTokenFromRequest,
 } from "@/lib/account/api-token-session";
-import { resolveAuthenticatedUserSub } from "@/lib/cognito/authenticated-session";
+import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import type { NextRequest } from "next/server";
 
 const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";

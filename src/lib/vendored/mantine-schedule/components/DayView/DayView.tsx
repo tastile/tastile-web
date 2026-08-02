@@ -493,8 +493,8 @@ export const DayView = factory<DayViewFactory>((_props) => {
 
   const expandedEvents = expandRecurringEvents({
     events,
-    rangeStart: dayjs(date).startOf("day").toDate(),
-    rangeEnd: dayjs(date).endOf("day").toDate(),
+    rangeStart: dayjs(date).subtract(1, "day").startOf("day").toDate(),
+    rangeEnd: dayjs(date).add(2, "day").endOf("day").toDate(),
     expansionLimit: recurrenceExpansionLimit,
   });
 
@@ -504,6 +504,7 @@ export const DayView = factory<DayViewFactory>((_props) => {
     startTime,
     endTime,
     intervalMinutes,
+    gridRefDate: date,
   });
 
   const handleExternalDrop = useCallback(

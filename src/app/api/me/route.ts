@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { getCoreClient } from "@/lib/api/endpoints";
-import { getAccountIdTokenClaims, getAccountOwnerId } from "@/lib/cognito/account-session";
+import { getCoreClient } from "@/shared/api/endpoints";
+import { getAccountIdTokenClaims, getAccountOwnerId } from "@/shared/auth/account-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";

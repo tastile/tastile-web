@@ -1,9 +1,9 @@
 "use client";
 
-import { ScheduleSidePanel } from "@/components/panels/ScheduleSidePanel";
-import { ScheduleMain } from "@/components/schedule/ScheduleMain";
-import { useSidePanel } from "@/lib/context/side-panel-context";
-import { useTrackVisit } from "@/lib/hooks/use-track-visit";
+import { ScheduleMain } from "@/features/manage-schedule/ui/ScheduleMain";
+import { ScheduleSidePanel } from "@/features/manage-schedule/ui/ScheduleSidePanel";
+import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTrackVisit } from "@/shared/hooks/use-track-visit";
 
 const SCHEDULE_SIDE_PANEL = <ScheduleSidePanel />;
 

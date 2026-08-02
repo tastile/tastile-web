@@ -1,9 +1,9 @@
-import { COOKIE_EMAIL_AUTH_SESSION, COOKIE_EMAIL_AUTH_USERNAME } from "@/lib/cognito/cookies";
-import { tryGetCognitoEnv } from "@/lib/cognito/env";
-import { normalizeEmail } from "@/lib/cognito/form";
-import { safeOAuthRedirectUri, safePkceValue } from "@/lib/cognito/login-url";
-import { CognitoPublicError, startPasswordSignIn } from "@/lib/cognito/public-client";
-import { getCognitoPublicOrigin } from "@/lib/cognito/public-origin";
+import { COOKIE_EMAIL_AUTH_SESSION, COOKIE_EMAIL_AUTH_USERNAME } from "@/shared/auth/cookies";
+import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { normalizeEmail } from "@/shared/auth/form";
+import { safeOAuthRedirectUri, safePkceValue } from "@/shared/auth/login-url";
+import { CognitoPublicError, startPasswordSignIn } from "@/shared/auth/public-client";
+import { getCognitoPublicOrigin } from "@/shared/auth/public-origin";
 import { type NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {

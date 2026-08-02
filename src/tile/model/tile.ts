@@ -1,0 +1,163 @@
+import type { SegmentId, TileId } from "@/shared/model/ids";
+
+export type StartSource = "manual" | "auto" | "prompt" | "system";
+export type SegmentMode = "work" | "break";
+export type TileLifecycle = "ready" | "started" | "done" | "closed";
+export type ObjectiveMode = "finish_once" | "recurring" | "maximize_within_interval" | "label_only";
+export type DoneRule = "manual" | "time_reached" | "interval_end";
+export type SemanticRole = "work" | "break" | "label";
+
+export type RecurrenceGenerator =
+  | { kind: "time_based"; step_min: number; anchor_epoch_min: number | null }
+  | { kind: "focus_block_based"; phases: Array<{ focus_min: number; break_min: number }> };
+
+export interface TimeRange {
+  start_offset_min: number;
+  end_offset_min: number;
+}
+
+export interface RecurrenceModel {
+  generator: RecurrenceGenerator;
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
+  window: {
+    weekday_mask: number;
+    start_offset_min: number;
+    end_offset_min: number;
+    exclusions: TimeRange[];
+  };
+  selector: {
+    expression: unknown | null;
+  };
+}
+
+export interface Segment {
+  id: SegmentId;
+  startAt: Date;
+  endAt: Date | null;
+  expectedEndAt?: Date | null;
+  mode: SegmentMode;
+  sourceTileId: TileId;
+}
+
+export interface TileCore {
+  id: TileId;
+  title: string;
+  nextAction: string | null;
+  doneDefinition: string | null;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  deferredAt?: Date | null;
+  nextStartAt?: Date | null;
+  /**
+   * Authoritative lifecycle from the v1 read model. The mapper writes this
+   * directly from the numeric code; legacy code paths (mock tiles, QuickTile)
+   * still get the derived value from `completedAt` / `startedAt` via
+   * `getTileLifecycle`.
+   */
+  lifecycle?: TileLifecycle;
+}
+
+export interface Tile {
+  core: TileCore;
+  work: {
+    segments: Segment[];
+  };
+  temporal: {
+    /** IANA timezone name (e.g. "Asia/Tokyo") for displaying this
+     *  tile's instants. `null` means UTC. */
+    tz: string | null;
+    releaseAt: Date | null;
+    dueAt: Date | null;
+    fixedStart: Date | null;
+    fixedEnd: Date | null;
+    activeStart: Date | null;
+    activeEnd: Date | null;
+  };
+  objective: {
+    objectiveMode: ObjectiveMode;
+    targetWorkMin: number | null;
+    targetRestMin: number | null;
+    doneRule: DoneRule | null;
+    recurrence: RecurrenceModel | null;
+  };
+  interruption: {
+    interruptPenalty: number;
+    resumePenalty: number;
+    breakSplitsWork: boolean;
+    externalInterruptOnly: boolean;
+  };
+  automation: {
+    promptOnStart: boolean;
+    promptOnEnd: boolean;
+    autoStartAllowed: boolean;
+    autoEndAllowed: boolean;
+  };
+  annotation: {
+    semanticRole: SemanticRole;
+    labels: string[];
+    timedLabels: Array<{
+      label: string;
+      startAt: Date | null;
+      endAt: Date | null;
+    }>;
+    interruptedAt?: Date | null;
+    interruptSource?: string | null;
+    interruptReason?: string | null;
+  };
+}
+
+export const Tile = {
+  create: (id: TileId, title: string): Tile => ({
+    core: {
+      id,
+      title,
+      nextAction: null,
+      doneDefinition: null,
+      startedAt: null,
+      completedAt: null,
+    },
+    work: {
+      segments: [],
+    },
+    temporal: {
+      tz: null,
+      releaseAt: null,
+      dueAt: null,
+      fixedStart: null,
+      fixedEnd: null,
+      activeStart: null,
+      activeEnd: null,
+    },
+    objective: {
+      objectiveMode: "finish_once",
+      targetWorkMin: null,
+      targetRestMin: null,
+      doneRule: "manual",
+      recurrence: null,
+    },
+    interruption: {
+      interruptPenalty: 3,
+      resumePenalty: 3,
+      breakSplitsWork: true,
+      externalInterruptOnly: false,
+    },
+    automation: {
+      promptOnStart: false,
+      promptOnEnd: true,
+      autoStartAllowed: false,
+      autoEndAllowed: false,
+    },
+    annotation: {
+      semanticRole: "work",
+      labels: [],
+      timedLabels: [],
+    },
+  }),
+};
+
+export function getTileLifecycle(tile: Tile): TileLifecycle {
+  if (tile.core.lifecycle) return tile.core.lifecycle;
+  if (tile.core.completedAt) return "done";
+  if (tile.core.startedAt) return "started";
+  return "ready";
+}

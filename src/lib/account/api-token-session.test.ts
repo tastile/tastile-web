@@ -15,7 +15,7 @@ vi.mock("@/lib/cognito/account-session", () => ({
 	getAccountUserSub: vi.fn(async () => mockUserSub),
 }));
 
-const { COOKIE_API_TOKEN } = await import("@/lib/cognito/cookies");
+const { COOKIE_API_TOKEN } = await import("@/shared/auth/cookies");
 const {
 	ensureDefaultApiTokenForUser,
 	getApiTokenFromCookies,

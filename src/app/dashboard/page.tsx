@@ -1,6 +1,6 @@
 "use client";
 
-import { getLastVisitedPath } from "@/lib/hooks/use-track-visit";
+import { getLastVisitedPath } from "@/shared/hooks/use-track-visit";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
 

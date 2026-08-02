@@ -1,5 +1,5 @@
-import type { AppState } from "../core/state";
-import { type Tile, getTileLifecycle } from "../domain/tile";
+import type { AppState } from "@/execution/model/state";
+import { type Tile, getTileLifecycle } from "@/tile/model/tile";
 
 export interface NextTileSuggestion {
   tile: Tile;

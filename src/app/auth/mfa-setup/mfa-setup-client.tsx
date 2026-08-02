@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslation } from "@/lib/i18n/use-translation";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

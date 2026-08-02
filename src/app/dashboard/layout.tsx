@@ -1,4 +1,4 @@
-import { DashboardQueryProvider } from "@/lib/query/query-provider";
+import { DashboardQueryProvider } from "@/shared/query/query-provider";
 import { DashboardLayoutClient } from "./layout-client";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

@@ -1,8 +1,8 @@
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { PricingCard } from "@/components/marketing/PricingCard";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
-import { translations } from "@/lib/i18n/translations";
+import { PricingCard } from "@/features/marketing/ui/PricingCard";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
+import { translations } from "@/shared/i18n/translations";
+import { SiteFooter } from "@/shared/ui/SiteFooter";
+import { SiteHeader } from "@/shared/ui/SiteHeader";
 import { Check } from "lucide-react";
 import Link from "next/link";
 

@@ -9,10 +9,10 @@
 //! field conversion, the v1 command envelope wrapping, and HTTP error
 //! mapping.
 
-import { setAuthCookies } from "@/lib/cognito/cookies";
-import { ensureBridgeAuth } from "@/lib/cognito/refresh-bridge-auth";
-import { parseIdTokenClaims } from "@/lib/cognito/server";
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
+import { setAuthCookies } from "@/shared/auth/cookies";
+import { ensureBridgeAuth } from "@/shared/auth/refresh-bridge-auth";
+import { parseIdTokenClaims } from "@/shared/auth/server";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
@@ -108,7 +108,7 @@ function envelope<T>(payload: T): Record<string, unknown> {
 
 async function bridgeHeaders(extra?: Record<string, string>): Promise<{
   headers: Record<string, string>;
-  refreshedTokens: import("@/lib/cognito/server").CognitoTokenSet | null;
+  refreshedTokens: import("@/shared/auth/server").CognitoTokenSet | null;
 } | null> {
   if (isE2EBypass()) {
     return {
@@ -143,7 +143,7 @@ async function bridgeHeaders(extra?: Record<string, string>): Promise<{
 
 async function applyRefreshedAuthCookies(
   response: NextResponse,
-  refreshedTokens: import("@/lib/cognito/server").CognitoTokenSet | null,
+  refreshedTokens: import("@/shared/auth/server").CognitoTokenSet | null,
 ): Promise<void> {
   if (!refreshedTokens) return;
   const claims = parseIdTokenClaims(refreshedTokens.id_token);

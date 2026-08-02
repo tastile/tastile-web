@@ -1,7 +1,7 @@
-import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
-import { TastileLogo } from "@/components/TastileLogo";
-import { getFooterTranslations, getHeaderTranslations } from "@/lib/i18n/server-translations";
+import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
+import { SiteFooter } from "@/shared/ui/SiteFooter";
+import { SiteHeader } from "@/shared/ui/SiteHeader";
+import { TastileLogo } from "@/shared/ui/TastileLogo";
 import { Laptop, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 

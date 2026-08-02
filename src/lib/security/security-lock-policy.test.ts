@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
-	getSecurityLockEnabled,
+	getEnabled,
 	SECURITY_LOCK_ENABLED_KEY,
-	shouldRequireSecurityUnlock,
+	shouldRequireUnlock,
 } from "./security-lock-policy";
 
 function createMemoryStorage(): Storage {
@@ -23,35 +23,35 @@ function createMemoryStorage(): Storage {
 	} as Storage;
 }
 
-describe("getSecurityLockEnabled (default OFF)", () => {
+describe("getEnabled (default OFF)", () => {
 	it("returns false when the key is unset (default off)", () => {
 		const storage = createMemoryStorage();
-		expect(getSecurityLockEnabled(storage)).toBe(false);
+		expect(getEnabled(storage)).toBe(false);
 	});
 
 	it("returns true when the user explicitly opted in (stored \"true\")", () => {
 		const storage = createMemoryStorage();
 		storage.setItem(SECURITY_LOCK_ENABLED_KEY, "true");
-		expect(getSecurityLockEnabled(storage)).toBe(true);
+		expect(getEnabled(storage)).toBe(true);
 	});
 
 	it("returns false when the user explicitly opted out (stored \"false\")", () => {
 		const storage = createMemoryStorage();
 		storage.setItem(SECURITY_LOCK_ENABLED_KEY, "false");
-		expect(getSecurityLockEnabled(storage)).toBe(false);
+		expect(getEnabled(storage)).toBe(false);
 	});
 
 	it("returns false for any non-true value (treats legacy / unexpected values as off)", () => {
 		const storage = createMemoryStorage();
 		storage.setItem(SECURITY_LOCK_ENABLED_KEY, "1");
-		expect(getSecurityLockEnabled(storage)).toBe(false);
+		expect(getEnabled(storage)).toBe(false);
 	});
 });
 
-describe("shouldRequireSecurityUnlock", () => {
+describe("shouldRequireUnlock", () => {
 	it("requires unlock when elapsed time is past timeout", () => {
 		expect(
-			shouldRequireSecurityUnlock({
+			shouldRequireUnlock({
 				enabled: true,
 				timeoutMinutes: 10,
 				lastLeftAt: 1_000,
@@ -62,7 +62,7 @@ describe("shouldRequireSecurityUnlock", () => {
 
 	it("skips when disabled", () => {
 		expect(
-			shouldRequireSecurityUnlock({
+			shouldRequireUnlock({
 				enabled: false,
 				timeoutMinutes: 10,
 				lastLeftAt: 1_000,

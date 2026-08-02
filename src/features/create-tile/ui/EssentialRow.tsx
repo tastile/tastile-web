@@ -1,0 +1,117 @@
+import { cn } from "@/shared/lib/cn";
+import { Button, UnstyledButton } from "@mantine/core";
+import { Check, ChevronRight, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
+export function EssentialRow({
+  icon: Icon,
+  label,
+  chip,
+  clearable,
+  onClear,
+  onClick,
+  editAria,
+  clearAria,
+  confirmClearAria,
+  confirmClearLabel,
+  testId,
+}: {
+  icon: typeof import("lucide-react").Calendar;
+  label: string;
+  chip: React.ReactNode;
+  clearable?: boolean;
+  onClear?: () => void;
+  onClick: () => void;
+  editAria?: string;
+  clearAria?: string;
+  confirmClearAria?: string;
+  confirmClearLabel?: string;
+  testId?: string;
+}) {
+  const [armed, setArmed] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
+  function disarm() {
+    setArmed(false);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }
+
+  function handleClearClick() {
+    if (!onClear) return;
+    if (armed) {
+      disarm();
+      onClear();
+    } else {
+      setArmed(true);
+      timerRef.current = setTimeout(() => {
+        timerRef.current = null;
+        setArmed(false);
+      }, 4000);
+    }
+  }
+
+  const canClear = Boolean(clearable && onClear);
+
+  return (
+    <div className="relative min-h-[48px]">
+      <UnstyledButton
+        onClick={onClick}
+        aria-label={editAria ?? `${label} Edit`}
+        data-testid={testId}
+        className="group flex min-h-[48px] w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+          <Icon size={14} />
+        </div>
+        <span className="w-[58px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
+          {label}
+        </span>
+        <div className="min-w-0 flex-1 text-left">{chip}</div>
+        <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+      </UnstyledButton>
+      {canClear ? (
+        <div className="absolute right-8 top-1/2 -translate-y-1/2">
+          <Button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClearClick();
+            }}
+            aria-label={armed ? (confirmClearAria ?? "Confirm") : (clearAria ?? "Clear selection")}
+            data-armed={armed ? "true" : undefined}
+            variant="subtle"
+            size="xs"
+            className={cn(
+              "transition-colors",
+              armed
+                ? "animate-pulse bg-danger text-white hover:bg-danger/90"
+                : "text-foreground-muted hover:bg-danger/15 hover:text-danger",
+            )}
+            onBlur={() => armed && disarm()}
+          >
+            {armed ? (
+              <>
+                <Check size={12} />
+                {confirmClearLabel ?? "Confirm"}
+              </>
+            ) : (
+              <X size={12} />
+            )}
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
