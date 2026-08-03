@@ -1,43 +1,47 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const resolveAuthenticatedUserSub = vi.fn();
-const getSubscriptionForUser = vi.fn();
+// Mock at module level
+vi.mock("@/lib/cognito/authenticated-session", () => ({
+  resolveAuthenticatedUserSub: vi.fn(),
+}))
 
-vi.mock("@/lib/cognito/authenticated-session", () => ({ resolveAuthenticatedUserSub }));
-vi.mock("@/lib/billing/server", () => ({ getSubscriptionForUser }));
+vi.mock("@/lib/billing/server", () => ({
+  getSubscriptionForUser: vi.fn(),
+}))
+
+const mockResolve = vi.mocked(vi.importActual("@/lib/cognito/authenticated-session")).resolveAuthenticatedUserSub
+const mockGetSubscription = vi.mocked(vi.importActual("@/lib/billing/server")).getSubscriptionForUser
 
 beforeEach(() => {
-  resolveAuthenticatedUserSub.mockReset();
-  getSubscriptionForUser.mockReset();
-  vi.resetModules();
-});
-
+  mockResolve.mockReset()
+  mockGetSubscription.mockReset()
+})
 
 describe("GET /api/billing/subscription", () => {
   it("returns 401 when not authenticated", async () => {
-    resolveAuthenticatedUserSub.mockResolvedValueOnce(null);
-    const { GET } = await import("./route");
-    const res = await GET();
-    expect(res.status).toBe(401);
-    const body = await res.json();
-    expect(body.error).toMatch(/Unauthorized/);
-    expect(getSubscriptionForUser).not.toHaveBeenCalled();
-  });
+    mockResolve.mockResolvedValueOnce(null)
+    const { GET } = await import("./route")
+    const res = await GET()
+    expect(res.status).toBe(401)
+    const body = await res.json()
+    expect(body.error).toMatch(/Unauthorized/)
+    expect(mockGetSubscription).not.toHaveBeenCalled()
+  })
 
   it("returns the subscription state for the authed sub", async () => {
-    resolveAuthenticatedUserSub.mockResolvedValueOnce("sub-abc");
-    getSubscriptionForUser.mockResolvedValueOnce({
+    const { GET } = await import("./route")
+    mockResolve.mockResolvedValueOnce("sub-abc")
+    mockGetSubscription.mockResolvedValueOnce({
       status: "active",
       interval: "monthly",
       priceId: "price_1",
       customerId: "cus_1",
       currentPeriodEnd: 1700000000,
       cancelAtPeriodEnd: false,
-    });
-    const { GET } = await import("./route");
-    const res = await GET();
-    expect(res.status).toBe(200);
-    const body = await res.json();
+    })
+    const res = await GET()
+    expect(res.status).toBe(200)
+    const body = await res.json()
     expect(body.subscription).toEqual({
       status: "active",
       interval: "monthly",
@@ -45,17 +49,27 @@ describe("GET /api/billing/subscription", () => {
       customerId: "cus_1",
       currentPeriodEnd: 1700000000,
       cancelAtPeriodEnd: false,
-    });
-    expect(getSubscriptionForUser).toHaveBeenCalledWith("sub-abc");
-  });
+    })
+    expect(mockGetSubscription).toHaveBeenCalledWith("sub-abc")
+  })
+
+  it("returns 404 when user has no subscription", async () => {
+    const { GET } = await import("./route")
+    mockResolve.mockResolvedValueOnce("sub-abc")
+    mockGetSubscription.mockResolvedValueOnce(null)
+    const res = await GET()
+    expect(res.status).toBe(404)
+    const body = await res.json()
+    expect(body.error).toMatch(/No active subscription/)
+  })
 
   it("passes through the free state", async () => {
-    resolveAuthenticatedUserSub.mockResolvedValueOnce("sub-xyz");
-    getSubscriptionForUser.mockResolvedValueOnce({ status: "free" });
-    const { GET } = await import("./route");
-    const res = await GET();
-    expect(res.status).toBe(200);
-    const body = await res.json();
-    expect(body.subscription).toEqual({ status: "free" });
-  });
-});
+    const { GET } = await import("./route")
+    mockResolve.mockResolvedValueOnce("sub-xyz")
+    mockGetSubscription.mockResolvedValueOnce({ status: "free" })
+    const res = await GET()
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.subscription).toEqual({ status: "free" })
+  })
+})
