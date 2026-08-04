@@ -29,13 +29,11 @@
 import { translations } from "@/shared/i18n/translations";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
 import type { ConditionNode } from "@/tile/model/v1/condition";
-import { ConditionKind, TileKind } from "@/tile/model/v1/constants";
+import { TileKind } from "@/tile/model/v1/constants";
 import { Button, Chip, NumberInput, SegmentedControl, Switch } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
-import { ConditionEditor } from "./ConditionEditor";
 import type { EditorLocale } from "./date-utils";
-import { defaultTerm } from "./default-term";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask
 // convention). Locale-specific labels live in translations.ts so no JA
@@ -298,37 +296,9 @@ export function SourceGenerationPanel({
             title={t("quickCreate.conditionModeLabel") ?? "繰り返し条件"}
             hint={t("quickCreate.conditionModeHint") ?? "条件が真のときだけTileを生成します"}
           />
-          {recurring.condition ? (
-            <div className="space-y-2">
-              <Button
-                size="compact-xs"
-                variant="outline"
-                color="red"
-                onClick={() => setField("recurring.condition", null)}
-              >
-                条件を外す
-              </Button>
-              <ConditionEditor
-                node={recurring.condition}
-                onChange={(next) => setField("recurring.condition", next)}
-                t={t}
-              />
-            </div>
-          ) : (
-            <Button
-              size="xs"
-              variant="outline"
-              onClick={() =>
-                setField("recurring.condition", {
-                  kind: ConditionKind.TERM,
-                  children: [],
-                  term: defaultTerm("calendar"),
-                })
-              }
-            >
-              繰り返し条件を追加
-            </Button>
-          )}
+          <div className="rounded bg-surface-2 px-3 py-2 text-xs text-foreground-muted">
+            条件編集は将来リリースで利用可能になります / Condition editing will be available in a future release
+          </div>
         </div>
       )}
       <div className="space-y-1.5">

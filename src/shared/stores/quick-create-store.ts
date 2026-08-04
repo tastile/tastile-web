@@ -109,6 +109,8 @@ export interface RecurringSlice {
   intervalUnit: "min" | "hour" | "day";
   /** repeatMode === "condition" のときに評価される条件木 */
   condition: import("@/tile/model/v1/condition").ConditionNode | null;
+  /** Set to true when recurring.condition was non-null but silently dropped by wire */
+  conditionIgnored: boolean;
 }
 
 export interface AdvancedSlice {
@@ -456,6 +458,7 @@ function defaultRecurring(): RecurringSlice {
     intervalValue: 30,
     intervalUnit: "min",
     condition: null,
+    conditionIgnored: false,
   };
 }
 
