@@ -296,6 +296,11 @@ interface LocalWireCompletion {
   }>;
 }
 
+/**
+ * Convert a TimeRequirement from store shape to wire shape.
+ * Standalone serializer without id/reference handling:
+ * see `serializeTimeRequirement` in `./time-requirement.ts`.
+ */
 function convertTimeRequirement(
   tr: StoreTimeRequirement,
 ): LocalWireCompletion["time_requirements"][number] {
