@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { buildDefaultQuickCreateState } from "@/shared/stores/quick-create-store";
 import { buildQuickCreateSchedulePayload } from "./quick-create-schedule-wire";
 
@@ -462,5 +462,78 @@ describe("buildQuickCreateSchedulePayload", () => {
     expect(() => buildQuickCreateSchedulePayload(state)).toThrow(
       "flow 1 requires positive sequence steps",
     );
+  });
+
+  it("silently drops recurring.condition with a console.warn (E1a)", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Conditional study" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "condition",
+      condition: {
+        kind: 2,
+        children: [],
+        term: {
+          kind: "calendar",
+          value: { weekdayMask: 0b0111111, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 },
+        },
+      },
+    };
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload).toBeDefined();
+    expect(payload.source_schedule?.generation.kind).toBe(2);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[E1a] recurring.condition silently dropped — Phase C/D wire slot not yet implemented",
+    );
+    expect(state.recurring.conditionIgnored).toBe(true);
+
+    warnSpy.mockRestore();
+  });
+
+  it("silently drops non-empty changeSets with a console.warn (D2a)", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "ChangeSet study" };
+    state.advanced = {
+      changeSets: [{ id: "cs1", when: null, rank: 0, merge: 0, changes: [] }],
+      rules: [],
+    };
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload).toBeDefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[D2a] advanced change rules silently dropped in create path",
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("silently drops non-empty legacy flows with a console.warn (D2a)", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Legacy flow study" };
+    state.plan = {
+      ...state.plan,
+      planning: {
+        ...state.plan.planning,
+        flows: [{ id: "legacy-flow", observe: [], when: null, candidates: [] }],
+      },
+    };
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload).toBeDefined();
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[D2a] legacy recurring/flow rules silently dropped in create path",
+    );
+
+    warnSpy.mockRestore();
   });
 });

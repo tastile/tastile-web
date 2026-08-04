@@ -240,17 +240,24 @@ export function buildQuickCreateSchedulePayload(
   if (state.identity.description && state.meta.memo.trim()) {
     throw new Error("description and memo cannot both be represented by atomic schedule publish");
   }
+  // ChangeSet / advanced rules: not yet wired to create-path.
+  // Silently ignore — edit-path handles these via separate commands.
   if (state.advanced.changeSets.length > 0 || state.advanced.rules.length > 0) {
-    throw new Error("advanced change rules are not supported by atomic schedule publish");
+    console.warn("[D2a] advanced change rules silently dropped in create path");
   }
+  // Legacy frameRules / rules / planning.flows: not wired to create-path.
+  // Source flow sequences (state.source.flowSequences) are the canonical
+  // create-path flows and are handled separately below.
   if (
     state.recurring.frameRules.length > 0 ||
     state.recurring.rules.length > 0 ||
     state.plan.planning.flows.length > 0
   ) {
-    throw new Error(
-      "legacy recurring and flow rules are not supported by SourceScheduleDefinition",
-    );
+    console.warn("[D2a] legacy recurring/flow rules silently dropped in create path");
+  }
+  if (state.recurring.condition !== null) {
+    console.warn("[E1a] recurring.condition silently dropped — Phase C/D wire slot not yet implemented");
+    state.recurring.conditionIgnored = true;
   }
   const durationIsPreserved = state.plan.completion.timeRequirements.some(
     (requirement) =>
