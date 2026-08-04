@@ -82,7 +82,15 @@ describe("buildQuickCreateSchedulePayload", () => {
           pick: { kind: 0, momentId: null },
         },
       ],
-      decisions: [{ id: "decision", kind: 0, when: null, prompt: "When?", options: [] }],
+      decisions: [
+        {
+          id: "decision",
+          observe: { scope: 0 },
+          candidates: [],
+          reuse: [],
+          dialog: null,
+        },
+      ],
     };
 
     const payload = buildQuickCreateSchedulePayload(state, new Date("2026-07-28T00:00:00.000Z"));

@@ -298,9 +298,19 @@ describe("convertCondition (internally-tagged → externally-tagged wire form)",
 describe("toWireSetPlanBody (full plan rewrite)", () => {
   it("converts authored conditions inside planning rules and decisions", () => {
     const condition = {
-      kind: 3,
+      kind: 3 as const,
       children: [],
-      term: { kind: "calendar", value: { weekdayMask: 0b0101010 } },
+      term: {
+        kind: "calendar" as const,
+        value: {
+          weekdayMask: 0b0101010,
+          timeStart: null,
+          timeEnd: null,
+          holidayKind: 2 as const,
+          dateRange: null,
+          offsetMin: 0,
+        },
+      },
     };
     const storePlan: StorePlanInput = {
       role: 0,
@@ -316,7 +326,22 @@ describe("toWireSetPlanBody (full plan rewrite)", () => {
         flows: [],
       },
       metrics: [],
-      decisions: [{ id: "decision", when: condition, prompt: "Choose", options: [] }],
+      decisions: [
+        {
+          id: "decision",
+          observe: { scope: 0 },
+          candidates: [
+            {
+              id: "c1",
+              when: condition,
+              rank: 0,
+              effects: [],
+            },
+          ],
+          reuse: [],
+          dialog: null,
+        },
+      ],
     };
 
     const wire = toWireSetPlanBody(storePlan);
@@ -324,9 +349,25 @@ describe("toWireSetPlanBody (full plan rewrite)", () => {
     expect(wire.planning.placement_rules[0]).toMatchObject({
       when: { Term: { Calendar: { weekday_mask: 0b0101010 } } },
     });
-    expect(wire.decisions[0]).toMatchObject({
-      when: { Term: { Calendar: { weekday_mask: 0b0101010 } } },
-    });
+    expect((wire.decisions[0] as Record<string, unknown>).candidates).toEqual([
+      {
+        id: "c1",
+        when: {
+          Term: {
+            Calendar: {
+              weekday_mask: 42,
+              time_start: null,
+              time_end: null,
+              holiday_kind: 2,
+              date_range: null,
+              offset_min: 0,
+            },
+          },
+        },
+        rank: 0,
+        effects: [],
+      },
+    ]);
   });
 
   it("converts the default QuickCreate plan to wire format", () => {

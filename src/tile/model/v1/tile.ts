@@ -9,6 +9,7 @@ import type { ChangeRule } from "./change-set";
 import type { Completion } from "./completion";
 import type { ConditionNode } from "./condition";
 import type { PlanRoleValue } from "./constants";
+import type { DecisionDef } from "@/shared/api/v1/decision";
 import type { Metric } from "./metric";
 import type { Reference } from "./reference";
 import type { DurationRange, Moment } from "./window";
@@ -118,6 +119,9 @@ export interface Decision {
   }>;
 }
 
+// Re-export DecisionDef for consumers that import from this module
+export type { DecisionDef } from "@/shared/api/v1/decision";
+
 // ---------- Plan ----------
 
 export interface Plan {
@@ -126,7 +130,7 @@ export interface Plan {
   completion: Completion;
   planning: Planning;
   metrics: Metric[];
-  decisions: Decision[];
+  decisions: DecisionDef[];
 }
 
 // ---------- FrameRule generators ----------

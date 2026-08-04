@@ -1,6 +1,7 @@
 // Re-export the v1 client + command helpers for `@/shared/api/v1` consumers.
 
 export type { Result } from "./endpoints";
+export * from "./decision";
 export * from "./plan-wire";
 export * from "./schedule-definition";
 export * from "./source-tiles";

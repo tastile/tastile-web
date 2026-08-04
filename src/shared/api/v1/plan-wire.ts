@@ -32,6 +32,7 @@
 
 import type { ConditionNode, Term } from "@/tile/model/v1/condition";
 import { uuidv7 } from "@/tile/model/v1/envelope";
+import { type DecisionDef, serializeDecision } from "./decision";
 import type { WireCompletion, WirePlanning } from "./openapi-contract";
 
 // ---------- UUIDv7 enforcement (v1/10 §1: identifiers are UUIDv7 only) ----------
@@ -264,7 +265,7 @@ export interface StorePlanInput {
   completion: StoreCompletion;
   planning: StorePlanning;
   metrics: unknown[];
-  decisions: unknown[];
+  decisions: DecisionDef[];
 }
 
 interface LocalWireCompletion {
@@ -423,7 +424,7 @@ export function toWireSetPlanBody(storePlan: StorePlanInput): WireSetPlanBody {
       ) as WirePlanning["nesting_rules"],
     },
     metrics: camelToSnakeDeep(normalised.metrics ?? []) as unknown[],
-    decisions: (normalised.decisions ?? []).map(convertConditionalRecord),
+    decisions: (normalised.decisions ?? []).map(serializeDecision),
   };
 }
 
