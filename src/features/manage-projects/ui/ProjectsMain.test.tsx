@@ -41,7 +41,7 @@ vi.mock("@/shared/hooks/use-workspaces", () => ({
   updateWorkspace: (...args: unknown[]) => mockUpdateWorkspace(...args),
 }));
 
-vi.mock("@/lib/hooks/use-tile-list", () => ({
+vi.mock("@/shared/hooks/use-tile-list", () => ({
   useTileList: (...args: unknown[]) => {
     mockUseTileList(...args);
     return { tiles: [], loading: false };

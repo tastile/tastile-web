@@ -8,7 +8,7 @@ const resolveAuthenticatedUserSub = vi.fn();
 const getSubscriptionForUser = vi.fn();
 const billingPortalSessionsCreate = vi.fn();
 
-vi.mock("@/lib/cognito/authenticated-session", () => ({ resolveAuthenticatedUserSub }));
+vi.mock("@/shared/auth/authenticated-session", () => ({ resolveAuthenticatedUserSub }));
 vi.mock("@/lib/billing/server", () => ({ getSubscriptionForUser }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({ billingPortal: { sessions: { create: billingPortalSessionsCreate } } }),

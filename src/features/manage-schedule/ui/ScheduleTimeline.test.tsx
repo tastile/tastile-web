@@ -24,7 +24,7 @@ const openCreateFn = vi.fn();
 const openEditFn = vi.fn();
 const loadFromRecurringTileFn = vi.fn();
 
-vi.mock("@/lib/stores/quick-create-store", () => ({
+vi.mock("@/shared/stores/quick-create-store", () => ({
   useQuickCreateStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       openEdit: openEditFn,
@@ -34,7 +34,7 @@ vi.mock("@/lib/stores/quick-create-store", () => ({
     }),
 }));
 
-vi.mock("@/lib/hooks/calendar/use-events", () => ({
+vi.mock("@/shared/hooks/calendar/use-events", () => ({
   useEvents: () => ({
     events: [],
     loading: false,
@@ -46,7 +46,7 @@ vi.mock("@/lib/hooks/calendar/use-events", () => ({
   }),
 }));
 
-vi.mock("@/lib/context/side-panel-context", () => ({
+vi.mock("@/shared/context/side-panel-context", () => ({
   useSidePanel: vi.fn(),
 }));
 
@@ -54,7 +54,7 @@ vi.mock("@/features/manage-schedule/ui/CalendarSidePanel", () => ({
   CalendarSidePanel: () => <div data-testid="calendar-side-panel" />,
 }));
 
-vi.mock("../DayPanel", () => ({
+vi.mock("./DayPanel", () => ({
   DayPanel: ({ onSlotCreate, onZoomBy }: { onSlotCreate?: (start: string, end: string) => void; onZoomBy?: (d: number) => void }) => (
     <div data-testid="day-panel">
       <button data-testid="trigger-slot-create" onClick={() => onSlotCreate?.("2026-07-30 09:00:00", "2026-07-30 10:00:00")}>slot</button>
@@ -62,10 +62,10 @@ vi.mock("../DayPanel", () => ({
     </div>
   ),
 }));
-vi.mock("../WeekPanel", () => ({ WeekPanel: () => <div data-testid="week-panel" /> }));
-vi.mock("../MonthPanel", () => ({ MonthPanel: () => <div data-testid="month-panel" /> }));
-vi.mock("../YearPanel", () => ({ YearPanel: () => <div data-testid="year-panel" /> }));
-vi.mock("../AgendaPanel", () => ({ AgendaPanel: () => <div data-testid="agenda-panel" /> }));
+vi.mock("./WeekPanel", () => ({ WeekPanel: () => <div data-testid="week-panel" /> }));
+vi.mock("./MonthPanel", () => ({ MonthPanel: () => <div data-testid="month-panel" /> }));
+vi.mock("./YearPanel", () => ({ YearPanel: () => <div data-testid="year-panel" /> }));
+vi.mock("./AgendaPanel", () => ({ AgendaPanel: () => <div data-testid="agenda-panel" /> }));
 
 import { ScheduleTimeline } from './ScheduleTimeline';
 

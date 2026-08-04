@@ -79,46 +79,46 @@ function updateCalendar(
   if (term.kind !== "calendar") return term;
   return { kind: "calendar", value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
 function updateMoment(
   term: Term,
   key: keyof import("@/tile/model/v1/condition").MomentTerm,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "moment") return term;
   return { kind: "moment", value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
 function updateRelation(
   term: Term,
   key: keyof import("@/tile/model/v1/condition").RelationTerm,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "relation") return term;
   return { kind: "relation", value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
 function updateTask(
   term: Term,
   key: keyof import("@/tile/model/v1/condition").TaskTerm,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "task") return term;
   return { kind: "task", value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
 function updateRequirement(
   term: Term,
   key: keyof import("@/tile/model/v1/condition").RequirementTerm,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "requirement") return term;
   return { kind: "requirement", value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
 function updateLife(
   term: Term,
   key: keyof import("@/tile/model/v1/condition").LifeTerm,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "life") return term;
@@ -128,16 +128,20 @@ function updateValue(term: Term, key: string, value: unknown): Term {
   if (term.kind !== "fact" && term.kind !== "metric" && term.kind !== "feedback") return term;
   return { ...term, value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
-function updateGap(term: Term, key: keyof import("@/tile/model/v1/condition").GapTerm, value: any) {
+function updateGap(
+  term: Term,
+  key: keyof import("@/tile/model/v1/condition").GapTerm,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
+  value: any,
+) {
   if (term.kind !== "gap") return term;
   return { kind: "gap", value: { ...term.value, [key]: value } } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
 function updateGapAnchor(
   term: Term,
   anchorKey: "leftAnchor" | "rightAnchor",
   field: keyof import("@/tile/model/v1/condition").AnchorSelector,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ): Term {
   if (term.kind !== "gap") return term;
@@ -149,10 +153,10 @@ function updateGapAnchor(
     },
   } as Term;
 }
-// biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
 function updateGapSize(
   term: Term,
   field: keyof import("@/tile/model/v1/condition").DurationRange,
+  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ): Term {
   if (term.kind !== "gap") return term;
@@ -500,9 +504,7 @@ function TermFields({
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${gapIdBase}-scope`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapScope")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapScope")}</span>
             <NumberInput
               id={`${gapIdBase}-scope`}
               value={term.value.scope}
@@ -512,9 +514,7 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${gapIdBase}-leftRef`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapLeftAnchor")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapLeftAnchor")}</span>
             <PickerButton
               value={term.value.leftAnchor.referenceId}
               onChange={(v) => onChange(updateGapAnchor(term, "leftAnchor", "referenceId", v))}
@@ -523,21 +523,19 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${gapIdBase}-leftPoint`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapLeftPoint")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapLeftPoint")}</span>
             <NumberInput
               id={`${gapIdBase}-leftPoint`}
               value={term.value.leftAnchor.point ?? 0}
-              onChange={(value) => onChange(updateGapAnchor(term, "leftAnchor", "point", Number(value) || 0))}
+              onChange={(value) =>
+                onChange(updateGapAnchor(term, "leftAnchor", "point", Number(value) || 0))
+              }
               size="xs"
               className="w-full"
             />
           </label>
           <label htmlFor={`${gapIdBase}-rightRef`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapRightAnchor")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapRightAnchor")}</span>
             <PickerButton
               value={term.value.rightAnchor.referenceId}
               onChange={(v) => onChange(updateGapAnchor(term, "rightAnchor", "referenceId", v))}
@@ -546,21 +544,19 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${gapIdBase}-rightPoint`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapRightPoint")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapRightPoint")}</span>
             <NumberInput
               id={`${gapIdBase}-rightPoint`}
               value={term.value.rightAnchor.point ?? 0}
-              onChange={(value) => onChange(updateGapAnchor(term, "rightAnchor", "point", Number(value) || 0))}
+              onChange={(value) =>
+                onChange(updateGapAnchor(term, "rightAnchor", "point", Number(value) || 0))
+              }
               size="xs"
               className="w-full"
             />
           </label>
           <label htmlFor={`${gapIdBase}-sizeMin`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapSizeMin")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapSizeMin")}</span>
             <NumberInput
               id={`${gapIdBase}-sizeMin`}
               value={term.value.size?.minMs ?? 0}
@@ -570,9 +566,7 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${gapIdBase}-sizeMax`} className="space-y-1">
-            <span className="block text-foreground-muted">
-              {t("quickCreate.gapSizeMax")}
-            </span>
+            <span className="block text-foreground-muted">{t("quickCreate.gapSizeMax")}</span>
             <NumberInput
               id={`${gapIdBase}-sizeMax`}
               value={term.value.size?.maxMs ?? 0}

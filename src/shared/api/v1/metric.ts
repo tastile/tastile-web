@@ -134,6 +134,7 @@ function serializeExpression(expr: ScalarExpression): unknown {
         CHOOSE: {
           branches: e.branches.map((b) => ({
             when: convertCondition(b.when),
+            // biome-ignore lint/suspicious/noThenProperty: domain spec field name
             then: serializeExpression(b.then),
           })),
           fallback: serializeExpression(e.fallback),

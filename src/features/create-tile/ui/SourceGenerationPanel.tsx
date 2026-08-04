@@ -297,7 +297,8 @@ export function SourceGenerationPanel({
             hint={t("quickCreate.conditionModeHint") ?? "条件が真のときだけTileを生成します"}
           />
           <div className="rounded bg-surface-2 px-3 py-2 text-xs text-foreground-muted">
-            条件編集は将来リリースで利用可能になります / Condition editing will be available in a future release
+            条件編集は将来リリースで利用可能になります / Condition editing will be available in a
+            future release
           </div>
         </div>
       )}

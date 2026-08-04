@@ -5,11 +5,11 @@
  * Interfaces only. No business logic.
  */
 
+import type { DecisionDef } from "@/shared/api/v1/decision";
 import type { ChangeRule } from "./change-set";
 import type { Completion } from "./completion";
 import type { ConditionNode } from "./condition";
 import type { PlanRoleValue } from "./constants";
-import type { DecisionDef } from "@/shared/api/v1/decision";
 import type { Metric } from "./metric";
 import type { Reference } from "./reference";
 import type { DurationRange, Moment } from "./window";

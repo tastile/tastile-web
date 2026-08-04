@@ -76,16 +76,13 @@ export function CompletionSubPanel({
                 tr.required.minMs === null ? null : Math.round(tr.required.minMs / 60000);
               const maxMin =
                 tr.required.maxMs === null ? null : Math.round(tr.required.maxMs / 60000);
-              const hasMinMaxError =
-                minMin !== null && maxMin !== null && minMin > maxMin;
+              const hasMinMaxError = minMin !== null && maxMin !== null && minMin > maxMin;
 
               return (
                 <div
                   key={tr.id}
                   className={`flex items-center gap-2 rounded-md bg-surface-1 px-2 py-1.5 text-sm ${
-                    hasMinMaxError
-                      ? "ring-1 ring-danger"
-                      : ""
+                    hasMinMaxError ? "ring-1 ring-danger" : ""
                   }`}
                   data-testid={`completion-time-line-${i}`}
                 >
@@ -99,9 +96,7 @@ export function CompletionSubPanel({
                       { value: "range", label: t("quickCreate.timeReqKindRange") },
                     ]}
                     value={
-                      minMin !== null && maxMin !== null && minMin !== maxMin
-                        ? "range"
-                        : "duration"
+                      minMin !== null && maxMin !== null && minMin !== maxMin ? "range" : "duration"
                     }
                     onChange={() => {}}
                     className="shrink-0"

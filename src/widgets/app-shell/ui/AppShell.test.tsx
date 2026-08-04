@@ -11,7 +11,7 @@ vi.mock("@/shared/i18n/use-translation", () => ({
 }));
 
 const executeMock = vi.fn();
-vi.mock("@/lib/hooks/execution-engine-context", () => ({
+vi.mock("@/shared/hooks/execution-engine-context", () => ({
 	useExecutionEngineContext: () => ({
 		execute: executeMock,
 		state: { execution: { activeTileId: null } },

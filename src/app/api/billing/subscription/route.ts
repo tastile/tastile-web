@@ -9,5 +9,8 @@ export async function GET() {
   }
 
   const state = await getSubscriptionForUser(userSub);
+  if (!state) {
+    return NextResponse.json({ error: "No active subscription" }, { status: 404 });
+  }
   return NextResponse.json({ subscription: state });
 }

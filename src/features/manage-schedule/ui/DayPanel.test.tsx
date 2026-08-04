@@ -1,7 +1,8 @@
 // src/components/schedule/__tests__/DayPanel.test.tsx
 /** @vitest-environment jsdom */
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
+import { renderWithMantine as render } from "@/test/render-with-mantine";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -57,16 +58,16 @@ vi.mock("@/lib/vendored/mantine-schedule", () => ({
   MobileMonthView: () => <div data-testid="mobile-month-view" />,
 }));
 
-vi.mock("../useResponsiveBreakpoint", () => ({
+vi.mock("./useResponsiveBreakpoint", () => ({
   useResponsiveBreakpoint: () => "desktop" as const,
 }));
 
-vi.mock("../ErrorBanner", () => ({
+vi.mock("./ErrorBanner", () => ({
   ErrorBanner: ({ error }: { error: Error | null }) =>
     error ? <div data-testid="error-banner">{error.message}</div> : null,
 }));
 
-vi.mock("../LoadingOverlay", () => ({
+vi.mock("./LoadingOverlay", () => ({
   LoadingOverlay: ({
     loading,
     children,
@@ -79,7 +80,7 @@ vi.mock("../LoadingOverlay", () => ({
   },
 }));
 
-vi.mock("../eventAdapter", () => ({
+vi.mock("./eventAdapter", () => ({
   toScheduleEvents: (e: CalendarEvent) => [
     {
       id: e.id,
@@ -94,7 +95,7 @@ vi.mock("../eventAdapter", () => ({
   ],
 }));
 
-vi.mock("../renderEventBody", () => ({
+vi.mock("./renderEventBody", () => ({
   renderEventBody: () => <span>body</span>,
 }));
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { Button, Textarea, TextInput } from "@mantine/core";
+import { Button, TextInput, Textarea } from "@mantine/core";
 import { Plus, Trash2 } from "lucide-react";
 
-import { ConditionEditor } from "./ConditionEditor";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
+import { ConditionEditor } from "./ConditionEditor";
 
 export interface TaskDefinitionEditorProps {
   t: (key: string) => string;

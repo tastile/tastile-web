@@ -256,7 +256,9 @@ export function buildQuickCreateSchedulePayload(
     console.warn("[D2a] legacy recurring/flow rules silently dropped in create path");
   }
   if (state.recurring.condition !== null) {
-    console.warn("[E1a] recurring.condition silently dropped — Phase C/D wire slot not yet implemented");
+    console.warn(
+      "[E1a] recurring.condition silently dropped — Phase C/D wire slot not yet implemented",
+    );
     state.recurring.conditionIgnored = true;
   }
   const durationIsPreserved = state.plan.completion.timeRequirements.some(

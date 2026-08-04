@@ -12,7 +12,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Stub the locale store so the test does not need a Zustand persist boundary.
-vi.mock("@/lib/stores/locale-store", () => ({
+vi.mock("@/shared/stores/locale-store", () => ({
   useLocaleStore: vi.fn(() => ({ locale: "en", setLocale: vi.fn() })),
 }));
 

@@ -1,0 +1,95 @@
+plan_file	plan_id	derived_repo	derived_title	action	issue_number	issue_url	error
+04-plans/A1a-identity-core-fields.md	A1a	tastile/tastile-web	[A1a] Identity core fields	POSTED	15	https://github.com/tastile/tastile-web/issues/15	
+04-plans/A1b-identity-visual-externalid.md	A1b	tastile/tastile-web	[A1b] Identity visual fields + externalId	POSTED	16	https://github.com/tastile/tastile-web/issues/16	
+04-plans/A1c-meta-min-field-spec.md	A1c	tastile/tastile-web	[A1c] §7 Meta (minimum) lands: `ownerSubjectId` is UUIDv5(user_sub)	POSTED	17	https://github.com/tastile/tastile-web/issues/17	
+04-plans/A2a-plan-role-completion.md	A2a	tastile/tastile-web	[A2a] Plan.role + Plan.completion wire audit	POSTED	18	https://github.com/tastile/tastile-web/issues/18	
+04-plans/A2b-plan-planning-references.md	A2b	tastile/tastile-web	[A2b] Plan.planning + Plan.references wire audit	POSTED	19	https://github.com/tastile/tastile-web/issues/19	
+04-plans/A2b-plan-row-count-assert.md	A2b1	tastile/tastile-web	[A2b1] v1_plan 行数・role 検証計画	POSTED	20	https://github.com/tastile/tastile-web/issues/20	
+04-plans/A3a-meta-owner-bridge.md	A3a	tastile/tastile-web	[A3a] Meta owner bridge	POSTED	21	https://github.com/tastile/tastile-web/issues/21	
+04-plans/A3b-meta-min-persistence.md	A3b	tastile/tastile-core	[A3b] meta-min persistence	POSTED	82	https://github.com/tastile/tastile-core/issues/82	
+04-plans/A3c-meta-editability.md	A3c	tastile/tastile-core	[A3c] meta-min editability contract	POSTED	83	https://github.com/tastile/tastile-core/issues/83	
+04-plans/A4a-owner-derived-from-sub-e2e.md	A4a	tastile/tastile-web	[A4a] owner_id derived from user_sub via UUIDv5 (e2e)	POSTED	22	https://github.com/tastile/tastile-web/issues/22	
+04-plans/A5a-quickcreate-ui-binding.md	A5a	tastile/tastile-web	[A5a] QuickCreate UI binding	POSTED	23	https://github.com/tastile/tastile-web/issues/23	
+04-plans/A5b-quickcreate-submit-handler.md	A5b	tastile/tastile-web	[A5b] QuickCreate submit handler (wire → POST → UI feedback)	POSTED	24	https://github.com/tastile/tastile-web/issues/24	
+04-plans/B1a-time-window-endpoints.md	B1a	tastile/tastile-core	[B1a] placement time-window endpoint discovery	POSTED	84	https://github.com/tastile/tastile-core/issues/84	
+04-plans/B1b-source-horizon-range.md	B1b	tastile/tastile-web	[B1b] §3 Time in Range モードの source_horizon 永続化検証	POSTED	25	https://github.com/tastile/tastile-web/issues/25	
+04-plans/B1b-window-timezone-math.md	B1b1	tastile/tastile-web	[B1b1] timezone + window math	POSTED	26	https://github.com/tastile/tastile-web/issues/26	
+04-plans/B2a-recurrence-mode-instant.md	B2a	tastile/tastile-web	[B2a] RecurrenceMode.instant（Time section default）の wire 経路	POSTED	27	https://github.com/tastile/tastile-web/issues/27	
+04-plans/B2b-reference-mode-deferred.md	B2b	tastile/tastile-web	[B2b] reference モード (whenMode="reference") 延期	POSTED	28	https://github.com/tastile/tastile-web/issues/28	
+04-plans/B3a-windows-array-persist-e2e.md	B3a	tastile/tastile-web	[B3a] Windows array round-trip to v1_window	POSTED	29	https://github.com/tastile/tastile-web/issues/29	
+04-plans/B4a-windows-rules-timeformat-e2e.md	B4a	tastile/tastile-web	[B4a] Window.rules[] time format acceptance e2e	POSTED	30	https://github.com/tastile/tastile-web/issues/30	
+04-plans/C1a-recurring-kind-roundtrip.md	C1a	tastile/tastile-web	[C1a] Recurring.kind enum round-trip（NONE=0 / DAILY=1 / WEEKLY=2 / MONTHLY=3）	POSTED	31	https://github.com/tastile/tastile-web/issues/31	
+04-plans/C1b-weekday-mask-roundtrip.md	C1b	tastile/tastile-web	[C1b] weekday_mask bit-order round-trip	POSTED	32	https://github.com/tastile/tastile-web/issues/32	
+04-plans/C1c-interval-unit-roundtrip-e2e.md	C1c	tastile/tastile-web	[C1c] interval unit round-trip E2E	POSTED	33	https://github.com/tastile/tastile-web/issues/33	
+04-plans/C2a-valid-instant-helpers.md	C2a	tastile/tastile-web	[C2a] `validInstant()` / `datePart()` ヘルパの検証	POSTED	34	https://github.com/tastile/tastile-web/issues/34	
+04-plans/C2b-end-date-vs-active-end-date.md	C2b	tastile/tastile-web	[C2b] endDate (Instant) vs life.active.endDate (LocalDate) 衝突検証	POSTED	35	https://github.com/tastile/tastile-web/issues/35	
+04-plans/C3a-source-priority-offset.md	C3a	tastile/tastile-web	[C3a] source.{offsetMin, priority} round-trip 検証	POSTED	36	https://github.com/tastile/tastile-web/issues/36	
+04-plans/C3b-excluded-dates-roundtrip.md	C3b	tastile/tastile-web	[C3b] excludedDates ラウンドトリップ & 配置スキップ検証	POSTED	37	https://github.com/tastile/tastile-web/issues/37	
+04-plans/C4a-split-kind-policy.md	C4a	tastile/tastile-web	[C4a] SplitPolicyKind enum round-trip（NONE=0 / DAILY_BOUNDARY=1 / SESSION_BOUNDARY=2）	POSTED	38	https://github.com/tastile/tastile-web/issues/38	
+04-plans/C4b-split-policy-split-deferred.md	C4b	tastile/tastile-web	[C4b] Split policy（min/max/max_segments）延期計画	POSTED	39	https://github.com/tastile/tastile-web/issues/39	
+04-plans/C5a-priority-overlap-arbitration.md	C5a	tastile/tastile-web	[C5a] `priority` field と overlap arbitration の検証	POSTED	40	https://github.com/tastile/tastile-web/issues/40	
+04-plans/C6a-source-window-include-anchor.md	C6a	tastile/tastile-web	[C6a] `SourceWindowInclude` enum + `anchor_mode`（FIXED / FLOATING）の round-trip	POSTED	41	https://github.com/tastile/tastile-web/issues/41	
+04-plans/C6b-source-window-offset-derivation-e2e.md	C6b	tastile/tastile-web	[C6b] SourceWindow.{start,end}_offset_ms span 派生 e2e	POSTED	42	https://github.com/tastile/tastile-web/issues/42	
+04-plans/C7a-existing-recurring-spec-wslc-rewrite.md	C7a	tastile/tastile-web	[C7a] wslc-ize existing recurring spec + canonical Mon-Fri assertion	POSTED	43	https://github.com/tastile/tastile-web/issues/43	
+04-plans/C7a-recurring-weekly-e2e-green.md	C7a1	tastile/tastile-web	[C7a1] recurring e2e spec green end-to-end	POSTED	44	https://github.com/tastile/tastile-web/issues/44	
+04-plans/D1a-frame-rule-creation.md	D1a	tastile/tastile-web	[D1a] FrameRule 作成ワイヤー拡張	POSTED	45	https://github.com/tastile/tastile-web/issues/45	
+04-plans/D2a-change-set-flow-throws.md	D2a	tastile/tastile-web	[D2a] ChangeSet / flow throw の empty-array 化	POSTED	46	https://github.com/tastile/tastile-web/issues/46	
+04-plans/D3a-frame-rule-e2e.md	D3a	tastile/tastile-web	[D3a] FrameRule persistence E2E	POSTED	47	https://github.com/tastile/tastile-web/issues/47	
+04-plans/E1a-recurring-condition-remove-affordance.md	E1a	tastile/tastile-web	[E1a] recurring.condition UI affordance removal	POSTED	48	https://github.com/tastile/tastile-web/issues/48	
+04-plans/E1b-condition-affordance-keep.md	E1b	tastile/tastile-web	[E1b] recurring.condition affordance 維持（disabled）	POSTED	49	https://github.com/tastile/tastile-web/issues/49	
+04-plans/E2a-condition-ast-types.md	E2a	tastile/tastile-web	[E2a] Condition AST TypeScript 型	POSTED	50	https://github.com/tastile/tastile-web/issues/50	
+04-plans/E2b-condition-editor-component.md	E2b	tastile/tastile-web	[E2b] ConditionEditor.tsx コンポーネント実装 (4 operators × 6 term kinds)	POSTED	51	https://github.com/tastile/tastile-web/issues/51	
+04-plans/E2c-task-definition-editor.md	E2c	tastile/tastile-web	[E2c] TaskDefinitionEditor	POSTED	52	https://github.com/tastile/tastile-web/issues/52	
+04-plans/E2d-condition-property-tests.md	E2d	tastile/tastile-web	[E2d] Condition AST ser/de round-trip property tests	POSTED	53	https://github.com/tastile/tastile-web/issues/53	
+04-plans/E3a-time-requirement-spec.md	E3a	tastile/tastile-web	[E3a] TimeRequirement TS 型 + シリアライザ	POSTED	54	https://github.com/tastile/tastile-web/issues/54	
+04-plans/E3b-time-requirement-editor-ui.md	E3b	tastile/tastile-web	[E3b] TimeRequirement editor UI	POSTED	55	https://github.com/tastile/tastile-web/issues/55	
+04-plans/E3c-time-requirement-e2e.md	E3c	tastile/tastile-web	[E3c] TimeRequirement round-trip e2e	POSTED	56	https://github.com/tastile/tastile-web/issues/56	
+04-plans/E3d-task-definition-editor-component.md	E3d	tastile/tastile-web	[E3d] TaskDefinitionEditor.tsx コンポーネント実装	POSTED	57	https://github.com/tastile/tastile-web/issues/57	
+04-plans/E4b-metric-decision-serde-roundtrip.md	E4b	tastile/tastile-web	[E4b] Metric + Decision AST ser/de round-trip property tests	POSTED	58	https://github.com/tastile/tastile-web/issues/58	
+04-plans/E4c-decision-tree-spec.md	E4c	tastile/tastile-web	[E4c] DecisionDef TS 型 + 候補評価器シリアライザ	POSTED	59	https://github.com/tastile/tastile-web/issues/59	
+04-plans/E5a-condition-basic-e2e.md	E5a	tastile/tastile-web	[E5a] Condition tree basic e2e spec	POSTED	60	https://github.com/tastile/tastile-web/issues/60	
+04-plans/E5b-metric-decision-e2e.md	E5b	tastile/tastile-web	[E5b] Metric + Decision e2e spec	POSTED	61	https://github.com/tastile/tastile-web/issues/61	
+04-plans/E6a-reference-condition-scope.md	E6a	tastile/tastile-web	[E6a] Reference condition scope	POSTED	62	https://github.com/tastile/tastile-web/issues/62	
+04-plans/E6b-condition-scope-e2e.md	E6b	tastile/tastile-web	[E6b] Condition scope e2e	POSTED	63	https://github.com/tastile/tastile-web/issues/63	
+04-plans/E7a-condition-ast-component-shared-refactor.md	E7a	tastile/tastile-web	[E7a] ConditionEditor shared refactor (completion + FrameRule.active)	POSTED	64	https://github.com/tastile/tastile-web/issues/64	
+04-plans/F1a-meta-project-removal.md	F1a	tastile/tastile-web	[F1a] `meta.project` UI 除去と wire の silent drop 化	POSTED	65	https://github.com/tastile/tastile-web/issues/65	
+04-plans/F1b-meta-tags-removal.md	F1b	tastile/tastile-web	[F1b] `meta.tags[]` UI 除去と wire の silent drop 化	POSTED	66	https://github.com/tastile/tastile-web/issues/66	
+04-plans/F2a-meta-project-spec.md	F2a	tastile/tastile-core	[F2a] `v1_project` テーブル設計 spec（wire 拡張パス採用時の deferred 計画）	POSTED	85	https://github.com/tastile/tastile-core/issues/85	
+04-plans/F2b-meta-tags-spec.md	F2b	tastile/tastile-core	[F2b] `v1_tag` テーブル設計 spec（wire 拡張パス採用時の deferred 計画）	POSTED	86	https://github.com/tastile/tastile-core/issues/86	
+04-plans/G1a-wslc-image-build.md	G1a	tastile/tastile-core	[G1a] wslc image cold build	POSTED	87	https://github.com/tastile/tastile-core/issues/87	
+04-plans/G1b-image-warm-verify.md	G1b	tastile/tastile-core	[G1b] wslc image warm/cold verify	POSTED	88	https://github.com/tastile/tastile-core/issues/88	
+04-plans/G1c-wslc-binary-preflight.md	G1c	tastile/tastile-core	[G1c] wslc binary preflight	POSTED	89	https://github.com/tastile/tastile-core/issues/89	
+04-plans/G2a-postgres-container-up.md	G2a	tastile/tastile-core	[G2a] postgres container up + readiness loop	POSTED	90	https://github.com/tastile/tastile-core/issues/90	
+04-plans/G2b-migrations-apply.md	G2b	tastile/tastile-core	[G2b] V1_* SQL migrations applied on first api boot	POSTED	91	https://github.com/tastile/tastile-core/issues/91	
+04-plans/G3a-api-container-up.md	G3a	tastile/tastile-core	[G3a] api container up + bridge secret env injection	POSTED	92	https://github.com/tastile/tastile-core/issues/92	
+04-plans/G3b-health-probes.md	G3b	tastile/tastile-core	[G3b] `/v1/health` + liveness probes	POSTED	93	https://github.com/tastile/tastile-core/issues/93	
+04-plans/G4a-worker-container-up.md	G4a	tastile/tastile-core	[G4a] wslc container bring-up for tastile-v1-api	POSTED	94	https://github.com/tastile/tastile-core/issues/94	
+04-plans/G4b-e2e-helper-truncate-list.md	G4b	tastile/tastile-web	[G4b] E2E helper TRUNCATE list extension	POSTED	67	https://github.com/tastile/tastile-web/issues/67	
+04-plans/G5a-helper-docker-to-wslc.md	G5a	tastile/tastile-web	[G5a] e2e helper: docker exec → wslc container exec + TRUNCATE 拡張	POSTED	68	https://github.com/tastile/tastile-web/issues/68	
+04-plans/G5b-bridge-endpoint-reachability.md	G5b	tastile/tastile-core	[G5b] Bridge endpoint reachability (host + web)	POSTED	95	https://github.com/tastile/tastile-core/issues/95	
+04-plans/G5b-spec-truncate-extend.md	G5b1	tastile/tastile-web	[G5b1] spec TRUNCATE call sites switch to resetDb()	POSTED	69	https://github.com/tastile/tastile-web/issues/69	
+04-plans/G6a-playwright-config-check.md	G6a	tastile/tastile-core	[G6a] Playwright config check	POSTED	96	https://github.com/tastile/tastile-core/issues/96	
+04-plans/G6b-bridge-secret-injection.md	G6b	tastile/tastile-core	[G6b] bridge secret env-var injection procedure	POSTED	97	https://github.com/tastile/tastile-core/issues/97	
+04-plans/G6c-port-31400-conflict-check.md	G6c	tastile/tastile-core	[G6c] port 31400 conflict preflight	POSTED	98	https://github.com/tastile/tastile-core/issues/98	
+04-plans/G7a-e2e-run-quick-tile.md	G7a	tastile/tastile-web	[G7a] first E2E run (quick-tile-create-e2e.spec.ts) procedure	POSTED	70	https://github.com/tastile/tastile-web/issues/70	
+04-plans/G7b-cleanup-down-script.md	G7b	tastile/tastile-core	[G7b] `scripts/wslc/down.sh` clean teardown + up-v1 idempotency	POSTED	99	https://github.com/tastile/tastile-core/issues/99	
+04-plans/G7b-image-version-pinning.md	G7b	tastile/tastile-core	[G7b] image version pinning (tag + label scheme)	POSTED	100	https://github.com/tastile/tastile-core/issues/100	
+04-plans/G8a-health-endpoint-curl-smoke.md	G8a	tastile/tastile-core	[G8a] /v1/health curl smoke gate	POSTED	101	https://github.com/tastile/tastile-core/issues/101	
+04-plans/G8a-wslc-down.md	G8a1	tastile/tastile-core	[G8a1] `scripts/wslc/down.sh` clean teardown procedure + state preservation	POSTED	102	https://github.com/tastile/tastile-core/issues/102	
+04-plans/G8b-cold-reset.md	G8b	tastile/tastile-core	[G8b] cold reset（full data wipe + image rebuild）	POSTED	103	https://github.com/tastile/tastile-core/issues/103	
+04-plans/H1a-secret-export-procedure.md	H1a	tastile/tastile-core	[H1a] Manual bridge secret export	POSTED	104	https://github.com/tastile/tastile-core/issues/104	
+04-plans/H1b-bridge-secret-mismatch-curl.md	H1b	tastile/tastile-core	[H1b] bridge secret mismatch 検出 (1 文字改竄 curl test)	POSTED	105	https://github.com/tastile/tastile-core/issues/105	
+04-plans/H1c-bridge-secret-validation.md	H1c	tastile/tastile-core	[H1c] bridge secret format validation	POSTED	106	https://github.com/tastile/tastile-core/issues/106	
+04-plans/H2-proxy-bridge-audit.md	H2	tastile/tastile-web	[H2] Proxy route bridge-mode audit	POSTED	71	https://github.com/tastile/tastile-web/issues/71	
+04-plans/H2b-core-bridge-handler.md	H2b	tastile/tastile-core	[H2b] core bridge auth handler	POSTED	107	https://github.com/tastile/tastile-core/issues/107	
+04-plans/H3a-bridge-auth-curl-verify.md	H3a	tastile/tastile-core	[H3a] bridge auth curl-only smoke test	POSTED	108	https://github.com/tastile/tastile-core/issues/108	
+04-plans/H3b-bridge-auth-testing.md	H3b	tastile/tastile-core	[H3b] bridge auth integration test suite	POSTED	109	https://github.com/tastile/tastile-core/issues/109	
+04-plans/H4a-bridge-mode-flag-flip.md	H4a	tastile/tastile-web	[H4a] Flip E2E_BYPASS_AUTH=0 and verify cookie path	POSTED	72	https://github.com/tastile/tastile-web/issues/72	
+04-plans/H4b-e2e-bridge-contract.md	H4b	tastile/tastile-core	[H4b] e2e bridge auth contract verify	POSTED	110	https://github.com/tastile/tastile-core/issues/110	
+04-plans/T1a-tile-create-flow-trace.md	T1a	tastile/tastile-web	[T1a] QuickCreate tile 作成 runtime trace	POSTED	75	https://github.com/tastile/tastile-web/issues/75
+04-plans/T1b-tile-edit-flow-trace.md	T1b	tastile/tastile-web	[T1b] tile edit post-submit runtime trace	POSTED	73	https://github.com/tastile/tastile-web/issues/73	
+04-plans/T2a-tile-delete-trace.md	T2a	tastile/tastile-web	[T2a] tile delete runtime trace	POSTED	74	https://github.com/tastile/tastile-web/issues/74	
+04-plans/T2b-change-set-impact.md	T2b	tastile/tastile-core	[T2b] edit/delete ChangeSet impact trace	POSTED	111	https://github.com/tastile/tastile-core/issues/111	
+04-plans/T3a-v1-timeline-trace.md	T3a	tastile/tastile-core	[T3a] `/v1/timeline` response-shape runtime trace	POSTED	112	https://github.com/tastile/tastile-core/issues/112	
+04-plans/T3b-worker-tick-trace.md	T3b	tastile/tastile-core	[T3b] v1 worker tick loop runtime trace	POSTED	113	https://github.com/tastile/tastile-core/issues/113	
+# SUMMARY POSTED=93 FAILED=0 TOTAL=93

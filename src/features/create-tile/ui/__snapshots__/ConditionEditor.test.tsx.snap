@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ConditionEditor > emits valid ConditionNode JSON on onChange 1`] = `"{"kind":0,"children":[{"kind":3,"children":[],"term":{"kind":"calendar","value":{"weekdayMask":0,"timeStart":null,"timeEnd":null,"holidayKind":2,"dateRange":null,"offsetMin":0}}}],"term":null}"`;

@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 // Mock at module level
-vi.mock("@/lib/cognito/authenticated-session", () => ({
-  resolveAuthenticatedUserSub: vi.fn(),
+const mockResolve = vi.fn()
+const mockGetSubscription = vi.fn()
+
+vi.mock("@/shared/auth/authenticated-session", () => ({
+  resolveAuthenticatedUserSub: mockResolve,
 }))
 
 vi.mock("@/lib/billing/server", () => ({
-  getSubscriptionForUser: vi.fn(),
+  getSubscriptionForUser: mockGetSubscription,
 }))
-
-const mockResolve = vi.mocked(vi.importActual("@/lib/cognito/authenticated-session")).resolveAuthenticatedUserSub
-const mockGetSubscription = vi.mocked(vi.importActual("@/lib/billing/server")).getSubscriptionForUser
 
 beforeEach(() => {
   mockResolve.mockReset()
@@ -56,7 +56,7 @@ describe("GET /api/billing/subscription", () => {
   it("returns 404 when user has no subscription", async () => {
     const { GET } = await import("./route")
     mockResolve.mockResolvedValueOnce("sub-abc")
-    mockGetSubscription.mockResolvedValueOnce(null)
+    mockGetSubscription.mockResolvedValueOnce(null as never)
     const res = await GET()
     expect(res.status).toBe(404)
     const body = await res.json()

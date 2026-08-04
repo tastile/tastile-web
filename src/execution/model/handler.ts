@@ -1,10 +1,10 @@
 import { EventId, SegmentId, TileId } from "@/shared/model/ids";
 import { Tile } from "@/tile/model/tile";
 import type { CommandEnvelope } from "./command";
+import { eventReducer as reduce } from "./domain-reducer";
 import type { Event, EventEnvelope } from "./event";
 import type { AppState } from "./state";
 import { validate } from "./validate";
-import { eventReducer as reduce } from "./domain-reducer";
 
 export class CommandHandler {
   handle(envelope: CommandEnvelope, initialState: AppState): EventEnvelope[] {
