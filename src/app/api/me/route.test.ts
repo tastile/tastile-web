@@ -76,14 +76,72 @@ describe("GET /api/me", () => {
     });
   });
 
-  it("returns 502 when the upstream profile call fails", async () => {
+  it("returns 401 when upstream returns 401", async () => {
+    const sub = "user-sub-abc";
     cookieStore[COOKIE_ID_TOKEN] = {
-      value: makeIdToken({ sub: "x", exp: 0 }),
+      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
       options: {},
     };
     mockCall.mockResolvedValue({
       ok: false,
-      error: { kind: "server", status: 500, message: "boom", body: null },
+      error: { kind: "auth", status: 401, message: "invalid token", body: null },
+    });
+
+    const res = await GET();
+    expect(res.status).toBe(401);
+    expect(mockCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 401 when upstream returns 403", async () => {
+    const sub = "user-sub-abc";
+    cookieStore[COOKIE_ID_TOKEN] = {
+      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
+      options: {},
+    };
+    mockCall.mockResolvedValue({
+      ok: false,
+      error: { kind: "auth", status: 403, message: "forbidden", body: null },
+    });
+
+    const res = await GET();
+    expect(res.status).toBe(401);
+    expect(mockCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 404 profile with 200 when owner profile not found", async () => {
+    const sub = "user-sub-abc";
+    cookieStore[COOKIE_ID_TOKEN] = {
+      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
+      options: {},
+    };
+    mockCall.mockResolvedValue({
+      ok: false,
+      error: { kind: "not-found", status: 404, message: "profile not found", body: null },
+    });
+
+    const res = await GET();
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.owner_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(body.email).toBe("alice@example.com");
+    expect(body.email_verified).toBe(false);
+    expect(body.display_name).toBeNull();
+    expect(body.avatar_url).toBeNull();
+    expect(body.bio).toBeNull();
+    expect(body.accent_color).toBeNull();
+    expect(body.revision).toBe(0);
+    expect(mockCall).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 502 for upstream 5xx errors", async () => {
+    const sub = "user-sub-abc";
+    cookieStore[COOKIE_ID_TOKEN] = {
+      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
+      options: {},
+    };
+    mockCall.mockResolvedValue({
+      ok: false,
+      error: { kind: "server", status: 502, message: "upstream failure", body: null },
     });
 
     const res = await GET();

@@ -1,37 +1,41 @@
+/** @vitest-environment node */
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import { NextResponse } from "next/server"
 
-// Mock at module level
-const mockResolve = vi.fn()
-const mockGetSubscription = vi.fn()
+// Create mock implementations
+const mockResolveAuthenticatedUserSub = vi.fn()
+const mockGetSubscriptionForUser = vi.fn()
 
+// Mock the modules BEFORE any imports use them
 vi.mock("@/shared/auth/authenticated-session", () => ({
-  resolveAuthenticatedUserSub: mockResolve,
+  resolveAuthenticatedUserSub: mockResolveAuthenticatedUserSub,
 }))
 
 vi.mock("@/lib/billing/server", () => ({
-  getSubscriptionForUser: mockGetSubscription,
+  getSubscriptionForUser: mockGetSubscriptionForUser,
 }))
 
+// Import the route AFTER mocks are set up
+const { GET } = await import("./route")
+
 beforeEach(() => {
-  mockResolve.mockReset()
-  mockGetSubscription.mockReset()
+  mockResolveAuthenticatedUserSub.mockReset()
+  mockGetSubscriptionForUser.mockReset()
 })
 
 describe("GET /api/billing/subscription", () => {
   it("returns 401 when not authenticated", async () => {
-    mockResolve.mockResolvedValueOnce(null)
-    const { GET } = await import("./route")
+    mockResolveAuthenticatedUserSub.mockResolvedValueOnce(null)
     const res = await GET()
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body.error).toMatch(/Unauthorized/)
-    expect(mockGetSubscription).not.toHaveBeenCalled()
+    expect(mockGetSubscriptionForUser).not.toHaveBeenCalled()
   })
 
   it("returns the subscription state for the authed sub", async () => {
-    const { GET } = await import("./route")
-    mockResolve.mockResolvedValueOnce("sub-abc")
-    mockGetSubscription.mockResolvedValueOnce({
+    mockResolveAuthenticatedUserSub.mockResolvedValueOnce("sub-abc")
+    mockGetSubscriptionForUser.mockResolvedValueOnce({
       status: "active",
       interval: "monthly",
       priceId: "price_1",
@@ -50,13 +54,12 @@ describe("GET /api/billing/subscription", () => {
       currentPeriodEnd: 1700000000,
       cancelAtPeriodEnd: false,
     })
-    expect(mockGetSubscription).toHaveBeenCalledWith("sub-abc")
+    expect(mockGetSubscriptionForUser).toHaveBeenCalledWith("sub-abc")
   })
 
   it("returns 404 when user has no subscription", async () => {
-    const { GET } = await import("./route")
-    mockResolve.mockResolvedValueOnce("sub-abc")
-    mockGetSubscription.mockResolvedValueOnce(null as never)
+    mockResolveAuthenticatedUserSub.mockResolvedValueOnce("sub-abc")
+    mockGetSubscriptionForUser.mockResolvedValueOnce(null)
     const res = await GET()
     expect(res.status).toBe(404)
     const body = await res.json()
@@ -64,9 +67,8 @@ describe("GET /api/billing/subscription", () => {
   })
 
   it("passes through the free state", async () => {
-    const { GET } = await import("./route")
-    mockResolve.mockResolvedValueOnce("sub-xyz")
-    mockGetSubscription.mockResolvedValueOnce({ status: "free" })
+    mockResolveAuthenticatedUserSub.mockResolvedValueOnce("sub-xyz")
+    mockGetSubscriptionForUser.mockResolvedValueOnce({ status: "free" })
     const res = await GET()
     expect(res.status).toBe(200)
     const body = await res.json()

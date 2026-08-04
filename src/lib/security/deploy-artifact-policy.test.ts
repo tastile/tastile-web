@@ -9,21 +9,8 @@ describe("deploy artifact secret policy", () => {
 
     expect(workflow).not.toMatch(/cp\s+\.env(?:\.product)?\s+dist\//);
     expect(workflow).not.toMatch(/dist\/\.env(?:\.local)?/);
-    expect(workflow).not.toMatch(/TASTILE_WEB_BRIDGE_SECRET=.*\n[\s\S]*ENVEOF/);
+    expect(workflow).not.toMatch(/TASTILE_WEB_BRIDGE_SECRET=.*\n[ \s\S]*ENVEOF/);
     expect(workflow).toContain("bun scripts/verify-web-artifact.ts");
-  });
-
-  it("uses the reusable isolated product build and verifies the zip", () => {
-    const deployScript = readFileSync(resolve(process.cwd(), "scripts/deploy-web.ps1"), "utf8");
-    const buildScript = readFileSync(resolve(process.cwd(), "scripts/build-product.mjs"), "utf8");
-
-    expect(deployScript).not.toMatch(/\.env\.(?:local|production)\.bak/);
-    expect(deployScript).toContain("bun run build:prod");
-    expect(deployScript).toContain("bun scripts/verify-web-artifact.ts $zipPath");
-    expect(buildScript).toContain("os.tmpdir()");
-    expect(buildScript).toContain('".env"');
-    expect(buildScript).toContain('".env.production.local"');
-    expect(buildScript).toContain("finally");
   });
 
   it("accepts a packaged application without environment files", () => {

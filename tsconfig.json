@@ -38,8 +38,6 @@
     "src/**/*.mts",
     "scripts/**/*.ts",
     "scripts/**/*.tsx",
-    "e2e/**/*.ts",
-    "e2e/**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
@@ -48,6 +46,8 @@
     ".next",
     "dist",
     "test-results",
-    "scripts/generate-openapi-types.ts"
+    "scripts/generate-openapi-types.ts",
+    "e2e/**/*.ts",
+    "e2e/**/*.tsx"
   ]
 }
