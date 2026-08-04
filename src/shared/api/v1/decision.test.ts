@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import * as fc from "fast-check";
 
 import type { ConditionNode } from "@/tile/model/v1/condition";
 import {
@@ -174,5 +175,140 @@ describe("DecisionDef satisfies interface contract", () => {
     const candidates = wire.candidates as Array<Record<string, unknown>>;
     const effects = candidates[0].effects as Array<Record<string, unknown>>;
     expect(effects[0].request).toEqual({ idempotencyKey: "01900000-0000-7000-8000-000000000abc" });
+  });
+});
+
+// ---------- Property tests (fast-check) ----------
+
+const hexChar = fc.constantFrom(..."0123456789abcdef".split(""));
+const hexStr = (n: number) =>
+  fc.array(hexChar, { minLength: n, maxLength: n }).map((a) => a.join(""));
+
+const uuidv7Arb = hexStr(32).map(
+  (h) =>
+    `${h.slice(0, 8)}-${h.slice(8, 12)}-7${h.slice(13, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`,
+);
+
+const conditionNodeArb: fc.Arbitrary<ConditionNode> = fc.constant(ALWAYS_TRUE);
+
+function decisionDefArb(): fc.Arbitrary<DecisionDef> {
+  return fc.record({
+    id: uuidv7Arb,
+    observe: fc.record({
+      scope: fc.constantFrom(
+        DecisionObserveScope.PLAN,
+        DecisionObserveScope.FRAME,
+        DecisionObserveScope.PLACEMENT,
+        DecisionObserveScope.EXECUTION,
+      ),
+    }),
+    candidates: fc.array(
+      fc.record({
+        id: uuidv7Arb,
+        when: conditionNodeArb,
+        rank: fc.integer({ min: -100, max: 100 }),
+        effects: fc.array(
+          fc.record({
+            kind: fc.constantFrom(
+              CandidateEffectKind.PROPOSE_PLACEMENT,
+              CandidateEffectKind.PROPOSE_CHANGE,
+              CandidateEffectKind.REQUEST,
+            ),
+            proposal: fc.constant(null),
+            change: fc.constant(null),
+            request: fc.constant(null),
+          }),
+          { maxLength: 3 },
+        ),
+      }),
+      { maxLength: 5 },
+    ),
+    reuse: fc.array(
+      fc.record({
+        id: uuidv7Arb,
+        when: conditionNodeArb,
+        source: fc.constant(null),
+        apply: fc.constant([]),
+      }),
+      { maxLength: 3 },
+    ),
+    dialog: fc.constant(null),
+  });
+}
+
+describe("DecisionDef ser/de round-trip", () => {
+  it("serializeDecision produces valid JSON (50 random decisions)", () => {
+    fc.assert(
+      fc.property(decisionDefArb(), (def) => {
+        const serialized = serializeDecision(def);
+        const json = JSON.stringify(serialized);
+        const parsed = JSON.parse(json);
+        expect(parsed).toEqual(serialized);
+      }),
+      { numRuns: 50 },
+    );
+  });
+
+  it("covers all DecisionObserveScope values", () => {
+    for (const scope of [0, 1, 2, 3]) {
+      const def: DecisionDef = {
+        id: "01900000-0000-7000-8000-000000000001",
+        observe: { scope },
+        candidates: [],
+        reuse: [],
+        dialog: null,
+      };
+      const serialized = serializeDecision(def) as Record<string, unknown>;
+      expect((serialized.observe as Record<string, unknown>).scope).toBe(scope);
+    }
+  });
+
+  it("covers all CandidateEffectKind values", () => {
+    for (const kind of [0, 1, 2]) {
+      const def: DecisionDef = {
+        id: "01900000-0000-7000-8000-000000000001",
+        observe: { scope: 0 },
+        candidates: [
+          {
+            id: "01900000-0000-7000-8000-000000000002",
+            when: { kind: 0, children: [], term: null },
+            rank: 0,
+            effects: [{ kind, proposal: null, change: null, request: null }],
+          },
+        ],
+        reuse: [],
+        dialog: null,
+      };
+      const serialized = serializeDecision(def) as Record<string, unknown>;
+      const candidates = serialized.candidates as Array<Record<string, unknown>>;
+      const effects = candidates[0].effects as Array<Record<string, unknown>>;
+      expect(effects[0].kind).toBe(kind);
+    }
+  });
+
+  it("converts nested ConditionNode in candidates via convertCondition", () => {
+    const def: DecisionDef = {
+      id: "01900000-0000-7000-8000-000000000001",
+      observe: { scope: 0 },
+      candidates: [
+        {
+          id: "c1",
+          when: {
+            kind: 3,
+            children: [],
+            term: { kind: "task", value: { taskId: "t1", state: 2 } },
+          },
+          rank: 1,
+          effects: [],
+        },
+      ],
+      reuse: [],
+      dialog: null,
+    };
+    const wire = serializeDecision(def) as Record<string, unknown>;
+    const candidates = wire.candidates as Array<Record<string, unknown>>;
+    expect(candidates[0].when).toEqual({
+      Term: { Task: { task_id: "t1", state: "Completed" } },
+    });
   });
 });
