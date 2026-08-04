@@ -37,7 +37,6 @@ describe("useQuickCreateStore", () => {
       expect(s.advanced.changeSets).toEqual([]);
       expect(s.advanced.rules).toEqual([]);
       expect(s.meta.ownerSubjectId).toBeNull();
-      expect(s.meta.tags).toEqual([]);
       expect(s.meta.memo).toBe("");
     });
   });
@@ -88,11 +87,6 @@ describe("useQuickCreateStore", () => {
     it("sets meta.memo", () => {
       useQuickCreateStore.getState().setField("meta.memo", "remember this");
       expect(useQuickCreateStore.getState().meta.memo).toBe("remember this");
-    });
-
-    it("sets meta.tags array", () => {
-      useQuickCreateStore.getState().setField("meta.tags", ["a", "b"]);
-      expect(useQuickCreateStore.getState().meta.tags).toEqual(["a", "b"]);
     });
   });
 

@@ -175,8 +175,6 @@ export interface SourceAuthoringSlice {
 
 export interface MetaSlice {
   ownerSubjectId: string | null;
-  project: string | null;
-  tags: string[];
   memo: string;
   /** Backwards-compat: `true` mirrors `plan.role = LABEL`. Set via setLabelOnly. */
   isLabelOnly: boolean;
@@ -485,8 +483,6 @@ function defaultSourceAuthoring(): SourceAuthoringSlice {
 function defaultMeta(): MetaSlice {
   return {
     ownerSubjectId: null,
-    project: null,
-    tags: [],
     memo: "",
     isLabelOnly: false,
   };
@@ -703,7 +699,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       },
       meta: {
         ...useQuickCreateStore.getState().meta,
-        tags: Array.isArray(event.tags) ? event.tags : [],
         memo: event.memo ?? "",
       },
     })),
@@ -763,7 +758,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       },
       meta: {
         ...defaultMeta(),
-        tags: Array.isArray(event.tags) ? event.tags : [],
         memo: event.memo ?? "",
       },
     });
@@ -869,7 +863,6 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         },
         meta: {
           ...useQuickCreateStore.getState().meta,
-          tags: [],
           memo: "",
         },
         recurrence: null,

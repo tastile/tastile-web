@@ -59,7 +59,6 @@ import {
   Calendar,
   ChevronRight,
   Clock,
-  FolderOpen,
   Layers,
   Link2,
   ListChecks,
@@ -67,7 +66,6 @@ import {
   Plus,
   Repeat,
   SlidersHorizontal,
-  Tag,
   Trash2,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -118,16 +116,6 @@ export function QuickCreate() {
   const projects = useWorkspaces();
   const refreshProjects = projects.refresh;
   const tiles = useTileList({ limit: 200 });
-  const knownTags = useMemo(() => {
-    const seen = new Set<string>();
-    for (const tile of tiles.tiles) {
-      for (const label of tile.labels ?? []) {
-        const trimmed = label.trim();
-        if (trimmed) seen.add(trimmed);
-      }
-    }
-    return Array.from(seen).sort((a, b) => a.localeCompare(b, "ja"));
-  }, [tiles.tiles]);
   const tilePickerData = useMemo(
     () =>
       tiles.tiles.reduce<{ value: string; label: string }[]>((acc, tile) => {
@@ -388,7 +376,6 @@ export function QuickCreate() {
       );
 
   const ownerId = meta.ownerSubjectId;
-  const currentProject = ownerId ? projects.workspaces.find((w) => w.id === ownerId) : null;
 
   return (
     <>
@@ -471,36 +458,11 @@ export function QuickCreate() {
                 }}
               />
 
-              {/* organize row: project + tags + add button */}
+              {/* organize row */}
               <div
                 className="flex flex-wrap items-center gap-1.5 pb-3"
                 data-testid="quick-create-organize-row"
               >
-                {currentProject && (
-                  <Button
-                    type="button"
-                    onClick={() => setActivePanel("meta")}
-                    radius="xl"
-                    size="xs"
-                    variant="light"
-                    leftSection={<FolderOpen size={12} />}
-                  >
-                    {currentProject.display_name}
-                  </Button>
-                )}
-                {meta.tags.map((tag) => (
-                  <Button
-                    key={tag}
-                    type="button"
-                    onClick={() => setActivePanel("meta")}
-                    radius="xl"
-                    size="xs"
-                    variant="light"
-                    leftSection={<Tag size={12} />}
-                  >
-                    #{tag}
-                  </Button>
-                ))}
                 <Button
                   type="button"
                   onClick={() => setActivePanel("meta")}
@@ -1022,9 +984,6 @@ export function QuickCreate() {
         t={t}
         meta={meta}
         setField={setField}
-        projects={projects}
-        knownTags={knownTags}
-        openProjectModal={openProjectModal}
       />
 
       <TaskDetailSubPanel

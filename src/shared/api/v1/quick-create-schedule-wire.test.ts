@@ -322,16 +322,6 @@ describe("buildQuickCreateSchedulePayload", () => {
     ]);
   });
 
-  it("rejects authored values that the atomic contract cannot represent instead of dropping them", () => {
-    const state = buildDefaultQuickCreateState();
-    state.identity = { ...state.identity, title: "Tagged study" };
-    state.meta = { ...state.meta, tags: ["exam"] };
-
-    expect(() => buildQuickCreateSchedulePayload(state)).toThrow(
-      "projects and tags are not supported by atomic schedule publish",
-    );
-  });
-
   it("combines date-only UI spans with the authored time-of-day range as RFC3339 instants", () => {
     const state = buildDefaultQuickCreateState();
     state.identity = { ...state.identity, title: "Calendar study" };

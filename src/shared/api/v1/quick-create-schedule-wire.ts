@@ -237,9 +237,6 @@ export function buildQuickCreateSchedulePayload(
       throw new Error(`flow ${index + 1} requires positive sequence steps`);
     }
   }
-  if (state.meta.project || state.meta.tags.length > 0) {
-    throw new Error("projects and tags are not supported by atomic schedule publish");
-  }
   if (state.identity.description && state.meta.memo.trim()) {
     throw new Error("description and memo cannot both be represented by atomic schedule publish");
   }
