@@ -1,5 +1,6 @@
 import { ConditionPanel } from "@/features/create-tile/ui/ConditionPanel";
 import { type SubPanelKey, SubPanelShell } from "@/features/create-tile/ui/SubPanelShell";
+import { TaskDefinitionEditor } from "@/features/create-tile/ui/TaskDefinitionEditor";
 import { defaultTerm } from "@/features/create-tile/ui/default-term";
 import { FormPanel, SectionHeader } from "@/shared/ui/form";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
@@ -173,6 +174,7 @@ export function CompletionSubPanel({
             styles={SEGMENT_STYLES}
           />
         </div>
+        <TaskDefinitionEditor t={t} />
         <div className="flex items-center gap-2 border-t border-border/40 pt-3">
           <Button
             type="button"
