@@ -401,6 +401,10 @@ export const quickCreateJa = {
   changeRulesTitle: "変更ルール",
   minMsLabel: "最小 (分)",
   maxMsLabel: "最大 (分)",
+  timeReqKind: "種別",
+  timeReqKindDuration: "時間",
+  timeReqKindDeadline: "期限",
+  timeReqKindRange: "範囲",
   allDay: "終日",
   // v1 gap-fill (2026-06-27): Visual / Description / Windows / FrameRule
   descriptionPlaceholder: "説明（任意）",
@@ -905,6 +909,10 @@ export const quickCreateEn = {
   changeRulesTitle: "Change rules",
   minMsLabel: "Min (min)",
   maxMsLabel: "Max (min)",
+  timeReqKind: "Kind",
+  timeReqKindDuration: "Duration",
+  timeReqKindDeadline: "Deadline",
+  timeReqKindRange: "Range",
   allDay: "All day",
   // v1 gap-fill (2026-06-27): Visual / Description / Windows / FrameRule
   descriptionPlaceholder: "Description (optional)",
