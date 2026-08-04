@@ -128,6 +128,40 @@ function updateValue(term: Term, key: string, value: unknown): Term {
   if (term.kind !== "fact" && term.kind !== "metric" && term.kind !== "feedback") return term;
   return { ...term, value: { ...term.value, [key]: value } } as Term;
 }
+// biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
+function updateGap(term: Term, key: keyof import("@/tile/model/v1/condition").GapTerm, value: any) {
+  if (term.kind !== "gap") return term;
+  return { kind: "gap", value: { ...term.value, [key]: value } } as Term;
+}
+// biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
+function updateGapAnchor(
+  term: Term,
+  anchorKey: "leftAnchor" | "rightAnchor",
+  field: keyof import("@/tile/model/v1/condition").AnchorSelector,
+  value: any,
+): Term {
+  if (term.kind !== "gap") return term;
+  return {
+    kind: "gap",
+    value: {
+      ...term.value,
+      [anchorKey]: { ...term.value[anchorKey], [field]: value },
+    },
+  } as Term;
+}
+// biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
+function updateGapSize(
+  term: Term,
+  field: keyof import("@/tile/model/v1/condition").DurationRange,
+  value: any,
+): Term {
+  if (term.kind !== "gap") return term;
+  const currentSize = term.value.size ?? { minMs: null, maxMs: null };
+  return {
+    kind: "gap",
+    value: { ...term.value, size: { ...currentSize, [field]: value } },
+  } as Term;
+}
 
 // ============================================================
 // PickerButton — modal-launched replacement for inline <Select> tile pickers
@@ -204,6 +238,7 @@ function TermFields({
   t: (k: string) => string;
 }) {
   const fieldIdBase = useId();
+  const gapIdBase = useId();
   switch (term.kind) {
     case "calendar":
       return (
@@ -461,8 +496,94 @@ function TermFields({
           </label>
         </div>
       );
-    case "gap":
-      return <p className="text-xs text-foreground-muted">{t("quickCreate.gapPlaceholder")}</p>;
+    case "gap": {
+      return (
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <label htmlFor={`${gapIdBase}-scope`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapScope")}
+            </span>
+            <NumberInput
+              id={`${gapIdBase}-scope`}
+              value={term.value.scope}
+              onChange={(value) => onChange(updateGap(term, "scope", Number(value) || 0))}
+              size="xs"
+              className="w-full"
+            />
+          </label>
+          <label htmlFor={`${gapIdBase}-leftRef`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapLeftAnchor")}
+            </span>
+            <PickerButton
+              value={term.value.leftAnchor.referenceId}
+              onChange={(v) => onChange(updateGapAnchor(term, "leftAnchor", "referenceId", v))}
+              placeholder={t("quickCreate.selectTile")}
+              testId={`${gapIdBase}-leftRef-picker`}
+            />
+          </label>
+          <label htmlFor={`${gapIdBase}-leftPoint`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapLeftPoint")}
+            </span>
+            <NumberInput
+              id={`${gapIdBase}-leftPoint`}
+              value={term.value.leftAnchor.point ?? 0}
+              onChange={(value) => onChange(updateGapAnchor(term, "leftAnchor", "point", Number(value) || 0))}
+              size="xs"
+              className="w-full"
+            />
+          </label>
+          <label htmlFor={`${gapIdBase}-rightRef`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapRightAnchor")}
+            </span>
+            <PickerButton
+              value={term.value.rightAnchor.referenceId}
+              onChange={(v) => onChange(updateGapAnchor(term, "rightAnchor", "referenceId", v))}
+              placeholder={t("quickCreate.selectTile")}
+              testId={`${gapIdBase}-rightRef-picker`}
+            />
+          </label>
+          <label htmlFor={`${gapIdBase}-rightPoint`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapRightPoint")}
+            </span>
+            <NumberInput
+              id={`${gapIdBase}-rightPoint`}
+              value={term.value.rightAnchor.point ?? 0}
+              onChange={(value) => onChange(updateGapAnchor(term, "rightAnchor", "point", Number(value) || 0))}
+              size="xs"
+              className="w-full"
+            />
+          </label>
+          <label htmlFor={`${gapIdBase}-sizeMin`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapSizeMin")}
+            </span>
+            <NumberInput
+              id={`${gapIdBase}-sizeMin`}
+              value={term.value.size?.minMs ?? 0}
+              onChange={(value) => onChange(updateGapSize(term, "minMs", Number(value) || 0))}
+              size="xs"
+              className="w-full"
+            />
+          </label>
+          <label htmlFor={`${gapIdBase}-sizeMax`} className="space-y-1">
+            <span className="block text-foreground-muted">
+              {t("quickCreate.gapSizeMax")}
+            </span>
+            <NumberInput
+              id={`${gapIdBase}-sizeMax`}
+              value={term.value.size?.maxMs ?? 0}
+              onChange={(value) => onChange(updateGapSize(term, "maxMs", Number(value) || 0))}
+              size="xs"
+              className="w-full"
+            />
+          </label>
+        </div>
+      );
+    }
     default:
       return null;
   }
@@ -479,6 +600,8 @@ export function ConditionEditor({
   tileOptions,
   taskOptions,
   requirementOptions,
+  maxDepth = 3,
+  depth = 0,
 }: {
   node: ConditionNode;
   onChange: (next: ConditionNode) => void;
@@ -486,8 +609,22 @@ export function ConditionEditor({
   tileOptions?: { value: string; label: string }[];
   taskOptions?: { value: string; label: string }[];
   requirementOptions?: { value: string; label: string }[];
+  maxDepth?: number;
+  depth?: number;
 }) {
   const isTerm = node.kind === ConditionKind.TERM;
+  const isNot = node.kind === ConditionKind.NOT;
+  const atDepthLimit = !isTerm && depth >= maxDepth;
+
+  if (atDepthLimit) {
+    return (
+      <div className="flex flex-col gap-1">
+        <ConditionKindSegmented value={node.kind as number} onChange={() => {}} t={t} />
+        <p className="text-xs text-foreground-muted pl-1">{t("quickCreate.conditionDepthLimit")}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-1">
       <ConditionKindSegmented
@@ -499,6 +636,16 @@ export function ConditionEditor({
               kind: kind as import("@/tile/model/v1/constants").ConditionKindValue,
               children: [],
               term: currentTerm,
+            });
+          } else if (kind === ConditionKind.NOT) {
+            const firstChild =
+              node.children.length > 0
+                ? node.children[0]
+                : { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") };
+            onChange({
+              kind: kind as import("@/tile/model/v1/constants").ConditionKindValue,
+              children: [firstChild],
+              term: null,
             });
           } else {
             onChange({
@@ -547,40 +694,46 @@ export function ConditionEditor({
                   tileOptions={tileOptions}
                   taskOptions={taskOptions}
                   requirementOptions={requirementOptions}
+                  maxDepth={maxDepth}
+                  depth={depth + 1}
                 />
-                <Button
-                  type="button"
-                  size="xs"
-                  variant="subtle"
-                  leftSection={<Trash2 size={14} aria-hidden="true" />}
-                  onClick={() => {
-                    const children = node.children.slice();
-                    children.splice(i, 1);
-                    onChange({ ...node, children });
-                  }}
-                  aria-label={t("quickCreate.conditionRemoveChild")}
-                  className="self-start text-foreground-muted hover:text-danger"
-                />
+                {!isNot && (
+                  <Button
+                    type="button"
+                    size="xs"
+                    variant="subtle"
+                    leftSection={<Trash2 size={14} aria-hidden="true" />}
+                    onClick={() => {
+                      const children = node.children.slice();
+                      children.splice(i, 1);
+                      onChange({ ...node, children });
+                    }}
+                    aria-label={t("quickCreate.conditionRemoveChild")}
+                    className="self-start text-foreground-muted hover:text-danger"
+                  />
+                )}
               </div>
             );
           })}
-          <Button
-            type="button"
-            size="sm"
-            variant="default"
-            leftSection={<Plus size={12} aria-hidden="true" />}
-            onClick={() =>
-              onChange({
-                ...node,
-                children: [
-                  ...node.children,
-                  { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") },
-                ],
-              })
-            }
-          >
-            {t("quickCreate.conditionAddChild")}
-          </Button>
+          {!isNot && (
+            <Button
+              type="button"
+              size="sm"
+              variant="default"
+              leftSection={<Plus size={12} aria-hidden="true" />}
+              onClick={() =>
+                onChange({
+                  ...node,
+                  children: [
+                    ...node.children,
+                    { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") },
+                  ],
+                })
+              }
+            >
+              {t("quickCreate.conditionAddChild")}
+            </Button>
+          )}
         </>
       )}
     </div>
