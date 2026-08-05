@@ -151,6 +151,8 @@ export interface SourceAuthoringSlice {
     maxSegments: number | null;
   };
   priority: number;
+  include: "INCLUDED" | "EXCLUDED";
+  anchorMode: "FIXED" | "FLOATING";
   relations: SourceRelationDraft[];
   flowSequences: Array<{
     id: string;
@@ -478,6 +480,8 @@ function defaultSourceAuthoring(): SourceAuthoringSlice {
       maxSegments: null,
     },
     priority: 0,
+    include: "INCLUDED",
+    anchorMode: "FIXED",
     relations: [],
     flowSequences: [],
   };

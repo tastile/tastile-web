@@ -17,6 +17,21 @@ const WindowKind = {
 } as const;
 type WindowKindCode = (typeof WindowKind)[keyof typeof WindowKind];
 
+/** v1 SourceWindowInclude — included (1) / excluded (0) per wire spec. */
+export const SourceWindowInclude = {
+  INCLUDED: 1,
+  EXCLUDED: 0,
+} as const;
+export type SourceWindowIncludeCode =
+  (typeof SourceWindowInclude)[keyof typeof SourceWindowInclude];
+
+/** v1 AnchorMode — fixed (0) / floating (1). */
+export const AnchorMode = {
+  FIXED: 0,
+  FLOATING: 1,
+} as const;
+export type AnchorModeCode = (typeof AnchorMode)[keyof typeof AnchorMode];
+
 export type Condition =
   | { All: Condition[] }
   | { Any: Condition[] }
@@ -71,6 +86,8 @@ export interface PublishScheduleDefinitionPayload {
       offset_min: number | null;
     };
     window: { start_offset_ms: number; end_offset_ms: number };
+    source_window_include: SourceWindowIncludeCode;
+    anchor_mode: AnchorModeCode;
     split_policy: {
       kind: 0 | 1 | 2;
       min_segment_ms: number | null;

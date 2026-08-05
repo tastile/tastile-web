@@ -2,7 +2,12 @@ import type { QuickCreateState } from "@/shared/stores/quick-create-store";
 import { tasksForSubmission } from "@/shared/stores/quick-create-store";
 import { uuidv7 } from "@/tile/model/v1/envelope";
 import { convertCondition, toWireSetPlanBody } from "./plan-wire";
-import type { PublishScheduleDefinitionPayload, WindowRule } from "./schedule-definition";
+import {
+  type AnchorModeCode,
+  type PublishScheduleDefinitionPayload,
+  type SourceWindowIncludeCode,
+  type WindowRule,
+} from "./schedule-definition";
 
 type QuickCreateScheduleState = Pick<
   QuickCreateState,
@@ -16,6 +21,16 @@ const MIN_MS = 60_000;
 const HOUR_MS = 60 * MIN_MS;
 
 const SPLIT_KIND_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2 } as const;
+
+const INCLUDE_MAP: Record<string, SourceWindowIncludeCode> = {
+  INCLUDED: 1,
+  EXCLUDED: 0,
+} as const;
+
+const ANCHOR_MAP: Record<string, AnchorModeCode> = {
+  FIXED: 0,
+  FLOATING: 1,
+} as const;
 
 function intervalAuthoredMs(value: number, unit: "min" | "hour" | "day"): number {
   if (!Number.isFinite(value) || value <= 0) return DEFAULT_INTERVAL_MS;
@@ -139,10 +154,7 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
 }
 
 function sourceWindow(state: QuickCreateScheduleState, duration: number) {
-  const start = authoredInstant(state, "start");
-  const end = authoredInstant(state, "end");
-  const spanMs = start && end ? Date.parse(end) - Date.parse(start) : duration;
-  return { start_offset_ms: 0, end_offset_ms: Math.max(duration, spanMs) };
+  return { start_offset_ms: 0, end_offset_ms: duration };
 }
 
 function windowRule(
@@ -365,6 +377,8 @@ export function buildQuickCreateSchedulePayload(
       required_duration_ms: duration,
       generation: sourceGeneration(state, now),
       window: sourceWindow(state, duration),
+      source_window_include: INCLUDE_MAP[state.source.include] ?? 1,
+      anchor_mode: ANCHOR_MAP[state.source.anchorMode] ?? 0,
       split_policy: {
         kind: (SPLIT_KIND_MAP[state.source.splitPolicy.kind] ?? 0) as 0 | 1 | 2,
         min_segment_ms: state.source.splitPolicy.minSegmentMs,

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildDefaultQuickCreateState } from "@/shared/stores/quick-create-store";
 import { buildQuickCreateSchedulePayload } from "./quick-create-schedule-wire";
+import { AnchorMode, SourceWindowInclude } from "./schedule-definition";
 
 describe("buildQuickCreateSchedulePayload", () => {
   it("preserves every authored schedule value in one SourceScheduleDefinition payload", () => {
@@ -122,7 +123,9 @@ describe("buildQuickCreateSchedulePayload", () => {
         excluded_dates: ["2026-08-06"],
         offset_min: 540,
       },
-      window: { start_offset_ms: 0, end_offset_ms: 10_800_000 },
+      window: { start_offset_ms: 0, end_offset_ms: 1_800_000 },
+      source_window_include: 1,
+      anchor_mode: 0,
       split_policy: {
         kind: 1,
         min_segment_ms: 900_000,
@@ -387,7 +390,7 @@ describe("buildQuickCreateSchedulePayload", () => {
     const generationAt = payload.source_schedule?.generation.at;
 
     expect(generationAt).toMatch(/^2026-07-28T\d{2}:00:00\.000Z$/);
-    expect(payload.source_schedule?.window.end_offset_ms).toBe(9 * 60 * 60_000);
+    expect(payload.source_schedule?.window.end_offset_ms).toBe(1_800_000);
     expect(payload.source_horizon?.start).toBe(generationAt);
     expect(payload.source_horizon?.end).toMatch(/^2026-07-28T\d{2}:00:00\.000Z$/);
   });
@@ -1148,6 +1151,153 @@ describe("buildQuickCreateSchedulePayload", () => {
       expect(highPayload.source_schedule?.priority).toBeGreaterThan(
         lowPayload.source_schedule!.priority,
       );
+    });
+  });
+
+  // ── C6a: SourceWindowInclude enum round-trip ────────────────────────
+  describe("C6a: SourceWindowInclude enum round-trip", () => {
+    it.each([
+      ["INCLUDED", SourceWindowInclude.INCLUDED, "INCLUDED maps to wire 1"],
+      ["EXCLUDED", SourceWindowInclude.EXCLUDED, "EXCLUDED maps to wire 0"],
+    ])(
+      "maps source.include=%s to source_schedule.source_window_include=%d (%s)",
+      (include: string, expectedWire: number, _label: string) => {
+        const state = buildDefaultQuickCreateState();
+        state.identity = { ...state.identity, title: `include ${include}` };
+        (state.source as { include: string }).include = include;
+        state.time = {
+          ...state.time,
+          span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:00:00.000Z" },
+        };
+
+        const payload = buildQuickCreateSchedulePayload(state);
+
+        expect(payload.source_schedule?.source_window_include).toBe(expectedWire);
+      },
+    );
+
+    it("defaults source_window_include to INCLUDED (1) when not set", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "default include" };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.source_window_include).toBe(1);
+    });
+  });
+
+  // ── C6a: AnchorMode enum round-trip ────────────────────────────────
+  describe("C6a: AnchorMode enum round-trip", () => {
+    it.each([
+      ["FIXED", AnchorMode.FIXED, "FIXED maps to wire 0"],
+      ["FLOATING", AnchorMode.FLOATING, "FLOATING maps to wire 1"],
+    ])(
+      "maps source.anchorMode=%s to source_schedule.anchor_mode=%d (%s)",
+      (anchorMode: string, expectedWire: number, _label: string) => {
+        const state = buildDefaultQuickCreateState();
+        state.identity = { ...state.identity, title: `anchor ${anchorMode}` };
+        (state.source as { anchorMode: string }).anchorMode = anchorMode;
+        state.time = {
+          ...state.time,
+          span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:00:00.000Z" },
+        };
+
+        const payload = buildQuickCreateSchedulePayload(state);
+
+        expect(payload.source_schedule?.anchor_mode).toBe(expectedWire);
+      },
+    );
+
+    it("defaults anchor_mode to FIXED (0) when not set", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "default anchor" };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.anchor_mode).toBe(0);
+    });
+  });
+
+  // ── C6b: SourceWindow offset_ms span derivation E2E ───────────────
+  describe("C6b: SourceWindow offset_ms span derivation", () => {
+    function stateWithDuration(minMs: number, maxMs: number) {
+      const state = buildDefaultQuickCreateState();
+      state.time = {
+        ...state.time,
+        durationMinMax: { minMs, maxMs },
+      };
+      state.plan = {
+        ...state.plan,
+        completion: {
+          ...state.plan.completion,
+          timeRequirements: state.plan.completion.timeRequirements.map((req, i) =>
+            i === 0 ? { ...req, required: { minMs, maxMs } } : req,
+          ),
+        },
+      };
+      return state;
+    }
+
+    it("derives start_offset_ms=0 and end_offset_ms=3600000 for a 60-min span", () => {
+      const state = stateWithDuration(3_600_000, 3_600_000);
+      state.identity = { ...state.identity, title: "60 min span" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-03T09:00:00+09:00", end: "2026-08-03T10:00:00+09:00" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
+      expect(payload.source_schedule?.window.end_offset_ms).toBe(3_600_000);
+    });
+
+    it("derives end_offset_ms from duration when no span is set", () => {
+      const state = stateWithDuration(1_800_000, 3_600_000);
+      state.identity = { ...state.identity, title: "duration only" };
+      state.time = {
+        ...state.time,
+        span: { start: "", end: "" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
+      expect(payload.source_schedule?.window.end_offset_ms).toBe(1_800_000);
+    });
+
+    it("preserves window alongside source_window_include and anchor_mode", () => {
+      const state = stateWithDuration(3_600_000, 3_600_000);
+      state.identity = { ...state.identity, title: "combined C6a+C6b" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:00:00.000Z" },
+      };
+      (state.source as { include: string }).include = "EXCLUDED";
+      (state.source as { anchorMode: string }).anchorMode = "FLOATING";
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.window).toEqual({
+        start_offset_ms: 0,
+        end_offset_ms: 3_600_000,
+      });
+      expect(payload.source_schedule?.source_window_include).toBe(0);
+      expect(payload.source_schedule?.anchor_mode).toBe(1);
+    });
+
+    it("end_offset_ms equals duration for a 90-min span", () => {
+      const state = stateWithDuration(5_400_000, 5_400_000);
+      state.identity = { ...state.identity, title: "90 min span" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:30:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
+      expect(payload.source_schedule?.window.end_offset_ms).toBe(5_400_000);
     });
   });
 });
