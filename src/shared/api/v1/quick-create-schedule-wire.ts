@@ -22,6 +22,12 @@ function intervalAuthoredMs(value: number, unit: "min" | "hour" | "day"): number
   return value * DAY_MS;
 }
 
+function normalizeWeekdayMask(mask: number): number {
+  // core v1/05: bit0=Mon ... bit6=Sun.  Accept and re-emit as-is,
+  // but clamp to 7 bits so bit8+ noise never leaks into the wire.
+  return mask & 0b1111111;
+}
+
 function validInstant(value: string | null | undefined): string | null {
   if (!value) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
@@ -78,7 +84,10 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   const end =
     validInstant(state.recurring.endDate) ?? validInstant(state.recurring.life.active.endDate);
   const common = {
-    weekday_mask: state.recurring.repeatMode === "weekly" ? state.recurring.weekdayMask : null,
+    weekday_mask:
+      state.recurring.repeatMode === "weekly"
+        ? normalizeWeekdayMask(state.recurring.weekdayMask)
+        : null,
     date_range_start: datePart(state.recurring.life.active.startDate),
     date_range_end: datePart(end),
     excluded_dates: state.source.excludedDates,
@@ -93,6 +102,24 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   }
   if (state.recurring.repeatMode === "once") {
     return { kind: 0 as const, at: start, ...common };
+  }
+  if (state.recurring.repeatMode === "monthly") {
+    return {
+      kind: 3 as const,
+      starts_at: start ?? now.toISOString(),
+      interval_ms: DAY_MS,
+      ends_at: end,
+      ...common,
+    };
+  }
+  if (state.recurring.repeatMode === "weekly") {
+    return {
+      kind: 2 as const,
+      starts_at: start ?? now.toISOString(),
+      interval_ms: DAY_MS,
+      ends_at: end,
+      ...common,
+    };
   }
 
   return {
@@ -257,7 +284,7 @@ export function buildQuickCreateSchedulePayload(
   }
   if (state.recurring.condition !== null) {
     console.warn(
-      "[E1a] recurring.condition silently dropped — Phase C/D wire slot not yet implemented",
+      "[Phase C/D reserved] recurring.condition ignored",
     );
     state.recurring.conditionIgnored = true;
   }

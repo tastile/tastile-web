@@ -24,16 +24,26 @@
  *   - recurring-weekday-row
  *   - recurring-weekday-{bit}     (bit 0 = Sunday)
  *   - recurring-end-switch
+ *   - recurring-condition-affordance  (E1b — disabled, tooltip-only)
  */
 
 import { translations } from "@/shared/i18n/translations";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
 import type { ConditionNode } from "@/tile/model/v1/condition";
-import { TileKind } from "@/tile/model/v1/constants";
-import { Button, Chip, NumberInput, SegmentedControl, Switch } from "@mantine/core";
+import { ConditionKind, TileKind } from "@/tile/model/v1/constants";
+import { Button, Chip, NumberInput, SegmentedControl, Switch, Tooltip } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
 import { Calendar, Repeat } from "lucide-react";
+import { ConditionEditor } from "./ConditionEditor";
 import type { EditorLocale } from "./date-utils";
+import { defaultTerm } from "./default-term";
+
+/**
+ * E1b — exact tooltip text shown on the disabled recurring.condition
+ * affordance. Kept as a constant so the test can match it without relying
+ * on translations (which the panel renders via the `t` prop).
+ */
+export const RECURRING_CONDITION_DISABLED_TOOLTIP = "Condition editor ships in Phase 4";
 
 // Bit 0 = Sunday … bit 6 = Saturday (matches WindowEditor.weekdayMask
 // convention). Locale-specific labels live in translations.ts so no JA
@@ -57,6 +67,7 @@ const REPEAT_MODE_OPTIONS = [
   { id: "once", labelKey: "repeatOnce" },
   { id: "daily", labelKey: "repeatDaily" },
   { id: "weekly", labelKey: "repeatWeekly" },
+  { id: "monthly", labelKey: "repeatMonthly" },
   { id: "interval", labelKey: "repeatInterval" },
   { id: "condition", labelKey: "repeatCondition" },
 ] as const;
@@ -296,10 +307,72 @@ export function SourceGenerationPanel({
             title={t("quickCreate.conditionModeLabel") ?? "繰り返し条件"}
             hint={t("quickCreate.conditionModeHint") ?? "条件が真のときだけTileを生成します"}
           />
-          <div className="rounded bg-surface-2 px-3 py-2 text-xs text-foreground-muted">
-            条件編集は将来リリースで利用可能になります / Condition editing will be available in a
-            future release
-          </div>
+          {/* E1b — recurring.condition affordance is kept (not removed) so users
+              see the slot exists, but every interaction is disabled while
+              ConditionEditor (Phase 4) is not yet wired. The wrapper span
+              ensures the Mantine Tooltip fires even though the inner Button
+              is disabled (native disabled buttons swallow mouse events). */}
+          <Tooltip label={RECURRING_CONDITION_DISABLED_TOOLTIP} withArrow position="top">
+            {recurring.condition ? (
+              <div
+                className="space-y-2"
+                data-testid="recurring-condition-affordance"
+                data-condition-disabled="true"
+                aria-disabled="true"
+                aria-describedby="recurring-condition-disabled-reason"
+              >
+                <Button
+                  size="compact-xs"
+                  variant="outline"
+                  color="red"
+                  disabled
+                  aria-disabled="true"
+                  tabIndex={-1}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    // No-op — E1b reserved (Phase 4). Submit path is unaffected.
+                  }}
+                >
+                  条件を外す
+                </Button>
+                <div aria-disabled="true" className="pointer-events-none opacity-60">
+                  <ConditionEditor
+                    node={recurring.condition}
+                    onChange={(next) => setField("recurring.condition", next)}
+                    t={t}
+                  />
+                </div>
+                <span id="recurring-condition-disabled-reason" className="sr-only">
+                  {RECURRING_CONDITION_DISABLED_TOOLTIP}
+                </span>
+              </div>
+            ) : (
+              <Button
+                size="xs"
+                variant="outline"
+                disabled
+                aria-disabled="true"
+                tabIndex={-1}
+                data-testid="recurring-condition-affordance"
+                data-condition-disabled="true"
+                aria-describedby="recurring-condition-disabled-reason"
+                onClick={(event) => {
+                  // E1b reserved — affordance is disabled. Mantine's
+                  // disabled Button already suppresses click, but we
+                  // guard explicitly so test runners that simulate
+                  // pointer events still cannot mutate the store.
+                  event.preventDefault();
+                  event.stopPropagation();
+                }}
+                className="cursor-not-allowed"
+              >
+                繰り返し条件を追加
+                <span id="recurring-condition-disabled-reason" className="sr-only">
+                  {RECURRING_CONDITION_DISABLED_TOOLTIP}
+                </span>
+              </Button>
+            )}
+          </Tooltip>
         </div>
       )}
       <div className="space-y-1.5">

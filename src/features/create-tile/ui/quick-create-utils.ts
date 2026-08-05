@@ -16,6 +16,7 @@ export const REPEAT_MODE_LABEL_KEY: Record<RepeatChoice, string> = {
   once: "quickCreate.repeatOnce",
   daily: "quickCreate.repeatDaily",
   weekly: "quickCreate.repeatWeekly",
+  monthly: "quickCreate.repeatMonthly",
   interval: "quickCreate.repeatInterval",
   condition: "quickCreate.repeatCondition",
 };
@@ -72,14 +73,14 @@ export const INTENT_ITEMS = [
   },
 ] as const;
 
-export function _localDateTimeToIso(value: string): string | null {
+function _localDateTimeToIso(value: string): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toISOString();
 }
 
-export function _isoToLocalDateTime(iso: string | null | undefined): string {
+function _isoToLocalDateTime(iso: string | null | undefined): string {
   if (!iso) return "";
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
@@ -87,35 +88,13 @@ export function _isoToLocalDateTime(iso: string | null | undefined): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function _localDateToIsoDate(value: string): string {
+function _localDateToIsoDate(value: string): string {
   return value ? `${value}T00:00:00.000Z` : "";
 }
 
-export function _isoToLocalDate(iso: string | null | undefined): string {
+function _isoToLocalDate(iso: string | null | undefined): string {
   if (!iso) return "";
   return iso.slice(0, 10);
-}
-
-export function _hexToEventColorName(hex: string | null | undefined): string | null {
-  if (!hex) return null;
-  const m = hex.toLowerCase().match(/^#([0-9a-f]{6})$/);
-  if (!m) return null;
-  const v = m[1];
-  const map: Record<string, string> = {
-    "3b82f6": "blue",
-    "22c55e": "green",
-    a855f7: "purple",
-    f97316: "orange",
-    ec4899: "pink",
-    "06b6d4": "cyan",
-    eab308: "yellow",
-    ef4444: "red",
-    "14b8a6": "teal",
-    "6366f1": "indigo",
-    "84cc16": "lime",
-    "6b7280": "gray",
-  };
-  return map[v] ?? null;
 }
 
 const jaDateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {

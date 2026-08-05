@@ -47,7 +47,7 @@ import { create } from "zustand";
  * FrameRule body from form fields, so we do not constrain this to the
  * strict `RecurrenceModel` discriminated union.
  */
-export interface RecurrenceTemplateRecurrence {
+interface RecurrenceTemplateRecurrence {
   generator: {
     focus_block_based?: { phases: Array<{ focus_min: number; break_min: number }> };
     step_min?: number;
@@ -63,7 +63,7 @@ export interface RecurrenceTemplateRecurrence {
   };
 }
 
-export type RepeatChoice = "once" | "daily" | "weekly" | "interval" | "condition";
+export type RepeatChoice = "once" | "daily" | "weekly" | "monthly" | "interval" | "condition";
 
 // ---------- slice types ----------
 
@@ -113,7 +113,7 @@ export interface RecurringSlice {
   conditionIgnored: boolean;
 }
 
-export interface AdvancedSlice {
+interface AdvancedSlice {
   changeSets: ChangeRule[];
   rules: ChangeRule[];
 }
@@ -184,9 +184,9 @@ export interface MetaSlice {
 
 // ---------- store ----------
 
-export type QuickCreateMode = "create" | "edit";
+type QuickCreateMode = "create" | "edit";
 
-export type SubmitState =
+type SubmitState =
   | { kind: "idle" }
   | { kind: "submitting" }
   | { kind: "error"; reason: string; message: string }
@@ -202,7 +202,7 @@ export type SubmitState =
  * because the proxy passes through whatever the v1 source provides;
  * Submit rebuilds the FrameRule body from form fields regardless.
  */
-export interface RecurringTemplateShape {
+interface RecurringTemplateShape {
   id: string;
   title: string;
   note: string;

@@ -112,7 +112,7 @@ describe("buildQuickCreateSchedulePayload", () => {
     expect(payload.source_schedule).toEqual({
       required_duration_ms: 1_800_000,
       generation: {
-        kind: 1,
+        kind: 2,
         starts_at: "2026-07-28T01:00:00.000Z",
         interval_ms: 86_400_000,
         ends_at: "2026-09-30T00:00:00.000Z",
@@ -286,6 +286,48 @@ describe("buildQuickCreateSchedulePayload", () => {
     });
     expect(JSON.stringify(payload.flows)).not.toContain("break");
     expect(JSON.stringify(payload.flows)).not.toContain("sleep");
+  });
+
+  // F1a: `state.meta.project` is removed from the MetaSlice, so this test
+  // documents the runtime contract — the wire must not throw on any meta
+  // value the atomic schedule cannot represent (project / tags). The type
+  // system enforces the absence of `state.meta.project` at compile time;
+  // this test proves the wire path stays green when only memo is set.
+  it("builds a payload when meta holds only memo (F1a — no project field exists on MetaSlice)", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Quiet study" };
+    state.meta = { ...state.meta, memo: "left a note for later" };
+    // @ts-expect-error — `project` was removed from MetaSlice in F1a; this
+    // line is the regression guard. If `state.meta.project` is reintroduced,
+    // the @ts-expect-error becomes unused and TypeScript will fail the build.
+    state.meta = { ...state.meta, project: "MyProject" };
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload).toBeDefined();
+    expect(payload.tile.title).toBe("Quiet study");
+  });
+
+  // F1b: `state.meta.tags` is removed from the MetaSlice, so this test
+  // documents the runtime contract — even when a stale caller passes
+  // `tags: ['work']`, the wire must not throw and must reach
+  // `publishScheduleDefinition` payload construction. The type system
+  // enforces the absence of `state.meta.tags` at compile time; the
+  // `@ts-expect-error` is the regression guard. If `state.meta.tags` is
+  // reintroduced, the `@ts-expect-error` becomes unused and TypeScript
+  // will fail the build.
+  it("builds a payload even when meta.tags is supplied as ['work'] (F1b — silent drop, no throw)", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Tag-driven study" };
+    // @ts-expect-error — `tags` was removed from MetaSlice in F1b; this
+    // line is the regression guard. If `state.meta.tags` is reintroduced,
+    // the @ts-expect-error becomes unused and TypeScript will fail the build.
+    state.meta = { ...state.meta, tags: ["work"] };
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload).toBeDefined();
+    expect(payload.tile.title).toBe("Tag-driven study");
   });
 
   it("preserves placement rule rank, effect and duration range", () => {
@@ -487,7 +529,7 @@ describe("buildQuickCreateSchedulePayload", () => {
     expect(payload).toBeDefined();
     expect(payload.source_schedule?.generation.kind).toBe(2);
     expect(warnSpy).toHaveBeenCalledWith(
-      "[E1a] recurring.condition silently dropped — Phase C/D wire slot not yet implemented",
+      "[Phase C/D reserved] recurring.condition ignored",
     );
     expect(state.recurring.conditionIgnored).toBe(true);
 
@@ -535,5 +577,186 @@ describe("buildQuickCreateSchedulePayload", () => {
     );
 
     warnSpy.mockRestore();
+  });
+
+  // ── C1a: Recurring.kind enum round-trip ──────────────────────────────
+  it.each([
+    ["once", 0, "NONE"],
+    ["daily", 1, "DAILY"],
+    ["weekly", 2, "WEEKLY"],
+    ["monthly", 3, "MONTHLY"],
+  ])(
+    "maps repeatMode=%s to generation.kind=%d (%s)",
+    (repeatMode: string, expectedKind: number) => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: `${repeatMode} round-trip` };
+      state.recurring = { ...state.recurring, repeatMode: repeatMode as any };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+      state.recurring.endDate = "2026-12-31T00:00:00.000Z";
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+
+      expect(payload.source_schedule?.generation.kind).toBe(expectedKind);
+    },
+  );
+
+  it("silently drops unknown repeatMode to kind=0 (NONE) via fallback", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Unknown mode" };
+    // @ts-expect-error — intentionally passing an invalid repeatMode
+    state.recurring = { ...state.recurring, repeatMode: "unknown_future" };
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    // condition and once-without-start both map to kind=2;
+    // the fallthrough for daily/weekly/interval/monthly is kind=1;
+    // an unrecognized mode hits the final return with kind=1.
+    expect(payload.source_schedule?.generation.kind).toBe(1);
+  });
+
+  // ── C1b: weekday_mask bit-order round-trip ───────────────────────────
+  it("passes weekdayMask through to generation.weekday_mask when repeatMode=weekly", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Weekly mask" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "weekly",
+      weekdayMask: 0b0011111, // Mon–Fri (31)
+      endDate: "2026-12-31T00:00:00.000Z",
+    };
+    state.time = {
+      ...state.time,
+      span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:00:00.000Z" },
+    };
+
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      new Date("2026-08-03T00:00:00.000Z"),
+    );
+
+    expect(payload.source_schedule?.generation.weekday_mask).toBe(0b0011111);
+  });
+
+  it("nullifies weekday_mask when repeatMode is not weekly", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Daily no mask" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "daily",
+      weekdayMask: 0b0011111,
+    };
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload.source_schedule?.generation.weekday_mask).toBeNull();
+  });
+
+  it("clamps weekdayMask to 7 bits via normalizeWeekdayMask", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Bit8 clamp" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "weekly",
+      weekdayMask: 0b10011111, // bit8 set → should be clamped to 0b00011111
+      endDate: "2026-12-31T00:00:00.000Z",
+    };
+    state.time = {
+      ...state.time,
+      span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:00:00.000Z" },
+    };
+
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      new Date("2026-08-03T00:00:00.000Z"),
+    );
+
+    expect(payload.source_schedule?.generation.weekday_mask).toBe(0b00011111);
+  });
+
+  it("preserves weekday_mask in window rules independently of generation", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Window mask" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "weekly",
+      weekdayMask: 0b0101010,
+      endDate: "2026-12-31T00:00:00.000Z",
+    };
+    state.windows = [
+      {
+        id: "w1",
+        owner: "self",
+        kind: 0,
+        bounds: { start: "2026-08-01T00:00:00.000Z", end: "2026-12-31T00:00:00.000Z" },
+        referenceId: null,
+        rules: [
+          {
+            id: "r1",
+            weekdayMask: 0b0101010,
+            timeStart: "09:00",
+            timeEnd: "18:00",
+            holidayKind: 2,
+            dateRange: null,
+            when: null,
+          },
+        ],
+      },
+    ];
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload.windows[0].rules[0].weekday_mask).toBe(0b0101010);
+  });
+
+  // ── C1c: interval unit round-trip ────────────────────────────────────
+  it.each([
+    [30, "min" as const, 1_800_000, "30 min"],
+    [2, "hour" as const, 7_200_000, "2 hour"],
+    [1, "day" as const, 86_400_000, "1 day"],
+  ])(
+    "maps intervalValue=%d intervalUnit=%s to generation.interval_ms=%d (%s)",
+    (value, unit, expectedMs) => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: `Interval ${value} ${unit}` };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "interval",
+        intervalValue: value,
+        intervalUnit: unit,
+        endDate: "2026-12-31T00:00:00.000Z",
+      };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+
+      expect(payload.source_schedule?.generation.interval_ms).toBe(expectedMs);
+    },
+  );
+
+  it("defaults to DAY_MS when intervalValue is non-positive", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Invalid interval" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "interval",
+      intervalValue: 0,
+      intervalUnit: "min",
+    };
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload.source_schedule?.generation.interval_ms).toBe(1_800_000);
   });
 });
