@@ -15,6 +15,8 @@ const DEFAULT_INTERVAL_MS = 30 * 60_000;
 const MIN_MS = 60_000;
 const HOUR_MS = 60 * MIN_MS;
 
+const SPLIT_KIND_MAP: Record<number, number> = { 0: 0, 1: 1, 2: 2 } as const;
+
 function intervalAuthoredMs(value: number, unit: "min" | "hour" | "day"): number {
   if (!Number.isFinite(value) || value <= 0) return DEFAULT_INTERVAL_MS;
   if (unit === "min") return value * MIN_MS;
@@ -364,7 +366,7 @@ export function buildQuickCreateSchedulePayload(
       generation: sourceGeneration(state, now),
       window: sourceWindow(state, duration),
       split_policy: {
-        kind: state.source.splitPolicy.kind,
+        kind: (SPLIT_KIND_MAP[state.source.splitPolicy.kind] ?? 0) as 0 | 1 | 2,
         min_segment_ms: state.source.splitPolicy.minSegmentMs,
         max_segment_ms: state.source.splitPolicy.maxSegmentMs,
         max_segments: state.source.splitPolicy.maxSegments,

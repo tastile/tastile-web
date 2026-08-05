@@ -145,7 +145,7 @@ export interface SourceAuthoringSlice {
   excludedDates: string[];
   preferredDurationMinMax: DurationRange;
   splitPolicy: {
-    kind: 0 | 1;
+    kind: 0 | 1 | 2;
     minSegmentMs: number | null;
     maxSegmentMs: number | null;
     maxSegments: number | null;

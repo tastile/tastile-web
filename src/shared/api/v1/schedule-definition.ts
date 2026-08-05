@@ -9,13 +9,13 @@ export const ScheduleReferenceUsage = {
 export type ScheduleReferenceUsageCode =
   (typeof ScheduleReferenceUsage)[keyof typeof ScheduleReferenceUsage];
 
-export const WindowKind = {
+const WindowKind = {
   CALENDAR: 0,
   LABEL_SPAN: 1,
   PARENT_SPAN: 2,
   GAP: 3,
 } as const;
-export type WindowKindCode = (typeof WindowKind)[keyof typeof WindowKind];
+type WindowKindCode = (typeof WindowKind)[keyof typeof WindowKind];
 
 export type Condition =
   | { All: Condition[] }
@@ -23,7 +23,7 @@ export type Condition =
   | { Not: Condition }
   | { Term: Record<string, unknown> };
 
-export interface TimeRequirement {
+interface TimeRequirement {
   id: string;
   observation: {
     scope: number;
@@ -59,7 +59,7 @@ export interface PublishScheduleDefinitionPayload {
   source_schedule?: {
     required_duration_ms: number;
     generation: {
-      kind: 0 | 1 | 2;
+      kind: 0 | 1 | 2 | 3;
       at?: string | null;
       starts_at?: string | null;
       interval_ms?: number | null;
@@ -72,7 +72,7 @@ export interface PublishScheduleDefinitionPayload {
     };
     window: { start_offset_ms: number; end_offset_ms: number };
     split_policy: {
-      kind: 0 | 1;
+      kind: 0 | 1 | 2;
       min_segment_ms: number | null;
       max_segment_ms: number | null;
       max_segments: number | null;

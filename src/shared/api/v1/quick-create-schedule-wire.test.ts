@@ -1029,4 +1029,125 @@ describe("buildQuickCreateSchedulePayload", () => {
       expect(payload.source_schedule?.priority).toBe(25);
     });
   });
+
+  // ── C4a: SplitPolicyKind enum round-trip (NONE=0 / DAILY_BOUNDARY=1 / SESSION_BOUNDARY=2) ──
+  describe("C4a: SplitPolicyKind enum round-trip", () => {
+    it.each([
+      [0, "NONE (Unsplit)"],
+      [1, "DAILY_BOUNDARY (Split)"],
+      [2, "SESSION_BOUNDARY"],
+    ])(
+      "maps splitPolicy.kind=%d to source_schedule.split_policy.kind=%d (%s)",
+      (kind: number, _label: string) => {
+        const state = buildDefaultQuickCreateState();
+        state.identity = { ...state.identity, title: `split kind ${kind}` };
+        state.source = {
+          ...state.source,
+          splitPolicy: {
+            kind: kind as 0 | 1 | 2,
+            minSegmentMs: null,
+            maxSegmentMs: null,
+            maxSegments: null,
+          },
+        };
+        state.time = {
+          ...state.time,
+          span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+        };
+
+        const payload = buildQuickCreateSchedulePayload(state);
+
+        expect(payload.source_schedule?.split_policy.kind).toBe(kind);
+      },
+    );
+
+    it("silently falls back to kind=0 (NONE) for unknown splitPolicy kind via wire map", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "unknown split kind" };
+      // Intentionally passing an invalid splitPolicy kind to test fallback
+      (state.source.splitPolicy as { kind: number }).kind = 99;
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      // The SPLIT_KIND_MAP fallback maps unknown values to 0 (NONE)
+      expect(payload.source_schedule?.split_policy.kind).toBe(0);
+    });
+
+    it("preserves split_policy fields alongside kind value", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "split with fields" };
+      state.source = {
+        ...state.source,
+        splitPolicy: {
+          kind: 1,
+          minSegmentMs: 900_000,
+          maxSegmentMs: 1_800_000,
+          maxSegments: 4,
+        },
+      };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.split_policy).toEqual({
+        kind: 1,
+        min_segment_ms: 900_000,
+        max_segment_ms: 1_800_000,
+        max_segments: 4,
+      });
+    });
+  });
+
+  // ── C5a: priority round-trip with overlap arbitration verification ──────
+  describe("C5a: priority field round-trip and overlap arbitration", () => {
+    it.each([
+      [5, "typical priority"],
+      [0, "zero priority"],
+      [-1, "negative priority"],
+      [10, "high priority for arbitration"],
+      [1, "low priority for arbitration"],
+    ])("serializes priority=%d to source_schedule.priority=%d (%s)", (priority, _label) => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: `priority ${priority}` };
+      state.source = { ...state.source, priority };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.priority).toBe(priority);
+    });
+
+    it("priority=10 (high) and priority=1 (low) both serialize correctly for overlap arbitration", () => {
+      const highState = buildDefaultQuickCreateState();
+      highState.identity = { ...highState.identity, title: "priority_high" };
+      highState.source = { ...highState.source, priority: 10 };
+      highState.time = {
+        ...highState.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const lowState = buildDefaultQuickCreateState();
+      lowState.identity = { ...lowState.identity, title: "priority_low" };
+      lowState.source = { ...lowState.source, priority: 1 };
+      lowState.time = {
+        ...lowState.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const highPayload = buildQuickCreateSchedulePayload(highState);
+      const lowPayload = buildQuickCreateSchedulePayload(lowState);
+
+      expect(highPayload.source_schedule?.priority).toBe(10);
+      expect(lowPayload.source_schedule?.priority).toBe(1);
+      expect(highPayload.source_schedule?.priority).toBeGreaterThan(
+        lowPayload.source_schedule!.priority,
+      );
+    });
+  });
 });

@@ -1181,7 +1181,7 @@ export interface components {
         SplitPolicySchema: {
             /**
              * Format: int32
-             * @description 0 = unsplit, 1 = split.
+             * @description 0 = NONE (Unsplit), 1 = DAILY_BOUNDARY, 2 = SESSION_BOUNDARY.
              */
             kind: number;
             /** Format: int64 */

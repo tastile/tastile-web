@@ -1,7 +1,7 @@
 "use client";
 
 import type { SourceAuthoringSlice, TimeSlice } from "@/shared/stores/quick-create-store";
-import { NumberInput, Select, SimpleGrid, Stack, TagsInput, Text } from "@mantine/core";
+import { NumberInput, Select, SimpleGrid, Stack, TagsInput, Text, Tooltip } from "@mantine/core";
 
 interface SourceWindowPanelProps {
   source: SourceAuthoringSlice;
@@ -75,15 +75,22 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
         onChange={(value) => setField("source.excludedDates", value)}
       />
 
-      <Select
-        label="分割"
-        value={String(source.splitPolicy.kind)}
-        data={[
-          { value: "0", label: "分割しない" },
-          { value: "1", label: "複数segmentへ分割可能" },
-        ]}
-        onChange={(value) => setField("source.splitPolicy.kind", Number(value) as 0 | 1)}
-      />
+      <Tooltip label="not supported in this build" position="top" disabled={source.splitPolicy.kind !== 1}>
+        <Select
+          label="分割"
+          value={String(source.splitPolicy.kind)}
+          data={[
+            { value: "0", label: "分割しない" },
+          ]}
+          description="分割機能はこのビルドでは未対応です"
+          onChange={(value) => {
+            const num = Number(value) as 0 | 1 | 2;
+            if (num === 0 || num === 1 || num === 2) {
+              setField("source.splitPolicy.kind", num);
+            }
+          }}
+        />
+      </Tooltip>
       {source.splitPolicy.kind === 1 ? (
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <NumberInput

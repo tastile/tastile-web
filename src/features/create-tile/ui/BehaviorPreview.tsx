@@ -290,7 +290,7 @@ interface SourcePreviewProps {
 }
 
 function SourcePreview({ source }: SourcePreviewProps) {
-  const splitLabel = source.splitPolicy.kind === 1 ? "分割あり" : "分割なし";
+  const splitLabel = source.splitPolicy.kind === 0 ? "分割なし" : "分割あり";
 
   return (
     <div className="space-y-1.5">
