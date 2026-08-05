@@ -1,8 +1,8 @@
 import type { TileId } from "@/shared/model/ids";
 
 export type PhaseKind = "work" | "break" | "idle";
-export type PromptKind = "start_tile" | "end_tile" | "end_break";
-export type PromptSeverity = "soft" | "elevated" | "critical";
+type PromptKind = "start_tile" | "end_tile" | "end_break";
+type PromptSeverity = "soft" | "elevated" | "critical";
 export type PromptAction =
   | "start_tile"
   | "start_break_parallel"
@@ -46,7 +46,7 @@ export interface Execution {
   syncStatus?: SyncStatus | null;
 }
 
-export interface SyncResult {
+interface SyncResult {
   uploaded: number;
   downloaded: number;
   applied: number;
@@ -62,8 +62,8 @@ export interface SyncStatus {
   lastResult: SyncResult | null;
 }
 
-export type TimelineType = "work" | "break" | "fixed";
-export type TimelineStatus = "done" | "active" | "scheduled";
+type TimelineType = "work" | "break" | "fixed";
+type TimelineStatus = "done" | "active" | "scheduled";
 
 export interface TimelineSnapshot {
   id: string;

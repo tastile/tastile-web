@@ -31,7 +31,7 @@ export type MonthYearSelectStylesNames =
   | "monthYearSelectList"
   | "monthYearSelectLabel";
 
-export type MonthYearSelectCssVariables = {
+type MonthYearSelectCssVariables = {
   monthYearSelectDropdown: "--control-radius";
 };
 

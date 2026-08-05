@@ -14,7 +14,7 @@ export interface ProfileMe {
   avatarUrl: string | null;
 }
 
-export async function fetchSafeSession(): Promise<SafeSession | null> {
+async function fetchSafeSession(): Promise<SafeSession | null> {
   const res = await fetch("/api/auth/session", { cache: "no-store" });
   if (!res.ok) return null;
   const data = (await res.json()) as Partial<SafeSession>;
@@ -26,7 +26,7 @@ export async function fetchSafeSession(): Promise<SafeSession | null> {
   };
 }
 
-export async function fetchProfile(): Promise<ProfileMe | null> {
+async function fetchProfile(): Promise<ProfileMe | null> {
   const res = await fetch("/api/me", { cache: "no-store" });
   if (!res.ok) return null;
   const data = (await res.json()) as {
@@ -41,7 +41,7 @@ export async function fetchProfile(): Promise<ProfileMe | null> {
   };
 }
 
-export const authQueryKeys = {
+const authQueryKeys = {
   session: ["auth", "safe-session"] as const,
   profile: ["auth", "profile"] as const,
 } as const;

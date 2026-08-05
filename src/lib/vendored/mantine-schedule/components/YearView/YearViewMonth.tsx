@@ -20,7 +20,7 @@ import type { YearViewFactory } from "./YearView";
 import { getHiddenWeekendColumns, getVisibleWeekDays } from "./get-visible-week-days";
 import type { GroupedEvents } from "./get-year-view-events/get-year-view-events";
 
-export interface YearViewDayKeydownPayload {
+interface YearViewDayKeydownPayload {
   weekIndex: number;
   dayIndex: number;
   date: string;

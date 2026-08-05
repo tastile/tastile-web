@@ -6,4 +6,4 @@ import type {
 } from "./WeekView";
 
 export { WeekView } from "./WeekView";
-export type { WeekViewProps, WeekViewFactory, WeekViewStylesNames, WeekViewCssVariables };
+;

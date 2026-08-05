@@ -30,16 +30,8 @@ const methodStyle: Record<Method, string> = {
 
 export default function ApiExplorer() {
   const [query, setQuery] = useState("");
-  const [focus, setFocus] = useState<EndpointKey | null>(() => {
-    if (typeof window === "undefined") return null;
-    const focusParam = new URL(window.location.href).searchParams.get("focus");
-    return focusParam && focusParam in ENDPOINTS ? (focusParam as EndpointKey) : null;
-  });
-  const [filterTag, setFilterTag] = useState<ApiTag | "All">(() => {
-    if (typeof window === "undefined") return "All";
-    const tagParam = new URL(window.location.href).searchParams.get("tag") as ApiTag | null;
-    return tagParam && TAG_ORDER.includes(tagParam) ? tagParam : "All";
-  });
+  const [focus, setFocus] = useState<EndpointKey | null>(null);
+  const [filterTag, setFilterTag] = useState<ApiTag | "All">("All");
 
   const sidePanel = useMemo(
     () => (

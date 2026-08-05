@@ -17,7 +17,7 @@ import type { AppState } from "./state";
  * Mutates `state` in place and returns it.  This matches the handler/test
  * convention where `state` is shared across multiple `reduce()` calls.
  */
-export const reduce = (state: AppState, event: Event): AppState => {
+const reduce = (state: AppState, event: Event): AppState => {
   switch (event.type) {
     // ==================== Tile Events ====================
 
@@ -181,15 +181,4 @@ export function eventReducer(state: AppState, event: Event): AppState {
   return reduce(state, event);
 }
 
-/**
- * Command → Events
- */
-export function domainReducer(state: AppState, command: Command): EventEnvelope[] {
-  // Implementation would generate events from command
-  return [];
-}
-
-/**
- * Export for core/reducer.ts compatibility
- */
-export { eventReducer as coreReduce };
+// TODO: Implement domainReducer when needed

@@ -4,7 +4,7 @@ import { getCoreClient } from "@/shared/api/endpoints";
 import { queryKeys } from "@/shared/query/query-keys";
 import { useQuery } from "@tanstack/react-query";
 
-export interface RecurringTemplateListItem {
+interface RecurringTemplateListItem {
   id: string;
   title: string;
   note: string;
@@ -18,7 +18,7 @@ export interface RecurringTemplateListItem {
   };
 }
 
-export const recurringTemplatesQueryOptions = {
+const recurringTemplatesQueryOptions = {
   queryKey: queryKeys.recurringTemplates,
   queryFn: async (): Promise<RecurringTemplateListItem[]> => {
     const res = await getCoreClient().call<RecurringTemplateListItem[]>("listRecurringTiles");

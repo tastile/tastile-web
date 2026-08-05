@@ -218,7 +218,7 @@ const defaultProps: Partial<ResourcesScheduleProps> = {
   mode: "default",
 };
 
-export const ResourcesSchedule = factory<ResourcesScheduleFactory>((_props) => {
+const ResourcesSchedule = factory<ResourcesScheduleFactory>((_props) => {
   const props = useProps("ResourcesSchedule", defaultProps, _props);
   const {
     classNames,
@@ -372,7 +372,7 @@ export const ResourcesSchedule = factory<ResourcesScheduleFactory>((_props) => {
 ResourcesSchedule.displayName = "@/lib/vendored/mantine-schedule/ResourcesSchedule";
 ResourcesSchedule.classes = classes;
 
-export namespace ResourcesSchedule {
+namespace ResourcesSchedule {
   export type Props = ResourcesScheduleProps;
   export type StylesNames = ResourcesScheduleStylesNames;
   export type Factory = ResourcesScheduleFactory;

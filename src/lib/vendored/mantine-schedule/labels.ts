@@ -25,7 +25,7 @@ export interface ScheduleLabels {
   agenda?: string;
 }
 
-export const DEFAULT_SCHEDULE_LABELS: ScheduleLabels = {
+const DEFAULT_SCHEDULE_LABELS: ScheduleLabels = {
   today: "Today",
   next: "Next",
   previous: "Previous",

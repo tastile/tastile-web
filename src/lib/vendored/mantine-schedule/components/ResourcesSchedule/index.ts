@@ -5,10 +5,5 @@ import type {
   ResourcesScheduleViewLevel,
 } from "./ResourcesSchedule";
 
-export { ResourcesSchedule } from "./ResourcesSchedule";
-export type {
-  ResourcesScheduleProps,
-  ResourcesScheduleFactory,
-  ResourcesScheduleStylesNames,
-  ResourcesScheduleViewLevel,
-};
+;
+;

@@ -13,7 +13,7 @@ import type { ApiError } from "@/tile/model/v1/envelope";
 import type { ApiClient } from "./endpoints";
 import { type Result, getRead } from "./endpoints";
 
-export interface SessionPrompt {
+interface SessionPrompt {
   title: string;
   body: string;
   why?: string | null;

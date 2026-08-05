@@ -10,7 +10,7 @@ import { getEventEndDate } from "../../WeekView/get-week-view-events/get-event-e
 
 /** A single all-day bar (single-day all-day event or a multi-day event) spanning one or more
  * consecutive visible weekdays, placed on a shared row so overlapping bars do not collide. */
-export interface ResourcesWeekViewAllDayBar {
+interface ResourcesWeekViewAllDayBar {
   /** The original event, with its declared start/end preserved for display and interaction */
   event: ScheduleEventData;
   /** Index of the first visible weekday the bar covers */

@@ -12,8 +12,8 @@ import { updatePlacementChanges, updateTileCommand } from "./tile-commands";
  */
 const E2E_DEV_TOKEN = "e2e-bypass-token";
 
-export type SubmitSuccess = { ok: true; tileId: string };
-export type SubmitFailure = { ok: false; error: ApiError };
+type SubmitSuccess = { ok: true; tileId: string };
+type SubmitFailure = { ok: false; error: ApiError };
 export type SubmitResult = SubmitSuccess | SubmitFailure;
 
 export interface SubmitOptions {

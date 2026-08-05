@@ -25,11 +25,11 @@ export type CurrentTimeIndicatorStylesNames =
   | "currentTimeIndicatorThumb"
   | "currentTimeIndicatorTimeBubble";
 
-export type CurrentTimeIndicatorCssVariables = {
+type CurrentTimeIndicatorCssVariables = {
   currentTimeIndicator: "--indicator-color";
 };
 
-export interface CurrentTimeIndicatorProps
+interface CurrentTimeIndicatorProps
   extends BoxProps,
     StylesApiProps<CurrentTimeIndicatorFactory>,
     ElementProps<"div"> {

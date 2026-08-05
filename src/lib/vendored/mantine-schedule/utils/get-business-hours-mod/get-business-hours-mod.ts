@@ -1,10 +1,10 @@
 import type { DayOfWeek } from "../../types";
 
 /** Business hours range in `HH:mm:ss` format */
-export type BusinessHoursRange = [string, string];
+type BusinessHoursRange = [string, string];
 
 /** Per-day business hours map keyed by day of the week (0 – Sunday, 6 – Saturday). `null` marks a day as fully outside business hours. */
-export type BusinessHoursPerDay = Partial<Record<DayOfWeek, BusinessHoursRange | null>>;
+type BusinessHoursPerDay = Partial<Record<DayOfWeek, BusinessHoursRange | null>>;
 
 /** Business hours value – tuple applies to every day, record configures business hours per day */
 export type BusinessHoursValue = BusinessHoursRange | BusinessHoursPerDay;

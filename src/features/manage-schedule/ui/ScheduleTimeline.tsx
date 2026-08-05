@@ -110,17 +110,14 @@ export function ScheduleTimeline({ initialView }: Props) {
       state.setView("day");
       state.setAnchor(date);
     },
-    [state],
+    [state.setView, state.setAnchor],
   );
 
-  const zoomRef = useRef(state.zoom);
-  zoomRef.current = state.zoom;
   const onZoomBy = useCallback(
     (delta: number) => {
-      state.setZoom(zoomRef.current + delta * ZOOM_STEP);
+      state.setZoom(state.zoom + delta * 8);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- state.setZoom is stable; zoom value read via ref
-    [state.setZoom],
+    [state.zoom, state.setZoom],
   );
 
   const panelView = state.view === "agenda" ? "list" : state.view;

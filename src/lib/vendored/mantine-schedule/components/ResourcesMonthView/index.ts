@@ -5,15 +5,10 @@ import type {
   ResourcesMonthViewStylesNames,
 } from "./ResourcesMonthView";
 
-export { ResourcesMonthView } from "./ResourcesMonthView";
-export type {
-  ResourcesMonthViewProps,
-  ResourcesMonthViewFactory,
-  ResourcesMonthViewStylesNames,
-  ResourcesMonthViewCssVariables,
-};
+;
+;
 
-export namespace ResourcesMonthView {
+namespace ResourcesMonthView {
   export type Props = ResourcesMonthViewProps;
   export type Factory = ResourcesMonthViewFactory;
   export type StylesNames = ResourcesMonthViewStylesNames;

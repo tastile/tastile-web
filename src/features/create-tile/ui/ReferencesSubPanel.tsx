@@ -42,8 +42,8 @@ export function ReferencesSubPanel({
           <p className="text-xs text-foreground-muted">{t("quickCreate.referenceEmptyListHint")}</p>
         ) : null}
         <div className="flex flex-col gap-4">
-          {plan.references.map((ref, i) => {
-            const refIdDisplay = ref.id || `ref_${i + 1}`;
+          {plan.references.map((ref, index) => {
+            const refIdDisplay = ref.id || `ref_${index + 1}`;
             const hasTarget = ref.target.referenceId !== null && ref.target.referenceId !== "";
             const intervalValue = (() => {
               const m = ref.pick.momentId ? Number(ref.pick.momentId) : 10;
@@ -51,9 +51,9 @@ export function ReferencesSubPanel({
             })();
             return (
               <div
-                key={`${refIdDisplay}-${i}`}
+                key={ref.id || `ref_${index + 1}`}
                 className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
-                data-testid={`reference-card-${i}`}
+                data-testid={`reference-card-${index}`}
               >
                 <div className="flex flex-col gap-1.5">
                   <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
@@ -64,7 +64,7 @@ export function ReferencesSubPanel({
                       "flex items-center gap-3 rounded-lg border bg-surface-0 p-3",
                       hasTarget ? "bg-accent-soft" : "border-border",
                     )}
-                    data-testid={`reference-target-card-${i}`}
+                    data-testid={`reference-target-card-${index}`}
                   >
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                       <Calendar size={18} aria-hidden="true" />
@@ -82,9 +82,9 @@ export function ReferencesSubPanel({
                     type="button"
                     size="sm"
                     variant={hasTarget ? "light" : "filled"}
-                    onClick={() => setReferencePickerIndex(i)}
+                    onClick={() => setReferencePickerIndex(index)}
                     leftSection={<Search size={14} aria-hidden="true" />}
-                    data-testid={`reference-picker-trigger-${i}`}
+                    data-testid={`reference-picker-trigger-${index}`}
                     aria-label={t("quickCreate.tilePickerPickAria")}
                     className="justify-start"
                     styles={{
@@ -111,7 +111,7 @@ export function ReferencesSubPanel({
                     value={String(ref.pick.kind)}
                     onChange={(next) => {
                       const updated = plan.references.slice();
-                      updated[i] = { ...ref, pick: { ...ref.pick, kind: Number(next) } };
+                      updated[index] = { ...ref, pick: { ...ref.pick, kind: Number(next) } };
                       setField("plan.references", updated);
                     }}
                     data={[
@@ -121,7 +121,7 @@ export function ReferencesSubPanel({
                       { value: "2", label: t("quickCreate.referenceRelationLast") },
                       { value: "0", label: t("quickCreate.referenceRelationAll") },
                     ]}
-                    data-testid={`reference-relation-tabs-${i}`}
+                    data-testid={`reference-relation-tabs-${index}`}
                     styles={SEGMENT_STYLES}
                   />
                 </div>
@@ -131,7 +131,7 @@ export function ReferencesSubPanel({
                   </div>
                   <div
                     className="flex items-center gap-2"
-                    data-testid={`reference-interval-stepper-${i}`}
+                    data-testid={`reference-interval-stepper-${index}`}
                   >
                     <NumberInput
                       min={5}
@@ -144,7 +144,7 @@ export function ReferencesSubPanel({
                         const next = Math.max(5, Math.min(120, num));
                         if (next === intervalValue) return;
                         const updated = plan.references.slice();
-                        updated[i] = { ...ref, pick: { ...ref.pick, momentId: String(next) } };
+                        updated[index] = { ...ref, pick: { ...ref.pick, momentId: String(next) } };
                         setField("plan.references", updated);
                       }}
                       size="xs"
@@ -163,7 +163,7 @@ export function ReferencesSubPanel({
                     leftSection={<Trash2 size={12} aria-hidden="true" />}
                     onClick={() => {
                       const next = plan.references.slice();
-                      next.splice(i, 1);
+                      next.splice(index, 1);
                       setField("plan.references", next);
                     }}
                     className="text-danger hover:bg-danger/10"

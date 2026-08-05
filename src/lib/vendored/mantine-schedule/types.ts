@@ -47,7 +47,7 @@ export type ScheduleViewLevel = "day" | "week" | "month" | "year";
 export type ScheduleMode = "static" | "default";
 
 /** Payload type for ScheduleEventData, defined in user application */
-export type EventPayload = Record<PropertyKey, any>;
+type EventPayload = Record<PropertyKey, any>;
 
 /** RFC 5545 recurrence data */
 export interface ScheduleRecurrenceData {
@@ -62,7 +62,7 @@ export interface ScheduleRecurrenceData {
 }
 
 /** Metadata attached to generated recurring instances */
-export interface RecurringInstanceMeta {
+interface RecurringInstanceMeta {
   /** If true, event is generated from recurrence rule */
   isRecurringInstance: boolean;
 
@@ -107,7 +107,7 @@ interface ScheduleEventBase<Payload extends EventPayload = EventPayload> {
 }
 
 /** One-off event without recurrence */
-export interface ScheduleSingleEventData<Payload extends EventPayload = EventPayload>
+interface ScheduleSingleEventData<Payload extends EventPayload = EventPayload>
   extends ScheduleEventBase<Payload> {
   recurrence?: never;
   recurringEventId?: never;
@@ -115,7 +115,7 @@ export interface ScheduleSingleEventData<Payload extends EventPayload = EventPay
 }
 
 /** Recurring series source event */
-export interface ScheduleRecurringSeriesEventData<Payload extends EventPayload = EventPayload>
+interface ScheduleRecurringSeriesEventData<Payload extends EventPayload = EventPayload>
   extends ScheduleEventBase<Payload> {
   /** Recurrence definition for the event series */
   recurrence: ScheduleRecurrenceData;
@@ -124,7 +124,7 @@ export interface ScheduleRecurringSeriesEventData<Payload extends EventPayload =
 }
 
 /** Override for one specific recurring occurrence */
-export interface ScheduleRecurringOverrideEventData<Payload extends EventPayload = EventPayload>
+interface ScheduleRecurringOverrideEventData<Payload extends EventPayload = EventPayload>
   extends ScheduleEventBase<Payload> {
   recurrence?: never;
   /** Parent recurring series id */
@@ -144,7 +144,7 @@ export type ScheduleEventData<Payload extends EventPayload = EventPayload> =
   | (ScheduleRecurringSeriesEventData<Payload> & ScheduleEventRuntimeMeta)
   | (ScheduleRecurringOverrideEventData<Payload> & ScheduleEventRuntimeMeta);
 
-export interface DayEventPositionData {
+interface DayEventPositionData {
   /** All day events */
   allDay: boolean;
 
@@ -173,7 +173,7 @@ export type DayPositionedEventData<Payload extends EventPayload = EventPayload> 
     position: DayEventPositionData;
   };
 
-export interface WeekEventPositionData extends DayEventPositionData {
+interface WeekEventPositionData extends DayEventPositionData {
   /** Week offset in %, represents event start position from the first day of the week (for regular events only) */
   weekOffset?: number;
 

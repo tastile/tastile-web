@@ -1,1 +1,0 @@
-export { NotificationsMenu } from "./NotificationsMenu";

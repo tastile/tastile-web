@@ -2,7 +2,7 @@ import type { TileId } from "@/shared/model/ids";
 import { type Tile, getTileLifecycle } from "@/tile/model/tile";
 import type { TimelineSnapshot } from "./execution";
 
-export type TimelineScale = "day" | "week" | "month" | "custom";
+type TimelineScale = "day" | "week" | "month" | "custom";
 
 export interface TimelineWindowInput {
   scale: TimelineScale;

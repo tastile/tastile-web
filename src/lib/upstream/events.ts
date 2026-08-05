@@ -315,7 +315,7 @@ export interface CalendarCreateInput {
   icon?: string | null;
 }
 
-export interface CalendarEventResult {
+interface CalendarEventResult {
   id: string;
   tileId: string;
   title: string;

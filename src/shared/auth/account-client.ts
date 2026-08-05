@@ -2,7 +2,7 @@ import type { CognitoEnv } from "./env";
 
 type CognitoJson = Record<string, unknown>;
 
-export class CognitoAccountError extends Error {
+class CognitoAccountError extends Error {
   constructor(
     message: string,
     public readonly code: string,

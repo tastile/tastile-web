@@ -141,6 +141,16 @@ export interface PublishScheduleDefinitionPayload {
     bounds: { start: string; end: string };
     rules: WindowRule[];
   }>;
+  frame_rules: Array<{
+    id: string;
+    active: Condition | null;
+    rank: number;
+    generator:
+      | { Step: { step: number; origin: unknown | null; bounds: unknown | null } }
+      | { Reference: { reference_id: string; align: number } }
+      | { Calendar: { unit: number; weekday_mask: number | null; holiday_kind: number } }
+      | { Transform: { source_frame_id: string; shift: number | null; scale: number | null } };
+  }>;
   recurrence: unknown | null;
   flows: Array<{
     observes: string[];

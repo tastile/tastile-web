@@ -6,7 +6,7 @@
 
 import type { ActorKindValue } from "./constants";
 
-export interface Actor {
+interface Actor {
   id: string;
   kind: ActorKindValue;
   /** Owner id when kind = USER; worker id when kind = WORKER; etc. */

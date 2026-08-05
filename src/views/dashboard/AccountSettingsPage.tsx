@@ -11,7 +11,7 @@ import { AlertCircle, Edit, Mail, MailIcon, RefreshCw, UserRound } from "lucide-
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
-export type TabId = "profile" | "subscription" | "tokens";
+type TabId = "profile" | "subscription" | "tokens";
 
 type Profile = {
   username: string;

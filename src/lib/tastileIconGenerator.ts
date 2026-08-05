@@ -1,4 +1,4 @@
-export type TastileFrame = {
+type TastileFrame = {
   x: number;
   y: number;
   width: number;
@@ -7,7 +7,7 @@ export type TastileFrame = {
   fill: string;
 };
 
-export type TastileTransform = {
+type TastileTransform = {
   translateX: number;
   translateY: number;
   rotationDeg: number;

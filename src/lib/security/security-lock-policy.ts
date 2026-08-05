@@ -1,5 +1,5 @@
 export const SECURITY_LOCK_ENABLED_KEY = "tastile.securityLock.enabled";
-export const SECURITY_LOCK_TIMEOUT_MINUTES_KEY = "tastile.securityLock.timeoutMinutes";
+const SECURITY_LOCK_TIMEOUT_MINUTES_KEY = "tastile.securityLock.timeoutMinutes";
 export const SECURITY_LOCK_LEFT_AT_KEY = "tastile.securityLock.leftAt";
 export const SECURITY_LOCK_CREDENTIAL_ID_KEY = "tastile.securityLock.credentialId";
 

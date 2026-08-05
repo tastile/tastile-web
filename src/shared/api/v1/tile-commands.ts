@@ -46,7 +46,7 @@ export type StartTileExecutionResult =
   | { ok: true; placementId: string; executionId: string | null }
   | { ok: false; error: ApiError };
 
-export type RecurrencePattern =
+type RecurrencePattern =
   | { kind: "daily" }
   | {
       kind: "weekly" /** Weekday bitmask.  bit 0=Mon..6=Sun (matches v1/05 CalendarTerm). */;
@@ -476,7 +476,7 @@ export function updatePlacementChanges(
   );
 }
 
-export function startTileCommand(options: StartTileOptions): Promise<CommandResult> {
+function startTileCommand(options: StartTileOptions): Promise<CommandResult> {
   const sourceRef = {
     created: null,
     recurring: null,
@@ -602,7 +602,7 @@ export async function startTileExecutionCommand(
 
 // ---------- v1 placement commands (manual placement CRUD) ----------
 
-export interface CreatePlacementOptions {
+interface CreatePlacementOptions {
   client: ApiClient;
   tileId: string;
   planId: string;
@@ -641,7 +641,7 @@ function toSpanInstant(value: string): string {
  * POST /v1/placements with CREATE_PLACEMENT.  Use after POST /v1/tiles
  * (kind=PLACEMENT) so the QuickCreate manual path is fully v1.
  */
-export function createPlacementCommand(options: CreatePlacementOptions): Promise<CommandResult> {
+function createPlacementCommand(options: CreatePlacementOptions): Promise<CommandResult> {
   return sendCommand(
     options.client,
     "POST",

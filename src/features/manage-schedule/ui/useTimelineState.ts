@@ -131,4 +131,4 @@ export function useTimelineState(initialView: ScheduleView = "day"): TimelineSta
   };
 }
 
-export { ZOOM_MIN, ZOOM_MAX, ZOOM_DEFAULT, ZOOM_STEP };
+export {    ZOOM_STEP };

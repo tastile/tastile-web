@@ -1,6 +1,6 @@
 import type dayjs from "dayjs";
 
-export type HangingStatus = "none" | "start" | "end" | "both";
+type HangingStatus = "none" | "start" | "end" | "both";
 
 interface CalculateEventPositionInput {
   eventStart: dayjs.Dayjs;

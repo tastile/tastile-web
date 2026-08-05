@@ -11,28 +11,28 @@ import type {
 } from "./constants";
 import type { Span } from "./window";
 
-export interface TimelineItemContent {
+interface TimelineItemContent {
   title: string;
   description: string | null;
 }
 
-export interface TimelineItemVisual {
+interface TimelineItemVisual {
   color: string | null;
   icon: string | null;
 }
 
-export interface TimelineItemInside {
+interface TimelineItemInside {
   parent: string;
   /** ScopeKind numeric value (no exported alias in constants.ts as of v1). */
   scope: number;
 }
 
-export interface TimelineItemSource {
+interface TimelineItemSource {
   kind: PlacementSourceValue;
   detail: string | null;
 }
 
-export interface TimelineItemResolution {
+interface TimelineItemResolution {
   state: ResolutionStateValue;
   resolved_at: string;
   resolution_hash: string;

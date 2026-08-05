@@ -77,7 +77,7 @@ async function createDefaultApiTokenForUser(
   return created.token;
 }
 
-export function setApiTokenCookie(token: string, response?: NextResponse): void {
+function setApiTokenCookie(token: string, response?: NextResponse): void {
   const target = response?.cookies;
   if (!target) return;
   target.set(COOKIE_API_TOKEN, token, {

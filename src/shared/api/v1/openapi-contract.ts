@@ -18,7 +18,7 @@ import type { components } from "./openapi-generated";
 // ---------------------------------------------------------------
 
 /** Wire shape for `POST /v1/tiles/{tileId}/plan` body. */
-export type WirePlan = components["schemas"]["SchedulePlanDefinitionSchema"];
+type WirePlan = components["schemas"]["SchedulePlanDefinitionSchema"];
 
 /** Wire shape for Completion (root + time_requirements + tasks). */
 export type WireCompletion = components["schemas"]["CompletionSchema"];
@@ -27,13 +27,13 @@ export type WireCompletion = components["schemas"]["CompletionSchema"];
 export type WireTaskDefinition = components["schemas"]["TaskDefinitionSchema"];
 
 /** Wire shape for TaskContent. */
-export type WireTaskContent = components["schemas"]["TaskContentSchema"];
+type WireTaskContent = components["schemas"]["TaskContentSchema"];
 
 /** Wire shape for TaskOrderRule. */
 export type WireTaskOrderRule = components["schemas"]["TaskOrderRuleSchema"];
 
 /** Wire shape for TimeRequirement. */
-export type WireTimeRequirement = components["schemas"]["TimeRequirementSchema"];
+type WireTimeRequirement = components["schemas"]["TimeRequirementSchema"];
 
 // ---------------------------------------------------------------
 // Condition / Term wire types
@@ -49,7 +49,7 @@ export type WireTerm = components["schemas"]["TermSchema"];
 export type WireCalendarTerm = components["schemas"]["CalendarTermSchema"];
 
 /** Wire shape for TaskTerm. */
-export type WireTaskTerm = components["schemas"]["TaskTermSchema"];
+type WireTaskTerm = components["schemas"]["TaskTermSchema"];
 
 // ---------------------------------------------------------------
 // Planning wire types
@@ -59,30 +59,30 @@ export type WireTaskTerm = components["schemas"]["TaskTermSchema"];
 export type WirePlanning = components["schemas"]["SchedulePlanningDefinitionSchema"];
 
 /** Wire shape for PlacementRule. */
-export type WirePlacementRule = components["schemas"]["PlacementRuleSchema"];
+type WirePlacementRule = components["schemas"]["PlacementRuleSchema"];
 
 /** Wire shape for NestingRule. */
-export type WireNestingRule = components["schemas"]["NestingRuleSchema"];
+type WireNestingRule = components["schemas"]["NestingRuleSchema"];
 
 // ---------------------------------------------------------------
 // Recurring / Schedule wire types
 // ---------------------------------------------------------------
 
 /** Wire shape for SourceGeneration. */
-export type WireSourceGeneration = components["schemas"]["SourceGenerationSchema"];
+type WireSourceGeneration = components["schemas"]["SourceGenerationSchema"];
 
 /** Wire shape for FlowDefinition (used by schedule creation). */
-export type WireFlowDefinition = components["schemas"]["FlowDefinitionSchema"];
+type WireFlowDefinition = components["schemas"]["FlowDefinitionSchema"];
 
 // ---------------------------------------------------------------
 // Primitive wire types
 // ---------------------------------------------------------------
 
 /** Wire shape for DateRange (start/end as date strings). */
-export type WireDateRange = components["schemas"]["DateRangeSchema"];
+type WireDateRange = components["schemas"]["DateRangeSchema"];
 
 /** Wire shape for Span. */
-export type WireSpan = components["schemas"]["SpanSchema"];
+type WireSpan = components["schemas"]["SpanSchema"];
 
 /** Wire shape for TimeOfDay. */
-export type WireTimeOfDay = components["schemas"]["TimeOfDaySchema"];
+type WireTimeOfDay = components["schemas"]["TimeOfDaySchema"];

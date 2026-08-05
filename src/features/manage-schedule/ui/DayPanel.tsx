@@ -59,12 +59,11 @@ export function DayPanel({
   const breakpoint = useResponsiveBreakpoint();
   const scheduleEvents = events.flatMap(toScheduleEvents);
   const containerRef = useRef<HTMLDivElement>(null);
-
   const onZoomByRef = useRef(onZoomBy);
-  onZoomByRef.current = onZoomBy;
 
   // Zoom via Ctrl+wheel — capture phase on container so it fires before ScrollArea
   useEffect(() => {
+    onZoomByRef.current = onZoomBy;
     const el = containerRef.current;
     if (!el) return;
     const handler = (e: WheelEvent) => {
@@ -73,8 +72,11 @@ export function DayPanel({
       onZoomByRef.current(e.deltaY < 0 ? 1 : -1);
     };
     el.addEventListener("wheel", handler, { passive: false, capture: true });
-    return () => el.removeEventListener("wheel", handler, { capture: true });
-  }, []);
+    return () => {
+      el.removeEventListener("wheel", handler, { capture: true });
+      onZoomByRef.current = onZoomBy;
+    };
+  }, [onZoomBy]);
 
   void range;
 

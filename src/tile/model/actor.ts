@@ -1,4 +1,4 @@
-export type ActorType = "system" | "human" | "agent";
+type ActorType = "system" | "human" | "agent";
 
 export interface Actor {
   type: ActorType;

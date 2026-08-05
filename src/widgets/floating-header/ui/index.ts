@@ -1,1 +1,0 @@
-export { FloatingHeader } from "./FloatingHeader";

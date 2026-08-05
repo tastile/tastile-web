@@ -18,7 +18,7 @@ export type CognitoAuthTokens = {
   expiresIn: number;
 };
 
-export type AuthChallenge =
+type AuthChallenge =
   | "EMAIL_OTP"
   | "PASSWORD"
   | "PASSWORD_SRP"

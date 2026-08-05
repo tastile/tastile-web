@@ -837,8 +837,4 @@ MonthView.classes = classes;
 MonthView.varsResolver = varsResolver;
 
 export namespace MonthView {
-  export type Props = MonthViewProps;
-  export type Factory = MonthViewFactory;
-  export type StylesNames = MonthViewStylesNames;
-  export type CssVariables = MonthViewCssVariables;
-}
+  }

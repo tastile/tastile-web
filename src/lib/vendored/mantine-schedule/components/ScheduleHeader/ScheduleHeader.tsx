@@ -31,12 +31,12 @@ export type CombinedScheduleHeaderStylesNames =
   | HeaderControlStylesNames
   | MonthYearSelectStylesNames;
 
-export type ScheduleHeaderStylesNames = "header";
-export type ScheduleHeaderCssVariables = {
+type ScheduleHeaderStylesNames = "header";
+type ScheduleHeaderCssVariables = {
   scheduleHeader: "--test";
 };
 
-export interface ScheduleHeaderProps
+interface ScheduleHeaderProps
   extends BoxProps,
     StylesApiProps<ScheduleHeaderFactory>,
     ElementProps<"div"> {

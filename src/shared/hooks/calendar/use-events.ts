@@ -36,7 +36,7 @@ export interface UseEventsRange {
   ownerIds?: string[];
 }
 
-export const EVENTS_CHANGED_EVENT = "tastile:events-changed";
+const EVENTS_CHANGED_EVENT = "tastile:events-changed";
 
 export function notifyEventsChanged(): void {
   if (typeof window === "undefined") return;

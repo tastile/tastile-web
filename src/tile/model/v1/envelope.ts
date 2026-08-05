@@ -97,18 +97,18 @@ export interface CommandRequest<T> {
   payload: T;
 }
 
-export interface AggregateRef {
+interface AggregateRef {
   kind: AggregateKindValue;
   id: string;
 }
 
-export interface PendingWork {
+interface PendingWork {
   kind: number;
   target: AggregateRef | null;
   notBefore: string | null;
 }
 
-export interface AggregateMeta {
+interface AggregateMeta {
   tileId: string | null;
   planId: string | null;
   recurringId: string | null;

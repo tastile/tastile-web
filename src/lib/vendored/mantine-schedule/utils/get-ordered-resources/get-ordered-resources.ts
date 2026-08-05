@@ -1,6 +1,6 @@
 import type { ScheduleResourceData, ScheduleResourceGroup } from "../../types";
 
-export interface GroupRange {
+interface GroupRange {
   group: ScheduleResourceGroup;
   startIndex: number;
   count: number;

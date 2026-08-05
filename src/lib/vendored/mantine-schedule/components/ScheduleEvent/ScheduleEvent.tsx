@@ -19,8 +19,8 @@ import classes from "./ScheduleEvent.module.css";
 
 export type ScheduleEventStylesNames = "event" | "eventInner" | "eventResizeHandle";
 
-export type ScheduleEventVariant = "filled" | "light";
-export type ScheduleEventCssVariables = {
+type ScheduleEventVariant = "filled" | "light";
+type ScheduleEventCssVariables = {
   event: "--event-bg" | "--event-color" | "--event-radius" | "--event-hover";
 };
 
@@ -31,7 +31,7 @@ export type RenderEvent = (
   props: React.ComponentPropsWithoutRef<"button"> & { children: React.ReactNode },
 ) => React.ReactElement;
 
-export interface ScheduleEventProps
+interface ScheduleEventProps
   extends BoxProps,
     StylesApiProps<ScheduleEventFactory>,
     ElementProps<"button"> {

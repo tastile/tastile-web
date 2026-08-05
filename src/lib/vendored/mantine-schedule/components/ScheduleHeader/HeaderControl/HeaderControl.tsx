@@ -18,7 +18,7 @@ import { useScheduleHeaderLabels } from "../ScheduleHeaderContext";
 import classes from "./HeaderControl.module.css";
 
 export type HeaderControlStylesNames = "headerControl";
-export type HeaderControlCssVariables = {
+type HeaderControlCssVariables = {
   headerControl: "--control-radius";
 };
 

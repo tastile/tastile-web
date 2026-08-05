@@ -7,11 +7,11 @@ export type ObjectiveMode = "finish_once" | "recurring" | "maximize_within_inter
 export type DoneRule = "manual" | "time_reached" | "interval_end";
 export type SemanticRole = "work" | "break" | "label";
 
-export type RecurrenceGenerator =
+type RecurrenceGenerator =
   | { kind: "time_based"; step_min: number; anchor_epoch_min: number | null }
   | { kind: "focus_block_based"; phases: Array<{ focus_min: number; break_min: number }> };
 
-export interface TimeRange {
+interface TimeRange {
   start_offset_min: number;
   end_offset_min: number;
 }
@@ -30,7 +30,7 @@ export interface RecurrenceModel {
   };
 }
 
-export interface Segment {
+interface Segment {
   id: SegmentId;
   startAt: Date;
   endAt: Date | null;
@@ -39,7 +39,7 @@ export interface Segment {
   sourceTileId: TileId;
 }
 
-export interface TileCore {
+interface TileCore {
   id: TileId;
   title: string;
   nextAction: string | null;

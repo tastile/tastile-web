@@ -1,11 +1,11 @@
 import { PlanRole, ResolutionState } from "@/tile/model/v1/constants";
 import type { TimelineItem } from "@/tile/model/v1/timeline-item";
 
-export type CalendarBlockKind = "work" | "break" | "label" | "scheduled";
-export type SemanticRole = "work" | "break" | "label";
-export type Ownership = "tastile_owned" | "remote_owned" | "synthetic";
+type CalendarBlockKind = "work" | "break" | "label" | "scheduled";
+type SemanticRole = "work" | "break" | "label";
+type Ownership = "tastile_owned" | "remote_owned" | "synthetic";
 
-export interface CalendarBlockView {
+interface CalendarBlockView {
   tile_id: string | null;
   title: string;
   kind: CalendarBlockKind;

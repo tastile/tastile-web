@@ -2,7 +2,7 @@
 
 import { cn } from "@/shared/lib/cn";
 
-export type StatusKind =
+type StatusKind =
   | "active"
   | "started"
   | "ready"

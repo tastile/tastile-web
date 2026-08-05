@@ -18,7 +18,7 @@ export interface DurationRange {
   maxMs: number | null;
 }
 
-export interface PointReference {
+interface PointReference {
   /** PLANNED_START=0 | PLANNED_END=1 | ACTUAL_START=2 | ACTUAL_END=3 | FRAME_START=4 | FRAME_END=5 | COMPLETED_AT=6 */
   point: number;
   referenceId: string | null;
@@ -34,7 +34,7 @@ export interface Moment {
 
 // ---------- Window ----------
 
-export interface WindowRule {
+interface WindowRule {
   id: string;
   /** CALENDAR-specific rules: weekdayMask, timeStart, timeEnd, holidayKind. */
   weekdayMask: number | null;

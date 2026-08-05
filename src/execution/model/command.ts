@@ -2,7 +2,7 @@ import { CommandId, type RequestId, type TileId } from "@/shared/model/ids";
 import type { Actor } from "@/tile/model/actor";
 import type { StartSource, Tile } from "@/tile/model/tile";
 
-export type StartupRecoveryAction =
+type StartupRecoveryAction =
   | "confirm_continue"
   | "confirm_stop_at"
   | "confirm_executed"

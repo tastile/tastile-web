@@ -4,13 +4,13 @@ import { getCoreClient } from "@/shared/api/endpoints";
 import { queryKeys } from "@/shared/query/query-keys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-export interface PlacementRow {
+interface PlacementRow {
   id: string;
   work_tile_id: string;
   time_tile_id: string;
   planned_minutes: number;
 }
-export interface CandidateRow {
+interface CandidateRow {
   work_tile_id: string;
 }
 const placementsOptions = {

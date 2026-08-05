@@ -10,7 +10,7 @@ export type DesktopReleaseInfo = {
   notes: string;
 };
 
-export function getDesktopManifestUrl() {
+function getDesktopManifestUrl() {
   return process.env.TASTILE_DESKTOP_MANIFEST_URL?.trim() ?? "";
 }
 

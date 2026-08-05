@@ -34,9 +34,9 @@ const EVENT_COLOR_HEX: Record<EventColor, string> = {
   gray: "#6b7280",
 };
 
-export type RecurrenceFrequency = "none" | "daily" | "weekly" | "monthly";
+type RecurrenceFrequency = "none" | "daily" | "weekly" | "monthly";
 
-export interface RecurrenceRule {
+interface RecurrenceRule {
   frequency: RecurrenceFrequency;
   /** ISO date (YYYY-MM-DD) — the last day the rule produces instances. */
   until?: string;

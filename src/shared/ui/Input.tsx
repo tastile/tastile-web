@@ -10,7 +10,7 @@ const SIZE_MAP = {
   large: "md",
 } as const;
 
-export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
   size?: keyof typeof SIZE_MAP;
   invalid?: boolean;
   leading?: React.ReactNode;

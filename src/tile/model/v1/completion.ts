@@ -15,7 +15,7 @@ import type {
 
 // ---------- TimeObservation ----------
 
-export interface TimeObservation {
+interface TimeObservation {
   scope: TimeScopeValue;
   source: TimeSourceValue;
   aggregate: TimeAggregateValue;
@@ -24,7 +24,7 @@ export interface TimeObservation {
 
 // ---------- TimeRequirement ----------
 
-export interface ScalarRange {
+interface ScalarRange {
   minMs: number | null;
   maxMs: number | null;
 }
@@ -38,12 +38,12 @@ export interface TimeRequirement {
 
 // ---------- TaskDefinition ----------
 
-export interface Content {
+interface Content {
   title: string;
   note: string | null;
 }
 
-export interface TaskOrderRule {
+interface TaskOrderRule {
   id: string;
   targetTaskId: string;
   relation: TaskOrderRelationValue;

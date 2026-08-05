@@ -3,7 +3,7 @@
 import { Select } from "@mantine/core";
 import type * as React from "react";
 
-export interface DropdownItem {
+interface DropdownItem {
   value: string;
   label: string;
   icon?: React.ReactNode;

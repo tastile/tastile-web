@@ -2,8 +2,8 @@
 export * from "./types";
 
 // Labels
-export type { ScheduleLabels, ScheduleLabelsOverride } from "./labels";
-export { DEFAULT_SCHEDULE_LABELS, getLabel } from "./labels";
+;
+;
 
 // Utils
 export * from "./utils";

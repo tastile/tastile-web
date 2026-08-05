@@ -5,10 +5,5 @@ import type {
   ResourcesWeekViewStylesNames,
 } from "./ResourcesWeekView";
 
-export { ResourcesWeekView } from "./ResourcesWeekView";
-export type {
-  ResourcesWeekViewProps,
-  ResourcesWeekViewFactory,
-  ResourcesWeekViewStylesNames,
-  ResourcesWeekViewCssVariables,
-};
+;
+;

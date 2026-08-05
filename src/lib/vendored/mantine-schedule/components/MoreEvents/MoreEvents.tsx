@@ -23,7 +23,7 @@ import {
 } from "../ScheduleEvent/ScheduleEvent";
 import classes from "./MoreEvents.module.css";
 
-export type MoreEventsDropdownType = "popover" | "modal";
+type MoreEventsDropdownType = "popover" | "modal";
 
 export type MoreEventsStylesNames = "moreEventsButton" | "moreEventsList" | "moreEventsDropdown";
 

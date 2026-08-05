@@ -13,65 +13,65 @@ export interface UtcSpan {
 }
 
 /** UUIDv7-bearing identifiers and RFC 3339 UTC instants on the Core wire. */
-export type SourceWireId = string;
-export type SourceWireInstant = string;
+type SourceWireId = string;
+type SourceWireInstant = string;
 
-export interface SourceRangeWire<T> {
+interface SourceRangeWire<T> {
   min: T | null;
   max: T | null;
 }
-export interface SourceTimeOfDayWire {
+interface SourceTimeOfDayWire {
   hour: number;
   minute: number;
   second: number;
   nanos: number;
 }
-export interface SourceDateRangeWire {
+interface SourceDateRangeWire {
   start: string;
   end: string;
 }
 
 /** Serde externally-tagged Condition and Term AST (`v1/05`). */
-export type SourceConditionWire =
+type SourceConditionWire =
   | { All: SourceConditionWire[] }
   | { Any: SourceConditionWire[] }
   | { Not: SourceConditionWire }
   | { Term: SourceTermWire };
 
-export type SourceMomentWire =
+type SourceMomentWire =
   | { Absolute: SourceWireInstant }
   | { Reference: [number, SourceMomentWire, number] };
-export type SourceMomentTargetWire =
+type SourceMomentTargetWire =
   | { Context: number }
   | { Reference: SourceWireId }
   | { Placement: SourceWireId }
   | { Execution: SourceWireId }
   | { Frame: SourceWireId };
-export type SourceMomentComparisonWire =
+type SourceMomentComparisonWire =
   | { At: SourceWireInstant }
   | { Before: SourceMomentTargetWire }
   | { After: SourceMomentTargetWire }
   | { Between: [SourceMomentTargetWire, SourceMomentTargetWire] }
   | { Within: SourceRangeWire<number> };
-export interface SourcePickWire {
+interface SourcePickWire {
   kind: number;
   at: SourceMomentWire | null;
 }
-export interface SourceAnchorSelectorWire {
+interface SourceAnchorSelectorWire {
   when: SourceConditionWire;
   pick: SourcePickWire;
 }
-export interface SourceGapAnchorsWire {
+interface SourceGapAnchorsWire {
   left: SourceAnchorSelectorWire;
   right: SourceAnchorSelectorWire;
   size: SourceRangeWire<number> | null;
 }
-export interface SourceScopeWire {
+interface SourceScopeWire {
   kind: number;
   parent: SourceWireId | null;
   gap: SourceGapAnchorsWire | null;
 }
-export interface SourceCalendarTermWire {
+interface SourceCalendarTermWire {
   weekday_mask: number;
   time_start: SourceTimeOfDayWire | null;
   time_end: SourceTimeOfDayWire | null;
@@ -79,13 +79,13 @@ export interface SourceCalendarTermWire {
   date_range: SourceDateRangeWire | null;
   offset_min: number;
 }
-export interface SourceMomentTermWire {
+interface SourceMomentTermWire {
   point: number;
   target: SourceMomentTargetWire;
   offset: number;
   comparison: SourceMomentComparisonWire;
 }
-export type SourceTermWire =
+type SourceTermWire =
   | { Calendar: SourceCalendarTermWire }
   | { Moment: SourceMomentTermWire }
   | {
@@ -109,7 +109,7 @@ export type SourceTermWire =
   | { Metric: { metric_id: SourceWireId; comparison: SourceMetricComparisonWire } }
   | { Feedback: { feedback_txn: SourceWireId; state: number } }
   | { Life: { target: SourceLifeTargetWire; state: "Active" | "Paused" | "Closed" | "Voided" } };
-export type SourceFactComparisonWire =
+type SourceFactComparisonWire =
   | { Equal: string }
   | { NotEqual: string }
   | { GreaterThan: number }
@@ -117,7 +117,7 @@ export type SourceFactComparisonWire =
   | { InRange: SourceRangeWire<number> }
   | "Exists"
   | "Missing";
-export type SourceMetricComparisonWire =
+type SourceMetricComparisonWire =
   | { Equal: number }
   | { NotEqual: number }
   | { GreaterThan: number }
@@ -125,32 +125,32 @@ export type SourceMetricComparisonWire =
   | { InRange: SourceRangeWire<number> }
   | "Exists"
   | "Missing";
-export type SourceLifeTargetWire =
+type SourceLifeTargetWire =
   | { Tile: SourceWireId }
   | { Placement: SourceWireId }
   | { Execution: SourceWireId }
   | { Recurring: SourceWireId };
 
-export interface SourceReferenceWire {
+interface SourceReferenceWire {
   id: SourceWireId;
   target: number;
   pick: SourcePickWire;
   when: SourceConditionWire | null;
 }
-export interface SourceTimeObservationWire {
+interface SourceTimeObservationWire {
   scope: number;
   source: number;
   aggregate: number;
   quantifier: number | null;
   reference: SourceWireId | null;
 }
-export interface SourceTimeRequirementWire {
+interface SourceTimeRequirementWire {
   id: SourceWireId;
   observation: SourceTimeObservationWire;
   required: SourceRangeWire<number>;
   preferred: SourceRangeWire<number> | null;
 }
-export interface SourceTaskDefinitionWire {
+interface SourceTaskDefinitionWire {
   id: SourceWireId;
   content: { title: string; description: string | null };
   show: SourceConditionWire | null;
@@ -162,13 +162,13 @@ export interface SourceTaskDefinitionWire {
     when: SourceConditionWire | null;
   }>;
 }
-export interface SourceCompletionWire {
+interface SourceCompletionWire {
   root: SourceConditionWire;
   time_requirements: SourceTimeRequirementWire[];
   tasks: SourceTaskDefinitionWire[];
 }
 
-export interface SourcePlacementRuleWire {
+interface SourcePlacementRuleWire {
   id: SourceWireId;
   when: SourceConditionWire | null;
   rank: number;
@@ -180,7 +180,7 @@ export interface SourcePlacementRuleWire {
     record: number | null;
   };
 }
-export interface SourceNestingRuleWire {
+interface SourceNestingRuleWire {
   id: SourceWireId;
   direction: number;
   when: SourceConditionWire | null;
@@ -188,7 +188,7 @@ export interface SourceNestingRuleWire {
   target: Omit<SourceReferenceWire, "when">;
   scope: SourceScopeWire;
 }
-export type SourceScalarExpressionWire =
+type SourceScalarExpressionWire =
   | { Literal: number }
   | { Read: SourceReadTargetWire }
   | {
@@ -207,7 +207,7 @@ export type SourceScalarExpressionWire =
         default: SourceScalarExpressionWire | null;
       };
     };
-export type SourceReadTargetWire =
+type SourceReadTargetWire =
   | { FrameDuration: SourceWireId }
   | { PlacementSpan: SourceWireId }
   | { ExecutionActiveDuration: SourceWireId }
@@ -215,22 +215,22 @@ export type SourceReadTargetWire =
   | { Metric: SourceWireId }
   | { RequirementMet: SourceWireId }
   | { TaskCompleted: SourceWireId };
-export interface SourceMetricWire {
+interface SourceMetricWire {
   id: SourceWireId;
   output: number;
   expression: SourceScalarExpressionWire;
   limit: SourceRangeWire<number> | null;
 }
 
-export type SourceTargetRefWire =
+type SourceTargetRefWire =
   | { Placement: SourceWireId }
   | { Execution: SourceWireId }
   | { Plan: SourceWireId };
-export interface SourceInsideWire {
+interface SourceInsideWire {
   parent: SourceWireId;
   scope: number;
 }
-export type SourceChangeValueWire =
+type SourceChangeValueWire =
   | { Span: UtcSpan }
   | { Instant: SourceWireInstant }
   | { Integer: number }
@@ -243,7 +243,7 @@ export type SourceChangeValueWire =
   | { TimeRequirementRef: SourceWireId }
   | { TaskDefRef: SourceWireId }
   | "None";
-export interface SourceChangeRuleWire {
+interface SourceChangeRuleWire {
   id: SourceWireId;
   target: SourceTargetRefWire;
   kind: number;
@@ -260,7 +260,7 @@ export interface SourceChangeRuleWire {
   } | null;
   rank: number;
 }
-export interface SourceDecisionWire {
+interface SourceDecisionWire {
   id: SourceWireId;
   observe: number;
   when: SourceConditionWire | null;
@@ -284,7 +284,7 @@ export interface SourceDecisionWire {
   }>;
   dialog: SourceInteractionNodeWire;
 }
-export type SourceCandidateEffectWire = {
+type SourceCandidateEffectWire = {
   kind: number;
   proposal: {
     id: SourceWireId;
@@ -303,14 +303,14 @@ export type SourceCandidateEffectWire = {
   } | null;
   idempotency_key: SourceWireId | null;
 };
-export type SourceRequestKindWire =
+type SourceRequestKindWire =
   | { StartExecution: SourceWireId }
   | { FinishExecution: SourceWireId }
   | { PauseExecution: SourceWireId }
   | { ResumeExecution: SourceWireId }
   | { RecordFact: SourceWireId }
   | { MarkTask: [SourceWireId, SourceWireId] };
-export interface SourceInteractionNodeWire {
+interface SourceInteractionNodeWire {
   id: SourceWireId;
   visible: SourceConditionWire | null;
   view: { title: string; body: string | null };
@@ -326,7 +326,7 @@ export interface SourceInteractionNodeWire {
 }
 
 /** SourceTile Flow definitions are deliberately separate from Plan planning. */
-export type SourceFlowSignalWire =
+type SourceFlowSignalWire =
   | "PlacementCreated"
   | "PlacementUpdated"
   | "PlacementClosed"
@@ -334,7 +334,7 @@ export type SourceFlowSignalWire =
   | "ExecutionFinished"
   | "FactChanged"
   | "MetricChanged";
-export interface SourceFlowDefinitionWire {
+interface SourceFlowDefinitionWire {
   observes: SourceFlowSignalWire[];
   when: SourceConditionWire | null;
   candidates: Array<{
@@ -345,7 +345,7 @@ export interface SourceFlowDefinitionWire {
 }
 
 /** Server-owned SourceTile IDs are intentionally absent from this payload. */
-export interface SourceTileDefinitionWire {
+interface SourceTileDefinitionWire {
   title: string;
   description: string | null;
   color: string | null;
@@ -354,7 +354,7 @@ export interface SourceTileDefinitionWire {
 }
 
 /** Exact top-level `SchedulePlanDefinition` wire contract. */
-export interface SourceTilePlanWire {
+interface SourceTilePlanWire {
   role: number;
   references: SourceReferenceWire[];
   completion: SourceCompletionWire;
@@ -366,7 +366,7 @@ export interface SourceTilePlanWire {
   decisions: SourceDecisionWire[];
 }
 
-export interface SourceGenerationWire {
+interface SourceGenerationWire {
   /** Core's current `SourceGenerationKind` numeric registry value. */
   kind: 0 | 1;
   at: string | null;
@@ -379,7 +379,7 @@ export interface SourceGenerationWire {
   excluded_dates?: string[];
 }
 
-export interface SourceScheduleWire {
+interface SourceScheduleWire {
   required_duration_ms: number;
   generation: SourceGenerationWire;
   // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
@@ -405,7 +405,7 @@ export interface SourceTileCreatePayload {
 /** `PUT /v1/source-tiles/{id}` body; the source ID belongs only in the path. */
 export type SourceTileUpdatePayload = SourceTileCreatePayload;
 
-export interface SourceScheduleRead {
+interface SourceScheduleRead {
   required_duration_ms: number;
   generation: {
     kind: number;
@@ -445,7 +445,7 @@ export interface SourceTileRead {
   updated_at: string;
 }
 
-export interface OccurrenceRead {
+interface OccurrenceRead {
   occurrence_id: string;
   source_tile_id: string;
   sequence_no: number;

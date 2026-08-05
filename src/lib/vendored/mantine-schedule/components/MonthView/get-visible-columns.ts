@@ -78,4 +78,4 @@ export function clipSpanToVisibleColumns(
   return spans;
 }
 
-export { DAYS_IN_WEEK, COLUMN_WIDTH };
+;

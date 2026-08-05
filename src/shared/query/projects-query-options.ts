@@ -4,9 +4,9 @@ import { getCoreClient } from "@/shared/api/endpoints";
 import type { Workspace } from "@/shared/hooks/use-workspaces";
 import { queryKeys } from "./query-keys";
 
-export const projectsQueryKey = [...queryKeys.projects] as const;
+const projectsQueryKey = [...queryKeys.projects] as const;
 
-export async function fetchWorkspaces(): Promise<Workspace[]> {
+async function fetchWorkspaces(): Promise<Workspace[]> {
   const res = await getCoreClient().call<{ items: Workspace[]; count: number }>("listMyWorkspaces");
   if (!res.ok) throw new Error(res.error.message);
   return res.data.items ?? [];

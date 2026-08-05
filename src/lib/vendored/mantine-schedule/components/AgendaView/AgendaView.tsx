@@ -45,11 +45,11 @@ export type AgendaViewStylesNames =
   | "agendaViewEventTime"
   | "agendaViewNoEvents";
 
-export type AgendaViewCssVariables = {
+type AgendaViewCssVariables = {
   agendaView: "--agenda-view-radius";
 };
 
-export interface AgendaViewProps
+interface AgendaViewProps
   extends BoxProps,
     StylesApiProps<AgendaViewFactory>,
     ElementProps<"div"> {
@@ -260,8 +260,4 @@ AgendaView.classes = classes;
 AgendaView.varsResolver = varsResolver;
 
 export namespace AgendaView {
-  export type Props = AgendaViewProps;
-  export type Factory = AgendaViewFactory;
-  export type StylesNames = AgendaViewStylesNames;
-  export type CssVariables = AgendaViewCssVariables;
-}
+  }

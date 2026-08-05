@@ -18,7 +18,7 @@ export const DecisionObserveScope = {
   EXECUTION: 3,
 } as const;
 
-export interface DecisionObserve {
+interface DecisionObserve {
   scope: number;
 }
 
@@ -30,16 +30,16 @@ export const CandidateEffectKind = {
   REQUEST: 2,
 } as const;
 
-export interface PlacementProposalDraft {
+interface PlacementProposalDraft {
   span: { start: string; end: string } | null;
 }
 
-export interface RequestDraft {
+interface RequestDraft {
   /** REQUIRED for REQUEST kind (v1/06 §87: 幂等キー必須) */
   idempotencyKey: string;
 }
 
-export interface CandidateEffect {
+interface CandidateEffect {
   kind: number;
   proposal: PlacementProposalDraft | null;
   change: unknown | null;
@@ -53,7 +53,7 @@ export interface DecisionCandidate {
   effects: CandidateEffect[];
 }
 
-export interface FeedbackReuseRule {
+interface FeedbackReuseRule {
   id: string;
   when: ConditionNode;
   source: unknown;

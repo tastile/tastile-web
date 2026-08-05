@@ -4,14 +4,14 @@
  * Interfaces only. No business logic.
  */
 
-export type ScalarValue = number | string;
+type ScalarValue = number | string;
 
-export interface ScalarLiteral {
+interface ScalarLiteral {
   kind: "literal";
   value: ScalarValue;
 }
 
-export interface ScalarRead {
+interface ScalarRead {
   kind: "read";
   /** Source aggregate: RECURRING=0 | PLACEMENT=1 | EXECUTION=2 | SESSION=3 */
   sourceKind: number;
@@ -21,21 +21,21 @@ export interface ScalarRead {
   part: number;
 }
 
-export interface ScalarAggregate {
+interface ScalarAggregate {
   kind: "aggregate";
   /** COUNT=0 | SUM=1 | MIN=2 | MAX=3 | FIRST=4 | LAST=5 */
   op: number;
   over: ScalarExpression[];
 }
 
-export interface ScalarOperate {
+interface ScalarOperate {
   kind: "operate";
   /** ADD=0 | SUBTRACT=1 | MULTIPLY=2 | DIVIDE=3 | MIN=4 | MAX=5 | ABS=6 | CLAMP=7 */
   op: number;
   args: ScalarExpression[];
 }
 
-export interface ScalarChoose {
+interface ScalarChoose {
   kind: "choose";
   branches: Array<{
     when: ScalarExpression;
@@ -44,14 +44,14 @@ export interface ScalarChoose {
   fallback: ScalarExpression;
 }
 
-export type ScalarExpression =
+type ScalarExpression =
   | ScalarLiteral
   | ScalarRead
   | ScalarAggregate
   | ScalarOperate
   | ScalarChoose;
 
-export interface ScalarValueRange {
+interface ScalarValueRange {
   min: ScalarValue | null;
   max: ScalarValue | null;
 }

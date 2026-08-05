@@ -14,7 +14,7 @@ import type {
 
 // ---------- Key (numeric 3-element structure) ----------
 
-export interface Key {
+interface Key {
   /** PLAN=0 | TIME_REQUIREMENT=1 | TASK=2 | RULE=3 | NEST=4 | PLACEMENT=5 | EXECUTION_INPUT=6 */
   group: number;
   /** UUIDv7 identifying the specific element (TaskId, RuleId, …). null when no item. */
@@ -25,12 +25,12 @@ export interface Key {
 
 // ---------- Activation / Revoked ----------
 
-export interface Activation {
+interface Activation {
   when: ConditionNode | null;
   until: string | null;
 }
 
-export interface Revoked {
+interface Revoked {
   at: string;
   reason: string | null;
   actorId: string;
@@ -38,7 +38,7 @@ export interface Revoked {
 
 // ---------- Change ----------
 
-export interface ChangeValue {
+interface ChangeValue {
   // Tagged union: `kind` discriminates the payload shape.
   kind: ChangeKindValue;
   /** SET: scalar replacement (number | string | boolean | null). */
@@ -51,44 +51,44 @@ export interface ChangeValue {
   drop: IdentifiedDrop | null;
 }
 
-export interface ScalarReplace {
+interface ScalarReplace {
   // `value` is intentionally `unknown` to mirror the spec; concrete shapes
   // are constrained at the read/resolve layer using `Key.group`.
   value: unknown;
 }
 
-export interface IdentifiedPut {
+interface IdentifiedPut {
   elementId: string;
   element: unknown;
 }
 
-export interface IdentifiedDrop {
+interface IdentifiedDrop {
   elementId: string;
 }
 
-export interface ChangeSource {
+interface ChangeSource {
   kind: ChangeSourceValue;
   origin: ChangeOrigin | null;
 }
 
-export type ChangeOrigin =
+type ChangeOrigin =
   | { kind: "recurring"; recurring: VersionRef; frame: FrameRef }
   | { kind: "flow"; flow: VersionRef; frame: FrameRef }
   | { kind: "user" }
   | { kind: "decision"; feedbackTxn: string; decisionRun: string }
   | { kind: "execution"; execution: VersionRef };
 
-export interface VersionRef {
+interface VersionRef {
   id: string;
   revision: number;
 }
 
-export interface FrameRef {
+interface FrameRef {
   id: string;
   rangeStart: string;
 }
 
-export interface Change {
+interface Change {
   id: string;
   key: Key;
   layer: ChangeLayerValue;

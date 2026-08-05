@@ -4,13 +4,13 @@ import { cn } from "@/shared/lib/cn";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export interface PageSummaryItem {
+interface PageSummaryItem {
   label: string;
   value: ReactNode;
   href?: string;
 }
 
-export interface PageSummarySection {
+interface PageSummarySection {
   heading?: string;
   items: PageSummaryItem[];
 }

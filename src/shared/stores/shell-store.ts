@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type SidePanel = "references" | "tasks" | "projects" | "schedule";
+type SidePanel = "references" | "tasks" | "projects" | "schedule";
 
 /** Equivalent to the three Supabase modes */
 export type SidebarBehavior = "expandable" | "open" | "closed";

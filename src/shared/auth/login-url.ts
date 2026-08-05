@@ -2,7 +2,7 @@ import { MissingRequiredEnvError } from "@/lib/upstream/cloud-api-base";
 
 import type { CognitoEnv } from "./env";
 
-export const COGNITO_IDENTITY_PROVIDERS = ["Google", "SignInWithApple"] as const;
+const COGNITO_IDENTITY_PROVIDERS = ["Google", "SignInWithApple"] as const;
 
 export type CognitoIdentityProvider = (typeof COGNITO_IDENTITY_PROVIDERS)[number];
 

@@ -1,5 +1,6 @@
 import type { QuickCreateState } from "@/shared/stores/quick-create-store";
 import { tasksForSubmission } from "@/shared/stores/quick-create-store";
+import type { FrameRule } from "@/tile/model/v1/tile";
 import { uuidv7 } from "@/tile/model/v1/envelope";
 import { convertCondition, toWireSetPlanBody } from "./plan-wire";
 import {

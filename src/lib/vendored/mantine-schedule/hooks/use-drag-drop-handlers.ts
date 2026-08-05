@@ -2,7 +2,6 @@ import dayjs from "dayjs";
 import { useCallback, useEffectEvent, useState } from "react";
 import type { DragContextValue } from "../components/DragContext/DragContext";
 import type { DateTimeStringValue, ScheduleEventData, ScheduleMode } from "../types";
-import { useDragState } from "./use-drag-state";
 
 export interface UseDragDropHandlersOptions<T = any> {
   /** Whether drag and drop is enabled */
@@ -67,6 +66,13 @@ export interface DragDropHandlers<T = any> {
   isDropTarget: (target: T) => boolean;
 }
 
+interface DragState {
+  isDragging: boolean;
+  draggedEventId: string | number | null;
+  draggedEvent: ScheduleEventData | null;
+  dropTarget: any | null;
+}
+
 /**
  * Hook that provides unified drag-drop handlers for Schedule views.
  * Handles drag state management and event drops across Day, Week, and Month views.
@@ -92,24 +98,39 @@ export function useDragDropHandlers<T = any>(
   const stableOnEventDragEnd = useEffectEvent(onEventDragEnd || (() => {}));
   const stableOnExternalDrop = useEffectEvent(onExternalDrop || (() => {}));
 
-  const dragState = useDragState();
-  const [dropTarget, setDropTarget] = useState<T | null>(null);
+  const [dragState, setDragState] = useState<DragState>({
+    isDragging: false,
+    draggedEventId: null,
+    draggedEvent: null,
+    dropTarget: null,
+  });
+  const [dropTarget, setDropTargetState] = useState<DropTarget | null>(null);
 
   const handleDragEnd = useCallback(() => {
-    dragState.endDrag();
-    setDropTarget(null);
+    setDragState({
+      isDragging: false,
+      draggedEventId: null,
+      draggedEvent: null,
+      dropTarget: null,
+    });
+    setDropTargetState(null);
     stableOnEventDragEnd();
-  }, [dragState]);
+  }, [stableOnEventDragEnd]);
 
   const handleDragStart = useCallback(
     (event: ScheduleEventData) => {
       if (!enabled || mode === "static") {
         return;
       }
-      dragState.startDrag(event);
+      setDragState({
+        isDragging: true,
+        draggedEventId: event.id,
+        draggedEvent: event,
+        dropTarget: null,
+      });
       stableOnEventDragStart(event);
     },
-    [enabled, mode, dragState],
+    [enabled, mode, stableOnEventDragStart],
   );
 
   const handleDragOver = useCallback(
@@ -118,7 +139,7 @@ export function useDragDropHandlers<T = any>(
         return;
       }
 
-      let isInternalDrag = dragState.state.isDragging;
+      let isInternalDrag = dragState.isDragging;
 
       if (isInternalDrag && !event.dataTransfer.types.includes("application/json")) {
         handleDragEnd();
@@ -135,13 +156,13 @@ export function useDragDropHandlers<T = any>(
 
       event.preventDefault();
       event.dataTransfer.dropEffect = isInternalDrag ? "move" : "copy";
-      setDropTarget(target);
+      setDropTargetState(target);
     },
-    [enabled, mode, dragState.state.isDragging, onExternalDrop, handleDragEnd],
+    [enabled, mode, dragState.isDragging, onExternalDrop, handleDragEnd],
   );
 
   const handleDragLeave = useCallback(() => {
-    setDropTarget(null);
+    setDropTargetState(null);
   }, []);
 
   const handleDrop = useCallback(
@@ -149,32 +170,32 @@ export function useDragDropHandlers<T = any>(
       event.preventDefault();
 
       const isInternalDrag =
-        dragState.state.isDragging && event.dataTransfer.types.includes("application/json");
+        dragState.isDragging && event.dataTransfer.types.includes("application/json");
 
-      if (isInternalDrag && enabled && dragState.state.draggedEvent && onEventDrop) {
-        const { start, end } = calculateDropTarget(target, dragState.state.draggedEvent);
+      if (isInternalDrag && enabled && dragState.draggedEvent && onEventDrop) {
+        const { start, end } = calculateDropTarget(target, dragState.draggedEvent);
         stableOnEventDrop({
-          eventId: dragState.state.draggedEventId!,
+          eventId: (dragState.draggedEventId as string),
           newStart: dayjs(start).format("YYYY-MM-DD HH:mm:ss"),
           newEnd: dayjs(end).format("YYYY-MM-DD HH:mm:ss"),
-          event: dragState.state.draggedEvent,
+          event: dragState.draggedEvent,
         });
         handleDragEnd();
         return;
       }
 
       if (!isInternalDrag && onExternalDrop) {
-        if (dragState.state.isDragging) {
+        if (dragState.isDragging) {
           handleDragEnd();
         }
         stableOnExternalDrop(event, target);
-        setDropTarget(null);
+        setDropTargetState(null);
         return;
       }
 
-      setDropTarget(null);
+      setDropTargetState(null);
     },
-    [enabled, dragState.state, onEventDrop, onExternalDrop, calculateDropTarget, handleDragEnd],
+    [enabled, dragState, onEventDrop, onExternalDrop, calculateDropTarget, handleDragEnd],
   );
 
   const isDraggableEvent = useCallback(
@@ -201,13 +222,13 @@ export function useDragDropHandlers<T = any>(
   );
 
   const dragContextValue: DragContextValue = {
-    isDragging: dragState.state.isDragging,
-    draggedEventId: dragState.state.draggedEventId,
-    draggedEvent: dragState.state.draggedEvent,
-    dropTarget: dragState.state.dropTarget,
+    isDragging: dragState.isDragging,
+    draggedEventId: dragState.draggedEventId,
+    draggedEvent: dragState.draggedEvent,
+    dropTarget: dragState.dropTarget,
     onDragStart: handleDragStart,
     onDragEnd: handleDragEnd,
-    setDropTarget: dragState.setDropTarget,
+    setDropTarget: setDropTargetState,
   };
 
   return {

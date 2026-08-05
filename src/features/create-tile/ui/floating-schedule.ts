@@ -5,7 +5,7 @@ import type {
 } from "@/shared/api/v1/schedule-definition";
 import { uuidv7 } from "@/tile/model/v1/envelope";
 
-export interface FloatingLabel {
+interface FloatingLabel {
   placementId: string;
   title: string;
   start: string;

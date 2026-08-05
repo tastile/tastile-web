@@ -1,7 +1,7 @@
 import { getStripe } from "@/lib/stripe";
 import type Stripe from "stripe";
 
-export type SubscriptionInterval = "monthly" | "yearly";
+type SubscriptionInterval = "monthly" | "yearly";
 
 export type SubscriptionState =
   | { status: "free" }

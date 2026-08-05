@@ -17,22 +17,22 @@ import type { DurationRange, Moment } from "./window";
 // ---------- Planning (rules & flows) ----------
 
 /** PlacementRuleEffect.scope.kind: ROOT=0 | HOST=1 | GAP=2 */
-export interface Scope {
+interface Scope {
   kind: number;
   parent: string | null;
   gap: GapScope | null;
 }
 
-export interface GapScope {
+interface GapScope {
   leftAnchor: string;
   rightAnchor: string;
   size: DurationRange | null;
 }
 
 /** PlacementRuleEffect.record: OPTIONAL=0 | REQUIRED=1 */
-export type RecordRequirement = number | null;
+type RecordRequirement = number | null;
 
-export interface PlacementRuleEffect {
+interface PlacementRuleEffect {
   /** PERMIT_SCOPE=0 | DENY_SCOPE=1 | LIMIT_SPAN=2 | SCORE_SCOPE=3 | RECORD_REQUIREMENT=4 */
   kind: number;
   scope: Scope | null;
@@ -49,7 +49,7 @@ export interface PlacementRule {
 }
 
 /** NestingRule.direction: HOST=0 | INSIDE=1 */
-export interface NestingRule {
+interface NestingRule {
   id: string;
   direction: number;
   when: ConditionNode | null;
@@ -61,7 +61,7 @@ export interface NestingRule {
 // ---------- Flow ----------
 
 /** Signal kinds are implementation-defined; we keep them numeric. */
-export interface Signal {
+interface Signal {
   id: string;
   kind: number;
   /** Parameters describing the signal source. */
@@ -69,7 +69,7 @@ export interface Signal {
 }
 
 /** FlowOutput.kind: PROPOSE_PLACEMENT=0 | PROPOSE_CHANGE=1 */
-export interface PlacementProposalDraft {
+interface PlacementProposalDraft {
   title: string;
   baselineSpan: { start: string; end: string };
   inside: { parentId: string | null; scopeKind: number };
@@ -77,27 +77,27 @@ export interface PlacementProposalDraft {
   proposalKey: { producerId: string; localId: string };
 }
 
-export interface FlowOutput {
+interface FlowOutput {
   kind: number;
   proposal: PlacementProposalDraft | null;
   change: ChangeRule | null;
 }
 
-export interface FlowCandidate {
+interface FlowCandidate {
   id: string;
   when: ConditionNode;
   rank: number;
   outputs: FlowOutput[];
 }
 
-export interface Flow {
+interface Flow {
   id: string;
   observe: Signal[];
   when: ConditionNode | null;
   candidates: FlowCandidate[];
 }
 
-export interface Planning {
+interface Planning {
   placementRules: PlacementRule[];
   nestingRules: NestingRule[];
   flows: Flow[];
@@ -105,7 +105,7 @@ export interface Planning {
 
 // ---------- Decision ----------
 
-export interface Decision {
+interface Decision {
   id: string;
   /** Decision kind is defined in v1/06; left as a numeric here. */
   kind: number;
@@ -120,7 +120,7 @@ export interface Decision {
 }
 
 // Re-export DecisionDef for consumers that import from this module
-export type { DecisionDef } from "@/shared/api/v1/decision";
+;
 
 // ---------- Plan ----------
 
@@ -135,19 +135,19 @@ export interface Plan {
 
 // ---------- FrameRule generators ----------
 
-export interface StepGenerator {
+interface StepGenerator {
   step: number;
   origin: Moment | null;
   bounds: { start: string; end: string } | null;
 }
 
-export interface ReferenceGenerator {
+interface ReferenceGenerator {
   referenceId: string;
   /** START=0 | END=1 | CENTER=2 */
   align: number;
 }
 
-export interface CalendarGenerator {
+interface CalendarGenerator {
   /** DAY=0 | WEEK=1 | MONTH=2 */
   unit: number;
   weekdayMask: number | null;
@@ -155,13 +155,13 @@ export interface CalendarGenerator {
   holidayKind: number;
 }
 
-export interface TransformGenerator {
+interface TransformGenerator {
   sourceFrameId: string;
   shift: number | null;
   scale: number | null;
 }
 
-export type FrameGenerator =
+type FrameGenerator =
   | { kind: "step"; value: StepGenerator }
   | { kind: "reference"; value: ReferenceGenerator }
   | { kind: "calendar"; value: CalendarGenerator }
@@ -176,7 +176,7 @@ export interface FrameRule {
 // ---------- RecurringOutput (RecurringRule output element) ----------
 
 /** RecurringOutput.kind: PROPOSE_PLACEMENT=0 | PROPOSE_CHANGE=1 */
-export interface RecurringOutput {
+interface RecurringOutput {
   kind: number;
   proposal: PlacementProposalDraft | null;
   change: ChangeRule | null;

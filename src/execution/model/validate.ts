@@ -13,7 +13,7 @@ import type { AppState } from "./state";
 /**
  * 検証エラー
  */
-export class ValidationError extends Error {
+class ValidationError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "ValidationError";
