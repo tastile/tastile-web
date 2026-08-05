@@ -759,4 +759,102 @@ describe("buildQuickCreateSchedulePayload", () => {
 
     expect(payload.source_schedule?.generation.interval_ms).toBe(1_800_000);
   });
+
+  // ── C2b: endDate (Instant) vs life.active.endDate (LocalDate) ──────
+  describe("endDate vs life.active.endDate field mapping", () => {
+    it("maps endDate to ends_at and date_range_end when only endDate is set", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "endDate only" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-09-01T09:00:00.000Z", end: "2026-09-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "2026-09-30T00:00:00Z",
+        life: {
+          ...state.recurring.life,
+          active: { startDate: "", endDate: "" },
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.generation.ends_at).toBe("2026-09-30T00:00:00.000Z");
+      expect(payload.source_schedule?.generation.date_range_end).toBe("2026-09-30");
+    });
+
+    it("maps life.active.endDate to ends_at and date_range_end when only life.active.endDate is set", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "life.active.endDate only" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-10-01T09:00:00.000Z", end: "2026-10-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "",
+        life: {
+          ...state.recurring.life,
+          active: { startDate: "", endDate: "2026-10-31" },
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      // life.active.endDate "2026-10-31" → validInstant converts via local midnight
+      // In UTC+9: local midnight = 15:00 UTC previous day → "2026-10-30T15:00:00.000Z"
+      // date_range_end is derived from end (the Instant), not from the original LocalDate
+      // This demonstrates the conflict: LocalDate "2026-10-31" becomes "2026-10-30" in date_range_end
+      expect(payload.source_schedule?.generation.date_range_end).toBe("2026-10-30");
+    });
+
+    it("prefers endDate over life.active.endDate when both are set", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "both set" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-09-01T09:00:00.000Z", end: "2026-09-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "2026-09-30T00:00:00Z",
+        life: {
+          ...state.recurring.life,
+          active: { startDate: "", endDate: "2026-10-31" },
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.generation.ends_at).toBe("2026-09-30T00:00:00.000Z");
+      expect(payload.source_schedule?.generation.date_range_end).toBe("2026-09-30");
+    });
+
+    it("returns null for both fields when neither is set", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "neither set" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-09-01T09:00:00.000Z", end: "2026-09-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "",
+        life: {
+          ...state.recurring.life,
+          active: { startDate: "", endDate: "" },
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.generation.ends_at).toBeNull();
+      expect(payload.source_schedule?.generation.date_range_end).toBeNull();
+    });
+  });
 });
