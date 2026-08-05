@@ -97,9 +97,11 @@ export async function v1CreatePlacement(
       const escaped = label.replace(/'/g, "''");
       const annId = crypto.randomUUID();
       const sql = "INSERT INTO v1_annotation (id, tile_id, kind, label, owner_id, revision, created_at, updated_at) VALUES ('" + annId + "'::uuid, '" + tileId + "'::uuid, 0, '" + escaped + "', '00000000-0000-0000-0000-000000000001'::uuid, 1, now(), now()) ON CONFLICT (id) DO NOTHING;";
-      try {
-        execFileSync("docker", ["exec", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql], { stdio: "ignore" });
-      } catch (e) { void e; }
+      execFileSync(
+        "wslc",
+        ["container", "exec", "tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql],
+        { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
+      );
     }
   }
 
@@ -134,19 +136,24 @@ export async function v1CreatePlacementAndResolve(
  */
 export async function truncateV1(): Promise<void> {
   const { execFileSync } = await import("node:child_process");
-  try {
-    execFileSync(
-      "docker",
-      [
-        "exec", "tastile-core-db-1",
-        "psql", "-U", "tastile", "-d", "tastile_db", "-c",
-        "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_annotation RESTART IDENTITY CASCADE;",
-      ],
-      { stdio: "ignore" },
-    );
-  } catch {
-    // No-op; docker exec is the canonical cleanup path.
-  }
+  execFileSync(
+    "wslc",
+    [
+      "container", "exec", "tastile-db",
+      "psql", "-U", "tastile", "-d", "tastile_db", "-c",
+      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
+    ],
+    { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
+  );
+}
+
+/**
+ * Pre-test cleanup: truncate all v1 tables via wslc so the next test
+ * starts from a fully empty calendar.  This is the canonical cleanup
+ * function for e2e specs (G5a + G5b).
+ */
+export async function resetDb(): Promise<void> {
+  await truncateV1();
 }
 /**
  * Create a v1 Recurring tile (kind=0) + Step frame-rule + materialize
