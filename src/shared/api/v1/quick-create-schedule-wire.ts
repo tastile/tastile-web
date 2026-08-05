@@ -28,7 +28,7 @@ function normalizeWeekdayMask(mask: number): number {
   return mask & 0b1111111;
 }
 
-function validInstant(value: string | null | undefined): string | null {
+export function validInstant(value: string | null | undefined): string | null {
   if (!value) return null;
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return new Date(`${value}T00:00:00`).toISOString();
@@ -36,7 +36,7 @@ function validInstant(value: string | null | undefined): string | null {
   return Number.isNaN(Date.parse(value)) ? null : new Date(value).toISOString();
 }
 
-function datePart(value: string | null | undefined): string | null {
+export function datePart(value: string | null | undefined): string | null {
   if (value && /^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   return validInstant(value)?.slice(0, 10) ?? null;
 }
