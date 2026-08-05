@@ -857,4 +857,176 @@ describe("buildQuickCreateSchedulePayload", () => {
       expect(payload.source_schedule?.generation.date_range_end).toBeNull();
     });
   });
+
+  // ── C3a: source.{offsetMin, priority} round-trip ────────────────────
+  describe("C3a: source.offsetMin round-trip", () => {
+    it.each([
+      [0, "zero offset"],
+      [540, "JST +9 (UTC+9)"],
+      [-540, "negative offset"],
+      [720, "max offset"],
+      [-720, "min offset"],
+    ])("serializes offsetMin=%d to generation.offset_min=%d (%s)", (offsetMin, _label) => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: `offsetMin ${offsetMin}` };
+      state.source = { ...state.source, offsetMin };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.generation.offset_min).toBe(offsetMin);
+    });
+
+    it("preserves offsetMin through the full source_schedule object", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "full round-trip offsetMin" };
+      state.source = { ...state.source, offsetMin: 540 };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule).toBeDefined();
+      expect(payload.source_schedule!.generation.offset_min).toBe(540);
+    });
+  });
+
+  describe("C3a: source.priority round-trip", () => {
+    it.each([
+      [0, "zero priority"],
+      [5, "typical priority"],
+      [25, "high priority"],
+      [-1, "negative priority"],
+      [100, "very high priority"],
+    ])("serializes priority=%d to source_schedule.priority=%d (%s)", (priority, _label) => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: `priority ${priority}` };
+      state.source = { ...state.source, priority };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.priority).toBe(priority);
+    });
+
+    it("preserves both offsetMin and priority simultaneously in source_schedule", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "combined round-trip" };
+      state.source = { ...state.source, offsetMin: 540, priority: 25 };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule).toEqual(
+        expect.objectContaining({
+          generation: expect.objectContaining({ offset_min: 540 }),
+          priority: 25,
+        }),
+      );
+    });
+  });
+
+  // ── C3b: excludedDates round-trip ───────────────────────────────────
+  describe("C3b: source.excludedDates round-trip", () => {
+    it("serializes a single excluded date to generation.excluded_dates", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "single excluded" };
+      state.source = { ...state.source, excludedDates: ["2026-08-06"] };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "2026-08-14T00:00:00.000Z",
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+
+      expect(payload.source_schedule?.generation.excluded_dates).toEqual(["2026-08-06"]);
+    });
+
+    it("serializes multiple excluded dates preserving YYYY-MM-DD format", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "multi excluded" };
+      state.source = {
+        ...state.source,
+        excludedDates: ["2026-08-06", "2026-08-07", "2026-08-13"],
+      };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "2026-08-14T00:00:00.000Z",
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+
+      expect(payload.source_schedule?.generation.excluded_dates).toEqual([
+        "2026-08-06",
+        "2026-08-07",
+        "2026-08-13",
+      ]);
+    });
+
+    it("serializes empty excludedDates as an empty array", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "empty excluded" };
+      state.source = { ...state.source, excludedDates: [] };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.generation.excluded_dates).toEqual([]);
+    });
+
+    it("preserves excludedDates alongside offsetMin and priority", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "combined C3b" };
+      state.source = {
+        ...state.source,
+        excludedDates: ["2026-08-06"],
+        offsetMin: 540,
+        priority: 25,
+      };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01T09:00:00.000Z", end: "2026-08-01T10:00:00.000Z" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        endDate: "2026-08-14T00:00:00.000Z",
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+
+      expect(payload.source_schedule?.generation).toEqual(
+        expect.objectContaining({
+          excluded_dates: ["2026-08-06"],
+          offset_min: 540,
+        }),
+      );
+      expect(payload.source_schedule?.priority).toBe(25);
+    });
+  });
 });
