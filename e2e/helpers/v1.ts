@@ -141,7 +141,7 @@ export async function truncateV1(): Promise<void> {
     [
       "container", "exec", "tastile-dev-api",
       "psql", "-U", "tastile", "-d", "tastile", "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
+      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile RESTART IDENTITY CASCADE;",
     ],
     { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
   );
