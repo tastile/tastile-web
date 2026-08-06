@@ -594,6 +594,13 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
   setField: (path, value) =>
     set((state) => {
       const next = setDeepPath(state, path, value);
+      // E1a: sync conditionIgnored when recurring.condition changes
+      if (path === "recurring.condition") {
+        const ignored = value !== null;
+        if (next.recurring.conditionIgnored !== ignored) {
+          return { ...next, recurring: { ...next.recurring, conditionIgnored: ignored } };
+        }
+      }
       const updatesRequired = path.startsWith("time.durationMinMax.");
       const updatesPreferred = path.startsWith("source.preferredDurationMinMax.");
       if (!updatesRequired && !updatesPreferred) return next;

@@ -239,6 +239,29 @@ describe("buildQuickCreateSchedulePayload", () => {
     expect(payload.recurrence).toBeNull();
   });
 
+  it("silently drops non-null recurring.condition with console.warn and does not wire it into completion.root (E1a)", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Condition drop" };
+    state.recurring = {
+      ...state.recurring,
+      repeatMode: "condition",
+      condition: { kind: 0, children: [], term: null },
+    };
+    // Remove the default "Mark done" task so completion.root stays as-is
+    state.plan.completion.tasks = [];
+
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    expect(payload).toBeDefined();
+    expect(warnSpy).toHaveBeenCalledWith("[Phase C/D reserved] recurring.condition ignored");
+    // completion.root must NOT contain the condition AST — it should be the plain default root
+    expect(payload.plan.completion.root).toEqual({ All: [] });
+
+    warnSpy.mockRestore();
+  });
+
   it("publishes generic wait/emit Flow sequences without a use-case discriminator", () => {
     const state = buildDefaultQuickCreateState();
     state.identity = { ...state.identity, title: "Renamed workflow" };

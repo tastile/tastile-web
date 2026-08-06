@@ -339,10 +339,13 @@ export function buildQuickCreateSchedulePayload(
           children: submittedTasks.map((task) => task.complete),
         }
       : state.plan.completion.root;
-  // Wire the recurring condition slot into completion.root if present
-  const planRoot = state.recurring.condition !== null
-    ? { ...completionRoot, ...convertCondition(state.recurring.condition) }
-    : completionRoot;
+  // E1a: recurring.condition is not yet wired to the schedule publish
+  // payload. Silently drop it with a dev-visible warning so in-memory
+  // state from hydration / devtools does not silently vanish.
+  if (state.recurring.condition !== null) {
+    console.warn("[Phase C/D reserved] recurring.condition ignored");
+  }
+  const planRoot = completionRoot;
   const plan = toWireSetPlanBody({
     ...state.plan,
     completion: {
