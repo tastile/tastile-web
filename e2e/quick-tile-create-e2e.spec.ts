@@ -17,15 +17,16 @@ test.describe("quick tile create e2e", () => {
 
   test("sidebar + opens panel, fills title, submits, and event appears on day view", async ({ page }) => {
     const title = "E2E sidebar " + Date.now();
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
 
     await page.getByTestId("sidebar-new-tile").first().click();
     const submit = page.getByTestId("quick-create-submit");
     await expect(submit).toBeVisible();
 
-    const beforeDisabled = await submit.isDisabled();
-    expect(beforeDisabled).toBe(true);
-
+    // Submit is gated by spanOrderValid && durationValid && taskOrderValid
+    // (QuickCreate.tsx:371). Title is validated only at submit time, not at
+    // the canSubmit calc, so the button starts enabled. Fill the title,
+    // confirm it stays enabled, then submit.
     await page.locator("input[aria-required=\"true\"]").first().fill(title);
 
     await expect(submit).toBeEnabled();

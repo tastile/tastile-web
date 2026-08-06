@@ -41,6 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
+  const isE2E = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
 
   return (
     <html lang="en" {...mantineHtmlProps}>
@@ -52,7 +53,7 @@ export default function RootLayout({
       <body className={`${zenKaku.className} font-sans antialiased`}>
         <GoogleAnalytics measurementId={gaMeasurementId} />
         <AppProviders>
-          <DemoSiteBanner />
+          {isE2E ? null : <DemoSiteBanner />}
           {children}
         </AppProviders>
       </body>

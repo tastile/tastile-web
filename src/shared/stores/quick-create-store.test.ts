@@ -28,7 +28,9 @@ describe("useQuickCreateStore", () => {
       // placement choice supplies a span later; creation must not fabricate it.
       expect(s.time.span).toEqual({ start: "", end: "" });
       expect(s.initialAllDay).toBe(false);
-      expect(s.time.durationMinMax).toEqual({ minMs: 1800000, maxMs: 5400000 });
+      // No authored duration by default; the wire's requiredDuration() falls
+      // back to a 5-min cap for the empty-span "place now" UX path.
+      expect(s.time.durationMinMax).toEqual({ minMs: null, maxMs: null });
       expect(s.windows).toEqual([]);
       expect(s.recurring.life.active).toEqual({ startDate: "", endDate: "" });
       expect(s.recurring.life.state).toBe(RecurringState.ACTIVE);

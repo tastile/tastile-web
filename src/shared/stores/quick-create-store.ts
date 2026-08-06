@@ -321,6 +321,10 @@ function defaultConditionRoot(): Plan["completion"]["root"] {
 }
 
 function defaultTimeRequirement(): TimeRequirement {
+  // No authored completion time requirement yet. The wire's
+  // requiredDuration() falls back to a 5-min cap for the empty-span
+  // "place now" UX path when this is null. UI authors add requirements
+  // explicitly via the CompletionSubPanel.
   return {
     id: `tr_${Math.random().toString(36).slice(2, 9)}`,
     observation: {
@@ -330,8 +334,8 @@ function defaultTimeRequirement(): TimeRequirement {
       quantifier: 0,
     },
     required: {
-      minMs: 30 * 60_000,
-      maxMs: 90 * 60_000,
+      minMs: null,
+      maxMs: null,
     },
     preferred: null,
   };
@@ -426,10 +430,13 @@ function defaultIdentity(): TileIdentitySlice {
 
 function defaultTime(): TimeSlice {
   // A new tile is floating until the user or scheduler creates a Placement.
-  // Keep its required duration, but never fabricate a fixed span.
+  // No authored duration yet: the wire's requiredDuration() falls back to
+  // a 5-min cap for the empty-span "place now" UX path so the new tile
+  // appears in /v1/timeline even when surrounding SourceTile placements
+  // (e.g. V1_015 休憩 seed) cover the adjacent slots.
   return {
     span: { start: "", end: "" },
-    durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
+    durationMinMax: { minMs: null, maxMs: null },
     whenMode: "none",
     timeOfDayMode: "unspecified",
     timeOfDayStart: "",

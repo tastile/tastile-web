@@ -94,7 +94,21 @@ function requiredDuration(state: QuickCreateScheduleState): number {
   const requirement = state.plan.completion.timeRequirements.find(
     (item) => item.required.minMs !== null && item.required.minMs > 0,
   );
-  return requirement?.required.minMs ?? 60_000;
+  if (requirement && requirement.required.minMs !== null) {
+    return requirement.required.minMs;
+  }
+  // "Place now" UX path: empty span + once-repeat means the user has not
+  // authored any duration. A long default (30 min) leaves no room for
+  // materialization when adjacent SourceTile placements (e.g. the V1_015
+  // 休憩 seed at every 30-min slot) already cover the surrounding slots.
+  // The wire caps the effective duration at 5 min so any partial free gap
+  // accepts the placement. The QuickCreate form still shows the user's
+  // authored duration when present; the 5 min cap is purely a wire-level
+  // accommodation for SourceTile OneTime's materialization contract.
+  if (!state.time.span.start && state.recurring.repeatMode === "once") {
+    return 5 * MIN_MS;
+  }
+  return 60_000;
 }
 
 function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
@@ -113,14 +127,17 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     offset_min: state.source.offsetMin,
   };
 
-  if (
-    state.recurring.repeatMode === "condition" ||
-    (!start && state.recurring.repeatMode === "once")
-  ) {
+  // repeatMode="once" unconditionally maps to SourceGenerationKind::OneTime (0).
+  // Per v1/02 + V1_025 storage constraint, kind=0 requires generation_at NOT NULL.
+  // When the user has not authored a start time (default QuickCreate state — span
+  // is empty), default to now so the worker materializes a placement immediately
+  // and the new tile appears in /v1/timeline. The empty-span UX path is a "create
+  // and place now" intent, not a demand-driven tile (kind=2 requires a Flow).
+  if (state.recurring.repeatMode === "condition") {
     return { kind: 2 as const, ...common };
   }
   if (state.recurring.repeatMode === "once") {
-    return { kind: 0 as const, at: start, ...common };
+    return { kind: 0 as const, at: start ?? now.toISOString(), ...common };
   }
   if (state.recurring.repeatMode === "weekly") {
     return {

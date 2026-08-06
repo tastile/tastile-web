@@ -404,9 +404,21 @@ describe("buildQuickCreateSchedulePayload", () => {
     state.time = {
       ...state.time,
       span: { start: "2026-07-28", end: "2026-07-28" },
+      durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
       timeOfDayMode: "range",
       timeOfDayStart: "09:00",
       timeOfDayEnd: "18:00",
+    };
+    state.plan = {
+      ...state.plan,
+      completion: {
+        ...state.plan.completion,
+        timeRequirements: state.plan.completion.timeRequirements.map((tr, i) =>
+          i === 0
+            ? { ...tr, required: { minMs: 30 * 60_000, maxMs: 30 * 60_000 } }
+            : tr,
+        ),
+      },
     };
 
     const payload = buildQuickCreateSchedulePayload(state);
@@ -629,7 +641,7 @@ describe("buildQuickCreateSchedulePayload", () => {
     },
   );
 
-  it("silently drops unknown repeatMode to kind=0 (NONE) via fallback", () => {
+  it("silently drops unknown repeatMode to kind=1 (RECURRING) via fallback", () => {
     const state = buildDefaultQuickCreateState();
     state.identity = { ...state.identity, title: "Unknown mode" };
     // @ts-expect-error — intentionally passing an invalid repeatMode
@@ -637,10 +649,87 @@ describe("buildQuickCreateSchedulePayload", () => {
 
     const payload = buildQuickCreateSchedulePayload(state);
 
-    // condition and once-without-start both map to kind=2;
+    // repeatMode=condition maps to kind=2 (DemandDriven);
+    // once-with-or-without-start maps to kind=0 (OneTime) — empty span
+    //   defaults `at` to now so the worker materializes a placement;
     // weekly/monthly/interval/daily all hit kind=1 branches;
     // an unrecognized mode hits the final return with kind=1.
     expect(payload.source_schedule?.generation.kind).toBe(1);
+  });
+
+  // ── C1c: once-without-start defaults to kind=0 with `at: now` ─────────
+  // QuickCreate's default state has an empty span. The user expects the
+  // tile to appear in /v1/timeline after submit (UX intent = "create and
+  // place now"), so the wire must emit SourceGenerationKind::OneTime (0)
+  // with `at` defaulted to now — not DemandDriven (2), which requires a
+  // Flow source to materialize.
+  it("once-without-start defaults to kind=0 with at: now", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "No span tile" };
+    // repeatMode stays "once" (default), span stays empty (default).
+
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      new Date("2026-08-01T12:00:00.000Z"),
+    );
+
+    expect(payload.source_schedule?.generation.kind).toBe(0);
+    expect(payload.source_schedule?.generation.at).toBe(
+      "2026-08-01T12:00:00.000Z",
+    );
+  });
+
+  // ── C1d: once-without-start caps duration at 5 min ─────────────────────
+  // The seeded time requirement defaults to 30 min, but the "place now" UX
+  // intent is a short visible event. The wire caps `required_duration_ms`
+  // to 5 min so any partial free gap (e.g. between two 休憩 SourceTile
+  // placements) accepts the materialization; otherwise the occurrence is
+  // marked unplaced (state=1) and the new tile never appears in /v1/timeline.
+  it("once-without-start caps required_duration_ms at 5 min", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Short place-now tile" };
+    // repeatMode stays "once" (default), span stays empty (default).
+    // state.time.durationMinMax.minMs stays null (no user input).
+
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      new Date("2026-08-01T12:00:00.000Z"),
+    );
+
+    expect(payload.source_schedule?.required_duration_ms).toBe(5 * 60_000);
+  });
+
+  // ── C1e: once-without-start honors explicit user duration ──────────────
+  // If the user authors a 30-min duration in QuickCreate, the wire must NOT
+  // override it with the 5-min cap. The cap only applies to the empty-span
+  // "place now" default.
+  it("once-without-start honors explicit user duration over the 5 min cap", () => {
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Authored 30 min tile" };
+    state.time = {
+      ...state.time,
+      durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
+    };
+    // The wire requires the duration range to be represented by a matching
+    // completion time requirement (v1/13 cross-reference).
+    state.plan.completion = {
+      ...state.plan.completion,
+      timeRequirements: [
+        {
+          id: "tr_explicit",
+          observation: { scope: 1, source: 0, aggregate: 0, quantifier: 0 },
+          required: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
+          preferred: null,
+        },
+      ],
+    };
+
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      new Date("2026-08-01T12:00:00.000Z"),
+    );
+
+    expect(payload.source_schedule?.required_duration_ms).toBe(30 * 60_000);
   });
 
   // ── C1b: weekday_mask bit-order round-trip ───────────────────────────
