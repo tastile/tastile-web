@@ -56,4 +56,31 @@ describe("serializeTimeRequirement", () => {
     const wire = serializeTimeRequirement(req) as Record<string, unknown>;
     expect(wire.preferred).toEqual({ min: null, max: 3600000 });
   });
+
+  it("default {required: 30-90min} round-trip preserves duration", () => {
+    const req: TimeRequirement = {
+      id: "tr_default_test",
+      observation: { scope: 1, source: 0, aggregate: 0, quantifier: 0 },
+      required: { minMs: 30 * 60_000, maxMs: 90 * 60_000 },
+      preferred: null,
+    };
+    const wire = serializeTimeRequirement(req) as Record<string, unknown>;
+    const reqWire = wire.required as Record<string, unknown>;
+    expect(reqWire.min).toBe(30 * 60_000);
+    expect(reqWire.max).toBe(90 * 60_000);
+    expect(wire.preferred).toBeNull();
+  });
+
+  it("EACH_DURATION with quantifier=ALL preserves quantifier", () => {
+    const req: TimeRequirement = {
+      id: "tr_each_test",
+      observation: { scope: 1, source: 0, aggregate: 1, quantifier: 0 },
+      required: { minMs: 1800000, maxMs: 1800000 },
+      preferred: null,
+    };
+    const wire = serializeTimeRequirement(req) as Record<string, unknown>;
+    const obs = wire.observation as Record<string, unknown>;
+    expect(obs.aggregate).toBe(1);
+    expect(obs.quantifier).toBe(0);
+  });
 });
