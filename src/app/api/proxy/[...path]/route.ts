@@ -14,6 +14,14 @@ function getIsE2EBypass(): boolean {
 
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 
+const PASS_THROUGH_REQUEST_HEADERS = [
+  "idempotency-key",
+  "idempotency-key-set",
+  "x-request-id",
+  "x-requested-with",
+  "x-forwarded-for",
+] as const;
+
 async function proxyRequest(request: NextRequest, pathSegments: string[]): Promise<NextResponse> {
   const path = pathSegments.join("/");
   const upstreamPath = toV1Path(path);
@@ -59,6 +67,11 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
   const contentType = request.headers.get("content-type");
   if (contentType) {
     headers.set("content-type", contentType);
+  }
+
+  for (const name of PASS_THROUGH_REQUEST_HEADERS) {
+    const value = request.headers.get(name);
+    if (value) headers.set(name, value);
   }
 
   const init: RequestInit = {

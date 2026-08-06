@@ -141,6 +141,61 @@ describe("api proxy v1 path compatibility", () => {
     expect(upstreamHeaders.get("x-tastile-web-session-user")).toBe("cognito-sub-abc");
   });
 
+  it("forwards idempotency, request-id, and x-forwarded-for headers to core", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "https://core.tastile.test";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("{}", { status: 202 }));
+    const { POST } = await import("./[...path]/route");
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "idempotency-key": "key-12345",
+        "x-request-id": "req-abc",
+        "x-forwarded-for": "203.0.113.5",
+      },
+      body: JSON.stringify({ title: "Forward me" }),
+    });
+
+    await POST(request, { params: Promise.resolve({ path: ["v1", "tiles"] }) });
+
+    const upstreamHeaders = fetchMock.mock.calls[0][1]?.headers as Headers;
+    expect(upstreamHeaders.get("idempotency-key")).toBe("key-12345");
+    expect(upstreamHeaders.get("x-request-id")).toBe("req-abc");
+    expect(upstreamHeaders.get("x-forwarded-for")).toBe("203.0.113.5");
+    expect(upstreamHeaders.get("content-type")).toBe("application/json");
+  });
+
+  it("does not forward headers outside the pass-through allowlist", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "https://core.tastile.test";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response("{}", { status: 202 }));
+    const { POST } = await import("./[...path]/route");
+    const request = new NextRequest(`${APP_BASE_URL}/api/proxy/v1/tiles`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: "tastile_uid=cognito-sub-abc",
+        referer: "https://app.example.test/dashboard",
+        "user-agent": "vitest",
+        "x-not-on-list": "should-not-arrive",
+      },
+      body: JSON.stringify({}),
+    });
+
+    await POST(request, { params: Promise.resolve({ path: ["v1", "tiles"] }) });
+
+    const upstreamHeaders = fetchMock.mock.calls[0][1]?.headers as Headers;
+    expect(upstreamHeaders.get("cookie")).toBeNull();
+    expect(upstreamHeaders.get("referer")).toBeNull();
+    expect(upstreamHeaders.get("user-agent")).toBeNull();
+    expect(upstreamHeaders.get("x-not-on-list")).toBeNull();
+  });
+
   it("forwards E2E requests to core without replacing its response", async () => {
     process.env.E2E_BYPASS_AUTH = "1";
     process.env.CLOUD_API_BASE = "https://core.tastile.test";
