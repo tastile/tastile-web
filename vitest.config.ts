@@ -5,7 +5,7 @@ export default defineConfig({
   envDir: false,
   test: {
     globals: true,
-    environment: "node",
+    environment: "jsdom",
     exclude: [
       "e2e/**",
       "node_modules/**",

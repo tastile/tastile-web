@@ -13,17 +13,17 @@ function todayUtc(): string {
 
 async function deleteAllEvents(_page: Page) { 
   // Wipe both the calendar event table and the placement table directly
-  // via docker exec, so the day view is fully empty for the next test.
+  // via wslc container exec, so the day view is fully empty for the next test.
   // /api/events/{id} only touches v1_event, leaving v1_placement rows
   // around to render in the day view.
   try {
-    execFileSync("docker", [
-      "exec", "tastile-core-db-1",
+    execFileSync("wslc", [
+      "container", "exec", "tastile-db",
       "psql", "-U", "tastile", "-d", "tastile_db", "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring RESTART IDENTITY CASCADE;",
+      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
     ], { stdio: "ignore" });
   } catch {
-    // No-op: docker exec is the canonical cleanup; the v0 /api/events
+    // No-op: wslc container exec is the canonical cleanup; the v0 /api/events
     // fallback was removed when v0 endpoints started returning 410.
   }
 }

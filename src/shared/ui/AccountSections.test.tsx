@@ -51,7 +51,7 @@ function compilerControlFlowViolations(
   const source = ts.createSourceFile(
     fileName,
     readFileSync(new URL(fileName, import.meta.url), "utf8"),
-    ts.ScriptTarget.Latest,
+    ts.ScriptTarget.Latest || ts.ScriptTarget.ESNext,
     true,
     ts.ScriptKind.TSX,
   );

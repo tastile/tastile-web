@@ -11,13 +11,13 @@ function todayUtc(): string {
 
 async function deleteAllEvents(_page: Page) { 
   // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
-  // directly via docker exec so the day view is fully empty for the next test.
+  // directly via wslc container exec so the day view is fully empty for the next test.
   execFileSync(
-    "docker",
+    "wslc",
     [
-      "exec", "tastile-core-db-1",
+      "container", "exec", "tastile-db",
       "psql", "-U", "tastile", "-d", "tastile_db", "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring RESTART IDENTITY CASCADE;",
+      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
     ],
     { stdio: "ignore" },
   );

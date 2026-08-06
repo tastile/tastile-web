@@ -509,20 +509,12 @@ describe("buildQuickCreateSchedulePayload", () => {
     );
   });
 
-  it("silently drops recurring.condition with a console.warn (E1a)", () => {
+  it("silently drops legacy recurring rules with console.warn", () => {
     const state = buildDefaultQuickCreateState();
-    state.identity = { ...state.identity, title: "Conditional study" };
+    state.identity = { ...state.identity, title: "Legacy rules study" };
     state.recurring = {
       ...state.recurring,
-      repeatMode: "condition",
-      condition: {
-        kind: 2,
-        children: [],
-        term: {
-          kind: "calendar",
-          value: { weekdayMask: 0b0111111, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 },
-        },
-      },
+      frameRules: [{ id: "fr1", when: null, rank: 0, rules: [] }],
     };
 
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
@@ -530,11 +522,9 @@ describe("buildQuickCreateSchedulePayload", () => {
     const payload = buildQuickCreateSchedulePayload(state);
 
     expect(payload).toBeDefined();
-    expect(payload.source_schedule?.generation.kind).toBe(2);
     expect(warnSpy).toHaveBeenCalledWith(
-      "[Phase C/D reserved] recurring.condition ignored",
+      "[D2a] legacy recurring/flow rules silently dropped in create path",
     );
-    expect(state.recurring.conditionIgnored).toBe(true);
 
     warnSpy.mockRestore();
   });

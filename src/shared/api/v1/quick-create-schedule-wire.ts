@@ -1,10 +1,11 @@
 import type { QuickCreateState } from "@/shared/stores/quick-create-store";
 import { tasksForSubmission } from "@/shared/stores/quick-create-store";
-import type { FrameRule } from "@/tile/model/v1/tile";
 import { uuidv7 } from "@/tile/model/v1/envelope";
+import type { FrameRule } from "@/tile/model/v1/tile";
 import { convertCondition, toWireSetPlanBody } from "./plan-wire";
 import {
   type AnchorModeCode,
+  type Condition,
   type PublishScheduleDefinitionPayload,
   type SourceWindowIncludeCode,
   type WindowRule,
@@ -297,12 +298,6 @@ export function buildQuickCreateSchedulePayload(
   ) {
     console.warn("[D2a] legacy recurring/flow rules silently dropped in create path");
   }
-  if (state.recurring.condition !== null) {
-    console.warn(
-      "[Phase C/D reserved] recurring.condition ignored",
-    );
-    state.recurring.conditionIgnored = true;
-  }
   const durationIsPreserved = state.plan.completion.timeRequirements.some(
     (requirement) =>
       requirement.required.minMs === state.time.durationMinMax.minMs &&
@@ -322,11 +317,15 @@ export function buildQuickCreateSchedulePayload(
           children: submittedTasks.map((task) => task.complete),
         }
       : state.plan.completion.root;
+  // Wire the recurring condition slot into completion.root if present
+  const planRoot = state.recurring.condition !== null
+    ? { ...completionRoot, ...convertCondition(state.recurring.condition) }
+    : completionRoot;
   const plan = toWireSetPlanBody({
     ...state.plan,
     completion: {
       ...state.plan.completion,
-      root: completionRoot,
+      root: planRoot,
       timeRequirements: state.plan.completion.timeRequirements.map((requirement, index) =>
         index === 0
           ? {

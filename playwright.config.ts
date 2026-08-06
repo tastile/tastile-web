@@ -15,11 +15,13 @@ export default defineConfig({
   webServer: {
     command: webServerCommand,
     env: {
-      E2E_BYPASS_AUTH: "1",
-      NEXT_PUBLIC_E2E_BYPASS_AUTH: "1",
+      E2E_BYPASS_AUTH: "0",
+      NEXT_PUBLIC_E2E_BYPASS_AUTH: "0",
       NEXT_PUBLIC_DAEMON_BASE_URL: "http://localhost:31400",
       TASTILE_USE_RUST_CORE: "1",
       TASTILE_RUST_API_URL: "http://127.0.0.1:31400",
+      COOKIE_USER_SUB: "e2e-bridge-test-user",
+      TASTILE_WEB_BRIDGE_SECRET: "dev-e2e-secret",
     },
     url: baseURL,
     reuseExistingServer: true,
