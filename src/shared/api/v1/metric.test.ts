@@ -445,4 +445,63 @@ describe("Metric ser/de round-trip", () => {
     });
     expect(op.right).toEqual({ LITERAL: { value: 2 } });
   });
+
+  it("covers limit=null (no upper bound)", () => {
+    const metric: Metric = {
+      id: "01900000-0000-7000-8000-000000000001",
+      output: MetricOutput.COUNT,
+      expression: { kind: ScalarExpressionKind.LITERAL, value: 1 },
+      limit: null,
+    };
+    const wire = serializeMetric(metric) as Record<string, unknown>;
+    expect(wire.limit).toBeNull();
+  });
+
+  it("covers limit with min=null, max=null (both null)", () => {
+    const metric: Metric = {
+      id: "01900000-0000-7000-8000-000000000001",
+      output: MetricOutput.COUNT,
+      expression: { kind: ScalarExpressionKind.LITERAL, value: 1 },
+      limit: { min: null, max: null },
+    };
+    const wire = serializeMetric(metric) as Record<string, unknown>;
+    expect(wire.limit).toEqual({ min: null, max: null });
+  });
+
+  it("covers limit with min=null only", () => {
+    const metric: Metric = {
+      id: "01900000-0000-7000-8000-000000000001",
+      output: MetricOutput.COUNT,
+      expression: { kind: ScalarExpressionKind.LITERAL, value: 1 },
+      limit: { min: null, max: 100 },
+    };
+    const wire = serializeMetric(metric) as Record<string, unknown>;
+    expect(wire.limit).toEqual({ min: null, max: 100 });
+  });
+
+  it("covers limit with max=null only", () => {
+    const metric: Metric = {
+      id: "01900000-0000-7000-8000-000000000001",
+      output: MetricOutput.COUNT,
+      expression: { kind: ScalarExpressionKind.LITERAL, value: 1 },
+      limit: { min: 10, max: null },
+    };
+    const wire = serializeMetric(metric) as Record<string, unknown>;
+    expect(wire.limit).toEqual({ min: 10, max: null });
+  });
+
+  it("covers all expression kinds in random samples", () => {
+    const seenKinds = new Set<number>();
+    fc.assert(
+      fc.property(metricArb(), (metric) => {
+        seenKinds.add(metric.expression.kind);
+      }),
+      { numRuns: 100 },
+    );
+    expect(seenKinds.has(ScalarExpressionKind.LITERAL)).toBe(true);
+    expect(seenKinds.has(ScalarExpressionKind.READ)).toBe(true);
+    expect(seenKinds.has(ScalarExpressionKind.AGGREGATE)).toBe(true);
+    expect(seenKinds.has(ScalarExpressionKind.OPERATE)).toBe(true);
+    expect(seenKinds.has(ScalarExpressionKind.CHOOSE)).toBe(true);
+  });
 });
