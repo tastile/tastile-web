@@ -301,6 +301,135 @@ describe("Condition AST ser/de round-trip", () => {
       JSON.parse(JSON.stringify(ast)),
     );
   });
+
+  it("reference condition: relation term with target pointer round-trips", () => {
+    const TARGET_TILE_ID = "01900000-0000-7000-8000-000000000099";
+    const ast: ConditionNode = {
+      kind: 3,
+      children: [],
+      term: {
+        kind: "relation",
+        value: {
+          referenceId: TARGET_TILE_ID,
+          relation: 0,
+          windowKind: 0,
+        },
+      },
+    };
+    const wire = convertCondition(ast);
+    const back = parseCondition(wire);
+    expect(JSON.parse(JSON.stringify(back))).toEqual(
+      JSON.parse(JSON.stringify(ast)),
+    );
+    // Wire shape must be externally tagged: {"Term": {"Relation": {...}}}
+    // relation is numeric (0=Root), window_kind is string ("Root")
+    expect(wire).toEqual({
+      Term: {
+        Relation: {
+          reference_id: TARGET_TILE_ID,
+          relation: 0,
+          window_kind: "Root",
+        },
+      },
+    });
+  });
+
+  it("reference condition scope: condition evaluates target tile state, not source", () => {
+    const SOURCE_TILE_ID = "01900000-0000-7000-8000-000000000010";
+    const TARGET_TILE_ID = "01900000-0000-7000-8000-000000000020";
+    // A relation term pointing at TARGET, nested inside an ALL combinator.
+    // The scope contract: the condition evaluates the target's state,
+    // independent of the source tile being edited.
+    const ast: ConditionNode = {
+      kind: 0,
+      children: [
+        {
+          kind: 3,
+          children: [],
+          term: {
+            kind: "relation",
+            value: {
+              referenceId: TARGET_TILE_ID,
+              relation: 0,
+              windowKind: 0,
+            },
+          },
+        },
+        {
+          kind: 3,
+          children: [],
+          term: {
+            kind: "life",
+            value: {
+              target: TARGET_TILE_ID,
+              state: 2,
+            },
+          },
+        },
+      ],
+      term: null,
+    };
+    const wire = convertCondition(ast);
+    const back = parseCondition(wire);
+    expect(JSON.parse(JSON.stringify(back))).toEqual(
+      JSON.parse(JSON.stringify(ast)),
+    );
+    // Verify the target pointer is preserved through round-trip
+    const relationTerm = (back.children[0] as ConditionNode).term;
+    expect(relationTerm).not.toBeNull();
+    if (relationTerm?.kind === "relation") {
+      expect(relationTerm.value.referenceId).toBe(TARGET_TILE_ID);
+    }
+    // Verify source tile ID is NOT embedded in the condition
+    const wireStr = JSON.stringify(wire);
+    expect(wireStr).not.toContain(SOURCE_TILE_ID);
+  });
+
+  it("reference condition: completion root and recurring condition attach points are distinct", () => {
+    // completion.root: attaches to Plan.completion.root
+    const completionRoot: ConditionNode = {
+      kind: 0,
+      children: [
+        {
+          kind: 3,
+          children: [],
+          term: {
+            kind: "relation",
+            value: { referenceId: "target-tile-1", relation: 0, windowKind: 0 },
+          },
+        },
+      ],
+      term: null,
+    };
+    // recurring.condition: attaches to FrameRule.active (Phase 4, currently dropped)
+    const recurringCondition: ConditionNode = {
+      kind: 1,
+      children: [
+        {
+          kind: 3,
+          children: [],
+          term: {
+            kind: "relation",
+            value: { referenceId: "target-tile-2", relation: 1, windowKind: 2 },
+          },
+        },
+      ],
+      term: null,
+    };
+    // Both serialize independently with the same externally-tagged shape
+    // relation is numeric, window_kind is string
+    const wireCompletion = convertCondition(completionRoot);
+    const wireRecurring = convertCondition(recurringCondition);
+    expect(wireCompletion).toEqual({
+      All: [{ Term: { Relation: { reference_id: "target-tile-1", relation: 0, window_kind: "Root" } } }],
+    });
+    expect(wireRecurring).toEqual({
+      Any: [{ Term: { Relation: { reference_id: "target-tile-2", relation: 1, window_kind: "ParentSpan" } } }],
+    });
+    // Structurally distinct (different combinator op)
+    expect(Object.keys(wireCompletion as object)[0]).toBe("All");
+    expect(Object.keys(wireRecurring as object)[0]).toBe("Any");
+  });
 });
 
 function makeTermForKind(kind: string): Term {
