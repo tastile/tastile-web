@@ -272,6 +272,7 @@ export interface QuickCreateState {
   setField: (path: string, value: unknown) => void;
   addTask: (title?: string) => string;
   removeTask: (taskId: string) => void;
+  reorderTasks: (fromIndex: number, toIndex: number) => void;
   setTaskField: (taskId: string, path: string, value: unknown) => void;
   /** Convenience: flips `plan.role` between EXECUTABLE / LABEL in sync with `meta.isLabelOnly`. */
   setLabelOnly: (isLabelOnly: boolean) => void;
@@ -667,6 +668,23 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         },
       },
     })),
+  reorderTasks: (fromIndex, toIndex) =>
+    set((state) => {
+      const tasks = [...state.plan.completion.tasks];
+      if (fromIndex < 0 || fromIndex >= tasks.length) return state;
+      if (toIndex < 0 || toIndex >= tasks.length) return state;
+      const [moved] = tasks.splice(fromIndex, 1);
+      tasks.splice(toIndex, 0, moved);
+      return {
+        plan: {
+          ...state.plan,
+          completion: {
+            ...state.plan.completion,
+            tasks,
+          },
+        },
+      };
+    }),
   setTaskField: (taskId, path, value) =>
     set((state) => ({
       plan: {

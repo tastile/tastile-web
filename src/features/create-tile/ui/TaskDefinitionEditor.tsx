@@ -1,7 +1,7 @@
 "use client";
 
 import { Button, Switch, TextInput, Textarea } from "@mantine/core";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import type { ConditionNode } from "@/tile/model/v1/condition";
@@ -24,6 +24,7 @@ export function TaskDefinitionEditor({ t }: TaskDefinitionEditorProps) {
   const tasks = useQuickCreateStore((s) => s.plan.completion.tasks);
   const addTask = useQuickCreateStore((s) => s.addTask);
   const removeTask = useQuickCreateStore((s) => s.removeTask);
+  const reorderTasks = useQuickCreateStore((s) => s.reorderTasks);
   const setTaskField = useQuickCreateStore((s) => s.setTaskField);
 
   return (
@@ -31,13 +32,37 @@ export function TaskDefinitionEditor({ t }: TaskDefinitionEditorProps) {
       <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
         {t("quickCreate.tasksSectionTitle")}
       </div>
-      {tasks.map((task) => (
+      {tasks.map((task, index) => (
         <div
           key={task.id}
           className="flex flex-col gap-2 rounded-md border border-border/40 bg-surface-1 p-2"
           data-testid="task-row"
         >
           <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-0.5">
+              <Button
+                type="button"
+                size="compact-xs"
+                variant="subtle"
+                onClick={() => reorderTasks(index, index - 1)}
+                disabled={index === 0}
+                aria-label={t("quickCreate.moveUp")}
+                data-testid="task-move-up"
+              >
+                <ChevronUp size={12} />
+              </Button>
+              <Button
+                type="button"
+                size="compact-xs"
+                variant="subtle"
+                onClick={() => reorderTasks(index, index + 1)}
+                disabled={index === tasks.length - 1}
+                aria-label={t("quickCreate.moveDown")}
+                data-testid="task-move-down"
+              >
+                <ChevronDown size={12} />
+              </Button>
+            </div>
             <TextInput
               value={task.content.title}
               onChange={(e) => setTaskField(task.id, "content.title", e.target.value)}
