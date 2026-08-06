@@ -1,7 +1,7 @@
+import { describe, expect, it } from "vitest";
 import * as fc from "fast-check";
 import type { ConditionNode, Term } from "@/tile/model/v1/condition";
-import { convertCondition } from "./plan-wire";
-import { defaultTerm } from "@/features/create-tile/ui/default-term";
+import { convertCondition, convertTerm, parseCondition, parseTerm } from "./plan-wire";
 
 const hexChar = fc.constantFrom(..."0123456789abcdef".split(""));
 
@@ -76,6 +76,37 @@ function termArb(): fc.Arbitrary<Term> {
         ),
       }),
     }),
+    fc.record({
+      kind: fc.constant("fact" as const),
+      value: fc.record({
+        factId: uuidv7Arb,
+        op: fc.constantFrom(0, 1, 2, 3),
+        value: fc.option(fc.oneof(fc.integer(), fc.constant(null)), { nil: null }),
+      }),
+    }),
+    fc.record({
+      kind: fc.constant("metric" as const),
+      value: fc.record({
+        metricId: uuidv7Arb,
+        op: fc.constantFrom(0, 1, 2, 3),
+        value: fc.option(fc.oneof(fc.integer(), fc.constant(null)), { nil: null }),
+      }),
+    }),
+    fc.record({
+      kind: fc.constant("feedback" as const),
+      value: fc.record({
+        feedbackTxnId: uuidv7Arb,
+        op: fc.constantFrom(0, 1, 2, 3),
+        value: fc.option(fc.oneof(fc.integer(), fc.constant(null)), { nil: null }),
+      }),
+    }),
+    fc.record({
+      kind: fc.constant("life" as const),
+      value: fc.record({
+        target: uuidv7Arb,
+        state: fc.constantFrom(0, 1, 2),
+      }),
+    }),
   );
 }
 
@@ -95,12 +126,12 @@ function conditionNodeArb(maxDepth: number): fc.Arbitrary<ConditionNode> {
     }),
     fc.record({
       kind: fc.constant(0),
-      children: fc.array(conditionNodeArb(maxDepth - 1), { maxLength: 3 }).map((c) => [...c]),
+      children: fc.array(conditionNodeArb(maxDepth - 1), { minLength: 1, maxLength: 3 }).map((c) => [...c]),
       term: fc.constant(null),
     }),
     fc.record({
       kind: fc.constant(1),
-      children: fc.array(conditionNodeArb(maxDepth - 1), { maxLength: 3 }).map((c) => [...c]),
+      children: fc.array(conditionNodeArb(maxDepth - 1), { minLength: 1, maxLength: 3 }).map((c) => [...c]),
       term: fc.constant(null),
     }),
     fc.record({
@@ -112,16 +143,29 @@ function conditionNodeArb(maxDepth: number): fc.Arbitrary<ConditionNode> {
 }
 
 describe("Condition AST ser/de round-trip", () => {
-  it("convertCondition preserves structure for 100 random ASTs", () => {
+  it("parseCondition(convertCondition(ast)) deep-equals ast for 100 random ASTs", () => {
     fc.assert(
       fc.property(conditionNodeArb(3), (ast) => {
         const wire = convertCondition(ast);
-        const json = JSON.stringify(wire);
-        expect(json).toBeTruthy();
-        const parsed = JSON.parse(json);
-        expect(parsed).toBeDefined();
+        const back = parseCondition(wire);
+        expect(JSON.parse(JSON.stringify(back))).toEqual(
+          JSON.parse(JSON.stringify(ast)),
+        );
       }),
-      { numRuns: 100 },
+      { numRuns: 100, endOnFailure: true },
+    );
+  });
+
+  it("parseTerm(convertTerm(term)) deep-equals term for 100 random terms", () => {
+    fc.assert(
+      fc.property(termArb(), (term) => {
+        const wire = convertTerm(term);
+        const back = parseTerm(wire);
+        expect(JSON.parse(JSON.stringify(back))).toEqual(
+          JSON.parse(JSON.stringify(term)),
+        );
+      }),
+      { numRuns: 100, endOnFailure: true },
     );
   });
 
@@ -162,11 +206,14 @@ describe("Condition AST ser/de round-trip", () => {
               term: null,
             };
       const wire = convertCondition(ast);
-      expect(wire).toBeDefined();
+      const back = parseCondition(wire);
+      expect(JSON.parse(JSON.stringify(back))).toEqual(
+        JSON.parse(JSON.stringify(ast)),
+      );
     }
   });
 
-  it("covers all 6 core term kinds", () => {
+  it("covers all 9 store-side term kinds in round-trip", () => {
     const termKinds = [
       "calendar",
       "moment",
@@ -174,11 +221,111 @@ describe("Condition AST ser/de round-trip", () => {
       "task",
       "requirement",
       "gap",
+      "fact",
+      "metric",
+      "feedback",
+      "life",
     ];
     for (const kind of termKinds) {
-      const ast: ConditionNode = { kind: 3, children: [], term: defaultTerm(kind) };
-      const wire = convertCondition(ast);
-      expect(wire).toBeDefined();
+      const term = makeTermForKind(kind);
+      const wire = convertTerm(term);
+      const back = parseTerm(wire);
+      expect(back.kind).toBe(term.kind);
     }
   });
+
+  it("hand-picked fixture: ALL with two TERM children", () => {
+    const ast: ConditionNode = {
+      kind: 0,
+      children: [
+        {
+          kind: 3,
+          children: [],
+          term: { kind: "task", value: { taskId: "01900000-0000-7000-8000-000000000001", state: 2 } },
+        },
+        {
+          kind: 3,
+          children: [],
+          term: { kind: "metric", value: { metricId: "01900000-0000-7000-8000-000000000002", op: 0, value: 100 } },
+        },
+      ],
+      term: null,
+    };
+    const wire = convertCondition(ast);
+    const back = parseCondition(wire);
+    expect(JSON.parse(JSON.stringify(back))).toEqual(
+      JSON.parse(JSON.stringify(ast)),
+    );
+  });
+
+  it("hand-picked fixture: NOT wrapping TERM", () => {
+    const ast: ConditionNode = {
+      kind: 2,
+      children: [
+        {
+          kind: 3,
+          children: [],
+          term: { kind: "calendar", value: { weekdayMask: 0b1111111, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } },
+        },
+      ],
+      term: null,
+    };
+    const wire = convertCondition(ast);
+    const back = parseCondition(wire);
+    expect(JSON.parse(JSON.stringify(back))).toEqual(
+      JSON.parse(JSON.stringify(ast)),
+    );
+  });
+
+  it("hand-picked fixture: nested ANY > ALL > TERM", () => {
+    const ast: ConditionNode = {
+      kind: 1,
+      children: [
+        {
+          kind: 0,
+          children: [
+            {
+              kind: 3,
+              children: [],
+              term: { kind: "gap", value: { scope: 2, leftAnchor: { referenceId: null, point: null }, rightAnchor: { referenceId: null, point: null }, size: { minMs: 60000, maxMs: 3600000 } } },
+            },
+          ],
+          term: null,
+        },
+      ],
+      term: null,
+    };
+    const wire = convertCondition(ast);
+    const back = parseCondition(wire);
+    expect(JSON.parse(JSON.stringify(back))).toEqual(
+      JSON.parse(JSON.stringify(ast)),
+    );
+  });
 });
+
+function makeTermForKind(kind: string): Term {
+  switch (kind) {
+    case "calendar":
+      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } };
+    case "moment":
+      return { kind: "moment", value: { referenceId: null, point: null, offsetMs: 0 } };
+    case "relation":
+      return { kind: "relation", value: { referenceId: "01900000-0000-7000-8000-000000000001", relation: 0, windowKind: 0 } };
+    case "task":
+      return { kind: "task", value: { taskId: "01900000-0000-7000-8000-000000000001", state: 0 } };
+    case "requirement":
+      return { kind: "requirement", value: { requirementId: "01900000-0000-7000-8000-000000000001", state: 0 } };
+    case "gap":
+      return { kind: "gap", value: { scope: 0, leftAnchor: { referenceId: null, point: null }, rightAnchor: { referenceId: null, point: null }, size: { minMs: null, maxMs: null } } };
+    case "fact":
+      return { kind: "fact", value: { factId: "01900000-0000-7000-8000-000000000001", op: 0, value: null } };
+    case "metric":
+      return { kind: "metric", value: { metricId: "01900000-0000-7000-8000-000000000001", op: 0, value: null } };
+    case "feedback":
+      return { kind: "feedback", value: { feedbackTxnId: "01900000-0000-7000-8000-000000000001", op: 0, value: null } };
+    case "life":
+      return { kind: "life", value: { target: "01900000-0000-7000-8000-000000000001", state: 0 } };
+    default:
+      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } };
+  }
+}

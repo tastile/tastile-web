@@ -31,6 +31,7 @@
  */
 
 import type { ConditionNode, Term } from "@/tile/model/v1/condition";
+import { ConditionKind } from "@/tile/model/v1/constants";
 import { uuidv7 } from "@/tile/model/v1/envelope";
 import { type DecisionDef, serializeDecision } from "./decision";
 import type { WireCompletion, WirePlanning } from "./openapi-contract";
@@ -119,6 +120,145 @@ export function convertCondition(node: unknown): unknown {
   // Unknown discriminator: pass the object through the key renamer.
   return camelToSnakeDeep(node);
 }
+
+const SNAKE_TO_CAMEL = /_([a-z0-9])/g;
+
+function snakeToCamelKey(key: string): string {
+  return key.replace(SNAKE_TO_CAMEL, (_match, letter: string) => letter.toUpperCase());
+}
+
+function snakeToCamelDeep(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => snakeToCamelDeep(item));
+  }
+  if (isPlainObject(value)) {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      out[snakeToCamelKey(k)] = snakeToCamelDeep(v);
+    }
+    return out;
+  }
+  return value;
+}
+
+/**
+ * Parse a Condition from the externally-tagged wire form back to the
+ * internally-tagged store form. Inverse of `convertCondition`.
+ */
+export function parseCondition(wire: unknown): ConditionNode {
+  if (!isPlainObject(wire)) {
+    return { kind: ConditionKind.ALL, children: [], term: null };
+  }
+  if ("All" in wire) {
+    const children = (wire.All as unknown[] ?? []).map(parseCondition);
+    return { kind: ConditionKind.ALL, children, term: null };
+  }
+  if ("Any" in wire) {
+    const children = (wire.Any as unknown[] ?? []).map(parseCondition);
+    return { kind: ConditionKind.ANY, children, term: null };
+  }
+  if ("Not" in wire) {
+    const child = wire.Not != null ? parseCondition(wire.Not) : null;
+    return { kind: ConditionKind.NOT, children: child ? [child] : [], term: null };
+  }
+  if ("Term" in wire) {
+    return { kind: ConditionKind.TERM, children: [], term: parseTerm(wire.Term) };
+  }
+  return { kind: ConditionKind.ALL, children: [], term: null };
+}
+
+/**
+ * Parse a Term from the externally-tagged wire form back to the
+ * internally-tagged store form. Inverse of `convertTerm`.
+ */
+export function parseTerm(wire: unknown): Term {
+  if (!isPlainObject(wire)) {
+    return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } };
+  }
+  const variantKey = Object.keys(wire)[0];
+  if (typeof variantKey !== "string") {
+    return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } };
+  }
+  const kind = variantKey[0].toLowerCase() + variantKey.slice(1);
+  const rawValue = wire[variantKey];
+  if (!isPlainObject(rawValue)) {
+    return defaultTermParse(kind);
+  }
+  const camelValue = snakeToCamelDeep(rawValue) as Record<string, unknown>;
+  const value = adjustTermValueParse(kind, camelValue);
+  return { kind, value } as unknown as Term;
+}
+
+function defaultTermParse(kind: string): Term {
+  switch (kind) {
+    case "task":
+      return { kind: "task", value: { taskId: "", state: 0 } };
+    case "requirement":
+      return { kind: "requirement", value: { requirementId: "", state: 0 } };
+    case "relation":
+      return { kind: "relation", value: { referenceId: "", relation: 0, windowKind: 0 } };
+    case "moment":
+      return { kind: "moment", value: { referenceId: null, point: null, offsetMs: 0 } };
+    case "gap":
+      return { kind: "gap", value: { scope: 0, leftAnchor: { referenceId: null, point: null }, rightAnchor: { referenceId: null, point: null }, size: { minMs: null, maxMs: null } } };
+    case "calendar":
+      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } };
+    case "fact":
+      return { kind: "fact", value: { factId: "", op: 0, value: null } };
+    case "metric":
+      return { kind: "metric", value: { metricId: "", op: 0, value: null } };
+    case "feedback":
+      return { kind: "feedback", value: { feedbackTxnId: "", op: 0, value: null } };
+    case "life":
+      return { kind: "life", value: { target: "", state: 0 } };
+    default:
+      return { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } };
+  }
+}
+
+function adjustTermValueParse(kind: string, value: Record<string, unknown>): Record<string, unknown> {
+  switch (kind) {
+    case "task": {
+      const stateStr = typeof value.state === "string" ? value.state : undefined;
+      const stateNum = typeof value.state === "number" ? value.state : undefined;
+      const state = stateStr != null
+        ? (TASK_STATE_KIND_REVERSE[stateStr] ?? 0)
+        : (stateNum ?? 0);
+      return { taskId: value.taskId ?? "", state };
+    }
+    case "requirement": {
+      const stateStr = typeof value.state === "string" ? value.state : undefined;
+      const stateNum = typeof value.state === "number" ? value.state : undefined;
+      const state = stateStr != null
+        ? (REQUIREMENT_STATE_REVERSE[stateStr] ?? 0)
+        : (stateNum ?? 0);
+      return { requirementId: value.timeRequirement ?? value.requirementId ?? "", state };
+    }
+    case "relation": {
+      const wkStr = typeof value.windowKind === "string" ? value.windowKind : undefined;
+      const wkNum = typeof value.windowKind === "number" ? value.windowKind : undefined;
+      const windowKind = wkStr != null
+        ? (RELATION_WINDOW_KIND_REVERSE[wkStr] ?? 0)
+        : (wkNum ?? 0);
+      return { referenceId: value.referenceId ?? "", relation: value.relation ?? 0, windowKind };
+    }
+    case "moment": {
+      return { referenceId: value.referenceId ?? null, point: value.point ?? null, offsetMs: value.offset ?? value.offsetMs ?? 0 };
+    }
+    default:
+      return value;
+  }
+}
+
+const TASK_STATE_KIND_REVERSE: Record<string, number> = {
+  Visible: 0, Marked: 1, Completed: 2, NotCompleted: 3,
+};
+const REQUIREMENT_STATE_REVERSE: Record<string, number> = {
+  Met: 0, Unmet: 1, Any: 2,
+};
+const RELATION_WINDOW_KIND_REVERSE: Record<string, number> = {
+  Root: 0, LabelSpan: 1, ParentSpan: 2, Gap: 3,
+};
 
 /**
  * Convert a Term to the externally-tagged wire form. The Rust `Term`
