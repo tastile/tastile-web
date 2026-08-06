@@ -25,6 +25,7 @@ const payload: PublishScheduleDefinitionPayload = {
   },
   reference_targets: [],
   windows: [{ kind: 0, bounds: { start: "2026-07-01T00:00:00Z", end: "2026-07-02T00:00:00Z" }, rules: [{ id: "018f0000-0000-7000-8000-000000000002", weekday_mask: null, time_start_min: null, time_end_min: null, holiday_kind: 2, date_range: null, offset_min: 0, label_placement: null, parent_placement: null, gap_left_condition_id: null, gap_right_condition_id: null, gap_size: null }] }],
+  frame_rules: [],
   recurrence: null,
   flows: [{ observes: ["FactChanged"], when: null, candidates: [{ when: { Term: { Fact: { key: "ready", comparison: "Exists" } } }, rank: 0, outputs: [{ ProposeNewPlanPlacement: { span: { start: "2026-07-01T00:00:00Z", end: "2026-07-02T00:00:00Z" } } }] }] }],
 };

@@ -509,24 +509,28 @@ describe("buildQuickCreateSchedulePayload", () => {
     );
   });
 
-  it("silently drops legacy recurring rules with console.warn", () => {
+  it("maps frameRules to frame_rules in payload (D1a)", () => {
     const state = buildDefaultQuickCreateState();
-    state.identity = { ...state.identity, title: "Legacy rules study" };
+    state.identity = { ...state.identity, title: "FrameRule study" };
     state.recurring = {
       ...state.recurring,
-      frameRules: [{ id: "fr1", when: null, rank: 0, rules: [] }],
+      frameRules: [
+        {
+          id: "fr1",
+          generator: { kind: "step", value: { step: 86_400_000, origin: null, bounds: null } },
+          active: null,
+        },
+      ],
     };
-
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     const payload = buildQuickCreateSchedulePayload(state);
 
-    expect(payload).toBeDefined();
-    expect(warnSpy).toHaveBeenCalledWith(
-      "[D2a] legacy recurring/flow rules silently dropped in create path",
-    );
-
-    warnSpy.mockRestore();
+    expect(payload.frame_rules).toHaveLength(1);
+    expect(payload.frame_rules[0].id).toBe("fr1");
+    expect(payload.frame_rules[0].rank).toBe(0);
+    expect(payload.frame_rules[0].generator).toEqual({
+      Step: { step: 86_400_000, origin: null, bounds: null },
+    });
   });
 
   it("silently drops non-empty changeSets with a console.warn (D2a)", () => {
@@ -566,7 +570,7 @@ describe("buildQuickCreateSchedulePayload", () => {
 
     expect(payload).toBeDefined();
     expect(warnSpy).toHaveBeenCalledWith(
-      "[D2a] legacy recurring/flow rules silently dropped in create path",
+      "[D2a] legacy rules/planning flows silently dropped in create path",
     );
 
     warnSpy.mockRestore();

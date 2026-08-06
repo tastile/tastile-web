@@ -103,8 +103,8 @@ export function buildFloatingSchedulePayload(
     ],
     windows: [
       {
-        kind: 1,
-        bounds: { start: input.label.start, end: input.label.end },
+        kind: 0 as const,
+        bounds: { start: input.window.start, end: input.window.end },
         rules: [
           {
             id: windowRuleId,
@@ -114,7 +114,7 @@ export function buildFloatingSchedulePayload(
             holiday_kind: 2,
             date_range: null,
             offset_min: 0,
-            label_placement: input.label.placementId,
+            label_placement: null,
             parent_placement: null,
             gap_left_condition_id: null,
             gap_right_condition_id: null,
@@ -123,6 +123,7 @@ export function buildFloatingSchedulePayload(
         ],
       },
     ],
+    frame_rules: [],
     recurrence: null,
     flows: [
       {

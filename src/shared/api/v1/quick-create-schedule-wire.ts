@@ -253,6 +253,31 @@ function minimumGapCondition(
   };
 }
 
+function mapFrameRule(rule: FrameRule): PublishScheduleDefinitionPayload["frame_rules"][number] {
+  const active = rule.active ? (convertCondition(rule.active) as Condition) : null;
+  const gen = rule.generator;
+  let generator: PublishScheduleDefinitionPayload["frame_rules"][number]["generator"];
+  switch (gen.kind) {
+    case "step":
+      generator = { Step: { step: gen.value.step, origin: gen.value.origin, bounds: gen.value.bounds } };
+      break;
+    case "reference":
+      generator = { Reference: { reference_id: gen.value.referenceId, align: gen.value.align } };
+      break;
+    case "calendar":
+      generator = {
+        Calendar: { unit: gen.value.unit, weekday_mask: gen.value.weekdayMask, holiday_kind: gen.value.holidayKind },
+      };
+      break;
+    case "transform":
+      generator = {
+        Transform: { source_frame_id: gen.value.sourceFrameId, shift: gen.value.shift, scale: gen.value.scale },
+      };
+      break;
+  }
+  return { id: rule.id, active, rank: 0, generator };
+}
+
 export function buildQuickCreateSchedulePayload(
   state: QuickCreateScheduleState,
   now = new Date(),
@@ -288,15 +313,12 @@ export function buildQuickCreateSchedulePayload(
   if (state.advanced.changeSets.length > 0 || state.advanced.rules.length > 0) {
     console.warn("[D2a] advanced change rules silently dropped in create path");
   }
-  // Legacy frameRules / rules / planning.flows: not wired to create-path.
+  // Legacy rules / planning.flows: not wired to create-path.
   // Source flow sequences (state.source.flowSequences) are the canonical
   // create-path flows and are handled separately below.
-  if (
-    state.recurring.frameRules.length > 0 ||
-    state.recurring.rules.length > 0 ||
-    state.plan.planning.flows.length > 0
-  ) {
-    console.warn("[D2a] legacy recurring/flow rules silently dropped in create path");
+  // frameRules ARE wired (D1a) and mapped into frame_rules below.
+  if (state.recurring.rules.length > 0 || state.plan.planning.flows.length > 0) {
+    console.warn("[D2a] legacy rules/planning flows silently dropped in create path");
   }
   const durationIsPreserved = state.plan.completion.timeRequirements.some(
     (requirement) =>
@@ -408,6 +430,7 @@ export function buildQuickCreateSchedulePayload(
     },
     reference_targets: referenceTargets,
     windows: publishWindows(state),
+    frame_rules: state.recurring.frameRules.map(mapFrameRule),
     recurrence: null,
     flows: state.source.flowSequences.map((flow) => {
       const firstDuration = flow.steps[0]?.emitDurationMs ?? duration;
