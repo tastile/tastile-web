@@ -592,6 +592,7 @@ export function ConditionEditor({
   node,
   onChange,
   t,
+  slot,
   tileOptions,
   taskOptions,
   requirementOptions,
@@ -601,6 +602,8 @@ export function ConditionEditor({
   node: ConditionNode;
   onChange: (next: ConditionNode) => void;
   t: (k: string) => string;
+  /** Identifies which store path this editor writes to. Used for test assertions and analytics. */
+  slot?: "completion.root" | "recurring.condition";
   tileOptions?: { value: string; label: string }[];
   taskOptions?: { value: string; label: string }[];
   requirementOptions?: { value: string; label: string }[];
@@ -621,7 +624,7 @@ export function ConditionEditor({
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1" data-testid={slot ? `condition-editor-${slot}` : "condition-editor"}>
       <ConditionKindSegmented
         value={node.kind as number}
         onChange={(kind) => {
@@ -686,6 +689,7 @@ export function ConditionEditor({
                     onChange({ ...node, children });
                   }}
                   t={t}
+                  slot={slot}
                   tileOptions={tileOptions}
                   taskOptions={taskOptions}
                   requirementOptions={requirementOptions}

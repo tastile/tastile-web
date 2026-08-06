@@ -101,4 +101,47 @@ describe("ConditionEditor", () => {
     );
     expect(container).toBeTruthy();
   });
+
+  it("slot=completion.root sets data-testid on root element", () => {
+    const node = {
+      kind: ConditionKind.TERM,
+      children: [],
+      term: { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } },
+    };
+    const onChange = vi.fn();
+    const { container } = render(
+      <ConditionEditor node={node as never} onChange={onChange} t={t} slot="completion.root" />,
+    );
+    const root = container.querySelector('[data-testid="condition-editor-completion.root"]');
+    expect(root).toBeTruthy();
+  });
+
+  it("slot=recurring.condition sets data-testid on root element", () => {
+    const node = {
+      kind: ConditionKind.TERM,
+      children: [],
+      term: { kind: "relation", value: { referenceId: "01900000-0000-7000-8000-000000000001", relation: 0, windowKind: 0 } },
+    };
+    const onChange = vi.fn();
+    const { container } = render(
+      <ConditionEditor node={node as never} onChange={onChange} t={t} slot="recurring.condition" />,
+    );
+    const root = container.querySelector('[data-testid="condition-editor-recurring.condition"]');
+    expect(root).toBeTruthy();
+  });
+
+  it("no slot sets generic data-testid", () => {
+    const node = {
+      kind: ConditionKind.TERM,
+      children: [],
+      term: { kind: "calendar", value: { weekdayMask: 0, timeStart: null, timeEnd: null, holidayKind: 2, dateRange: null, offsetMin: 0 } },
+    };
+    const onChange = vi.fn();
+    const { container } = render(
+      <ConditionEditor node={node as never} onChange={onChange} t={t} />,
+    );
+    const root = container.querySelector('[data-testid="condition-editor"]');
+    expect(root).toBeTruthy();
+    expect(container.querySelector('[data-testid="condition-editor-completion.root"]')).toBeNull();
+  });
 });
