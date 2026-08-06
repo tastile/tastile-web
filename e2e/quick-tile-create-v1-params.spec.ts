@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { execFileSync } from "node:child_process";
+import { resetDb } from "./helpers/v1";
 
-function todayUtc(): string { 
+function todayUtc(): string {
   // Use the date in the user's local timezone (the test runner is
   // pinned to Asia/Tokyo). UTC-vs-local would otherwise drop events
   // created at the day boundary because the day view queries
@@ -9,23 +9,10 @@ function todayUtc(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 }
 
-async function deleteAllEvents(_page: Page) { 
-  // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
-  // directly via wslc container exec so the day view is fully empty for the next test.
-  execFileSync(
-    "wslc",
-    [
-      "container", "exec", "tastile-dev-api",
-      "psql", "-U", "tastile", "-d", "tastile", "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
-    ],
-    { stdio: "ignore" },
-  );
-}
-
 test.describe("quick tile create — v1 parameters", () => {
   test.beforeEach(async ({ page }) => {
-    await deleteAllEvents(page);
+    // v1 params write only v1_placement but v1_tile still accumulates per test
+    await resetDb();
   });
 
   test("duration exposes a base input (v1 placement.duration)", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { execFileSync } from "node:child_process";
+import { resetDb } from "./helpers/v1";
 
 function todayUtc(): string {
   // Use the date in the user's local timezone (the test runner is
@@ -7,25 +7,6 @@ function todayUtc(): string {
   // created at the day boundary because the day view queries
   // [localMidnight, localMidnight+24h).
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
-}
-
-
-
-async function deleteAllEvents(_page: Page) { 
-  // Wipe both the calendar event table and the placement table directly
-  // via wslc container exec, so the day view is fully empty for the next test.
-  // /api/events/{id} only touches v1_event, leaving v1_placement rows
-  // around to render in the day view.
-  try {
-    execFileSync("wslc", [
-      "container", "exec", "tastile-dev-api",
-      "psql", "-U", "tastile", "-d", "tastile", "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
-    ], { stdio: "ignore" });
-  } catch {
-    // No-op: wslc container exec is the canonical cleanup; the v0 /api/events
-    // fallback was removed when v0 endpoints started returning 410.
-  }
 }
 
 interface CreatedTile { id: string; occurrenceId: string; tileId?: string }
@@ -115,7 +96,8 @@ async function createEventViaApi(
 
 test.describe("quick tile — cell click + tile click edit/delete", () => {
   test.beforeEach(async ({ page }) => {
-    await deleteAllEvents(page);
+    // edit/delete cycle leaves stale v1_tile if not resetDb()'d
+    await resetDb();
   });
 
   test("clicking a day-view slot opens the create panel with the slot time preset", async ({ page }) => {
