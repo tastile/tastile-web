@@ -2,7 +2,7 @@
 
 import { Button, NumberInput, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
-import { GitBranch, ListChecks, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, GitBranch, ListChecks, Plus, Search, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 
 import { RowSegmented } from "@/shared/ui/form";
@@ -59,6 +59,7 @@ function TermKindSegmented({
     { value: "task", label: t("quickCreate.termTask") },
     { value: "fact", label: t("quickCreate.termFact") },
     { value: "metric", label: t("quickCreate.termMetric") },
+    { value: "feedback", label: t("quickCreate.termFeedback") },
     { value: "life", label: t("quickCreate.termLife") },
   ];
   return (
@@ -692,19 +693,51 @@ export function ConditionEditor({
                   depth={depth + 1}
                 />
                 {!isNot && (
-                  <Button
-                    type="button"
-                    size="xs"
-                    variant="subtle"
-                    leftSection={<Trash2 size={14} aria-hidden="true" />}
-                    onClick={() => {
-                      const children = node.children.slice();
-                      children.splice(i, 1);
-                      onChange({ ...node, children });
-                    }}
-                    aria-label={t("quickCreate.conditionRemoveChild")}
-                    className="self-start text-foreground-muted hover:text-danger"
-                  />
+                  <div className="flex items-center gap-1">
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="subtle"
+                      leftSection={<ChevronUp size={14} aria-hidden="true" />}
+                      onClick={() => {
+                        if (i === 0) return;
+                        const children = node.children.slice();
+                        [children[i - 1], children[i]] = [children[i], children[i - 1]];
+                        onChange({ ...node, children });
+                      }}
+                      disabled={i === 0}
+                      aria-label={t("quickCreate.conditionMoveUp")}
+                      className="text-foreground-muted hover:text-foreground"
+                    />
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="subtle"
+                      leftSection={<ChevronDown size={14} aria-hidden="true" />}
+                      onClick={() => {
+                        if (i >= node.children.length - 1) return;
+                        const children = node.children.slice();
+                        [children[i], children[i + 1]] = [children[i + 1], children[i]];
+                        onChange({ ...node, children });
+                      }}
+                      disabled={i >= node.children.length - 1}
+                      aria-label={t("quickCreate.conditionMoveDown")}
+                      className="text-foreground-muted hover:text-foreground"
+                    />
+                    <Button
+                      type="button"
+                      size="xs"
+                      variant="subtle"
+                      leftSection={<Trash2 size={14} aria-hidden="true" />}
+                      onClick={() => {
+                        const children = node.children.slice();
+                        children.splice(i, 1);
+                        onChange({ ...node, children });
+                      }}
+                      aria-label={t("quickCreate.conditionRemoveChild")}
+                      className="text-foreground-muted hover:text-danger"
+                    />
+                  </div>
                 )}
               </div>
             );
