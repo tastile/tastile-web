@@ -113,9 +113,9 @@ describe("buildQuickCreateSchedulePayload", () => {
     expect(payload.source_schedule).toEqual({
       required_duration_ms: 1_800_000,
       generation: {
-        kind: 2,
+        kind: 1,
         starts_at: "2026-07-28T01:00:00.000Z",
-        interval_ms: 86_400_000,
+        interval_ms: 1_800_000,
         ends_at: "2026-09-30T00:00:00.000Z",
         weekday_mask: 0b0101010,
         date_range_start: null,
@@ -600,11 +600,14 @@ describe("buildQuickCreateSchedulePayload", () => {
   });
 
   // ── C1a: Recurring.kind enum round-trip ──────────────────────────────
+  // SourceGenerationKind has only 3 valid values (0/1/2). weekly must map
+  // to Recurring (1), monthly falls back to Recurring (1) with DAY_MS
+  // since the v1/02 domain has no first-class monthly generator.
   it.each([
     ["once", 0, "NONE"],
     ["daily", 1, "DAILY"],
-    ["weekly", 2, "WEEKLY"],
-    ["monthly", 3, "MONTHLY"],
+    ["weekly", 1, "WEEKLY"],
+    ["monthly", 1, "MONTHLY"],
   ])(
     "maps repeatMode=%s to generation.kind=%d (%s)",
     (repeatMode: string, expectedKind: number) => {
@@ -635,7 +638,7 @@ describe("buildQuickCreateSchedulePayload", () => {
     const payload = buildQuickCreateSchedulePayload(state);
 
     // condition and once-without-start both map to kind=2;
-    // the fallthrough for daily/weekly/interval/monthly is kind=1;
+    // weekly/monthly/interval/daily all hit kind=1 branches;
     // an unrecognized mode hits the final return with kind=1.
     expect(payload.source_schedule?.generation.kind).toBe(1);
   });

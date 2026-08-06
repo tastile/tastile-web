@@ -131,35 +131,31 @@ test.describe("quick tile create — recurring e2e", () => {
     }
     expect(count, `expected ${expected} placements for Mon-Fri over 14d`).toBeGreaterThanOrEqual(expected);
 
-    // DB-level assertion: SourceSchedule fields via wslc psql.
+    // DB-level assertion: SourceTile fields via wslc psql.
+    // Canonical columns: generation_kind, generation_weekday_mask,
+    // generation_interval_ms, generation_offset_min, generation_date_range_end,
+    // split_kind, priority (all flat columns on v1_source_tile).
     const scheduleRow = wslcPsql(
-      "SELECT jsonb_build_object(" +
-        "'kind', generation->>'kind'," +
-        "'weekday_mask', generation->>'weekday_mask'," +
-        "'interval_ms', generation->>'interval_ms'," +
-        "'offset_min', generation->>'offset_min'," +
-        "'date_range_end', generation->>'date_range_end'," +
-        "'split_kind', split_policy->>'kind'," +
-        "'priority', priority" +
-      ") FROM v1_source_schedule WHERE generation->>'weekday_mask' = '31' ORDER BY id DESC LIMIT 1;",
+      "SELECT generation_kind::text, generation_weekday_mask::text, " +
+        "generation_interval_ms::text, generation_offset_min::text, " +
+        "generation_date_range_end::text, split_kind::text, priority::text " +
+        "FROM v1_source_tile WHERE generation_weekday_mask = 31 " +
+        "ORDER BY created_at DESC LIMIT 1;",
     );
-    const schedule = JSON.parse(scheduleRow) as {
-      kind: string; weekday_mask: string; interval_ms: string;
-      offset_min: string; date_range_end: string; split_kind: string; priority: number;
-    };
-    expect(schedule.kind, "generation.kind").toBe("1");
-    expect(schedule.weekday_mask, "generation.weekday_mask").toBe("31");
-    expect(schedule.interval_ms, "generation.interval_ms").toBe("1800000");
-    expect(schedule.offset_min, "generation.offset_min").toBe("540");
-    expect(schedule.date_range_end, "generation.date_range_end").toBe(end);
-    expect(schedule.split_kind, "split_policy.kind").toBe("0");
-    expect(schedule.priority, "priority").toBe(5);
+    const fields = scheduleRow.split("|");
+    expect(fields[0], "generation_kind").toBe("1");
+    expect(fields[1], "generation_weekday_mask").toBe("31");
+    expect(fields[2], "generation_interval_ms").toBe("1800000");
+    expect(fields[3], "generation_offset_min").toBe("540");
+    expect(fields[4], "generation_date_range_end").toBe(end);
+    expect(fields[5], "split_kind").toBe("0");
+    expect(fields[6], "priority").toBe("5");
 
     // DB-level assertion: placement count matches expected weekdays.
     const placementCount = Number(wslcPsql(
       "SELECT count(*) FROM v1_placement p " +
-      "JOIN v1_source_schedule s ON p.source_schedule_id = s.id " +
-      "WHERE s.generation->>'weekday_mask' = '31';",
+      "JOIN v1_source_tile s ON p.source_tile_id = s.source_tile_id " +
+      "WHERE s.generation_weekday_mask = 31;",
     ));
     expect(placementCount, `expected ~${expected} placements with weekday_mask=31`).toBeGreaterThanOrEqual(expected);
   });

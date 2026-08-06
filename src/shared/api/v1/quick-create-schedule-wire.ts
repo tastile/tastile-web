@@ -122,18 +122,30 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   if (state.recurring.repeatMode === "once") {
     return { kind: 0 as const, at: start, ...common };
   }
-  if (state.recurring.repeatMode === "monthly") {
+  if (state.recurring.repeatMode === "weekly") {
     return {
-      kind: 3 as const,
+      kind: 1 as const,
       starts_at: start ?? now.toISOString(),
-      interval_ms: DAY_MS,
+      // Weekly authoring honors the user-authored interval (per
+      // C-recurring-source.md 変更手順 step 3: "Round-trip 30 min →
+      // 1800000 ms"). The weekday_mask filter happens server-side in
+      // SourceGenerationKind::Recurring expansion (v1/02).
+      interval_ms: intervalAuthoredMs(
+        state.recurring.intervalValue,
+        state.recurring.intervalUnit,
+      ),
       ends_at: end,
       ...common,
     };
   }
-  if (state.recurring.repeatMode === "weekly") {
+  if (state.recurring.repeatMode === "monthly") {
+    // monthly has no first-class domain support in SourceGenerationKind
+    // (valid: 0 OneTime / 1 Recurring / 2 DemandDriven per v1/02). Map
+    // monthly to Recurring with DAY_MS so the wire stays valid; the
+    // server will expand daily and the date_range_* bounds cap the run.
+    // A future CalendarGenerator unit=monthly wire is the proper fix.
     return {
-      kind: 2 as const,
+      kind: 1 as const,
       starts_at: start ?? now.toISOString(),
       interval_ms: DAY_MS,
       ends_at: end,
@@ -144,8 +156,6 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   return {
     kind: 1 as const,
     starts_at: start ?? now.toISOString(),
-    // Weekly authoring is a daily expansion filtered by weekday_mask. A
-    // seven-day step would only ever visit the weekday of starts_at.
     interval_ms:
       state.recurring.repeatMode === "interval"
         ? intervalAuthoredMs(state.recurring.intervalValue, state.recurring.intervalUnit)
