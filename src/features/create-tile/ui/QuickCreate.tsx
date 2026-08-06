@@ -68,7 +68,7 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BehaviorPreview } from "./BehaviorPreview";
 import { CompletionSubPanel } from "./CompletionSubPanel";
@@ -235,6 +235,113 @@ export function QuickCreate() {
     }
   }, [identity.externalId, setField]);
 
+  // --- draft autosave to localStorage (issue #23 A5a) ---
+  // Snapshot the form-bearing slices on a 500ms debounce. Transient UI
+  // (submitState / fieldErrors / isOpen) is intentionally excluded.
+  const DRAFT_STORAGE_KEY = "tastile.draft.create-tile";
+  const draftSignatureRef = useRef<string>("");
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isOpen) return;
+    const snapshot = {
+      identity,
+      plan,
+      time,
+      windows,
+      source,
+      recurring,
+      meta,
+      mode,
+    };
+    const serialized = JSON.stringify(snapshot);
+    if (serialized === draftSignatureRef.current) return;
+    draftSignatureRef.current = serialized;
+    const handle = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(DRAFT_STORAGE_KEY, serialized);
+      } catch {
+        // localStorage may be unavailable (private mode, quota exceeded);
+        // draft autosave is best-effort — never block the user.
+      }
+    }, 500);
+    return () => window.clearTimeout(handle);
+  }, [
+    DRAFT_STORAGE_KEY,
+    isOpen,
+    identity,
+    plan,
+    time,
+    windows,
+    source,
+    recurring,
+    meta,
+    mode,
+  ]);
+
+  // Hydrate draft on first mount when the panel opens in "create" mode.
+  // SSR-safe: only runs client-side via the `mounted` gate above.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!isOpen) return;
+    if (mode !== "create") return; // never overwrite an in-progress edit
+    if (identity.title.trim().length > 0) return; // user already typed → don't clobber
+    try {
+      const raw = window.localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        identity?: unknown;
+        plan?: unknown;
+        time?: unknown;
+        windows?: unknown;
+        source?: unknown;
+        recurring?: unknown;
+        meta?: unknown;
+      };
+      // Defensive: only re-hydrate the form-bearing slices.
+      if (parsed.identity && typeof parsed.identity === "object") {
+        setField("identity", parsed.identity);
+      }
+      if (parsed.plan && typeof parsed.plan === "object") {
+        setField("plan", parsed.plan);
+      }
+      if (parsed.time && typeof parsed.time === "object") {
+        setField("time", parsed.time);
+      }
+      if (Array.isArray(parsed.windows)) {
+        setField("windows", parsed.windows);
+      }
+      if (parsed.source && typeof parsed.source === "object") {
+        setField("source", parsed.source);
+      }
+      if (parsed.recurring && typeof parsed.recurring === "object") {
+        setField("recurring", parsed.recurring);
+      }
+      if (parsed.meta && typeof parsed.meta === "object") {
+        setField("meta", parsed.meta);
+      }
+    } catch {
+      // Corrupt draft — discard silently rather than block the user.
+      try {
+        window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+      } catch {
+        // ignore
+      }
+    }
+    // Run only on mount-open transition. Listing isOpen / mode is enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const discardDraft = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    draftSignatureRef.current = "";
+    reset();
+  }, [DRAFT_STORAGE_KEY, reset]);
+
   // --- validity (must be before early return — refer to these below) ---
   const spanHasStart = !!time.span.start;
   const spanHasEnd = !!time.span.end;
@@ -334,6 +441,15 @@ export function QuickCreate() {
           );
         }
         setSubmitState({ kind: "success" });
+        // Issue #23 A5a — clear the localStorage draft on successful submit.
+        try {
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+            draftSignatureRef.current = "";
+          }
+        } catch {
+          // ignore — best-effort
+        }
         reset();
         setActivePanel("base");
         setMemoExpanded(false);
@@ -411,7 +527,7 @@ export function QuickCreate() {
             radius="md"
             value={String(plan.role)}
             onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
-            data-testid="behavior-role-inline"
+            data-testid="quick-create-tile-kind"
             data={[
               {
                 value: String(PlanRole.EXECUTABLE),
@@ -433,7 +549,7 @@ export function QuickCreate() {
         <div className="flex-1 overflow-y-auto p-4">
           <div className="mx-auto max-w-[640px]">
             {/* ── main card ── */}
-            <section className="py-2">
+            <section className="py-2" data-testid="quick-create-tab-identity">
               {/* title input */}
               <TextInput
                 id="tile-title-input"
@@ -446,6 +562,8 @@ export function QuickCreate() {
                 variant="unstyled"
                 size="xl"
                 fw={700}
+                data-testid="quick-create-input-title"
+                aria-required="true"
                 styles={{
                   input: {
                     fontSize: "1.5rem",
@@ -470,6 +588,7 @@ export function QuickCreate() {
                   variant="outline"
                   size="xs"
                   radius="xl"
+                  data-testid="quick-create-tab-meta"
                 >
                   {t("quickCreate.metaExpandLabel") || "Refine"}
                 </Button>
@@ -480,6 +599,7 @@ export function QuickCreate() {
                 <hr className="border-border mb-2" />
                 <EssentialRow
                   icon={Calendar}
+                  testId="quick-create-tab-plan"
                   label={t("quickCreate.timeNavTitle")}
                   chip={
                     time.whenMode === "none" ? (
@@ -553,9 +673,10 @@ export function QuickCreate() {
                   confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
                   confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
                 />
+                <div data-testid="quick-create-recurring-toggle">
                 <EssentialRow
                   icon={Repeat}
-                  testId="quick-create-repeat"
+                  testId="quick-create-tab-recurring"
                   label={t("quickCreate.repeatChip")}
                   chip={
                     recurring.repeatMode === "once" ? null : (
@@ -601,6 +722,7 @@ export function QuickCreate() {
                   confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
                   confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
                 />
+                </div>
                 <EssentialRow
                   icon={SlidersHorizontal}
                   label="配置・分割"
@@ -824,6 +946,8 @@ export function QuickCreate() {
           onSubmit={handleSubmit}
           submitLabel={mode === "edit" ? t("quickCreate.update") : t("quickCreate.commit")}
           cancelLabel={t("quickCreate.cancel")}
+          onDiscardDraft={mode === "create" ? discardDraft : null}
+          discardLabel={t("quickCreate.discardDraft") || "Discard draft"}
         />
         {loadError ? (
           <p

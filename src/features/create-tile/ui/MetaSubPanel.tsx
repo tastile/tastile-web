@@ -39,6 +39,7 @@ export function MetaSubPanel({
             placeholder={t("quickCreate.memoPlaceholder")}
             aria-label={t("quickCreate.memoPlaceholder")}
             rows={6}
+            data-testid="quick-create-input-meta-memo"
             className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
           />
         </FormRow>
