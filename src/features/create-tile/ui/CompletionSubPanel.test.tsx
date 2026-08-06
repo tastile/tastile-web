@@ -43,17 +43,21 @@ function makeProps(overrides?: { timeRequirements?: TimeReq[] }) {
     tilePickerData: [],
     taskPickerData: [],
     requirementPickerData: [],
-    time: { durationMinMax: { minMs: 30 * 60_000 } },
+    time: { durationMinMax: { minMs: 30 * 60_000, maxMs: 90 * 60_000 } },
   };
 }
 
 describe("CompletionSubPanel — time requirements", () => {
-  it("renders time requirement rows with min/max inputs", () => {
+  it("renders time requirement section", () => {
     render(<CompletionSubPanel {...makeProps()} />);
-    expect(screen.getByTestId("completion-time-requirement-lines")).toBeTruthy();
+    expect(screen.getByTestId("completion-time-requirement-section")).toBeTruthy();
     expect(screen.getByTestId("completion-time-line-0")).toBeTruthy();
-    const minInput = screen.getByLabelText("quickCreate.minMsLabel");
-    const maxInput = screen.getByLabelText("quickCreate.maxMsLabel");
+  });
+
+  it("renders min/max inputs with labels", () => {
+    render(<CompletionSubPanel {...makeProps()} />);
+    const minInput = screen.getByLabelText("quickCreate.minMinutesLabel");
+    const maxInput = screen.getByLabelText("quickCreate.maxMinutesLabel");
     expect(minInput).toBeTruthy();
     expect(maxInput).toBeTruthy();
   });
@@ -71,7 +75,7 @@ describe("CompletionSubPanel — time requirements", () => {
     );
   });
 
-  it("shows warning icon when min > max", () => {
+  it("shows error when min > max", () => {
     render(
       <CompletionSubPanel
         {...makeProps({
@@ -89,9 +93,14 @@ describe("CompletionSubPanel — time requirements", () => {
     expect(row.className).toContain("ring-danger");
   });
 
-  it("no warning when min <= max", () => {
+  it("no error when min <= max", () => {
     render(<CompletionSubPanel {...makeProps()} />);
     const row = screen.getByTestId("completion-time-line-0");
     expect(row.className).not.toContain("ring-danger");
+  });
+
+  it("add time requirement button exists", () => {
+    render(<CompletionSubPanel {...makeProps()} />);
+    expect(screen.getByTestId("add-time-requirement-button")).toBeTruthy();
   });
 });

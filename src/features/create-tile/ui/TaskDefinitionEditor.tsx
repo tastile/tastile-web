@@ -1,10 +1,20 @@
 "use client";
 
-import { Button, TextInput, Textarea } from "@mantine/core";
+import { Button, Switch, TextInput, Textarea } from "@mantine/core";
 import { Plus, Trash2 } from "lucide-react";
 
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
+import type { ConditionNode } from "@/tile/model/v1/condition";
+import { ConditionKind } from "@/tile/model/v1/constants";
 import { ConditionEditor } from "./ConditionEditor";
+
+function defaultShowCondition(): ConditionNode {
+  return {
+    kind: ConditionKind.ALL,
+    children: [],
+    term: null,
+  };
+}
 
 export interface TaskDefinitionEditorProps {
   t: (key: string) => string;
@@ -56,6 +66,36 @@ export function TaskDefinitionEditor({ t }: TaskDefinitionEditorProps) {
             size="xs"
             className="resize-none"
           />
+          <div className="flex items-center gap-2">
+            <Switch
+              size="xs"
+              checked={task.show !== null}
+              onChange={(e) => {
+                const checked = e.currentTarget.checked;
+                setTaskField(
+                  task.id,
+                  "show",
+                  checked ? defaultShowCondition() : null,
+                );
+              }}
+              label={t("quickCreate.taskShowLabel")}
+              aria-label={t("quickCreate.taskShowLabel")}
+              data-testid="task-show-toggle"
+            />
+          </div>
+          {task.show !== null && (
+            <div className="flex flex-col gap-1">
+              <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
+                {t("quickCreate.taskShowLabel")}
+              </div>
+              <ConditionEditor
+                node={task.show}
+                onChange={(next) => setTaskField(task.id, "show", next)}
+                t={t}
+                maxDepth={2}
+              />
+            </div>
+          )}
           <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
             {t("quickCreate.taskCompleteLabel")}
           </div>
