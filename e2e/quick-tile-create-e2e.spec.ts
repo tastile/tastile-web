@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { execFileSync } from "node:child_process";
+import { v1AuthHeaders } from "./helpers/v1";
 
 function todayUtc(): string {
   // Use the date in the user's local timezone (the test runner is
@@ -9,14 +10,14 @@ function todayUtc(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
 }
 
-async function deleteAllEvents(_page: Page) { 
+async function deleteAllEvents(_page: Page) {
   // /api/events is now 410 (v0 removed).  Wipe the v1 placement+plan rows
   // directly via wslc container exec so the day view is fully empty for the next test.
   execFileSync(
     "wslc",
     [
-      "container", "exec", "tastile-db",
-      "psql", "-U", "tastile", "-d", "tastile_db", "-c",
+      "container", "exec", "tastile-dev-api",
+      "psql", "-U", "tastile", "-d", "tastile", "-c",
       "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
     ],
     { stdio: "ignore" },
@@ -53,14 +54,17 @@ test.describe("quick tile create e2e", () => {
     const prev = new Date(new Date(day + "T00:00:00Z").getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const next = new Date(new Date(day + "T00:00:00Z").getTime() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-    // The title must appear in the day-view occurrences.
-    // Tile === calendar event === same path. The day view reads from
-    // tastile-core v1, not /api/events, so assert on what the UI uses.
-    const occUrl = `/api/events/occurrences?start=${prev}T00:00:00.000Z&end=${next}T23:59:59.999Z&min_minutes=0&include_recurring=true`;
-    const occ = await page.request.get(occUrl);
-    const occData = (await occ.json()) as { occurrences: Array<{ title: string }> };
-    const occTitles = (occData.occurrences ?? []).map((o) => o.title);
-    expect(occTitles).toContain(title);
+    // The title must appear in the v1 timeline (read path).
+    // /api/events/occurrences is v0 (410 Gone) — replaced by
+    // /api/proxy/v1/timeline returning EffectivePlacement[].
+    const tlRes = await page.request.get(
+      `/api/proxy/v1/timeline?start=${prev}T00:00:00.000Z&end=${next}T23:59:59.999Z`,
+      { headers: v1AuthHeaders() },
+    );
+    expect(tlRes.ok()).toBeTruthy();
+    const tlData = (await tlRes.json()) as Array<{ content?: { title?: string } }>;
+    const tlTitles = (tlData ?? []).map((p) => p.content?.title);
+    expect(tlTitles).toContain(title);
   });
 });
 

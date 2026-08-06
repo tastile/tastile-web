@@ -99,7 +99,7 @@ export async function v1CreatePlacement(
       const sql = "INSERT INTO v1_annotation (id, tile_id, kind, label, owner_id, revision, created_at, updated_at) VALUES ('" + annId + "'::uuid, '" + tileId + "'::uuid, 0, '" + escaped + "', '00000000-0000-0000-0000-000000000001'::uuid, 1, now(), now()) ON CONFLICT (id) DO NOTHING;";
       execFileSync(
         "wslc",
-        ["container", "exec", "tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql],
+        ["container", "exec", "tastile-dev-api", "psql", "-U", "tastile", "-d", "tastile", "-c", sql],
         { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
       );
     }
@@ -139,8 +139,8 @@ export async function truncateV1(): Promise<void> {
   execFileSync(
     "wslc",
     [
-      "container", "exec", "tastile-db",
-      "psql", "-U", "tastile", "-d", "tastile_db", "-c",
+      "container", "exec", "tastile-dev-api",
+      "psql", "-U", "tastile", "-d", "tastile", "-c",
       "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation RESTART IDENTITY CASCADE;",
     ],
     { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },

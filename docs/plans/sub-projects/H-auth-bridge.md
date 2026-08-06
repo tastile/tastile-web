@@ -73,6 +73,23 @@ Picking **A** for now. Structural sync (B/C) deferred until sub-project G also h
 - **Cookie spoofing**: `COOKIE_USER_SUB` is the only required cookie for bridge mode. If the cookie is forged but the secret is leaked, an attacker can spoof any owner. The secret must never enter client bundles.
 - **owner_id stability**: because owner is derived from `user_sub` via UUIDv5, deleting and recreating a cognito user with the same sub reuses the same owner. Migrating users between cognito pools without preserving sub will silently switch owners.
 
+## Header contract (verified 2026-08-06)
+
+| Direction | Header | Value | Source / sink |
+|---|---|---|---|
+| web → core | `x-tastile-web-bridge-secret` | exact match `TASTILE_WEB_BRIDGE_SECRET` env var on core side | `crates-v1/api/src/handlers/common.rs:810` |
+| web → core | `x-tastile-web-session-user` | cognito sub (or any non-empty string in dev) | `common.rs:801` |
+| core response (401) | `kind: 1, message: "missing or invalid x-actor-id header"` | when bridge headers missing AND `x-owner-id`/`x-actor-id` also missing | 3rd-tier bypass (`common.rs:25`) |
+| core response (200) | `v1_subject` auto-provisioned | `ensure_bridge_owner_provisioning` runs on first successful bridge auth | `common.rs:758-766` |
+| core health | `"bridge_secret":"present"` | when `TASTILE_WEB_BRIDGE_SECRET` env var is set on core | `/v1/health` |
+
+Required **container env** to align with `playwright.config.ts` webServer.env (`TASTILE_WEB_BRIDGE_SECRET=dev-e2e-secret`):
+```
+wslc container run -e TASTILE_WEB_BRIDGE_SECRET=dev-e2e-secret ...
+```
+
+If `TASTILE_WEB_BRIDGE_SECRET` is unset on core, the bridge auth path silently falls through to the 3rd-tier check (x-owner-id/x-actor-id) which fails for browser-driven requests because the proxy never sets those headers in bridge mode.
+
 ## Acceptance
 
 - `E2E_BYPASS_AUTH=0` env: QuickCreate submission persists to DB.
