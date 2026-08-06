@@ -213,6 +213,17 @@ export interface PublishScheduleDefinitionPayload {
 export interface PublishScheduleDefinitionOptions {
   client: ApiClient;
   payload: PublishScheduleDefinitionPayload;
+  /**
+   * Optional override for the command envelope's `idempotency_key`.
+   * When supplied, the same value is also attached as the
+   * `Idempotency-Key` header so it shows up in DevTools Network
+   * (issue #24 A5b criterion 6). The v1 daemon reads idempotency
+   * from the body envelope, so the header is currently best-effort
+   * visibility.
+   */
+  idempotencyKey?: string;
+  /** Optional AbortSignal for caller-side cancellation. */
+  signal?: AbortSignal;
 }
 
 export interface PublishScheduleDefinitionResult {
@@ -221,16 +232,18 @@ export interface PublishScheduleDefinitionResult {
   planId: string;
   windowsIds: string[];
   flowIds: string[];
+  /** Echoed idempotency key (generated or supplied). */
+  idempotencyKey: string;
 }
 export type PublishScheduleDefinitionFailure = {
   ok: false;
   error: import("@/tile/model/v1/envelope").ApiError;
 };
 
-function envelope<T>(payload: T): CommandRequest<T> {
+function envelope<T>(payload: T, idempotencyKey: string): CommandRequest<T> {
   return {
     expectedRevision: null,
-    idempotencyKey: uuidv7(),
+    idempotencyKey,
     occurredAt: nowIso(),
     payload,
   };
@@ -245,11 +258,14 @@ export async function publishScheduleDefinition(
       error: { kind: 0, message: "title is required", currentRevision: null, violations: [] },
     };
   }
+  const idempotencyKey = options.idempotencyKey ?? uuidv7();
   const res = await sendCommand(
     options.client,
     "POST",
     "/v1/schedule-definitions",
-    envelope(options.payload),
+    envelope(options.payload, idempotencyKey),
+    options.signal ? { signal: options.signal } : undefined,
+    options.idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
   );
   if (!res.ok) return { ok: false, error: res.error };
   const meta = res.data.aggregateMeta;
@@ -272,6 +288,7 @@ export async function publishScheduleDefinition(
     planId,
     windowsIds: meta?.windowIds ?? [],
     flowIds: meta?.flowIds ?? [],
+    idempotencyKey,
   };
 }
 

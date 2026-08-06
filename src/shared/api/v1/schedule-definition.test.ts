@@ -42,11 +42,55 @@ describe("schedule definition API", () => {
       }),
     });
     const result = await publishScheduleDefinition({ client, payload });
-    expect(result).toEqual({ ok: true, tileId: "tile-id", planId: "plan-id", windowsIds: ["window-id"], flowIds: ["flow-id"] });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.tileId).toBe("tile-id");
+      expect(result.planId).toBe("plan-id");
+      expect(result.windowsIds).toEqual(["window-id"]);
+      expect(result.flowIds).toEqual(["flow-id"]);
+      expect(result.idempotencyKey).toMatch(/^[0-9a-f-]{36}$/);
+    }
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://api.example.com/v1/schedule-definitions");
     expect(init.method).toBe("POST");
     expect(JSON.parse(init.body as string).payload).toEqual(payload);
+  });
+
+  it("echoes the supplied Idempotency-Key in the body envelope and Idempotency-Key header", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true, status: 200, json: async () => ({
+        command_id: "cmd", accepted_at: "2026-07-01T00:00:00Z",
+        aggregate: { kind: AggregateKind.RECURRING, id: "tile-id" },
+        aggregate_meta: { plan_id: "plan-id", window_ids: [], flow_ids: [] },
+      }),
+    });
+    const supplied = "00000000-0000-4000-8000-000000000001";
+    const result = await publishScheduleDefinition({
+      client, payload, idempotencyKey: supplied,
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.idempotencyKey).toBe(supplied);
+    }
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBe(supplied);
+    const body = JSON.parse(init.body as string);
+    expect(body.idempotency_key).toBe(supplied);
+  });
+
+  it("does not send the Idempotency-Key header when no override is supplied", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true, status: 200, json: async () => ({
+        command_id: "cmd", accepted_at: "2026-07-01T00:00:00Z",
+        aggregate: { kind: AggregateKind.RECURRING, id: "tile-id" },
+        aggregate_meta: { plan_id: "plan-id", window_ids: [], flow_ids: [] },
+      }),
+    });
+    await publishScheduleDefinition({ client, payload });
+    const [, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+    const headers = init.headers as Record<string, string>;
+    expect(headers["Idempotency-Key"]).toBeUndefined();
   });
 
   it("does not call the API for a blank title", async () => {

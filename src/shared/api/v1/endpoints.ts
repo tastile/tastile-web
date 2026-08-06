@@ -232,6 +232,8 @@ export async function sendCommand<TReq>(
   method: "POST" | "PUT" | "DELETE",
   path: string,
   envelope: CommandRequest<TReq>,
+  initOverrides?: { signal?: AbortSignal },
+  extraHeaders?: Record<string, string>,
 ): Promise<Result<CommandResponse>> {
   const token = client.useProxyBridge ? null : await client.getIdToken();
   if (!client.useProxyBridge && !token) {
@@ -242,6 +244,11 @@ export async function sendCommand<TReq>(
     "Content-Type": "application/json",
   };
   if (token) headers.Authorization = `Bearer ${token}`;
+  if (extraHeaders) {
+    for (const [k, v] of Object.entries(extraHeaders)) {
+      if (v !== undefined && v !== null) headers[k] = v;
+    }
+  }
 
   let res: Response;
   try {
@@ -249,8 +256,20 @@ export async function sendCommand<TReq>(
       method,
       headers,
       body: JSON.stringify(toWireCommandRequest(envelope)),
+      ...(initOverrides?.signal ? { signal: initOverrides.signal } : {}),
     });
   } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") {
+      return {
+        ok: false,
+        error: {
+          kind: ApiErrorKind.RETRYABLE,
+          message: "aborted",
+          currentRevision: null,
+          violations: [],
+        },
+      };
+    }
     return {
       ok: false,
       error: networkError(err instanceof Error ? err.message : "fetch failed"),

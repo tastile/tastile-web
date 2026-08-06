@@ -32,7 +32,7 @@ import { SourceGenerationPanel } from "@/features/create-tile/ui/SourceGeneratio
 import { SourceWindowPanel } from "@/features/create-tile/ui/SourceWindowPanel";
 import { type SubPanelKey, SubPanelShell } from "@/features/create-tile/ui/SubPanelShell";
 import { SubmitBar } from "@/features/create-tile/ui/SubmitBar";
-import { makeClient, submitCreateTile, submitUpdateTile } from "@/shared/api/v1/submit";
+import { makeClient, submitCreateTile, submitTile, submitUpdateTile, SubmitError, SubmitValidationError } from "@/shared/api/v1/submit";
 import { notifyEventsChanged } from "@/shared/hooks/calendar/use-events";
 import { useIsDesktop } from "@/shared/hooks/use-media-query";
 import { useTileList } from "@/shared/hooks/use-tile-list";
@@ -69,6 +69,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { BehaviorPreview } from "./BehaviorPreview";
 import { CompletionSubPanel } from "./CompletionSubPanel";
@@ -164,6 +165,21 @@ export function QuickCreate() {
           body: submitState.message,
         }
       : null;
+  // A5b — submit handler augmentation (issue #24):
+  //   - retry toast: carries the Idempotency-Key so the user can retry
+  //   - slow notice: surfaced after 5s of in-flight POST
+  const [retryToast, setRetryToast] = useState<{ message: string; idempotencyKey: string } | null>(
+    null,
+  );
+  const [slowNotice, setSlowNotice] = useState(false);
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const slowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
+  useEffect(() => {
+    return () => {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    };
+  }, []);
   // react-doctor-disable-next-line react-doctor/rerender-state-only-in-handlers
   const [invalidField, setInvalidField] = useState<"title" | null>(null);
   const titleOk = identity.title.trim().length > 0;
@@ -407,8 +423,9 @@ export function QuickCreate() {
     );
   }
 
-  // --- submit ---
-  async function handleSubmit() {
+  // --- submit (A5b: idempotency + retry + analytics) ---
+  async function handleSubmitForce(retryKey?: string) {
+    setRetryToast(null);
     setSubmitState({ kind: "idle" });
     setInvalidField(null);
     if (!titleOk) {
@@ -432,41 +449,95 @@ export function QuickCreate() {
 
     const client = makeClient();
     setSubmitState({ kind: "submitting" });
-    const submitFn = mode === "edit" ? submitUpdateTile : submitCreateTile;
-    await submitFn({ client })
-      .then((result) => {
-        if (!result.ok) {
-          throw new Error(
-            `${t(mode === "edit" ? "quickCreate.updateError" : "quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
-          );
+    setSlowNotice(false);
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setSlowNotice(true);
+    }, 5000);
+
+    const submitFn = mode === "edit" ? submitUpdateTile : submitTile;
+    try {
+      const result =
+        mode === "edit"
+          ? await submitFn({ client })
+          : await submitTile({ client, idempotencyKey: retryKey });
+      if (!result.ok) {
+        throw new Error(
+          `${t(mode === "edit" ? "quickCreate.updateError" : "quickCreate.createError")} (api:${result.error.kind}) ${result.error.message}`,
+        );
+      }
+      if (result.ok && result.idempotencyKey) {
+        idempotencyKeyRef.current = result.idempotencyKey;
+      }
+      setSubmitState({ kind: "success" });
+      // Issue #23 A5a — clear the localStorage draft on successful submit.
+      try {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+          draftSignatureRef.current = "";
         }
-        setSubmitState({ kind: "success" });
-        // Issue #23 A5a — clear the localStorage draft on successful submit.
-        try {
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-            draftSignatureRef.current = "";
-          }
-        } catch {
-          // ignore — best-effort
-        }
-        reset();
-        setActivePanel("base");
-        setMemoExpanded(false);
-        notifyEventsChanged();
-        close();
-      })
-      .catch((err: unknown) => {
+      } catch {
+        // ignore — best-effort
+      }
+      reset();
+      setActivePanel("base");
+      setMemoExpanded(false);
+      notifyEventsChanged();
+      const tileId = result.tileId;
+      // A5b: navigate to timeline with focus ring (issue #24 acceptance).
+      try {
+        router.push(`/dashboard/timeline?focus=${tileId}`);
+      } catch {
+        // ignore — older Next.js may not have router.push
+      }
+      close();
+    } catch (err) {
+      if (err instanceof SubmitValidationError) {
+        // 4xx — inline banner (no navigation).
         setSubmitState({
           kind: "error",
           reason: "api",
-          message:
-            err instanceof Error
-              ? err.message
-              : t(mode === "edit" ? "quickCreate.updateError" : "quickCreate.createError"),
+          message: err.message,
         });
+        return;
+      }
+      if (err instanceof SubmitError) {
+        // 5xx / network / abort — surface retry toast with the same Idempotency-Key.
+        const key = idempotencyKeyRef.current ?? crypto.randomUUID();
+        idempotencyKeyRef.current = key;
+        setRetryToast({
+          message: err.message || t("quickCreate.submitFailedRetry"),
+          idempotencyKey: key,
+        });
+        setSubmitState({ kind: "idle" });
+        return;
+      }
+      setSubmitState({
+        kind: "error",
+        reason: "api",
+        message:
+          err instanceof Error
+            ? err.message
+            : t(mode === "edit" ? "quickCreate.updateError" : "quickCreate.createError"),
       });
+    } finally {
+      if (slowTimerRef.current) {
+        clearTimeout(slowTimerRef.current);
+        slowTimerRef.current = null;
+      }
+      setSlowNotice(false);
+    }
   }
+
+  // Backwards-compatible name used by the SubmitBar prop.
+  async function handleSubmit() {
+    return handleSubmitForce();
+  }
+  const retrySubmit = useCallback(() => {
+    if (retryToast?.idempotencyKey) {
+      void handleSubmitForce(retryToast.idempotencyKey);
+    }
+  }, [retryToast]);
 
   // --- layout classes ---
   const panelClass = isDesktop
@@ -949,6 +1020,44 @@ export function QuickCreate() {
           onDiscardDraft={mode === "create" ? discardDraft : null}
           discardLabel={t("quickCreate.discardDraft") || "Discard draft"}
         />
+        {slowNotice && submitting ? (
+          <p
+            data-testid="quick-create-slow-notice"
+            className="px-4 pb-1 text-center text-xs text-foreground-muted"
+            aria-live="polite"
+          >
+            {t("quickCreate.takingLonger") || "Taking longer than usual..."}
+          </p>
+        ) : null}
+        {retryToast ? (
+          <div
+            role="alert"
+            data-testid="quick-create-retry-toast"
+            className="flex items-center justify-between gap-2 border-t border-danger/30 bg-danger/5 px-4 py-2"
+          >
+            <p className="flex-1 text-xs text-foreground">
+              <span className="font-semibold">{t("quickCreate.submitFailed") || "Submit failed"}</span>
+              <span className="mx-1">—</span>
+              <span>{retryToast.message}</span>
+            </p>
+            <Button
+              type="button"
+              size="xs"
+              variant="filled"
+              color="red"
+              onClick={retrySubmit}
+              data-testid="quick-create-retry-button"
+              disabled={submitting}
+            >
+              {t("quickCreate.retry") || "Retry"}
+            </Button>
+            <CloseButton
+              size="sm"
+              onClick={() => setRetryToast(null)}
+              aria-label={t("tiles.closePanel") || "Dismiss"}
+            />
+          </div>
+        ) : null}
         {loadError ? (
           <p
             role="alert"
