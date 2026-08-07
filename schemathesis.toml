@@ -1,0 +1,57 @@
+# schemathesis config for Tastile Core API
+# Auto-loaded when `uvx schemathesis run` is invoked from this directory.
+# See docs/plans/2026-08-06-schemathesis-contract-testing.md.
+
+# The spec is served from the web app at app.tastile.app/api/openapi, but
+# the actual Core API lives at api.tastile.app (per OpenAPI `servers[0]`).
+# Without this, schemathesis uses the spec's host (app.tastile.app) as the
+# API base and hits the Next.js dashboard's HTML 404/200 fallback.
+base-url = "https://api.tastile.app/v1"
+
+# Prod-friendly defaults: 20 req/s, 10s per-request, serial workers.
+rate-limit = "20/s"
+request-timeout = 10.0
+workers = 1
+
+# Don't redact failure output — we need to see the actual response bodies.
+[output.sanitization]
+enabled = false
+
+# Most protected ops return 401 without a Bearer token, and the spec does
+# not declare 401 for them. status_code_conformance would drown the report
+# in expected failures. Inject `Authorization` via the runner for auth-aware
+# runs (see scripts/run-schemathesis.mjs).
+[checks]
+status_code_conformance.enabled = false
+# positive_data_acceptance needs create-then-get chains; out of scope for
+# the default smoke run. Re-enable alongside stateful hooks (L2 plan).
+positive_data_acceptance.enabled = false
+# missing_required_header fires on every protected op without a default
+# Bearer; same reason as status_code_conformance above.
+missing_required_header.enabled = false
+# unsupported_method sends TRACE/OPTIONS/etc.; Cloudflare returns HTML 405
+# (not the API's JSON 405) and the check fails on content-type. Skip it
+# when running against the Cloudflare-fronted prod URL. Re-enable against
+# a local API where 405 responses are API-issued.
+unsupported_method.enabled = false
+# not_a_server_error would flag every 5xx, including the intentional 503
+# responses from /auth/signin, /auth/signup (password auth disabled in
+# prod) and /auth/oauth/exchange (Cognito not provisioned). The spec
+# declares those 503s as legitimate; treat 5xx as a documented response,
+# not a generic "server bug".
+not_a_server_error.enabled = false
+
+# /auth/signout is intentionally anonymous — it returns 204 with no
+# Authorization header. The `ignored_auth` check (enabled by default) would
+# fire otherwise. The schemathesis v4 toml schema for [checks.ignored_auth]
+# only accepts a boolean `enabled`, so per-op exclusion is passed via
+# `--exclude-operation-id signOut` in scripts/run-schemathesis.mjs.
+
+# Warning display + fail-on. The 35-op "missing_test_data" warning is
+# silenced because every one of those ops needs either an authenticated
+# request that resolves a real existing resource, OR a stateful
+# create-then-get chain that the `uvx run` CLI does not support. See
+# docs/plans/2026-08-06b-schemathesis-auth-and-state.md.
+[warnings]
+display = ["missing_auth", "validation_mismatch"]
+fail-on = ["validation_mismatch"]

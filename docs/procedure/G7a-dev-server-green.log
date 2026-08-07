@@ -1,0 +1,12 @@
+$ next dev
+▲ Next.js 16.3.0 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.2.111:3000
+- Environments: .env.local, .env.development
+✓ Ready in 410ms
+✓ Running next.config.ts took 34ms
+
+ GET /dashboard/timeline/day?t=1786022775 200 in 1006ms (next.js: 508ms, proxy.ts: 106ms, application-code: 392ms)
+ GET /dashboard/timeline/day 200 in 91ms (next.js: 15ms, proxy.ts: 4ms, application-code: 72ms)
+[?25h
+error: script "dev" exited with code 1

@@ -96,3 +96,5 @@ evidence/web-verify-*.log
 /*-2026*.png
 
 .reference/*
+.schemathesis/
+docs/trace/
