@@ -99,7 +99,7 @@ export async function v1CreatePlacement(
       const sql = "INSERT INTO v1_annotation (id, tile_id, kind, label, owner_id, revision, created_at, updated_at) VALUES ('" + annId + "'::uuid, '" + tileId + "'::uuid, 0, '" + escaped + "', '00000000-0000-0000-0000-000000000001'::uuid, 1, now(), now()) ON CONFLICT (id) DO NOTHING;";
       execFileSync(
         "wslc",
-        ["container", "exec", "tastile-dev-api", "psql", "-U", "tastile", "-d", "tastile", "-c", sql],
+        ["container", "exec", "tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql],
         { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
       );
     }
@@ -131,20 +131,25 @@ export async function v1CreatePlacementAndResolve(
 
 /**
  * Truncate all v1 tables in the canonical cleanup order so the next
- * test sees a fully empty calendar.  Goes through docker exec on the
- * tastile-core-db-1 container.
+ * test sees a fully empty calendar.  Goes through wslc container exec
+ * on the tastile-db container (canonical name from scripts/wslc/up-v1.sh).
  */
 export async function truncateV1(): Promise<void> {
   const { execFileSync } = await import("node:child_process");
-  execFileSync(
-    "wslc",
-    [
-      "container", "exec", "tastile-dev-api",
-      "psql", "-U", "tastile", "-d", "tastile", "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile RESTART IDENTITY CASCADE;",
-    ],
-    { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
-  );
+  try {
+    execFileSync(
+      "wslc",
+      [
+        "container", "exec", "tastile-db",
+        "psql", "-U", "tastile", "-d", "tastile_db", "-c",
+        "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile RESTART IDENTITY CASCADE;",
+      ],
+      { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
+    );
+  } catch (err) {
+    console.error("[truncateV1] wslc container exec failed:", err);
+    throw err;
+  }
 }
 
 /**

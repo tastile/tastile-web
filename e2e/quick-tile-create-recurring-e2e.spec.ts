@@ -18,7 +18,7 @@ function isoAtUtc(date: string, hour: number, minute: number): string {
 function wslcPsql(sql: string): string {
   return execFileSync(
     "wslc",
-    ["container", "exec", "tastile-dev-api", "psql", "-U", "tastile", "-d", "tastile", "-tA", "-c", sql],
+    ["container", "exec", "tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-tA", "-c", sql],
     { encoding: "utf8", timeout: 15_000 },
   ).trim();
 }
