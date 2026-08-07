@@ -827,12 +827,14 @@ export class CoreClient {
       }
     }
     const requestPath = this.useProxyBridge ? path : toV1CorePath(path);
-    let rawUrl = this.baseUrl + requestPath;
-    if (rawUrl.startsWith("/")) {
-      const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost";
-      rawUrl = origin + rawUrl;
-    }
-    const url = new URL(rawUrl);
+    const rawUrl = this.baseUrl + requestPath;
+    // Use a port-less loopback origin so relative baseUrl paths don't pick up
+    // the test runner's port (e.g. http://localhost:3000) when resolved via
+    // `new URL`. Browser fetch ignores the host/port for same-origin requests
+    // — only the path/query/headers matter.
+    const url = rawUrl.startsWith("/")
+      ? new URL(`http://localhost${rawUrl}`)
+      : new URL(rawUrl);
     if (options.query) {
       for (const [k, v] of Object.entries(options.query)) {
         if (v === undefined) continue;

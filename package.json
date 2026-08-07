@@ -27,7 +27,7 @@
     "lint:biome": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "test:unit": "node scripts/run-vitest.mjs",
+    "test:unit": "node scripts/run-vitest.mts",
     "test:e2e": "playwright test",
     "knip": "knip --no-config-hints",
     "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run knip && bun run test:unit",
