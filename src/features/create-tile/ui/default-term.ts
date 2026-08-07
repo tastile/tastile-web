@@ -1,4 +1,4 @@
-import type { Term } from "@/tile/model/v1/condition";
+import type { FactTerm, FeedbackTerm, MetricTerm, Term } from "@/tile/model/v1/condition";
 import { HolidayKind } from "@/tile/model/v1/constants";
 
 export function defaultTerm(kind: string): Term {

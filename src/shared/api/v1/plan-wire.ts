@@ -30,7 +30,13 @@
  * form is extended to set them).
  */
 
-import type { ConditionNode, Term } from "@/tile/model/v1/condition";
+import type {
+  ConditionNode,
+  FactTerm,
+  FeedbackTerm,
+  MetricTerm,
+  Term,
+} from "@/tile/model/v1/condition";
 import { ConditionKind } from "@/tile/model/v1/constants";
 import { uuidv7 } from "@/tile/model/v1/envelope";
 import { type DecisionDef, serializeDecision } from "./decision";

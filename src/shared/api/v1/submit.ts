@@ -1,7 +1,7 @@
 import { recordTileCreateAttempt } from "@/shared/analytics/tile-create";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import type { ApiError } from "@/tile/model/v1/envelope";
 import { ApiErrorKind } from "@/tile/model/v1/constants";
+import type { ApiError } from "@/tile/model/v1/envelope";
 import type { ApiClient } from "./endpoints";
 import { buildQuickCreateSchedulePayload } from "./quick-create-schedule-wire";
 import { publishScheduleDefinition } from "./schedule-definition";

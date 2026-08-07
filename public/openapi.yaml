@@ -48,10 +48,9 @@ paths:
         '200':
           description: OK
           content:
-            text/plain:
+            application/json:
               schema:
-                type: string
-                example: ok
+                $ref: '#/components/schemas/HealthResponse'
 
   /ready:
     get:
@@ -129,7 +128,6 @@ paths:
       parameters:
         - name: flow_id
           in: query
-          required: true
           schema:
             type: string
       responses:
@@ -162,7 +160,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+        '503':
+          description: Service unavailable (e.g. Cognito not provisioned, empty body)
 
   /auth/callback:
     get:
@@ -193,11 +197,11 @@ paths:
             type: string
       responses:
         '200':
-          description: HTML page with auth result
+          description: Auth callback JSON
           content:
-            text/html:
+            application/json:
               schema:
-                type: string
+                $ref: '#/components/schemas/AuthCallbackResponse'
 
   /auth/signin:
     post:
@@ -219,9 +223,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: Password authentication disabled in production
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordAuthDisabledResponse'
 
   /auth/signup:
     post:
@@ -243,21 +257,27 @@ paths:
               schema:
                 $ref: '#/components/schemas/SessionResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: Bad request
+          content:
+            text/plain:
+              schema:
+                type: string
+        '503':
+          description: Password authentication disabled in production
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordAuthDisabledResponse'
 
   /auth/signout:
     post:
       tags: [Auth]
-      summary: Sign out
+      summary: Sign out (idempotent, anonymous)
       operationId: signOut
+      security: []
       responses:
-        '200':
-          description: Signed out
-          content:
-            application/json:
-              schema:
-                type: object
-                nullable: true
+        '204':
+          description: Signed out (no content)
 
   /auth/session:
     get:
@@ -502,6 +522,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommandResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /commands/break/end:
     post:
@@ -515,6 +537,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommandResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /commands/prompt/respond-startup-recovery:
     post:
@@ -534,6 +558,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CommandResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /commands/prompt/request:
     post:
@@ -553,6 +579,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RequestPromptResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /commands/tick:
     post:
@@ -1019,27 +1047,41 @@ components:
           type: string
 
     # ─── Public Schemas ───────────────────────────────────────────────────────
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+        version:
+          type: string
+          example: "0.1.0"
+
     ReadyResponse:
       type: object
-      required: [ready]
+      required: [status]
       properties:
-        ready:
-          type: boolean
-          example: true
+        status:
+          type: string
+          example: ready
+        database:
+          type: string
+          example: reachable
+        migration:
+          type: string
+          example: V1_050__decision_effect_change
 
     VersionResponse:
       type: object
-      required: [version, app, binary_sha256]
+      required: [version, name]
       properties:
         version:
           type: string
           example: "0.2.0"
-        app:
+        name:
           type: string
-          example: "tastile-daemon"
-        binary_sha256:
-          type: string
-          description: SHA256 hash of the binary
+          example: tastile-daemon
 
     RuntimePathsResponse:
       type: object
@@ -1065,37 +1107,64 @@ components:
       properties:
         provider:
           type: string
+          enum: [google]
           example: google
         scopes:
           type: string
         query_params:
           type: object
-          additionalProperties:
-            type: string
+          additionalProperties: true
 
     StartOAuthResponse:
       type: object
-      required: [auth_url, flow_id, provider]
+      required: [redirect_url, state]
       properties:
-        auth_url:
+        redirect_url:
           type: string
           format: uri
-        flow_id:
+        state:
           type: string
-        provider:
-          type: string
+          format: uuid
 
     OAuthStatusResponse:
       type: object
-      required: [flow_id, completed]
       properties:
-        flow_id:
-          type: string
-        completed:
+        configured:
           type: boolean
-        error:
+          example: false
+        provider:
+          type: string
+          example: cognito
+
+    AuthCallbackResponse:
+      type: object
+      required: [ok, note]
+      properties:
+        ok:
+          type: boolean
+          example: true
+        note:
+          type: string
+          example: "Cognito round-trip handled client-side; use POST /v1/auth/oauth/exchange to mint a session."
+
+    PasswordAuthDisabledResponse:
+      type: object
+      required: [kind, message]
+      properties:
+        kind:
+          type: integer
+          enum: [1]
+          example: 1
+        message:
+          type: string
+          example: "password authentication is disabled in production"
+        current_revision:
           type: string
           nullable: true
+        violations:
+          type: array
+          items:
+            type: object
 
     ExchangeOAuthCodeRequest:
       type: object

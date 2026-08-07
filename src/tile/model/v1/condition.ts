@@ -3,18 +3,17 @@
  *
  * Interfaces only. No business logic.
  *
- * - `Combinator` is the 4-value union matching Rust `ConditionKind`
- *   discriminants: ALL(0), ANY(1), NOT(2), TERM(3).
  * - `Term` is a discriminated union of the 10 term kinds defined in
- *   v1/05 §Term 種別. Each variant's payload field names, primitive types,
- *   and nullability match the Rust spec exactly.
- * - `ConditionNode` is the recursive AST node. `kind` is a `Combinator`
- *   discriminant; `children` holds sub-nodes for ALL/ANY/NOT; `term`
- *   holds the leaf payload for TERM.
+ *   v1/05 §Term 種別 (calendar / moment / relation / gap / requirement /
+ *   task / fact / metric / feedback / life). Each variant's payload field
+ *   names, primitive types, and nullability match the Rust spec exactly.
+ * - `ConditionNode` is the recursive AST node. `kind` is a
+ *   `ConditionKindValue` discriminant; `children` holds sub-nodes for
+ *   ALL/ANY/NOT; `term` holds the leaf payload for TERM.
  */
 
 import type { ConditionKindValue, HolidayKindValue } from "./constants";
-import { ConditionKind } from "./constants";
+import type { DateRange } from "./window";
 
 // ---------- Term variants ----------
 
@@ -63,28 +62,28 @@ export interface TaskTerm {
   state: number;
 }
 
-export interface FactTerm {
-  factId: string;
-  op: number;
-  value: number | string | null;
-}
-
-export interface MetricTerm {
-  metricId: string;
-  op: number;
-  value: number | string | null;
-}
-
-export interface FeedbackTerm {
-  feedbackTxnId: string;
-  op: number;
-  value: number | string | null;
-}
-
 export interface LifeTerm {
   target: string;
   /** READY=0 | STARTED=1 | DONE=2 */
   state: number;
+}
+
+export interface FactTerm {
+  factId: string;
+  op: 0 | 1 | 2 | 3;
+  value: number | null;
+}
+
+export interface MetricTerm {
+  metricId: string;
+  op: 0 | 1 | 2 | 3;
+  value: number | null;
+}
+
+export interface FeedbackTerm {
+  feedbackTxnId: string;
+  op: 0 | 1 | 2 | 3;
+  value: number | null;
 }
 
 export type Term =
@@ -107,62 +106,7 @@ export interface ConditionNode {
   term: Term | null;
 }
 
-// ---------- Combinator ----------
-
-/**
- * The 4-value union matching Rust `ConditionKind` discriminants.
- * `TERM` is included because it is a valid `ConditionNode.kind` even
- * though it behaves as a leaf rather than a combinator.
- */
-export type Combinator = ConditionKindValue;
-
-// ---------- Type guards ----------
-
-export function isCombinatorKind(kind: number): kind is Combinator {
-  return (
-    kind === ConditionKind.ALL ||
-    kind === ConditionKind.ANY ||
-    kind === ConditionKind.NOT ||
-    kind === ConditionKind.TERM
-  );
-}
-
-export function isAll(node: ConditionNode): boolean {
-  return node.kind === ConditionKind.ALL;
-}
-
-export function isAny(node: ConditionNode): boolean {
-  return node.kind === ConditionKind.ANY;
-}
-
-export function isNot(node: ConditionNode): boolean {
-  return node.kind === ConditionKind.NOT;
-}
-
-export function isTerm(node: ConditionNode): boolean {
-  return node.kind === ConditionKind.TERM;
-}
-
-export function isValidCondition(node: unknown): node is ConditionNode {
-  if (node === null || typeof node !== "object") return false;
-  const obj = node as Record<string, unknown>;
-  if (!isCombinatorKind(obj.kind as number)) return false;
-  if (!Array.isArray(obj.children)) return false;
-  if (obj.term !== null && (typeof obj.term !== "object" || obj.term === null)) return false;
-  if (obj.term !== null) {
-    const t = obj.term as Record<string, unknown>;
-    if (typeof t.kind !== "string") return false;
-    if (!("value" in t)) return false;
-  }
-  return true;
-}
-
 // ---------- Supporting types ----------
-
-export interface DateRange {
-  startDate: string;
-  endDate: string;
-}
 
 export interface DurationRange {
   minMs: number | null;

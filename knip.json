@@ -1,4 +1,10 @@
 {
   "$schema": "https://knip.dev/schema.json",
-  "project": ["src/**"]
+  "project": ["src/**"],
+  "ignore": [
+    "src/lib/vendored/**"
+  ],
+  "ignoreBinaries": [
+    "wslc"
+  ]
 }

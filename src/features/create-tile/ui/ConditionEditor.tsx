@@ -6,7 +6,19 @@ import { ChevronDown, ChevronUp, GitBranch, ListChecks, Plus, Search, Trash2 } f
 import { useId, useState } from "react";
 
 import { RowSegmented } from "@/shared/ui/form";
-import type { ConditionNode, Term } from "@/tile/model/v1/condition";
+import type {
+  AnchorSelector,
+  CalendarTerm,
+  ConditionNode,
+  DurationRange,
+  GapTerm,
+  LifeTerm,
+  MomentTerm,
+  RelationTerm,
+  RequirementTerm,
+  TaskTerm,
+  Term,
+} from "@/tile/model/v1/condition";
 import { ConditionKind } from "@/tile/model/v1/constants";
 
 import { TileReferencePicker } from "./TileReferencePicker";

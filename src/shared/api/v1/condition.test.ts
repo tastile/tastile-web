@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as fc from "fast-check";
-import type { ConditionNode, Term } from "@/tile/model/v1/condition";
+import type { ConditionNode, FactTerm, FeedbackTerm, MetricTerm, Term } from "@/tile/model/v1/condition";
 import { convertCondition, convertTerm, parseCondition, parseTerm } from "./plan-wire";
 
 const hexChar = fc.constantFrom(..."0123456789abcdef".split(""));

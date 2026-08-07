@@ -833,7 +833,7 @@ describe("buildQuickCreateSchedulePayload", () => {
     [1, "day" as const, 86_400_000, "1 day"],
   ])(
     "maps intervalValue=%d intervalUnit=%s to generation.interval_ms=%d (%s)",
-    (value, unit, expectedMs) => {
+    (value, unit, expectedMs, _label) => {
       const state = buildDefaultQuickCreateState();
       state.identity = { ...state.identity, title: `Interval ${value} ${unit}` };
       state.recurring = {

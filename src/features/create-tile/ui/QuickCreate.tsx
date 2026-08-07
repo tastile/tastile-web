@@ -32,7 +32,7 @@ import { SourceGenerationPanel } from "@/features/create-tile/ui/SourceGeneratio
 import { SourceWindowPanel } from "@/features/create-tile/ui/SourceWindowPanel";
 import { type SubPanelKey, SubPanelShell } from "@/features/create-tile/ui/SubPanelShell";
 import { SubmitBar } from "@/features/create-tile/ui/SubmitBar";
-import { makeClient, submitCreateTile, submitTile, submitUpdateTile, SubmitError, SubmitValidationError } from "@/shared/api/v1/submit";
+import { SubmitError, SubmitValidationError, makeClient, submitCreateTile, submitTile, submitUpdateTile } from "@/shared/api/v1/submit";
 import { notifyEventsChanged } from "@/shared/hooks/calendar/use-events";
 import { useIsDesktop } from "@/shared/hooks/use-media-query";
 import { useTileList } from "@/shared/hooks/use-tile-list";
@@ -68,8 +68,8 @@ import {
   SlidersHorizontal,
   Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { BehaviorPreview } from "./BehaviorPreview";
 import { CompletionSubPanel } from "./CompletionSubPanel";

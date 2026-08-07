@@ -104,7 +104,7 @@ export function buildFloatingSchedulePayload(
     windows: [
       {
         kind: 0 as const,
-        bounds: { start: input.window.start, end: input.window.end },
+        bounds: { start: input.label.start, end: input.label.end },
         rules: [
           {
             id: windowRuleId,

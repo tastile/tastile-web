@@ -1,7 +1,7 @@
 import dayjs from "dayjs";
 import { useCallback, useEffectEvent, useState } from "react";
 import type { DragContextValue } from "../components/DragContext/DragContext";
-import type { DateTimeStringValue, ScheduleEventData, ScheduleMode } from "../types";
+import type { DateTimeStringValue, DropTarget, ScheduleEventData, ScheduleMode } from "../types";
 
 export interface UseDragDropHandlersOptions<T = any> {
   /** Whether drag and drop is enabled */
@@ -156,7 +156,7 @@ export function useDragDropHandlers<T = any>(
 
       event.preventDefault();
       event.dataTransfer.dropEffect = isInternalDrag ? "move" : "copy";
-      setDropTargetState(target);
+      setDropTargetState(target as unknown as DropTarget);
     },
     [enabled, mode, dragState.isDragging, onExternalDrop, handleDragEnd],
   );
@@ -233,7 +233,7 @@ export function useDragDropHandlers<T = any>(
 
   return {
     dragContextValue,
-    dropTarget,
+    dropTarget: dropTarget as T | null,
     handleDragStart,
     handleDragEnd,
     handleDragOver,
