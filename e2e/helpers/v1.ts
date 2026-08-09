@@ -142,7 +142,12 @@ export async function truncateV1(): Promise<void> {
       [
         "container", "exec", "tastile-db",
         "psql", "-U", "tastile", "-d", "tastile_db", "-c",
-        "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile RESTART IDENTITY CASCADE;",
+        // 12 tables: parent aggregates + tables whose FK to parent is NOT
+        // ON DELETE CASCADE.  v1_source_lifecycle_event references
+        // v1_source_tile without CASCADE (V1_026), v1_decision_session is
+        // a root table (V1_042).  All other child tables ride on
+        // CASCADE from v1_tile / v1_placement.
+        "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;",
       ],
       { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
     );
