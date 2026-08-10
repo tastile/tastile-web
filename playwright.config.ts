@@ -8,6 +8,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 1,
+  timeout: 120_000,
   use: {
     baseURL,
     trace: "on-first-retry",

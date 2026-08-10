@@ -1,24 +1,24 @@
 import type { Locale } from "@/shared/stores/locale-store";
-import { account } from "./sections/system/account";
-import { auth } from "./sections/system/auth";
-import { calendar } from "./sections/features/calendar";
-import { common } from "./sections/app/common";
-import { dashboard } from "./sections/features/dashboard";
-import { execution } from "./sections/system/execution";
-import { language } from "./sections/app/language";
-import { notifications } from "./sections/system/notifications";
-import { preferences } from "./sections/system/preferences";
-import { prompt } from "./sections/system/prompt";
-import { projects } from "./sections/features/projects";
-import { schedule } from "./sections/features/schedule";
-import { settings } from "./sections/system/settings";
-import { shell } from "./sections/app/shell";
-import { nav } from "./sections/app/nav";
-import { header } from "./sections/app/header";
-import { sidebar } from "./sections/app/sidebar";
 import { activityBar } from "./sections/app/activityBar";
+import { common } from "./sections/app/common";
 import { floatingHeader } from "./sections/app/floatingHeader";
+import { header } from "./sections/app/header";
+import { language } from "./sections/app/language";
 import { languageToggle } from "./sections/app/languageToggle";
+import { nav } from "./sections/app/nav";
+import { shell } from "./sections/app/shell";
+import { sidebar } from "./sections/app/sidebar";
+import { calendar } from "./sections/features/calendar";
+import { dashboard } from "./sections/features/dashboard";
+import { projects } from "./sections/features/projects";
+import {
+  quickCreateEn,
+  quickCreateEs,
+  quickCreateJa,
+  quickCreateKo,
+  quickCreateZhCn,
+} from "./sections/features/quickcreate";
+import { schedule } from "./sections/features/schedule";
 import { tasks } from "./sections/features/tasks";
 import { tiles } from "./sections/features/tiles";
 import { timeline } from "./sections/features/timeline";
@@ -33,13 +33,13 @@ import {
   marketingLandingEn,
   marketingLandingJa,
 } from "./sections/marketing/marketingLanding";
-import {
-  quickCreateEn,
-  quickCreateEs,
-  quickCreateJa,
-  quickCreateKo,
-  quickCreateZhCn,
-} from "./sections/features/quickcreate";
+import { account } from "./sections/system/account";
+import { auth } from "./sections/system/auth";
+import { execution } from "./sections/system/execution";
+import { notifications } from "./sections/system/notifications";
+import { preferences } from "./sections/system/preferences";
+import { prompt } from "./sections/system/prompt";
+import { settings } from "./sections/system/settings";
 
 type Dict = Record<string, unknown>;
 

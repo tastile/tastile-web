@@ -54,6 +54,31 @@ export default defineConfig({
       E2E_BYPASS_AUTH: "",
       NEXT_PUBLIC_E2E_BYPASS_AUTH: "",
     },
+    // Coverage targets follow policy §29. Thresholds are enforced only when
+    // coverage is enabled (`bunx vitest run --coverage`); the standard
+    // `bun run check` gate stays at the iteration floor and does not collect
+    // coverage. Bring the suite to 80% lines/statements/functions/branches
+    // before wiring `coverage` into `bun run check`.
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html"],
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/**/*.{test,spec}.{ts,tsx}",
+        "src/**/__tests__/**",
+        "src/**/__mocks__/**",
+        "src/**/*.d.ts",
+        "src/test/**",
+        "src/lib/api/v1/openapi-generated.{d.ts,ts}",
+        "src/**/index.ts",
+      ],
+      thresholds: {
+        lines: 80,
+        statements: 80,
+        functions: 80,
+        branches: 80,
+      },
+    },
   },
   resolve: {
     alias: {

@@ -73,8 +73,6 @@ probe*raw*.json
 # local event store
 /.tastile-data/
 
-.claude/*
-
 # Claude / agent / IDE tooling
 .claude/
 .agents/
@@ -98,3 +96,15 @@ evidence/web-verify-*.log
 .reference/*
 .schemathesis/
 docs/trace/
+
+# Generated / throwaway artifacts (policy §30 / §31)
+.tmp/
+/openapi.json
+/.openapi-cache.json
+# Local dev-server lifecycle artifacts (never enter release)
+/dev-server.log
+/dev-server.pid
+# Plan evidence: screenshots are scratch, JSON evidence is committed separately
+/docs/plans/evidence/**/screenshots/
+/docs/plans/evidence/**/dev-server.log
+/docs/plans/evidence/**/dev-server.pid
