@@ -99,6 +99,14 @@ jobs:
       - name: Lint, typecheck, test, build
         env:
           NEXT_TELEMETRY_DISABLED: 1
+          # Pin TZ so vitest workers deterministically match local dev (JST).
+          # The schedule wire tests in quick-create-schedule-wire.test.ts
+          # exercise LocalDate → Instant conversion through
+          # `new Date("YYYY-MM-DDT00:00:00")`, which is TZ-dependent on
+          # purpose — the conflict is documented in the test itself.
+          # GitHub-hosted ubuntu-latest runners default to UTC; without
+          # this pin the same tests pass on a JST laptop and fail on CI.
+          TZ: Asia/Tokyo
         run: bun run check:release
 
       - name: Package standalone build
