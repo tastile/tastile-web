@@ -17,7 +17,7 @@ test.describe("calendar event flow", () => {
     await truncateV1();
   });
 
-  test.skip("create -> list-view -> edit -> delete", async ({ page }) => {
+  test.skip("create -> list-view -> edit -> delete", async ({ page, request }) => {
     const title = uniqueTitle("Team sync");
     const updatedTitle = uniqueTitle("Team sync v2");
     const day = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Tokyo" });
@@ -77,7 +77,7 @@ test.describe("calendar event flow", () => {
     expect(after3).toHaveLength(0);
   });
 
-  test.skip("month view shows event on correct day", async ({ page }) => {
+  test.skip("month view shows event on correct day", async ({ page, request }) => {
     const title = uniqueTitle("All-hands");
     const today = new Date();
     const yyyy = today.getUTCFullYear();
@@ -85,7 +85,7 @@ test.describe("calendar event flow", () => {
     const dd = String(today.getUTCDate()).padStart(2, "0");
     const dayStr = yyyy + "-" + mm + "-" + dd;
 
-    await v1CreatePlacement(page, {
+    await v1CreatePlacement(request, {
       title,
       start: dayStr + "T15:00:00.000Z",
       end: dayStr + "T16:00:00.000Z",

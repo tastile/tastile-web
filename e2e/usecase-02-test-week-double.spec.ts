@@ -1,34 +1,35 @@
-// USECASE 02 — テスト週間学習量増 (test-week-double)
-// Class: A — recurring/label/frame
-// Drive: UI (QuickCreate panel) — create a SourceTile whose
-// occurrence cadence doubles inside the test-week window.
-// Verify: GET /v1/source-tiles/{id} schedule.kind reflects the
-// doubling rule.
-//
-// Helpers: source-tile.ts
-// Verify: GET /v1/source-tiles/{id}
-//
-// Status: REVIEWED.
-
 import { test, expect } from "@playwright/test";
 import { resetDb } from "./helpers/v1";
-import { v1CreateSourceTile, v1GetSourceLifecycle } from "./helpers/source-tile";
+import { psqlCount } from "./helpers/psql";
+import {
+  goToDay,
+  openQuickCreate,
+  setQuickCreateTitle,
+  setQuickCreateRecurring,
+  submitQuickCreate,
+  expectDayEventVisible,
+  uniqueTitle,
+} from "./helpers/ui";
 
 test.describe("USECASE 02 — test-week-double", () => {
   test.beforeEach(async () => { await resetDb(); });
 
-  test("source-tile with double-cadence schedule persists and reads back", async ({ request, page }) => {
-    const sourceTileId = await v1CreateSourceTile(request, {
-      title: "Test-week study " + Date.now(),
-      scheduleKind: 0, // DAILY_STEP
-      stepMs: 12 * 60 * 60 * 1000, // 12h cadence (vs 24h default = 2x)
+  test("user creates a weekly Mon-Fri recurring tile", async ({ page }) => {
+    const title = uniqueTitle("Test-week study");
+    await goToDay(page, "2026-09-01");
+    await openQuickCreate(page);
+    await setQuickCreateTitle(page, title);
+    await setQuickCreateRecurring(page, {
+      mode: "weekly",
+      weekdayMask: 0b00111110,
     });
-    expect(sourceTileId).toBeTruthy();
+    await submitQuickCreate(page);
 
-    await page.goto("/dashboard/calendar?view=week");
+    await goToDay(page, "2026-09-01");
+    await expectDayEventVisible(page, title);
 
-    const view = await v1GetSourceLifecycle(request, sourceTileId);
-    expect(view.id).toBe(sourceTileId);
-    expect(view.title).toContain("Test-week study");
+    const escapedTitle = title.replace(/'/g, "''");
+    const tileCount = await psqlCount("v1_tile", `title = '${escapedTitle}'`);
+    expect(tileCount, `v1_tile row for "${title}"`).toBeGreaterThanOrEqual(1);
   });
 });

@@ -10,10 +10,10 @@ test.describe("overlap lane assignment", () => {
     await truncateV1();
   });
 
-  test("three overlapping events in day view get distinct lanes", async ({ page }) => {
+  test("three overlapping events in day view get distinct lanes", async ({ page, request }) => {
     const day = todayUtc();
     const mk = (title: string, startH: number, endH: number, color: string) =>
-      v1CreatePlacement(page, {
+      v1CreatePlacement(request, {
         title,
         start: day + "T" + String(startH).padStart(2, "0") + ":00:00.000Z",
         end: day + "T" + String(endH).padStart(2, "0") + ":00:00.000Z",
@@ -54,9 +54,9 @@ test.describe("overlap lane assignment", () => {
     expect(span).toBeGreaterThan(20);
   });
 
-  test("5-minute break is hidden by default (min_minutes=6)", async ({ page }) => {
+  test("5-minute break is hidden by default (min_minutes=6)", async ({ page, request }) => {
     const day = todayUtc();
-    await v1CreatePlacement(page, {
+    await v1CreatePlacement(request, {
       title: "Short break",
       start: day + "T10:00:00.000Z",
       end: day + "T10:05:00.000Z",

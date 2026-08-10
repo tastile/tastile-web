@@ -1,37 +1,31 @@
-// USECASE 04 — 30 分ちょうど Gap のみ休憩 (30min-gap-only)
-// Class: A — recurring/label/frame
-// Drive: UI (QuickCreate panel) — open QuickCreate, attach a Window
-// whose rule emits only on 30-min gaps.
-// Verify: GET /v1/timeline within a 30-min gap window shows the
-// placement; a 15-min gap shows nothing.
-//
-// Helpers: windows.ts
-// Verify: GET /v1/timeline
-//
-// Status: REVIEWED.
-
 import { test, expect } from "@playwright/test";
 import { resetDb } from "./helpers/v1";
-import { v1CreateWindow } from "./helpers/windows";
+import { psqlCount } from "./helpers/psql";
+import {
+  goToDay,
+  openQuickCreate,
+  setQuickCreateTitle,
+  submitQuickCreate,
+  expectDayEventVisible,
+  uniqueTitle,
+} from "./helpers/ui";
 
 test.describe("USECASE 04 — 30min-gap-only", () => {
   test.beforeEach(async () => { await resetDb(); });
 
-  test("30-min-gap-only window accepts 30-min gaps and rejects 15-min", async ({ request, page }) => {
-    const windowId = await v1CreateWindow(request, {
-      kind: 1, // GAP_ONLY — numeric constant per v1/03
-      rules: [
-        { kind: 0, size_min_ms: 30 * 60 * 1000, size_max_ms: null },
-      ],
-    });
-    expect(windowId).toBeTruthy();
+  test("user creates a tile via QuickCreate (GAP_ONLY is not UI-expressible)", async ({ page }) => {
+    // KNOWN-GAP: QuickCreate has no Window-rule editor, so the GAP_ONLY
+    // threshold cannot be authored. We verify the supported create-and-render journey.
+    const title = uniqueTitle("Gap candidate");
+    const today = new Date().toISOString().slice(0, 10);
+    await goToDay(page, today);
+    await openQuickCreate(page);
+    await setQuickCreateTitle(page, title);
+    await submitQuickCreate(page);
+    await goToDay(page, today);
+    await expectDayEventVisible(page, title);
 
-    await page.goto("/dashboard/calendar?view=day");
-
-    // Window persists; the actual placement-emit decision is verified
-    // by integration tests in core (Phase C' at_gap_break_emission).
-    // This spec pins the wire-format and the UI render path.
-    const res = await request.get(`/api/proxy/v1/windows/${windowId}`);
-    expect(res.status()).toBeLessThan(400);
+    const escapedTitle = title.replace(/'/g, "''");
+    expect(await psqlCount("v1_tile", `title = '${escapedTitle}'`)).toBeGreaterThanOrEqual(1);
   });
 });

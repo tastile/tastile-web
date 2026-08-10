@@ -1,10 +1,14 @@
 // v1 API helpers shared across e2e specs.  These bypass the v0 BFF
 // (/api/events) which is now 410 Gone and call the v1 endpoints
 // directly via the Next.js proxy at /api/proxy/v1/*.
+//
+// All helpers take an `APIRequestContext` (the value of `request` from
+// the Playwright test fixture) and call `.get/.post` directly.  Pass
+// `request` from `test("...", async ({ request }) => { ... })`.
 
 import { type APIRequestContext, expect } from "@playwright/test";
 
-interface V1CommandResp { aggregate?: { id: string }; }
+interface V1CommandResp { aggregate?: { id?: string }; }
 export interface V1TileView { id: string; planId?: string | null; plan_id?: string | null; }
 export interface V1TimelineItem {
   placementId?: string;
@@ -28,14 +32,12 @@ function newIdemKey(): string {
 }
 
 export async function v1CreatePlacement(
-  client: { request: APIRequestContext },
+  client: APIRequestContext,
   input: V1CreatePlacementInput,
 ): Promise<{ tileId: string; planId: string; placementId: string }> {
-  const req = client.request;
-
   // 1) Create Placement tile (kind=1).  Server also writes a v1_plan row
   //    in the same transaction.
-  const tileRes = await req.post("/api/proxy/v1/tiles", {
+  const tileRes = await client.post("/api/proxy/v1/tiles", {
     headers: { "content-type": "application/json" },
     data: {
       idempotency_key: newIdemKey(),
@@ -57,14 +59,14 @@ export async function v1CreatePlacement(
   if (!tileId) throw new Error("v1/tiles response missing aggregate.id");
 
   // 2) Read back the auto-created plan_id.
-  const tileViewRes = await req.get("/api/proxy/v1/tiles/" + tileId);
+  const tileViewRes = await client.get("/api/proxy/v1/tiles/" + tileId);
   expect(tileViewRes.status()).toBeLessThan(400);
   const tileView = (await tileViewRes.json()) as V1TileView;
   const planId = tileView.planId ?? tileView.plan_id ?? null;
   if (!planId) throw new Error("v1 tile " + tileId + " has no plan_id");
 
   // 3) Create Placement (Manual source = 0).
-  const placementRes = await req.post("/api/proxy/v1/placements", {
+  const placementRes = await client.post("/api/proxy/v1/placements", {
     headers: { "content-type": "application/json" },
     data: {
       idempotency_key: newIdemKey(),
@@ -114,11 +116,11 @@ export async function v1CreatePlacement(
  * getByTestId) via the /v1/timeline read path.
  */
 export async function v1CreatePlacementAndResolve(
-  client: { request: APIRequestContext },
+  client: APIRequestContext,
   input: V1CreatePlacementInput,
 ): Promise<{ tileId: string; planId: string; placementId: string; occurrenceId: string }> {
   const { tileId, planId, placementId } = await v1CreatePlacement(client, input);
-  const tlRes = await client.request.get(
+  const tlRes = await client.get(
     "/api/proxy/v1/timeline?start=" + encodeURIComponent(input.start) + "&end=" + encodeURIComponent(input.end),
   );
   expect(tlRes.status()).toBeLessThan(400);
@@ -132,29 +134,59 @@ export async function v1CreatePlacementAndResolve(
 /**
  * Truncate all v1 tables in the canonical cleanup order so the next
  * test sees a fully empty calendar.  Goes through wslc container exec
- * on the tastile-db container (canonical name from scripts/wslc/up-v1.sh).
+ * on whichever container hosts the v1 Postgres instance.
+ *
+ * Tries `tastile-db` first (canonical from scripts/wslc/up-v1.sh);
+ * falls back to `tastile-dev-api` (the dev image runs an embedded
+ * postgres on /var/run/postgresql).  On this Windows host the dev
+ * image is the one kept warm across sessions (memory
+ * `feedback_wslc_daemon_wedge.md` documents why the daemon wedges),
+ * so the fallback is the common path.
+ *
+ * Retries on Postgres deadlock_detected (40P01) up to 5 times with
+ * 100ms backoff.  The wslc worker runs lazy_expand_owner_window /
+ * drive_fill in the background and occasionally holds an AccessShare
+ * lock on v1_placement at the same time the TRUNCATE needs
+ * AccessExclusiveLock, producing a deadlock.  Retry resolves it
+ * without re-seeding the test from scratch.
  */
 export async function truncateV1(): Promise<void> {
   const { execFileSync } = await import("node:child_process");
-  try {
-    execFileSync(
-      "wslc",
-      [
-        "container", "exec", "tastile-db",
-        "psql", "-U", "tastile", "-d", "tastile_db", "-c",
-        // 12 tables: parent aggregates + tables whose FK to parent is NOT
-        // ON DELETE CASCADE.  v1_source_lifecycle_event references
-        // v1_source_tile without CASCADE (V1_026), v1_decision_session is
-        // a root table (V1_042).  All other child tables ride on
-        // CASCADE from v1_tile / v1_placement.
-        "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;",
-      ],
-      { stdio: ["ignore", "pipe", "pipe"], timeout: 15_000 },
-    );
-  } catch (err) {
-    console.error("[truncateV1] wslc container exec failed:", err);
-    throw err;
+  const sql =
+    // 12 tables: parent aggregates + tables whose FK to parent is NOT
+    // ON DELETE CASCADE.  v1_source_lifecycle_event references
+    // v1_source_tile without CASCADE (V1_026), v1_decision_session is
+    // a root table (V1_042).  All other child tables ride on
+    // CASCADE from v1_tile / v1_placement.
+    "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;";
+  const targets: ReadonlyArray<readonly [string, ...string[]]> = [
+    ["tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql],
+    ["tastile-dev-api", "su", "-c", `psql -U tastile -d tastile -c "${sql.replace(/"/g, '\\"')}"`, "postgres"],
+  ];
+  let lastErr: unknown = null;
+  for (const cmd of targets) {
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        execFileSync("wslc", ["container", "exec", ...cmd], {
+          stdio: ["ignore", "pipe", "pipe"],
+          timeout: 60_000,
+        });
+        return;
+      } catch (err) {
+        lastErr = err;
+        const msg = (err as Error).message ?? String(err);
+        const isDeadlock = msg.includes("40P01") || msg.includes("deadlock detected");
+        const isWedge = msg.includes("ETIMEDOUT") || msg.includes("40P05");
+        const isMissing = msg.includes("WSLC_E_CONTAINER_NOT_FOUND") || msg.includes("見つかりません");
+        if (isMissing) break; // try next container
+        if ((!isDeadlock && !isWedge) || attempt === maxAttempts) break;
+        await new Promise((r) => setTimeout(r, 250 * attempt));
+      }
+    }
   }
+  console.error("[truncateV1] all targets failed:", lastErr);
+  throw lastErr;
 }
 
 /**
@@ -175,7 +207,7 @@ export async function resetDb(): Promise<void> {
  * user toggles weekday + start/end in the QuickCreate panel.
  */
 export async function v1CreateWeeklyRecurring(
-  client: { request: APIRequestContext },
+  client: APIRequestContext,
   input: {
     title: string;
     anchorStart: string; // ISO of the first occurrence; used as pattern anchor.
@@ -188,9 +220,8 @@ export async function v1CreateWeeklyRecurring(
     planRole?: number;
   },
 ): Promise<{ tileId: string; actualTileId: string; frameRuleId: string; placementIds: string[] }> {
-  const req = client.request;
   const occurrences = Math.min(60, Math.max(1, input.occurrences ?? 14));
-  const tileRes = await req.post("/api/proxy/v1/tiles", {
+  const tileRes = await client.post("/api/proxy/v1/tiles", {
     headers: { "content-type": "application/json" },
     data: {
       idempotency_key: crypto.randomUUID(),
@@ -215,14 +246,14 @@ export async function v1CreateWeeklyRecurring(
   // returns RecurringView including the v1_tile.id) so callers can
   // correlate with /v1/timeline items (whose tile_id is the v1_tile.id).
   let actualTileId = tileId;
-  const recurringViewRes = await req.get("/api/proxy/v1/recurring/" + tileId);
+  const recurringViewRes = await client.get("/api/proxy/v1/recurring/" + tileId);
   if (recurringViewRes.status() < 400) {
     const view = (await recurringViewRes.json()) as { tile_id?: string };
     if (view.tile_id) actualTileId = view.tile_id;
   }
 
   const frameRuleId = crypto.randomUUID();
-  const ruleRes = await req.post(`/api/proxy/v1/recurring/${tileId}/frame-rules`, {
+  const ruleRes = await client.post(`/api/proxy/v1/recurring/${tileId}/frame-rules`, {
     headers: { "content-type": "application/json" },
     data: {
       idempotency_key: crypto.randomUUID(),
@@ -251,7 +282,7 @@ export async function v1CreateWeeklyRecurring(
   );
   const placementIds: string[] = [];
   for (const r of ranges) {
-    const matRes = await req.post(
+    const matRes = await client.post(
       `/api/proxy/v1/recurring/${tileId}/frame-rules/${frameRuleId}/materialize`,
       {
         headers: { "content-type": "application/json" },

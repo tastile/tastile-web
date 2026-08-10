@@ -10,12 +10,12 @@ test.describe('quick tile — recommend popover uses real tile data', () => {
     await truncateV1();
   });
 
-  test('tag suggest popover shows tags from a previously created event', async ({ page }) => {
+  test('tag suggest popover shows tags from a previously created event', async ({ page, request }) => {
     const day = todayUtc();
     const tag = 'reco-' + Date.now();
     const title = 'tile-with-tag-' + Date.now();
 
-    await v1CreatePlacement(page, {
+    await v1CreatePlacement(request, {
       title,
       start: day + 'T10:00:00.000Z',
       end: day + 'T11:00:00.000Z',

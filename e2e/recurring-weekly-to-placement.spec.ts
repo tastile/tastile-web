@@ -10,7 +10,7 @@ test.describe('v1 — recurring to placement flow (weekly + time-of-day)', () =>
     await truncateV1();
   });
 
-  test('Monday + Tuesday 12:00-13:00 weekly produces a placement on each match', async ({ page }) => {
+  test('Monday + Tuesday 12:00-13:00 weekly produces a placement on each match', async ({ page, request }) => {
     // Anchor: the next Monday at 12:00 local (Asia/Tokyo).  The test
     // runner is pinned to Asia/Tokyo so we use Date(...) in local time.
     const today = new Date();
@@ -23,7 +23,7 @@ test.describe('v1 — recurring to placement flow (weekly + time-of-day)', () =>
     // v1 weekday mask: bit 0=Mon, bit 1=Tue
     const mask = (1 << 0) | (1 << 1);
 
-    const { placementIds } = await v1CreateWeeklyRecurring(page, {
+    const { placementIds } = await v1CreateWeeklyRecurring(request, {
       title: 'weekly-mon-tue-12-13',
       anchorStart,
       anchorEnd,
@@ -49,7 +49,7 @@ test.describe('v1 — recurring to placement flow (weekly + time-of-day)', () =>
     expect(present.length, 'timeline sees all materialized placements').toBe(4);
   });
 
-  test('un-materialized occurrences in range appear via /v1/timeline lazy expand', async ({ page }) => {
+  test('un-materialized occurrences in range appear via /v1/timeline lazy expand', async ({ page, request }) => {
     // Create a weekly Mon+Tue 12-13 tile, materialize only the FIRST
     // occurrence, then query the timeline across a 14-day window.  The
     // server's lazy_expand_for_window should create placements for
@@ -62,7 +62,7 @@ test.describe('v1 — recurring to placement flow (weekly + time-of-day)', () =>
     const anchorEnd = new Date(monday.getTime() + 60 * 60 * 1000).toISOString();
     const mask = (1 << 0) | (1 << 1);
 
-    const { actualTileId, frameRuleId } = await v1CreateWeeklyRecurring(page, {
+    const { actualTileId, frameRuleId } = await v1CreateWeeklyRecurring(request, {
       title: 'lazy-expand-test',
       anchorStart,
       anchorEnd,

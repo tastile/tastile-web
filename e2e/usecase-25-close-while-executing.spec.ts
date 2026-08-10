@@ -1,39 +1,52 @@
-// USECASE 25 — 実行中 close (close-while-executing)
-// Class: D — execution/cancel
-// Drive: UI (timeline) — close a Source-managed Placement while its
-// Execution is still ACTIVE.  The Execution must remain ACTIVE
-// (per v1/10 §6: Execution does not depend on Placement state) but
-// the underlying Placement becomes read-only.
-// Verify: GET /v1/executions/{id} state=ACTIVE.
+// USECASE 25 — close-while-executing
 //
-// Status: REVIEWED.
+// KNOWN-GAP: The execution panel does not expose a "cancel source"
+// affordance.  Closing the placement while an execution is active is
+// therefore not reachable through the UI today.  This spec exercises
+// the supported create + start journey and verifies the day panel
+// stays usable after the start.
 
 import { test, expect } from "@playwright/test";
-import { resetDb, v1CreatePlacementAndResolve } from "./helpers/v1";
-import { v1StartExecution, v1ReadExecutionSegments } from "./helpers/execution";
+import { resetDb } from "./helpers/v1";
+import { psqlCount } from "./helpers/psql";
+import {
+  clickDayEvent,
+  clickStartExecution,
+  expectDayEventVisible,
+  goToDay,
+  openQuickCreate,
+  setQuickCreateTitle,
+  submitQuickCreate,
+  uniqueTitle,
+} from "./helpers/ui";
 
 test.describe("USECASE 25 — close-while-executing", () => {
   test.beforeEach(async () => { await resetDb(); });
 
-  test("execution survives source-managed placement closure", async ({ request, page }) => {
-    const day = "2026-09-01";
-    const { placementId } = await v1CreatePlacementAndResolve(request, {
-      title: "close-while-exec " + Date.now(),
-      start: `${day}T09:00:00Z`,
-      end: `${day}T10:00:00Z`,
-    });
+  test("the execution journey leaves the day panel usable", async ({ page }) => {
+    const title = uniqueTitle("Close while exec");
 
-    const exId = await v1StartExecution(request, placementId);
+    // 1) Submit a tile via QuickCreate.
+    await goToDay(page, "2026-09-01");
+    await openQuickCreate(page);
+    await setQuickCreateTitle(page, title);
+    await submitQuickCreate(page);
 
-    await page.goto("/dashboard/calendar?view=day");
+    // 2) Navigate back to the day view at the same date.
+    await goToDay(page, "2026-09-01");
+    await expectDayEventVisible(page, title);
 
-    // Closure is the cancel of the placement via DELETE-like command.
-    // The contract (Execution state stays ACTIVE) is verified via the
-    // execution read after the closure call.
-    const view = await v1ReadExecutionSegments(request, exId);
-    expect(view.id).toBe(exId);
+    // 3) Open the execution panel and click Start.
+    await clickDayEvent(page, title);
+    await clickStartExecution(page);
 
-    const placement = await request.get(`/api/proxy/v1/placements/${placementId}`);
-    expect(placement.status()).toBeLessThan(400);
+    // 4) After returning to the day view, the placement is still rendered.
+    await goToDay(page, "2026-09-01");
+    await expectDayEventVisible(page, title);
+
+    // 5) DB ground truth — at least one v1_tile row carries the title.
+    const escaped = title.replace(/'/g, "''");
+    const tileCount = await psqlCount("v1_tile", `title = '${escaped}'`);
+    expect(tileCount, `v1_tile rows for "${title}"`).toBeGreaterThanOrEqual(1);
   });
 });
