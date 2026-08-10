@@ -27,7 +27,43 @@ export const header = {
       },
     },
   },
-  "zh-CN": {},
-  ko: {},
-  es: {},
+  "zh-CN": {
+    header: {
+      active: "执行中",
+      menu: "菜单",
+      notifications: "通知",
+      sync: {
+        in_progress: "同步中",
+        error: "同步错误",
+        delta: "同步",
+        idle: "同步空闲",
+      },
+    },
+  },
+  ko: {
+    header: {
+      active: "실행 중",
+      menu: "메뉴",
+      notifications: "알림",
+      sync: {
+        in_progress: "동기화 중",
+        error: "동기화 오류",
+        delta: "동기화",
+        idle: "동기화 대기",
+      },
+    },
+  },
+  es: {
+    header: {
+      active: "Activo",
+      menu: "Menú",
+      notifications: "Notificaciones",
+      sync: {
+        in_progress: "sincronizando",
+        error: "error de sincronización",
+        delta: "sincronizar",
+        idle: "sincronización inactiva",
+      },
+    },
+  },
 } satisfies Record<Locale, Record<string, unknown>>;

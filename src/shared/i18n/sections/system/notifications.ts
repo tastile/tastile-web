@@ -25,7 +25,40 @@ export const notifications = {
       generic: "通知があります",
     },
   },
-  "zh-CN": {},
-  ko: {},
-  es: {},
+  "zh-CN": {
+    notifications: {
+      promptPending: "需要处理的操作",
+      onBreak: "正在休息",
+      running: "运行中",
+      accessShareOffer: "共享邀请",
+      accessRequest: "访问请求",
+      accessUpdated: "访问权限已更新",
+      accessOther: "访问通知",
+      generic: "通知",
+    },
+  },
+  ko: {
+    notifications: {
+      promptPending: "확인 필요한 알림",
+      onBreak: "휴식 중",
+      running: "실행 중",
+      accessShareOffer: "공유 요청",
+      accessRequest: "접근 요청",
+      accessUpdated: "접근 권한 업데이트됨",
+      accessOther: "접근 알림",
+      generic: "알림",
+    },
+  },
+  es: {
+    notifications: {
+      promptPending: "Acción requerida",
+      onBreak: "En pausa",
+      running: "En ejecución",
+      accessShareOffer: "Oferta de compartición",
+      accessRequest: "Solicitud de acceso",
+      accessUpdated: "Acceso actualizado",
+      accessOther: "Notificación de acceso",
+      generic: "Notificación",
+    },
+  },
 } satisfies Record<Locale, Record<string, unknown>>;
