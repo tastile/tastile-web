@@ -1,9 +1,0 @@
-
- RUN  v4.1.10 C:/Users/rebui/Desktop/tastile/tastile-web
-
-
- Test Files  1 passed (1)
-      Tests  13 passed (13)
-   Start at  09:44:25
-   Duration  2.98s (transform 155ms, setup 0ms, import 592ms, tests 554ms, environment 1.52s)
-

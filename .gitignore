@@ -86,8 +86,13 @@ dist/
 bun.lockb.bak
 
 # Diagnostic artifacts (react-doctor, debug screenshots, manual walkthroughs)
+# policy §30 / §31: scratch evidence never enters release.
+# Kept tracked: evidence/2026-07-29-*/ (plan evidence bundles),
+# evidence/web-*.txt (point-in-time snapshots).
 .doctor-cache/
 evidence/doctor/
+evidence/*.log
+evidence/*.network-response
 evidence/manual-*.log
 evidence/verify-*.log
 evidence/web-verify-*.log

@@ -148,9 +148,7 @@ describe("Condition AST ser/de round-trip", () => {
       fc.property(conditionNodeArb(3), (ast) => {
         const wire = convertCondition(ast);
         const back = parseCondition(wire);
-        expect(JSON.parse(JSON.stringify(back))).toEqual(
-          JSON.parse(JSON.stringify(ast)),
-        );
+        expect(structuredClone(back)).toEqual(structuredClone(ast));
       }),
       { numRuns: 100, endOnFailure: true },
     );
@@ -161,9 +159,7 @@ describe("Condition AST ser/de round-trip", () => {
       fc.property(termArb(), (term) => {
         const wire = convertTerm(term);
         const back = parseTerm(wire);
-        expect(JSON.parse(JSON.stringify(back))).toEqual(
-          JSON.parse(JSON.stringify(term)),
-        );
+        expect(structuredClone(back)).toEqual(structuredClone(term));
       }),
       { numRuns: 100, endOnFailure: true },
     );
@@ -207,9 +203,7 @@ describe("Condition AST ser/de round-trip", () => {
             };
       const wire = convertCondition(ast);
       const back = parseCondition(wire);
-      expect(JSON.parse(JSON.stringify(back))).toEqual(
-        JSON.parse(JSON.stringify(ast)),
-      );
+      expect(structuredClone(back)).toEqual(structuredClone(ast));
     }
   });
 
@@ -253,9 +247,7 @@ describe("Condition AST ser/de round-trip", () => {
     };
     const wire = convertCondition(ast);
     const back = parseCondition(wire);
-    expect(JSON.parse(JSON.stringify(back))).toEqual(
-      JSON.parse(JSON.stringify(ast)),
-    );
+    expect(structuredClone(back)).toEqual(structuredClone(ast));
   });
 
   it("hand-picked fixture: NOT wrapping TERM", () => {
@@ -272,9 +264,7 @@ describe("Condition AST ser/de round-trip", () => {
     };
     const wire = convertCondition(ast);
     const back = parseCondition(wire);
-    expect(JSON.parse(JSON.stringify(back))).toEqual(
-      JSON.parse(JSON.stringify(ast)),
-    );
+    expect(structuredClone(back)).toEqual(structuredClone(ast));
   });
 
   it("hand-picked fixture: nested ANY > ALL > TERM", () => {
@@ -297,9 +287,7 @@ describe("Condition AST ser/de round-trip", () => {
     };
     const wire = convertCondition(ast);
     const back = parseCondition(wire);
-    expect(JSON.parse(JSON.stringify(back))).toEqual(
-      JSON.parse(JSON.stringify(ast)),
-    );
+    expect(structuredClone(back)).toEqual(structuredClone(ast));
   });
 
   it("reference condition: relation term with target pointer round-trips", () => {
@@ -318,9 +306,7 @@ describe("Condition AST ser/de round-trip", () => {
     };
     const wire = convertCondition(ast);
     const back = parseCondition(wire);
-    expect(JSON.parse(JSON.stringify(back))).toEqual(
-      JSON.parse(JSON.stringify(ast)),
-    );
+    expect(structuredClone(back)).toEqual(structuredClone(ast));
     // Wire shape must be externally tagged: {"Term": {"Relation": {...}}}
     // relation is numeric (0=Root), window_kind is string ("Root")
     expect(wire).toEqual({
@@ -371,9 +357,7 @@ describe("Condition AST ser/de round-trip", () => {
     };
     const wire = convertCondition(ast);
     const back = parseCondition(wire);
-    expect(JSON.parse(JSON.stringify(back))).toEqual(
-      JSON.parse(JSON.stringify(ast)),
-    );
+    expect(structuredClone(back)).toEqual(structuredClone(ast));
     // Verify the target pointer is preserved through round-trip
     const relationTerm = (back.children[0] as ConditionNode).term;
     expect(relationTerm).not.toBeNull();
