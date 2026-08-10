@@ -91,6 +91,8 @@ jobs:
           NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
           NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=Google,SignInWithApple
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+          NEXT_PUBLIC_TASTILE_CORE_URL=https://api.tastile.app
+          NEXT_PUBLIC_CORE_DIRECT_MODE=1
           CLOUD_API_BASE=http://127.0.0.1:31400
           ENVEOF
 
