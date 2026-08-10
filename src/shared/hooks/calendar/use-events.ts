@@ -34,9 +34,30 @@ export interface UseEventsRange {
   includeRecurring?: boolean;
   /** Workspace owner ids selected in the calendar side panel. */
   ownerIds?: string[];
+  /**
+   * When set, the range is split into chunks of this many days (max) and
+   * each chunk is fetched independently.  The Rust /v1/timeline API caps
+   * at 31 days per request, so year-view (365 d) must chunk.
+   */
+  maxWindowDays?: number;
 }
 
 const EVENTS_CHANGED_EVENT = "tastile:events-changed";
+
+/** Split [start, end) into at most `maxDays`-wide contiguous sub-ranges. */
+function splitRange(start: string, end: string, maxDays: number): Array<{ start: string; end: string }> {
+  const chunks: Array<{ start: string; end: string }> = [];
+  let cursor = new Date(start);
+  const stop = new Date(end);
+  while (cursor < stop) {
+    const chunkEnd = new Date(cursor);
+    chunkEnd.setDate(chunkEnd.getDate() + maxDays);
+    if (chunkEnd > stop) chunkEnd.setTime(stop.getTime());
+    chunks.push({ start: cursor.toISOString(), end: chunkEnd.toISOString() });
+    cursor = new Date(chunkEnd);
+  }
+  return chunks;
+}
 
 export function notifyEventsChanged(): void {
   if (typeof window === "undefined") return;
@@ -65,6 +86,7 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     const minMinutes = range?.minMinutes;
     const includeRecurring = range?.includeRecurring;
     const ownerIds = range?.ownerIds;
+    const maxWindowDays = range?.maxWindowDays;
     if (!start || !end) {
       // No range yet (e.g. component not mounted with a window); the
       // caller can re-invoke reload() once range is available.
@@ -80,36 +102,66 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
       setLoading(false);
       return;
     }
+
     setLoading(true);
     setError(null);
-    const qs = new URLSearchParams();
-    qs.set("start", start);
-    qs.set("end", end);
-    qs.set("min_minutes", String(minMinutes ?? 0));
-    qs.set("include_recurring", String(includeRecurring ?? true));
-    if (ownerIds?.length) qs.set("owner_ids", ownerIds.join(","));
-    await fetch(`${OCC_BASE}?${qs.toString()}`, { cache: "no-store" })
-      .then(async (res) => {
-        if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
-        const data = (await res.json()) as
-          | { events: CalendarEvent[] }
-          | { occurrences: CalendarEvent[] };
-        const list =
-          "events" in data ? data.events : (data as { occurrences: CalendarEvent[] }).occurrences;
-        setEvents(list ?? []);
-      })
-      .catch((err: unknown) => {
-        // Stable Error reference: a poll that fails repeatedly with the same
-        // message must not create a new Error object every cycle, or
-        // consumers (CalendarMain's banner, EventListView) re-render on
-        // every tick and the calendar appears to shake.
-        const msg = err instanceof Error ? err.message : String(err);
-        setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds]);
+
+    /** Build the query-string for a single chunk. */
+    const buildQs = (s: string, e: string) => {
+      const qs = new URLSearchParams();
+      qs.set("start", s);
+      qs.set("end", e);
+      qs.set("min_minutes", String(minMinutes ?? 0));
+      qs.set("include_recurring", String(includeRecurring ?? true));
+      if (ownerIds?.length) qs.set("owner_ids", ownerIds.join(","));
+      return qs.toString();
+    };
+
+    /** Fetch a single chunk and return parsed events. */
+    const fetchChunk = async (s: string, e: string): Promise<CalendarEvent[]> => {
+      const res = await fetch(`${OCC_BASE}?${buildQs(s, e)}`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
+      const data = (await res.json()) as
+        | { events: CalendarEvent[] }
+        | { occurrences: CalendarEvent[] };
+      return ("events" in data ? data.events : (data as { occurrences: CalendarEvent[] }).occurrences) ?? [];
+    };
+
+    try {
+      let allEvents: CalendarEvent[];
+
+      if (maxWindowDays) {
+        // Split the range into <= maxWindowDays chunks and fetch in
+        // parallel so the Rust 31-day /v1/timeline limit is respected.
+        const chunks = splitRange(start, end, maxWindowDays);
+        const results = await Promise.all(chunks.map((c) => fetchChunk(c.start, c.end)));
+        // Flatten and deduplicate by id (chunks may share boundary events).
+        const seen = new Set<string>();
+        allEvents = [];
+        for (const batch of results) {
+          for (const ev of batch) {
+            if (!seen.has(ev.id)) {
+              seen.add(ev.id);
+              allEvents.push(ev);
+            }
+          }
+        }
+      } else {
+        allEvents = await fetchChunk(start, end);
+      }
+
+      setEvents(allEvents);
+    } catch (err: unknown) {
+      // Stable Error reference: a poll that fails repeatedly with the same
+      // message must not create a new Error object every cycle, or
+      // consumers (CalendarMain's banner, EventListView) re-render on
+      // every tick and the calendar appears to shake.
+      const msg = err instanceof Error ? err.message : String(err);
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+    } finally {
+      setLoading(false);
+    }
+  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds, range?.maxWindowDays]);
 
   const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
     const res = await fetch("/api/events", {

@@ -188,11 +188,18 @@ export function getDayViewTimeRange(mode: DisplayMode): { startTime: string; end
 }
 
 /**
- * WeekView: produce the 7 dates to render. Mode "scope" → Sun..Sat
- * of anchor's week. Mode "around" → today − 3 .. today + 3. Mode
- * "future" → today .. today + 6.
+ * WeekView: produce the 7 dates to render. Mode "scope" →
+ * firstDayOfWeek..firstDayOfWeek+6 of anchor's week. Mode "around"
+ * → today − 3 .. today + 3. Mode "future" → today .. today + 6.
+ *
+ * `firstDayOfWeek` must match the value passed to vendored WeekView so
+ * the displayed dates align with isWithinWeek's filtering window.
  */
-export function getWeekViewDates(mode: DisplayMode, anchor: string): string[] {
+export function getWeekViewDates(
+  mode: DisplayMode,
+  anchor: string,
+  firstDayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6 = 0,
+): string[] {
   const [y, m, d] = anchor.split("-").map(Number);
   const yy = y ?? 1970;
   const mm = (m ?? 1) - 1;
@@ -210,10 +217,11 @@ export function getWeekViewDates(mode: DisplayMode, anchor: string): string[] {
       return toIsoDate(day);
     });
   }
-  // scope: Sun..Sat of anchor's week.
+  // scope: firstDayOfWeek .. firstDayOfWeek+6 of anchor's week.
   const dow = new Date(Date.UTC(yy, mm, dd)).getUTCDay();
+  const offset = (dow - firstDayOfWeek + 7) % 7;
   return Array.from({ length: 7 }, (_, i) => {
-    const day = new Date(Date.UTC(yy, mm, dd - dow + i));
+    const day = new Date(Date.UTC(yy, mm, dd - offset + i));
     return toIsoDate(day);
   });
 }

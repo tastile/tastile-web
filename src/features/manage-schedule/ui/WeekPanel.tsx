@@ -76,7 +76,7 @@ export function WeekPanel({
   void range;
 
   const scrollTime = getScrollTimeForMode(displayMode);
-  const weekDates = getWeekViewDates(displayMode, anchor);
+  const weekDates = getWeekViewDates(displayMode, anchor, firstDayOfWeek);
 
   return (
     <div ref={containerRef} className="relative h-full" data-testid="week-panel">

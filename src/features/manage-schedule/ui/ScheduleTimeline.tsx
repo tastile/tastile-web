@@ -75,6 +75,7 @@ export function ScheduleTimeline({ initialView }: Props) {
     ...paddedRange,
     minMinutes: minDuration,
     ownerIds: selectedOwnerIds,
+    maxWindowDays: state.view === "year" ? 31 : undefined,
   });
 
   const openCreate = useQuickCreateStore((s) => s.openCreate);
