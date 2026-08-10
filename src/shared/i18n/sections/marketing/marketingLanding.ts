@@ -1,135 +1,3 @@
-export const marketingJa = {
-  nav: {
-    features: "機能",
-    pricing: "料金",
-    download: "ダウンロード",
-    login: "ログイン",
-    getStarted: "無料で始める",
-    webApp: "Webアプリ",
-    privacy: "プライバシー",
-    terms: "利用規約",
-    tokushoho: "特定商取引法に基づく表記",
-  },
-  pricing: {
-    title: "シンプルで透明な料金体系",
-    subtitle: "無料で始められます。もっと必要になったらアップグレード。",
-    freePlan: "Free",
-    freeDesc: "個人の実行制御のために",
-    proPlan: "Pro",
-    proDesc: "本格的な実行制御のために",
-    popular: "人気",
-    monthly: "月額",
-    yearly: "年額",
-    yearlySave: "17%お得",
-    perMonth: "/月",
-    perYear: "/年",
-    getStarted: "無料で始める",
-    upgrade: "Proにアップグレード",
-    loading: "読み込み中...",
-    freeFeatures: [
-      { title: "100ローカルタイル", desc: "デバイスに保存" },
-      { title: "50クラウドタイル", desc: "デバイス間で同期" },
-      { title: "30日分の履歴", desc: "実行追跡" },
-      { title: "Webアプリ", desc: "ステータス、プロンプト、メモ" },
-    ],
-    proFeatures: [
-      { title: "10,000タイル", desc: "ローカル＋クラウド保存" },
-      { title: "2年分の履歴", desc: "長期追跡" },
-      { title: "100,000イベント", desc: "詳細な実行ログ" },
-      { title: "デスクトップ同期", desc: "Windowsアプリ連携" },
-      { title: "フルダッシュボード", desc: "分析とインサイト" },
-      { title: "条件編集", desc: "高度なタイル設定" },
-    ],
-  },
-  download: {
-    title: "Tastileをダウンロード",
-    subtitle: "デスクトップアプリで最高の実行制御体験を。",
-    downloadButton: "Windows版をダウンロード（64ビット）",
-    version: "バージョン",
-    alsoAvailable: "その他利用可能",
-    microsoftStore: "Microsoft Store",
-    comingSoon: "近日Microsoft Storeに登場",
-    systemRequirements: "システム要件",
-    requirements: [
-      "Windows 10 バージョン 19041.0 以上",
-      "Windows 11 対応",
-      "x64 アーキテクチャ",
-      "同期機能にはインターネット接続が必要",
-    ],
-    webAlternative: "または、ダウンロードなしでTastileをWebで使えます。",
-    openWebApp: "Webアプリを開く",
-  },
-  footer: {
-    copyright: "© 2026 Tastile. All rights reserved.",
-  },
-};
-
-export const marketingEn = {
-  nav: {
-    features: "Features",
-    pricing: "Pricing",
-    download: "Download",
-    login: "Log in",
-    getStarted: "Get Started Free",
-    webApp: "Web App",
-    privacy: "Privacy",
-    terms: "Terms",
-    tokushoho: "Commerce Disclosure",
-  },
-  pricing: {
-    title: "Simple, transparent pricing",
-    subtitle: "Start free, upgrade when you need more power.",
-    freePlan: "Free",
-    freeDesc: "For personal execution control",
-    proPlan: "Pro",
-    proDesc: "For serious execution control",
-    popular: "POPULAR",
-    monthly: "Monthly",
-    yearly: "Yearly",
-    yearlySave: "save 17%",
-    perMonth: "/month",
-    perYear: "/year",
-    getStarted: "Get Started Free",
-    upgrade: "Upgrade to Pro",
-    loading: "Loading...",
-    freeFeatures: [
-      { title: "100 local tiles", desc: "Stored on your device" },
-      { title: "50 cloud tiles", desc: "Sync across devices" },
-      { title: "30 day history", desc: "Execution tracking" },
-      { title: "Web app", desc: "Status, prompt, memo" },
-    ],
-    proFeatures: [
-      { title: "10,000 tiles", desc: "Local + cloud storage" },
-      { title: "2 year history", desc: "Long-term tracking" },
-      { title: "100,000 events", desc: "Detailed execution log" },
-      { title: "Desktop sync", desc: "Windows app integration" },
-      { title: "Full dashboard", desc: "Analytics and insights" },
-      { title: "Condition editing", desc: "Advanced tile configuration" },
-    ],
-  },
-  download: {
-    title: "Download Tastile for Windows",
-    subtitle: "Get the desktop app for the best execution control experience.",
-    downloadButton: "Download for Windows (64-bit)",
-    version: "Version",
-    alsoAvailable: "Also available on",
-    microsoftStore: "Microsoft Store",
-    comingSoon: "Coming soon to Microsoft Store",
-    systemRequirements: "System Requirements",
-    requirements: [
-      "Windows 10 version 19041.0 or higher",
-      "Windows 11 supported",
-      "x64 architecture",
-      "Internet connection for sync features",
-    ],
-    webAlternative: "Or use Tastile on the web — no download required.",
-    openWebApp: "Open Web App",
-  },
-  footer: {
-    copyright: "© 2026 Tastile. All rights reserved.",
-  },
-};
-
 export const marketingLandingJa = {
   hero: {
     badge: "実行アプリ",
@@ -407,37 +275,37 @@ export const marketingLandingEn = {
     row0Body:
       "The tile carries its own deadline. The engine works backward from progress and free time, and places the tile where it lands hardest. Slip is detected instantly and folded into the next open slot. The deadline is not a hard wall — it is a 'preferred arrival time' the tile carries.",
     row0Example:
-      "\u201cSend the deck by Fri 5pm.\u201d \u2192 Engine picks Wed or Thu morning automatically.",
+      "“Send the deck by Fri 5pm.” → Engine picks Wed or Thu morning automatically.",
     row1Name: "Place",
     row1Lede: "Where it happens",
     row1Body:
-      "Place is one of the axes too. The engine matches place to time of day, and picks the slot where focus actually lands. It distinguishes indoor from outdoor, focus from transit. Place is not just a tag \u2014 it shapes the tile's personality.",
+      "Place is one of the axes too. The engine matches place to time of day, and picks the slot where focus actually lands. It distinguishes indoor from outdoor, focus from transit. Place is not just a tag — it shapes the tile's personality.",
     row1Example:
-      "\u201cOutdoors\u201d + morning \u2192 skip transit windows. \u201cStudio\u201d + afternoon \u2192 reserve as a focus block.",
+      "“Outdoors” + morning → skip transit windows. “Studio” + afternoon → reserve as a focus block.",
     row2Name: "State",
     row2Lede: "What changes on start",
     row2Body:
-      "On start, the world rearranges. The engine sets focus mode, quiets notifications, opens the documents that matter. State changes flow from the tile itself. Starting a tile is not 'you do something' \u2014 it is 'the world tilts toward this task'.",
+      "On start, the world rearranges. The engine sets focus mode, quiets notifications, opens the documents that matter. State changes flow from the tile itself. Starting a tile is not 'you do something' — it is 'the world tilts toward this task'.",
     row2Example:
-      "Start \u2192 focus mode on \u2192 notifications silenced / related docs open automatically.",
+      "Start → focus mode on → notifications silenced / related docs open automatically.",
     row3Name: "Deform",
     row3Lede: "Shifts shape mid-run",
     row3Body:
-      "Tiles can change shape mid-run. Trim what is no longer needed, fill what is short. A 60-minute slot that finishes in 45 redistributes the spare 15 to the next waiting tile. Deform is not failure \u2014 it is optimization, and the history keeps every record.",
+      "Tiles can change shape mid-run. Trim what is no longer needed, fill what is short. A 60-minute slot that finishes in 45 redistributes the spare 15 to the next waiting tile. Deform is not failure — it is optimization, and the history keeps every record.",
     row3Example:
-      "60m task \u2192 trimmed to 45m + 15m folded into the next waiting tile automatically.",
+      "60m task → trimmed to 45m + 15m folded into the next waiting tile automatically.",
     row4Name: "Complete",
     row4Lede: "How it knows it is done",
     row4Body:
-      "The tile carries its own definition of done. Nothing closes by accident, nothing stays open by guesswork. Checklists, output files, external notifications. Multiple conditions can stack. 'Done' is not human opinion \u2014 it is a spec the tile carries.",
+      "The tile carries its own definition of done. Nothing closes by accident, nothing stays open by guesswork. Checklists, output files, external notifications. Multiple conditions can stack. 'Done' is not human opinion — it is a spec the tile carries.",
     row4Example:
-      "Every checkbox ticked \u2192 done. Output file lands in the right folder \u2192 done.",
+      "Every checkbox ticked → done. Output file lands in the right folder → done.",
     row5Name: "Overflow",
     row5Lede: "The remainder rolls into the next open slot",
     row5Body:
-      "What happens when a tile runs past its time is decided by the tile itself. A 45-minute slot that takes 55 still keeps the leftover 5 and folds it forward. Nothing is dropped, every tile stays in a state. Overflow is not failure \u2014 it is normal engine behavior.",
+      "What happens when a tile runs past its time is decided by the tile itself. A 45-minute slot that takes 55 still keeps the leftover 5 and folds it forward. Nothing is dropped, every tile stays in a state. Overflow is not failure — it is normal engine behavior.",
     row5Example:
-      "45m slot runs to 55m \u2192 the leftover 5m slots into 12:00 automatically. The history keeps the record.",
+      "45m slot runs to 55m → the leftover 5m slots into 12:00 automatically. The history keeps the record.",
   },
   lifecycle: {
     eyebrow: "Always running",
@@ -456,7 +324,7 @@ export const marketingLandingEn = {
       "You stop here. The task, the deadline, the place, the state. The engine takes everything else.",
     phaseDetail1Title: "Compile",
     phaseDetail1Description:
-      "Sort by the six conditions. Detect duplicates, group related work. Priorities are not declared \u2014 they fall out of conditions.",
+      "Sort by the six conditions. Detect duplicates, group related work. Priorities are not declared — they fall out of conditions.",
     phaseDetail2Title: "Place",
     phaseDetail2Description:
       "Drop into the best open slot of the day. Match place to time of day. Count transit and breaks.",
@@ -474,7 +342,7 @@ export const marketingLandingEn = {
     eyebrow: "Manifesto",
     title0: "Not a task manager.",
     title1: "An execution engine.",
-    lead: "Tastile is not a tool to add tasks. It is an engine to run execution. Your job is not to decide \u2014 it is to finish.",
+    lead: "Tastile is not a tool to add tasks. It is an engine to run execution. Your job is not to decide — it is to finish.",
     leftLabel: "A usual task manager",
     leftItem0: "Plan it",
     leftItem1: "Rank it",
@@ -554,7 +422,7 @@ export const marketingLandingEn = {
     intro: "Run, not ruminate. Spend time executing, not deciding.",
     countSuffix: "questions",
     q0: "How is this different?",
-    a0: "Calendar, clock, and tasks, in one place. No more switching apps. You do not plan \u2014 the tile moves.",
+    a0: "Calendar, clock, and tasks, in one place. No more switching apps. You do not plan — the tile moves.",
     q1: "What if the schedule changes?",
     a1: "The engine rebuilds it. Slip or a new opening, either way the schedule reshapes instantly. No manual edits.",
     q2: "What if I do not finish a task?",

@@ -1,0 +1,47 @@
+import type { Locale } from "@/shared/stores/locale-store";
+
+export const floatingHeader = {
+  en: {
+    floatingHeader: {
+      homeAria: "tastile home",
+      executing: "EXECUTING",
+      idle: "IDLE",
+      left: "left",
+      openSearch: "Open search",
+      openNotifications: "Open notifications",
+      userMenu: "User menu",
+      openNavMenu: "Open navigation menu",
+      statusLabel: "Status",
+      statusExecuting: "Executing",
+      statusIdle: "Idle",
+      accountSettings: "Account Settings",
+      logOut: "Log out",
+      menu: "Menu",
+      search: "Search",
+      notifications: "Notifications",
+    },
+  },
+  ja: {
+    floatingHeader: {
+      homeAria: "tastile ホーム",
+      executing: "実行中",
+      idle: "待機中",
+      left: "残り",
+      openSearch: "検索を開く",
+      openNotifications: "通知を開く",
+      userMenu: "ユーザーメニュー",
+      openNavMenu: "ナビゲーションメニューを開く",
+      statusLabel: "ステータス",
+      statusExecuting: "実行中",
+      statusIdle: "待機",
+      accountSettings: "アカウント設定",
+      logOut: "ログアウト",
+      menu: "メニュー",
+      search: "検索",
+      notifications: "通知",
+    },
+  },
+  "zh-CN": {},
+  ko: {},
+  es: {},
+} satisfies Record<Locale, Record<string, unknown>>;

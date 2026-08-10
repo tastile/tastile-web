@@ -3,6 +3,7 @@
 import { makeClient } from "@/shared/api/v1/submit";
 import { startTileExecutionCommand } from "@/shared/api/v1/tile-commands";
 import { useTileList } from "@/shared/hooks/use-tile-list";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { mapListView } from "@/shared/lib/map-list-view-to-tile";
 import type { TileId } from "@/shared/model/ids";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
@@ -14,6 +15,7 @@ import { useCallback, useMemo, useState } from "react";
 
 export function TasksMain() {
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
   const search = searchParams.get("q") ?? "";
   const range = searchParams.get("range") ?? "7d"; // default 7 days
   const granularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
@@ -99,7 +101,7 @@ export function TasksMain() {
 
   return (
     <PageContainer>
-      <PageHeader title="Tasks" description="Manage and view your actionable items" />
+      <PageHeader title="Tasks" description={t("tasks.subtitle")} />
 
       {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">

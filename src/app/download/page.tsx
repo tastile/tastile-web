@@ -24,13 +24,18 @@ type MarketingDownload = {
   openWebApp: string;
 };
 
+const SUPPORTED_LANGS = ["en", "ja", "zh-CN", "ko", "es"] as const satisfies readonly Locale[];
+
 export default async function DownloadPage({
   searchParams,
 }: {
   searchParams: Promise<{ lang?: string }>;
 }) {
   const params = await searchParams;
-  const lang: Locale = params.lang === "en" ? "en" : "ja";
+  const requested = params.lang;
+  const lang: Locale = (SUPPORTED_LANGS as readonly string[]).includes(requested ?? "")
+    ? (requested as Locale)
+    : "en";
   const t = (
     translations[lang] as {
       marketing: { download: MarketingDownload };

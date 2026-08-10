@@ -11,19 +11,13 @@ function getDtFormatter(locale: Locale, opts: FmtOptions): Intl.DateTimeFormat {
     const intlLocale =
       locale === "ja"
         ? "ja-JP"
-        : locale === "de"
-          ? "de-DE"
-          : locale === "es"
-            ? "es-ES"
-            : locale === "fr"
-              ? "fr-FR"
-              : locale === "ko"
-                ? "ko-KR"
-                : locale === "zh-CN"
-                  ? "zh-CN"
-                  : locale === "pt-BR"
-                    ? "pt-BR"
-                    : "en-US";
+        : locale === "es"
+          ? "es-ES"
+          : locale === "ko"
+            ? "ko-KR"
+            : locale === "zh-CN"
+              ? "zh-CN"
+              : "en-US";
     fmt = new Intl.DateTimeFormat(intlLocale, opts);
     dtFormatters.set(key, fmt);
   }

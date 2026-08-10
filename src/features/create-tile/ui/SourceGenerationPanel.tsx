@@ -55,10 +55,7 @@ const enTree = translations.en as unknown as LocaleTree;
 const WEEKDAY_LABELS: Record<EditorLocale, readonly string[]> = {
   ja: jaTree.weekdays,
   en: enTree.weekdays,
-  de: enTree.weekdays,
   es: enTree.weekdays,
-  "pt-BR": enTree.weekdays,
-  fr: enTree.weekdays,
   ko: enTree.weekdays,
   "zh-CN": enTree.weekdays,
 };

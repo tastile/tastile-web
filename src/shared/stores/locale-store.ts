@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Locale = "en" | "ja" | "de" | "es" | "pt-BR" | "fr" | "ko" | "zh-CN";
+export type Locale = "en" | "ja" | "zh-CN" | "ko" | "es";
 
 export const DEFAULT_LOCALE: Locale = "ja";
 

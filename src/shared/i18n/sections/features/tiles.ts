@@ -1,0 +1,75 @@
+import type { Locale } from "@/shared/stores/locale-store";
+
+export const tiles = {
+  en: {
+    tiles: {
+      actions: {
+        start: "Start",
+        complete: "Complete",
+        defer: "Defer",
+        interrupt: "Interrupt",
+        edit: "Edit",
+        delete: "Delete",
+      },
+      dialogs: {
+        startTitle: "Start Task",
+        deferTitle: "Defer Task",
+        interruptTitle: "Interrupt Task",
+        nextStartAt: "Next start time",
+        deleteConfirm: "Are you sure you want to delete?",
+      },
+      doneDefinition: "Done when",
+      startAt: "Start",
+      duration: "Duration",
+      noTiles: "No tiles yet",
+      unscheduled: "Unscheduled",
+      source: {
+        break: "Break",
+        sleep: "Sleep",
+        legacy: "Source",
+      },
+      notSet: "Not set",
+      closePanel: "Close panel",
+      weekdayAriaPrefix: "Weekday",
+      inputDate: "date",
+      inputDatetime: "datetime",
+    },
+  },
+  ja: {
+    tiles: {
+      actions: {
+        start: "開始",
+        complete: "完了",
+        defer: "先送り",
+        interrupt: "中断",
+        edit: "編集",
+        delete: "削除",
+      },
+      dialogs: {
+        startTitle: "タスクを開始",
+        deferTitle: "タスクを先送り",
+        interruptTitle: "タスクを中断",
+        nextStartAt: "次の開始時刻",
+        deleteConfirm: "本当に削除しますか？",
+      },
+      doneDefinition: "完了条件",
+      startAt: "開始",
+      duration: "所要",
+      noTiles: "タイルがありません",
+      unscheduled: "未スケジュール",
+      source: {
+        break: "休憩",
+        sleep: "睡眠",
+        legacy: "Source",
+      },
+      notSet: "未設定",
+      closePanel: "パネルを閉じる",
+      weekdayAriaPrefix: "曜日",
+      inputDate: "日付",
+      inputDatetime: "日時",
+    },
+  },
+  "zh-CN": {},
+  ko: {},
+  es: {},
+} satisfies Record<Locale, Record<string, unknown>>;

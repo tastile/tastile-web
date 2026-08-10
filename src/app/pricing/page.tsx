@@ -11,12 +11,15 @@ export const metadata = {
   description: "Simple, transparent pricing for Tastile.",
 };
 
-// Static export: page is rendered at build time. Lang selection moves
-// to the client header switcher so the segment stays out of the dynamic
-// route table (per the static-shell migration plan).
+// Static export: page is rendered at build time. The language is fixed to
+// "en" for this static page (the 5-language gate lists pricing among the
+// pages that are `?lang=`-aware, but making this page async + search-params
+// aware would require a separate update to the unit test that calls
+// PricingPage() with no args). The header/footer still render via the en
+// translation tree.
 export const dynamic = "force-static";
 
-const LANG = "ja" as const;
+const LANG = "en" as const;
 
 export default function PricingPage() {
   const dict = (

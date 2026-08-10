@@ -155,10 +155,7 @@ export function RightSidebar({
 const timelineRangeFormatters: Record<Locale, Intl.DateTimeFormat> = {
   ja: new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric" }),
   en: new Intl.DateTimeFormat("en-US", { month: "numeric", day: "numeric" }),
-  de: new Intl.DateTimeFormat("de-DE", { month: "numeric", day: "numeric" }),
   es: new Intl.DateTimeFormat("es-ES", { month: "numeric", day: "numeric" }),
-  "pt-BR": new Intl.DateTimeFormat("pt-BR", { month: "numeric", day: "numeric" }),
-  fr: new Intl.DateTimeFormat("fr-FR", { month: "numeric", day: "numeric" }),
   ko: new Intl.DateTimeFormat("ko-KR", { month: "numeric", day: "numeric" }),
   "zh-CN": new Intl.DateTimeFormat("zh-CN", { month: "numeric", day: "numeric" }),
 };

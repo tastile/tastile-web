@@ -510,6 +510,42 @@ conditionMoveDown: "下へ移動",
   task: "タスク",
 };
 
+// Skeleton quick-create entries for the 3 new locales (zh-CN / ko / es).
+// The picker's own display names are populated; everything else falls
+// through to the English tree via the translations store.
+export const quickCreateZhCn = {
+  settings: { language: "语言" },
+  language: {
+    "zh-CN": "中文",
+    en: "English",
+    ja: "日本語",
+    ko: "한국어",
+    es: "Español",
+  },
+};
+
+export const quickCreateKo = {
+  settings: { language: "언어" },
+  language: {
+    "zh-CN": "中文",
+    en: "English",
+    ja: "日本語",
+    ko: "한국어",
+    es: "Español",
+  },
+};
+
+export const quickCreateEs = {
+  settings: { language: "Idioma" },
+  language: {
+    "zh-CN": "中文",
+    en: "English",
+    ja: "日本語",
+    ko: "한국어",
+    es: "Español",
+  },
+};
+
 export const quickCreateEn = {
   title: "Create Tile",
   // Context-sensitive headings: {mode, kind, role} → label.

@@ -19,7 +19,7 @@ import { useLocaleStore } from "@/shared/stores/locale-store";
 import { useThemeStore } from "@/shared/stores/theme-store";
 import { type WeekStartDay, useWeekStartStore } from "@/shared/stores/week-start-store";
 import { RowSegmented } from "@/shared/ui/form";
-import { Button, NumberInput, Switch } from "@mantine/core";
+import { Button, NumberInput, Select, Switch } from "@mantine/core";
 import { Bell, CalendarDays, Languages, Palette } from "lucide-react";
 import { Suspense, useMemo, useState } from "react";
 
@@ -70,15 +70,15 @@ export default function GeneralPreferences() {
     setNotificationPermission(permission);
     setNotificationStatus(
       permission === "granted"
-        ? "Notifications are enabled."
+        ? t("preferences.notifications.allowed")
         : permission === "denied"
-          ? "Notifications are blocked by this browser."
-          : "Notification permission is still pending.",
+          ? t("preferences.notifications.blocked")
+          : t("preferences.notifications.pending"),
     );
   }
 
   async function _simulateNotification() {
-    const preview = "This is a test notification from Tastile.";
+    const preview = t("preferences.notifications.testBody");
     setNotificationPreview(preview);
     const permission =
       notificationPermission === "default"
@@ -88,8 +88,8 @@ export default function GeneralPreferences() {
     if (permission !== "granted") {
       setNotificationStatus(
         permission === "denied"
-          ? "Browser notifications are blocked. Showing a local preview instead."
-          : "This browser does not support notifications here. Showing a local preview instead.",
+          ? t("preferences.notifications.blockedHelp")
+          : t("preferences.notifications.unsupportedHelp"),
       );
       return;
     }
@@ -99,12 +99,12 @@ export default function GeneralPreferences() {
       body: preview,
       tag: `settings-test-${Date.now()}`,
     });
-    setNotificationStatus("Sent a test notification.");
+    setNotificationStatus(t("preferences.notifications.sent"));
   }
 
   return (
     <div className="mx-auto w-full max-w-4xl p-6 sm:p-8">
-      <h1 className="text-2xl font-normal text-foreground">General Preferences</h1>
+      <h1 className="text-2xl font-normal text-foreground">{t("preferences.heading")}</h1>
 
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.theme")}</h2>
@@ -122,15 +122,26 @@ export default function GeneralPreferences() {
 
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.language")}</h2>
-        <RowSegmented
-          icon={Languages}
-          value={locale}
-          onChange={setLocale}
-          options={[
-            { value: "ja", label: t("settings.languageJa") },
-            { value: "en", label: t("settings.languageEn") },
-          ]}
-        />
+        <div className="flex items-center gap-3">
+          <Languages className="h-5 w-5 shrink-0 text-foreground-muted" />
+          <Select
+            className="min-w-[14rem] flex-1"
+            data={[
+              { value: "ja", label: t("language.ja") },
+              { value: "en", label: t("language.en") },
+              { value: "zh-CN", label: t("language.zh-CN") },
+              { value: "ko", label: t("language.ko") },
+              { value: "es", label: t("language.es") },
+            ]}
+            value={locale}
+            onChange={(value) => {
+              if (value) setLocale(value as typeof locale);
+            }}
+            allowDeselect={false}
+            checkIconPosition="right"
+            aria-label={t("settings.language")}
+          />
+        </div>
       </section>
 
       <section className="mt-8">
@@ -147,12 +158,16 @@ export default function GeneralPreferences() {
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">Notifications</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">
+          {t("preferences.notifications.heading")}
+        </h2>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 gap-3">
             <Bell className="mt-0.5 h-5 w-5 shrink-0 text-foreground-muted" />
             <div>
-              <p className="text-sm font-semibold text-foreground">Browser notifications</p>
+              <p className="text-sm font-semibold text-foreground">
+                {t("preferences.notifications.browser")}
+              </p>
               <p className="mt-1 text-xs text-foreground-muted">Status: {notificationPermission}</p>
               {notificationStatus ? (
                 <p className="mt-2 text-xs text-foreground-muted">{notificationStatus}</p>
@@ -167,20 +182,23 @@ export default function GeneralPreferences() {
           </div>
           <div className="flex shrink-0 gap-2">
             <Button component="button" onClick={requestNotifications}>
-              Allow
+              {t("preferences.notifications.allow")}
             </Button>
           </div>
         </div>
       </section>
 
       <section className="mt-8">
-        <h2 className="mb-4 text-lg font-semibold text-foreground">Security Lock</h2>
+        <h2 className="mb-4 text-lg font-semibold text-foreground">
+          {t("preferences.securityLock.heading")}
+        </h2>
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-foreground">Require device unlock</p>
+            <p className="text-sm font-semibold text-foreground">
+              {t("preferences.securityLock.require")}
+            </p>
             <p className="mt-1 text-xs text-foreground-muted">
-              Default is off. Turn on to require device unlock on launch. Uses this browser&apos;s
-              platform authenticator.
+              {t("preferences.securityLock.helpText")}
             </p>
           </div>
           <Switch

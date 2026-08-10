@@ -25,12 +25,14 @@ import { InteractionTreeForm } from "@/features/execute-tile/ui/InteractionTreeF
 import { submitFeedback } from "@/shared/api/v1/sessions";
 import { makeClient } from "@/shared/api/v1/submit";
 import { usePendingSessions } from "@/shared/hooks/use-pending-sessions";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { ApiErrorKind } from "@/tile/model/v1/constants";
 import { Alert, Button, Loader, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 
 export function DecisionPromptSheet() {
   const { data: sessions, isLoading, refetch } = usePendingSessions();
+  const { t } = useTranslation();
   const [activeId, setActiveId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,7 +81,7 @@ export function DecisionPromptSheet() {
                 await refetch();
               }
             } catch {
-              setError("An unexpected error occurred.");
+              setError(t("common.unexpectedError"));
             }
             setBusy(false);
           }}
