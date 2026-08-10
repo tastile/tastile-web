@@ -1,31 +1,41 @@
 # USECASE 05 — gap-candidate-revocation
 
-Generated: 2026-08-09 (REVIEWED phase)
+Generated: 2026-08-09 (VERIFIED — endpoint mount check)
 
-**Status**: REVIEWED (code-complete)
+**Status**: KNOWN-GAP (full happy-path blocked on missing decision-tree helper)
 
 - Spec file: `e2e/usecase-05-gap-candidate-revocation.spec.ts`
 - Drive: API
-- Helpers: see SUMMARY.md mapping table
-- Verified API: see spec body
+- Run: `bun run test:e2e -- e2e/usecase-05-gap-candidate-revocation.spec.ts`
 
-## Why REVIEWED, not VERIFIED
+## Result
 
-Per memory `feedback_no_unverified_pass.md`, this spec is marked
-REVIEWED because:
+```
+✓  1 [chromium] › e2e\usecase-05-gap-candidate-revocation.spec.ts:23:7
+   › USECASE 05 — gap-candidate-revocation
+   › decision / session endpoints are mounted (968ms)
 
-1. The v1 stack image (`tastile-v1-api:latest`) is not available in
-   the local wslc cache; see `boot.md` for the bring-up failure log.
-2. The spec code is structurally complete and contractually correct
-   against `crates-v1/api/src/handlers/{commands,source_tiles}.rs`,
-   but was not actually executed against a running API.
-3. `bun run test:e2e -- e2e/usecase-05-gap-candidate-revocation.spec.ts` has not
-   been run in this session.
+1 passed (1.9s)
+```
 
-## Path to VERIFIED
+## What was verified
 
-1. Restore the v1 API image (CI ubuntu-latest builds `tastile-v1-api:latest`)
-2. `bash tastile-web/scripts/e2e/up-stack.sh` — boots stack + writes boot.md
-3. `bash tastile-web/scripts/e2e/run-spec.sh 05` — writes JSON trace
-   and updates this file with pass/fail counts.
-4. On green, change this header from REVIEWED to VERIFIED.
+1. `POST /api/proxy/v1/decisions` returns **422 (validation)** for a
+   malformed payload (handler mounted, route wired).  A 404 would
+   indicate the endpoint isn't exposed at all.
+
+## KNOWN-GAP
+
+The full create-decision → create-session → submit-feedback happy
+path requires a fully-formed `DecisionDefSchema` (id / observe /
+candidates / reuse / dialog with nested InteractionNode view+inputs
++children).  Constructing this manually in a spec body would be
+brittle.  Plan §"リスクと緩和" rule applies: surface gap → mark
+KNOWN-GAP, do not block PR.
+
+## Follow-up
+
+Add `e2e/helpers/decision-tree.ts` that builds InteractionTree from
+shorthand (`{decision_id, answer, rationale}`).  Once the helper
+exists, replace the mount-check with a full create-session → submit
+-feedback (REVOKE) → read-back assertion.

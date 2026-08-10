@@ -1,31 +1,33 @@
 # USECASE 21 — concurrent-start-one-execution
 
-Generated: 2026-08-09 (REVIEWED phase)
+Generated: 2026-08-09 (VERIFIED)
 
-**Status**: REVIEWED (code-complete)
+**Status**: VERIFIED
 
 - Spec file: `e2e/usecase-21-concurrent-start-one-execution.spec.ts`
-- Drive: UI
-- Helpers: see SUMMARY.md mapping table
-- Verified API: see spec body
+- Drive: API (UI page.goto before request — UI smoke only)
+- Helpers: `v1CreatePlacementAndResolve`, `v1StartExecution`
+- Run: `bun run test:e2e -- e2e/usecase-21-concurrent-start-one-execution.spec.ts`
 
-## Why REVIEWED, not VERIFIED
+## Result
 
-Per memory `feedback_no_unverified_pass.md`, this spec is marked
-REVIEWED because:
+```
+✓  1 [chromium] › e2e\usecase-21-concurrent-start-one-execution.spec.ts:17:7
+   › USECASE 21 — concurrent-start-one-execution
+   › two concurrent StartExecution calls return the same id (5.1s)
 
-1. The v1 stack image (`tastile-v1-api:latest`) is not available in
-   the local wslc cache; see `boot.md` for the bring-up failure log.
-2. The spec code is structurally complete and contractually correct
-   against `crates-v1/api/src/handlers/{commands,source_tiles}.rs`,
-   but was not actually executed against a running API.
-3. `bun run test:e2e -- e2e/usecase-21-concurrent-start-one-execution.spec.ts` has not
-   been run in this session.
+1 passed (6.6s)
+```
 
-## Path to VERIFIED
+## What was verified
 
-1. Restore the v1 API image (CI ubuntu-latest builds `tastile-v1-api:latest`)
-2. `bash tastile-web/scripts/e2e/up-stack.sh` — boots stack + writes boot.md
-3. `bash tastile-web/scripts/e2e/run-spec.sh 21` — writes JSON trace
-   and updates this file with pass/fail counts.
-4. On green, change this header from REVIEWED to VERIFIED.
+1. `v1CreatePlacementAndResolve` returns a placement id.
+2. `Promise.all([v1StartExecution, v1StartExecution])` returns the
+   same id from both calls — the API surfaces the same execution
+   aggregate to two concurrent Start requests (per the
+   one-active-execution invariant).
+3. UI smoke: `page.goto("/dashboard/calendar?view=day")` completes.
+
+The full "exactly one ACTIVE Execution in the DB" contract is
+covered by core's acceptance test for this USECASE; the web spec
+pins that two parallel starts collapse to one id over the wire.

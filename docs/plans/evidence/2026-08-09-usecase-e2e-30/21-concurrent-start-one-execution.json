@@ -1,0 +1,201 @@
+$ playwright test "e2e/usecase-21-concurrent-start-one-execution.spec.ts" "--reporter=json"
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/usecase-21-concurrent-start-one-execution.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\playwright.config.ts",
+    "rootDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/rebui/Desktop/tastile/tastile-web/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "bun run dev",
+      "env": {
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_DAEMON_BASE_URL": "http://localhost:31400",
+        "TASTILE_USE_RUST_CORE": "1",
+        "TASTILE_RUST_API_URL": "http://127.0.0.1:31400",
+        "COOKIE_USER_SUB": "e2e-bridge-test-user",
+        "TASTILE_WEB_BRIDGE_SECRET": "dev-e2e-secret"
+      },
+      "url": "http://127.0.0.1:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "usecase-21-concurrent-start-one-execution.spec.ts",
+      "file": "usecase-21-concurrent-start-one-execution.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "USECASE 21 — concurrent-start-one-execution",
+          "file": "usecase-21-concurrent-start-one-execution.spec.ts",
+          "line": 23,
+          "column": 6,
+          "specs": [
+            {
+              "title": "clicking start-execution twice does not spawn a second execution",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30071,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts",
+                            "column": 28,
+                            "line": 117
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-testid=\\'quick-create-submit\\']')\nExpected: not visible\nReceived: visible\n\nCall log:\n\u001b[2m  - Expect \"not toBeVisible\" with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\\'quick-create-submit\\']')\u001b[22m\n\u001b[2m    55 × locator resolved to <button type=\"button\" data-testid=\"quick-create-submit\" class=\"mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\u001b[2m  - Test timeout of 30000ms exceeded.\u001b[22m\n\n\n   at helpers\\ui.ts:117\n\n  115 |   await expect(submit).toBeEnabled();\n  116 |   await submit.click();\n> 117 |   await expect(submit).not.toBeVisible({ timeout: 45000 });\n      |                            ^\n  118 | }\n  119 |\n  120 | /** Discard the current draft (autosave + close). */\n    at submitQuickCreate (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts:117:28)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-21-concurrent-start-one-execution.spec.ts:33:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T08:54:51.608Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-21-concurrent-star-3e8d5-ot-spawn-a-second-execution-chromium\\error-context.md"
+                        }
+                      ]
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30401,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts",
+                            "column": 28,
+                            "line": 117
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-testid=\\'quick-create-submit\\']')\nExpected: not visible\nReceived: visible\n\nCall log:\n\u001b[2m  - Expect \"not toBeVisible\" with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\\'quick-create-submit\\']')\u001b[22m\n\u001b[2m    55 × locator resolved to <button type=\"button\" data-testid=\"quick-create-submit\" class=\"mantine-focus-auto mantine-active m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\u001b[2m  - Test timeout of 30000ms exceeded.\u001b[22m\n\n\n   at helpers\\ui.ts:117\n\n  115 |   await expect(submit).toBeEnabled();\n  116 |   await submit.click();\n> 117 |   await expect(submit).not.toBeVisible({ timeout: 45000 });\n      |                            ^\n  118 | }\n  119 |\n  120 | /** Discard the current draft (autosave + close). */\n    at submitQuickCreate (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts:117:28)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-21-concurrent-start-one-execution.spec.ts:33:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T08:55:22.258Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-21-concurrent-star-3e8d5-ot-spawn-a-second-execution-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-21-concurrent-star-3e8d5-ot-spawn-a-second-execution-chromium-retry1\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "b63e1d1861e431d6af27-b6aa4ee733ce7f1e2281",
+              "file": "usecase-21-concurrent-start-one-execution.spec.ts",
+              "line": 26,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-09T08:54:50.520Z",
+    "duration": 62733.092000000004,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
+error: script "test:e2e" exited with code 1

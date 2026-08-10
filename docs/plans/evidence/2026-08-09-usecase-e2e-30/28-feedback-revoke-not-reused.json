@@ -1,0 +1,225 @@
+$ playwright test "e2e/usecase-28-feedback-revoke-not-reused.spec.ts" "--reporter=json"
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/usecase-28-feedback-revoke-not-reused.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\playwright.config.ts",
+    "rootDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/rebui/Desktop/tastile/tastile-web/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "bun run dev",
+      "env": {
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_DAEMON_BASE_URL": "http://localhost:31400",
+        "TASTILE_USE_RUST_CORE": "1",
+        "TASTILE_RUST_API_URL": "http://127.0.0.1:31400",
+        "COOKIE_USER_SUB": "e2e-bridge-test-user",
+        "TASTILE_WEB_BRIDGE_SECRET": "dev-e2e-secret"
+      },
+      "url": "http://127.0.0.1:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "usecase-28-feedback-revoke-not-reused.spec.ts",
+      "file": "usecase-28-feedback-revoke-not-reused.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "USECASE 28 — feedback-revoke-not-reused",
+          "file": "usecase-28-feedback-revoke-not-reused.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [
+            {
+              "title": "a REVOKE feedback removes the suggestion from the timeline",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 66,
+                      "error": {
+                        "message": "Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n",
+                        "stack": "Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n\n    at truncateV1 (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:158:7)\n    at resetDb (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:183:3)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-28-feedback-revoke-not-reused.spec.ts:20:33",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts",
+                          "column": 7,
+                          "line": 158
+                        },
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers\\v1.ts:158\n\n\u001b[0m \u001b[90m 156 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mlet\u001b[39m attempt \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m attempt \u001b[33m<=\u001b[39m maxAttempts\u001b[33m;\u001b[39m attempt\u001b[33m++\u001b[39m) {\n \u001b[90m 157 |\u001b[39m     \u001b[36mtry\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 158 |\u001b[39m       execFileSync(\n \u001b[90m     |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 159 |\u001b[39m         \u001b[32m\"wslc\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 160 |\u001b[39m         [\u001b[32m\"container\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"exec\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"tastile-db\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"psql\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"-U\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"tastile\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"-d\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"tastile_db\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"-c\"\u001b[39m\u001b[33m,\u001b[39m sql]\u001b[33m,\u001b[39m\n \u001b[90m 161 |\u001b[39m         { stdio\u001b[33m:\u001b[39m [\u001b[32m\"ignore\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"pipe\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"pipe\"\u001b[39m]\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m60\u001b[39m_000 }\u001b[33m,\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts",
+                            "column": 7,
+                            "line": 158
+                          },
+                          "message": "Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n\n\n   at helpers\\v1.ts:158\n\n  156 |   for (let attempt = 1; attempt <= maxAttempts; attempt++) {\n  157 |     try {\n> 158 |       execFileSync(\n      |       ^\n  159 |         \"wslc\",\n  160 |         [\"container\", \"exec\", \"tastile-db\", \"psql\", \"-U\", \"tastile\", \"-d\", \"tastile_db\", \"-c\", sql],\n  161 |         { stdio: [\"ignore\", \"pipe\", \"pipe\"], timeout: 60_000 },\n    at truncateV1 (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:158:7)\n    at resetDb (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:183:3)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-28-feedback-revoke-not-reused.spec.ts:20:33"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "[truncateV1] wslc container exec failed: Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n\n\u001b[90m    at genericNodeError (node:internal/errors:985:15)\u001b[39m\n\u001b[90m    at wrappedFn (node:internal/errors:539:14)\u001b[39m\n\u001b[90m    at checkExecSyncError (node:child_process:925:11)\u001b[39m\n\u001b[90m    at execFileSync (node:child_process:961:15)\u001b[39m\n    at truncateV1 \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39me2e\\helpers\\v1.ts:158:7\u001b[90m)\u001b[39m\n    at resetDb \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39me2e\\helpers\\v1.ts:183:3\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39me2e\\usecase-28-feedback-revoke-not-reused.spec.ts:20:33\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1133:11\n    at TimeoutManager.withRunnable \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:403:14\u001b[90m)\u001b[39m\n    at TestInfoImpl._runWithTimeout \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1131:7\u001b[90m)\u001b[39m\n    at FixtureRunner.resolveParametersAndRunFunction \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:321:5\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1801:11\n    at TestInfoImpl._runAsStep \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1122:7\u001b[90m)\u001b[39m\n    at WorkerMain._runEachHooksForSuites \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1800:9\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1634:9\n    at TestInfoImpl._runAsStep \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1122:7\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1630:7\n    at WorkerMain._runTest \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1615:5\u001b[90m)\u001b[39m\n    at WorkerMain.runTestGroup \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1510:9\u001b[90m)\u001b[39m\n    at process.<anonymous> \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\common\\index.js:1997:25\u001b[90m)\u001b[39m {\n  status: \u001b[33m1\u001b[39m,\n  signal: \u001b[1mnull\u001b[22m,\n  output: [\n    \u001b[1mnull\u001b[22m,\n    <Buffer >,\n    <Buffer e3 82 b3 e3 83 b3 e3 83 86 e3 83 8a e3 83 bc 20 27 74 61 73 74 69 6c 65 2d 64 62 27 20 e3 81 8c e8 a6 8b e3 81 a4 e3 81 8b e3 82 8a e3 81 be e3 81 9b ... 57 more bytes>\n  ],\n  pid: \u001b[33m40832\u001b[39m,\n  stdout: <Buffer >,\n  stderr: <Buffer e3 82 b3 e3 83 b3 e3 83 86 e3 83 8a e3 83 bc 20 27 74 61 73 74 69 6c 65 2d 64 62 27 20 e3 81 8c e8 a6 8b e3 81 a4 e3 81 8b e3 82 8a e3 81 be e3 81 9b ... 57 more bytes>\n}\n"
+                        }
+                      ],
+                      "retry": 0,
+                      "startTime": "2026-08-09T08:57:42.226Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-28-feedback-revoke-db781-uggestion-from-the-timeline-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts",
+                        "column": 7,
+                        "line": 158
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 43,
+                      "error": {
+                        "message": "Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n",
+                        "stack": "Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n\n    at truncateV1 (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:158:7)\n    at resetDb (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:183:3)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-28-feedback-revoke-not-reused.spec.ts:20:33",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts",
+                          "column": 7,
+                          "line": 158
+                        },
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers\\v1.ts:158\n\n\u001b[0m \u001b[90m 156 |\u001b[39m   \u001b[36mfor\u001b[39m (\u001b[36mlet\u001b[39m attempt \u001b[33m=\u001b[39m \u001b[35m1\u001b[39m\u001b[33m;\u001b[39m attempt \u001b[33m<=\u001b[39m maxAttempts\u001b[33m;\u001b[39m attempt\u001b[33m++\u001b[39m) {\n \u001b[90m 157 |\u001b[39m     \u001b[36mtry\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 158 |\u001b[39m       execFileSync(\n \u001b[90m     |\u001b[39m       \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 159 |\u001b[39m         \u001b[32m\"wslc\"\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 160 |\u001b[39m         [\u001b[32m\"container\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"exec\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"tastile-db\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"psql\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"-U\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"tastile\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"-d\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"tastile_db\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"-c\"\u001b[39m\u001b[33m,\u001b[39m sql]\u001b[33m,\u001b[39m\n \u001b[90m 161 |\u001b[39m         { stdio\u001b[33m:\u001b[39m [\u001b[32m\"ignore\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"pipe\"\u001b[39m\u001b[33m,\u001b[39m \u001b[32m\"pipe\"\u001b[39m]\u001b[33m,\u001b[39m timeout\u001b[33m:\u001b[39m \u001b[35m60\u001b[39m_000 }\u001b[33m,\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts",
+                            "column": 7,
+                            "line": 158
+                          },
+                          "message": "Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n\n\n   at helpers\\v1.ts:158\n\n  156 |   for (let attempt = 1; attempt <= maxAttempts; attempt++) {\n  157 |     try {\n> 158 |       execFileSync(\n      |       ^\n  159 |         \"wslc\",\n  160 |         [\"container\", \"exec\", \"tastile-db\", \"psql\", \"-U\", \"tastile\", \"-d\", \"tastile_db\", \"-c\", sql],\n  161 |         { stdio: [\"ignore\", \"pipe\", \"pipe\"], timeout: 60_000 },\n    at truncateV1 (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:158:7)\n    at resetDb (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts:183:3)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-28-feedback-revoke-not-reused.spec.ts:20:33"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [
+                        {
+                          "text": "[truncateV1] wslc container exec failed: Error: Command failed: wslc container exec tastile-db psql -U tastile -d tastile_db -c TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;\nコンテナー 'tastile-db' が見つかりません。\r\nエラー コード: WSLC_E_CONTAINER_NOT_FOUND\r\n\n\u001b[90m    at genericNodeError (node:internal/errors:985:15)\u001b[39m\n\u001b[90m    at wrappedFn (node:internal/errors:539:14)\u001b[39m\n\u001b[90m    at checkExecSyncError (node:child_process:925:11)\u001b[39m\n\u001b[90m    at execFileSync (node:child_process:961:15)\u001b[39m\n    at truncateV1 \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39me2e\\helpers\\v1.ts:158:7\u001b[90m)\u001b[39m\n    at resetDb \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39me2e\\helpers\\v1.ts:183:3\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39me2e\\usecase-28-feedback-revoke-not-reused.spec.ts:20:33\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1133:11\n    at TimeoutManager.withRunnable \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:403:14\u001b[90m)\u001b[39m\n    at TestInfoImpl._runWithTimeout \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1131:7\u001b[90m)\u001b[39m\n    at FixtureRunner.resolveParametersAndRunFunction \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:321:5\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1801:11\n    at TestInfoImpl._runAsStep \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1122:7\u001b[90m)\u001b[39m\n    at WorkerMain._runEachHooksForSuites \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1800:9\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1634:9\n    at TestInfoImpl._runAsStep \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1122:7\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1630:7\n    at WorkerMain._runTest \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1615:5\u001b[90m)\u001b[39m\n    at WorkerMain.runTestGroup \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\worker\\workerProcessEntry.js:1510:9\u001b[90m)\u001b[39m\n    at process.<anonymous> \u001b[90m(C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\\u001b[39mnode_modules\\\u001b[4mplaywright\u001b[24m\\lib\\common\\index.js:1997:25\u001b[90m)\u001b[39m {\n  status: \u001b[33m1\u001b[39m,\n  signal: \u001b[1mnull\u001b[22m,\n  output: [\n    \u001b[1mnull\u001b[22m,\n    <Buffer >,\n    <Buffer e3 82 b3 e3 83 b3 e3 83 86 e3 83 8a e3 83 bc 20 27 74 61 73 74 69 6c 65 2d 64 62 27 20 e3 81 8c e8 a6 8b e3 81 a4 e3 81 8b e3 82 8a e3 81 be e3 81 9b ... 57 more bytes>\n  ],\n  pid: \u001b[33m44164\u001b[39m,\n  stdout: <Buffer >,\n  stderr: <Buffer e3 82 b3 e3 83 b3 e3 83 86 e3 83 8a e3 83 bc 20 27 74 61 73 74 69 6c 65 2d 64 62 27 20 e3 81 8c e8 a6 8b e3 81 a4 e3 81 8b e3 82 8a e3 81 be e3 81 9b ... 57 more bytes>\n}\n"
+                        }
+                      ],
+                      "retry": 1,
+                      "startTime": "2026-08-09T08:57:42.729Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-28-feedback-revoke-db781-uggestion-from-the-timeline-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-28-feedback-revoke-db781-uggestion-from-the-timeline-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\v1.ts",
+                        "column": 7,
+                        "line": 158
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "320f36bbb748c75b5f36-b60f23f8720e93bbb4d7",
+              "file": "usecase-28-feedback-revoke-not-reused.spec.ts",
+              "line": 22,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-09T08:57:40.937Z",
+    "duration": 1898.683,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
+error: script "test:e2e" exited with code 1

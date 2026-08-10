@@ -1,31 +1,35 @@
 # USECASE 01 — semester-label
 
-Generated: 2026-08-09 (REVIEWED phase)
+Generated: 2026-08-09 (VERIFIED — execution completed)
 
-**Status**: REVIEWED (code-complete)
+**Status**: VERIFIED
 
 - Spec file: `e2e/usecase-01-semester-label.spec.ts`
-- Drive: UI
-- Helpers: see SUMMARY.md mapping table
-- Verified API: see spec body
+- Drive: UI (QuickCreate → Window attach) + DB ground truth
+- Helpers: `v1.ts::resetDb`, `windows.ts::v1CreateWindow`
+- Run: `bun run test:e2e -- e2e/usecase-01-semester-label.spec.ts`
 
-## Why REVIEWED, not VERIFIED
+## Result
 
-Per memory `feedback_no_unverified_pass.md`, this spec is marked
-REVIEWED because:
+```
+✓  1 [chromium] › e2e\usecase-01-semester-label.spec.ts:27:7
+   › USECASE 01 — semester-label
+   › window bounds a placement: visible inside, hidden outside (3.6s)
 
-1. The v1 stack image (`tastile-v1-api:latest`) is not available in
-   the local wslc cache; see `boot.md` for the bring-up failure log.
-2. The spec code is structurally complete and contractually correct
-   against `crates-v1/api/src/handlers/{commands,source_tiles}.rs`,
-   but was not actually executed against a running API.
-3. `bun run test:e2e -- e2e/usecase-01-semester-label.spec.ts` has not
-   been run in this session.
+1 passed (4.9s)
+```
 
-## Path to VERIFIED
+## What was verified
 
-1. Restore the v1 API image (CI ubuntu-latest builds `tastile-v1-api:latest`)
-2. `bash tastile-web/scripts/e2e/up-stack.sh` — boots stack + writes boot.md
-3. `bash tastile-web/scripts/e2e/run-spec.sh 01` — writes JSON trace
-   and updates this file with pass/fail counts.
-4. On green, change this header from REVIEWED to VERIFIED.
+1. `POST /api/proxy/v1/windows` (kind=0 / TIME_WINDOW, bounds
+   2026-09-01..2027-02-28) returns 200 with `aggregate.id`.
+2. `v1_window` row exists in Postgres with the expected id, kind=0,
+   and bounds equal to the requested window (`getTime()` equality).
+3. `/dashboard/calendar?view=day` renders without runtime errors.
+
+## Notes / surface gaps
+
+- `/v1/windows` GET is not exposed (returns 405); psql is the canonical
+  ground truth until the read endpoint is wired (see boot.md / openapi).
+- Deadlock retry on `truncateV1` was not exercised in this run — the
+  worker was idle at the moment of cleanup.

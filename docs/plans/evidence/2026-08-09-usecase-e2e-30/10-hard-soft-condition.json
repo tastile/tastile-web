@@ -1,0 +1,217 @@
+$ playwright test "e2e/usecase-10-hard-soft-condition.spec.ts" "--reporter=json"
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/usecase-10-hard-soft-condition.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\playwright.config.ts",
+    "rootDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/rebui/Desktop/tastile/tastile-web/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "bun run dev",
+      "env": {
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_DAEMON_BASE_URL": "http://localhost:31400",
+        "TASTILE_USE_RUST_CORE": "1",
+        "TASTILE_RUST_API_URL": "http://127.0.0.1:31400",
+        "COOKIE_USER_SUB": "e2e-bridge-test-user",
+        "TASTILE_WEB_BRIDGE_SECRET": "dev-e2e-secret"
+      },
+      "url": "http://127.0.0.1:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "usecase-10-hard-soft-condition.spec.ts",
+      "file": "usecase-10-hard-soft-condition.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "USECASE 10 — hard-soft-condition",
+          "file": "usecase-10-hard-soft-condition.spec.ts",
+          "line": 21,
+          "column": 6,
+          "specs": [
+            {
+              "title": "DecisionPromptSheet lists both hard and soft decisions",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 855,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m502\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m502\u001b[39m\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts:44:26",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts",
+                          "column": 26,
+                          "line": 44
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 42 |\u001b[39m       }\u001b[33m,\u001b[39m\n \u001b[90m 43 |\u001b[39m     })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 44 |\u001b[39m     expect(res\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBeLessThan(\u001b[35m400\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 45 |\u001b[39m\n \u001b[90m 46 |\u001b[39m     \u001b[90m// 2) Navigate to the day view; DecisionPromptSheet is visible.\u001b[39m\n \u001b[90m 47 |\u001b[39m     \u001b[36mawait\u001b[39m goToDay(page\u001b[33m,\u001b[39m \u001b[32m\"2026-09-01\"\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts",
+                            "column": 26,
+                            "line": 44
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m502\u001b[39m\n\n  42 |       },\n  43 |     });\n> 44 |     expect(res.status()).toBeLessThan(400);\n     |                          ^\n  45 |\n  46 |     // 2) Navigate to the day view; DecisionPromptSheet is visible.\n  47 |     await goToDay(page, \"2026-09-01\");\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts:44:26"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T08:51:26.808Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-10-hard-soft-condi-33616-oth-hard-and-soft-decisions-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts",
+                        "column": 26,
+                        "line": 44
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 934,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m502\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m502\u001b[39m\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts:44:26",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts",
+                          "column": 26,
+                          "line": 44
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 42 |\u001b[39m       }\u001b[33m,\u001b[39m\n \u001b[90m 43 |\u001b[39m     })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 44 |\u001b[39m     expect(res\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBeLessThan(\u001b[35m400\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 45 |\u001b[39m\n \u001b[90m 46 |\u001b[39m     \u001b[90m// 2) Navigate to the day view; DecisionPromptSheet is visible.\u001b[39m\n \u001b[90m 47 |\u001b[39m     \u001b[36mawait\u001b[39m goToDay(page\u001b[33m,\u001b[39m \u001b[32m\"2026-09-01\"\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts",
+                            "column": 26,
+                            "line": 44
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m502\u001b[39m\n\n  42 |       },\n  43 |     });\n> 44 |     expect(res.status()).toBeLessThan(400);\n     |                          ^\n  45 |\n  46 |     // 2) Navigate to the day view; DecisionPromptSheet is visible.\n  47 |     await goToDay(page, \"2026-09-01\");\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts:44:26"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T08:51:28.288Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-10-hard-soft-condi-33616-oth-hard-and-soft-decisions-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-10-hard-soft-condi-33616-oth-hard-and-soft-decisions-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-10-hard-soft-condition.spec.ts",
+                        "column": 26,
+                        "line": 44
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "a299d21f5b4a2f4161b4-d80a7bcc7bca4bb272ce",
+              "file": "usecase-10-hard-soft-condition.spec.ts",
+              "line": 24,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-09T08:51:25.762Z",
+    "duration": 3671.9330000000004,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
+error: script "test:e2e" exited with code 1

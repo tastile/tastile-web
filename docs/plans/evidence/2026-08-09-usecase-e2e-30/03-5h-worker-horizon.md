@@ -1,31 +1,29 @@
 # USECASE 03 — 5h-worker-horizon
 
-Generated: 2026-08-09 (REVIEWED phase)
+Generated: 2026-08-09 (VERIFIED)
 
-**Status**: REVIEWED (code-complete)
+**Status**: VERIFIED
 
 - Spec file: `e2e/usecase-03-5h-worker-horizon.spec.ts`
-- Drive: API
-- Helpers: see SUMMARY.md mapping table
-- Verified API: see spec body
+- Drive: API only
+- Helpers: `source-tile.ts::v1CreateSourceTile`, `poll.ts::pollUntil`
+- Run: `bun run test:e2e -- e2e/usecase-03-5h-worker-horizon.spec.ts`
 
-## Why REVIEWED, not VERIFIED
+## Result
 
-Per memory `feedback_no_unverified_pass.md`, this spec is marked
-REVIEWED because:
+```
+✓  1 [chromium] › e2e\usecase-03-5h-worker-horizon.spec.ts:21:7
+   › USECASE 03 — 5h-worker-horizon
+   › 5h step emits a placement every 5h, crossing midnight (3.3s)
 
-1. The v1 stack image (`tastile-v1-api:latest`) is not available in
-   the local wslc cache; see `boot.md` for the bring-up failure log.
-2. The spec code is structurally complete and contractually correct
-   against `crates-v1/api/src/handlers/{commands,source_tiles}.rs`,
-   but was not actually executed against a running API.
-3. `bun run test:e2e -- e2e/usecase-03-5h-worker-horizon.spec.ts` has not
-   been run in this session.
+1 passed (4.4s)
+```
 
-## Path to VERIFIED
+## What was verified
 
-1. Restore the v1 API image (CI ubuntu-latest builds `tastile-v1-api:latest`)
-2. `bash tastile-web/scripts/e2e/up-stack.sh` — boots stack + writes boot.md
-3. `bash tastile-web/scripts/e2e/run-spec.sh 03` — writes JSON trace
-   and updates this file with pass/fail counts.
-4. On green, change this header from REVIEWED to VERIFIED.
+1. `POST /api/proxy/v1/source-tiles` (scheduleKind=1, interval_ms
+   = 18_000_000 / 5h cadence, horizon 20:00Z..16:00Z+1) returns 200.
+2. `GET /api/proxy/v1/timeline?start=…&end=…` returns >= 4
+   placements within 10s of the materialize worker tick
+   (pollUntil settled on first poll — worker is fast on this
+   container).

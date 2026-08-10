@@ -1,0 +1,217 @@
+$ playwright test "e2e/usecase-06-parent-scope-shrink.spec.ts" "--reporter=json"
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/usecase-06-parent-scope-shrink.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\playwright.config.ts",
+    "rootDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/rebui/Desktop/tastile/tastile-web/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "bun run dev",
+      "env": {
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_DAEMON_BASE_URL": "http://localhost:31400",
+        "TASTILE_USE_RUST_CORE": "1",
+        "TASTILE_RUST_API_URL": "http://127.0.0.1:31400",
+        "COOKIE_USER_SUB": "e2e-bridge-test-user",
+        "TASTILE_WEB_BRIDGE_SECRET": "dev-e2e-secret"
+      },
+      "url": "http://127.0.0.1:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "usecase-06-parent-scope-shrink.spec.ts",
+      "file": "usecase-06-parent-scope-shrink.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "USECASE 06 — parent-scope-shrink",
+          "file": "usecase-06-parent-scope-shrink.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [
+            {
+              "title": "shrinking the source horizon hides children outside the new scope",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 888,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m422\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m422\u001b[39m\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts:48:30",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts",
+                          "column": 30,
+                          "line": 48
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 46 |\u001b[39m       }\u001b[33m,\u001b[39m\n \u001b[90m 47 |\u001b[39m     })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 48 |\u001b[39m     expect(tileRes\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBeLessThan(\u001b[35m400\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 49 |\u001b[39m     \u001b[36mconst\u001b[39m tile \u001b[33m=\u001b[39m (\u001b[36mawait\u001b[39m tileRes\u001b[33m.\u001b[39mjson()) \u001b[36mas\u001b[39m { aggregate\u001b[33m?\u001b[39m\u001b[33m:\u001b[39m { id\u001b[33m?\u001b[39m\u001b[33m:\u001b[39m string } }\u001b[33m;\u001b[39m\n \u001b[90m 50 |\u001b[39m     \u001b[36mconst\u001b[39m tileId \u001b[33m=\u001b[39m tile\u001b[33m.\u001b[39maggregate\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mid\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39mtileId) \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m\"seed: tile id missing\"\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts",
+                            "column": 30,
+                            "line": 48
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m422\u001b[39m\n\n  46 |       },\n  47 |     });\n> 48 |     expect(tileRes.status()).toBeLessThan(400);\n     |                              ^\n  49 |     const tile = (await tileRes.json()) as { aggregate?: { id?: string } };\n  50 |     const tileId = tile.aggregate?.id;\n  51 |     if (!tileId) throw new Error(\"seed: tile id missing\");\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts:48:30"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T08:49:29.743Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-06-parent-scope-sh-8d7c8-ldren-outside-the-new-scope-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts",
+                        "column": 30,
+                        "line": 48
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 898,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m422\u001b[39m",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m422\u001b[39m\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts:48:30",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts",
+                          "column": 30,
+                          "line": 48
+                        },
+                        "snippet": "\u001b[0m \u001b[90m 46 |\u001b[39m       }\u001b[33m,\u001b[39m\n \u001b[90m 47 |\u001b[39m     })\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 48 |\u001b[39m     expect(tileRes\u001b[33m.\u001b[39mstatus())\u001b[33m.\u001b[39mtoBeLessThan(\u001b[35m400\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 49 |\u001b[39m     \u001b[36mconst\u001b[39m tile \u001b[33m=\u001b[39m (\u001b[36mawait\u001b[39m tileRes\u001b[33m.\u001b[39mjson()) \u001b[36mas\u001b[39m { aggregate\u001b[33m?\u001b[39m\u001b[33m:\u001b[39m { id\u001b[33m?\u001b[39m\u001b[33m:\u001b[39m string } }\u001b[33m;\u001b[39m\n \u001b[90m 50 |\u001b[39m     \u001b[36mconst\u001b[39m tileId \u001b[33m=\u001b[39m tile\u001b[33m.\u001b[39maggregate\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mid\u001b[33m;\u001b[39m\n \u001b[90m 51 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[33m!\u001b[39mtileId) \u001b[36mthrow\u001b[39m \u001b[36mnew\u001b[39m \u001b[33mError\u001b[39m(\u001b[32m\"seed: tile id missing\"\u001b[39m)\u001b[33m;\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts",
+                            "column": 30,
+                            "line": 48
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThan\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: < \u001b[32m400\u001b[39m\nReceived:   \u001b[31m422\u001b[39m\n\n  46 |       },\n  47 |     });\n> 48 |     expect(tileRes.status()).toBeLessThan(400);\n     |                              ^\n  49 |     const tile = (await tileRes.json()) as { aggregate?: { id?: string } };\n  50 |     const tileId = tile.aggregate?.id;\n  51 |     if (!tileId) throw new Error(\"seed: tile id missing\");\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts:48:30"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T08:49:31.193Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-06-parent-scope-sh-8d7c8-ldren-outside-the-new-scope-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-06-parent-scope-sh-8d7c8-ldren-outside-the-new-scope-chromium-retry1\\trace.zip"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-06-parent-scope-shrink.spec.ts",
+                        "column": 30,
+                        "line": 48
+                      }
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "a13a46d090aa7cc19c92-e7422846fc2269de711a",
+              "file": "usecase-06-parent-scope-shrink.spec.ts",
+              "line": 22,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-09T08:49:28.742Z",
+    "duration": 3581.1769999999997,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
+error: script "test:e2e" exited with code 1

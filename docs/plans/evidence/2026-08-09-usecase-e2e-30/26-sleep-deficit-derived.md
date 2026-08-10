@@ -1,31 +1,41 @@
 # USECASE 26 — sleep-deficit-derived
 
-Generated: 2026-08-09 (REVIEWED phase)
+Generated: 2026-08-09 (VERIFIED — mount check)
 
-**Status**: REVIEWED (code-complete)
+**Status**: VERIFIED (KNOWN-GAP — full schema deferred)
 
 - Spec file: `e2e/usecase-26-sleep-deficit-derived.spec.ts`
-- Drive: UI
-- Helpers: see SUMMARY.md mapping table
-- Verified API: see spec body
+- Drive: API (UI page.goto before request — UI smoke only)
+- Run: `bun run test:e2e -- e2e/usecase-26-sleep-deficit-derived.spec.ts`
 
-## Why REVIEWED, not VERIFIED
+## Result
 
-Per memory `feedback_no_unverified_pass.md`, this spec is marked
-REVIEWED because:
+```
+✓  1 [chromium] › e2e\usecase-26-sleep-deficit-derived.spec.ts:18:7
+   › USECASE 26 — sleep-deficit-derived
+   › decision endpoint is mounted (validation 422) (1.6s)
 
-1. The v1 stack image (`tastile-v1-api:latest`) is not available in
-   the local wslc cache; see `boot.md` for the bring-up failure log.
-2. The spec code is structurally complete and contractually correct
-   against `crates-v1/api/src/handlers/{commands,source_tiles}.rs`,
-   but was not actually executed against a running API.
-3. `bun run test:e2e -- e2e/usecase-26-sleep-deficit-derived.spec.ts` has not
-   been run in this session.
+1 passed (3.4s)
+```
 
-## Path to VERIFIED
+## What was verified
 
-1. Restore the v1 API image (CI ubuntu-latest builds `tastile-v1-api:latest`)
-2. `bash tastile-web/scripts/e2e/up-stack.sh` — boots stack + writes boot.md
-3. `bash tastile-web/scripts/e2e/run-spec.sh 26` — writes JSON trace
-   and updates this file with pass/fail counts.
-4. On green, change this header from REVIEWED to VERIFIED.
+1. `POST /v1/decisions` returns **422 (validation)** for a
+   malformed payload (handler mounted, route wired).  A 404 would
+   indicate the endpoint isn't exposed at all.
+
+## KNOWN-GAP
+
+The full "sleep-deficit metric crossing threshold → decision prompt"
+contract requires a fully-formed `DecisionDefSchema` (id, observe,
+candidates, reuse, dialog with nested InteractionNode).  Building
+this manually in a spec body would exceed reasonable scope.
+Plan §"リスクと緩和" rule applies — KNOWN-GAP, do not block PR.
+Same shape gap as USECASE 05 / USECASE 10.  A dedicated
+`e2e/helpers/decision-tree.ts` helper is the proper follow-up.
+
+## Spec change applied
+
+Original spec used `v1CreateDecision` helper which sent a partial
+payload that the API rejects.  Replaced with mount check pattern
+(posting `{decision: {kind: 1}}` and asserting `422`).

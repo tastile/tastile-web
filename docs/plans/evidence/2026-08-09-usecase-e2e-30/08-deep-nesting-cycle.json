@@ -1,0 +1,209 @@
+$ playwright test "e2e/usecase-08-deep-nesting-cycle.spec.ts" "--reporter=json"
+{
+  "config": {
+    "argv": [
+      "C:\\nvm4w\\nodejs\\node.exe",
+      "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\node_modules\\@playwright\\test\\cli.js",
+      "test",
+      "e2e/usecase-08-deep-nesting-cycle.spec.ts",
+      "--reporter=json"
+    ],
+    "configFile": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\playwright.config.ts",
+    "rootDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "C:/Users/rebui/Desktop/tastile/tastile-web/test-results",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "C:/Users/rebui/Desktop/tastile/tastile-web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.62.1",
+    "workers": 1,
+    "webServer": {
+      "command": "bun run dev",
+      "env": {
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_DAEMON_BASE_URL": "http://localhost:31400",
+        "TASTILE_USE_RUST_CORE": "1",
+        "TASTILE_RUST_API_URL": "http://127.0.0.1:31400",
+        "COOKIE_USER_SUB": "e2e-bridge-test-user",
+        "TASTILE_WEB_BRIDGE_SECRET": "dev-e2e-secret"
+      },
+      "url": "http://127.0.0.1:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "usecase-08-deep-nesting-cycle.spec.ts",
+      "file": "usecase-08-deep-nesting-cycle.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "USECASE 08 — deep-nesting-cycle",
+          "file": "usecase-08-deep-nesting-cycle.spec.ts",
+          "line": 23,
+          "column": 6,
+          "specs": [
+            {
+              "title": "a non-cyclic nesting renders without crash",
+              "ok": false,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium",
+                  "projectName": "chromium",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "failed",
+                      "duration": 8793,
+                      "error": {
+                        "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\\'day-panel\\']').getByText('Nesting root 1786265379839-4461s9').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\\'day-panel\\']').getByText('Nesting root 1786265379839-4461s9').first()\u001b[22m\n",
+                        "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\\'day-panel\\']').getByText('Nesting root 1786265379839-4461s9').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\\'day-panel\\']').getByText('Nesting root 1786265379839-4461s9').first()\u001b[22m\n\n    at expectDayEventVisible (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts:163:5)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-08-deep-nesting-cycle.spec.ts:39:32",
+                        "location": {
+                          "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts",
+                          "column": 5,
+                          "line": 163
+                        },
+                        "snippet": "\u001b[90m   at \u001b[39mhelpers\\ui.ts:163\n\n\u001b[0m \u001b[90m 161 |\u001b[39m   \u001b[36mawait\u001b[39m expect(\n \u001b[90m 162 |\u001b[39m     page\u001b[33m.\u001b[39mlocator(\u001b[32m\"[data-testid='day-panel']\"\u001b[39m)\u001b[33m.\u001b[39mgetByText(title\u001b[33m,\u001b[39m { exact\u001b[33m:\u001b[39m \u001b[36mfalse\u001b[39m })\u001b[33m.\u001b[39mfirst()\u001b[33m,\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 163 |\u001b[39m   )\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 164 |\u001b[39m }\n \u001b[90m 165 |\u001b[39m\n \u001b[90m 166 |\u001b[39m \u001b[90m/** Assert that a timeline event with the given title is NOT visible in the day view. */\u001b[39m\u001b[0m"
+                      },
+                      "errors": [
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts",
+                            "column": 5,
+                            "line": 163
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: locator('[data-testid=\\'day-panel\\']').getByText('Nesting root 1786265379839-4461s9').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\\'day-panel\\']').getByText('Nesting root 1786265379839-4461s9').first()\u001b[22m\n\n\n   at helpers\\ui.ts:163\n\n  161 |   await expect(\n  162 |     page.locator(\"[data-testid='day-panel']\").getByText(title, { exact: false }).first(),\n> 163 |   ).toBeVisible();\n      |     ^\n  164 | }\n  165 |\n  166 | /** Assert that a timeline event with the given title is NOT visible in the day view. */\n    at expectDayEventVisible (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts:163:5)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-08-deep-nesting-cycle.spec.ts:39:32"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2026-08-09T08:49:38.987Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-08-deep-nesting-cy-339cc-sting-renders-without-crash-chromium\\error-context.md"
+                        }
+                      ],
+                      "errorLocation": {
+                        "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts",
+                        "column": 5,
+                        "line": 163
+                      }
+                    },
+                    {
+                      "workerIndex": 1,
+                      "parallelIndex": 0,
+                      "status": "timedOut",
+                      "duration": 30795,
+                      "error": {
+                        "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m",
+                        "stack": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                      },
+                      "errors": [
+                        {
+                          "message": "\u001b[31mTest timeout of 30000ms exceeded.\u001b[39m"
+                        },
+                        {
+                          "location": {
+                            "file": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts",
+                            "column": 28,
+                            "line": 117
+                          },
+                          "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  locator('[data-testid=\\'quick-create-submit\\']')\nExpected: not visible\nReceived: visible\n\nCall log:\n\u001b[2m  - Expect \"not toBeVisible\" with timeout 45000ms\u001b[22m\n\u001b[2m  - waiting for locator('[data-testid=\\'quick-create-submit\\']')\u001b[22m\n\u001b[2m    53 × locator resolved to <button disabled type=\"button\" data-loading=\"true\" data-testid=\"quick-create-submit\" class=\"mantine-focus-auto m_77c9d27d mantine-Button-root m_87cf2631 mantine-UnstyledButton-root\">…</button>\u001b[22m\n\u001b[2m       - unexpected value \"visible\"\u001b[22m\n\u001b[2m  - Test timeout of 30000ms exceeded.\u001b[22m\n\n\n   at helpers\\ui.ts:117\n\n  115 |   await expect(submit).toBeEnabled();\n  116 |   await submit.click();\n> 117 |   await expect(submit).not.toBeVisible({ timeout: 45000 });\n      |                            ^\n  118 | }\n  119 |\n  120 | /** Discard the current draft (autosave + close). */\n    at submitQuickCreate (C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\helpers\\ui.ts:117:28)\n    at C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\e2e\\usecase-08-deep-nesting-cycle.spec.ts:36:5"
+                        }
+                      ],
+                      "stdout": [],
+                      "stderr": [],
+                      "retry": 1,
+                      "startTime": "2026-08-09T08:49:48.390Z",
+                      "annotations": [],
+                      "attachments": [
+                        {
+                          "name": "error-context",
+                          "contentType": "text/markdown",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-08-deep-nesting-cy-339cc-sting-renders-without-crash-chromium-retry1\\error-context.md"
+                        },
+                        {
+                          "name": "trace",
+                          "contentType": "application/zip",
+                          "path": "C:\\Users\\rebui\\Desktop\\tastile\\tastile-web\\test-results\\usecase-08-deep-nesting-cy-339cc-sting-renders-without-crash-chromium-retry1\\trace.zip"
+                        }
+                      ]
+                    }
+                  ],
+                  "status": "unexpected"
+                }
+              ],
+              "id": "203f05331f4842a80311-1f2a079fc5f36c21f7a4",
+              "file": "usecase-08-deep-nesting-cycle.spec.ts",
+              "line": 26,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-08-09T08:49:38.013Z",
+    "duration": 42297.295999999995,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
+error: script "test:e2e" exited with code 1
