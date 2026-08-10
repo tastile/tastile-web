@@ -2,237 +2,110 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## ⚠️ CRITICAL: Read These First
+## Canonical Contract
 
-**Before doing ANYTHING in this codebase, you MUST read:**
+**Read [`AGENTS.md`](./AGENTS.md) first.** It is the canonical contract for this repository (v1 domain routing, sync model, prohibitions, implementation status, env vars, current constraints). Do not duplicate its content here — this file is only a Claude Code adapter.
 
-1. **`../tastile-root/docs/HARNESS.md`** - Tastile プロジェクト全体の方針
-2. **`../tastile-core/v1/02-core-entities.md`** - v1 ドメインモデル (Tile / Plan / Placement / Execution)
-3. **`../tastile-core/v1/10-invariants.md`** - 不変条件
-4. **`../tastile-core/v1/14-read-model-and-endpoint.md`** - API 仕様
+The workspace-level contract that binds this child repository to `tastile-core`, `tastile-desktop`, `tastile-android`, and `tastile-brands` lives in `../AGENTS.md` and `../tastile-root/docs/HARNESS.md`.
 
-**tastile-core/v1/ が唯一の仕様正本。旧 pomodoroom/CORE_POLICY.md や tastile_docs_bundle/ は廃止済み。**
+## Claude Code Configuration Layout
 
-## Project Context
+- Claude Code settings/hooks: `.claude/` (intentionally empty — no settings.json, no hooks/)
+- Agent Skills (Codex-style, canonical): `.agents/skills/` (`react-doctor`, `tastile-precommit-review`)
+- Claude Code Skills (thin adapters): `.claude/skills/`
 
-**tastile-web** is a **browser-based companion** to the primary Tastile execution control system.
-
-### The Tastile Ecosystem
-
-Tastile v1's **primary platform is Windows PC** (not web):
-- **tastile-core** (Rust): The source of truth. Command/Event/Reducer engine, PostgreSQL storage, HTTP API
-- **tastile-desktop** (C#/WinUI): Primary Windows client with OS-level intervention (focus capture, fullscreen prompts, system tray)
-- **tastile-android** (Kotlin): Android companion
-- **tastile-web** (this repo): **Minimal web implementation** that replicates core functionality in the browser via the AWS-hosted `tastile-core` API (Cognito Hosted UI for auth)
-
-### tastile-web's Role
-
-tastile-web is NOT the primary Tastile experience. It exists to:
-1. Provide access when not on the Windows PC
-2. Offer iOS PWA support (since native iOS is deferred)
-3. Handle landing pages, billing, and web-accessible dashboard
-4. Serve as a **proof that the architecture works browser-standalone**
-
-**Critical misunderstanding to avoid:** This is not a "web app with desktop support". tastile-web is a **thin client** that consumes the tastile-core API.
-
-## Architecture Philosophy
-
-### Core Principles
-
-1. **Execution Control, Not Task Management**
-   - Tastile optimizes for execution friction reduction, not planning elegance
-   - The goal: minimize "what should I do now?" decision cost
-
-2. **v1 4 Aggregate モデル**
-   - Tile / Plan / Placement / Execution の 4 集約で構成
-   - 詳細は `../tastile-core/v1/02-core-entities.md`
-
-3. **Facts, Not States**
-   - Core stores **what happened** (events, timestamps), not **what status is** (running/paused/done)
-   - `status` is a derived value, NOT a stored field
-   - Lifecycle: `if completedAt != null => done; else if startedAt != null => started; else => ready`
-
-4. **CLI-First, GUI-Second**
-   - All business logic must be invocable via Command API
-   - AI agents, automation, and humans use the **same Command surface**
-   - UI is a thin presentation layer over Core
-
-### Backend: AWS
-
-- **Auth**: AWS Cognito Hosted UI (Google OAuth federated identity). Same sign-in flow as `tastile-desktop` — see `../tastile-desktop/CLAUDE.md` for connection model details.
-- **API**: `tastile-core` (Rust daemon on EC2) over HTTPS. Web client is a thin presentation layer that issues Command API calls and consumes the resulting Events.
-- **Database**: Postgres via tastile-core (no direct DB access from the web client).
-- **Event sourcing**: Stored in tastile-core, not in a side-channel DB.
-- **Sync**: Client ↔ tastile-core API (poll + SSE) for multi-device state propagation.
-- **Billing**: Stripe webhooks via Next.js API routes.
-- **File storage**: AWS S3 (e.g., desktop installer manifest).
-
-Tokens issued by Cognito: `id_token` (JWT, sent as `Authorization: Bearer …`) plus `refresh_token` for silent renewal.
-
-### Frontend Stack
-- Next.js 16 (App Router) + TypeScript
-- Tailwind CSS v4
-- Vitest for testing
-- **No global state library** - AppState derived from events
-
-### Event Sourcing Pattern (MANDATORY)
-
-Web implementation MUST follow the same Command/Event/Reducer pattern as Rust Core:
-
-```
-Command (intent)
-  ↓
-Validation (can we accept this?)
-  ↓
-Event(s) generated (what actually happened)
-  ↓
-Event Store append (tastile-core API persistence)
-  ↓
-Reducer (derive new AppState from events)
-  ↓
-React re-render
-  ↓
-Sync via tastile-core API (poll + SSE) → other devices
-```
-
-**Absolute Rules:**
-- NEVER mutate AppState directly
-- NEVER store `status`, `running`, `active` as fields — these are **derived**
-- Events are **facts** (TileStarted, TileCompleted), not UI actions (ButtonClicked)
-- Each Command has an `actor` (human/agent/cron/loop/system)
-- Events are immutable and append-only
-
-Key file structure (must be created):
-```
-src/lib/
-├── domain/          # v1 Tile model, Execution, Actor, IDs
-├── core/
-│   ├── command.ts   # Command types + envelope
-│   ├── event.ts     # Event types + envelope
-│   ├── state.ts     # AppState (derived from events)
-│   ├── validate.ts  # Command validation rules
-│   ├── handler.ts   # Command → Events generator
-│   └── reducer/     # Event → AppState reducer
-├── storage/
-│   └── event-store.ts  # tastile-core API event persistence
-└── hooks/
-    └── use-execution-engine.ts  # React integration
-```
-
-### Route Structure
-- `/` - Public landing
-- `/dashboard/*` - Authenticated dashboard (main UI)
-- `/app/*` - iOS PWA routes (mobile-optimized)
-- `/api/*` - Next.js API routes (Stripe, downloads, etc.)
-
-**Important**: Work with `/dashboard` routes, NOT `/app` routes, when building web dashboard features.
+The Skill adapter pattern: a thin wrapper under `.claude/skills/` that delegates to `.agents/skills/`. Do not author new Skills in `.claude/skills/` without a corresponding canonical entry in `.agents/skills/`.
 
 ## Commands
 
-### Development
-```bash
-bun dev          # Start dev server (http://localhost:3000)
-bun run build    # Production build
-bun run lint     # Run ESLint
-bun test         # Run all tests with Vitest
-bun test <file>  # Run specific test file
-```
+The package scripts in `package.json` are the source of truth. Canonical entry points:
 
-### Testing
-```bash
-bun test src/lib/storage/event-store.test.ts  # Test specific file
-bun test --ui                                  # Interactive UI
-```
+| Purpose | Command |
+| --- | --- |
+| Dev server | `bun dev` |
+| Production build (Next standalone) | `bun run build` |
+| Production artifact | `bun run build:prod` |
+| Fast local quality gate | `bun run check` (biome + eslint + typecheck + knip + vitest) |
+| Release gate | `bun run check:release` (gate + audit + build:prod) |
+| Biome only | `bun run lint:biome` |
+| ESLint only | `bun run lint` |
+| Type check only | `bun run typecheck` |
+| Knip (dead-code) | `bun run knip` |
+| Unit/component tests | `bun test` (single file: `bun test path/to/file.test.ts`) |
+| Run all tests via project wrapper | `bun run test:unit` |
+| E2E (Playwright) | `bun run test:e2e` |
+| Regenerate OpenAPI types | `bun run generate-types` |
+| React Doctor scan | `bun run doctor` |
 
-## Critical Implementation Notes
+`bun run check` is the standard completion gate; use focused scripts only during iterative development, never as the final gate.
 
-### Absolute Prohibitions
+## Architecture (current state)
 
-1. **DO NOT use `_old/` directory** - Deprecated code, treat as archive
-2. **DO NOT store derived state** - No `status`, `running`, `paused` fields in Tile
-3. **DO NOT use `kind` string enums** - v1 では数値定数のみ
-4. **DO NOT mutate AppState** - Only via Events through Reducer
-5. **DO NOT create UI-specific Commands** - Commands must be domain-level (not "ClickedButton")
-6. **DO NOT give AI special backdoor APIs** - AI uses same Command surface as humans
+This is a thin-client Next.js 16 dashboard for the `tastile-core` API. **Do not introduce business logic in the client** — all domain logic is owned by `tastile-core` and surfaced through the Command/Event/Reducer contract.
 
-### tastile-core API
-- All requests authenticated with `Authorization: Bearer <id_token>` (Cognito JWT)
-- The `events` log is append-only; clients never issue UPDATE/DELETE on events
-- Multi-device sync is delegated to tastile-core (poll + SSE); clients do not implement their own sync layer
-- Database schema lives in `tastile-core` — see `../tastile-core/CLAUDE.md`
+Directory layout follows Feature-Sliced Design (FSD):
 
-### Mock Data vs Real Data
-Current UI components use `src/lib/mock-data.ts`. When implementing features:
-1. Replace mock imports with real `tastile-core` API client calls
-2. Use `useExecutionEngine()` hook for state management
-3. Connect to actual `EventStore` and `AppState`
+- `src/app/` — Next.js App Router routes and API handlers (also legacy `/app/*` redirects to `/dashboard` via `next.config.ts`)
+- `src/shared/` — cross-cutting primitives: `ui/`, `api/`, `lib/`, `i18n/`, `model/`, `auth/`, `stores/`, `query/`, `hooks/`, `analytics/`, `context/`
+- `src/features/` — user-facing features: `create-tile`, `execute-tile`, `manage-tasks`, `manage-projects`, `manage-schedule`, `manage-settings`, `marketing`, `view-notifications`
+- `src/widgets/` — composite UI blocks: `app-shell`, `activity-bar`, `floating-header`, `side-tool-panel`
+- `src/views/` — page-level compositions (e.g. `dashboard/`)
+- `src/{tile,execution,calendar}/` — domain slices, each with `model/` and `ui/`
+- `src/lib/` — legacy/non-FSD infrastructure (kept for `account`, `api` clients, `billing`, `notifications`, `projection`, `scheduler`, `security`, `styles`, `theme`, `upstream`, `vendored`)
 
-### State Management
-- Local component state: React `useState`
-- Global UI state (modals, theme): Zustand stores in `src/lib/stores/`
-- Execution engine state: `use-execution-engine.ts` hook (replays events into AppState)
+The historical `src/lib/{domain,core,storage,hooks}` layout from the early 2026 design docs has been superseded; the FSD plan in `docs/fsd-phase1-plan.md` documents the migration. Do not add new code to that legacy shape unless an existing module requires it.
 
-### Sync Model
-- **Tiles**: Cloud-authoritative, local cache
-- **Events**: Append-only, ordered by `occurred_at`
-- **Settings**: Last-write-wins
-- **Execution state** (active_tile, phase): NOT persisted by tastile-core across restarts (browser-local only)
+UI library: **Mantine v9** (`@mantine/core`, `@mantine/dates`, `@mantine/form`, `@mantine/hooks`) with Tailwind CSS v4. Mantine is the preferred primitive for equivalent UI state and lifecycle behavior — see `.claude/memory/feedback_mantine_first_ui.md` (auto-memory).
 
-## Current Implementation Status
+React Compiler is enabled in `next.config.ts`. Avoid manual memoization (`useMemo`, `useCallback`) unless required by an external library that breaks under the compiler; the relevant react-doctor rule is disabled in `doctor.config.json` to reflect that.
 
-As of 2026-06-18:
-- ✅ `tastile-core` API client skeleton (`src/lib/core/`)
-- ✅ `EventStore` stub for persistence (`src/lib/storage/event-store.ts`)
-- ⚠️ `use-execution-engine` hook exists BUT references non-existent imports
-- ✅ Dashboard shell UI (`/dashboard`) - **uses mock data**
-- ❌ **Domain model NOT implemented** - v1 Tile model 未実装
-- ❌ **Command/Event/Reducer NOT implemented** - Core engine missing
-- ❌ **AppState derivation NOT implemented** - No event replay logic
+## Key Cross-References
 
-**The execution engine described in progress reports was NEVER committed to this repo.**
+- v1 domain spec: `../tastile-core/v1/` (Tile / Plan / Placement / Execution, invariants, read-model endpoints, API contracts)
+- OpenAPI generated types: `src/lib/api/v1/openapi-generated.d.ts` (regenerate via `bun run generate-types`)
+- Design system source of truth: `docs/DESIGN-SYSTEM.md`
+- Linear-derived visual baseline: `docs/awesome-design-md/design-md/linear.app/DESIGN.md` (per `docs/decisions.md`)
+- Architectural decisions log: `docs/decisions.md`
+- Bridge auth contract for E2E: see `.agents/skills/tastile-precommit-review` SKILL.md for the security boundary list (Cognito, cookies, server-only secrets, Stripe, proxy)
+- **E2E stack prerequisites**: `scripts/e2e/up-stack.sh` requires the `tastile-v1-api:latest` wslc image to already exist. Build it once with `bash ../tastile-core/scripts/wslc/build.sh` (or `.wslc/wslc-build.ps1`); on hosts where Defender blocks `cc1.exe` use CI `ubuntu-latest`. The troubleshooting table in `../tastile-core/scripts/wslc/README.md` is canonical.
 
-### What Actually Needs To Be Built
+## Next.js 16 Caveat
 
-To connect UI to real data, you must:
-1. v1 Tile ドメインモデルの実装 - see tastile-core/v1/02-core-entities.md
-2. Implement Command types (StartTile, CompleteTile, etc.) - see doc 04
-3. Implement Event types (TileStarted, TileCompleted, etc.) - see doc 04
-4. Implement Validator (command acceptance rules)
-5. Implement Reducer (events → AppState transformation)
-6. Implement CommandHandler (command → validation → events → append → reduce)
-7. Connect `use-execution-engine` to real types
-8. Replace mock data in UI components with derived state from AppState
+Next.js 16 has breaking changes — conventions, APIs, and file structure may differ from training data. Before writing route/handler code, read the relevant guide under `node_modules/next/dist/docs/`. Treat the agent-rules block automatically prepended at the end of `AGENTS.md` by `next dev` as canonical; do not strip it from committed work.
 
-Refer to Rust Core implementation as reference (`tastile-core/crates/`).
+## Environment
 
-## Required Reading (Project Docs)
+Copy `.env.development.example` to `.env.development` (dev) or `.env.production.example` to `.env.production` (prod) and fill required values. Only `.env`, `.env.development`, and `.env.production` may carry real values; all other `.env*` files are gitignored.
 
-These documents are THE source of truth:
+Key variable groups:
 
-### Foundation (MUST READ)
-- `../tastile-root/docs/HARNESS.md` - プロジェクト全体方針
-- `../tastile-core/v1/02-core-entities.md` - v1 ドメインモデル
-- `../tastile-core/v1/10-invariants.md` - 不変条件
-- `../tastile-core/v1/14-read-model-and-endpoint.md` - API 仕様
+- Stripe billing (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`)
+- Desktop download/version (`TASTILE_DESKTOP_MANIFEST_URL`, `NEXT_PUBLIC_TASTILE_DESKTOP_VERSION`, `TASTILE_DESKTOP_VERSION`)
+- AWS Cognito Hosted UI (`NEXT_PUBLIC_COGNITO_*`, `TASTILE_WEB_BRIDGE_SECRET`)
+- `tastile-core` API (`CLOUD_API_BASE`, `NEXT_PUBLIC_DAEMON_BASE_URL`, `TASTILE_RUST_API_URL`, `TASTILE_USE_RUST_CORE`)
+- Analytics + hosts (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_APEX_HOST`, `NEXT_PUBLIC_APP_HOST`)
 
-### Reference
-- `../tastile-core/HARNESS.md` - バックエンド詳細ハーネス
-- `../tastile-core/v1/` - v1 仕様群 (15 ファイル)
+`.env.local` is reserved for local-only overrides and is **not** loaded by the Vitest config on purpose — see the comment block in `vitest.config.ts` for why.
 
-## Environment Variables
+## Containerization
 
-Required in `.env.dev` (development) or `.env.product` (production):
-```
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PRO_MONTHLY_PRICE_ID=
-STRIPE_PRO_YEARLY_PRICE_ID=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-NEXT_PUBLIC_APP_URL=https://app.tastile.app
-TASTILE_DESKTOP_MANIFEST_URL=
-NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=
-TASTILE_DESKTOP_VERSION=
-NEXT_PUBLIC_GA_MEASUREMENT_ID=
-```
+`Containerfile` (not `Dockerfile`) is the canonical image definition. Multi-stage: `oven/bun:1.3.14` build → `node:20-bookworm-slim` run, producing a Next standalone bundle (`output: "standalone"` in `next.config.ts`).
 
-See `.env.dev.example` or `.env.product.example` for reference. Auth-related AWS Cognito / `tastile-core` API keys are added as the AWS integration lands; they are intentionally not listed here until the corresponding source changes are merged.
+## Quality Gate (project-local invariants)
+
+These are non-negotiable for any change that touches this repository:
+
+1. `bun run check` passes with zero errors and zero unjustified warnings.
+2. Knip reports no unused dependencies, exports, or files in the changed scope (broad ignores are forbidden).
+3. Biome and ESLint both pass; do not silence rules project-wide to pass.
+4. Vitest unit/component tests cover changed behavior; do not mark complete on a single happy-path test.
+5. E2E changes (auth, billing, proxy, event behavior) require focused Playwright coverage and must respect `E2E_BYPASS_AUTH=0` unless the test is explicitly the bypass path.
+6. UI changes must be verified in an actual rendered browser (Playwright or equivalent) before claiming completion — type-check and unit tests are not sufficient.
+7. The release path (`bun run check:release`) is the only sanctioned signal for "ship-ready". `bun run check` is the iteration floor.
+
+## Subagent / Parallelization Rules (project-local)
+
+- Local `main` only — do not create feature branches or worktrees.
+- Disjoint file ownership per subagent; never let two subagents edit the same file in parallel.
+- Commit operations are serialized; each subagent produces its own commit covering only its owned changes.
+- Pre-commit review of agent-initiated commits must go through `.agents/skills/tastile-precommit-review`; do not self-approve.

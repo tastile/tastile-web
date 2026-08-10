@@ -6,7 +6,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 **Before doing ANYTHING in this codebase, you MUST read:**
 
-1. **`../tastile-root/docs/HARNESS.md`** - Tastile プロジェクト全体の方針
+1. **`../docs/HARNESS.md`** - Tastile プロジェクト全体の方針
 2. **`../tastile-core/v1/02-core-entities.md`** - v1 ドメインモデル (Tile / Plan / Placement / Execution)
 3. **`../tastile-core/v1/10-invariants.md`** - 不変条件
 4. **`../tastile-core/v1/14-read-model-and-endpoint.md`** - API 仕様
@@ -198,7 +198,7 @@ Refer to Rust Core implementation as reference (`tastile-core/crates/`).
 These documents are THE source of truth:
 
 ### Foundation (MUST READ)
-- `../tastile-root/docs/HARNESS.md` - プロジェクト全体方針
+- `../docs/HARNESS.md` - プロジェクト全体方針
 - `../tastile-core/v1/02-core-entities.md` - v1 ドメインモデル
 - `../tastile-core/v1/10-invariants.md` - 不変条件
 - `../tastile-core/v1/14-read-model-and-endpoint.md` - API 仕様
@@ -209,7 +209,7 @@ These documents are THE source of truth:
 
 ## Environment Variables
 
-Required in `.env.dev` (development) or `.env.product` (production):
+Required in `.env.development` (development) or `.env.production` (production):
 ```dotenv
 NEXT_PUBLIC_TASTILE_CORE_URL=http://localhost:3140
 STRIPE_SECRET_KEY=
@@ -217,7 +217,7 @@ STRIPE_WEBHOOK_SECRET=
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
 ```
 
-See `.env.dev.example` or `.env.product.example` for reference.
+See `.env.development.example` or `.env.production.example` for reference.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
