@@ -58,9 +58,7 @@ describe("marketing page layout consistency", () => {
 		);
 		unmountDownload();
 
-		const pricingUi = await PricingPage({
-			searchParams: Promise.resolve({}),
-		});
+		const pricingUi = PricingPage();
 		const pricingContainer = renderWithMantine(pricingUi).container;
 		const pricingShell = pricingContainer.querySelector<HTMLElement>(".min-h-dvh");
 		expect(pricingShell?.className).toContain("flex");

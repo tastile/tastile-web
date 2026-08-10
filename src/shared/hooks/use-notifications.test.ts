@@ -3,9 +3,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { callMock, fetchMock } = vi.hoisted(() => ({
+const { callMock } = vi.hoisted(() => ({
   callMock: vi.fn(),
-  fetchMock: vi.fn(),
 }));
 
 vi.mock("@/shared/api/endpoints", async () => {
@@ -23,8 +22,11 @@ vi.mock("@/lib/notifications/browser", () => ({
   showNotification: vi.fn(),
 }));
 
+// Stable translation function so the hook's useCallback dep stays stable
+// (otherwise the dep churns each render and the test below spins).
+const stableT = (key: string) => key;
 vi.mock("@/shared/i18n/use-translation", () => ({
-  useTranslation: () => ({ t: (key: string) => key, locale: "en" }),
+  useTranslation: () => ({ t: stableT, locale: "en" }),
 }));
 
 // Imported after the mocks so the hook under test uses them.
@@ -55,38 +57,42 @@ const executionSnapshot = {
   pending_prompt_id: null,
 };
 
-const executionSnapshotB = {
-  ...executionSnapshot,
-  main_tile: { id: "tile-b", title: "Second" },
-};
+type CallOk<T> = { ok: true; data: T; status: number; latencyMs: number };
 
-function okExecution(data: typeof executionSnapshot) {
-  return { ok: true as const, data, status: 200, latencyMs: 1 };
+function okExecution(data: typeof executionSnapshot): CallOk<typeof executionSnapshot> {
+  return { ok: true, data, status: 200, latencyMs: 1 };
 }
 
-function okNotifications(items: Array<{ id: string; message: string; created_at: string; read_at: string | null; kind: number }>) {
-  return new Response(JSON.stringify({ items }), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+function okNotifications(
+  items: Array<{ id: string; message: string; created_at: string; read_at: string | null; kind: number }>,
+): CallOk<{ items: typeof items }> {
+  return { ok: true, data: { items }, status: 200, latencyMs: 1 };
+}
+
+function defaultMockImpl(method: string) {
+  if (method === "listAccessNotifications") {
+    return Promise.resolve(okNotifications([]));
+  }
+  return Promise.resolve(okExecution(executionSnapshot));
+}
+
+function listCallsSoFar(): number {
+  return callMock.mock.calls.filter(([m]) => m === "listAccessNotifications").length;
 }
 
 describe("useNotifications", () => {
   beforeEach(() => {
     callMock.mockReset();
-    fetchMock.mockReset();
-    vi.stubGlobal("fetch", fetchMock);
+    // Default behavior: every call returns a well-formed envelope so the
+    // hook's re-renders don't blow up on `undefined.ok`.
+    callMock.mockImplementation(defaultMockImpl);
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
   it("starts in loading state and exposes an empty list", async () => {
-    callMock.mockResolvedValue(okExecution(executionSnapshot));
-    fetchMock.mockResolvedValueOnce(okNotifications([]));
-
     const { result, unmount } = renderHook(() => useNotifications());
 
     expect(result.current.loading).toBe(true);
@@ -99,24 +105,41 @@ describe("useNotifications", () => {
   });
 
   it("drops a stale access-list response when a newer refresh arrives", async () => {
-    let resolveFirstList: (value: Response) => void = () => {};
-    let resolveSecondList: (value: Response) => void = () => {};
-    fetchMock
-      .mockImplementationOnce(
-        () => new Promise<Response>((r) => (resolveFirstList = r)),
-      )
-      .mockImplementationOnce(
-        () => new Promise<Response>((r) => (resolveSecondList = r)),
-      );
+    let resolveFirstList: (value: CallOk<{ items: unknown[] }>) => void = () => {};
+    let resolveSecondList: (value: CallOk<{ items: unknown[] }>) => void = () => {};
+    let listCallIdx = 0;
 
-    callMock.mockResolvedValue(okExecution(executionSnapshot));
+    // Override ONLY the first two listAccessNotifications calls with
+    // pending promises. `mockImplementationOnce` is consumed in call order,
+    // so we have to inspect the method name inside the impl.
+    callMock.mockImplementation((method: string) => {
+      if (method === "listAccessNotifications") {
+        listCallIdx++;
+        if (listCallIdx === 1) {
+          return new Promise<CallOk<{ items: unknown[] }>>((r) => {
+            resolveFirstList = r;
+          });
+        }
+        if (listCallIdx === 2) {
+          return new Promise<CallOk<{ items: unknown[] }>>((r) => {
+            resolveSecondList = r;
+          });
+        }
+      }
+      return defaultMockImpl(method);
+    });
 
     const { result, unmount } = renderHook(() => useNotifications());
 
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => {
+      expect(listCallsSoFar()).toBeGreaterThanOrEqual(1);
+    });
 
     window.dispatchEvent(new CustomEvent("tastile:notifications-changed"));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
+
+    await waitFor(() => {
+      expect(listCallsSoFar()).toBeGreaterThanOrEqual(2);
+    });
 
     // Resolve out of order: stale empty list arrives after fresh populated list.
     resolveSecondList(
@@ -139,28 +162,34 @@ describe("useNotifications", () => {
   });
 
   it("refreshes when tastile:notifications-changed fires", async () => {
-    callMock.mockResolvedValue(okExecution(executionSnapshot));
-    fetchMock.mockResolvedValueOnce(okNotifications([]));
-
     const { result, unmount } = renderHook(() => useNotifications());
-    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
-    const before = fetchMock.mock.calls.length;
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+    const before = listCallsSoFar();
 
-    fetchMock.mockResolvedValueOnce(
-      okNotifications([
-        {
-          id: "n1",
-          message: "New invite",
-          created_at: "2026-07-23T09:00:00.000Z",
-          read_at: null,
-          kind: 1,
-        },
-      ]),
-    );
+    // Override the next listAccessNotifications call to return a populated list.
+    callMock.mockImplementationOnce((method: string) => {
+      if (method === "listAccessNotifications") {
+        return Promise.resolve(
+          okNotifications([
+            {
+              id: "n1",
+              message: "New invite",
+              created_at: "2026-07-23T09:00:00.000Z",
+              read_at: null,
+              kind: 1,
+            },
+          ]),
+        );
+      }
+      return defaultMockImpl(method);
+    });
+
     window.dispatchEvent(new CustomEvent("tastile:notifications-changed"));
 
     await waitFor(() => {
-      expect(fetchMock.mock.calls.length).toBeGreaterThan(before);
+      expect(listCallsSoFar()).toBeGreaterThan(before);
     });
     await waitFor(() => {
       expect(result.current.notifications.some((n) => n.id === "access:n1")).toBe(true);

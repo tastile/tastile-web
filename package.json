@@ -17,10 +17,13 @@
   "engines": {
     "node": ">=20.11.0"
   },
+  "overrides": {
+    "nanoid": ">=3.3.18"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:prod": "node scripts/build-product.mjs",
+    "build:prod": "node scripts/build-product.mts",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
@@ -45,7 +48,7 @@
     "@tanstack/react-query": "^5.101.4",
     "lucide-react": "^0.515.0",
     "next": "^16.3.0",
-    "postcss": "^8.5.25",
+    "postcss": "^8.5.26",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "rrule": "^2.8.1",
@@ -58,7 +61,7 @@
     "@next/bundle-analyzer": "^16.3.0",
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
-    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
     "@types/node": "^22.20.1",
@@ -73,7 +76,7 @@
     "fast-check": "^4.9.0",
     "jiti": "^2.7.0",
     "jsdom": "^26.1.0",
-    "knip": "^6.31.0",
+    "knip": "^6.32.0",
     "openapi-typescript": "^7.13.0",
     "postcss-preset-mantine": "^1.18.0",
     "postcss-simple-vars": "^7.0.1",

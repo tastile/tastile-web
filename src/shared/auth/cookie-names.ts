@@ -9,6 +9,10 @@ export const COOKIE_ACCESS_TOKEN = "tastile_access_token";
 export const COOKIE_REFRESH_TOKEN = "tastile_refresh_token";
 export const COOKIE_USER_SUB = "tastile_uid";
 export const COOKIE_API_TOKEN = "tastile_api_token";
+// Short-lived credential handed to browser JS so it can call tastile-core
+// directly. Distinct from COOKIE_API_TOKEN, which is long-lived and never
+// leaves the server.
+export const COOKIE_CORE_BROWSER_TOKEN = "tastile_core_browser_token";
 export const COOKIE_PKCE_VERIFIER = "tastile_pkce_verifier";
 export const COOKIE_OAUTH_STATE = "tastile_oauth_state";
 export const COOKIE_OAUTH_NEXT = "tastile_oauth_next";

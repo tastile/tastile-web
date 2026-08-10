@@ -358,6 +358,16 @@ export function QuickCreate() {
     reset();
   }, [DRAFT_STORAGE_KEY, reset]);
 
+  // retrySubmit MUST be declared above the `if (!mounted) return null` early
+  // return so hook order stays stable when `mounted` flips (issue: hooks-order
+  // violation previously hit "Rendered more hooks than during the previous
+  // render" at QuickCreate.tsx:536 the first time the panel opened).
+  const retrySubmit = useCallback(() => {
+    if (retryToast?.idempotencyKey) {
+      void handleSubmitForce(retryToast.idempotencyKey);
+    }
+  }, [retryToast]);
+
   // --- validity (must be before early return — refer to these below) ---
   const spanHasStart = !!time.span.start;
   const spanHasEnd = !!time.span.end;
@@ -533,11 +543,6 @@ export function QuickCreate() {
   async function handleSubmit() {
     return handleSubmitForce();
   }
-  const retrySubmit = useCallback(() => {
-    if (retryToast?.idempotencyKey) {
-      void handleSubmitForce(retryToast.idempotencyKey);
-    }
-  }, [retryToast]);
 
   // --- layout classes ---
   const panelClass = isDesktop

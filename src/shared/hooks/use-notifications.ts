@@ -188,14 +188,13 @@ async function fetchAccessNotifications(
   t: (key: string) => string,
 ): Promise<{ ok: true; items: NotificationItem[] } | { ok: false; error: Error }> {
   try {
-    const res = await fetch("/api/proxy/access/notifications?limit=20", {
-      headers: { accept: "application/json" },
-      cache: "no-store",
-    });
-    if (!res.ok) return { ok: false, error: new Error(`notifications API returned ${res.status}`) };
-    const body = (await res.json()) as
-      | ListResponse<AccessNotificationWire>
-      | AccessNotificationWire[];
+    const res = await getCoreClient().call<
+      ListResponse<AccessNotificationWire> | AccessNotificationWire[]
+    >("listAccessNotifications", { query: { limit: 20 } });
+    if (!res.ok) {
+      return { ok: false, error: new Error(`notifications API returned ${res.error.status}`) };
+    }
+    const body = res.data;
     const rows = Array.isArray(body) ? body : (body.items ?? []);
     return {
       ok: true,

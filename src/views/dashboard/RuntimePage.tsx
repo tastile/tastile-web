@@ -1,6 +1,6 @@
 "use client";
 
-import { ENDPOINTS, type Result, getCoreClient } from "@/shared/api/endpoints";
+import { ENDPOINTS, type Result, getCoreClient, resolveCoreBaseUrl } from "@/shared/api/endpoints";
 import { useSidePanel } from "@/shared/context/side-panel-context";
 import { cn } from "@/shared/lib/cn";
 import { Card, CardHeader } from "@/shared/ui/Card";
@@ -384,9 +384,5 @@ function formatUptime(sec: number): string {
 }
 
 function coreBaseUrl(): string {
-  const base =
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL ?? process.env.NEXT_PUBLIC_DAEMON_BASE_URL ?? "";
-  if (base) return base;
-  if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") return "http://127.0.0.1:31400";
-  return "/api/proxy";
+  return resolveCoreBaseUrl();
 }

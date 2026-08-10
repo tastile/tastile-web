@@ -18,6 +18,8 @@
  */
 
 import { MissingCloudApiBaseError } from "@/lib/upstream/cloud-api-base";
+import { getCoreToken, refreshCoreToken } from "@/shared/api/core-token";
+import { toV1Path } from "@/shared/api/v1/path-map";
 import { COOKIE_DIRECT_DAEMON } from "@/shared/auth/cookie-names";
 
 export type ApiErrorKind =
@@ -422,6 +424,14 @@ const LEGACY_ENDPOINTS = {
     auth: true,
     keywords: ["prompt", "pending"],
   } as EndpointMeta,
+  listAccessNotifications: {
+    method: "GET",
+    path: "/access/notifications",
+    tag: "Views",
+    summary: "Access notifications",
+    auth: true,
+    keywords: ["notification", "access", "inbox"],
+  } as EndpointMeta,
   getTimelineToday: {
     method: "GET",
     path: "/views/timeline/today",
@@ -795,6 +805,15 @@ export interface CoreClientConfig {
   tokenProvider: () => string | null | Promise<string | null>;
   fetchImpl?: typeof fetch;
   useProxyBridge?: boolean;
+  /** Sends cookies instead of a bearer token (local daemon direct mode). */
+  sendCredentials?: boolean;
+  /** Invoked once per request after a 401 so a stale bearer can be replaced. */
+  onUnauthorized?: () => Promise<string | null>;
+  /**
+   * Proxy base used when a direct call cannot reach core at all (DNS, CORS,
+   * offline). Only applied to GET so an ambiguous mutation is never replayed.
+   */
+  fallbackBaseUrl?: string;
 }
 
 export class CoreClient {
@@ -802,12 +821,18 @@ export class CoreClient {
   private tokenProvider: () => string | null | Promise<string | null>;
   private fetchImpl: typeof fetch;
   private useProxyBridge: boolean;
+  private sendCredentials: boolean;
+  private onUnauthorized?: () => Promise<string | null>;
+  private fallbackBaseUrl?: string;
 
   constructor(config: CoreClientConfig) {
     this.baseUrl = config.baseUrl.replace(/\/$/, "");
     this.tokenProvider = config.tokenProvider;
     this.fetchImpl = config.fetchImpl ?? globalThis.fetch.bind(globalThis);
     this.useProxyBridge = config.useProxyBridge ?? false;
+    this.sendCredentials = config.sendCredentials ?? !this.useProxyBridge;
+    this.onUnauthorized = config.onUnauthorized;
+    this.fallbackBaseUrl = config.fallbackBaseUrl;
   }
 
   async call<T = unknown>(
@@ -826,7 +851,7 @@ export class CoreClient {
         path = path.replace(`{${k}}`, encodeURIComponent(v));
       }
     }
-    const requestPath = this.useProxyBridge ? path : toV1CorePath(path);
+    const requestPath = this.useProxyBridge ? path : toV1Path(path);
     const rawUrl = this.baseUrl + requestPath;
     // Use a port-less loopback origin so relative baseUrl paths don't pick up
     // the test runner's port (e.g. http://localhost:3000) when resolved via
@@ -847,24 +872,27 @@ export class CoreClient {
     if (meta.method !== "GET" && options.body !== undefined) {
       headers["content-type"] = "application/json";
     }
-    if (meta.auth && this.useProxyBridge) {
+    if (meta.auth) {
       const token = await this.tokenProvider();
       if (token) headers.authorization = `Bearer ${token}`;
     }
 
+    const fetchInit: RequestInit = {
+      method: meta.method,
+      headers,
+      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      cache: "no-store",
+    };
+    if (this.sendCredentials) {
+      fetchInit.credentials = "include";
+    }
+
     let response: Response;
     try {
-      const fetchInit: RequestInit = {
-        method: meta.method,
-        headers,
-        body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-        cache: "no-store",
-      };
-      if (!this.useProxyBridge) {
-        fetchInit.credentials = "include";
-      }
       response = await this.fetchImpl(url.toString(), fetchInit);
     } catch (err) {
+      const fallback = await this.retryThroughProxy<T>(meta, path, url, fetchInit, started);
+      if (fallback) return fallback;
       return {
         ok: false,
         error: {
@@ -876,32 +904,72 @@ export class CoreClient {
       };
     }
 
-    const latencyMs = Math.round(performance.now() - started);
-    const text = await response.text();
-    let body: unknown = null;
-    if (text) {
-      try {
-        body = JSON.parse(text);
-      } catch {
-        body = text;
+    if (response.status === 401 && this.onUnauthorized) {
+      const refreshed = await this.onUnauthorized();
+      if (refreshed) {
+        response = await this.fetchImpl(url.toString(), {
+          ...fetchInit,
+          headers: { ...headers, authorization: `Bearer ${refreshed}` },
+        });
       }
     }
-    if (!response.ok) {
-      return {
-        ok: false,
-        error: {
-          kind: classifyStatus(response.status),
-          status: response.status,
-          message:
-            (body && typeof body === "object" && "error" in body
-              ? String((body as { error: unknown }).error)
-              : null) ?? response.statusText,
-          body,
-        },
-      };
-    }
-    return { ok: true, data: body as T, status: response.status, latencyMs };
+
+    return toResult<T>(response, started);
   }
+
+  private async retryThroughProxy<T>(
+    meta: EndpointMeta,
+    path: string,
+    url: URL,
+    fetchInit: RequestInit,
+    started: number,
+  ): Promise<Result<T> | null> {
+    // A failed mutation may or may not have reached core; replaying it through
+    // another route could duplicate the command. Reads only.
+    if (!this.fallbackBaseUrl || meta.method !== "GET") return null;
+    const proxyUrl = new URL(`http://localhost${this.fallbackBaseUrl}${path}`);
+    proxyUrl.search = url.search;
+    const headers = { ...(fetchInit.headers as Record<string, string>) };
+    // The proxy attaches the upstream credential server-side.
+    delete headers.authorization;
+    try {
+      const response = await this.fetchImpl(
+        `${this.fallbackBaseUrl}${path}${proxyUrl.search}`,
+        { ...fetchInit, headers, credentials: "include" },
+      );
+      return toResult<T>(response, started);
+    } catch {
+      return null;
+    }
+  }
+}
+
+async function toResult<T>(response: Response, started: number): Promise<Result<T>> {
+  const latencyMs = Math.round(performance.now() - started);
+  const text = await response.text();
+  let body: unknown = null;
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      body = text;
+    }
+  }
+  if (!response.ok) {
+    return {
+      ok: false,
+      error: {
+        kind: classifyStatus(response.status),
+        status: response.status,
+        message:
+          (body && typeof body === "object" && "error" in body
+            ? String((body as { error: unknown }).error)
+            : null) ?? response.statusText,
+        body,
+      },
+    };
+  }
+  return { ok: true, data: body as T, status: response.status, latencyMs };
 }
 
 function classifyStatus(status: number): ApiErrorKind {
@@ -911,43 +979,6 @@ function classifyStatus(status: number): ApiErrorKind {
   if (status === 422 || status === 400) return "validation";
   if (status >= 500) return "server";
   return "server";
-}
-
-function toV1CorePath(path: string): string {
-  const map: Record<string, string> = {
-    "/health": "/v1/health",
-    "/ready": "/v1/ready",
-    "/version": "/v1/version",
-    "/read/runtime-paths": "/v1/runtime/paths",
-    "/auth/session": "/v1/auth/session",
-    "/auth/session/restore": "/v1/auth/session/restore",
-    "/auth/tile-quota": "/v1/quota/tiles",
-    "/read/tiles": "/v1/tiles",
-    "/views/tile-list": "/v1/tiles",
-    "/read/active-tile": "/v1/active-tile",
-    "/views/active-tile": "/v1/active-tile",
-    "/read/execution-view": "/v1/active-tile",
-    "/read/placements": "/v1/placements",
-    "/read/candidates": "/v1/candidates",
-    "/views/timeline/today": "/v1/timeline/today",
-    "/views/calendar/day": "/v1/calendar/day",
-    "/views/calendar/week": "/v1/calendar/week",
-    "/views/calendar/month": "/v1/calendar/month",
-    "/views/calendar/year": "/v1/calendar/year",
-    "/views/pending-prompt": "/v1/prompts/pending",
-    "/prompts/current": "/v1/prompts/pending",
-    "/debug/events": "/v1/debug/events",
-    "/access/subjects": "/v1/access/subjects",
-    "/access/workspaces": "/v1/access/workspaces",
-    "/access/subjects/{id}": "/v1/access/subjects/{id}",
-  };
-  if (map[path]) return map[path];
-  // Parameterized paths: {id} is a UUIDv7, preserved verbatim.
-  return path
-    .replace(/^\/read\/tile\/([^/]+)$/, "/v1/tiles/$1")
-    .replace(/^\/read\/tile\/([^/]+)\/editable$/, "/v1/tiles/$1/editable")
-    .replace(/^\/read\/placement\/([^/]+)$/, "/v1/placements/$1")
-    .replace(/^\/read\/execution\/([^/]+)$/, "/v1/executions/$1");
 }
 
 // ============================================================================
@@ -981,6 +1012,34 @@ function readDirectDaemonCookie(): boolean {
   return document.cookie.split(/;\s*/).some((c) => c === target);
 }
 
+// Direct-to-core mode is opt-in per deployment, never inferred from the URL
+// scheme: an operator must be able to fall back to the proxy by flipping one
+// variable when core's CORS or token config misbehaves.
+export function isCloudDirectEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") return false;
+  return process.env.NEXT_PUBLIC_CORE_DIRECT_MODE === "1";
+}
+
+/**
+ * Resolve the effective base URL for core calls without instantiating the
+ * singleton. Mirrors the decision tree in `getCoreClient()` so dev tools
+ * (Runtime / ApiExplorer) display the same URL the client will actually
+ * hit. Returns the proxy bridge path when no direct target is configured.
+ */
+export function resolveCoreBaseUrl(): string {
+  const rawBaseUrl =
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ??
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL?.trim() ??
+    "";
+  const baseUrl =
+    rawBaseUrl ||
+    (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1" ? "http://127.0.0.1:31400" : "");
+  if (!baseUrl) return "/api/proxy";
+  if (readDirectDaemonCookie()) return baseUrl;
+  if (isCloudDirectEnabled()) return baseUrl;
+  return shouldUseProxyBridge(baseUrl) ? "/api/proxy" : baseUrl;
+}
+
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
   const rawBaseUrl =
@@ -1002,6 +1061,18 @@ export function getCoreClient(): CoreClient {
       baseUrl,
       useProxyBridge: false,
       tokenProvider: async () => null, // Browser sends Cookie via credentials:include
+    });
+    return _client;
+  }
+  if (isCloudDirectEnabled()) {
+    _client = new CoreClient({
+      baseUrl,
+      useProxyBridge: false,
+      // Bearer-only: core's production CORS config does not allow credentials.
+      sendCredentials: false,
+      tokenProvider: getCoreToken,
+      onUnauthorized: refreshCoreToken,
+      fallbackBaseUrl: "/api/proxy",
     });
     return _client;
   }

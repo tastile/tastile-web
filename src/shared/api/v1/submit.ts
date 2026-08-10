@@ -1,4 +1,6 @@
 import { recordTileCreateAttempt } from "@/shared/analytics/tile-create";
+import { getCoreToken } from "@/shared/api/core-token";
+import { isCloudDirectEnabled } from "@/shared/api/endpoints";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { ApiErrorKind } from "@/tile/model/v1/constants";
 import type { ApiError } from "@/tile/model/v1/envelope";
@@ -32,10 +34,26 @@ export interface SubmitOptions {
 export function makeClient(): ApiClient {
   const e2eBypass = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
   const explicitCoreUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_V1_URL;
-  const useProxyBridge = !explicitCoreUrl;
+  if (explicitCoreUrl) {
+    return {
+      baseUrl: explicitCoreUrl,
+      useProxyBridge: false,
+      getIdToken: async () => (e2eBypass ? E2E_DEV_TOKEN : null),
+    };
+  }
+  const cloudDirectBase = isCloudDirectEnabled()
+    ? (process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ?? "")
+    : "";
+  if (cloudDirectBase) {
+    return {
+      baseUrl: cloudDirectBase,
+      useProxyBridge: false,
+      getIdToken: getCoreToken,
+    };
+  }
   return {
-    baseUrl: explicitCoreUrl ?? "/api/proxy",
-    useProxyBridge,
+    baseUrl: "/api/proxy",
+    useProxyBridge: true,
     getIdToken: async () => (e2eBypass ? E2E_DEV_TOKEN : null),
   };
 }

@@ -1,18 +1,9 @@
-import { getIdTokenFromCookies } from "@/shared/auth/cookies";
-import { redirect } from "next/navigation";
 import { AppLayoutClient } from "./layout-client";
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const bypassAuth =
-    process.env.NODE_ENV !== "production" &&
-    (process.env.E2E_BYPASS_AUTH === "1" || process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1");
-  if (bypassAuth) {
-    return <AppLayoutClient>{children}</AppLayoutClient>;
-  }
-  const idToken = await getIdTokenFromCookies();
-  if (!idToken) {
-    redirect("/login");
-  }
-
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  // Auth gate runs on the client in `AppLayoutClient` so this segment is
+  // statically generated; server-side redirects would otherwise turn every
+  // /dashboard URL into a dynamic route.  Dev/CI bypass uses the same
+  // /api/auth/session contract as production.
   return <AppLayoutClient>{children}</AppLayoutClient>;
 }

@@ -11,15 +11,16 @@ export const metadata = {
   description: "Simple, transparent pricing for Tastile.",
 };
 
-export default async function PricingPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ lang?: string }>;
-}) {
-  const params = await searchParams;
-  const lang = params.lang === "en" ? "en" : "ja";
+// Static export: page is rendered at build time. Lang selection moves
+// to the client header switcher so the segment stays out of the dynamic
+// route table (per the static-shell migration plan).
+export const dynamic = "force-static";
+
+const LANG = "ja" as const;
+
+export default function PricingPage() {
   const dict = (
-    translations[lang] as unknown as {
+    translations[LANG] as unknown as {
       marketing: {
         pricing: {
           title: string;
@@ -35,7 +36,7 @@ export default async function PricingPage({
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
+      <SiteHeader showFeatureLink translations={getHeaderTranslations(LANG)} />
       <main className="flex-1">
         <div className="layout-shell max-w-5xl py-20">
           <div>
@@ -77,7 +78,7 @@ export default async function PricingPage({
           </div>
         </div>
       </main>
-      <SiteFooter translations={getFooterTranslations(lang)} />
+      <SiteFooter translations={getFooterTranslations(LANG)} />
     </div>
   );
 }

@@ -87,19 +87,103 @@ describe("CoreClient", () => {
     expect(authHeader(fetchImpl)).toBe("Bearer my-bearer");
   });
 
-  it("does not call tokenProvider when the proxy bridge is NOT used", async () => {
+  it("attaches the bearer in direct-to-core mode and sends no cookies", async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ status: "ok" })));
-    const tokenProvider = vi.fn(async () => "should-never-be-read");
+    const tokenProvider = vi.fn(async () => "direct-bearer");
+    const client = new CoreClient({
+      baseUrl: "https://core.tastile.test",
+      tokenProvider,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: false,
+      sendCredentials: false,
+    });
+
+    await client.call("getSession");
+
+    expect(authHeader(fetchImpl)).toBe("Bearer direct-bearer");
+    expect((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].credentials).toBe(
+      undefined,
+    );
+  });
+
+  it("sends cookies and no bearer for the local daemon direct client", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ status: "ok" })));
     const client = new CoreClient({
       baseUrl: "http://localhost:31400",
-      tokenProvider,
+      tokenProvider: async () => null,
       fetchImpl: fetchImpl as unknown as typeof fetch,
       useProxyBridge: false,
     });
 
     await client.call("getSession");
 
-    expect(tokenProvider).not.toHaveBeenCalled();
+    expect(authHeader(fetchImpl)).toBeUndefined();
+    expect((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].credentials).toBe(
+      "include",
+    );
+  });
+
+  it("refreshes the bearer once after a 401 and replays the request", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 401 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "ok" })));
+    const onUnauthorized = vi.fn(async () => "fresh-bearer");
+    const client = new CoreClient({
+      baseUrl: "https://core.tastile.test",
+      tokenProvider: async () => "stale-bearer",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: false,
+      sendCredentials: false,
+      onUnauthorized,
+    });
+
+    const result = await client.call("getSession");
+
+    expect(result.ok).toBe(true);
+    expect(onUnauthorized).toHaveBeenCalledTimes(1);
+    const retryInit = (fetchImpl.mock.calls[1] as [string, RequestInit])[1];
+    expect((retryInit.headers as Record<string, string>).authorization).toBe("Bearer fresh-bearer");
+  });
+
+  it("falls back to the proxy when a direct GET cannot reach core", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ status: "ok" })));
+    const client = new CoreClient({
+      baseUrl: "https://core.tastile.test",
+      tokenProvider: async () => "bearer",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: false,
+      sendCredentials: false,
+      fallbackBaseUrl: "/api/proxy",
+    });
+
+    const result = await client.call("getSession");
+
+    expect(result.ok).toBe(true);
+    const fallbackUrl = (fetchImpl.mock.calls[1] as [string, RequestInit])[0];
+    expect(fallbackUrl.startsWith("/api/proxy")).toBe(true);
+    const fallbackInit = (fetchImpl.mock.calls[1] as [string, RequestInit])[1];
+    expect((fallbackInit.headers as Record<string, string>).authorization).toBeUndefined();
+  });
+
+  it("does not replay a failed mutation through the proxy", async () => {
+    const fetchImpl = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    const client = new CoreClient({
+      baseUrl: "https://core.tastile.test",
+      tokenProvider: async () => "bearer",
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: false,
+      sendCredentials: false,
+      fallbackBaseUrl: "/api/proxy",
+    });
+
+    const result = await client.call("createTile", { body: {} });
+
+    expect(result.ok).toBe(false);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
 

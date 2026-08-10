@@ -89,6 +89,40 @@ function setApiTokenCookie(token: string, response?: NextResponse): void {
   });
 }
 
+const BROWSER_TOKEN_NAME = "Web browser session";
+
+export interface MintedBrowserToken {
+  token: string;
+  expiresAt: string;
+}
+
+// Mints a token the browser may hold in memory to call tastile-core directly.
+// It carries an explicit `expires_at` so core rejects it after the TTL
+// (verified in crates-v1/api/src/handlers/common.rs bearer_auth_result).
+export async function mintBrowserApiToken(
+  userSub: string,
+  ttlSeconds: number,
+): Promise<MintedBrowserToken | null> {
+  const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
+  if (!bridgeSecret) return null;
+
+  const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+  const createResponse = await fetch(`${coreUrl()}/v1/api-tokens`, {
+    method: "POST",
+    headers: {
+      "x-tastile-web-bridge-secret": bridgeSecret,
+      "x-tastile-web-session-user": userSub,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ label: BROWSER_TOKEN_NAME, expires_at: expiresAt }),
+    cache: "no-store",
+  });
+  if (!createResponse.ok) return null;
+
+  const created = (await createResponse.json()) as CreatedApiToken;
+  return { token: created.token, expiresAt };
+}
+
 export function coreUrl() {
   const value =
     process.env.TASTILE_CORE_URL?.trim() ??

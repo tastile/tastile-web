@@ -37,6 +37,25 @@ jobs:
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
+      - name: Validate tag version against package.json
+        # Per release policy: tag format validation, semver extraction,
+        # authoritative version comparison, full quality gate, release
+        # build — fail (do not auto-fix) on mismatch.
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::Tag version '$VERSION' is not a valid MAJOR.MINOR.PATCH semver"
+            exit 1
+          fi
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Tag version $VERSION does not match package.json version $PKG_VERSION"
+            exit 1
+          fi
+          echo "Tag version $VERSION matches package.json version."
+
       - name: Install
         run: bun install --frozen-lockfile
 

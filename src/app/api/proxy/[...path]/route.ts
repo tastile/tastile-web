@@ -1,5 +1,17 @@
+import {
+  injectTimelineTodayDefaults,
+  toV1Path as toV1PathAbsolute,
+} from "@/shared/api/v1/path-map";
 import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/shared/auth/cookies";
 import { type NextRequest, NextResponse } from "next/server";
+
+export { injectTimelineTodayDefaults };
+
+// The proxy receives path segments without a leading slash; the shared map is
+// slash-prefixed because that is the shape the endpoint table uses.
+export function toV1Path(path: string): string {
+  return toV1PathAbsolute(`/${path}`).slice(1);
+}
 
 function getCloudApiBase(): string {
   const value = process.env.CLOUD_API_BASE;
@@ -118,72 +130,6 @@ function isSafeResponseHeader(name: string): boolean {
   ]).has(name.toLowerCase());
 }
 
-export function toV1Path(path: string): string {
-  const map: Record<string, string> = {
-    health: "v1/health",
-    ready: "v1/ready",
-    version: "v1/version",
-    "read/runtime-paths": "v1/runtime/paths",
-    "runtime/paths": "v1/runtime/paths",
-    "auth/session": "v1/auth/session",
-    "auth/session/restore": "v1/auth/session/restore",
-    "commands/recurring-tile": "v1/tiles",
-    "read/tiles": "v1/tiles",
-    "views/tile-list": "v1/tiles",
-    "read/active-tile": "v1/active-tile",
-    "views/active-tile": "v1/active-tile",
-    "read/execution-view": "v1/active-tile",
-    "read/placements": "v1/placements",
-    "read/candidates": "v1/candidates",
-    "views/timeline/today": "v1/timeline/today",
-    "views/pending-prompt": "v1/prompts/pending",
-    "prompts/current": "v1/prompts/pending",
-    "auth/tile-quota": "v1/quota/tiles",
-    "debug/events": "v1/debug/events",
-    "access/subjects": "v1/access/subjects",
-    "access/workspaces": "v1/access/workspaces",
-    "access/subjects/by-external": "v1/access/subjects/by-external",
-    "access/capabilities": "v1/access/capabilities",
-    "access/offers": "v1/access/offers",
-    "access/requests": "v1/access/requests",
-    "access/grants": "v1/access/grants",
-    "access/notifications": "v1/access/notifications",
-    "views/calendar/day": "v1/calendar/day",
-    "views/calendar/week": "v1/calendar/week",
-    "views/calendar/month": "v1/calendar/month",
-    "views/calendar/year": "v1/calendar/year",
-  };
-  if (map[path]) return map[path];
-  const rewritten = path
-    .replace(/^read\/tile\/([^/]+)$/, "v1/tiles/$1")
-    .replace(/^read\/tile\/([^/]+)\/editable$/, "v1/tiles/$1/editable")
-    .replace(/^read\/placement\/([^/]+)$/, "v1/placements/$1")
-    .replace(/^read\/execution\/([^/]+)$/, "v1/executions/$1")
-    .replace(/^access\/subjects\/([^/]+)$/, "v1/access/subjects/$1")
-    .replace(/^access\/grants\/([^/]+)$/, "v1/access/grants/$1")
-    .replace(
-      /^access\/grants\/([^/]+)\/(accept|decline|approve|deny|revoke|withdraw|audit)$/,
-      "v1/access/grants/$1/$2",
-    )
-    .replace(/^access\/notifications\/([^/]+)\/read$/, "v1/access/notifications/$1/read")
-    .replace(/^access\/notifications\/read-all$/, "v1/access/notifications/read-all");
-  if (rewritten !== path) return rewritten;
-  return path.replace(/^v1\//, "v1/");
-}
-
-export function injectTimelineTodayDefaults(params: URLSearchParams): void {
-  if (!params.has("start")) {
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
-    params.set("start", today.toISOString());
-  }
-  if (!params.has("end")) {
-    const startIso = params.get("start") ?? new Date().toISOString();
-    const endDate = new Date(startIso);
-    endDate.setUTCDate(endDate.getUTCDate() + 1);
-    params.set("end", endDate.toISOString());
-  }
-}
 
 export async function GET(
   request: NextRequest,
