@@ -22,7 +22,7 @@ describe("useResponsiveBreakpoint", () => {
     Object.defineProperty(window, "innerWidth", { value: width, configurable: true });
     sharedMql = {
       matches,
-      media: "(max-width: 600px)",
+      media: "(max-width: 640px)",
       addEventListener: vi.fn((_e: string, h: (ev: { matches: boolean }) => void) => {
         sharedMql._handler = h;
       }),
@@ -37,14 +37,14 @@ describe("useResponsiveBreakpoint", () => {
     window.matchMedia = originalMatchMedia;
   });
 
-  it("returns 'desktop' when innerWidth > 600", () => {
+  it("returns 'desktop' when innerWidth > 640", () => {
     setMatchMedia(1200, false);
     const { result } = renderHook(() => useResponsiveBreakpoint());
     expect(result.current).toBe("desktop");
   });
 
-  it("returns 'mobile' when innerWidth <= 600", () => {
-    setMatchMedia(600, true);
+  it("returns 'mobile' when innerWidth <= 640", () => {
+    setMatchMedia(640, true);
     const { result } = renderHook(() => useResponsiveBreakpoint());
     expect(result.current).toBe("mobile");
   });
