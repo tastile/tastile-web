@@ -71,11 +71,27 @@ export function ScheduleTimeline({ initialView }: Props) {
   const [minDuration, setMinDuration] = useState(0);
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[] | undefined>(undefined);
 
+  // The Rust /v1/timeline handler caps each request at 31 days, so any
+  // view that inherently spans more must be chunked.  Year = 365 days
+  // (12 chunks of 31 days), agenda = 97 days (4 chunks of 31).  Month
+  // = 31 days but we still chunk it into 7-day windows so the first
+  // chunk paints fast and the user sees data filling in progressively
+  // rather than waiting for the whole month at once.  Week = 7 days but
+  // we chunk into 1-day windows so today (or whichever day resolves
+  // first) paints before the other 6 days.  Day is single-request.
+  const maxWindowDays =
+    state.view === "year" || state.view === "agenda"
+      ? 31
+      : state.view === "month"
+        ? 7
+        : state.view === "week"
+          ? 1
+          : undefined;
   const { events, loading, error } = useEvents({
     ...paddedRange,
     minMinutes: minDuration,
     ownerIds: selectedOwnerIds,
-    maxWindowDays: state.view === "year" ? 31 : undefined,
+    maxWindowDays,
   });
 
   const openCreate = useQuickCreateStore((s) => s.openCreate);
