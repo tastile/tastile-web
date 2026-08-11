@@ -407,7 +407,6 @@ export function QuickCreate() {
       }
     }
     // Run only on mount-open transition. Listing isOpen / mode is enough.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const discardDraft = useCallback(() => {
