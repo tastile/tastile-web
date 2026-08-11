@@ -7,7 +7,7 @@ test.describe("floating schedule editor", () => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
 
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
 
     // The catalog request is read-only.  This test deliberately does not
     // create labels, submit the form, or alter the backing database.

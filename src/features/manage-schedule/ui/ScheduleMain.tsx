@@ -3,7 +3,6 @@
 import { useCandidates, usePlacements } from "@/shared/hooks/use-placements";
 import { useRecurringTemplates } from "@/shared/hooks/use-recurring-templates";
 import { useTileList } from "@/shared/hooks/use-tile-list";
-import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { mapListView } from "@/shared/lib/map-list-view-to-tile";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
@@ -15,7 +14,6 @@ import { useSearchParams } from "next/navigation";
 
 export function ScheduleMain() {
   const searchParams = useSearchParams();
-  const { t } = useTranslation();
   const view = searchParams.get("view") ?? "recurring";
   const ownerIdsFromUrl = (() => {
     const raw = searchParams.get("projects");
@@ -25,9 +23,8 @@ export function ScheduleMain() {
   const recurring = useRecurringTemplates();
   const placementsState = usePlacements();
   const candidatesState = useCandidates();
-  const openCreate = useQuickCreateStore((s) => s.openCreate);
 
-  const { tiles, loading, error: tileError, refresh: refreshTiles } = useTileList({
+  const { tiles, loading } = useTileList({
     viewMode: view === "recurring" ? "recurring" : "by_state",
     limit: view === "recurring" ? undefined : 500,
     range: "7d",
@@ -51,29 +48,20 @@ export function ScheduleMain() {
 
   const title =
     view === "recurring"
-      ? t("schedule.recurringTitle")
+      ? "Recurring Tiles"
       : view === "placements"
-        ? t("schedule.placementsTitle")
-        : t("schedule.upcomingTitle");
+        ? "Auto-Placed Schedule"
+        : "Upcoming Deadlines";
   const subtitle =
     view === "recurring"
-      ? t("schedule.recurringSubtitle")
+      ? "Routines and repeating tasks"
       : view === "placements"
-        ? t("schedule.placementsSubtitle")
-        : t("schedule.upcomingSubtitle");
+        ? "Work tiles the engine has placed into time blocks"
+        : "Tasks with upcoming due dates";
 
   const placementsCount = placementsState.placements.length;
   const candidatesCount = candidatesState.candidates.length;
   const placementsLoading = placementsState.loading || candidatesState.loading;
-  const refreshPlacements = async () => {
-    await Promise.all([placementsState.refresh(), candidatesState.refresh()]);
-  };
-  const scopeLabel =
-    view === "recurring"
-      ? t("schedule.recurringView")
-      : view === "placements"
-        ? t("schedule.placementsView")
-        : t("schedule.upcomingView");
 
   return (
     <PageContainer>
@@ -82,101 +70,81 @@ export function ScheduleMain() {
       {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
         <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
-          {scopeLabel}
+          {view === "recurring"
+            ? "Schedule View: Recurring Templates"
+            : view === "placements"
+              ? "Schedule View: Auto-Placed"
+              : "Schedule View: Upcoming Deadlines"}
         </span>
         <span className="font-mono text-[10px] text-foreground-lighter">
           {view === "recurring"
             ? recurring.loading
-              ? t("schedule.loading")
-              : t("schedule.templatesCount", { count: recurring.templates.length })
+              ? "Loading..."
+              : `${recurring.templates.length} templates found`
             : view === "placements"
               ? placementsLoading
-                ? t("schedule.loading")
-                : t("schedule.placementSummary", {
-                    placed: placementsCount,
-                    waiting: candidatesCount,
-                  })
+                ? "Loading..."
+                : `${placementsCount} placed · ${candidatesCount} waiting`
               : loading
-                ? t("schedule.loading")
-                : t("schedule.itemsCount", { count: filteredTiles.length })}
+                ? "Loading..."
+                : `${filteredTiles.length} items found`}
         </span>
       </div>
 
       <div className="mt-4">
         {view === "recurring" && recurring.loading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-20 w-full rounded-md" />
-            <Skeleton className="h-20 w-full rounded-md" />
+            <Skeleton className="h-20 w-full rounded-xl" />
+            <Skeleton className="h-20 w-full rounded-xl" />
           </div>
         )}
         {view !== "recurring" && view !== "placements" && loading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         )}
         {view === "placements" && placementsLoading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         )}
         {view === "recurring" && recurring.error && (
           <Alert
-            radius="sm"
             icon={<AlertCircle className="h-4 w-4" />}
-            title={t("schedule.failedTemplates")}
+            title="Failed to load recurring templates"
           >
-            <Button size="xs" radius="sm" variant="light" mt="sm" onClick={() => void recurring.refresh()}>
-              {t("schedule.retry")}
-            </Button>
+            {recurring.error.message}
           </Alert>
         )}
-        {view === "placements" && (placementsState.error || candidatesState.error) && (
-          <Alert radius="sm" icon={<AlertCircle className="h-4 w-4" />} title={t("schedule.failedPlacements")}>
-            <Button size="xs" radius="sm" variant="light" mt="sm" onClick={() => void refreshPlacements()}>
-              {t("schedule.retry")}
-            </Button>
+        {view === "placements" && placementsState.error && (
+          <Alert icon={<AlertCircle className="h-4 w-4" />} title="Failed to load placements">
+            {placementsState.error.message}
           </Alert>
         )}
-        {view !== "recurring" && view !== "placements" && tileError && !loading && (
-          <Alert radius="sm" icon={<AlertCircle className="h-4 w-4" />} title={t("schedule.failedItems")}>
-            <Button size="xs" radius="sm" variant="light" mt="sm" onClick={() => void refreshTiles()}>
-              {t("schedule.retry")}
-            </Button>
-          </Alert>
-        )}
-        {view === "recurring" && !recurring.loading && !recurring.error && recurring.templates.length === 0 && (
-          <Alert radius="sm" icon={<AlertCircle className="h-4 w-4" />} title={t("schedule.noTemplatesTitle")}>
-            <p className="text-sm">{t("schedule.noTemplatesBody")}</p>
-            <Button size="xs" radius="sm" variant="light" mt="sm" onClick={() => openCreate()}>
-              {t("schedule.createWorkflow")}
-            </Button>
+        {view === "recurring" && !recurring.loading && recurring.templates.length === 0 && (
+          <Alert icon={<AlertCircle className="h-4 w-4" />} title="No recurring templates found">
+            <p className="text-sm">No recurring templates found in the source database.</p>
           </Alert>
         )}
         {view !== "recurring" &&
           view !== "placements" &&
           !loading &&
-          !tileError &&
           filteredTiles.length === 0 && (
-            <Alert radius="sm" icon={<AlertCircle className="h-4 w-4" />} title={t("schedule.noItemsTitle")}>
-              <p className="text-sm">{t("schedule.noItemsBody")}</p>
-              <Button size="xs" radius="sm" variant="light" mt="sm" onClick={() => openCreate()}>
-                {t("schedule.createWorkflow")}
-              </Button>
+            <Alert icon={<AlertCircle className="h-4 w-4" />} title="No tiles found">
+              <p className="text-sm">No tiles found for this schedule view.</p>
             </Alert>
           )}
         {view === "placements" &&
           !placementsLoading &&
-          !placementsState.error &&
-          !candidatesState.error &&
           placementsCount === 0 &&
           candidatesCount === 0 && (
-            <Alert radius="sm" icon={<AlertCircle className="h-4 w-4" />} title={t("schedule.noPlacementsTitle")}>
-              <p className="text-sm">{t("schedule.noPlacementsBody")}</p>
-                <Button size="xs" radius="sm" variant="light" mt="sm" onClick={() => openCreate()}>
-                {t("schedule.createWorkflow")}
-              </Button>
+            <Alert icon={<AlertCircle className="h-4 w-4" />} title="No placements found">
+              <p className="text-sm">
+                No placements yet. Create a work tile with an estimated duration to see it scheduled
+                here.
+              </p>
             </Alert>
           )}
 
@@ -188,9 +156,9 @@ export function ScheduleMain() {
               {placementsCount > 0 && (
                 <section>
                   <h2 className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle mb-2">
-                    {t("schedule.placed")} ({placementsCount})
+                    Placed ({placementsCount})
                   </h2>
-                  <div className="border border-border bg-surface-1 rounded-md overflow-hidden divide-y divide-border/40 shadow-xs">
+                  <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
                     {placementsState.placements.map((p) => (
                       <div
                         key={p.id}
@@ -198,10 +166,10 @@ export function ScheduleMain() {
                       >
                         <div className="min-w-0">
                           <div className="font-mono text-xs text-foreground-subtle">
-                            {t("schedule.work")} · {p.work_tile_id.slice(0, 8)}
+                            work {p.work_tile_id.slice(0, 8)}
                           </div>
                           <div className="font-mono text-xs text-foreground-subtle">
-                            {t("schedule.timeBlock")} · {p.time_tile_id.slice(0, 8)}
+                            block {p.time_tile_id.slice(0, 8)}
                           </div>
                         </div>
                         <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
@@ -215,15 +183,15 @@ export function ScheduleMain() {
               {candidatesCount > 0 && (
                 <section>
                   <h2 className="text-xs font-semibold uppercase tracking-wide text-foreground-subtle mb-2">
-                    {t("schedule.waiting")} ({candidatesCount})
+                    Waiting ({candidatesCount})
                   </h2>
-                  <div className="border border-border bg-surface-1 rounded-md overflow-hidden divide-y divide-border/40 shadow-xs">
+                  <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
                     {candidatesState.candidates.map((c) => (
                       <div
                         key={c.work_tile_id}
                         className="px-4 py-3 font-mono text-xs text-foreground-subtle"
                       >
-                        {t("schedule.work")} · {c.work_tile_id.slice(0, 8)}
+                        work {c.work_tile_id.slice(0, 8)}
                       </div>
                     ))}
                   </div>
@@ -234,7 +202,7 @@ export function ScheduleMain() {
 
         {/* Recurring templates list as a table */}
         {view === "recurring" && !recurring.loading && recurring.templates.length > 0 && (
-          <div className="border border-border bg-surface-1 rounded-md overflow-hidden divide-y divide-border/40 shadow-xs">
+          <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
             {recurring.templates
               .reduce<typeof recurring.templates>((acc, t) => {
                 if (t?.recurrence) acc.push(t);
@@ -249,7 +217,6 @@ export function ScheduleMain() {
                     loadFromTemplate(template);
                   }}
                   className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
-                  radius="sm"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
@@ -263,12 +230,12 @@ export function ScheduleMain() {
                       ) : null}
                     </div>
                     <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
-                      {t("schedule.template")}
+                      Template
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-foreground-subtle">
                     <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
-                      {describeGenerator(template, t)}
+                      {describeGenerator(template)}
                     </span>
                     <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
                       {formatWindow(
@@ -284,9 +251,7 @@ export function ScheduleMain() {
                           : "bg-surface-3/50 border-border",
                       )}
                     >
-                      {template.recurrence.selector.expression
-                        ? t("schedule.selectorEnabled")
-                        : t("schedule.noSelector")}
+                      {template.recurrence.selector.expression ? "Selector enabled" : "No selector"}
                     </span>
                   </div>
                 </Button>
@@ -296,7 +261,7 @@ export function ScheduleMain() {
 
         {/* Upcoming deadlines list matching compact style */}
         {view !== "recurring" && !loading && filteredTiles.length > 0 && (
-          <div className="border border-border bg-surface-1 rounded-md overflow-hidden divide-y divide-border/40 shadow-xs">
+          <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
             {filteredTiles.map((t) => (
               <TileCardCompact key={t.id} tile={mapListView(t)} listView={t} />
             ))}
@@ -309,18 +274,17 @@ export function ScheduleMain() {
 
 function describeGenerator(
   template: ReturnType<typeof useRecurringTemplates>["templates"][number],
-  t: (key: string, params?: Record<string, string | number>) => string,
 ) {
   const generator = template?.recurrence?.generator;
-  if (!generator) return t("schedule.noGenerator");
+  if (!generator) return "Recurring";
   const phases = generator.focus_block_based?.phases;
   if (phases && phases.length > 0) {
-    return t("schedule.phases", { count: phases.length });
+    return `${phases.length} phases`;
   }
   if (typeof generator.step_min === "number") {
-    return t("schedule.everyMinutes", { minutes: generator.step_min });
+    return `Every ${generator.step_min} min`;
   }
-  return t("schedule.noGenerator");
+  return "Recurring";
 }
 
 function formatWindow(startOffsetMin: number, endOffsetMin: number) {

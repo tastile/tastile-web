@@ -561,7 +561,7 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
   };
 
   const weekdays =
-    weekDatesProp?.map(toDateString) ??
+    weekDatesProp ??
     getWeekDays({
       week: date,
       withWeekendDays,

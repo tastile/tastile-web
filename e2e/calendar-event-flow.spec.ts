@@ -24,7 +24,7 @@ test.describe("calendar event flow", () => {
     const start = day + "T10:00:00.000Z";
     const end = day + "T11:00:00.000Z";
 
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar");
     await expect(page.getByTestId("calendar-main")).toBeVisible();
     await expect(page.getByTestId("cal-title")).toBeVisible();
 
@@ -91,7 +91,7 @@ test.describe("calendar event flow", () => {
       end: dayStr + "T16:00:00.000Z",
     });
 
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar");
     await page.getByTestId("cal-view-month").click();
     const monthDay = page.getByTestId("month-day-" + dayStr);
     await expect(monthDay).toBeVisible();

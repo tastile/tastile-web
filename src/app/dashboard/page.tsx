@@ -3,7 +3,20 @@
 import { getLastVisitedPath } from "@/shared/hooks/use-track-visit";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { decideRedirectTarget } from "./redirect-target";
+
+const REDIRECTABLE_PATHS = [
+  "/dashboard/tasks",
+  "/dashboard/projects",
+  "/dashboard/schedule",
+  "/dashboard/timeline",
+  "/dashboard/events",
+  "/dashboard/preferences/general",
+  "/dashboard/preferences/account",
+  "/dashboard/runtime",
+  "/dashboard/api",
+  "/dashboard/billing",
+  "/dashboard/quota",
+];
 
 export default function DashboardPage() {
   return (
@@ -19,8 +32,14 @@ function DashboardPageInner() {
   const router = useRouter();
 
   useEffect(() => {
-    // react-doctor-disable-next-line react-doctor/nextjs-no-client-side-redirect
-    router.replace(decideRedirectTarget(getLastVisitedPath()));
+    const last = getLastVisitedPath();
+    if (last && last !== "/dashboard" && REDIRECTABLE_PATHS.includes(last)) {
+      // react-doctor-disable-next-line react-doctor/nextjs-no-client-side-redirect
+      router.replace(last);
+    } else {
+      // react-doctor-disable-next-line react-doctor/nextjs-no-client-side-redirect
+      router.replace("/dashboard/timeline");
+    }
   }, [router]);
 
   return null;

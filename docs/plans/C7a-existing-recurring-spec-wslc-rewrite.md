@@ -107,7 +107,7 @@ fixture 受領は維持 (G5b リスク 4 参照)。
       .toISOString()
       .slice(0, 10);
 
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
     await page.getByTestId("sidebar-new-tile").first().click();
 
     const submit = page.getByTestId("quick-create-submit");

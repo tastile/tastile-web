@@ -115,7 +115,7 @@ test.describe('quick tile - day view timeline display', () => {
       memo: null,
     });
 
-    await page.goto('/dashboard/timeline/day');
+    await page.goto('/dashboard/calendar?view=day');
     const tile = page.locator('[data-event-id], [data-testid^="day-event-"]', { hasText: title }).first();
     await expect(tile).toBeVisible();
   });
@@ -139,7 +139,7 @@ test.describe('quick tile - day view timeline display', () => {
       memo: null,
     });
 
-    await page.goto('/dashboard/timeline/day');
+    await page.goto('/dashboard/calendar?view=day');
     const tile = page.locator('[data-event-id], [data-testid^="day-event-"]', { hasText: title }).first();
     await expect(tile).toBeVisible();
   });

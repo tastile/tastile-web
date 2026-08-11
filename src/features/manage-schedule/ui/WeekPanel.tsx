@@ -6,9 +6,10 @@ import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
 import { getWeekViewDates } from "@/lib/calendar/layout";
 import { WeekView } from "@/lib/vendored/mantine-schedule";
 import { getFirstDayOfWeek, useWeekStartStore } from "@/shared/stores/week-start-store";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { ErrorBanner } from "./ErrorBanner";
-import { buildLoadingWeekEvents, toScheduleEvents } from "./eventAdapter";
+import { LoadingOverlay } from "./LoadingOverlay";
+import { toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 
 type Props = {
@@ -48,23 +49,11 @@ export function WeekPanel({
   onSlotCreate,
   onZoomBy,
 }: Props) {
+  const scheduleEvents = events.flatMap(toScheduleEvents);
   const weekStartPref = useWeekStartStore((s) => s.weekStart);
   const firstDayOfWeek = getFirstDayOfWeek(weekStartPref);
 
-  // While loading, swap real events for placeholder shells with a
-  // sentinel title so the same ScheduleEvent pipeline positions them
-  // at realistic times of each day. renderEventBody detects the
-  // sentinel and substitutes a Skeleton card of the same shape.
-  const loadingEvents = useMemo(
-    () => (loading ? buildLoadingWeekEvents(anchor, firstDayOfWeek) : []),
-    [loading, anchor, firstDayOfWeek],
-  );
-  const realScheduleEvents = useMemo(
-    () => events.flatMap(toScheduleEvents),
-    [events],
-  );
-  const scheduleEvents = loading ? loadingEvents.flatMap(toScheduleEvents) : realScheduleEvents;
-
+  // Zoom via Ctrl+wheel — capture phase on container so it fires before ScrollArea
   const containerRef = useRef<HTMLDivElement>(null);
   const onZoomByRef = useRef(onZoomBy);
 
@@ -90,34 +79,31 @@ export function WeekPanel({
   const weekDates = getWeekViewDates(displayMode, anchor, firstDayOfWeek);
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-full"
-      data-testid="week-panel"
-      data-loading={loading || undefined}
-    >
+    <div ref={containerRef} className="relative h-full" data-testid="week-panel">
       {error && <ErrorBanner error={error} />}
-      <WeekView
-        data-testid="week-view"
-        date={anchor}
-        weekDates={weekDates}
-        events={scheduleEvents}
-        withHeader={false}
-        firstDayOfWeek={firstDayOfWeek}
-        withWeekendDays
-        canDragEvent={() => false}
-        canResizeEvent={() => false}
-        withDragSlotSelect
-        withCurrentTimeIndicator
-        intervalMinutes={60}
-        onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
-        onTimeSlotClick={({ slotStart, slotEnd }) => onSlotCreate(slotStart, slotEnd)}
-        onSlotDragEnd={(s, e) => onSlotCreate(s, e)}
-        renderEventBody={(e) => renderEventBody(e, "week")}
-        scrollAreaProps={{ style: { height: "100%" } }}
-        startScrollTime={scrollTime}
-        style={{ "--week-view-slot-height": `${zoom}px` } as React.CSSProperties}
-      />
+      <LoadingOverlay loading={loading}>
+        <WeekView
+          data-testid="week-view"
+          date={anchor}
+          weekDates={weekDates}
+          events={scheduleEvents}
+          withHeader={false}
+          firstDayOfWeek={firstDayOfWeek}
+          withWeekendDays
+          canDragEvent={() => false}
+          canResizeEvent={() => false}
+          withDragSlotSelect
+          withCurrentTimeIndicator
+          intervalMinutes={60}
+          onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
+          onTimeSlotClick={({ slotStart, slotEnd }) => onSlotCreate(slotStart, slotEnd)}
+          onSlotDragEnd={(s, e) => onSlotCreate(s, e)}
+          renderEventBody={(e) => renderEventBody(e, "week")}
+          scrollAreaProps={{ style: { height: "100%" } }}
+          startScrollTime={scrollTime}
+          style={{ "--week-view-slot-height": `${zoom}px` } as React.CSSProperties}
+        />
+      </LoadingOverlay>
     </div>
   );
 }

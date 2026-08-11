@@ -43,7 +43,7 @@ test.describe("TimeRequirement round-trip e2e", () => {
 
   test("TimeRequirement persists through QuickCreate submit and is readable from DB", async ({ page }) => {
     const title = "TimeReq E2E " + Date.now();
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
 
     await page.getByTestId("sidebar-new-tile").first().click();
     const submit = page.getByTestId("quick-create-submit");
@@ -86,7 +86,7 @@ test.describe("TimeRequirement round-trip e2e", () => {
 
   test("API read endpoint returns the same TimeRequirement values", async ({ page }) => {
     const title = "TimeReq API " + Date.now();
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
 
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator('input[aria-required="true"]').first().fill(title);

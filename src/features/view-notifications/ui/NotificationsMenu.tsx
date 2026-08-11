@@ -13,7 +13,6 @@ import {
   FloatingMenuLabel,
   FloatingMenuSeparator,
 } from "@/shared/ui/floating-menu";
-import { Skeleton } from "@mantine/core";
 
 interface NotificationsMenuProps {
   open: boolean;
@@ -66,14 +65,7 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
           {t("shell.floatingHeader.notifications")}
         </FloatingMenuLabel>
         {loading ? (
-          <div className="space-y-3 p-4" role="status" aria-label="Loading notifications">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="flex flex-col gap-1.5">
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-2.5 w-1/3" />
-              </div>
-            ))}
-          </div>
+          <div className="p-4 text-center text-xs text-foreground-subtle">Loading...</div>
         ) : error ? (
           <div className="p-4 text-center text-xs text-danger">{error.message}</div>
         ) : notifications.length === 0 ? (

@@ -4,7 +4,6 @@ import { NotificationsMenu } from "@/features/view-notifications/ui/Notification
 import { AuthProvider, useAuth } from "@/shared/context/auth-context";
 import { SidePanelProvider, useSidePanelContent } from "@/shared/context/side-panel-context";
 import { ExecutionEngineProvider } from "@/shared/hooks/execution-engine-context";
-import { useTrackVisit } from "@/shared/hooks/use-track-visit";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { BottomSheet } from "@/shared/ui/BottomSheet";
@@ -57,13 +56,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   // SideToolPanel already subscribes internally and re-renders on its
   // own. The mobile floating button below reads its own subscription
   // through a small dedicated component instead.
-  const pathname = usePathname();
-  // Track the current pathname so subsequent /dashboard visits can
-  // restore the last opened page. Skip the redirect source itself
-  // (`/dashboard`) by passing an empty string — useTrackVisit treats
-  // empty paths as a no-op and the previously stored valid path is
-  // preserved, so the page's own redirect logic can read it.
-  useTrackVisit(pathname === "/dashboard" ? "" : pathname);
+  const _pathname = usePathname();
   const [mobileSidePanelOpen, { open: openMobileSidePanel, close: closeMobileSidePanel }] =
     useDisclosure(false);
   const [searchOpen, { open: openSearch, close: closeSearch }] = useDisclosure(false);
@@ -104,7 +97,6 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       </a>
       <FloatingHeader
         userName={session?.displayName ?? "Loading..."}
-        onOpenCreate={openQuickCreate}
         onOpenSearch={openSearch}
         onOpenNotifications={openNotifications}
         notificationsButtonRef={notificationsButtonRef}
@@ -142,7 +134,7 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       <BottomSheet
         open={mobileSidePanelOpen}
         onOpenChange={(next) => (next ? openMobileSidePanel() : closeMobileSidePanel())}
-        title={t("dashboard.sidePanelTitle")}
+        title={t("dashboard.sidePanelDetailsTitle")}
       >
         <div className="py-2">
           <MobileSidePanelContent />

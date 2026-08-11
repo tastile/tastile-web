@@ -1,50 +1,6 @@
 import type { CalendarEvent, EventColor } from "@/calendar/model/calendar";
 // src/components/schedule/eventAdapter.ts
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
-import dayjs from "dayjs";
-
-/**
- * Loading placeholders render uniformly across every visible cell so
- * the user can distinguish "still loading" from "loaded, just empty":
- * any empty cell unambiguously means data has arrived. The placeholders
- * flow through the same ScheduleEvent pipeline as real events so each
- * chip occupies the same size and position as the real card it
- * previews.
- */
-
-/**
- * Fixed number of placeholder chips per Month cell, regardless of day.
- * Rendered at the first N row slots inside each cell. Chosen as 2
- * because real Month renders up to `maxEventsPerDay` (=3) chips per
- * cell, so 2 is a representative preview without exceeding the cap.
- */
-export const MONTH_LOADING_CHIPS_PER_CELL = 2;
-
-/**
- * Fixed number of placeholder events per Week-view day, each at the
- * same set of representative hours. Same reasoning as Month: uniform
- * across days so an empty day after load can't be confused with a
- * still-loading day.
- */
-const WEEK_LOADING_EVENTS_PER_DAY = 2;
-
-/**
- * Hours of the day (local time) at which a placeholder event starts
- * inside each Day view. Each event spans `durHours` after the start.
- * The same set of times is used for both Day and Week views so the
- * loading preview looks identical across them.
- *
- * Day view uses all of these at the anchor date.
- * Week view uses them at every visible day, uniformly.
- */
-type LoadingTime = readonly [startHour: number, durationHours: number];
-const LOADING_TIMES: readonly LoadingTime[] = [
-  [9, 1.5], // morning work block
-  [13, 1], // lunch meeting
-  [14.5, 2], // afternoon deep-work block
-  [17, 1], // end-of-day wrap
-  [19, 1.5], // evening session
-];
 
 const COLOR_MAP: Record<EventColor, string> = {
   blue: "blue",
@@ -148,82 +104,6 @@ export function toScheduleEvents(e: CalendarEvent): ScheduleEventData<CalendarEv
   }
 
   return results;
-}
-
-/**
- * Marker title used by fake loading placeholders passed into
- * MonthView/DayView/WeekView while real events are still being
- * fetched. `renderEventBody` checks for this title to render a
- * Skeleton card of the same shape instead of the regular event body.
- * Using a sentinel title (instead of a payload flag) keeps the
- * contract flat — any consumer that filters by title will skip
- * placeholders without learning a new field.
- */
-export const MONTH_LOADING_EVENT_TITLE = "__loading__";
-
-/** Build a synthetic CalendarEvent whose `title` matches the loading
- *  sentinel. Caller is responsible for setting `start`/`end` to the
- *  window the event should occupy; `toScheduleEvents` will then route
- *  the event through the normal ScheduleEvent pipeline.
- */
-function makeLoadingEvent(id: string, start: string, end: string): CalendarEvent {
-  return {
-    id,
-    title: MONTH_LOADING_EVENT_TITLE,
-    start,
-    end,
-    allDay: false,
-    color: "gray",
-    recurrence: { frequency: "none" },
-    createdAt: "",
-    updatedAt: "",
-  };
-}
-
-/**
- * Build placeholder events for the Day view at typical hours of
- * `anchor`'s day. `shiftMs` mirrors the DayView's virtual-time origin
- * shift so placeholders align with the displayed row positions.
- */
-export function buildLoadingDayEvents(anchor: string, shiftMs = 0): CalendarEvent[] {
-  const base = dayjs(anchor).startOf("day");
-  return LOADING_TIMES.map(([hour, dur], i) => {
-    const start = base.hour(Math.floor(hour)).minute(Math.round((hour % 1) * 60));
-    const end = start.add(Math.round(dur * 60), "minute");
-    const startStr = new Date(start.toDate().getTime() + shiftMs).toISOString();
-    const endStr = new Date(end.toDate().getTime() + shiftMs).toISOString();
-    return makeLoadingEvent(`__loading_day_${i}_${start.valueOf()}`, startStr, endStr);
-  });
-}
-
-/**
- * Build placeholder events for the Week view. Every visible day gets
- * the SAME set of placeholder events at the same times, so the user
- * can tell at a glance that the view is still loading (uniform
- * pattern across all 7 columns) versus a day that has genuinely no
- * events (column stays empty after load).
- */
-export function buildLoadingWeekEvents(anchor: string, firstDayOfWeek: 0 | 1): CalendarEvent[] {
-  const anchorDow = dayjs(anchor).day();
-  const offset = (anchorDow - firstDayOfWeek + 7) % 7;
-  const weekStart = dayjs(anchor).subtract(offset, "day").startOf("day");
-  const events: CalendarEvent[] = [];
-  for (let dayOffset = 0; dayOffset < 7; dayOffset += 1) {
-    const day = weekStart.add(dayOffset, "day");
-    for (let i = 0; i < WEEK_LOADING_EVENTS_PER_DAY; i += 1) {
-      const [hour, dur] = LOADING_TIMES[i];
-      const start = day.hour(Math.floor(hour)).minute(Math.round((hour % 1) * 60));
-      const end = start.add(Math.round(dur * 60), "minute");
-      events.push(
-        makeLoadingEvent(
-          `__loading_week_d${dayOffset}_${i}_${start.valueOf()}`,
-          start.toISOString(),
-          end.toISOString(),
-        ),
-      );
-    }
-  }
-  return events;
 }
 
 /** @deprecated — use toScheduleEvents for overnight-safe conversion */

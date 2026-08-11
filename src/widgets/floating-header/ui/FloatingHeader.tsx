@@ -22,7 +22,6 @@ import {
   CheckSquare,
   Layers,
   LogOut,
-  Plus,
   Repeat,
   Search,
   Settings,
@@ -34,7 +33,6 @@ import { useEffect, useState } from "react";
 
 interface FloatingHeaderProps {
   userName: string;
-  onOpenCreate: () => void;
   onOpenSearch: () => void;
   onOpenNotifications: () => void;
   // Ref attached to the Bell button so the notifications panel
@@ -52,7 +50,6 @@ const NAV_ITEMS = [
 
 export function FloatingHeader({
   userName,
-  onOpenCreate,
   onOpenSearch,
   onOpenNotifications,
   notificationsButtonRef,
@@ -219,7 +216,6 @@ export function FloatingHeader({
             size="sm"
             aria-label={t("shell.floatingHeader.openNavMenu")}
             onClick={openMenu}
-            className="md:hidden"
           />
         </div>
       </header>
@@ -230,21 +226,6 @@ export function FloatingHeader({
         title={t("shell.floatingHeader.menu")}
       >
         <div className="flex flex-col gap-4">
-          <Button
-            type="button"
-            variant="light"
-            size="sm"
-            onClick={() => {
-              closeMenu();
-              onOpenCreate();
-            }}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-md text-sm font-medium"
-            data-testid="mobile-create-workflow"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            <span>{t("shell.floatingHeader.createWorkflow")}</span>
-          </Button>
-
           {/* Quick actions (Search / Notifications) */}
           <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
             <Button

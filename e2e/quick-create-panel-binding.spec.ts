@@ -34,7 +34,7 @@ import { resetDb, v1AuthHeaders } from "./helpers/v1";
 test.describe("QuickCreate panel binding (#23 A5a)", () => {
   test.beforeEach(async ({ page }) => {
     await resetDb();
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
     await page.getByTestId("sidebar-new-tile").first().click();
     await expect(page.getByTestId("quick-create-panel")).toBeVisible();
   });

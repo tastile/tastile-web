@@ -3,31 +3,31 @@ import type { Locale } from "@/shared/stores/locale-store";
 export const dashboard = {
   en: {
     dashboard: {
-      sidePanelTitle: "Side panel",
+      sidePanelDetailsTitle: "Details",
       sidePanelOpenAria: "Open side panel",
     },
   },
   ja: {
     dashboard: {
-      sidePanelTitle: "サイドパネル",
+      sidePanelDetailsTitle: "詳細",
       sidePanelOpenAria: "サイドパネルを開く",
     },
   },
   "zh-CN": {
     dashboard: {
-      sidePanelTitle: "侧边面板",
+      sidePanelDetailsTitle: "详情",
       sidePanelOpenAria: "打开侧边面板",
     },
   },
   ko: {
     dashboard: {
-      sidePanelTitle: "측면 패널",
+      sidePanelDetailsTitle: "세부 정보",
       sidePanelOpenAria: "측면 패널 열기",
     },
   },
   es: {
     dashboard: {
-      sidePanelTitle: "Panel lateral",
+      sidePanelDetailsTitle: "Detalles",
       sidePanelOpenAria: "Abrir panel lateral",
     },
   },

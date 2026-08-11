@@ -102,7 +102,7 @@ test.describe("condition scope reference e2e (E6b)", () => {
     const day = todayUtc();
 
     // 1) Open QuickCreate
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
     await page.getByTestId("sidebar-new-tile").first().click();
     const submit = page.getByTestId("quick-create-submit");
     await expect(submit).toBeVisible();
