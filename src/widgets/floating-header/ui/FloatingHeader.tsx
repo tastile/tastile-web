@@ -114,7 +114,7 @@ export function FloatingHeader({
                 <span aria-hidden className="text-foreground-subtle">
                   ·
                 </span>
-                <span className="truncate max-w-[200px] text-foreground">{main.title}</span>
+                <span className="truncate max-w-[8rem] text-foreground sm:max-w-[200px]">{main.title}</span>
                 {ends ? (
                   <>
                     <span aria-hidden className="text-foreground-subtle">
@@ -131,7 +131,7 @@ export function FloatingHeader({
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-1 pr-3">
+        <div className="flex items-center gap-1 pr-2 sm:pr-3">
           <ExecutionControls />
 
           <ActionIcon
@@ -216,6 +216,7 @@ export function FloatingHeader({
             size="sm"
             aria-label={t("shell.floatingHeader.openNavMenu")}
             onClick={openMenu}
+            className="md:hidden"
           />
         </div>
       </header>
