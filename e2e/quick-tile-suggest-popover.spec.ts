@@ -7,7 +7,7 @@ test.describe("quick tile create \u2014 project / tag suggest popovers", () => {
   });
 
   test("project suggest row is hidden until input is focused, then floats as popover", async ({ page }) => {
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
     await page.getByTestId('sidebar-new-tile').first().click();
 
     const projectRow = page.getByTestId("project-suggest-row");
@@ -27,7 +27,7 @@ test.describe("quick tile create \u2014 project / tag suggest popovers", () => {
   });
 
   test("tag suggest row is hidden until input is focused, then floats as popover", async ({ page }) => {
-    await page.goto("/dashboard/timeline/day");
+    await page.goto("/dashboard/calendar?view=day");
     await page.getByTestId('sidebar-new-tile').first().click();
 
     const tagRow = page.getByTestId("tag-suggest-row");

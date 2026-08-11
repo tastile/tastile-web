@@ -77,8 +77,5 @@ export function useRecurringTemplates() {
     templates: query.data ?? [],
     loading: query.isPending,
     error: query.error as Error | null,
-    refresh: async () => {
-      await query.refetch();
-    },
   };
 }

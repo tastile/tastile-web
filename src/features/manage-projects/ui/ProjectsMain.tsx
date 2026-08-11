@@ -2,9 +2,7 @@
 
 import { useTileList } from "@/shared/hooks/use-tile-list";
 import { type Workspace, updateWorkspace, useWorkspaces } from "@/shared/hooks/use-workspaces";
-import { useTranslation } from "@/shared/i18n/use-translation";
 import { mapListView } from "@/shared/lib/map-list-view-to-tile";
-import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { Input } from "@/shared/ui/Input";
 import { PageContainer, PageHeader } from "@/shared/ui/page-header/PageHeader";
 import { TileCardCompact } from "@/tile/ui/TileCardCompact";
@@ -14,33 +12,21 @@ import { useState } from "react";
 
 export function ProjectsMain() {
   const searchParams = useSearchParams();
-  const { t, locale } = useTranslation();
   const ownerId = searchParams.get("owner");
-  const { workspaces, refresh: refreshWorkspaces, loading: wsLoading, error: wsError } = useWorkspaces();
+  const { workspaces, refresh, loading: wsLoading } = useWorkspaces();
   const project = ownerId ? workspaces.find((w) => w.id === ownerId) : null;
-  const openCreate = useQuickCreateStore((s) => s.openCreate);
-  const setField = useQuickCreateStore((s) => s.setField);
 
-  const { tiles, loading, error: tileError, refresh: refreshTiles } = useTileList({
+  const { tiles, loading } = useTileList({
     ownerIds: ownerId ? [ownerId] : undefined,
     limit: 500,
   });
 
-  const refresh = async () => {
-    await Promise.all([refreshWorkspaces(), refreshTiles?.()]);
-  };
-
-  const handleCreate = () => {
-    if (ownerId) setField("meta.ownerSubjectId", ownerId);
-    openCreate();
-  };
-
   return (
     <PageContainer>
       <PageHeader
-        title={project ? project.display_name : t("projects.allTitle")}
+        title={project ? project.display_name : "All Projects"}
         description={
-          project ? t("projects.projectSubtitle") : t("projects.allSubtitle")
+          project ? "Tiles owned by this workspace" : "Select a project from the sidebar"
         }
       />
 
@@ -50,48 +36,42 @@ export function ProjectsMain() {
           project={project}
           tileCount={tiles.length}
           onSaved={refresh}
-          locale={locale}
-          t={t}
         />
       )}
 
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
         <span className="flex items-center gap-2 rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-foreground-lighter">
-          {project ? project.display_name : t("projects.allWork")}
+          {project ? (
+            <>
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ backgroundColor: project.color ?? "#6b7280" }}
+              />
+              owner_id: {project.id.slice(0, 8)} · slug: {project.slug ?? "(none)"}
+            </>
+          ) : (
+            "All project tiles"
+          )}
         </span>
         <span className="font-mono text-[10px] text-foreground-lighter">
-          {loading || wsLoading ? t("projects.loading") : `${tiles.length} ${t("projects.items")}`}
+          {loading || wsLoading ? "Loading..." : `${tiles.length} items found`}
         </span>
       </div>
 
       <div className="mt-4">
-        {(loading || wsLoading) && (
+        {loading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         )}
-        {!loading && !wsLoading && (wsError || tileError) && (
-          <div
-            role="alert"
-            className="flex flex-col items-start gap-3 rounded-md border border-danger/30 bg-danger/5 px-4 py-4 text-sm text-foreground"
-          >
-            <p>{t("projects.loadError")}</p>
-            <Button size="sm" radius="sm" variant="light" onClick={() => void refresh()}>
-              {t("projects.retry")}
-            </Button>
+        {!loading && tiles.length === 0 && (
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface-1 py-12 text-foreground-subtle">
+            <p className="text-sm">No tiles in this project.</p>
           </div>
         )}
-        {!loading && !wsLoading && !wsError && !tileError && tiles.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-md border border-dashed border-border bg-surface-1 py-12 text-foreground-subtle">
-            <p className="text-sm">{project ? t("projects.empty") : t("projects.emptyAll")}</p>
-            <Button className="mt-4" size="sm" radius="sm" onClick={handleCreate}>
-              {t("projects.create")}
-            </Button>
-          </div>
-        )}
-        {!loading && !wsLoading && !wsError && !tileError && tiles.length > 0 && (
-          <div className="divide-y divide-border/40 overflow-hidden rounded-md border border-border bg-surface-1 shadow-xs">
+        {!loading && tiles.length > 0 && (
+          <div className="divide-y divide-border/40 overflow-hidden rounded-lg border border-border bg-surface-1 shadow-xs">
             {tiles.map((t) => (
               <TileCardCompact key={t.id} tile={mapListView(t)} listView={t} />
             ))}
@@ -106,14 +86,10 @@ function ProjectEditForm({
   project,
   tileCount,
   onSaved,
-  locale,
-  t,
 }: {
   project: Workspace;
   tileCount: number;
   onSaved: () => Promise<void>;
-  locale: string;
-  t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   // Keyed by project.id at the call site — state re-initializes on project change.
   // react-doctor-disable-next-line react-doctor/no-derived-useState
@@ -122,17 +98,14 @@ function ProjectEditForm({
   const [color, setColor] = useState(project.color ?? "#6b7280");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   function save() {
     if (!name.trim()) {
-      setError(t("projects.nameRequired"));
-      setErrorDetail(null);
+      setError("name required");
       return;
     }
     setSaving(true);
     setError(null);
-    setErrorDetail(null);
     // Promise chain instead of try/catch/finally in the render path so the
     // React Compiler sees a supported pattern. saving flag is reset via
     // .finally() on both success and failure paths.
@@ -145,9 +118,7 @@ function ProjectEditForm({
         await onSaved();
       })
       .catch((e: unknown) => {
-        const detail = e instanceof Error ? e.message : String(e);
-        setError(t("projects.saveError"));
-        setErrorDetail(detail);
+        setError((e as Error).message);
       })
       .finally(() => {
         setSaving(false);
@@ -155,9 +126,9 @@ function ProjectEditForm({
   }
 
   return (
-    <section className="mt-4 grid grid-cols-1 gap-3 rounded-md border border-border/40 bg-surface-1 p-4 md:grid-cols-3">
+    <section className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-border/40 bg-surface-1 p-4 md:grid-cols-3">
       <label htmlFor="project-name" className="flex flex-col gap-1 text-xs">
-        <span className="font-semibold text-foreground-subtle">{t("projects.name")}</span>
+        <span className="font-semibold text-foreground-subtle">Name</span>
         <Input
           id="project-name"
           value={name}
@@ -166,7 +137,7 @@ function ProjectEditForm({
         />
       </label>
       <label htmlFor="project-slug" className="flex flex-col gap-1 text-xs">
-        <span className="font-semibold text-foreground-subtle">{t("projects.slug")}</span>
+        <span className="font-semibold text-foreground-subtle">Slug</span>
         <Input
           id="project-slug"
           value={slug}
@@ -177,7 +148,7 @@ function ProjectEditForm({
         />
       </label>
       <label htmlFor="project-color" className="flex flex-col gap-1 text-xs">
-        <span className="font-semibold text-foreground-subtle">{t("projects.color")}</span>
+        <span className="font-semibold text-foreground-subtle">Color</span>
         <input
           id="project-color"
           type="color"
@@ -188,17 +159,13 @@ function ProjectEditForm({
       </label>
       <div className="flex items-center justify-between font-mono text-[10px] text-foreground-subtle md:col-span-3">
         <span>
-          {t("projects.savedMeta", {
-            count: tileCount,
-            date: new Date(project.created_at).toLocaleDateString(locale, { timeZone: "UTC" }),
-          })}
+          {tileCount} tiles · created{" "}
+          {new Date(project.created_at).toLocaleDateString("en-US", { timeZone: "UTC" })}
         </span>
         <div className="flex items-center gap-2">
           {error && <span className="text-status-danger">{error}</span>}
-          {errorDetail && <span className="text-status-danger">{errorDetail}</span>}
-          <Button onClick={save} disabled={saving || !name.trim()} size="sm" radius="sm">
-            <span aria-hidden="true">{saving ? t("projects.saving") : t("projects.save")}</span>
-            <span className="sr-only">{saving ? "Saving" : "Save"}</span>
+          <Button onClick={save} disabled={saving || !name.trim()} size="sm">
+            {saving ? "Saving..." : "Save"}
           </Button>
         </div>
       </div>

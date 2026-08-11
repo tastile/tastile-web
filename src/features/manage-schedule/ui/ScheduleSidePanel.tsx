@@ -9,7 +9,6 @@ import {
   Button,
   Checkbox,
   SegmentedControl,
-  Skeleton,
   Tree,
   getTreeExpandedState,
   useTree,
@@ -25,8 +24,8 @@ const SEGMENT_STYLES = {
 } as const;
 
 const SCHEDULE_VIEWS = [
-  { id: "recurring", labelKey: "schedule.recurringView", icon: RefreshCw },
-  { id: "upcoming", labelKey: "schedule.upcomingView", icon: CalendarClock },
+  { id: "recurring", label: "Recurring", icon: RefreshCw },
+  { id: "upcoming", label: "Upcoming", icon: CalendarClock },
 ] as const;
 
 export function ScheduleSidePanel() {
@@ -34,7 +33,6 @@ export function ScheduleSidePanel() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
-  const { t } = useTranslation();
 
   const currentView = searchParams.get("view") ?? "recurring";
 
@@ -51,7 +49,7 @@ export function ScheduleSidePanel() {
     <div className="flex flex-col gap-6 pt-2 select-none">
       <div className="px-4 pb-1 pt-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-          {t("schedule.views")}
+          Schedule Views
         </span>
       </div>
 
@@ -59,7 +57,7 @@ export function ScheduleSidePanel() {
         <SegmentedControl
           fullWidth
           size="xs"
-          radius="sm"
+          radius="md"
           withItemsBorders={false}
           value={currentView}
           onChange={(next) => handleSelect(next)}
@@ -68,7 +66,7 @@ export function ScheduleSidePanel() {
             label: (
               <span className="inline-flex items-center gap-1.5">
                 <v.icon size={12} aria-hidden />
-                {t(v.labelKey)}
+                {v.label}
               </span>
             ),
           }))}
@@ -141,10 +139,8 @@ function ProjectsCheckboxSection() {
 
   if (loading) {
     return (
-      <div className="space-y-1.5 px-3 py-2" role="status" aria-label="Loading projects">
-        {Array.from({ length: 3 }, (_, i) => (
-          <Skeleton key={i} className="h-3 w-full" />
-        ))}
+      <div className="px-3 text-[10px] text-foreground-subtle">
+        {t("panels.schedule.loadingProjects")}
       </div>
     );
   }

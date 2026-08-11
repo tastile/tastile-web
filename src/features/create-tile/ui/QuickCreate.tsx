@@ -80,21 +80,7 @@ import { IntentSubPanel } from "./IntentSubPanel";
 import { MetaSubPanel } from "./MetaSubPanel";
 import { ReferencesSubPanel } from "./ReferencesSubPanel";
 import { TaskDetailSubPanel } from "./TaskDetailSubPanel";
-import { WorkflowComposer, getWorkflowValidation } from "./WorkflowComposer";
 import { REPEAT_MODE_LABEL_KEY, formatDisplayDate, weekdayLabelsFor } from "./quick-create-utils";
-
-type EditorView = "workflow" | "details";
-
-function recurringTimeFromIso(value: string): string {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-}
 
 // ============================================================
 // Main component
@@ -127,16 +113,7 @@ export function QuickCreate() {
 
   const [visualOpen, setVisualOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<SubPanelKey>("base");
-  const [editorView, setEditorView] = useState<EditorView>("workflow");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-
-  // Every new create or edit session starts with the human-readable workflow
-  // view. The structural editor remains one click away, but a previous
-  // session cannot leave the next user in the advanced surface by accident.
-  useEffect(() => {
-    if (isOpen) setEditorView("workflow");
-  }, [isOpen]);
-
   const projects = useWorkspaces();
   const refreshProjects = projects.refresh;
   const tiles = useTileList({ limit: 200 });
@@ -401,28 +378,13 @@ export function QuickCreate() {
     time.durationMinMax.maxMs === null ||
     time.durationMinMax.minMs <= time.durationMinMax.maxMs;
   const taskOrderValid = !hasTaskOrderCycle(plan.completion.tasks);
-  const recurringTime = time.timeOfDayStart || recurringTimeFromIso(time.span.start);
-  const workflowValidation = getWorkflowValidation({
-    kind: identity.kind,
-    repeatMode: recurring.repeatMode,
-    whenMode: time.whenMode,
-    spanStart: time.span.start,
-    recurringTime,
-    weekdayMask: recurring.weekdayMask,
-  });
-  const workflowValidationPath = workflowValidation?.path ?? null;
-  const workflowValidationMessageKey = workflowValidation?.messageKey ?? null;
-  const canSubmit =
-    spanOrderValid && durationValid && taskOrderValid && !workflowValidation && !submitBlocked;
+  const canSubmit = spanOrderValid && durationValid && taskOrderValid && !submitBlocked;
 
   // --- field-level error sync ---
   useEffect(() => {
     const errors = new Map<string, string>();
     if (!spanOrderValid) errors.set("time.span", t("quickCreate.invalidTemporalOrder"));
     if (!durationValid) errors.set("time.durationMinMax", t("quickCreate.invalidDurationRange"));
-    if (workflowValidationPath && workflowValidationMessageKey) {
-      errors.set(workflowValidationPath, t(workflowValidationMessageKey));
-    }
     setFieldErrors(errors);
     setCanSubmitFromStore(errors.size === 0 && !submitBlocked);
     setSubmitBlockedReasonFromStore(
@@ -435,8 +397,6 @@ export function QuickCreate() {
   }, [
     spanOrderValid,
     durationValid,
-    workflowValidationPath,
-    workflowValidationMessageKey,
     submitBlocked,
     t,
     setFieldErrors,
@@ -492,14 +452,6 @@ export function QuickCreate() {
         kind: "error",
         reason: "validation",
         message: t("quickCreate.invalidTemporalOrder"),
-      });
-      return;
-    }
-    if (workflowValidation) {
-      setSubmitState({
-        kind: "error",
-        reason: "validation",
-        message: t(workflowValidation.messageKey),
       });
       return;
     }
@@ -606,7 +558,7 @@ export function QuickCreate() {
       )
     : cn(
         "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[85vh] flex flex-col rounded-t-md bg-surface-0 shadow-lg transition-all duration-300 ease-out",
+        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
         isClosing
           ? "translate-y-full opacity-0"
           : activePanel !== "base"
@@ -638,7 +590,7 @@ export function QuickCreate() {
       <div className={panelClass} data-testid="quick-create-panel">
         {/* ─── composer head ─── */}
         <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-ink">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
             <Layers className="h-4 w-4" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
@@ -648,18 +600,18 @@ export function QuickCreate() {
           </div>
           <SegmentedControl
             size="xs"
-            radius="sm"
-            value={editorView}
-            onChange={(value) => setEditorView(value as EditorView)}
-            data-testid="quick-create-editor-view"
+            radius="md"
+            value={String(plan.role)}
+            onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
+            data-testid="quick-create-tile-kind"
             data={[
               {
-                value: "workflow",
-                label: t("quickCreate.simple"),
+                value: String(PlanRole.EXECUTABLE),
+                label: t("quickCreate.behaviorExecutable"),
               },
               {
-                value: "details",
-                label: t("quickCreate.detailed"),
+                value: String(PlanRole.LABEL),
+                label: t("quickCreate.behaviorLabel"),
               },
             ]}
             className="shrink-0"
@@ -671,36 +623,7 @@ export function QuickCreate() {
 
         {/* ─── composer body ─── */}
         <div className="flex-1 overflow-y-auto p-4">
-          {editorView === "workflow" ? (
-            <div className="mx-auto max-w-[640px]">
-              <WorkflowComposer t={t} onOpenDetails={() => setEditorView("details")} />
-            </div>
-          ) : (
           <div className="mx-auto max-w-[640px]">
-            <div className="mb-4 flex items-center justify-between gap-3 rounded-md border border-border bg-surface-1 p-3">
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground">{t("quickCreate.workflowTypeLabel")}</p>
-                <p className="text-xs text-foreground-muted">{t("quickCreate.objectiveGuide")}</p>
-              </div>
-              <SegmentedControl
-                size="xs"
-                radius="sm"
-                value={String(plan.role)}
-                onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
-                data-testid="quick-create-tile-kind"
-                data={[
-                  {
-                    value: String(PlanRole.EXECUTABLE),
-                    label: t("quickCreate.behaviorExecutable"),
-                  },
-                  {
-                    value: String(PlanRole.LABEL),
-                    label: t("quickCreate.behaviorLabel"),
-                  },
-                ]}
-                className="shrink-0"
-              />
-            </div>
             {/* ── main card ── */}
             <section className="py-2" data-testid="quick-create-tab-identity">
               {/* title input */}
@@ -740,7 +663,7 @@ export function QuickCreate() {
                   leftSection={<Plus size={12} />}
                   variant="outline"
                   size="xs"
-                  radius="sm"
+                  radius="xl"
                   data-testid="quick-create-tab-meta"
                 >
                   {t("quickCreate.metaExpandLabel") || "Refine"}
@@ -1085,7 +1008,6 @@ export function QuickCreate() {
               />
             </section>
           </div>
-          )}
         </div>
 
         {/* ─── composer foot ─── */}
@@ -1101,7 +1023,7 @@ export function QuickCreate() {
           submitLabel={mode === "edit" ? t("quickCreate.update") : t("quickCreate.commit")}
           cancelLabel={t("quickCreate.cancel")}
           onDiscardDraft={mode === "create" ? discardDraft : null}
-          discardLabel={t("quickCreate.discardDraft")}
+          discardLabel={t("quickCreate.discardDraft") || "Discard draft"}
         />
         {slowNotice && submitting ? (
           <p

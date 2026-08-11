@@ -73,6 +73,10 @@ probe*raw*.json
 # local event store
 /.tastile-data/
 
+# Claude / agent / IDE tooling
+.claude/
+.agents/
+
 # Dist artifacts / screenshots / zips
 .tmp-screens/
 dist/
@@ -109,5 +113,3 @@ docs/trace/
 /docs/plans/evidence/**/screenshots/
 /docs/plans/evidence/**/dev-server.log
 /docs/plans/evidence/**/dev-server.pid
-
-*.log

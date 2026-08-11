@@ -102,7 +102,7 @@ test.describe("quick tile — cell click + tile click edit/delete", () => {
 
   test("clicking a day-view slot opens the create panel with the slot time preset", async ({ page }) => {
     const day = todayUtc();
-    await page.goto(`/dashboard/timeline/day&anchor=${day}`);
+    await page.goto(`/dashboard/calendar?view=day&anchor=${day}`);
     await page.getByTestId(`day-slot-${day}-14`).click();
 
     const submit = page.getByTestId("quick-create-submit");
@@ -122,7 +122,7 @@ test.describe("quick tile — cell click + tile click edit/delete", () => {
     const updated = "Edited " + Date.now();
     const { id, occurrenceId } = await createEventViaApi(page, { title: original, start, end });
 
-    await page.goto(`/dashboard/timeline/day&anchor=${day}`);
+    await page.goto(`/dashboard/calendar?view=day&anchor=${day}`);
     // The tile is rendered as a button carrying the (possibly expanded) occurrence id.
     await page.getByTestId(`day-event-${occurrenceId}`).click();
 
@@ -170,7 +170,7 @@ test.describe("quick tile — cell click + tile click edit/delete", () => {
     const title = "Delete me " + Date.now();
     const { id, occurrenceId } = await createEventViaApi(page, { title, start, end });
 
-    await page.goto(`/dashboard/timeline/day&anchor=${day}`);
+    await page.goto(`/dashboard/calendar?view=day&anchor=${day}`);
     await page.locator(`[data-tile-id="${occurrenceId}"]`).first().click();
 
     const del = page.getByTestId("quick-create-delete");

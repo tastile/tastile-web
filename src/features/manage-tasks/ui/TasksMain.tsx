@@ -9,7 +9,7 @@ import type { TileId } from "@/shared/model/ids";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { PageContainer, PageHeader } from "@/shared/ui/page-header/PageHeader";
 import { TileCardCompact } from "@/tile/ui/TileCardCompact";
-import { Button, Skeleton } from "@mantine/core";
+import { Skeleton } from "@mantine/core";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 
@@ -20,11 +20,10 @@ export function TasksMain() {
   const range = searchParams.get("range") ?? "7d"; // default 7 days
   const granularity = searchParams.get("granularity") ?? "no_breaks,min_0m";
   const openEdit = useQuickCreateStore((s) => s.loadFromRecurringTile);
-  const openCreate = useQuickCreateStore((s) => s.openCreate);
   const [startingTileId, setStartingTileId] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
 
-  const { tiles, loading, error, refresh } = useTileList({
+  const { tiles, loading, refresh } = useTileList({
     viewMode: "by_state",
     limit: 200,
     search: search || undefined,
@@ -37,16 +36,9 @@ export function TasksMain() {
 
     const num = Number.parseInt(range, 10);
     const unit = range.slice(-1);
-    const unitStr =
-      unit === "d"
-        ? t("panels.tasks.days")
-        : unit === "w"
-          ? t("panels.tasks.weeks")
-          : unit === "m"
-            ? t("panels.tasks.months")
-            : "";
+    const unitStr = unit === "d" ? "days" : unit === "w" ? "weeks" : unit === "m" ? "months" : "";
     if (!Number.isNaN(num)) {
-      parts.push(`${t("tasks.range")}: ${num} ${unitStr}`);
+      parts.push(`Range: ${num} ${unitStr}`);
     }
 
     const gParts = granularity.split(",");
@@ -54,30 +46,30 @@ export function TasksMain() {
     if (minPart) {
       const mins = minPart.replace("min_", "").replace("m", "");
       if (mins !== "0") {
-        parts.push(`${t("panels.tasks.minDuration")}: ${mins}${t("panels.tasks.minUnit")}`);
+        parts.push(`Min duration: ${mins}m`);
       }
     }
 
     if (gParts.includes("important_only")) {
-      parts.push(t("panels.tasks.highPriorityOnly"));
+      parts.push("High Priority");
     }
     if (gParts.includes("no_low_priority")) {
-      parts.push(t("panels.tasks.excludeLowPriority"));
+      parts.push("No Low Priority");
     }
 
     if (search) {
-      parts.push(`${t("panels.tasks.search")}: "${search}"`);
+      parts.push(`Search: "${search}"`);
     }
 
-    return parts.length > 0 ? parts.join(" • ") : t("tasks.title");
-  }, [range, granularity, search, t]);
+    return parts.length > 0 ? parts.join(" • ") : "All Tasks";
+  }, [range, granularity, search]);
 
   const handleStart = useCallback(
     async (tileId: TileId) => {
       const id = tileId.toString();
       const item = tiles.find((tile) => tile.id === id);
       if (!item?.plan_id) {
-        setStartError(t("tasks.missingPlan"));
+        setStartError("This tile has no plan_id; start command cannot be sent.");
         return;
       }
 
@@ -96,7 +88,7 @@ export function TasksMain() {
 
       setStartingTileId(null);
       if (!result.ok) {
-        setStartError(t("tasks.startError"));
+        setStartError(result.error.message);
         return;
       }
 
@@ -104,12 +96,12 @@ export function TasksMain() {
       window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
       await refresh();
     },
-    [tiles, refresh, t],
+    [tiles, refresh],
   );
 
   return (
     <PageContainer>
-      <PageHeader title={t("tasks.title")} description={t("tasks.subtitle")} />
+      <PageHeader title="Tasks" description={t("tasks.subtitle")} />
 
       {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
@@ -117,44 +109,30 @@ export function TasksMain() {
           {filterDesc}
         </span>
         <span className="font-mono text-[10px] text-foreground-lighter">
-          {loading ? t("tasks.loading") : `${tiles.length} ${t("tasks.items")}`}
+          {loading ? "Loading..." : `${tiles.length} items found`}
         </span>
       </div>
       {startError ? (
-        <div className="mt-3 rounded-md border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+        <div className="mt-3 rounded border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
           {startError}
         </div>
       ) : null}
 
       <div className="mt-4">
-        {error && !loading && (
-          <div
-            role="alert"
-            className="flex flex-col items-start gap-3 rounded-md border border-danger/30 bg-danger/5 px-4 py-4 text-sm text-foreground"
-          >
-            <p>{t("tasks.loadError")}</p>
-            <Button size="sm" radius="sm" variant="light" onClick={() => void refresh()}>
-              {t("tasks.retry")}
-            </Button>
-          </div>
-        )}
         {loading && (
           <div className="flex flex-col gap-2">
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
-            <Skeleton className="h-10 w-full rounded-md" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
           </div>
         )}
-        {!loading && !error && tiles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-md bg-surface-1">
-            <p className="text-sm">{search ? t("tasks.emptyFiltered") : t("tasks.empty")}</p>
-            <Button className="mt-4" size="sm" radius="sm" onClick={() => openCreate()}>
-              {t("tasks.createFirst")}
-            </Button>
+        {!loading && tiles.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
+            <p className="text-sm">No tasks found matching the current filters.</p>
           </div>
         )}
-        {!loading && !error && tiles.length > 0 && (
-          <div className="border border-border bg-surface-1 rounded-md overflow-hidden divide-y divide-border/40 shadow-xs">
+        {!loading && tiles.length > 0 && (
+          <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
             {tiles.map((t) => {
               const tile = mapListView(t);
               return (

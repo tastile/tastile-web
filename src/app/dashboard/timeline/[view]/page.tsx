@@ -1,7 +1,7 @@
+import { ScheduleTimeline } from "@/features/manage-schedule/ui/ScheduleTimeline";
 import { MinuteClockProvider } from "@/shared/hooks/minute-clock";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { ViewPageClient } from "./view-page-client";
 
 const VALID_VIEWS = ["day", "week", "month", "year", "agenda"] as const;
 type View = (typeof VALID_VIEWS)[number];
@@ -20,7 +20,7 @@ export default async function TimelineViewPage({
   return (
     <Suspense fallback={null}>
       <MinuteClockProvider>
-        <ViewPageClient view={view} />
+        <ScheduleTimeline initialView={view} />
       </MinuteClockProvider>
     </Suspense>
   );

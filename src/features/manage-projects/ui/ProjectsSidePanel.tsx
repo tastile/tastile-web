@@ -16,7 +16,6 @@ import {
   ColorInput,
   Modal,
   Select,
-  Skeleton,
   TextInput,
   Tree,
   getTreeExpandedState,
@@ -42,13 +41,6 @@ export function ProjectsSidePanel() {
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
   const { t } = useTranslation();
-  const text = useCallback(
-    (key: string, fallback: string) => {
-      const value = t(key);
-      return value === key ? fallback : value;
-    },
-    [t],
-  );
   const { workspaces, refresh, loading, error } = useWorkspaces();
 
   const currentOwner = searchParams.get("owner") ?? null;
@@ -63,7 +55,7 @@ export function ProjectsSidePanel() {
     mode: "uncontrolled",
     initialValues: { name: "", slug: "", color: DEFAULT_COLOR },
     validate: {
-      name: (value) => (value.trim().length === 0 ? t("projects.nameRequired") : null),
+      name: (value) => (value.trim().length === 0 ? "Name is required" : null),
     },
   });
 
@@ -142,7 +134,7 @@ export function ProjectsSidePanel() {
         </ActionIcon>
       </div>
 
-      <Modal opened={creating} onClose={resetForm} title={t("projects.newTitle")} centered size="sm">
+      <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
         {/* react-doctor-disable-next-line react-hooks-js/refs */}
         <form
           onSubmit={form.onSubmit((values) => handleCreate(values))}
@@ -150,16 +142,16 @@ export function ProjectsSidePanel() {
         >
           <TextInput
             {...form.getInputProps("name")}
-            placeholder={t("projects.namePlaceholder")}
+            placeholder="Project name"
             maxLength={80}
             required
             data-testid="project-create-name"
-            label={t("projects.name")}
+            label="Name"
             size="sm"
           />
           <TextInput
             {...slugProps}
-            placeholder={t("projects.slugPlaceholder")}
+            placeholder="slug (optional)"
             onChange={(event) => {
               const normalized = event.currentTarget.value
                 .toLowerCase()
@@ -169,7 +161,7 @@ export function ProjectsSidePanel() {
             pattern="[a-z0-9-]+"
             maxLength={40}
             data-testid="project-create-slug"
-            label={t("projects.slug")}
+            label="Slug"
             size="sm"
           />
           <div>
@@ -177,27 +169,27 @@ export function ProjectsSidePanel() {
               htmlFor="project-color"
               className="mb-1 block text-[10px] text-foreground-subtle"
             >
-              {t("projects.color")}
+              Color
             </label>
             <ColorInput
               id="project-color"
               {...form.getInputProps("color")}
-              aria-label={t("projects.color")}
+              aria-label="Project color"
               data-testid="project-create-color"
             />
           </div>
           <Select
-            aria-label={t("projects.parent")}
+            aria-label="Parent project"
             label={
               <span className="flex items-center gap-1 text-[10px] text-foreground-subtle">
                 <FolderPlus className="h-3 w-3" aria-hidden />
-                {t("projects.parent")}
+                Parent project
               </span>
             }
             value={parentId ?? null}
             onChange={(value) => setParentId(value || null)}
             data={[
-              { value: "", label: t("projects.topLevel") },
+              { value: "", label: "Top level" },
               ...orderWorkspaceTree(workspaces).map(({ workspace, depth }) => ({
                 value: workspace.id,
                 label: `${"　".repeat(depth)}${workspace.display_name}`,
@@ -209,11 +201,11 @@ export function ProjectsSidePanel() {
             data-testid="project-create-parent"
           />
           <div className="flex items-center gap-2 justify-end">
-            <Button title={text("projects.cancel", "Cancel")} onClick={resetForm} disabled={creatingBusy} variant="outline">
-              {text("projects.cancel", "Cancel")}
+            <Button title="Cancel" onClick={resetForm} disabled={creatingBusy} variant="outline">
+              Cancel
             </Button>
             <Button type="submit" disabled={creatingBusy} data-testid="project-create-submit">
-              {creatingBusy ? text("projects.creating", "Creating...") : text("projects.create", "Create")}
+              {creatingBusy ? "Creating..." : "Create"}
             </Button>
 
             {createError && <span className="text-[10px] text-status-danger">{createError}</span>}
@@ -239,10 +231,8 @@ export function ProjectsSidePanel() {
           </Button>
 
           {loading && (
-            <div className="space-y-1.5 px-2 py-1.5" role="status" aria-label="Loading projects">
-              {Array.from({ length: 3 }, (_, i) => (
-                <Skeleton key={i} className="h-3 w-full" />
-              ))}
+            <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">
+              {t("panels.projects.loadingProjects")}
             </div>
           )}
           {error && (

@@ -6,9 +6,10 @@ import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
 import { getDayViewWindow } from "@/lib/calendar/layout";
 import { DayView, MobileMonthView } from "@/lib/vendored/mantine-schedule";
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ErrorBanner } from "./ErrorBanner";
-import { buildLoadingDayEvents, toScheduleEvents } from "./eventAdapter";
+import { LoadingOverlay } from "./LoadingOverlay";
+import { toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
 import { useResponsiveBreakpoint } from "./useResponsiveBreakpoint";
 
@@ -61,20 +62,9 @@ export function DayPanel({
   // changing which rows exist, so cross-midnight windows stay visible.
   // Only the rendered geometry is shifted — `payload` keeps the real event
   // so click-to-edit round-trips the true instant.
-  //
-  // While loading, swap real events for placeholder shells with a
-  // sentinel title so the same ScheduleEvent pipeline positions them
-  // at realistic times of the day. renderEventBody detects the sentinel
-  // and substitutes a Skeleton card of the same shape.
-  const loadingEvents = useMemo(
-    () => (loading ? buildLoadingDayEvents(anchor, shiftMs) : []),
-    [loading, anchor, shiftMs],
+  const scheduleEvents = events.flatMap((e) =>
+    toScheduleEvents(shiftEvent(e, shiftMs)).map((se) => ({ ...se, payload: e })),
   );
-  const realScheduleEvents = useMemo(
-    () => events.flatMap((e) => toScheduleEvents(shiftEvent(e, shiftMs)).map((se) => ({ ...se, payload: e }))),
-    [events, shiftMs],
-  );
-  const scheduleEvents = loading ? loadingEvents.flatMap(toScheduleEvents) : realScheduleEvents;
   // The mobile fallback buckets by calendar day and has no virtual-day
   // notion, so it must see real times.
   const mobileEvents = shiftMs === 0 ? scheduleEvents : events.flatMap(toScheduleEvents);
@@ -106,16 +96,13 @@ export function DayPanel({
 
   // Gutter labels show the *real* time behind each virtual row, with a date
   // prefix on the row where the real day rolls over.
-  const slotLabel = useCallback(
-    (date: string) => {
-      const real = new Date(new Date(date).getTime() - shiftMs);
-      const hhmm = `${pad(real.getHours())}:${pad(real.getMinutes())}`;
-      return real.getHours() === 0 && real.getMinutes() === 0
-        ? `${real.getMonth() + 1}/${real.getDate()} ${hhmm}`
-        : hhmm;
-    },
-    [shiftMs],
-  );
+  const slotLabel = (date: string) => {
+    const real = new Date(new Date(date).getTime() - shiftMs);
+    const hhmm = `${pad(real.getHours())}:${pad(real.getMinutes())}`;
+    return real.getHours() === 0 && real.getMinutes() === 0
+      ? `${real.getMonth() + 1}/${real.getDate()} ${hhmm}`
+      : hhmm;
+  };
 
   if (breakpoint === "mobile") {
     const renderMobileEvent = (e: ScheduleEventData) => {
@@ -125,49 +112,48 @@ export function DayPanel({
     };
 
     return (
-      <div className="relative h-full" data-testid="day-panel-mobile" data-loading={loading || undefined}>
+      <div className="relative h-full" data-testid="day-panel-mobile">
         {error && <ErrorBanner error={error} />}
-        <MobileMonthView
-          date={anchor}
-          events={mobileEvents}
-          onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
-          renderEvent={renderMobileEvent}
-        />
+        <LoadingOverlay loading={loading}>
+          <MobileMonthView
+            date={anchor}
+            events={mobileEvents}
+            onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
+            renderEvent={renderMobileEvent}
+          />
+        </LoadingOverlay>
       </div>
     );
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-full"
-      data-testid="day-panel"
-      data-loading={loading || undefined}
-    >
+    <div ref={containerRef} className="relative h-full" data-testid="day-panel">
       {error && <ErrorBanner error={error} />}
-      <DayView
-        date={anchor}
-        events={scheduleEvents}
-        withHeader={false}
-        canDragEvent={() => false}
-        canResizeEvent={() => false}
-        withDragSlotSelect
-        withCurrentTimeIndicator
-        intervalMinutes={30}
-        startTime={startTime}
-        endTime={endTime}
-        onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
-        onTimeSlotClick={({ slotStart, slotEnd }) =>
-          onSlotCreate(unshiftSlot(slotStart), unshiftSlot(slotEnd))
-        }
-        onSlotDragEnd={(s, e) => onSlotCreate(unshiftSlot(s), unshiftSlot(e))}
-        renderEventBody={(e) => renderEventBody(e, "day")}
-        slotLabelFormat={slotLabel}
-        getCurrentTime={() => new Date(Date.now() + shiftMs)}
-        scrollAreaProps={{ style: { height: "100%" } }}
-        startScrollTime={scrollTime}
-        style={{ "--day-view-slot-height": `${zoom}px` } as React.CSSProperties}
-      />
+      <LoadingOverlay loading={loading}>
+        <DayView
+          date={anchor}
+          events={scheduleEvents}
+          withHeader={false}
+          canDragEvent={() => false}
+          canResizeEvent={() => false}
+          withDragSlotSelect
+          withCurrentTimeIndicator
+          intervalMinutes={30}
+          startTime={startTime}
+          endTime={endTime}
+          onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
+          onTimeSlotClick={({ slotStart, slotEnd }) =>
+            onSlotCreate(unshiftSlot(slotStart), unshiftSlot(slotEnd))
+          }
+          onSlotDragEnd={(s, e) => onSlotCreate(unshiftSlot(s), unshiftSlot(e))}
+          renderEventBody={(e) => renderEventBody(e, "day")}
+          slotLabelFormat={slotLabel}
+          getCurrentTime={() => new Date(Date.now() + shiftMs)}
+          scrollAreaProps={{ style: { height: "100%" } }}
+          startScrollTime={scrollTime}
+          style={{ "--day-view-slot-height": `${zoom}px` } as React.CSSProperties}
+        />
+      </LoadingOverlay>
     </div>
   );
 }

@@ -34,7 +34,7 @@ export function YearPanel({ range, anchor, zoom, displayMode, events, loading, e
   return (
     <div className="relative h-full" data-testid="year-panel">
       {error && <ErrorBanner error={error} />}
-      <LoadingOverlay loading={loading} view="year">
+      <LoadingOverlay loading={loading}>
         <YearView
           data-testid="year-view"
           date={anchor}
