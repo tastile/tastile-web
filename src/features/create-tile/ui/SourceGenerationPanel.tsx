@@ -186,7 +186,7 @@ export interface SourceGenerationPanelProps {
   locale: EditorLocale;
   /** Translation lookup. */
   t: (key: string) => string;
-  /** 現在の timeOfDay 設定（interval モード時の連携表示用） */
+  /** Current timeOfDay settings, surfaced when interval mode joins the panel. */
   timeOfDayStart?: string;
   timeOfDayEnd?: string;
 }

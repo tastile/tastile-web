@@ -2,8 +2,8 @@
 // Domain Layer: Validation
 // ============================================================================
 //
-// 検証ロジックは Domain Layer に配置される。
-// UI → API Layer → Domain Layer (validate) → Infrastructure
+// Validation rules live in the Domain Layer.
+// UI -> API Layer -> Domain Layer (validate) -> Infrastructure
 // ============================================================================
 
 import { getTileLifecycle } from "@/tile/model/tile";
@@ -11,7 +11,7 @@ import type { Command } from "./command";
 import type { AppState } from "./state";
 
 /**
- * 検証エラー
+ * Validation error raised when a command violates a Domain rule.
  */
 class ValidationError extends Error {
   constructor(message: string) {
@@ -21,17 +21,20 @@ class ValidationError extends Error {
 }
 
 /**
- * 検証ルール
+ * Validation rules. Each command type has its own switch arm with
+ * narrow, behavioral checks; rationale is captured in plain English
+ * comments so the invariant is reviewable without re-deriving it from
+ * the test suite.
  */
 export const validate = (command: Command, state: AppState): void => {
   switch (command.type) {
     case "create_tile": {
-      // タイトルが空でないこと
+      // Title must not be empty.
       if (!command.tile.core.title.trim()) {
         throw new ValidationError("Title cannot be empty");
       }
 
-      // tile_id と tile の ID が一致すること
+      // tile_id must match tile.core.id.
       if (command.tile.core.id !== command.tile_id) {
         throw new ValidationError("tile_id must match tile.core.id");
       }
@@ -45,12 +48,12 @@ export const validate = (command: Command, state: AppState): void => {
         throw new ValidationError(`Tile not found: ${command.tile_id}`);
       }
 
-      // 完了したタイルは開始できない
+      // Completed tiles cannot be started (lifecycle invariant).
       if (getTileLifecycle(tile) === "done") {
         throw new ValidationError("Cannot start completed tile");
       }
 
-      // 既に開始されているタイル
+      // Already-started tiles cannot be re-entered without ending first.
       if (tile.work.segments.some((seg) => !seg.endAt)) {
         throw new ValidationError("Tile already started");
       }
@@ -64,7 +67,7 @@ export const validate = (command: Command, state: AppState): void => {
         throw new ValidationError(`Tile not found: ${command.tile_id}`);
       }
 
-      // アクティブタイルのみ完了可能
+      // Only the currently active tile may be completed.
       if (state.execution.activeTileId !== command.tile_id) {
         throw new ValidationError("Can only complete active tile");
       }
@@ -91,7 +94,7 @@ export const validate = (command: Command, state: AppState): void => {
     }
 
     case "start_break": {
-      // 中断が進行中ではないこと
+      // No break may overlap another in-progress break.
       const hasBreakInProgress = Array.from(state.tiles.values()).some(
         (tile) =>
           tile.annotation.semanticRole === "break" &&
@@ -106,7 +109,7 @@ export const validate = (command: Command, state: AppState): void => {
     }
 
     case "switch_active_tile": {
-      // 自分自身への切り替えは不可能
+      // Switching to the same tile is a no-op and rejected to keep call sites honest.
       if (command.from_tile_id === command.to_tile_id) {
         throw new ValidationError("Cannot switch to same tile");
       }
@@ -152,7 +155,7 @@ export const validate = (command: Command, state: AppState): void => {
         throw new ValidationError(`Tile not found: ${command.tile_id}`);
       }
 
-      // 進行中のタイルのみ拡張可能
+      // Only an in-progress tile (started, not completed) may be extended.
       if (tile.core.startedAt === null || tile.core.completedAt !== null) {
         throw new ValidationError("Tile not in progress");
       }
@@ -169,7 +172,7 @@ export const validate = (command: Command, state: AppState): void => {
     }
 
     default:
-      // 未実装のコマンド
+      // Catch-all for commands the validator does not yet handle.
       throw new ValidationError(`Unhandled command type: ${command.type}`);
   }
 };

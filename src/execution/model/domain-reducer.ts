@@ -2,9 +2,9 @@
 // Domain Layer: Reducer
 // ============================================================================
 //
-// 単一の関数で Event → AppState を変換する。
-// 依存関係の逆転の入口として、すべての Reducer ロジックをここから
-// 呼び出す。
+// Single function that converts Event -> AppState.
+// Entry point for dependency inversion: all reducer logic is dispatched
+// from here.
 // ============================================================================
 
 import type { Command } from "./command";

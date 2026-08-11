@@ -35,7 +35,7 @@ interface PlacementProposalDraft {
 }
 
 interface RequestDraft {
-  /** REQUIRED for REQUEST kind (v1/06 §87: 幂等キー必須) */
+  /** Required for the REQUEST kind (v1/06 §87 idempotency key contract). */
   idempotencyKey: string;
 }
 

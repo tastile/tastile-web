@@ -107,7 +107,7 @@ export interface RecurringSlice {
   endDate: string;
   intervalValue: number;
   intervalUnit: "min" | "hour" | "day";
-  /** repeatMode === "condition" のときに評価される条件木 */
+  /** Condition tree evaluated when repeatMode === "condition". */
   condition: import("@/tile/model/v1/condition").ConditionNode | null;
   /** Set to true when recurring.condition was non-null but silently dropped by wire */
   conditionIgnored: boolean;
@@ -169,9 +169,9 @@ export interface SourceAuthoringSlice {
     candidateWhen: import("@/tile/model/v1/condition").ConditionNode | null;
     minimumGapMs: number;
     rank: number;
-    /** 最終 step の後、先頭に戻って繰り返す（汎用循環 Flow） */
+    /** Whether to wrap back to the first step after the final one (generic cyclic flow). */
     cycle: boolean;
-    /** 割り込み発生時に step 位置を先頭にリセットする */
+    /** Whether to reset the step cursor to the start whenever an interrupt fires. */
     resetOnInterrupt: boolean;
     steps: Array<{ id: string; waitBeforeMs: number; emitDurationMs: number }>;
   }>;
