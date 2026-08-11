@@ -49,6 +49,7 @@ import {
   ActionIcon,
   Button,
   CloseButton,
+  Drawer,
   NumberInput,
   Pill,
   SegmentedControl,
@@ -81,6 +82,68 @@ import { MetaSubPanel } from "./MetaSubPanel";
 import { ReferencesSubPanel } from "./ReferencesSubPanel";
 import { TaskDetailSubPanel } from "./TaskDetailSubPanel";
 import { REPEAT_MODE_LABEL_KEY, formatDisplayDate, weekdayLabelsFor } from "./quick-create-utils";
+
+// ============================================================
+// Panel shell — Mantine Drawer on desktop, custom bottom sheet on mobile.
+// Centralizes the desktop-vs-mobile wrapper so the composer body below
+// can stay a single inline block instead of being duplicated per branch.
+// ============================================================
+
+type PanelShellProps = {
+  isDesktop: boolean;
+  panelClass: string;
+  mounted: boolean;
+  isClosing: boolean;
+  onClose: () => void;
+  innerTransformClass: string;
+  children: React.ReactNode;
+};
+
+function QuickCreatePanelShell({
+  isDesktop,
+  panelClass,
+  mounted,
+  isClosing,
+  onClose,
+  innerTransformClass,
+  children,
+}: PanelShellProps) {
+  if (isDesktop) {
+    return (
+      <Drawer
+        opened={mounted && !isClosing}
+        onClose={onClose}
+        position="right"
+        size="36rem"
+        withOverlay={false}
+        lockScroll={false}
+        trapFocus={false}
+        withCloseButton={false}
+        transitionProps={{ transition: "slide-left", duration: 220 }}
+        zIndex={56}
+        classNames={{
+          content:
+            "h-screen max-h-screen flex flex-col bg-surface-0 shadow-lg border-l border-border",
+        }}
+      >
+        <div
+          className={cn(
+            "flex flex-1 flex-col bg-surface-0 transition-transform duration-200 ease-out",
+            innerTransformClass,
+          )}
+          data-testid="quick-create-panel"
+        >
+          {children}
+        </div>
+      </Drawer>
+    );
+  }
+  return (
+    <div className={panelClass} data-testid="quick-create-panel">
+      {children}
+    </div>
+  );
+}
 
 // ============================================================
 // Main component
@@ -545,17 +608,11 @@ export function QuickCreate() {
   }
 
   // --- layout classes ---
+  // Desktop path is rendered inside <QuickCreatePanelShell>'s Mantine Drawer,
+  // so the desktop panelClass is unused there. Mobile keeps the custom
+  // bottom-sheet styling.
   const panelClass = isDesktop
-    ? cn(
-        "fixed inset-y-0 right-0 z-[56]",
-        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-x-full opacity-0"
-          : activePanel !== "base"
-            ? "-translate-x-6"
-            : "translate-x-0",
-        "[animation:slideInFromRight_0.22s_ease-out]",
-      )
+    ? ""
     : cn(
         "fixed inset-x-0 bottom-0 z-[56]",
         "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
@@ -566,6 +623,12 @@ export function QuickCreate() {
             : "translate-y-0",
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
+
+  // On desktop, the panel inner div slides left when a sub-panel opens so
+  // the sub-panel (z-[58], positioned fixed) can cover it. Mobile keeps
+  // the parent div's translate via panelClass.
+  const innerTransformClass =
+    isDesktop && !isClosing && activePanel !== "base" ? "-translate-x-6" : "translate-x-0";
 
   const ownerId = meta.ownerSubjectId;
 
@@ -586,8 +649,15 @@ export function QuickCreate() {
         aria-hidden
       />
 
-      {/* main panel */}
-      <div className={panelClass} data-testid="quick-create-panel">
+      {/* main panel — Mantine Drawer on desktop, custom bottom sheet on mobile */}
+      <QuickCreatePanelShell
+        isDesktop={isDesktop}
+        panelClass={panelClass}
+        mounted={mounted}
+        isClosing={isClosing}
+        onClose={close}
+        innerTransformClass={innerTransformClass}
+      >
         {/* ─── composer head ─── */}
         <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
@@ -1072,7 +1142,7 @@ export function QuickCreate() {
             {loadError}
           </p>
         ) : null}
-      </div>
+      </QuickCreatePanelShell>
 
       <IntentSubPanel
         activePanel={activePanel}
