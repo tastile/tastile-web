@@ -3,7 +3,7 @@
 
 import type { CalendarEvent } from "@/calendar/model/calendar";
 import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
-import { getDayViewTimeRange } from "@/lib/calendar/layout";
+import { getDayViewWindow } from "@/lib/calendar/layout";
 import { DayView, MobileMonthView } from "@/lib/vendored/mantine-schedule";
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
 import { useCallback, useEffect, useRef } from "react";
@@ -26,22 +26,22 @@ type Props = {
   onZoomBy: (delta: number) => void;
 };
 
-/**
- * Compute the auto-scroll time based on display mode.
- * - scope: no scroll (top of grid = 00:00)
- * - around: scroll to start of visible range (currentHour - 12, clipped)
- * - future: scroll to current hour
- */
-function getScrollTimeForMode(mode: DisplayMode): string | undefined {
-  if (mode === "scope") return undefined;
-  const now = new Date();
-  const h = now.getHours();
-  if (mode === "around") {
-    const scrollH = Math.max(0, h - 12);
-    return `${String(scrollH).padStart(2, "0")}:00:00`;
-  }
-  // future
-  return `${String(h).padStart(2, "0")}:00:00`;
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** "YYYY-MM-DD HH:mm:ss" in local time — the format the vendored view uses. */
+function toLocalSlotString(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/** Move an ISO instant by `shiftMs` while keeping it an ISO instant. */
+function shiftIso(iso: string, shiftMs: number): string {
+  const t = new Date(iso).getTime();
+  return Number.isNaN(t) ? iso : new Date(t + shiftMs).toISOString();
+}
+
+function shiftEvent(e: CalendarEvent, shiftMs: number): CalendarEvent {
+  if (shiftMs === 0 || e.allDay) return e;
+  return { ...e, start: shiftIso(e.start, shiftMs), end: shiftIso(e.end, shiftMs) };
 }
 
 export function DayPanel({
@@ -57,7 +57,17 @@ export function DayPanel({
   onZoomBy,
 }: Props) {
   const breakpoint = useResponsiveBreakpoint();
-  const scheduleEvents = events.flatMap(toScheduleEvents);
+  const { shiftMs, startTime, endTime, scrollTime } = getDayViewWindow(displayMode, anchor);
+  // The grid is a fixed 24 h; modes shift the *time origin* instead of
+  // changing which rows exist, so cross-midnight windows stay visible.
+  // Only the rendered geometry is shifted — `payload` keeps the real event
+  // so click-to-edit round-trips the true instant.
+  const scheduleEvents = events.flatMap((e) =>
+    toScheduleEvents(shiftEvent(e, shiftMs)).map((se) => ({ ...se, payload: e })),
+  );
+  // The mobile fallback buckets by calendar day and has no virtual-day
+  // notion, so it must see real times.
+  const mobileEvents = shiftMs === 0 ? scheduleEvents : events.flatMap(toScheduleEvents);
   const containerRef = useRef<HTMLDivElement>(null);
   const onZoomByRef = useRef(onZoomBy);
 
@@ -80,8 +90,19 @@ export function DayPanel({
 
   void range;
 
-  const scrollTime = getScrollTimeForMode(displayMode);
-  const { startTime, endTime } = getDayViewTimeRange(displayMode);
+  // Grid slot ("YYYY-MM-DD HH:mm:ss", virtual) → real local slot string.
+  const unshiftSlot = (slot: string) =>
+    shiftMs === 0 ? slot : toLocalSlotString(new Date(new Date(slot).getTime() - shiftMs));
+
+  // Gutter labels show the *real* time behind each virtual row, with a date
+  // prefix on the row where the real day rolls over.
+  const slotLabel = (date: string) => {
+    const real = new Date(new Date(date).getTime() - shiftMs);
+    const hhmm = `${pad(real.getHours())}:${pad(real.getMinutes())}`;
+    return real.getHours() === 0 && real.getMinutes() === 0
+      ? `${real.getMonth() + 1}/${real.getDate()} ${hhmm}`
+      : hhmm;
+  };
 
   if (breakpoint === "mobile") {
     const renderMobileEvent = (e: ScheduleEventData) => {
@@ -96,7 +117,7 @@ export function DayPanel({
         <LoadingOverlay loading={loading}>
           <MobileMonthView
             date={anchor}
-            events={scheduleEvents}
+            events={mobileEvents}
             onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
             renderEvent={renderMobileEvent}
           />
@@ -121,9 +142,13 @@ export function DayPanel({
           startTime={startTime}
           endTime={endTime}
           onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
-          onTimeSlotClick={({ slotStart, slotEnd }) => onSlotCreate(slotStart, slotEnd)}
-          onSlotDragEnd={(s, e) => onSlotCreate(s, e)}
+          onTimeSlotClick={({ slotStart, slotEnd }) =>
+            onSlotCreate(unshiftSlot(slotStart), unshiftSlot(slotEnd))
+          }
+          onSlotDragEnd={(s, e) => onSlotCreate(unshiftSlot(s), unshiftSlot(e))}
           renderEventBody={(e) => renderEventBody(e, "day")}
+          slotLabelFormat={slotLabel}
+          getCurrentTime={() => new Date(Date.now() + shiftMs)}
           scrollAreaProps={{ style: { height: "100%" } }}
           startScrollTime={scrollTime}
           style={{ "--day-view-slot-height": `${zoom}px` } as React.CSSProperties}

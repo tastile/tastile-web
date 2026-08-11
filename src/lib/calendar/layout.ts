@@ -56,24 +56,12 @@ export function getModeRange(
   }
 
   if (view === "day") {
-    if (mode === "around") {
-      const nowMs = Date.now();
-      return {
-        start: new Date(nowMs - 12 * 60 * 60 * 1000).toISOString(),
-        end: new Date(nowMs + 12 * 60 * 60 * 1000).toISOString(),
-      };
-    }
-    if (mode === "future") {
-      const nowMs = Date.now();
-      return {
-        start: new Date(nowMs).toISOString(),
-        end: new Date(nowMs + 24 * 60 * 60 * 1000).toISOString(),
-      };
-    }
-    // scope
+    // The day grid is always a 24 h window starting at the mode's origin,
+    // so the API range must be exactly that window (it may cross midnight).
+    const originMs = getDayViewOrigin(mode, anchor, Date.now(), tzOffsetMinutes);
     return {
-      start: new Date(localMidnightMs).toISOString(),
-      end: new Date(localMidnightMs + 24 * 60 * 60 * 1000).toISOString(),
+      start: new Date(originMs).toISOString(),
+      end: new Date(originMs + 24 * 60 * 60 * 1000).toISOString(),
     };
   }
 
@@ -147,43 +135,73 @@ function todayLocalIso(tzOffsetMinutes: number): string {
 }
 
 /**
- * Compute startTime / endTime for the DayView grid based on display mode.
+ * Day view window.
  *
- * - scope:  full 24 h  (00:00:00 – 23:59:59)
- * - around: 24 h centred on now, clipped to same-day bounds
- * - future: from now to end of day
+ * The DayView grid is ALWAYS a full 24 h (00:00:00 – 23:59:59) of a single
+ * "virtual day". Display modes do not change which grid rows exist — they
+ * only change which real instant the grid's 00:00 corresponds to:
  *
- * The vendored DayView generates slots within a single day, so the
- * range must always satisfy startTime < endTime on the same day.
- * Cross-midnight visualisation is achieved via scroll + event overlap
- * in getDayViewEvents.
+ * - scope:  origin = local midnight of `anchor`      (virtual == real)
+ * - around: origin = floor(now, hour) − 12 h          (crosses midnight)
+ * - future: origin = floor(now, hour)                 (crosses midnight)
+ *
+ * Callers map real instants into the grid by adding `shiftMs`, and map
+ * grid interactions back to real instants by subtracting it.
  */
-export function getDayViewTimeRange(mode: DisplayMode): { startTime: string; endTime: string } {
-  if (mode === "scope") {
-    return { startTime: "00:00:00", endTime: "23:59:59" };
+export interface DayViewWindow {
+  /** Real instant (ms) rendered at grid 00:00. */
+  originMs: number;
+  /** Add to a real instant to get its position in the virtual day. */
+  shiftMs: number;
+  /** Grid start (always full day). */
+  startTime: string;
+  /** Grid end (always full day). */
+  endTime: string;
+  /** Where to auto-scroll inside the virtual day, if anywhere. */
+  scrollTime?: string;
+}
+
+const HOUR_MS = 60 * 60 * 1000;
+
+/**
+ * Local midnight (real ms) of a YYYY-MM-DD string. When `tzOffsetMinutes`
+ * is given, midnight is resolved in that timezone rather than the host's.
+ */
+function localMidnightOf(anchor: string, tzOffsetMinutes?: number): number {
+  const [y, m, d] = anchor.split("-").map(Number);
+  if (tzOffsetMinutes === undefined) {
+    return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1, 0, 0, 0, 0).getTime();
   }
+  return Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1) - tzOffsetMinutes * 60_000;
+}
 
-  const currentHour = new Date().getHours();
+/** Real instant that the day grid's 00:00 represents. */
+function getDayViewOrigin(
+  mode: DisplayMode,
+  anchor: string,
+  nowMs = Date.now(),
+  tzOffsetMinutes?: number,
+): number {
+  const flooredNow = Math.floor(nowMs / HOUR_MS) * HOUR_MS;
+  if (mode === "around") return flooredNow - 12 * HOUR_MS;
+  if (mode === "future") return flooredNow;
+  return localMidnightOf(anchor, tzOffsetMinutes);
+}
 
-  if (mode === "around") {
-    // 24 h centred on now, but clipped to [0, 23] so slots are always
-    // within the same day.  When clipping shortens the window, the
-    // scroll position (getScrollTimeForMode) still centres on "now".
-    const startHour = Math.max(0, currentHour - 12);
-    const endHour = Math.min(23, currentHour + 12);
-    if (startHour >= endHour) {
-      return { startTime: "00:00:00", endTime: "23:59:59" };
-    }
-    return {
-      startTime: `${String(startHour).padStart(2, "0")}:00:00`,
-      endTime: `${String(endHour).padStart(2, "0")}:59:59`,
-    };
-  }
-
-  // future: from current hour to end of day
+export function getDayViewWindow(
+  mode: DisplayMode,
+  anchor: string,
+  nowMs = Date.now(),
+): DayViewWindow {
+  const originMs = getDayViewOrigin(mode, anchor, nowMs);
+  const shiftMs = localMidnightOf(anchor) - originMs;
   return {
-    startTime: `${String(currentHour).padStart(2, "0")}:00:00`,
+    originMs,
+    shiftMs,
+    startTime: "00:00:00",
     endTime: "23:59:59",
+    // around: "now" sits at the centre of the window; future: at the top.
+    scrollTime: mode === "around" ? "12:00:00" : undefined,
   };
 }
 
