@@ -11,20 +11,21 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
   const mono = "font-[family-name:var(--font-geist-mono)]";
 
   return (
-    <section className="layout-shell relative overflow-hidden pt-24 pb-32 lg:pt-32 lg:pb-40">
+    <section className="layout-shell relative overflow-hidden pt-20 pb-24 lg:pt-32 lg:pb-40">
       {/* Background giant numeral. */}
-      <div aria-hidden className="pointer-events-none absolute top-12 left-[-2rem] z-0 select-none">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute top-12 left-[-1rem] z-0 select-none lg:left-[-2rem]"
+      >
         <p className={`mkt-giant-numeral ${mono}`}>06</p>
       </div>
 
       {/* Piercing type. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-[18%] z-0 mkt-bleed-in select-none overflow-hidden"
+        className="pointer-events-none absolute inset-x-0 top-[10%] z-0 mkt-bleed-in select-none overflow-hidden sm:top-[18%]"
       >
-        <p
-          className={`mkt-pierce-stroke mkt-pierce-accent whitespace-nowrap text-center ${display}`}
-        >
+        <p className={`mkt-pierce-stroke mkt-pierce-accent text-center ${display}`}>
           {t.pierceText}
         </p>
       </div>

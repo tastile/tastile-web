@@ -179,15 +179,16 @@
 }
 
 .mkt-pierce-stroke {
-  font-size: clamp(4rem, 14vw, 13rem);
+  font-size: clamp(2.5rem, 14vw, 13rem);
   font-weight: 900;
   line-height: 0.82;
   letter-spacing: -0.06em;
   color: transparent;
   -webkit-text-stroke: 1px var(--border-strong);
-  white-space: nowrap;
   pointer-events: none;
   user-select: none;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .mkt-pierce-fill {

@@ -9,17 +9,17 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
   const mono = "font-[family-name:var(--font-geist-mono)]";
 
   return (
-    <section className="relative bg-background pt-12 pb-24 lg:pt-24 lg:pb-32">
+    <section className="relative overflow-hidden bg-background pt-10 pb-20 lg:pt-24 lg:pb-32">
       {/* Background giant numeral. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-12 left-[-2rem] z-0 select-none lg:top-16"
+        className="pointer-events-none absolute top-12 left-[-1rem] z-0 select-none lg:left-[-2rem] lg:top-16"
       >
         <p className={`mkt-giant-numeral ${mono}`}>01</p>
       </div>
 
       <div className="layout-shell relative z-10">
-        <header className="grid gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
+        <header className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
               {t.eyebrow}
@@ -47,11 +47,11 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
         </header>
 
         {/* Rows — no card chrome, just hairline rules. */}
-        <div className="mt-16">
+        <div className="mt-12 lg:mt-16">
           {t.rows.map((row) => (
             <article
               key={row.numeral}
-              className="mkt-condition-row grid gap-6 lg:grid-cols-[6rem_1fr_1.4fr] lg:gap-12"
+              className="mkt-condition-row grid grid-cols-1 gap-6 sm:grid-cols-[3rem_1fr] lg:grid-cols-[6rem_1fr_1.4fr] lg:gap-12"
             >
               <div className="flex items-start gap-3">
                 <span

@@ -11,13 +11,13 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
   const mono = "font-[family-name:var(--font-geist-mono)]";
 
   return (
-    <section className="layout-shell relative overflow-hidden pt-12 pb-32 lg:pt-16 lg:pb-48">
+    <section className="layout-shell relative overflow-hidden pt-10 pb-20 lg:pt-16 lg:pb-48">
       {/* Piercing type — bleeds across the hero. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 top-[28%] z-0 mkt-bleed-in select-none overflow-hidden"
       >
-        <p className={`mkt-pierce-stroke ${display} whitespace-nowrap text-center opacity-90`}>
+        <p className={`mkt-pierce-stroke ${display} text-center opacity-90`}>
           {t.pierceText}
         </p>
       </div>
@@ -25,12 +25,12 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
       {/* Background giant numeral "00". */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-12 right-[-3rem] z-0 select-none"
+        className="pointer-events-none absolute -top-12 right-[-1rem] z-0 select-none lg:right-[-3rem]"
       >
         <p className={`mkt-giant-numeral ${mono}`}>00</p>
       </div>
 
-      <div className="relative z-10 grid gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:items-start">
+      <div className="relative z-10 grid grid-cols-1 gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:items-start">
         <div>
           <p className="mkt-anim mkt-anim-1 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
             <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
@@ -70,7 +70,7 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
 
         {/* Product preview overflows downward into the next section. */}
         <div className="mkt-anim mkt-anim-3 relative">
-          <div className="mkt-bleed-down">
+          <div className="mkt-bleed-down lg:-mt-12">
             <ProductPreview t={t} lang={lang} />
           </div>
         </div>

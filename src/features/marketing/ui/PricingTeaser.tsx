@@ -22,17 +22,17 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
   const mono = "font-[family-name:var(--font-geist-mono)]";
 
   return (
-    <section className="relative overflow-hidden border-t border-surface-2 py-24 lg:py-32">
+    <section className="relative overflow-hidden border-t border-surface-2 py-20 lg:py-32">
       {/* Background giant numeral. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-12 right-[-2rem] z-0 select-none"
+        className="pointer-events-none absolute top-12 right-[-1rem] z-0 select-none lg:right-[-2rem]"
       >
         <p className={`mkt-giant-numeral ${mono}`}>04</p>
       </div>
 
       <div className="layout-shell relative z-10">
-        <header className="grid gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
+        <header className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
               {t.eyebrow}
@@ -87,9 +87,9 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
         </div>
 
         {/* Pricing as stacked horizontal bands, not parallel cards. */}
-        <div className="mt-16">
+        <div className="mt-12 lg:mt-16">
           {/* Free band. */}
-          <article className="mkt-price-band grid gap-8 lg:grid-cols-[10rem_1fr_2fr_auto] lg:items-center lg:gap-12">
+          <article className="mkt-price-band grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-[10rem_1fr_2fr_auto] lg:items-center lg:gap-12">
             <div>
               <p
                 className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
@@ -97,7 +97,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 01 / {t.free.name}
               </p>
               <p
-                className={`mt-3 text-5xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
+                className={`mt-3 text-4xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
               >
                 {t.free.price}
               </p>
@@ -110,7 +110,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               </p>
               <p className={`mt-2 text-base text-foreground-muted ${body}`}>{t.free.tagline}</p>
             </div>
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 sm:col-span-2 lg:col-span-1">
               {t.free.features.map((feature) => (
                 <li key={feature.title} className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-foreground-muted/15 text-foreground-muted">
@@ -127,7 +127,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 </li>
               ))}
             </ul>
-            <div className="flex flex-col items-start gap-2 lg:items-end">
+            <div className="flex flex-col items-start gap-2 sm:col-span-2 lg:col-span-1 lg:items-end">
               <Link
                 href="/login"
                 className={`mkt-cta inline-flex items-center gap-2 rounded-full border border-surface-2 bg-surface-0 px-5 py-3 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
@@ -141,7 +141,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
           </article>
 
           {/* Pro band — emphasized with subtle primary tint. */}
-          <article className="mkt-price-band mkt-price-band-pro grid gap-8 lg:grid-cols-[10rem_1fr_2fr_auto] lg:items-center lg:gap-12">
+          <article className="mkt-price-band mkt-price-band-pro grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-[10rem_1fr_2fr_auto] lg:items-center lg:gap-12">
             <div>
               <div className="flex items-center gap-2">
                 <p
@@ -156,7 +156,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 </span>
               </div>
               <p
-                className={`mt-3 flex items-baseline gap-2 text-5xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
+                className={`mt-3 flex items-baseline gap-2 text-4xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
               >
                 {billingInterval === "monthly" ? "$5" : "$50"}
                 <span className="text-base font-normal text-foreground-muted">
@@ -172,7 +172,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               </p>
               <p className={`mt-2 text-base text-foreground ${body}`}>{t.pro.tagline}</p>
             </div>
-            <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
+            <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 sm:col-span-2 lg:col-span-1">
               {t.pro.features.map((feature) => (
                 <li key={feature.title} className="flex items-start gap-3">
                   <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
@@ -189,7 +189,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 </li>
               ))}
             </ul>
-            <div className="flex flex-col items-start gap-2 lg:items-end">
+            <div className="flex flex-col items-start gap-2 sm:col-span-2 lg:col-span-1 lg:items-end">
               <Link
                 href="/pricing"
                 className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background hover:bg-interactive-hover ${display}`}
