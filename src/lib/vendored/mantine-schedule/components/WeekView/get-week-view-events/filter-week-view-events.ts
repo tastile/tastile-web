@@ -1,5 +1,7 @@
-import type { AnyDateValue, DayOfWeek, ScheduleEventData } from "../../../types";
-import { isEventInTimeRange, isWithinWeek, validateEvent } from "../../../utils";
+import dayjs from "dayjs";
+import type { AnyDateValue, DateStringValue, DayOfWeek, ScheduleEventData } from "../../../types";
+import { getWeekDays, isEventInTimeRange, validateEvent } from "../../../utils";
+import { getEventEndDate } from "./get-event-end-date";
 
 export interface FilterWeekViewEventsInput {
   /** Date (week start) at which events are positioned, used to check if events are all-day */
@@ -16,9 +18,30 @@ export interface FilterWeekViewEventsInput {
 
   /** First day of the week, 0 - Sunday, 1 - Monday, etc., used to calculate events positions */
   firstDayOfWeek?: DayOfWeek;
+
+  /**
+   * Explicit list of 7 visible dates (each formatted `YYYY-MM-DD HH:mm:ss`).
+   * When provided, takes precedence over `date` so the filter does not
+   * re-derive a scope week that might not match the rendered grid (e.g.
+   * around/future windows).
+   */
+  weekDays?: DateStringValue[];
+}
+
+function isEventInWeekDays(event: ScheduleEventData, weekDays: DateStringValue[]): boolean {
+  const eventStartDate = dayjs(event.start).startOf("day");
+  const actualEndDate = getEventEndDate(event);
+  return weekDays.some((day) => {
+    const dayDate = dayjs(day).startOf("day");
+    return (
+      (dayDate.isAfter(eventStartDate) || dayDate.isSame(eventStartDate)) &&
+      (dayDate.isBefore(actualEndDate) || dayDate.isSame(actualEndDate))
+    );
+  });
 }
 
 export function filterWeekViewEvents({
+  weekDays: explicitWeekDays,
   date,
   events,
   startTime,
@@ -29,12 +52,15 @@ export function filterWeekViewEvents({
     return [];
   }
 
+  const weekDays =
+    explicitWeekDays ?? getWeekDays({ week: date, firstDayOfWeek });
+
   const ids = new Set<string | number>();
   const filteredEvents: ScheduleEventData[] = [];
 
   for (const event of events) {
     if (
-      isWithinWeek({ event, targetWeek: date, firstDayOfWeek }) &&
+      isEventInWeekDays(event, weekDays) &&
       isEventInTimeRange({ event, startTime, endTime })
     ) {
       filteredEvents.push(validateEvent(event));

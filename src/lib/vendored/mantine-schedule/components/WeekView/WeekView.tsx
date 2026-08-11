@@ -560,14 +560,21 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
     });
   };
 
-  const weekdays =
-    weekDatesProp ??
-    getWeekDays({
-      week: date,
-      withWeekendDays,
-      weekendDays: ctx.getWeekendDays(weekendDays),
-      firstDayOfWeek: ctx.getFirstDayOfWeek(firstDayOfWeek),
-    });
+  // Normalize `weekDatesProp` to the "YYYY-MM-DD HH:mm:ss" key format
+  // used by `getWeekDays` / `getWeekPositionedEvents`. Without this the
+  // rendering loop iterates `weekDatesProp` ("YYYY-MM-DD") but
+  // `weekEvents.regularEvents` keys are "YYYY-MM-DD 00:00:00", so the
+  // per-day lookup always misses and no event renders.
+  const weekdays: DateStringValue[] = weekDatesProp
+    ? weekDatesProp.map((d) =>
+        d.length > 10 ? (d as DateStringValue) : (`${d} 00:00:00` as DateStringValue),
+      )
+    : getWeekDays({
+        week: date,
+        withWeekendDays,
+        weekendDays: ctx.getWeekendDays(weekendDays),
+        firstDayOfWeek: ctx.getFirstDayOfWeek(firstDayOfWeek),
+      });
 
   const expandedEvents = expandRecurringEvents({
     events,
@@ -579,8 +586,9 @@ export const WeekView = factory<WeekViewFactory>((_props) => {
   });
 
   const weekEvents = getWeekViewEvents({
-    date: weekDatesProp ? (weekdays[0] ?? date) : date,
+    date: weekdays[0] ?? date,
     events: expandedEvents,
+    weekDays: weekdays,
     startTime,
     endTime,
     intervalMinutes,

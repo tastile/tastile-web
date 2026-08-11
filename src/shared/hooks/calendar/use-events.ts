@@ -3,7 +3,7 @@
 import type { CalendarEvent, CalendarEventInput } from "@/calendar/model/calendar";
 import { queryKeys } from "@/shared/query/query-keys";
 import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface UseEventsState {
   events: CalendarEvent[];
@@ -105,11 +105,115 @@ export function notifyEventsChanged(): void {
   window.dispatchEvent(new Event(EVENTS_CHANGED_EVENT));
 }
 
+/** Read the chunk cache synchronously for the supplied range. Returns the
+ *  accumulator plus a loading flag set to `true` only when at least one
+ *  chunk is still missing. Used by `useEvents` to seed the lazy initial
+ *  state so the first paint already reflects the cache state — a fully-
+ *  cached range (including one that returned [] the previous time it was
+ *  fetched) paints directly with real data, no skeleton flash. Mirrors
+ *  the cache walk inside `reload`, but never reaches the network. */
+function readChunkState(
+  queryClient: ReturnType<typeof useQueryClient>,
+  range: UseEventsRange | undefined,
+): { events: CalendarEvent[]; loading: boolean } {
+  if (typeof window === "undefined") return { events: [], loading: true };
+  const start = range?.start;
+  const end = range?.end;
+  if (!start || !end) return { events: [], loading: true };
+  if (range?.ownerIds?.length === 0) return { events: [], loading: false };
+
+  // Optional chaining throughout — after the `!start || !end` return
+  // above `range` is guaranteed defined at runtime, but TypeScript's
+  // narrowing across early returns is not reliable inside nested
+  // helpers, and `useEventsRange` is `T | undefined` per the public
+  // hook signature.
+  const chunkKey = (s: string, e: string) =>
+    buildChunkKey(
+      s,
+      e,
+      range?.minMinutes,
+      range?.includeRecurring,
+      range?.ownerIds,
+      range?.summary,
+      range?.minRecurringStepMs,
+      range?.limit,
+    );
+
+  const maxWindowDays = range?.maxWindowDays;
+
+  if (maxWindowDays) {
+    const chunks = splitRange(start, end, maxWindowDays);
+    const acc: CalendarEvent[] = [];
+    const seen = new Set<string>();
+    let allCached = true;
+    for (const c of chunks) {
+      const cached = queryClient.getQueryData<CalendarEvent[]>(chunkKey(c.start, c.end));
+      if (cached !== undefined) {
+        for (const ev of cached) {
+          if (!seen.has(ev.id)) {
+            seen.add(ev.id);
+            acc.push(ev);
+          }
+        }
+      } else {
+        allCached = false;
+      }
+    }
+    return { events: allCached ? acc : [], loading: !allCached };
+  }
+
+  const cached = queryClient.getQueryData<CalendarEvent[]>(chunkKey(start, end));
+  if (cached !== undefined) {
+    return { events: cached, loading: false };
+  }
+  return { events: [], loading: true };
+}
+
 export function useEvents(range?: UseEventsRange): UseEventsState {
   const queryClient = useQueryClient();
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const initial = readChunkState(queryClient, range);
+  const [events, setEvents] = useState<CalendarEvent[]>(initial.events);
+  const [loading, setLoading] = useState<boolean>(initial.loading);
   const [error, setError] = useState<Error | null>(null);
+
+  // Reseed events/loading from the chunk cache whenever the range identity
+  // changes. `useState` only runs its initializer on mount, so on a rerender
+  // (Week → Day → Week round-trip) the state would otherwise keep the
+  // previous view's events until the effect-driven reload's `setEvents`
+  // commits — a visible flash of the wrong view's data, even though the
+  // chunk cache itself already has the answer. Re-seeding during render
+  // makes React discard the stale pass before commit, so the consumer
+  // sees the cached answer in the very next paint.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const rangeKey = [
+    range?.start ?? "",
+    range?.end ?? "",
+    range?.minMinutes ?? "",
+    range?.includeRecurring ?? "",
+    range?.ownerIds ? [...range.ownerIds].sort().join(",") : "",
+    range?.summary ?? "",
+    range?.minRecurringStepMs ?? "",
+    range?.maxWindowDays ?? "",
+    range?.limit ?? "",
+  ].join("|");
+  const [committedRangeKey, setCommittedRangeKey] = useState(rangeKey);
+  if (committedRangeKey !== rangeKey) {
+    const reseed = readChunkState(queryClient, range);
+    setCommittedRangeKey(rangeKey);
+    setEvents(reseed.events);
+    setLoading(reseed.loading);
+  }
+
+  // In-flight dedupe. When the effect that drives `reload` fires twice
+  // for the same range (React 19 dev / StrictMode-style double-invoke,
+  // or the microtask-deferred reload racing with an external
+  // `events-changed` listener), both invocations walk the same still-
+  // empty cache and each kicks off a fresh set of parallel chunk
+  // fetches — Week navigation ends up firing 14 requests for 7 chunks.
+  // Track the most recent in-flight reload keyed by range identity;
+  // subsequent reload() calls with the same key attach to that promise
+  // instead of duplicating the network round.
+  const inflightRef = useRef<{ key: string; promise: Promise<void> } | null>(null);
 
   const reload = useCallback(async () => {
     if (typeof window === "undefined") return;
@@ -132,21 +236,37 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     const minRecurringStepMs = range?.minRecurringStepMs;
     const maxWindowDays = range?.maxWindowDays;
     const limit = range?.limit;
-    if (!start || !end) {
-      // No range yet (e.g. component not mounted with a window); the
-      // caller can re-invoke reload() once range is available.
-      setEvents([]);
-      setLoading(false);
-      return;
+
+    // Identity key for the in-flight dedupe. Every field that affects
+    // either the cache walk or the upstream request must appear here;
+    // otherwise a minMinutes/ownerIds swap would dedupe against the
+    // previous request and serve stale data.
+    const dedupeKey =
+      `${start ?? ""}|${end ?? ""}|${minMinutes ?? ""}|${includeRecurring ?? ""}|` +
+      `${(ownerIds ?? []).join(",")}|${summary ?? ""}|${minRecurringStepMs ?? ""}|` +
+      `${maxWindowDays ?? ""}|${limit ?? ""}`;
+
+    const existing = inflightRef.current;
+    if (existing && existing.key === dedupeKey) {
+      return existing.promise;
     }
-    // An explicitly empty project selection means "show none".  It is
-    // distinct from an omitted selection, which means all workspaces.
-    if (ownerIds?.length === 0) {
-      setEvents([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+
+    const promise = (async () => {
+      if (!start || !end) {
+        // No range yet (e.g. component not mounted with a window); the
+        // caller can re-invoke reload() once range is available.
+        setEvents([]);
+        setLoading(false);
+        return;
+      }
+      // An explicitly empty project selection means "show none".  It is
+      // distinct from an omitted selection, which means all workspaces.
+      if (ownerIds?.length === 0) {
+        setEvents([]);
+        setError(null);
+        setLoading(false);
+        return;
+      }
 
     /** Build the query-string for a single chunk. */
     const buildQs = (s: string, e: string) => {
@@ -318,7 +438,22 @@ await runReload()
   .finally(() => {
     setLoading(false);
   });
-  }, [
+})();
+
+// Register this promise as the active in-flight reload and arm a
+// cleanup that clears the slot only if no newer reload has supplanted
+// it. We key on promise identity (not the dedupe key) so a stale
+// in-flight reload that finishes first doesn't accidentally clear the
+// slot for a newer reload that's still pending.
+inflightRef.current = { key: dedupeKey, promise };
+promise.finally(() => {
+  if (inflightRef.current?.promise === promise) {
+    inflightRef.current = null;
+  }
+});
+
+return promise;
+}, [
     range?.start,
     range?.end,
     range?.minMinutes,

@@ -1,7 +1,7 @@
 import type { CalendarEvent, EventColor } from "@/calendar/model/calendar";
+import type { DisplayMode } from "@/lib/calendar/layout";
 // src/components/schedule/eventAdapter.ts
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
-import type { DisplayMode } from "@/lib/calendar/layout";
 import dayjs from "dayjs";
 
 const COLOR_MAP: Record<EventColor, string> = {

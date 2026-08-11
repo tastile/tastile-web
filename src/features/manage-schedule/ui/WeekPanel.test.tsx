@@ -12,9 +12,11 @@ vi.mock("@/lib/vendored/mantine-schedule", () => ({
   WeekView: ({
     onTimeSlotClick,
     onSlotDragEnd,
+    events,
   }: {
     onTimeSlotClick?: (arg: { slotStart: string; slotEnd: string }) => void;
     onSlotDragEnd?: (start: string, end: string) => void;
+    events?: { id: string }[];
   }) => (
     <div data-testid="week-view">
       <button
@@ -29,6 +31,9 @@ vi.mock("@/lib/vendored/mantine-schedule", () => ({
       >
         drag
       </button>
+      {(events ?? []).map((e) => (
+        <div key={e.id} data-testid={`week-event-${e.id}`} />
+      ))}
     </div>
   ),
 }));
@@ -38,14 +43,7 @@ vi.mock("../ErrorBanner", () => ({
     error ? <div data-testid="error-banner">{error.message}</div> : null,
 }));
 
-vi.mock("./LoadingOverlay", () => ({
-  LoadingOverlay: ({ loading, children }: { loading: boolean; children: React.ReactNode }) => {
-    if (loading) return <div data-testid="week-loading">loading</div>;
-    return <>{children}</>;
-  },
-}));
-
-vi.mock("../eventAdapter", () => ({
+vi.mock("./eventAdapter", () => ({
   toScheduleEvents: (e: CalendarEvent) => [
     {
       id: e.id,
@@ -58,6 +56,20 @@ vi.mock("../eventAdapter", () => ({
       payload: e,
     },
   ],
+  buildLoadingWeekEvents: () => [
+    {
+      id: "__loading_week_synthetic",
+      title: "__loading__",
+      start: "2026-07-30T09:00:00.000Z",
+      end: "2026-07-30T10:00:00.000Z",
+      allDay: false,
+      color: "gray",
+      recurrence: { frequency: "none" },
+      createdAt: "",
+      updatedAt: "",
+    },
+  ],
+  MONTH_LOADING_EVENT_TITLE: "__loading__",
 }));
 
 vi.mock("../renderEventBody", () => ({
@@ -153,8 +165,8 @@ describe("WeekPanel", () => {
     });
   });
 
-  describe("loading overlay gating", () => {
-    it("shows week-loading overlay when loading and events is empty", () => {
+  describe("loading skeleton gating", () => {
+    it("marks the panel loading when loading=true and events is empty", () => {
       render(
         <WeekPanel
           range={range}
@@ -169,10 +181,28 @@ describe("WeekPanel", () => {
           displayMode="scope"
         />,
       );
-      expect(screen.getByTestId("week-loading")).toBeInTheDocument();
+      expect(screen.getByTestId("week-panel")).toHaveAttribute("data-loading");
     });
 
-    it("does NOT show week-loading overlay when events are present (partial cache)", () => {
+    it("injects synthetic skeleton events into the grid while loading", () => {
+      render(
+        <WeekPanel
+          range={range}
+          anchor="2026-07-30"
+          zoom={84}
+          events={[]}
+          loading={true}
+          error={null}
+          onEventClick={vi.fn()}
+          onSlotCreate={vi.fn()}
+          onZoomBy={vi.fn()}
+          displayMode="scope"
+        />,
+      );
+      expect(screen.getByTestId("week-event-__loading_week_synthetic")).toBeInTheDocument();
+    });
+
+    it("does NOT inject skeleton events once real events arrive (partial cache)", () => {
       const cached = {
         id: "evt-cached",
         title: "Cached event",
@@ -197,7 +227,8 @@ describe("WeekPanel", () => {
           displayMode="scope"
         />,
       );
-      expect(screen.queryByTestId("week-loading")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("week-event-__loading_week_synthetic")).not.toBeInTheDocument();
+      expect(screen.getByTestId("week-event-evt-cached")).toBeInTheDocument();
     });
   });
 });

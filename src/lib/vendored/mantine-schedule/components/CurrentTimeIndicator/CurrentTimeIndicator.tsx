@@ -12,7 +12,7 @@ import {
   useStyles,
 } from "@mantine/core";
 import { useDatesContext } from "@mantine/dates";
-import { useInterval } from "@mantine/hooks";
+import { useInterval, useMounted } from "@mantine/hooks";
 import dayjs from "dayjs";
 import { useState } from "react";
 import type { AnyDateValue, DateLabelFormat } from "../../types";
@@ -143,6 +143,10 @@ export const CurrentTimeIndicator = factory<CurrentTimeIndicatorFactory>((_props
   useInterval(() => setTick((tick) => tick + 1), 1000 * 60, {
     autoInvoke: true,
   });
+  // The indicator's position is derived from the wall clock, so the SSR pass
+  // and the hydration pass never agree on `--top-offset`. Render nothing until
+  // mounted so the first client paint is the only one that reads the clock.
+  const mounted = useMounted();
 
   const now = getCurrentTime ? dayjs(getCurrentTime()) : dayjs();
   const offsetPercent = getCurrentTimePosition({ startTime, endTime, intervalMinutes, now });
@@ -150,7 +154,7 @@ export const CurrentTimeIndicator = factory<CurrentTimeIndicatorFactory>((_props
     ? formatDate({ locale: ctx.getLocale(locale), date: now, format: currentTimeFormat })
     : "";
 
-  if (!isInTimeRange({ date: now, startTime, endTime })) {
+  if (!mounted || !isInTimeRange({ date: now, startTime, endTime })) {
     return null;
   }
 

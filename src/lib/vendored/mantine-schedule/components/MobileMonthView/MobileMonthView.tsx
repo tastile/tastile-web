@@ -314,12 +314,16 @@ export const MobileMonthView = factory<MobileMonthViewFactory>((_props) => {
         firstDayPosition.current?.weekIndex === weekIndex &&
         firstDayPosition.current?.dayIndex === dayIndex;
 
-      const indicators = dayEvents.slice(0, 3).map((event) => (
+      const indicators = dayEvents.slice(0, 3).map((event, idx) => (
         <div
           {...getStyles("mobileMonthViewDayIndicator", {
             style: { backgroundColor: getThemeColor(event.color, theme) },
           })}
-          key={event.id}
+          // Upstream `/v1/timeline` can return id=`""` (placement_id missing)
+          // or the same id across recurring instances of one tile. Compose
+          // a per-cell-unique key from id+position so React/Mantine Box no
+          // longer fire "Each child in a list should have a unique key".
+          key={event.id ? `${dayDate}-${event.id}-${idx}` : `${dayDate}-indicator-${idx}`}
         />
       ));
 

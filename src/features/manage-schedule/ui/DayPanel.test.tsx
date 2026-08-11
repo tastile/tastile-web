@@ -448,4 +448,23 @@ describe("DayPanel", () => {
       expect(onSlotCreate).toHaveBeenCalledWith("2026-07-30 00:00:00", "2026-07-30 00:30:00");
     });
 
-    it("labels gutter rows with real time, dating the midnight ro
+    it("labels gutter rows with real time, dating the midnight rollover", () => {
+      renderAround();
+      // virtual 09:00 is real 00:00 → the day rolls over here
+      expect(screen.getByTestId("grid-slot-label")).toHaveTextContent("7/30 00:00");
+    });
+
+    it("shifts the current-time indicator so it lands on real now", () => {
+      renderAround();
+      expect(screen.getByTestId("grid-now")).toHaveTextContent(
+        new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString(),
+      );
+    });
+
+    it("does NOT shift events on the mobile path (it buckets by calendar day)", () => {
+      bp.current = "mobile";
+      renderAround();
+      expect(screen.getByTestId("mobile-month-view")).toHaveTextContent(prevDayEvent.start);
+    });
+  });
+});

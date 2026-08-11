@@ -58,14 +58,14 @@ export function WeekPanel({
   // displayMode is forwarded so around/future populate the actual
   // 7 dates the rendered grid shows (not the scope week's Sunday).
   const loadingEvents = useMemo(
-    () => (loading ? buildLoadingWeekEvents(anchor, firstDayOfWeek, displayMode) : []),
-    [loading, anchor, firstDayOfWeek, displayMode],
+    () => (loading && events.length === 0 ? buildLoadingWeekEvents(anchor, firstDayOfWeek, displayMode) : []),
+    [loading, events.length, anchor, firstDayOfWeek, displayMode],
   );
   const realScheduleEvents = useMemo(
     () => events.flatMap(toScheduleEvents),
     [events],
   );
-  const scheduleEvents = loading ? loadingEvents.flatMap(toScheduleEvents) : realScheduleEvents;
+  const scheduleEvents = events.length > 0 ? realScheduleEvents : loadingEvents.flatMap(toScheduleEvents);
 
   // Zoom via Ctrl+wheel — capture phase on container so it fires before ScrollArea
   const containerRef = useRef<HTMLDivElement>(null);
@@ -97,7 +97,7 @@ export function WeekPanel({
       ref={containerRef}
       className="relative h-full"
       data-testid="week-panel"
-      data-loading={loading || undefined}
+      data-loading={loading && events.length === 0 ? true : undefined}
     >
       {error && <ErrorBanner error={error} />}
       <WeekView

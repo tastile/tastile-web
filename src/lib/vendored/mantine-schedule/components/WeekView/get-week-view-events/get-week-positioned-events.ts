@@ -40,6 +40,14 @@ export interface GetWeekPositionedEventsInput {
 
   /** If set to false, weekend days are hidden @default true */
   withWeekendDays?: boolean;
+
+  /**
+   * Explicit list of 7 visible dates (each formatted `YYYY-MM-DD HH:mm:ss`).
+   * When provided, takes precedence over the scope-week computation of
+   * `date` so event positioning matches the dates the grid actually
+   * renders (matters for around/future modes).
+   */
+  weekDays?: DateStringValue[];
 }
 
 /** Events grouped by week day date (YYYY-MM-DD 00:00:00) and by columns */
@@ -50,6 +58,7 @@ export interface GroupedWeekEvents {
 }
 
 export function getWeekPositionedEvents({
+  weekDays: explicitWeekDays,
   date,
   events,
   startTime,
@@ -59,7 +68,9 @@ export function getWeekPositionedEvents({
   weekendDays = [0, 6],
   withWeekendDays = true,
 }: GetWeekPositionedEventsInput): GroupedWeekEvents {
-  const weekDays = getWeekDays({ week: date, firstDayOfWeek, withWeekendDays, weekendDays });
+  const weekDays =
+    explicitWeekDays ??
+    getWeekDays({ week: date, firstDayOfWeek, withWeekendDays, weekendDays });
   const visibleDaysCount = weekDays.length;
   const weekStartDate = dayjs(weekDays[0]);
   const weekEndDate = dayjs(weekDays[weekDays.length - 1]);

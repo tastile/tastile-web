@@ -1,12 +1,12 @@
-import { ScheduleTimeline } from "@/features/manage-schedule/ui/ScheduleTimeline";
 import { MinuteClockProvider } from "@/shared/hooks/minute-clock";
 import { Suspense } from "react";
+import { TimelinePageClient } from "./timeline-page-client";
 
 export default function TimelinePage() {
   return (
     <Suspense fallback={null}>
       <MinuteClockProvider>
-        <ScheduleTimeline initialView="day" />
+        <TimelinePageClient />
       </MinuteClockProvider>
     </Suspense>
   );

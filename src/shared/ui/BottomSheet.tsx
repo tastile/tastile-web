@@ -29,11 +29,10 @@ export function BottomSheet({
       position="bottom"
       size="80vh"
       withCloseButton={!hideClose}
-      title={title ? <h2 id="bottom-sheet-title">{title}</h2> : undefined}
-      aria-labelledby={title ? "bottom-sheet-title" : undefined}
+      title={title}
       transitionProps={{ transition: "slide-up", duration: 240 }}
       overlayProps={{ backgroundOpacity: 0.4, blur: 2 }}
-      classNames={{ content: cn("rounded-t-2xl", className) }}
+      classNames={{ content: cn("rounded-t-md", className) }}
       {...{ [PANEL_ANIM_ATTR]: "" }}
       withOverlay
       lockScroll

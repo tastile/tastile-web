@@ -5,7 +5,7 @@ import type { CalendarEvent } from "@/calendar/model/calendar";
 import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
 import { YearView } from "@/lib/vendored/mantine-schedule";
 import { ErrorBanner } from "./ErrorBanner";
-import { LoadingOverlay } from "./LoadingOverlay";
+import { YearSkeleton } from "./YearSkeleton";
 import { toScheduleEvents } from "./eventAdapter";
 
 type Props = {
@@ -28,20 +28,25 @@ export function YearPanel({ range, anchor, zoom, displayMode, events, loading, e
   // indicator dots. Props that do not apply to this view (zoom, range,
   // onEventClick) are kept in the type contract for parity with the
   // other panels but ignored here.
-  void range;
-  void zoom;
   const scheduleEvents = events.flatMap(toScheduleEvents);
+  const showSkeleton = loading && events.length === 0;
   return (
-    <div className="relative h-full" data-testid="year-panel">
+    <div
+      className="relative h-full"
+      data-testid="year-panel"
+      data-loading={showSkeleton ? true : undefined}
+    >
       {error && <ErrorBanner error={error} />}
-      <LoadingOverlay loading={loading && events.length === 0}>
+      {showSkeleton ? (
+        <YearSkeleton />
+      ) : (
         <YearView
           data-testid="year-view"
           date={anchor}
           events={scheduleEvents}
           withHeader={false}
         />
-      </LoadingOverlay>
+      )}
     </div>
   );
 }

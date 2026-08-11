@@ -67,15 +67,15 @@ export function DayPanel({
   // at realistic times of the day. renderEventBody detects the sentinel
   // and substitutes a Skeleton card of the same shape.
   const loadingEvents = useMemo(
-    () => (loading ? buildLoadingDayEvents(anchor, shiftMs) : []),
-    [loading, anchor, shiftMs],
+    () => (loading && events.length === 0 ? buildLoadingDayEvents(anchor, shiftMs) : []),
+    [loading, events.length, anchor, shiftMs],
   );
   const realScheduleEvents = useMemo(
     () =>
       events.flatMap((e) => toScheduleEvents(shiftEvent(e, shiftMs)).map((se) => ({ ...se, payload: e }))),
     [events, shiftMs],
   );
-  const scheduleEvents = loading ? loadingEvents.flatMap(toScheduleEvents) : realScheduleEvents;
+  const scheduleEvents = events.length > 0 ? realScheduleEvents : loadingEvents.flatMap(toScheduleEvents);
   // The mobile fallback buckets by calendar day and has no virtual-day
   // notion, so it must see real times.
   const mobileEvents = shiftMs === 0 ? scheduleEvents : events.flatMap(toScheduleEvents);

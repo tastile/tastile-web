@@ -7,7 +7,7 @@ import { getModeRange } from "@/lib/calendar/layout";
 import { useSidePanel } from "@/shared/context/side-panel-context";
 import { useEvents } from "@/shared/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { AgendaPanel } from "./AgendaPanel";
 import { DayPanel } from "./DayPanel";
 import { MonthPanel } from "./MonthPanel";
@@ -26,6 +26,11 @@ function toRFC3339(dateStr: string): string {
   return `${dateStr}T00:00:00.000Z`;
 }
 
+/** Month and year render a compact projection: a duration floor plus
+ *  collapsed recurring occurrences. Day / week / agenda show everything. */
+function isCompactView(view: Props["initialView"]): boolean {
+  return view === "month" || view === "year";
+}
 export function ScheduleTimeline({ initialView }: Props) {
   const state = useTimelineState(initialView);
   const tzOffsetMinutes = useMemo(() => -new Date().getTimezoneOffset(), []);
@@ -68,17 +73,39 @@ export function ScheduleTimeline({ initialView }: Props) {
     return range;
   }, [range, state.view, effectiveAnchor]);
 
-  const [minDuration, setMinDuration] = useState(initialView === "month" || initialView === "year" ? 5 : 0);
+  // Seed from the RESOLVED view, not the `initialView` route prop. On
+  // `/dashboard/timeline?view=month` the prop is "day" while the resolved
+  // view is "month", and seeding from the prop would mount the compact
+  // month projection with the non-compact minMinutes=0 — a mismatch the
+  // reset below can never correct, because the view never changes.
+  const [minDuration, setMinDuration] = useState(isCompactView(state.view) ? 5 : 0);
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[] | undefined>(undefined);
-  const [showRecurring, setShowRecurring] = useState(
-    initialView !== "month" && initialView !== "year",
-  );
+  const [showRecurring, setShowRecurring] = useState(!isCompactView(state.view));
 
-  useEffect(() => {
-    const compact = state.view === "month" || state.view === "year";
+  // Compact views (month / year) default to a 5-minute floor and hide
+  // recurring occurrences; the other views show everything. Both remain
+  // user-adjustable from CalendarSidePanel, so they are real state — but
+  // they must RESET during the render that first observes the new view,
+  // not in a `useEffect` afterwards.
+  //
+  // With an effect, the first render after a view switch reached
+  // `useEvents` with the new view's chunking (maxWindowDays / summary)
+  // but the PREVIOUS view's `minDuration`. Because `minMinutes` is part
+  // of the chunk cache key, that render fired a full set of requests
+  // against keys nothing will ever read again (Week -> Month fired 5
+  // chunks at min_minutes=0, then 5 more at min_minutes=5 once the
+  // effect landed), and the return trip re-fetched all 7 Week chunks at
+  // min_minutes=5 instead of hitting the min_minutes=0 chunks already in
+  // cache. Adjusting during render makes React discard the stale pass
+  // before commit, so `useEvents` only ever sees a consistent pairing.
+  // https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+  const [viewForParams, setViewForParams] = useState(state.view);
+  if (viewForParams !== state.view) {
+    const compact = isCompactView(state.view);
+    setViewForParams(state.view);
     setMinDuration(compact ? 5 : 0);
     setShowRecurring(!compact);
-  }, [state.view]);
+  }
 
   // The Rust /v1/timeline handler caps each request at 31 days, so any
   // view that inherently spans more must be chunked.  Year = 365 days

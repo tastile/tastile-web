@@ -1,4 +1,5 @@
 /** @vitest-environment jsdom */
+import type { CalendarEvent } from "@/calendar/model/calendar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import React from "react";
@@ -138,6 +139,138 @@ describe("useEvents chunk cache", () => {
     });
     expect(fetchMock).not.toHaveBeenCalled();
     expect(result.current.loading).toBe(false);
+    expect(result.current.events).toHaveLength(7);
+  });
+
+  it("seeds events and loading=false from the chunk cache on initial mount (no skeleton flash on cache hit)", async () => {
+    // Pre-populate the cache for an existing range. When the hook
+    // mounts against this range the lazy initial state must read
+    // straight from the cache, so the first paint already has events
+    // and `loading=false` — no skeleton flash.
+    const event = makeEvent("e-1", "2026-08-11T09:00:00.000Z", "2026-08-11T10:00:00.000Z");
+    const qc = makeQueryClient();
+    qc.setQueryData<CalendarEvent[]>(
+      [
+        "v1",
+        "events-chunk",
+        "2026-08-11T00:00:00.000Z",
+        "2026-08-12T00:00:00.000Z",
+        0,
+        true,
+        [],
+        null,
+        null,
+        null,
+      ],
+      // CalendarEvent requires extra fields that the cache helper
+      // doesn't really need for this test — cast through `unknown`.
+      [event as unknown as CalendarEvent],
+    );
+
+    const { result } = renderHook(
+      () => useEvents({ start: "2026-08-11T00:00:00.000Z", end: "2026-08-12T00:00:00.000Z" }),
+      { wrapper: makeWrapper(qc) },
+    );
+
+    // Initial render reads the cache synchronously.
+    expect(result.current.loading).toBe(false);
+    expect(result.current.events).toEqual([event]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("negative cache: an empty [] chunk result seeds loading=false on remount", async () => {
+    // The user-visible scenario: previous fetch for the range returned
+    // no tiles. That empty array must be cached and serve the next
+    // mount synchronously, so the user doesn't see a skeleton on
+    // re-navigation to a range that has no events.
+    fetchMock.mockResolvedValue(jsonResponse({ events: [] }));
+
+    const qc = makeQueryClient();
+    const range = { start: "2026-08-11T00:00:00.000Z", end: "2026-08-12T00:00:00.000Z" };
+
+    // First mount fetches and stores [] in the cache.
+    const first = renderHook(() => useEvents(range), { wrapper: makeWrapper(qc) });
+    await waitFor(() => expect(first.result.current.loading).toBe(false));
+    expect(first.result.current.events).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Unmount, then remount against the same range. The cache must
+    // serve the empty array synchronously: loading=false on first
+    // render, no second network call.
+    first.unmount();
+    fetchMock.mockClear();
+    const second = renderHook(() => useEvents(range), { wrapper: makeWrapper(qc) });
+    expect(second.result.current.loading).toBe(false);
+    expect(second.result.current.events).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("maxWindowDays: range change with every chunk already cached skips the network (Week → Day → Week round-trip)", async () => {
+    // Simulates the user-visible scenario: visit Week (7 chunks cached),
+    // navigate to Day (Day chunk fetched, Week chunks untouched),
+    // navigate back to Week. The Week return must hit the existing
+    // chunk cache for all 7 days and not call fetch — that is the
+    // "should be instant" promise the user expects.
+    const events = Array.from({ length: 7 }, (_, i) =>
+      makeEvent(`w${i}`, `2026-08-${10 + i}T00:00:00.000Z`, `2026-08-${10 + i}T01:00:00.000Z`),
+    );
+    fetchMock.mockImplementation(async (url: string) => {
+      const u = new URL(url, "http://localhost");
+      const start = u.searchParams.get("start") ?? "";
+      const day = events.find((e) => e.start === start);
+      return jsonResponse({ events: day ? [day] : [] });
+    });
+
+    const qc = makeQueryClient();
+    const weekRange: Args = {
+      start: "2026-08-10T00:00:00.000Z",
+      end: "2026-08-17T00:00:00.000Z",
+      maxWindowDays: 1,
+    };
+    // Day's range is the third day of the Week, so its chunk key
+    // (Aug 12 → Aug 13) is identical to one of Week's chunks. The
+    // Day → Week → Day round-trip therefore exercises only chunks
+    // that are already in cache.
+    const dayRange: Args = {
+      start: "2026-08-12T00:00:00.000Z",
+      end: "2026-08-13T00:00:00.000Z",
+    };
+
+    interface Args {
+      start: string;
+      end: string;
+      maxWindowDays?: number;
+    }
+
+    const { result, rerender } = renderHook(({ args }: { args: Args }) => useEvents(args), {
+      wrapper: makeWrapper(qc),
+      initialProps: { args: weekRange },
+    });
+
+    // First mount on Week — fetches all 7 chunks.
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchMock).toHaveBeenCalledTimes(7);
+    expect(result.current.events).toHaveLength(7);
+
+    // Navigate to Day. Day's chunk key matches the Aug 12-13 Week
+    // chunk, so no new fetch is needed.
+    fetchMock.mockClear();
+    rerender({ args: dayRange });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(result.current.events).toHaveLength(1);
+
+    // Navigate back to Week. All 7 Week chunks must still be cached,
+    // so this must NOT issue any fetch. If it does, the cache walk is
+    // missing chunks and the user sees a skeleton/lag on every Week
+    // re-entry.
+    fetchMock.mockClear();
+    rerender({ args: weekRange });
+    // Synchronous cache walk: loading flips to false in the same tick
+    // as the rerender. waitFor is the only async step here; the
+    // assertions below verify nothing else happened in the meantime.
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(result.current.events).toHaveLength(7);
   });
 
@@ -288,5 +421,53 @@ describe("useEvents chunk cache", () => {
 
     // Different minMinutes → different cache key → miss → fetch.
     expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("inflight guard: concurrent reload() calls with the same range share one fetch promise", async () => {
+    // The Week-lag root cause: when the effect that drives reload()
+    // fires twice for the same range (React 19 dev / StrictMode-style
+    // double-invoke, or any other source of re-entrancy), both
+    // invocations walk the same still-empty chunk cache and each kick
+    // off a fresh set of parallel fetches. Without the inflight guard
+    // Week navigation fires 14 requests for 7 chunks. With the guard,
+    // a second reload() call while the first is still pending returns
+    // the existing in-flight promise and issues zero additional
+    // network requests.
+    //
+    // We can't easily simulate React's effect double-invoke, but we
+    // can call reload() directly while the initial mount's fetch is
+    // still pending — same shape, same race.
+    let release: (value: Response) => void = () => {};
+    const blocked = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    fetchMock.mockReturnValue(blocked);
+
+    const qc = makeQueryClient();
+    const { result } = renderHook(
+      () => useEvents({ start: "2026-08-11T00:00:00.000Z", end: "2026-08-12T00:00:00.000Z" }),
+      { wrapper: makeWrapper(qc) },
+    );
+
+    // Wait for the effect-driven reload to start its fetch.
+    await waitFor(() => expect(result.current.loading).toBe(true));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    // Fire a second reload() while the first is still pending. The
+    // dedupe guard should attach to the existing in-flight promise
+    // and NOT issue a second fetch. We capture the promise but don't
+    // await it yet — awaiting here would deadlock because the original
+    // fetch is still blocked.
+    fetchMock.mockClear();
+    const secondReload = result.current.reload();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    // Resolve the original fetch; the IIFE unwinds, setLoading(false)
+    // runs, and the shared promise resolves so the awaited reload
+    // call from the test can complete too.
+    release(jsonResponse({ events: [] }));
+    await secondReload;
+    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.loading).toBe(false));
   });
 });
