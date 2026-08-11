@@ -6,6 +6,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useSyncExternalStore,
 } from "react";
@@ -87,14 +88,19 @@ export function useSidePanel(content: ReactNode) {
   const register = useContext(SidePanelRegisterContext);
   const lastContentRef = useRef<ReactNode | null>(null);
 
-  // Single effect: push the latest content, and only when it actually
-  // changes by reference. Skipping register(null) on cleanup is
-  // intentional — it would fire on every render of the calling page
-  // (because the JSX argument is recreated each time) and cause a
-  // setContent storm that React then trips the "Maximum update depth
-  // exceeded" guard on. The page tree does not subscribe to the store,
-  // so updating content without a transient null is safe.
-  useEffect(() => {
+  // Register content via a layout effect (not plain effect) so the
+  // side panel renders with content on the very first paint after
+  // hydration — no "closed/missing" flash. A plain effect fires after
+  // paint and produces a one-frame "closed" pose that is undesirable
+  // now that the panel has no close state at all.
+  //
+  // Skipping register(null) on cleanup is intentional — it would fire
+  // on every render of the calling page (because the JSX argument is
+  // recreated each time) and cause a setContent storm that React
+  // trips "Maximum update depth exceeded" on. The page tree does not
+  // subscribe to the store (only SideToolPanel does), so updating
+  // content without a transient null is safe.
+  useLayoutEffect(() => {
     if (lastContentRef.current === content) return;
     lastContentRef.current = content;
     register(content);

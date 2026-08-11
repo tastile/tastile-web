@@ -3,22 +3,19 @@
 
 import { useSidePanelContent } from "@/shared/context/side-panel-context";
 import { cn } from "@/shared/lib/cn";
-import { useShellStore } from "@/shared/stores/shell-store";
-import { X } from "lucide-react";
 
 /**
  * Side tool panel that renders to the right of the activity bar.
- * Only shown when a page has registered content via useSidePanel().
- * Open/close state is managed by the shell store so both the panel's
- * close button and the ActivityBar's toggle button can control it.
+ * The aside is always reserved — there is no closed state. Content
+ * arrives via useSyncExternalStore; pages push it through useSidePanel
+ * in a layout effect, so the registered content is in place before the
+ * first paint after hydration. While content is empty (e.g. on a route
+ * that has no side panel), the area is still rendered (empty) so the
+ * surrounding layout does not shift and the panel never appears to be
+ * missing.
  */
 export function SideToolPanel() {
   const content = useSidePanelContent();
-  const sidePanelOpen = useShellStore((s) => s.sidePanelOpen);
-  const setSidePanel = useShellStore((s) => s.setSidePanel);
-
-  if (!content) return null;
-  if (!sidePanelOpen) return null;
 
   return (
     <aside
@@ -29,19 +26,6 @@ export function SideToolPanel() {
         "overflow-y-auto",
       )}
     >
-      <header className="flex items-center justify-between px-4 py-2 border-b border-[var(--border-subtle)]">
-        <span className="text-xs font-medium uppercase tracking-wide text-[var(--foreground-muted)]">
-          Details
-        </span>
-        <button
-          onClick={() => setSidePanel(false)}
-          aria-label="Close detail panel"
-          type="button"
-          className="rounded-md p-1 hover:bg-[var(--surface-2)]"
-        >
-          <X size={16} aria-hidden />
-        </button>
-      </header>
       <div className="p-4">{content}</div>
     </aside>
   );
