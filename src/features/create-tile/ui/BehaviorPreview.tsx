@@ -26,13 +26,13 @@ export interface BehaviorPreviewProps {
   recurring: RecurringSlice;
   source: SourceAuthoringSlice;
   locale: Locale;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
 interface TimePreviewProps {
   time: TimeSlice;
   locale: Locale;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   hasTimeSetting: boolean;
 }
 
@@ -55,7 +55,7 @@ function TimePreview({ time, locale, t, hasTimeSetting }: TimePreviewProps) {
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <Calendar size={12} className="shrink-0" />
-        <span>表示タイミング</span>
+        <span>{t("behaviorPreviewScheduleLabel")}</span>
       </div>
       <div className="relative h-6 rounded-md bg-surface-0 border border-border/30 overflow-hidden">
         {[0, 6, 12, 18].map((h) => (
@@ -92,10 +92,11 @@ function TimePreview({ time, locale, t, hasTimeSetting }: TimePreviewProps) {
 
 interface DurationPreviewProps {
   time: TimeSlice;
+  t: (key: string, params?: Record<string, string | number>) => string;
   hasDuration: boolean;
 }
 
-function DurationPreview({ time, hasDuration }: DurationPreviewProps) {
+function DurationPreview({ time, t, hasDuration }: DurationPreviewProps) {
   if (!hasDuration) return null;
 
   const min = time.durationMinMax.minMs ?? 0;
@@ -103,12 +104,15 @@ function DurationPreview({ time, hasDuration }: DurationPreviewProps) {
   const maxScale = 180 * 60 * 1000;
   const minPercent = Math.min((min / maxScale) * 100, 100);
   const maxPercent = Math.min((max / maxScale) * 100, 100);
+  const minuteUnit = t("behaviorPreviewRepeatIntervalUnitMin");
+
+  const formatMin = (ms: number) => `${Math.round(ms / 60000)}${minuteUnit}`;
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <Clock size={12} className="shrink-0" />
-        <span>実行時間</span>
+        <span>{t("behaviorPreviewExecutionTimeLabel")}</span>
       </div>
       <div className="relative h-4 rounded-md bg-surface-0 border border-border/30 overflow-hidden">
         <div
@@ -121,10 +125,10 @@ function DurationPreview({ time, hasDuration }: DurationPreviewProps) {
       </div>
       <div className="text-[10px] text-foreground-muted">
         {min !== null && max !== null
-          ? `${Math.round(min / 60000)}〜${Math.round(max / 60000)}分`
+          ? `${formatMin(min)}〜${formatMin(max)}`
           : min !== null
-            ? `${Math.round(min / 60000)}分以上`
-            : `${Math.round(max / 60000)}分以内`}
+            ? `${formatMin(min)}以上`
+            : `${formatMin(max)}以内`}
       </div>
     </div>
   );
@@ -133,10 +137,11 @@ function DurationPreview({ time, hasDuration }: DurationPreviewProps) {
 interface RepeatPreviewProps {
   recurring: RecurringSlice;
   locale: Locale;
+  t: (key: string, params?: Record<string, string | number>) => string;
   hasRepeat: boolean;
 }
 
-function RepeatPreview({ recurring, locale, hasRepeat }: RepeatPreviewProps) {
+function RepeatPreview({ recurring, locale, t, hasRepeat }: RepeatPreviewProps) {
   if (!hasRepeat) return null;
 
   const renderDots = () => {
@@ -192,7 +197,7 @@ function RepeatPreview({ recurring, locale, hasRepeat }: RepeatPreviewProps) {
   const getRepeatLabel = () => {
     switch (recurring.repeatMode) {
       case "daily":
-        return "毎日";
+        return t("behaviorPreviewRecurrenceKindDaily");
       case "weekly": {
         const days = weekdayLabelsFor(locale).reduce<string>((acc, label, i) => {
           if ((recurring.weekdayMask & (1 << i)) !== 0) {
@@ -200,19 +205,22 @@ function RepeatPreview({ recurring, locale, hasRepeat }: RepeatPreviewProps) {
           }
           return acc;
         }, "");
-        return days || "毎週";
+        return days || t("behaviorPreviewRecurrenceKindWeekly");
       }
       case "interval": {
-        const unit =
+        const unitKey =
           recurring.intervalUnit === "min"
-            ? "分"
+            ? "behaviorPreviewRepeatIntervalUnitMin"
             : recurring.intervalUnit === "hour"
-              ? "時間"
-              : "日";
-        return `${recurring.intervalValue}${unit}ごと`;
+              ? "behaviorPreviewRepeatIntervalUnitHour"
+              : "behaviorPreviewRepeatIntervalUnitDay";
+        return t("behaviorPreviewRepeatInterval", {
+          value: recurring.intervalValue,
+          unit: t(unitKey),
+        });
       }
       case "condition":
-        return "繰り返し条件";
+        return t("behaviorPreviewRecurrenceKindInterval");
       default:
         return "";
     }
@@ -222,7 +230,7 @@ function RepeatPreview({ recurring, locale, hasRepeat }: RepeatPreviewProps) {
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <Repeat size={12} className="shrink-0" />
-        <span>繰り返し</span>
+        <span>{t("behaviorPreviewRecurrenceLabel")}</span>
       </div>
       <div className="flex items-center gap-0.5">{renderDots()}</div>
       <div className="text-[10px] text-foreground-muted">
@@ -235,7 +243,7 @@ function RepeatPreview({ recurring, locale, hasRepeat }: RepeatPreviewProps) {
 
 interface WindowPreviewProps {
   windows: Window[];
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   hasWindows: boolean;
 }
 
@@ -246,7 +254,7 @@ function WindowPreview({ windows, t, hasWindows }: WindowPreviewProps) {
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <Layers size={12} className="shrink-0" />
-        <span>時間帯</span>
+        <span>{t("behaviorPreviewWindowLabel")}</span>
       </div>
       <div className="relative h-6 rounded-md bg-surface-0 border border-border/30 overflow-hidden">
         {[0, 6, 12, 18].map((h) => (
@@ -287,16 +295,20 @@ function WindowPreview({ windows, t, hasWindows }: WindowPreviewProps) {
 
 interface SourcePreviewProps {
   source: SourceAuthoringSlice;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }
 
-function SourcePreview({ source }: SourcePreviewProps) {
-  const splitLabel = source.splitPolicy.kind === 0 ? "分割なし" : "分割あり";
+function SourcePreview({ source, t }: SourcePreviewProps) {
+  const splitLabel =
+    source.splitPolicy.kind === 0
+      ? t("behaviorPreviewSplitAllow")
+      : t("behaviorPreviewSplitKeep");
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <SlidersHorizontal size={12} className="shrink-0" />
-        <span>配置</span>
+        <span>{t("behaviorPreviewPlacementLabel")}</span>
       </div>
       <div className="flex items-center gap-2">
         <div className="flex items-center gap-1">
@@ -310,7 +322,9 @@ function SourcePreview({ source }: SourcePreviewProps) {
             />
           ))}
         </div>
-        <span className="text-[10px] text-foreground-muted">優先度{source.priority}</span>
+        <span className="text-[10px] text-foreground-muted">
+          {t("behaviorPreviewPriorityPrefix", { value: source.priority })}
+        </span>
       </div>
       <div className="text-[10px] text-foreground-muted">{splitLabel}</div>
     </div>
@@ -319,17 +333,18 @@ function SourcePreview({ source }: SourcePreviewProps) {
 
 interface RelationsPreviewProps {
   source: SourceAuthoringSlice;
+  t: (key: string, params?: Record<string, string | number>) => string;
   hasRelations: boolean;
 }
 
-function RelationsPreview({ source, hasRelations }: RelationsPreviewProps) {
+function RelationsPreview({ source, t, hasRelations }: RelationsPreviewProps) {
   if (!hasRelations) return null;
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <Link2 size={12} className="shrink-0" />
-        <span>参照</span>
+        <span>{t("behaviorPreviewReferenceLabel")}</span>
       </div>
       <div className="flex flex-wrap gap-1">
         {source.relations.slice(0, 3).map((r) => (
@@ -352,23 +367,26 @@ function RelationsPreview({ source, hasRelations }: RelationsPreviewProps) {
 
 interface TasksPreviewProps {
   plan: Plan;
+  t: (key: string, params?: Record<string, string | number>) => string;
   hasTasks: boolean;
 }
 
-function TasksPreview({ plan, hasTasks }: TasksPreviewProps) {
+function TasksPreview({ plan, t, hasTasks }: TasksPreviewProps) {
   if (!hasTasks) return null;
+
+  const untitled = t("behaviorPreviewUntitledFallback");
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2 text-xs text-foreground-muted">
         <CheckCircle2 size={12} className="shrink-0" />
-        <span>完了条件</span>
+        <span>{t("behaviorPreviewObjectiveLabel")}</span>
       </div>
       <div className="space-y-1">
         {plan.completion.tasks.slice(0, 3).map((task) => (
           <div key={task.id} className="flex items-center gap-2 text-[10px] text-foreground">
             <div className="h-3 w-3 rounded-sm border border-border/50 bg-surface-0" />
-            <span className="truncate">{task.content?.title || "(無題)"}</span>
+            <span className="truncate">{task.content?.title || untitled}</span>
           </div>
         ))}
         {plan.completion.tasks.length > 3 && (
@@ -424,12 +442,12 @@ export function BehaviorPreview({
         <Accordion.Panel>
           <div className="space-y-4">
             <TimePreview time={time} locale={locale} t={t} hasTimeSetting={hasTimeSetting} />
-            <DurationPreview time={time} hasDuration={hasDuration} />
-            <RepeatPreview recurring={recurring} locale={locale} hasRepeat={hasRepeat} />
+            <DurationPreview time={time} t={t} hasDuration={hasDuration} />
+            <RepeatPreview recurring={recurring} locale={locale} t={t} hasRepeat={hasRepeat} />
             <WindowPreview windows={windows} t={t} hasWindows={hasWindows} />
-            <SourcePreview source={source} />
-            <RelationsPreview source={source} hasRelations={hasRelations} />
-            <TasksPreview plan={plan} hasTasks={hasTasks} />
+            <SourcePreview source={source} t={t} />
+            <RelationsPreview source={source} t={t} hasRelations={hasRelations} />
+            <TasksPreview plan={plan} t={t} hasTasks={hasTasks} />
           </div>
         </Accordion.Panel>
       </Accordion.Item>
