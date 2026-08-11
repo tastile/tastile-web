@@ -76,6 +76,10 @@ vi.mock("../renderEventBody", () => ({
   renderEventBody: () => <span>body</span>,
 }));
 
+vi.mock("./useResponsiveBreakpoint", () => ({
+  useResponsiveBreakpoint: () => "desktop" as const,
+}));
+
 const range: DisplayRange = { start: "2026-07-30", end: "2026-08-06" };
 
 describe("WeekPanel", () => {

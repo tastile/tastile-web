@@ -6,10 +6,12 @@ import type { DisplayMode, DisplayRange } from "@/lib/calendar/layout";
 import { getWeekViewDates } from "@/lib/calendar/layout";
 import { WeekView } from "@/lib/vendored/mantine-schedule";
 import { getFirstDayOfWeek, useWeekStartStore } from "@/shared/stores/week-start-store";
+import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import { ErrorBanner } from "./ErrorBanner";
 import { buildLoadingWeekEvents, toScheduleEvents } from "./eventAdapter";
 import { renderEventBody } from "./renderEventBody";
+import { useResponsiveBreakpoint } from "./useResponsiveBreakpoint";
 
 type Props = {
   range: DisplayRange;
@@ -50,6 +52,8 @@ export function WeekPanel({
 }: Props) {
   const weekStartPref = useWeekStartStore((s) => s.weekStart);
   const firstDayOfWeek = getFirstDayOfWeek(weekStartPref);
+  const breakpoint = useResponsiveBreakpoint();
+  const isMobile = breakpoint === "mobile";
 
   // While loading, swap real events for placeholder shells with a
   // sentinel title so the same ScheduleEvent pipeline positions them
@@ -98,29 +102,48 @@ export function WeekPanel({
       className="relative h-full"
       data-testid="week-panel"
       data-loading={loading && events.length === 0 ? true : undefined}
+      data-breakpoint={breakpoint}
     >
       {error && <ErrorBanner error={error} />}
-      <WeekView
-        data-testid="week-view"
-        date={anchor}
-        weekDates={weekDates}
-        events={scheduleEvents}
-        withHeader={false}
-        firstDayOfWeek={firstDayOfWeek}
-        withWeekendDays
-        canDragEvent={() => false}
-        canResizeEvent={() => false}
-        withDragSlotSelect
-        withCurrentTimeIndicator
-        intervalMinutes={60}
-        onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
-        onTimeSlotClick={({ slotStart, slotEnd }) => onSlotCreate(slotStart, slotEnd)}
-        onSlotDragEnd={(s, e) => onSlotCreate(s, e)}
-        renderEventBody={(e) => renderEventBody(e, "week")}
-        scrollAreaProps={{ style: { height: "100%" } }}
-        startScrollTime={scrollTime}
-        style={{ "--week-view-slot-height": `${zoom}px` } as React.CSSProperties}
-      />
+      {isMobile ? (
+        <div
+          data-testid="week-mobile-hint"
+          className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-sm text-foreground-muted"
+        >
+          <p>
+            Week view is optimized for desktop. Switch to day view for the current date, or open
+            the desktop dashboard.
+          </p>
+          <Link
+            href={`/dashboard/schedule?date=${anchor}&view=day`}
+            className="rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-interactive-hover"
+          >
+            Open day view
+          </Link>
+        </div>
+      ) : (
+        <WeekView
+          data-testid="week-view"
+          date={anchor}
+          weekDates={weekDates}
+          events={scheduleEvents}
+          withHeader={false}
+          firstDayOfWeek={firstDayOfWeek}
+          withWeekendDays
+          canDragEvent={() => false}
+          canResizeEvent={() => false}
+          withDragSlotSelect
+          withCurrentTimeIndicator
+          intervalMinutes={60}
+          onEventClick={(e) => onEventClick(e.payload as CalendarEvent)}
+          onTimeSlotClick={({ slotStart, slotEnd }) => onSlotCreate(slotStart, slotEnd)}
+          onSlotDragEnd={(s, e) => onSlotCreate(s, e)}
+          renderEventBody={(e) => renderEventBody(e, "week")}
+          scrollAreaProps={{ style: { height: "100%" } }}
+          startScrollTime={scrollTime}
+          style={{ "--week-view-slot-height": `${zoom}px` } as React.CSSProperties}
+        />
+      )}
     </div>
   );
 }
