@@ -33,17 +33,17 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
     : "var(--font-outfit), var(--font-zen-kaku)";
 
   return (
-    <section className="relative border-y border-surface-2 bg-surface-0 py-24 lg:py-32">
+    <section className="relative overflow-hidden border-y border-surface-2 bg-surface-0 py-20 lg:py-32">
       {/* Background giant numeral. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute top-12 right-[-2rem] z-0 select-none"
+        className="pointer-events-none absolute top-12 right-[-1rem] z-0 select-none lg:right-[-2rem]"
       >
         <p className={`mkt-giant-numeral ${mono}`}>02</p>
       </div>
 
       <div className="layout-shell relative z-10">
-        <header className="grid gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
+        <header className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
               {t.eyebrow}
@@ -71,8 +71,8 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
         </header>
 
         {/* Loop + integrated phase descriptions — single composition, not card grid. */}
-        <div className="mt-20 grid gap-12 lg:grid-cols-[1fr_1fr] lg:gap-16">
-          <div className="relative mx-auto w-full max-w-[420px]">
+        <div className="mt-12 grid gap-12 sm:mt-16 lg:mt-20 lg:grid-cols-[1fr_1fr] lg:gap-16">
+          <div className="relative mx-auto hidden w-full max-w-[420px] lg:block">
             <svg
               viewBox={`0 0 ${SIZE} ${SIZE}`}
               className="h-auto w-full"
