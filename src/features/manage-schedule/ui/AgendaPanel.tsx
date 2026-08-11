@@ -43,7 +43,7 @@ export function AgendaPanel({
   return (
     <div className="relative h-full" data-testid="agenda-panel">
       {error && <ErrorBanner error={error} />}
-      <LoadingOverlay loading={loading}>
+      <LoadingOverlay loading={loading && events.length === 0}>
         <AgendaView
           data-testid="agenda-view"
           rangeStart={rangeStart}

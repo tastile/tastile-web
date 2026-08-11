@@ -92,19 +92,6 @@ vi.mock("./ErrorBanner", () => ({
     error ? <div data-testid="error-banner">{error.message}</div> : null,
 }));
 
-vi.mock("./LoadingOverlay", () => ({
-  LoadingOverlay: ({
-    loading,
-    children,
-  }: {
-    loading: boolean;
-    children: React.ReactNode;
-  }) => {
-    if (loading) return <div data-testid="day-loading">loading</div>;
-    return <>{children}</>;
-  },
-}));
-
 vi.mock("./eventAdapter", () => ({
   // Echo the times it was handed so tests can observe the virtual-day shift.
   toScheduleEvents: (e: CalendarEvent) => [
@@ -119,6 +106,23 @@ vi.mock("./eventAdapter", () => ({
       payload: e,
     },
   ],
+  // Day view loading events: 5 sentinels at 9/13/14:30/17/19 local.
+  // We return exactly one synthetic event per call so the test can
+  // observe the synthetic flow into DayView's events prop.
+  buildLoadingDayEvents: () => [
+    {
+      id: "__loading_day_synthetic",
+      title: "__loading__",
+      start: "2026-07-30T00:00:00.000Z",
+      end: "2026-07-30T00:30:00.000Z",
+      allDay: false,
+      color: "gray",
+      recurrence: { frequency: "none" },
+      createdAt: "",
+      updatedAt: "",
+    },
+  ],
+  MONTH_LOADING_EVENT_TITLE: "__loading__",
 }));
 
 vi.mock("./renderEventBody", () => ({
@@ -300,7 +304,7 @@ describe("DayPanel", () => {
     expect(screen.getByTestId("error-banner")).toHaveTextContent("boom");
   });
 
-  it("shows loading overlay when loading", () => {
+  it("marks the panel loading when loading=true", () => {
     render(
       <DayPanel
         range={range}
@@ -315,7 +319,56 @@ describe("DayPanel", () => {
         displayMode="scope"
       />,
     );
-    expect(screen.getByTestId("day-loading")).toBeInTheDocument();
+    expect(screen.getByTestId("day-panel")).toHaveAttribute("data-loading");
+  });
+
+  it("injects synthetic skeleton events into the grid while loading", () => {
+    render(
+      <DayPanel
+        range={range}
+        anchor="2026-07-30"
+        zoom={56}
+        events={[]}
+        loading={true}
+        error={null}
+        onEventClick={vi.fn()}
+        onSlotCreate={vi.fn()}
+        onZoomBy={vi.fn()}
+        displayMode="scope"
+      />,
+    );
+    // The mock adapter emits a synthetic event the DayView mock echoes
+    // as a button with data-testid="grid-event-${id}".
+    expect(screen.getByTestId("grid-event-__loading_day_synthetic")).toBeInTheDocument();
+  });
+
+  it("does NOT inject skeleton events once real events arrive", () => {
+    const cached = {
+      id: "evt-cached",
+      title: "Cached event",
+      allDay: false,
+      start: "2026-07-30T09:00:00Z",
+      end: "2026-07-30T10:00:00Z",
+      source: { kind: 0, detail: null },
+      tileId: "tile-cached",
+      color: "blue",
+    } as CalendarEvent;
+    render(
+      <DayPanel
+        range={range}
+        anchor="2026-07-30"
+        zoom={56}
+        events={[cached]}
+        loading={true}
+        error={null}
+        onEventClick={vi.fn()}
+        onSlotCreate={vi.fn()}
+        onZoomBy={vi.fn()}
+        displayMode="scope"
+      />,
+    );
+    expect(screen.queryByTestId("grid-event-__loading_day_synthetic")).not.toBeInTheDocument();
+    expect(screen.getByTestId("grid-event-evt-cached")).toBeInTheDocument();
   });
 
   // ───────────────────────────────────────────────────────────────────────
@@ -395,23 +448,4 @@ describe("DayPanel", () => {
       expect(onSlotCreate).toHaveBeenCalledWith("2026-07-30 00:00:00", "2026-07-30 00:30:00");
     });
 
-    it("labels gutter rows with real time, dating the midnight rollover", () => {
-      renderAround();
-      // virtual 09:00 is real 00:00 → the day rolls over here
-      expect(screen.getByTestId("grid-slot-label")).toHaveTextContent("7/30 00:00");
-    });
-
-    it("shifts the current-time indicator so it lands on real now", () => {
-      renderAround();
-      expect(screen.getByTestId("grid-now")).toHaveTextContent(
-        new Date(now.getTime() + 9 * 60 * 60 * 1000).toISOString(),
-      );
-    });
-
-    it("does NOT shift events on the mobile path (it buckets by calendar day)", () => {
-      bp.current = "mobile";
-      renderAround();
-      expect(screen.getByTestId("mobile-month-view")).toHaveTextContent(prevDayEvent.start);
-    });
-  });
-});
+    it("labels gutter rows with real time, dating the midnight ro

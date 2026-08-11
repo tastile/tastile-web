@@ -38,7 +38,7 @@ vi.mock("../ErrorBanner", () => ({
     error ? <div data-testid="error-banner">{error.message}</div> : null,
 }));
 
-vi.mock("../LoadingOverlay", () => ({
+vi.mock("./LoadingOverlay", () => ({
   LoadingOverlay: ({ loading, children }: { loading: boolean; children: React.ReactNode }) => {
     if (loading) return <div data-testid="week-loading">loading</div>;
     return <>{children}</>;
@@ -150,6 +150,54 @@ describe("WeekPanel", () => {
       const panel = screen.getByTestId("week-panel");
       fireEvent.wheel(panel, { deltaY: 100, ctrlKey: false });
       expect(onZoomBy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("loading overlay gating", () => {
+    it("shows week-loading overlay when loading and events is empty", () => {
+      render(
+        <WeekPanel
+          range={range}
+          anchor="2026-07-30"
+          zoom={84}
+          events={[]}
+          loading={true}
+          error={null}
+          onEventClick={vi.fn()}
+          onSlotCreate={vi.fn()}
+          onZoomBy={vi.fn()}
+          displayMode="scope"
+        />,
+      );
+      expect(screen.getByTestId("week-loading")).toBeInTheDocument();
+    });
+
+    it("does NOT show week-loading overlay when events are present (partial cache)", () => {
+      const cached = {
+        id: "evt-cached",
+        title: "Cached event",
+        allDay: false,
+        start: "2026-07-30T09:00:00Z",
+        end: "2026-07-30T10:00:00Z",
+        source: { kind: 0, detail: null },
+        tileId: "tile-cached",
+        color: "blue",
+      } as CalendarEvent;
+      render(
+        <WeekPanel
+          range={range}
+          anchor="2026-07-30"
+          zoom={84}
+          events={[cached]}
+          loading={true}
+          error={null}
+          onEventClick={vi.fn()}
+          onSlotCreate={vi.fn()}
+          onZoomBy={vi.fn()}
+          displayMode="scope"
+        />,
+      );
+      expect(screen.queryByTestId("week-loading")).not.toBeInTheDocument();
     });
   });
 });
