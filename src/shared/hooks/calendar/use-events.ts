@@ -1,6 +1,8 @@
 "use client";
 
 import type { CalendarEvent, CalendarEventInput } from "@/calendar/model/calendar";
+import { queryKeys } from "@/shared/query/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
 export interface UseEventsState {
@@ -34,12 +36,22 @@ export interface UseEventsRange {
   includeRecurring?: boolean;
   /** Workspace owner ids selected in the calendar side panel. */
   ownerIds?: string[];
+  /** Compact representative projection for month/year views. */
+  summary?: "month";
+  /** Hide recurring occurrences whose generator cadence is at or below this value. */
+  minRecurringStepMs?: number;
   /**
    * When set, the range is split into chunks of this many days (max) and
    * each chunk is fetched independently.  The Rust /v1/timeline API caps
    * at 31 days per request, so year-view (365 d) must chunk.
    */
   maxWindowDays?: number;
+  /**
+   * When set, the request asks the upstream API for at most this many
+   * events.  Used by month view to keep the response size bounded when
+   * the owner has a dense schedule.  Defaults to unlimited.
+   */
+  limit?: number;
 }
 
 const EVENTS_CHANGED_EVENT = "tastile:events-changed";
@@ -59,12 +71,42 @@ function splitRange(start: string, end: string, maxDays: number): Array<{ start:
   return chunks;
 }
 
+/** Build the TanStack Query key for a single chunk. All params that
+ *  influence the upstream response must appear in the key so a
+ *  `minMinutes` change, owner selection swap, etc. invalidates the
+ *  chunk instead of serving stale data. `ownerIds` is sorted so two
+ *  equivalent arrays produce the same key.
+ */
+function buildChunkKey(
+  start: string,
+  end: string,
+  minMinutes: number | undefined,
+  includeRecurring: boolean | undefined,
+  ownerIds: readonly string[] | undefined,
+  summary: string | undefined,
+  minRecurringStepMs: number | undefined,
+  limit: number | undefined,
+): readonly unknown[] {
+  return [
+    ...queryKeys.eventsChunk,
+    start,
+    end,
+    minMinutes ?? 0,
+    includeRecurring ?? true,
+    ownerIds ? [...ownerIds].sort() : [],
+    summary ?? null,
+    minRecurringStepMs ?? null,
+    limit ?? null,
+  ];
+}
+
 export function notifyEventsChanged(): void {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(EVENTS_CHANGED_EVENT));
 }
 
 export function useEvents(range?: UseEventsRange): UseEventsState {
+  const queryClient = useQueryClient();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -86,7 +128,10 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     const minMinutes = range?.minMinutes;
     const includeRecurring = range?.includeRecurring;
     const ownerIds = range?.ownerIds;
+    const summary = range?.summary;
+    const minRecurringStepMs = range?.minRecurringStepMs;
     const maxWindowDays = range?.maxWindowDays;
+    const limit = range?.limit;
     if (!start || !end) {
       // No range yet (e.g. component not mounted with a window); the
       // caller can re-invoke reload() once range is available.
@@ -103,9 +148,6 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     /** Build the query-string for a single chunk. */
     const buildQs = (s: string, e: string) => {
       const qs = new URLSearchParams();
@@ -113,12 +155,20 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
       qs.set("end", e);
       qs.set("min_minutes", String(minMinutes ?? 0));
       qs.set("include_recurring", String(includeRecurring ?? true));
+      if (summary) qs.set("summary", summary);
+      if (minRecurringStepMs && minRecurringStepMs > 0) {
+        qs.set("min_recurring_step_ms", String(minRecurringStepMs));
+      }
       if (ownerIds?.length) qs.set("owner_ids", ownerIds.join(","));
+      if (limit && limit > 0) qs.set("limit", String(limit));
       return qs.toString();
     };
 
-    /** Fetch a single chunk and return parsed events. */
-    const fetchChunk = async (s: string, e: string): Promise<CalendarEvent[]> => {
+    const chunkKey = (s: string, e: string) =>
+      buildChunkKey(s, e, minMinutes, includeRecurring, ownerIds, summary, minRecurringStepMs, limit);
+
+    /** Network fetch only — no cache reads or writes. */
+    const fetchFromNetwork = async (s: string, e: string): Promise<CalendarEvent[]> => {
       const res = await fetch(`${OCC_BASE}?${buildQs(s, e)}`, { cache: "no-store" });
       if (!res.ok) throw new Error(`Failed to load events (${res.status})`);
       const data = (await res.json()) as
@@ -127,41 +177,159 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
       return ("events" in data ? data.events : (data as { occurrences: CalendarEvent[] }).occurrences) ?? [];
     };
 
-    try {
-      let allEvents: CalendarEvent[];
+    /** Read-through cache: return cached events if present, else fetch
+     *  and populate the cache. Cache lookups happen against TanStack
+     *  Query's shared queryClient so a Day chunk fetched on a previous
+     *  view serves synchronously on a Day → Week → Day round trip. */
+    const fetchChunk = async (s: string, e: string): Promise<CalendarEvent[]> => {
+      const key = chunkKey(s, e);
+      const cached = queryClient.getQueryData<CalendarEvent[]>(key);
+      if (cached) return cached;
+      const fresh = await fetchFromNetwork(s, e);
+      queryClient.setQueryData<CalendarEvent[]>(key, fresh);
+      return fresh;
+    };
 
-      if (maxWindowDays) {
-        // Split the range into <= maxWindowDays chunks and fetch in
-        // parallel so the Rust 31-day /v1/timeline limit is respected.
-        const chunks = splitRange(start, end, maxWindowDays);
-        const results = await Promise.all(chunks.map((c) => fetchChunk(c.start, c.end)));
-        // Flatten and deduplicate by id (chunks may share boundary events).
-        const seen = new Set<string>();
-        allEvents = [];
-        for (const batch of results) {
-          for (const ev of batch) {
-            if (!seen.has(ev.id)) {
-              seen.add(ev.id);
-              allEvents.push(ev);
-            }
+    // The reload body is expressed as a Promise chain (.then/.catch/.finally)
+// rather than a try/catch/finally block. The React Compiler does not lower
+// TryStatement, so any `try` — with or without `catch`/`finally` — disables
+// auto-memoization for this component. See react-doctor's `react-hooks-js/
+// todo` rule for the canonical fix.
+const runReload = async (): Promise<void> => {
+  if (maxWindowDays) {
+    // Split the range into <= maxWindowDays chunks. Each chunk is
+    // looked up in the chunk cache first; misses are fetched in
+    // parallel and progressively merged into state so the UI paints
+    // partial data (e.g. week 1 of a Month view before week 5).
+    //
+    // If EVERY chunk is already cached, skip `setLoading(true)`
+    // entirely and update state synchronously — this is what removes
+    // the skeleton flash on Day → Week → Day navigation: the second
+    // Day view reads its chunk straight from cache.
+    //
+    // Otherwise `loading` stays true until every chunk has resolved,
+    // because Month view renders skeleton placeholders for any cell
+    // whose date range has not yet arrived. Flipping `loading` off
+    // on the first chunk would erase skeletons from still-pending
+    // cells and the user would see "real cards in some weeks,
+    // nothing in others" with no signal that empty weeks are still
+    // loading.
+    const chunks = splitRange(start, end, maxWindowDays);
+    const seen = new Set<string>();
+    let acc: CalendarEvent[] = [];
+    const missingChunks: Array<{ start: string; end: string }> = [];
+    const errors: string[] = [];
+
+    // Synchronous cache walk. Avoids `await` so React can paint the
+    // cached accumulator in the same render pass as the reload.
+    for (const c of chunks) {
+      const cached = queryClient.getQueryData<CalendarEvent[]>(chunkKey(c.start, c.end));
+      if (cached) {
+        for (const ev of cached) {
+          if (!seen.has(ev.id)) {
+            seen.add(ev.id);
+            acc.push(ev);
           }
         }
       } else {
-        allEvents = await fetchChunk(start, end);
+        missingChunks.push(c);
       }
-
-      setEvents(allEvents);
-    } catch (err: unknown) {
-      // Stable Error reference: a poll that fails repeatedly with the same
-      // message must not create a new Error object every cycle, or
-      // consumers (CalendarMain's banner, EventListView) re-render on
-      // every tick and the calendar appears to shake.
-      const msg = err instanceof Error ? err.message : String(err);
-      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
-    } finally {
-      setLoading(false);
     }
-  }, [range?.start, range?.end, range?.minMinutes, range?.includeRecurring, range?.ownerIds, range?.maxWindowDays]);
+
+    if (missingChunks.length === 0) {
+      // All chunks served from cache — no network, no skeleton flash.
+      setEvents(acc);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    // Some chunks still need fetching. Set loading before kicking
+    // off the parallel fetches so the panel renders skeletons for
+    // any cell whose chunk hasn't arrived yet.
+    setLoading(true);
+    setError(null);
+
+    await Promise.all(
+      missingChunks.map((c) =>
+        fetchChunk(c.start, c.end)
+          .then((batch) => {
+            const fresh: CalendarEvent[] = [];
+            for (const ev of batch) {
+              if (!seen.has(ev.id)) {
+                seen.add(ev.id);
+                fresh.push(ev);
+              }
+            }
+            if (fresh.length > 0) {
+              acc = [...acc, ...fresh];
+              setEvents(acc);
+            }
+          })
+          .catch((err: unknown) => {
+            errors.push(err instanceof Error ? err.message : String(err));
+          }),
+      ),
+    );
+
+    // Stable Error reference: a poll that fails repeatedly with the same
+    // message must not create a new Error object every cycle, or
+    // consumers (CalendarMain's banner, EventListView) re-render on
+    // every tick and the calendar appears to shake.
+    const recordError = (msg: string) =>
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+
+    if (acc.length === 0 && errors.length === missingChunks.length) {
+      // Every missing chunk failed — surface the first error.
+      recordError(errors[0]);
+      return;
+    }
+    if (errors.length > 0) {
+      // Partial failure — record but keep the partial data
+      // already pushed to state.
+      recordError(`${errors.length}/${missingChunks.length} chunks failed: ${errors[0]}`);
+    }
+  } else {
+    // Single-chunk path: cache hit → synchronous setEvents, miss → fetch.
+    const key = chunkKey(start, end);
+    const cached = queryClient.getQueryData<CalendarEvent[]>(key);
+    if (cached) {
+      setEvents(cached);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    await fetchChunk(start, end).then((batch) => {
+      setEvents(batch);
+    });
+  }
+};
+
+await runReload()
+  .catch((err: unknown) => {
+    // Stable Error reference for unexpected failures (e.g. the single-
+    // chunk fetch rejecting). Mirrors the behavior of the prior
+    // try/catch — same Error-reference stability.
+    const msg = err instanceof Error ? err.message : String(err);
+    setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+  })
+  .finally(() => {
+    setLoading(false);
+  });
+  }, [
+    range?.start,
+    range?.end,
+    range?.minMinutes,
+    range?.includeRecurring,
+    range?.ownerIds,
+    range?.summary,
+    range?.minRecurringStepMs,
+    range?.maxWindowDays,
+    range?.limit,
+    queryClient,
+  ]);
 
   const create = useCallback(async (input: CalendarEventInput): Promise<CalendarEvent> => {
     const res = await fetch("/api/events", {
@@ -180,9 +348,15 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
     const body = (await res.json()) as { event: CalendarEvent };
     const event = body.event;
     setEvents((prev) => [...prev, event]);
+    // Drop every cached chunk so the next reload refetches and the new
+    // event surfaces in whichever range actually contains it. We
+    // could surgically patch only chunks that overlap with `event`,
+    // but the simplicity of a wholesale drop matches the small chunk
+    // count typical of dashboard navigation.
+    queryClient.removeQueries({ queryKey: queryKeys.eventsChunk });
     notifyEventsChanged();
     return event;
-  }, []);
+  }, [queryClient]);
 
   const update = useCallback(
     async (id: string, patch: Partial<CalendarEventInput>): Promise<CalendarEvent> => {
@@ -209,10 +383,11 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
         ? { ...current, ...out.tile, updatedAt: new Date().toISOString() }
         : ({ ...(out.tile as CalendarEvent), id, tileId } as CalendarEvent);
       setEvents((prev) => prev.map((e) => (e.id === id ? merged : e)));
+      queryClient.removeQueries({ queryKey: queryKeys.eventsChunk });
       notifyEventsChanged();
       return merged;
     },
-    [events],
+    [events, queryClient],
   );
 
   const remove = useCallback(
@@ -229,9 +404,10 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
         throw new Error(`Failed to remove event (${res.status})`);
       }
       setEvents((prev) => prev.filter((e) => e.id !== id));
+      queryClient.removeQueries({ queryKey: queryKeys.eventsChunk });
       notifyEventsChanged();
     },
-    [events],
+    [events, queryClient],
   );
 
   useEffect(() => {
@@ -246,11 +422,15 @@ export function useEvents(range?: UseEventsRange): UseEventsState {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const handler = (): void => {
+      // External invalidation (e.g. QuickCreate submission in another
+      // panel) — drop every cached chunk so the reload that follows
+      // actually fetches fresh data instead of serving from cache.
+      queryClient.removeQueries({ queryKey: queryKeys.eventsChunk });
       void reload();
     };
     window.addEventListener(EVENTS_CHANGED_EVENT, handler);
     return () => window.removeEventListener(EVENTS_CHANGED_EVENT, handler);
-  }, [reload]);
+  }, [reload, queryClient]);
 
   return { events, loading, error, reload, create, update, remove };
 }

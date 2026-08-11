@@ -19,9 +19,16 @@ export async function GET(req: Request) {
   }
   const minRaw = url.searchParams.get("min_minutes");
   const includeRaw = url.searchParams.get("include_recurring");
+  const limitRaw = url.searchParams.get("limit");
+  const summaryRaw = url.searchParams.get("summary");
+  const minRecurringStepRaw = url.searchParams.get("min_recurring_step_ms");
   const minMinutes = minRaw === null ? 0 : Math.max(0, Number(minRaw));
   const includeRecurring = includeRaw === null ? true : includeRaw !== "false";
   const ownerIds = url.searchParams.get("owner_ids")?.split(",").filter(Boolean);
+  const limit = limitRaw === null ? undefined : Math.max(1, Number(limitRaw));
+  const summary = summaryRaw === "month" ? "month" : undefined;
+  const minRecurringStepMs =
+    minRecurringStepRaw === null ? undefined : Math.max(1, Number(minRecurringStepRaw));
 
   return upstreamListTimeline({
     start,
@@ -29,5 +36,8 @@ export async function GET(req: Request) {
     minMinutes,
     includeRecurring,
     ownerIds,
+    limit,
+    summary,
+    minRecurringStepMs,
   });
 }

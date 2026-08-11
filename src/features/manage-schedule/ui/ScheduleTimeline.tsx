@@ -7,7 +7,7 @@ import { getModeRange } from "@/lib/calendar/layout";
 import { useSidePanel } from "@/shared/context/side-panel-context";
 import { useEvents } from "@/shared/hooks/calendar/use-events";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AgendaPanel } from "./AgendaPanel";
 import { DayPanel } from "./DayPanel";
 import { MonthPanel } from "./MonthPanel";
@@ -68,8 +68,17 @@ export function ScheduleTimeline({ initialView }: Props) {
     return range;
   }, [range, state.view, effectiveAnchor]);
 
-  const [minDuration, setMinDuration] = useState(0);
+  const [minDuration, setMinDuration] = useState(initialView === "month" || initialView === "year" ? 5 : 0);
   const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[] | undefined>(undefined);
+  const [showRecurring, setShowRecurring] = useState(
+    initialView !== "month" && initialView !== "year",
+  );
+
+  useEffect(() => {
+    const compact = state.view === "month" || state.view === "year";
+    setMinDuration(compact ? 5 : 0);
+    setShowRecurring(!compact);
+  }, [state.view]);
 
   // The Rust /v1/timeline handler caps each request at 31 days, so any
   // view that inherently spans more must be chunked.  Year = 365 days
@@ -92,6 +101,12 @@ export function ScheduleTimeline({ initialView }: Props) {
     minMinutes: minDuration,
     ownerIds: selectedOwnerIds,
     maxWindowDays,
+    limit: state.view === "month" ? 500 : undefined,
+    summary: state.view === "month" || state.view === "year" ? "month" : undefined,
+    minRecurringStepMs:
+      (state.view === "month" || state.view === "year") && !showRecurring
+        ? 24 * 60 * 60 * 1000
+        : undefined,
   });
 
   const openCreate = useQuickCreateStore((s) => s.openCreate);
@@ -145,13 +160,23 @@ export function ScheduleTimeline({ initialView }: Props) {
         view={panelView}
         mode={state.mode}
         minDuration={minDuration}
+        showRecurring={showRecurring}
         onSelectDate={state.setAnchor}
         onModeChange={state.setMode}
         onMinDurationChange={setMinDuration}
         onOwnerIdsChange={setSelectedOwnerIds}
+        onShowRecurringChange={setShowRecurring}
       />
     ),
-    [state.anchor, panelView, state.mode, minDuration, state.setAnchor, state.setMode],
+    [
+      state.anchor,
+      panelView,
+      state.mode,
+      minDuration,
+      showRecurring,
+      state.setAnchor,
+      state.setMode,
+    ],
   );
   useSidePanel(sidePanelElement);
 
@@ -165,6 +190,8 @@ export function ScheduleTimeline({ initialView }: Props) {
     error,
     onEventClick,
   };
+
+  const monthPanelBase = { ...panelBase, events };
 
   const navDisabled = loading || state.mode !== "scope";
 
@@ -189,7 +216,7 @@ export function ScheduleTimeline({ initialView }: Props) {
           <WeekPanel {...panelBase} onSlotCreate={onSlotCreate} onZoomBy={onZoomBy} />
         )}
         {state.view === "month" && (
-          <MonthPanel {...panelBase} onSlotCreate={onSlotCreate} onDayClick={onMonthDayClick} />
+          <MonthPanel {...monthPanelBase} onSlotCreate={onSlotCreate} onDayClick={onMonthDayClick} />
         )}
         {state.view === "year" && <YearPanel {...panelBase} />}
         {state.view === "agenda" && <AgendaPanel {...panelBase} />}

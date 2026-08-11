@@ -10,6 +10,7 @@ import {
   Button,
   Checkbox,
   Select,
+  Skeleton,
   Tree,
   getTreeExpandedState,
   useTree,
@@ -32,11 +33,18 @@ interface CalendarSidePanelProps {
   /** Timeline display mode — used to adjust the highlight range. */
   mode?: DisplayMode;
   minDuration?: number;
+  /**
+   * Whether the Month view is currently showing RECURRING events.
+   * Surfaced as a toggle only for the Month view — Day/Week/Year/Agenda
+   * always show every event.
+   */
+  showRecurring?: boolean;
   /** Called when the user picks a date. */
   onSelectDate?: (date: string) => void;
   onModeChange?: (mode: DisplayMode) => void;
   onMinDurationChange?: (minutes: number) => void;
   onOwnerIdsChange?: (ids: string[] | undefined) => void;
+  onShowRecurringChange?: (show: boolean) => void;
 }
 
 // Given anchor (YYYY-MM-DD) and view, return the list of dates to shade on
@@ -102,11 +110,14 @@ export function CalendarSidePanel({
   view: _view,
   mode,
   minDuration = 0,
+  showRecurring,
   onSelectDate,
   onModeChange,
   onMinDurationChange,
   onOwnerIdsChange,
+  onShowRecurringChange,
 }: CalendarSidePanelProps) {
+  const { t } = useTranslation();
   // Around / future modes always anchor to today; the mini calendar
   // is read-only so the user can't pick a date the main view will
   // ignore anyway.
@@ -117,7 +128,7 @@ export function CalendarSidePanel({
       {/* Mini calendar */}
       <div className="px-3">
         <DatePicker
-          aria-label="Select date"
+          aria-label={t("panels.calendar.selectDate")}
           value={anchor}
           onChange={(value) => {
             if (value) onSelectDate?.(value);
@@ -132,16 +143,16 @@ export function CalendarSidePanel({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
             <Clock className="h-3 w-3" aria-hidden />
-            <span>Time range</span>
+            <span>{t("panels.calendar.timeRange")}</span>
           </div>
           <Select
-            aria-label="Time range"
+            aria-label={t("panels.calendar.timeRange")}
             value={mode ?? "scope"}
             onChange={(value) => value && onModeChange?.(value as DisplayMode)}
             data={[
-              { value: "scope", label: "Selected date" },
-              { value: "around", label: "Around now" },
-              { value: "future", label: "From now" },
+              { value: "scope", label: t("panels.calendar.selectedDate") },
+              { value: "around", label: t("panels.calendar.aroundNow") },
+              { value: "future", label: t("panels.calendar.fromNow") },
             ]}
             size="xs"
             allowDeselect={false}
@@ -152,17 +163,17 @@ export function CalendarSidePanel({
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
             <Filter className="h-3 w-3" aria-hidden />
-            <span>Min duration</span>
+            <span>{t("panels.calendar.minDuration")}</span>
           </div>
           <Select
-            aria-label="Min duration"
+            aria-label={t("panels.calendar.minDuration")}
             value={String(minDuration)}
             onChange={(value) => value && onMinDurationChange?.(Number(value))}
             data={[
-              { value: "0", label: "Show all (including 5 min breaks)" },
-              { value: "5", label: "5 minutes+" },
-              { value: "15", label: "15 minutes+" },
-              { value: "30", label: "30 minutes+" },
+              { value: "0", label: t("panels.calendar.showAll") },
+              { value: "5", label: t("panels.calendar.minutesPlus", { minutes: 5 }) },
+              { value: "15", label: t("panels.calendar.minutesPlus", { minutes: 15 }) },
+              { value: "30", label: t("panels.calendar.minutesPlus", { minutes: 30 }) },
             ]}
             size="xs"
             allowDeselect={false}
@@ -170,6 +181,20 @@ export function CalendarSidePanel({
             data-testid="panel-min-duration"
           />
         </div>
+        {/* Month-only toggle: default hides RECURRING events
+            (source.kind === 1) so a daily standup doesn't expand into
+            30 identical bars. Users can flip this to see them. */}
+        {(_view === "month" || _view === "year") && onShowRecurringChange && (
+          <div className="flex flex-col gap-1">
+            <Checkbox
+              size="xs"
+              label={t("panels.calendar.showRecurring")}
+              checked={!!showRecurring}
+              onChange={(e) => onShowRecurringChange(e.currentTarget.checked)}
+              data-testid="panel-show-recurring"
+            />
+          </div>
+        )}
       </section>
 
       <div className="mx-3 h-px bg-border" />
@@ -241,8 +266,10 @@ function ProjectsCheckboxSection({
 
   if (loading) {
     return (
-      <div className="px-3 text-[10px] text-foreground-subtle">
-        {t("panels.calendar.loadingProjects")}
+      <div className="space-y-1.5 px-3 py-2" role="status" aria-label="Loading projects">
+        {Array.from({ length: 3 }, (_, i) => (
+          <Skeleton key={i} className="h-3 w-full" />
+        ))}
       </div>
     );
   }

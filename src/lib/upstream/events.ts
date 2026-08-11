@@ -220,6 +220,16 @@ export interface TimelineQuery {
   minMinutes?: number;
   includeRecurring?: boolean;
   ownerIds?: string[];
+  /** Month/year compact read model. */
+  summary?: "month";
+  /** Hide recurring occurrences whose generator cadence is at or below this value. */
+  minRecurringStepMs?: number;
+  /**
+   * Optional hard cap on the number of events returned by the upstream
+   * API.  When set, the request forwards `limit=N` so the v1 Rust
+   * handler paginates instead of returning every placement in range.
+   */
+  limit?: number;
 }
 
 interface TimelineItemRaw {
@@ -244,8 +254,21 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
   const qs = new URLSearchParams();
   qs.set("start", toUtcIso(q.start));
   qs.set("end", toUtcIso(q.end));
-  qs.set("include_labels", "true");
-  if (q.ownerIds?.length) qs.set("owner_ids", q.ownerIds.join(","));
+  qs.set("include_labels", "false");
+  if (q.summary) qs.set("summary", q.summary);
+  if (q.minMinutes && q.minMinutes > 0) {
+    // The Core filter is `if duration_ms < min_ms { skip }` (strict
+    // less-than per plan "未満"). The Web UI's `minMinutes=N` is read
+    // as "drop ≤ N minutes" — the natural way to bridge that into a
+    // strict-less-than filter is +1 ms so exactly-N-minute events are
+    // also dropped.
+    qs.set("min_duration_ms", String(q.minMinutes * 60_000 + 1));
+  }
+  if (q.minRecurringStepMs && q.minRecurringStepMs > 0) {
+    qs.set("min_recurring_step_ms", String(q.minRecurringStepMs));
+  }
+  if (q.includeRecurring === false) qs.set("exclude_source_kinds", "1");
+  if (q.limit && q.limit > 0) qs.set("limit", String(q.limit));
   const auth = await bridgeHeaders();
   if (!auth) return unauthenticatedUpstreamResponse();
   const url = `${rustBase()}/v1/timeline?${qs.toString()}`;

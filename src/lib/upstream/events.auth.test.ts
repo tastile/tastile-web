@@ -74,7 +74,7 @@ describe("events upstream authentication", () => {
 
     expect(response.status).toBe(200);
     expect(fetchMock).toHaveBeenCalledWith(
-      `${"http://localhost:31400"}/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z&include_labels=true`,
+      `${"http://localhost:31400"}/v1/timeline?start=2026-01-01T00%3A00%3A00Z&end=2026-01-02T00%3A00%3A00Z&include_labels=false`,
       expect.objectContaining({
         headers: {
           "x-owner-id": "00000000-0000-0000-0000-000000000001",
@@ -82,6 +82,23 @@ describe("events upstream authentication", () => {
         },
       }),
     );
+  });
+
+  it("forwards min_duration_ms with +1 ms to bridge '≤ minMinutes' into Core's strict-less-than filter", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    process.env.CLOUD_API_BASE = "http://localhost:31400";
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("[]", { status: 200 }));
+
+    await upstreamListTimeline({
+      start: "2026-01-01T00:00:00Z",
+      end: "2026-01-02T00:00:00Z",
+      minMinutes: 5,
+    });
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url).toContain("min_duration_ms=300001");
   });
 
   it("maps Core LABEL timeline items to all-day calendar events", async () => {
