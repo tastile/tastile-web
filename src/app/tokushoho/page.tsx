@@ -10,7 +10,7 @@ export const metadata = {
 export default function TokushohoPage() {
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader showFeatureLink translations={getHeaderTranslations("en")} />
+      <SiteHeader translations={getHeaderTranslations("en")} />
       <main className="flex-1">
         <div className="layout-shell max-w-3xl py-12">
           <h1 className="mb-8 text-3xl font-[510] tracking-[-0.02em] text-foreground">
@@ -23,6 +23,7 @@ export default function TokushohoPage() {
               Transactions.
             </p>
 
+            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <table className="w-full border-collapse text-sm">
               <tbody>
                 <tr className="border-b border-border">
@@ -121,6 +122,7 @@ export default function TokushohoPage() {
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       </main>
       <SiteFooter translations={getFooterTranslations("en")} />

@@ -33,7 +33,7 @@ export default function DesktopAuthCompletePage() {
       <SiteHeader hideAuth translations={getHeaderTranslations("en")} />
 
       <main className="layout-shell flex flex-1 items-center justify-center py-12">
-        <div className="w-full max-w-xl rounded-lg bg-surface-elevated p-8">
+        <div className="w-full max-w-xl rounded-lg bg-surface-elevated p-4 sm:p-8">
           <div className="flex items-center gap-4">
             <TastileLogo size={64} className="text-foreground" />
             <div>

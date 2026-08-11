@@ -47,7 +47,7 @@ export function AuthShell({
           <p className="max-w-xl text-lg leading-8 text-foreground-muted">{subtitle}</p>
         </section>
 
-        <section className="w-full rounded-lg bg-surface-elevated p-6 sm:p-8">
+        <section className="mx-auto w-full max-w-md rounded-lg bg-surface-elevated p-6 sm:max-w-lg sm:p-8">
           {message ? (
             <div className="mb-5 rounded-lg bg-surface-0 px-4 py-3 text-sm leading-6 text-foreground-muted">
               {message}

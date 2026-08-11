@@ -328,6 +328,12 @@ button {
   }
 }
 
+@media (max-width: 480px) {
+  .layout-shell {
+    padding-inline: 12px;
+  }
+}
+
 .themed-datetime-input {
   color-scheme: light;
 }
