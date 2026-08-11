@@ -18,7 +18,6 @@ export default [
       "**/src/views/**",
       "**/src/widgets/**",
       "**/src/features/**",
-      "**/src/components/**",
       "**/e2e/**",
       "**/.reference/**",
       "**/.yarn/**",
