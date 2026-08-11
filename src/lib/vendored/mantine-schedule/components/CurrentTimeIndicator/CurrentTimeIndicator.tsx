@@ -14,7 +14,7 @@ import {
 import { useDatesContext } from "@mantine/dates";
 import { useInterval } from "@mantine/hooks";
 import dayjs from "dayjs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AnyDateValue, DateLabelFormat } from "../../types";
 import { formatDate, getCurrentTimePosition, isInTimeRange } from "../../utils";
 import classes from "./CurrentTimeIndicator.module.css";
@@ -139,10 +139,21 @@ export const CurrentTimeIndicator = factory<CurrentTimeIndicatorFactory>((_props
   });
 
   const ctx = useDatesContext();
+  // The indicator depends on the wall clock. Render no indicator during SSR
+  // and the first client render so hydration is deterministic, then reveal it
+  // after mount and let the existing minute interval keep it current.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const [, setTick] = useState(0);
   useInterval(() => setTick((tick) => tick + 1), 1000 * 60, {
     autoInvoke: true,
   });
+
+  if (!mounted) {
+    return null;
+  }
 
   const now = getCurrentTime ? dayjs(getCurrentTime()) : dayjs();
   const offsetPercent = getCurrentTimePosition({ startTime, endTime, intervalMinutes, now });

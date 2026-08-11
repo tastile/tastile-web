@@ -46,7 +46,7 @@ test.describe("C1c — interval unit round-trip E2E", () => {
         .toISOString()
         .slice(0, 10);
 
-      await page.goto("/dashboard/calendar?view=day");
+      await page.goto("/dashboard/timeline/day");
       await page.getByTestId("sidebar-new-tile").first().click();
 
       const submit = page.getByTestId("quick-create-submit");

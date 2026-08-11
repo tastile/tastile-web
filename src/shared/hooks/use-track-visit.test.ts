@@ -40,6 +40,22 @@ describe("useTrackVisit", () => {
     expect(() => renderHook(() => useTrackVisit("/dashboard/tasks"))).not.toThrow();
     setItem.mockRestore();
   });
+
+  it("treats an empty path as a skip signal (layout does not overwrite the stored value)", () => {
+    window.localStorage.setItem(STORAGE_KEY, "/dashboard/projects");
+    renderHook(() => useTrackVisit(""));
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("/dashboard/projects");
+  });
+
+  it("rewrites storage once a non-empty path arrives after a skip", () => {
+    const { rerender } = renderHook(({ path }) => useTrackVisit(path), {
+      initialProps: { path: "" },
+    });
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
+
+    rerender({ path: "/dashboard/timeline/month" });
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBe("/dashboard/timeline/month");
+  });
 });
 
 describe("getLastVisitedPath", () => {

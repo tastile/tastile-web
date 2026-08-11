@@ -75,7 +75,7 @@ test.describe("condition tree basic e2e (E5a)", () => {
     const day = todayUtc();
 
     // 1) Open QuickCreate
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     const submit = page.getByTestId("quick-create-submit");
     await expect(submit).toBeVisible();
@@ -141,7 +141,7 @@ test.describe("condition tree basic e2e (E5a)", () => {
     const title = `E5a No Drop ${Date.now()}`;
     const day = todayUtc();
 
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator('input[aria-required="true"]').first().fill(title);
 

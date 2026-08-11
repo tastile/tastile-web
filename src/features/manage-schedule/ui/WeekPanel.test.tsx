@@ -39,8 +39,16 @@ vi.mock("../ErrorBanner", () => ({
 }));
 
 vi.mock("../LoadingOverlay", () => ({
-  LoadingOverlay: ({ loading, children }: { loading: boolean; children: React.ReactNode }) => {
-    if (loading) return <div data-testid="week-loading">loading</div>;
+  LoadingOverlay: ({
+    loading,
+    view,
+    children,
+  }: {
+    loading: boolean;
+    view: "day" | "week" | "month" | "year" | "agenda";
+    children: React.ReactNode;
+  }) => {
+    if (loading) return <div data-testid="week-loading">{`loading-${view}`}</div>;
     return <>{children}</>;
   },
 }));
@@ -58,6 +66,8 @@ vi.mock("../eventAdapter", () => ({
       payload: e,
     },
   ],
+  buildLoadingWeekEvents: () => [],
+  MONTH_LOADING_EVENT_TITLE: "__loading__",
 }));
 
 vi.mock("../renderEventBody", () => ({

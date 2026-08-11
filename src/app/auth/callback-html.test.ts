@@ -64,7 +64,7 @@ describe("callbackHtmlResponse", () => {
   });
 
   it("preserves a normal destination path", async () => {
-    const destination = "/dashboard/calendar?date=2026-07-23";
+    const destination = "/dashboard/timeline/day?date=2026-07-23";
     const response = callbackHtmlResponse({
       title: "Welcome",
       message: "Loading…",

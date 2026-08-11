@@ -51,7 +51,7 @@ for (const e of events) {
   await page.request.post("http://127.0.0.1:3000/api/events", { data: e });
 }
 
-await page.goto("http://127.0.0.1:3000/dashboard/calendar");
+await page.goto("http://127.0.0.1:3000/dashboard/timeline/day");
 await page.waitForSelector('[data-testid="calendar-main"]');
 
 async function snap(name) {
