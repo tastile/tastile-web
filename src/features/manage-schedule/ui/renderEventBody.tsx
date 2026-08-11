@@ -3,8 +3,10 @@
 
 import type { CalendarEvent } from "@/calendar/model/calendar";
 import type { ScheduleEventData } from "@/lib/vendored/mantine-schedule";
+import { Skeleton } from "@mantine/core";
 import * as Lucide from "lucide-react";
 import type { FC } from "react";
+import { MONTH_LOADING_EVENT_TITLE } from "./eventAdapter";
 
 export type EventScope = "day" | "week" | "month" | "agenda";
 
@@ -18,6 +20,26 @@ const SCOPE_TESTID: Record<EventScope, string> = {
 export function renderEventBody(event: ScheduleEventData<CalendarEvent>, scope: EventScope) {
   const e = event.payload;
   if (!e) return null;
+  // Loading placeholders are CalendarEvent shells with a sentinel
+  // title; render a Mantine Skeleton sized to fill the ScheduleEvent
+  // wrapper so the skeleton IS the event card at the same size and
+  // position as the real card would be. height/width both "100%" so
+  // the Skeleton occupies the full colored card area (the wrapper's
+  // padding + rounded corners stay; the Skeleton's gray fills inside
+  // them). Using Mantine's height/width props (not Tailwind h-*/w-*)
+  // because Skeleton's CSS sets `--skeleton-height` as unlayered CSS
+  // and wins over `@layer utilities`.
+  if (e.title === MONTH_LOADING_EVENT_TITLE) {
+    return (
+      <Skeleton
+        data-testid={`${SCOPE_TESTID[scope]}-loading`}
+        height="100%"
+        width="100%"
+        radius="xs"
+        animate
+      />
+    );
+  }
   const rawIcon = e.icon?.trim();
   const pascalized = rawIcon ? pascalize(rawIcon) : "";
   const lucideRecord = Lucide as unknown as Record<string, FC<{ className?: string }>>;

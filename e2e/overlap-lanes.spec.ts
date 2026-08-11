@@ -27,7 +27,7 @@ test.describe("overlap lane assignment", () => {
     expect(b.placementId).toBeTruthy();
     expect(c.placementId).toBeTruthy();
 
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await expect(page.getByTestId("calendar-main")).toBeVisible();
 
     const aBtn = page.getByTestId(/^day-event-/).filter({ hasText: "LaneTest A" });
@@ -62,7 +62,7 @@ test.describe("overlap lane assignment", () => {
       end: day + "T10:05:00.000Z",
       color: "gray",
     });
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     const chip = page.getByTestId(/^day-event-/).filter({ hasText: "Short break" });
     await expect(chip).toHaveCount(0);
   });

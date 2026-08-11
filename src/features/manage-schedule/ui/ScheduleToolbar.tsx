@@ -1,28 +1,30 @@
 // src/components/schedule/ScheduleToolbar.tsx
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { ActionIcon, Button, SegmentedControl } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { DisplayMode, ScheduleView } from "./useTimelineState";
 
-const VIEW_OPTIONS: { value: ScheduleView; label: string }[] = [
-  { value: "day", label: "Day" },
-  { value: "week", label: "Week" },
-  { value: "month", label: "Month" },
-  { value: "year", label: "Year" },
-  { value: "agenda", label: "Agenda" },
+const VIEW_OPTIONS: { value: ScheduleView; labelKey: string }[] = [
+  { value: "day", labelKey: "timeline.day" },
+  { value: "week", labelKey: "timeline.week" },
+  { value: "month", labelKey: "timeline.month" },
+  { value: "year", labelKey: "timeline.year" },
+  { value: "agenda", labelKey: "timeline.agenda" },
 ];
 
-const MODE_OPTIONS: { value: DisplayMode; label: string }[] = [
-  { value: "scope", label: "Scope" },
-  { value: "around", label: "Around" },
-  { value: "future", label: "Future" },
+const MODE_OPTIONS: { value: DisplayMode; labelKey: string }[] = [
+  { value: "scope", labelKey: "timeline.scope" },
+  { value: "around", labelKey: "timeline.around" },
+  { value: "future", labelKey: "timeline.future" },
 ];
 
-function formatAnchor(view: ScheduleView, anchor: string): string {
+function formatAnchor(view: ScheduleView, anchor: string, locale: string): string {
   const d = new Date(`${anchor}T00:00:00Z`);
+  const dateLocale = locale === "zh-CN" ? "zh-CN" : locale;
   if (view === "day" || view === "agenda") {
-    return d.toLocaleDateString("en-US", {
+    return d.toLocaleDateString(dateLocale, {
       weekday: "long",
       month: "long",
       day: "numeric",
@@ -35,26 +37,17 @@ function formatAnchor(view: ScheduleView, anchor: string): string {
     start.setUTCDate(start.getUTCDate() - start.getUTCDay());
     const end = new Date(start);
     end.setUTCDate(end.getUTCDate() + 6);
-    return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
+    return `${start.toLocaleDateString(dateLocale, { month: "short", day: "numeric", timeZone: "UTC" })} – ${end.toLocaleDateString(dateLocale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
   }
   if (view === "month") {
-    return d.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+    return d.toLocaleDateString(dateLocale, { month: "long", year: "numeric", timeZone: "UTC" });
   }
-  return d.toLocaleDateString("en-US", { year: "numeric", timeZone: "UTC" });
+  return d.toLocaleDateString(dateLocale, { year: "numeric", timeZone: "UTC" });
 }
 
-function modeLabel(view: ScheduleView, mode: DisplayMode): string | null {
+function modeLabel(mode: DisplayMode, t: (key: string) => string): string | null {
   if (mode === "scope") return null;
-  if (mode === "around") {
-    if (view === "day") return "Today · ±12h";
-    if (view === "week") return "Today · ±3d";
-    if (view === "month") return "Today · ±15d";
-    return "Today";
-  }
-  if (view === "day") return "From now · 24h";
-  if (view === "week") return "From now · 7d";
-  if (view === "month") return "From now · 31d";
-  return "From now";
+  return t(mode === "around" ? "timeline.around" : "timeline.future");
 }
 
 export interface ScheduleToolbarProps {
@@ -80,7 +73,8 @@ export function ScheduleToolbar({
   onViewChange,
   onModeChange,
 }: ScheduleToolbarProps) {
-  const titlePrefix = modeLabel(view, mode);
+  const { t, locale } = useTranslation();
+  const titlePrefix = modeLabel(mode, t);
   return (
     <div className="sticky top-0 z-40 flex h-12 shrink-0 items-center gap-2 bg-surface-0 px-4">
       <ActionIcon
@@ -88,10 +82,10 @@ export function ScheduleToolbar({
         variant="subtle"
         size="sm"
         onClick={onPrev}
-        aria-label="Previous"
+        aria-label={t("timeline.previous")}
         disabled={navDisabled}
         data-testid="cal-prev"
-        className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+        className="rounded-sm p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
       </ActionIcon>
@@ -101,17 +95,17 @@ export function ScheduleToolbar({
             {titlePrefix}
           </span>
         ) : null}
-        {formatAnchor(view, anchor)}
+        {formatAnchor(view, anchor, locale)}
       </h2>
       <ActionIcon
         type="button"
         variant="subtle"
         size="sm"
         onClick={onNext}
-        aria-label="Next"
+        aria-label={t("timeline.next")}
         disabled={navDisabled}
         data-testid="cal-next"
-        className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+        className="rounded-sm p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
         <ChevronRight className="h-4 w-4" />
       </ActionIcon>
@@ -122,21 +116,22 @@ export function ScheduleToolbar({
         onClick={onToday}
         disabled={navDisabled}
         data-testid="cal-today"
-        className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+        radius="sm"
+        className="ml-1 rounded-sm px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
-        Today
+        {t("timeline.today")}
       </Button>
       <div className="ml-auto flex items-center gap-2">
         {view !== "month" && view !== "year" && view !== "agenda" && (
           <SegmentedControl
             size="xs"
-            radius="md"
+            radius="sm"
             withItemsBorders={false}
             value={mode}
             onChange={(v) => onModeChange(v as DisplayMode)}
             data={MODE_OPTIONS.map((m) => ({
               value: m.value,
-              label: <span data-testid={`cal-mode-${m.value}`}>{m.label}</span>,
+              label: <span data-testid={`cal-mode-${m.value}`}>{t(m.labelKey)}</span>,
             }))}
             styles={{
               root: { backgroundColor: "var(--surface-1)" },
@@ -148,13 +143,13 @@ export function ScheduleToolbar({
         )}
         <SegmentedControl
           size="xs"
-          radius="md"
+          radius="sm"
           withItemsBorders={false}
           value={view}
           onChange={(v) => onViewChange(v as ScheduleView)}
           data={VIEW_OPTIONS.map((v) => ({
             value: v.value,
-            label: <span data-testid={`cal-view-${v.value}`}>{v.label}</span>,
+            label: <span data-testid={`cal-view-${v.value}`}>{t(v.labelKey)}</span>,
           }))}
           styles={{
             root: { backgroundColor: "var(--surface-1)" },

@@ -3,7 +3,18 @@ import type { Locale } from "@/shared/stores/locale-store";
 export const tasks = {
   en: {
     tasks: {
+      title: "Tasks",
       subtitle: "Manage and view your actionable items",
+      loading: "Loading tasks…",
+      items: "items",
+      empty: "No tasks are ready in this range.",
+      emptyFiltered: "No tasks match the current filters.",
+      createFirst: "Create a task",
+      loadError: "We couldn't load your tasks.",
+      retry: "Try again",
+      startError: "This task couldn't be started.",
+      missingPlan: "This task is missing its execution plan.",
+      range: "Range",
     },
     panels: {
       tasks: {
@@ -25,7 +36,18 @@ export const tasks = {
   },
   ja: {
     tasks: {
+      title: "タスク",
       subtitle: "実行可能なタスクを管理・確認できます",
+      loading: "タスクを読み込み中…",
+      items: "件",
+      empty: "この期間に実行できるタスクはありません。",
+      emptyFiltered: "現在の条件に一致するタスクはありません。",
+      createFirst: "タスクを作成",
+      loadError: "タスクを読み込めませんでした。",
+      retry: "再試行",
+      startError: "タスクを開始できませんでした。",
+      missingPlan: "このタスクには実行プランがありません。",
+      range: "期間",
     },
     panels: {
       tasks: {
@@ -47,7 +69,18 @@ export const tasks = {
   },
   "zh-CN": {
     tasks: {
+      title: "任务",
       subtitle: "管理和查看你的可执行项",
+      loading: "正在加载任务…",
+      items: "项",
+      empty: "此时间范围内没有可执行任务。",
+      emptyFiltered: "没有符合当前筛选条件的任务。",
+      createFirst: "创建任务",
+      loadError: "无法加载任务。",
+      retry: "重试",
+      startError: "无法开始此任务。",
+      missingPlan: "此任务没有执行计划。",
+      range: "范围",
     },
     panels: {
       tasks: {
@@ -69,7 +102,18 @@ export const tasks = {
   },
   ko: {
     tasks: {
+      title: "작업",
       subtitle: "실행 가능한 항목을 관리하고 확인하세요",
+      loading: "작업 불러오는 중…",
+      items: "개",
+      empty: "이 기간에 실행할 수 있는 작업이 없습니다.",
+      emptyFiltered: "현재 필터와 일치하는 작업이 없습니다.",
+      createFirst: "작업 만들기",
+      loadError: "작업을 불러올 수 없습니다.",
+      retry: "다시 시도",
+      startError: "작업을 시작할 수 없습니다.",
+      missingPlan: "이 작업에 실행 계획이 없습니다.",
+      range: "기간",
     },
     panels: {
       tasks: {
@@ -91,7 +135,18 @@ export const tasks = {
   },
   es: {
     tasks: {
+      title: "Tareas",
       subtitle: "Gestiona y consulta tus elementos accionables",
+      loading: "Cargando tareas…",
+      items: "elementos",
+      empty: "No hay tareas listas en este periodo.",
+      emptyFiltered: "Ninguna tarea coincide con los filtros actuales.",
+      createFirst: "Crear una tarea",
+      loadError: "No se pudieron cargar las tareas.",
+      retry: "Reintentar",
+      startError: "No se pudo iniciar esta tarea.",
+      missingPlan: "Esta tarea no tiene un plan de ejecución.",
+      range: "Periodo",
     },
     panels: {
       tasks: {

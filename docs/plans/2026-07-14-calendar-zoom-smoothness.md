@@ -2,7 +2,7 @@
 
 ## Symptom
 
-`tastile-web` の `/dashboard/calendar` (Day / Week view) で Ctrl+wheel ズーム・
+`tastile-web` の `/dashboard/timeline/[view]` (Day / Week view) で Ctrl+wheel ズーム・
 トラックパッドピンチ・2 本指タッチピンチの挙動が**カクカク**する。ジェスチャー中は
 フレーム落ちが目立ち、カーソル追従も遅れる。
 
@@ -59,7 +59,7 @@
 
 - `bun test src/lib/hooks/use-zoom.test.tsx` 全件 pass (touch 系は `touchend` を追加)
 - `bun test src/components/calendar` 全件 pass
-- `bun dev` → `/dashboard/calendar?view=day` で Ctrl+wheel を回したときに視覚が
+- `bun dev` → `/dashboard/timeline/day` で Ctrl+wheel を回したときに視覚が
   即時に追従・滑らか、wheel 停止後に layout が安定
 - Chrome DevTools Performance パネルで Ctrl+wheel 中のフレームレートが 60fps を維持
 

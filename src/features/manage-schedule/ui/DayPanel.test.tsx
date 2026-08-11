@@ -95,12 +95,14 @@ vi.mock("./ErrorBanner", () => ({
 vi.mock("./LoadingOverlay", () => ({
   LoadingOverlay: ({
     loading,
+    view,
     children,
   }: {
     loading: boolean;
+    view: "day" | "week" | "month" | "year" | "agenda";
     children: React.ReactNode;
   }) => {
-    if (loading) return <div data-testid="day-loading">loading</div>;
+    if (loading) return <div data-testid="day-loading">{`loading-${view}`}</div>;
     return <>{children}</>;
   },
 }));
@@ -119,6 +121,8 @@ vi.mock("./eventAdapter", () => ({
       payload: e,
     },
   ],
+  buildLoadingDayEvents: () => [],
+  MONTH_LOADING_EVENT_TITLE: "__loading__",
 }));
 
 vi.mock("./renderEventBody", () => ({
@@ -300,7 +304,7 @@ describe("DayPanel", () => {
     expect(screen.getByTestId("error-banner")).toHaveTextContent("boom");
   });
 
-  it("shows loading overlay when loading", () => {
+  it("marks the panel loading when loading=true", () => {
     render(
       <DayPanel
         range={range}
@@ -315,7 +319,12 @@ describe("DayPanel", () => {
         displayMode="scope"
       />,
     );
-    expect(screen.getByTestId("day-loading")).toBeInTheDocument();
+    // Loading state is no longer a separate overlay sibling; the panel
+    // carries `data-loading` so consumers and tests can observe it,
+    // and skeleton cards flow through the DayView's normal event
+    // pipeline (renderEventBody substitutes a Skeleton for the
+    // loading sentinel title).
+    expect(screen.getByTestId("day-panel")).toHaveAttribute("data-loading");
   });
 
   // ───────────────────────────────────────────────────────────────────────

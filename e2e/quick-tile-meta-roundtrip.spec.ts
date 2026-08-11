@@ -34,7 +34,7 @@ test.describe.skip("quick tile create — project / tag / memo round-trip", () =
     const tag = "design" + Date.now().toString().slice(-4);
     const memo = "this is the memo body " + Date.now();
 
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
 
     await page.locator("input[aria-required='true']").first().fill(title);
@@ -93,7 +93,7 @@ test.describe.skip("quick tile create — project / tag / memo round-trip", () =
 
   test("edit mode hides immutable fields (kind / role / windows) and exposes Delete", async ({ page }) => {
     const title = "Edit hide " + Date.now();
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
 
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator("input[aria-required='true']").first().fill(title);

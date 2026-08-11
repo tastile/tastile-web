@@ -43,7 +43,7 @@ test.describe("TaskDefinition round-trip e2e", () => {
 
   test("two tasks appear in submit payload and persist to DB", async ({ page }) => {
     const title = "TaskDef E2E " + Date.now();
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
 
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator('input[aria-required="true"]').first().fill(title);
@@ -91,7 +91,7 @@ test.describe("TaskDefinition round-trip e2e", () => {
 
   test("task complete condition round-trips via API", async ({ page }) => {
     const title = "TaskCond E2E " + Date.now();
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
 
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator('input[aria-required="true"]').first().fill(title);

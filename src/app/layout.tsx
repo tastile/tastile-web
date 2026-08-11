@@ -41,6 +41,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "";
+  // Hide the demo banner during E2E so its fixed bottom bar doesn't intercept
+  // clicks on QuickCreate / dialog actions. Real users still see it.
   const isE2E = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
 
   return (

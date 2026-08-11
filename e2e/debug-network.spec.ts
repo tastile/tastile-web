@@ -16,7 +16,7 @@ test.skip("debug quick tile submit with network capture", async ({ page }) => {
     }
   });
 
-  await page.goto("/dashboard/calendar?view=day");
+  await page.goto("/dashboard/timeline/day");
   await page.getByTestId("sidebar-new-tile").first().click();
   const submit = page.getByTestId("quick-create-submit");
   await expect(submit).toBeVisible();

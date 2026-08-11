@@ -148,7 +148,7 @@ function d1aImplemented(): boolean {
 // UI helpers
 
 async function openQuickCreate(page: Page): Promise<void> {
-  await page.goto("/dashboard/calendar?view=day");
+  await page.goto("/dashboard/timeline/day");
   await page.getByTestId("sidebar-new-tile").first().click();
   const submit = page.getByTestId("quick-create-submit");
   await expect(submit).toBeVisible();

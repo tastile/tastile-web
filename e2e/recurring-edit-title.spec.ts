@@ -77,7 +77,7 @@ test.describe("v1 - recurring tile edit title", () => {
     });
     expect(matRes.status()).toBeLessThan(300);
 
-    await page.goto("/dashboard/calendar?view=day&anchor=" + day);
+    await page.goto("/dashboard/timeline/day&anchor=" + day);
     const dayTile = page.locator("[data-testid^=day-event-], [data-event-id]", { hasText: original }).first();
     await expect(dayTile).toBeVisible({ timeout: 10_000 });
 

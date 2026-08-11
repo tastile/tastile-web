@@ -7,7 +7,7 @@ import { Dropdown } from "@/shared/ui/Dropdown";
 import { EmptyState } from "@/shared/ui/Empty";
 import { PageSummaryPanel } from "@/shared/ui/PageSummaryPanel";
 import { PageContainer, PageHeader } from "@/shared/ui/page-header/PageHeader";
-import { Alert, Badge, Button, Loader, Text, TextInput } from "@mantine/core";
+import { Alert, Badge, Button, Skeleton, Text, TextInput } from "@mantine/core";
 import { IconAlertCircle } from "@tabler/icons-react";
 import {
   Activity,
@@ -206,8 +206,22 @@ export default function Events() {
 
       <Card padded={false}>
         {loading ? (
-          <div className="flex items-center gap-2 p-6 text-sm text-ink-3">
-            <Loader size="xs" /> Reading event log…
+          <div className="p-6" role="status" aria-label="Loading events">
+            <div className="space-y-2">
+              {Array.from({ length: 6 }, (_, i) => (
+                <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: static placeholder
+                  key={i}
+                  className="flex items-center gap-3"
+                >
+                  <Skeleton className="h-4 w-8" />
+                  <Skeleton className="h-4 w-16 rounded" />
+                  <Skeleton className="h-4 flex-1" />
+                  <Skeleton className="hidden h-4 w-20 md:block" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : !events?.ok ? (
           <div className="p-6">

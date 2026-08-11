@@ -23,7 +23,7 @@ test.describe("ConditionEditor shared refactor e2e (E7a)", () => {
   }) => {
     const title = `E7a SlotRoot ${Date.now()}`;
 
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     const submit = page.getByTestId("quick-create-submit");
     await expect(submit).toBeVisible();
@@ -67,7 +67,7 @@ test.describe("ConditionEditor shared refactor e2e (E7a)", () => {
   }) => {
     const title = `E7a SlotRecur ${Date.now()}`;
 
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     const submit = page.getByTestId("quick-create-submit");
     await expect(submit).toBeVisible();
@@ -108,7 +108,7 @@ test.describe("ConditionEditor shared refactor e2e (E7a)", () => {
   }) => {
     const title = `E7a SubPanel ${Date.now()}`;
 
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator('input[aria-required="true"]').first().fill(title);
 

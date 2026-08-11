@@ -13,4 +13,12 @@ export const queryKeys = {
   candidates: ["v1", "candidates"] as const,
   recurringTemplates: ["v1", "recurring-templates"] as const,
   tiles: ["v1", "tiles"] as const,
+  /**
+   * Cache namespace for calendar event chunks fetched by `useEvents`.
+   * Each query key is `[...eventsChunk, start, end, minMinutes,
+   * includeRecurring, ownerIds, summary, minRecurringStepMs, limit]`
+   * so a Day → Week → Day round trip hits the same Day chunk on
+   * the way back and serves synchronously without a skeleton flash.
+   */
+  eventsChunk: ["v1", "events-chunk"] as const,
 } as const;

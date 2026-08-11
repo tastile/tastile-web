@@ -16,7 +16,7 @@ test.describe("quick tile create — v1 parameters", () => {
   });
 
   test("duration exposes a base input (v1 placement.duration)", async ({ page }) => {
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     // The panel defaults to all-day; toggle all-day off to surface the
     // base duration input. The toggle is a switch labelled "終日".
@@ -30,7 +30,7 @@ test.describe("quick tile create — v1 parameters", () => {
   });
 
   test("kind, role, and recurring state are exposed in the panel", async ({ page }) => {
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
 
     // TileKind row is always visible in the main view.
@@ -72,7 +72,7 @@ test.describe("quick tile create — v1 parameters", () => {
 
   test("recurring tile flows through to placement via the v1 submit path", async ({ page }) => {
     const title = "Recurring to placement " + Date.now();
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     await page.locator('input[aria-required="true"]').first().fill(title);
     await page

@@ -57,7 +57,7 @@ test.describe("B3a windows array persist e2e", () => {
 
   test("1 window of kind=range with 1 rule persists as 1 v1_window row", async ({ page }) => {
     const title = "B3a windows " + Date.now();
-    await page.goto("/dashboard/calendar?view=day");
+    await page.goto("/dashboard/timeline/day");
     await page.getByTestId("sidebar-new-tile").first().click();
     await expect(page.getByTestId("quick-create-submit")).toBeVisible();
 

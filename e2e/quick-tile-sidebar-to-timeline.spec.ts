@@ -39,7 +39,7 @@ test.describe('quick tile - end-to-end create to timeline render', () => {
     .slice(0, 10);
 
     // 1) Open sidebar, click the New tile button, fill the form, submit.
-    await page.goto('/dashboard/calendar?view=day');
+    await page.goto('/dashboard/timeline/day');
     await page.getByTestId('sidebar-new-tile').first().click();
     const submit = page.getByTestId('quick-create-submit');
     await expect(submit).toBeVisible();
