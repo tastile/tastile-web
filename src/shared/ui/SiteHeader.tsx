@@ -1,12 +1,12 @@
 import { TastileLogo } from "@/shared/ui/TastileLogo";
 import Link from "next/link";
+import { SiteHeaderMobileNav } from "./SiteHeaderMobileNav";
 
 export function SiteHeader({
   hideAuth,
   translations,
 }: {
   hideAuth?: boolean;
-  showFeatureLink?: boolean;
   translations: {
     features: string;
     pricing: string;
@@ -45,12 +45,13 @@ export function SiteHeader({
               </Link>
               <Link
                 href="/login"
-                className="ml-1 rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-interactive-hover"
+                className="ml-1 hidden rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background hover:bg-interactive-hover sm:inline-flex"
               >
                 {translations.getStarted}
               </Link>
             </>
           )}
+          <SiteHeaderMobileNav translations={translations} hideAuth={hideAuth} />
         </nav>
       </div>
     </header>

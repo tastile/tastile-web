@@ -22,7 +22,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
-      <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
+      <SiteHeader translations={getHeaderTranslations(lang)} />
       <main className="flex-1">
         <LandingPage t={t} lang={lang} />
       </main>

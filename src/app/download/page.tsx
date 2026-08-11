@@ -46,7 +46,7 @@ export default async function DownloadPage({
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader showFeatureLink translations={getHeaderTranslations(lang)} />
+      <SiteHeader translations={getHeaderTranslations(lang)} />
       <main className="flex-1">
         <div className="layout-shell max-w-4xl py-20">
           <div>

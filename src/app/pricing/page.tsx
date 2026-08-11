@@ -39,7 +39,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader showFeatureLink translations={getHeaderTranslations(LANG)} />
+      <SiteHeader translations={getHeaderTranslations(LANG)} />
       <main className="flex-1">
         <div className="layout-shell max-w-5xl py-20">
           <div>
