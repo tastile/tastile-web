@@ -200,6 +200,7 @@ interface ActivityContentProps {
 }
 
 function ActivityContent({ label, Icon, expanded, active = false }: ActivityContentProps) {
+  // Color is inherited from the enclosing Button so that active/hover states stay in one place.
   return (
     <span
       style={{
@@ -221,12 +222,13 @@ function ActivityContent({ label, Icon, expanded, active = false }: ActivityCont
           flex: "0 0 40px",
         }}
       >
-        <Icon className={cn("h-4 w-4", active && "text-foreground")} aria-hidden />
+        <Icon className="h-4 w-4" aria-hidden />
       </span>
       <span
         className={cn(
           "min-w-0 whitespace-nowrap text-left text-sm",
           "transition-[opacity,transform] duration-200 ease-in-out",
+          active && "font-medium",
           expanded ? "translate-x-0 opacity-100" : "pointer-events-none -translate-x-2 opacity-0",
         )}
         style={{
@@ -251,7 +253,7 @@ const ActivityButton = forwardRef<HTMLButtonElement, ActivityButtonProps>(functi
       type="button"
       variant="subtle"
       aria-label={ariaLabel ?? label}
-      className={cn("text-foreground-subtle hover:bg-surface-2 hover:text-foreground", className)}
+      className={cn("activity-item", className)}
       styles={activityButtonStyles}
       {...props}
     >
@@ -285,10 +287,8 @@ function ActivityLink({ href, label, Icon, active, expanded }: ActivityLinkProps
         variant="subtle"
         aria-label={label}
         aria-current={active ? "page" : undefined}
-        className={cn(
-          "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-          active && "bg-surface-2 text-foreground",
-        )}
+        data-active={active}
+        className="activity-item"
         styles={activityButtonStyles}
       >
         <ActivityContent label={label} Icon={Icon} expanded={expanded} active={active} />

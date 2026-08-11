@@ -463,6 +463,36 @@ button {
   outline-offset: 2px;
 }
 
+/* ActivityBar (dashboard sidebar) item colors.
+
+   These live here as plain unlayered rules rather than as Tailwind utility
+   classes on the component, because the items are Mantine <Button>s. Mantine
+   ships its CSS unlayered and sets `color: inherit` on the UnstyledButton
+   root, and in the CSS cascade unlayered declarations beat *any* @layer — so
+   `text-primary` / `bg-surface-2` in `@layer utilities` silently lose to
+   Mantine no matter their specificity. Keeping these rules unlayered, and at
+   a higher specificity than Mantine's single-class rules, puts them back in
+   control. (layout.tsx imports Mantine's stylesheet before this file, so
+   same-specificity ties also resolve our way.)
+
+   If Mantine's stylesheet is ever wrapped in `@layer mantine`, these can move
+   back to Tailwind classes on the component. */
+.activity-item {
+  color: var(--foreground-subtle);
+}
+.activity-item:hover {
+  background-color: var(--surface-2);
+  color: var(--foreground);
+}
+.activity-item[data-active="true"] {
+  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  color: var(--primary);
+}
+.activity-item[data-active="true"]:hover {
+  background-color: color-mix(in oklab, var(--primary) 15%, transparent);
+  color: var(--primary);
+}
+
 @layer base {
   :where(button, a, [role="button"], input, select, textarea, [tabindex]):focus-visible {
     outline: 2px solid var(--focus-ring);

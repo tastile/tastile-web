@@ -39,7 +39,7 @@ function MobileTabButton({ icon, label, href, active }: MobileTabButtonProps) {
       href={href}
       className={cn(
         "flex flex-col items-center justify-center gap-1 rounded-md px-4 py-2",
-        active ? "text-foreground" : "text-foreground-muted",
+        active ? "bg-primary/10 text-primary" : "text-foreground-muted",
       )}
     >
       {icon}

@@ -77,7 +77,7 @@ function TabButton({ icon, label, href, active, expanded }: TabButtonProps) {
       className={cn(
         "relative flex h-11 items-center overflow-hidden rounded-md transition-all",
         active
-          ? "bg-surface-2 text-foreground"
+          ? "bg-primary/10 text-primary"
           : "text-foreground-muted hover:bg-surface-1 hover:text-foreground",
       )}
     >
