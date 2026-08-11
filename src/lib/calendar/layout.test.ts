@@ -56,6 +56,57 @@ describe("getModeRange year", () => {
   });
 });
 
+describe("getModeRange week + around/future", () => {
+  // Anchor today's local date so the test isn't anchored to a fixed
+  // wall-clock value. tzOffsetMinutes=540 (JST) is the production
+  // runtime; verify both directions.
+  const today = (() => {
+    const d = new Date(Date.now() + 540 * 60_000);
+    return d.toISOString().slice(0, 10);
+  })();
+  // Anchor today's local-midnight in UTC. 540min east of UTC means
+  // JST local-midnight falls on the previous calendar day in UTC.
+  const todayLocalMidnightUtc =
+    today && /^\d{4}-\d{2}-\d{2}$/.test(today)
+      ? (() => {
+          const [y, m, d] = today.split("-").map(Number);
+          return new Date(Date.UTC(y, m - 1, d, -9, 0, 0, 0)).toISOString();
+        })()
+      : null;
+
+  it("future: range is [today_local_midnight, today+7d_local_midnight)", () => {
+    const r = getModeRange("week", "future", today, 540);
+    const startMs = new Date(r.start).getTime();
+    const endMs = new Date(r.end).getTime();
+    // The request spans exactly 7 days.
+    expect(endMs - startMs).toBe(7 * 24 * 60 * 60 * 1000);
+    // The grid (getWeekViewDates("future", today)) renders today .. today+6;
+    // the request must start at today's local midnight, not 'now'.
+    if (todayLocalMidnightUtc) expect(r.start).toBe(todayLocalMidnightUtc);
+  });
+
+  it("around: range covers today-3 .. today+3 local-midnight-aligned", () => {
+    const r = getModeRange("week", "around", today, 540);
+    const startMs = new Date(r.start).getTime();
+    const endMs = new Date(r.end).getTime();
+    expect(endMs - startMs).toBe(7 * 24 * 60 * 60 * 1000);
+    if (todayLocalMidnightUtc) {
+      const offsetMs = 3 * 24 * 60 * 60 * 1000;
+      expect(r.start).toBe(new Date(new Date(todayLocalMidnightUtc).getTime() - offsetMs).toISOString());
+      expect(r.end).toBe(new Date(new Date(todayLocalMidnightUtc).getTime() + 4 * 24 * 60 * 60 * 1000).toISOString());
+    }
+  });
+
+  it("future: request covers JST 00:00..24:00 of today (not 'now'+7d)", () => {
+    // The bug: Date.now()-based range left a 1-hour sliver (00:00 JST
+    // today to "now" JST today) outside the response when the user
+    // opens the view shortly after midnight. Lock in the local-midnight
+    // alignment.
+    const r = getModeRange("week", "future", today, 540);
+    if (todayLocalMidnightUtc) expect(r.start).toBe(todayLocalMidnightUtc);
+  });
+});
+
 describe("getDayViewWindow (grid is always 24 h; only the origin moves)", () => {
   // 2026-07-30 03:20 local — deliberately near midnight so around/future
   // must reach into the previous / next calendar day.

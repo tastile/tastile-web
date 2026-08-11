@@ -13,4 +13,13 @@ export const queryKeys = {
   candidates: ["v1", "candidates"] as const,
   recurringTemplates: ["v1", "recurring-templates"] as const,
   tiles: ["v1", "tiles"] as const,
+  /**
+   * Cache namespace for calendar event chunks fetched by `useEvents`.
+   * The chunk key is `[...queryKeys.eventsChunk, start, end, minMinutes,
+   * includeRecurring, ownerIds, summary, minRecurringStepMs, limit]` —
+   * every param that influences the upstream response must appear so a
+   * `minMinutes` change, owner selection swap, etc. invalidates the
+   * chunk instead of serving stale data.
+   */
+  eventsChunk: ["v1", "events-chunk"] as const,
 } as const;

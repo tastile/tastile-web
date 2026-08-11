@@ -66,19 +66,22 @@ export function getModeRange(
   }
 
   if (view === "week") {
-    if (mode === "around") {
-      const todayMs = Date.now() - tzOffsetMinutes * 60_000;
-      const startMs = todayMs - 3 * 24 * 60 * 60 * 1000;
+    if (mode === "around" || mode === "future") {
+      // Anchor today's local midnight (not Date.now() floored to a clock
+      // instant) so the request range aligns with the 7 local-midnight-
+      // aligned days that `getWeekViewDates` actually renders. Using
+      // Date.now() here left a sliver of the first/last grid day outside
+      // the response (events scheduled before/after the clock instant
+      // were silently dropped) and produced visible "no skeleton, no
+      // events" gaps on the boundary cells.
+      const [ty, tm, td] = todayLocalIso(tzOffsetMinutes).split("-").map(Number);
+      const todayLocalMs = Date.UTC(ty ?? 1970, (tm ?? 1) - 1, td ?? 1) - tzOffsetMinutes * 60_000;
+      const dayMs = 24 * 60 * 60 * 1000;
+      const offsetDays = mode === "around" ? 3 : 0;
+      const spanDays = 7;
       return {
-        start: new Date(startMs).toISOString(),
-        end: new Date(todayMs + 4 * 24 * 60 * 60 * 1000).toISOString(),
-      };
-    }
-    if (mode === "future") {
-      const todayMs = Date.now() - tzOffsetMinutes * 60_000;
-      return {
-        start: new Date(todayMs).toISOString(),
-        end: new Date(todayMs + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        start: new Date(todayLocalMs - offsetDays * dayMs).toISOString(),
+        end: new Date(todayLocalMs + (spanDays - offsetDays) * dayMs).toISOString(),
       };
     }
     // scope: anchor's week, week start = Sunday.
@@ -100,19 +103,20 @@ export function getModeRange(
   }
 
   // month
-  if (mode === "around") {
-    const todayMs = Date.now() - tzOffsetMinutes * 60_000;
-    const startMs = todayMs - 15 * 24 * 60 * 60 * 1000;
+  if (mode === "around" || mode === "future") {
+    // Same alignment rationale as the week branch: the Month grid renders
+    // local-midnight-aligned cells, so the API request must use today's
+    // local midnight (not Date.now()) as the anchor. Otherwise the
+    // first/last cell of the rendered grid lies outside the response
+    // range and renders as "no skeleton, no events".
+    const [ty, tm, td] = todayLocalIso(tzOffsetMinutes).split("-").map(Number);
+    const todayLocalMs = Date.UTC(ty ?? 1970, (tm ?? 1) - 1, td ?? 1) - tzOffsetMinutes * 60_000;
+    const dayMs = 24 * 60 * 60 * 1000;
+    const offsetDays = mode === "around" ? 15 : 0;
+    const spanDays = 31;
     return {
-      start: new Date(startMs).toISOString(),
-      end: new Date(todayMs + 16 * 24 * 60 * 60 * 1000).toISOString(),
-    };
-  }
-  if (mode === "future") {
-    const todayMs = Date.now() - tzOffsetMinutes * 60_000;
-    return {
-      start: new Date(todayMs).toISOString(),
-      end: new Date(todayMs + 31 * 24 * 60 * 60 * 1000).toISOString(),
+      start: new Date(todayLocalMs - offsetDays * dayMs).toISOString(),
+      end: new Date(todayLocalMs + (spanDays - offsetDays) * dayMs).toISOString(),
     };
   }
   // scope: anchor's month

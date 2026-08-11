@@ -19,8 +19,13 @@ const MODE_OPTIONS: { value: DisplayMode; label: string }[] = [
   { value: "future", label: "Future" },
 ];
 
-function formatAnchor(view: ScheduleView, anchor: string): string {
-  const d = new Date(`${anchor}T00:00:00Z`);
+function formatAnchor(view: ScheduleView, anchor: string, mode: DisplayMode, effectiveAnchor: string): string {
+  // For around/future modes the rendered grid uses `effectiveAnchor`
+  // (= today's local date), not the URL `anchor`. Title text has to
+  // mirror the grid or it shows a stale "Aug 9 – Aug 15" header over
+  // an "Aug 12 – Aug 18" future-mode view.
+  const displayAnchor = mode === "scope" ? anchor : effectiveAnchor;
+  const d = new Date(`${displayAnchor}T00:00:00Z`);
   if (view === "day" || view === "agenda") {
     return d.toLocaleDateString("en-US", {
       weekday: "long",
@@ -31,6 +36,14 @@ function formatAnchor(view: ScheduleView, anchor: string): string {
     });
   }
   if (view === "week") {
+    // For around/future the 7-day grid is exactly the local-midnight-
+    // aligned week of effectiveAnchor (no Sun-padded week start).
+    if (mode === "around" || mode === "future") {
+      const start = new Date(d);
+      const end = new Date(start);
+      end.setUTCDate(end.getUTCDate() + 6);
+      return `${start.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${end.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}`;
+    }
     const start = new Date(d);
     start.setUTCDate(start.getUTCDate() - start.getUTCDay());
     const end = new Date(start);
@@ -61,6 +74,7 @@ export interface ScheduleToolbarProps {
   view: ScheduleView;
   mode: DisplayMode;
   anchor: string;
+  effectiveAnchor: string;
   navDisabled: boolean;
   onPrev: () => void;
   onNext: () => void;
@@ -73,6 +87,7 @@ export function ScheduleToolbar({
   view,
   mode,
   anchor,
+  effectiveAnchor,
   navDisabled,
   onPrev,
   onNext,
@@ -101,7 +116,7 @@ export function ScheduleToolbar({
             {titlePrefix}
           </span>
         ) : null}
-        {formatAnchor(view, anchor)}
+        {formatAnchor(view, anchor, mode, effectiveAnchor)}
       </h2>
       <ActionIcon
         type="button"

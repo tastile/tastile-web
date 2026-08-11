@@ -201,6 +201,7 @@ export function ScheduleTimeline({ initialView }: Props) {
         view={state.view}
         mode={state.mode}
         anchor={state.anchor}
+        effectiveAnchor={effectiveAnchor}
         navDisabled={navDisabled}
         onPrev={() => state.shiftAnchor(-1)}
         onNext={() => state.shiftAnchor(1)}

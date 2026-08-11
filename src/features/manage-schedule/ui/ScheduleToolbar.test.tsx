@@ -25,6 +25,7 @@ const baseProps = {
   view: "day" as const,
   mode: "scope" as const,
   anchor: "2026-07-30",
+  effectiveAnchor: "2026-07-30",
   navDisabled: false,
   ...handlers,
 };
