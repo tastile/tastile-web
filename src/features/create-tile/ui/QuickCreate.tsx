@@ -39,17 +39,16 @@ import { useTileList } from "@/shared/hooks/use-tile-list";
 import { createWorkspace, useWorkspaces } from "@/shared/hooks/use-workspaces";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
+import type { ConditionNode } from "@/shared/model/v1/condition";
+import { PlanRole, type PlanRoleValue, TileKind } from "@/shared/model/v1/constants";
+import { uuidv7 } from "@/shared/model/v1/envelope";
+import type { Window } from "@/shared/model/v1/window";
 import { hasTaskOrderCycle, useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
-import type { ConditionNode } from "@/tile/model/v1/condition";
-import { PlanRole, type PlanRoleValue, TileKind } from "@/tile/model/v1/constants";
-import { uuidv7 } from "@/tile/model/v1/envelope";
-import type { Window } from "@/tile/model/v1/window";
 import {
   ActionIcon,
   Button,
   CloseButton,
-  Drawer,
   NumberInput,
   Pill,
   SegmentedControl,
@@ -82,68 +81,6 @@ import { MetaSubPanel } from "./MetaSubPanel";
 import { ReferencesSubPanel } from "./ReferencesSubPanel";
 import { TaskDetailSubPanel } from "./TaskDetailSubPanel";
 import { REPEAT_MODE_LABEL_KEY, formatDisplayDate, weekdayLabelsFor } from "./quick-create-utils";
-
-// ============================================================
-// Panel shell — Mantine Drawer on desktop, custom bottom sheet on mobile.
-// Centralizes the desktop-vs-mobile wrapper so the composer body below
-// can stay a single inline block instead of being duplicated per branch.
-// ============================================================
-
-type PanelShellProps = {
-  isDesktop: boolean;
-  panelClass: string;
-  mounted: boolean;
-  isClosing: boolean;
-  onClose: () => void;
-  innerTransformClass: string;
-  children: React.ReactNode;
-};
-
-function QuickCreatePanelShell({
-  isDesktop,
-  panelClass,
-  mounted,
-  isClosing,
-  onClose,
-  innerTransformClass,
-  children,
-}: PanelShellProps) {
-  if (isDesktop) {
-    return (
-      <Drawer
-        opened={mounted && !isClosing}
-        onClose={onClose}
-        position="right"
-        size="36rem"
-        withOverlay={false}
-        lockScroll={false}
-        trapFocus={false}
-        withCloseButton={false}
-        transitionProps={{ transition: "slide-left", duration: 220 }}
-        zIndex={56}
-        classNames={{
-          content:
-            "h-screen max-h-screen flex flex-col bg-surface-0 shadow-lg border-l border-border",
-        }}
-      >
-        <div
-          className={cn(
-            "flex flex-1 flex-col bg-surface-0 transition-transform duration-200 ease-out",
-            innerTransformClass,
-          )}
-          data-testid="quick-create-panel"
-        >
-          {children}
-        </div>
-      </Drawer>
-    );
-  }
-  return (
-    <div className={panelClass} data-testid="quick-create-panel">
-      {children}
-    </div>
-  );
-}
 
 // ============================================================
 // Main component
@@ -607,11 +544,22 @@ export function QuickCreate() {
   }
 
   // --- layout classes ---
-  // Desktop path is rendered inside <QuickCreatePanelShell>'s Mantine Drawer,
-  // so the desktop panelClass is unused there. Mobile keeps the custom
-  // bottom-sheet styling.
+  // Desktop is a single fixed-right panel that slides left by 24px when a
+  // sub-panel opens, exposing the dashboard underneath. The sub-panel
+  // (z-[58], positioned fixed right) covers the panel, while the parent
+  // div's `-translate-x-6` keeps the sub-panel "expansion" effect intact.
+  // Mobile keeps the custom bottom-sheet styling.
   const panelClass = isDesktop
-    ? ""
+    ? cn(
+        "fixed inset-y-0 right-0 z-[56]",
+        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
+        isClosing
+          ? "translate-x-full opacity-0"
+          : activePanel !== "base"
+            ? "-translate-x-6"
+            : "translate-x-0",
+        "[animation:slideInFromRight_0.22s_ease-out]",
+      )
     : cn(
         "fixed inset-x-0 bottom-0 z-[56]",
         "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
@@ -622,12 +570,6 @@ export function QuickCreate() {
             : "translate-y-0",
         "[animation:slideInFromBottom_0.22s_ease-out]",
       );
-
-  // On desktop, the panel inner div slides left when a sub-panel opens so
-  // the sub-panel (z-[58], positioned fixed) can cover it. Mobile keeps
-  // the parent div's translate via panelClass.
-  const innerTransformClass =
-    isDesktop && !isClosing && activePanel !== "base" ? "-translate-x-6" : "translate-x-0";
 
   const ownerId = meta.ownerSubjectId;
 
@@ -648,15 +590,8 @@ export function QuickCreate() {
         aria-hidden
       />
 
-      {/* main panel — Mantine Drawer on desktop, custom bottom sheet on mobile */}
-      <QuickCreatePanelShell
-        isDesktop={isDesktop}
-        panelClass={panelClass}
-        mounted={mounted}
-        isClosing={isClosing}
-        onClose={close}
-        innerTransformClass={innerTransformClass}
-      >
+      {/* main panel */}
+      <div className={panelClass} data-testid="quick-create-panel">
         {/* ─── composer head ─── */}
         <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
@@ -1141,7 +1076,7 @@ export function QuickCreate() {
             {loadError}
           </p>
         ) : null}
-      </QuickCreatePanelShell>
+      </div>
 
       <IntentSubPanel
         activePanel={activePanel}
