@@ -205,6 +205,76 @@ describe("useEvents chunk cache", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("maxWindowDays: render-time reseed serves partial events with loading=true (Day → Week, only Day's chunk is cached)", async () => {
+    // Regression: prior bug had `readChunkState` return `events: []` whenever
+    // ANY chunk was missing, which made a partial-cache range flash a
+    // skeleton on first paint even though some chunks were already warm.
+    // The correct shape is `events: <accumulator>` paired with
+    // `loading: true` — the same accumulation logic the reload body uses.
+    //
+    // User-visible scenario: open the calendar on Day (its 1-day chunk
+    // gets fetched and cached), then navigate to Week. 6 of Week's 7
+    // chunks are missing, but the Day chunk IS one of them — the
+    // initial paint of Week must show that 1 cached event with the
+    // loading flag on, not an empty array. With the buggy `events: []`,
+    // WeekPanel's `loadingEvents && events.length === 0` guard would
+    // hand the user a skeleton flash even though 1/7 chunks is warm.
+    const dayChunkEvent = makeEvent("e-1", "2026-08-12T09:00:00.000Z", "2026-08-12T10:00:00.000Z");
+    const qc = makeQueryClient();
+    qc.setQueryData<CalendarEvent[]>(
+      [
+        "v1",
+        "events-chunk",
+        "2026-08-12T00:00:00.000Z",
+        "2026-08-13T00:00:00.000Z",
+        0,
+        true,
+        [],
+        null,
+        null,
+        null,
+      ],
+      [dayChunkEvent as unknown as CalendarEvent],
+    );
+
+    const fetchEvents = [
+      dayChunkEvent,
+      makeEvent("d10", "2026-08-10T00:00:00.000Z"),
+      makeEvent("d11", "2026-08-11T00:00:00.000Z"),
+      makeEvent("d13", "2026-08-13T00:00:00.000Z"),
+      makeEvent("d14", "2026-08-14T00:00:00.000Z"),
+      makeEvent("d15", "2026-08-15T00:00:00.000Z"),
+      makeEvent("d16", "2026-08-16T00:00:00.000Z"),
+    ];
+    fetchMock.mockImplementation(async (url: string) => {
+      const u = new URL(url, "http://localhost");
+      const start = u.searchParams.get("start") ?? "";
+      const day = fetchEvents.find((e) => e.start === start);
+      return jsonResponse({ events: day ? [day] : [] });
+    });
+
+    const { result } = renderHook(
+      () =>
+        useEvents({
+          start: "2026-08-10T00:00:00.000Z",
+          end: "2026-08-17T00:00:00.000Z",
+          maxWindowDays: 1,
+        }),
+      { wrapper: makeWrapper(qc) },
+    );
+
+    // Initial render — synchronous cache walk. The cached Day chunk
+    // must surface immediately; `loading` stays true because 6 of 7
+    // chunks are still missing.
+    expect(result.current.loading).toBe(true);
+    expect(result.current.events.map((e) => e.id)).toEqual(["e-1"]);
+
+    // Reload resolves the remaining 6 chunks.
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(fetchMock).toHaveBeenCalledTimes(6);
+    expect(result.current.events).toHaveLength(7);
+  });
+
   it("maxWindowDays: range change with every chunk already cached skips the network (Week → Day → Week round-trip)", async () => {
     // Simulates the user-visible scenario: visit Week (7 chunks cached),
     // navigate to Day (Day chunk fetched, Week chunks untouched),

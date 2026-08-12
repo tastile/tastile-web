@@ -159,7 +159,14 @@ function readChunkState(
         allCached = false;
       }
     }
-    return { events: allCached ? acc : [], loading: !allCached };
+    // Render-time reseed must hand the consumer every cached event, even
+    // when only some chunks are present. The reload body accumulates the
+    // same way (see `runReload` below) and pairs `acc` with
+    // `loading: true` until the missing chunks arrive — a fully-empty
+    // reseed would erase the cache hit and force a skeleton flash on
+    // e.g. Day → Week, where the Day view's chunk is already warm but
+    // 6 of the Week view's 7 chunks are still missing.
+    return { events: acc, loading: !allCached };
   }
 
   const cached = queryClient.getQueryData<CalendarEvent[]>(chunkKey(start, end));
