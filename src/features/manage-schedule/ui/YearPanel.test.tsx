@@ -47,25 +47,10 @@ vi.mock("./eventAdapter", () => ({
 describe("YearPanel", () => {
   const range = { start: "2026-01-01", end: "2026-12-31" };
 
-  it("renders the YearView when not loading", () => {
-    render(
-      <YearPanel
-        range={range}
-        anchor="2026-07-30"
-        zoom={56}
-        events={[]}
-        loading={false}
-        error={null}
-        displayMode="scope"
-        onEventClick={vi.fn()}
-      />,
-    );
-    expect(screen.getByTestId("year-view")).toBeInTheDocument();
-    expect(screen.getByTestId("year-view")).toHaveAttribute("data-date", "2026-07-30");
-    expect(screen.queryByTestId("year-skeleton")).not.toBeInTheDocument();
-  });
-
-  it("renders YearSkeleton (4×3 of month blocks) while loading with no events", () => {
+  it("renders the YearView frame immediately even while loading with no events", () => {
+    // Frame-first: the placement frame must be visible from the first
+    // render, before any data arrives. A spinner or skeleton here would
+    // delay the user seeing the calendar structure.
     render(
       <YearPanel
         range={range}
@@ -78,14 +63,13 @@ describe("YearPanel", () => {
         onEventClick={vi.fn()}
       />,
     );
-    expect(screen.getByTestId("year-skeleton")).toBeInTheDocument();
-    expect(screen.getByTestId("year-skeleton-months")).toBeInTheDocument();
-    // 12 month blocks, one per month of the displayed year.
-    expect(screen.getAllByTestId("year-skeleton-month")).toHaveLength(12);
-    expect(screen.queryByTestId("year-view")).not.toBeInTheDocument();
+    expect(screen.getByTestId("year-view")).toBeInTheDocument();
+    expect(screen.getByTestId("year-view")).toHaveAttribute("data-date", "2026-07-30");
+    expect(screen.queryByTestId("year-loading")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("year-skeleton")).not.toBeInTheDocument();
   });
 
-  it("does NOT render YearSkeleton once events arrive (partial cache)", () => {
+  it("fills in the YearView when events arrive during loading", () => {
     const cached = {
       id: "evt-cached",
       title: "Cached event",
@@ -108,12 +92,28 @@ describe("YearPanel", () => {
         onEventClick={vi.fn()}
       />,
     );
-    expect(screen.queryByTestId("year-skeleton")).not.toBeInTheDocument();
     expect(screen.getByTestId("year-view")).toBeInTheDocument();
     expect(screen.getByTestId("year-event-evt-cached")).toBeInTheDocument();
   });
 
-  it("marks the panel loading when loading=true and events is empty", () => {
+  it("renders the YearView when not loading", () => {
+    render(
+      <YearPanel
+        range={range}
+        anchor="2026-07-30"
+        zoom={56}
+        events={[]}
+        loading={false}
+        error={null}
+        displayMode="scope"
+        onEventClick={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("year-view")).toBeInTheDocument();
+    expect(screen.queryByTestId("year-loading")).not.toBeInTheDocument();
+  });
+
+  it("marks the panel loading while loading is true", () => {
     render(
       <YearPanel
         range={range}
@@ -129,24 +129,14 @@ describe("YearPanel", () => {
     expect(screen.getByTestId("year-panel")).toHaveAttribute("data-loading");
   });
 
-  it("does NOT mark the panel loading when events have arrived", () => {
-    const cached = {
-      id: "evt-cached",
-      title: "Cached event",
-      allDay: false,
-      start: "2026-07-30T09:00:00Z",
-      end: "2026-07-30T10:00:00Z",
-      source: { kind: 0, detail: null },
-      tileId: "tile-cached",
-      color: "blue",
-    } as CalendarEvent;
+  it("does NOT mark the panel loading when loading is false", () => {
     render(
       <YearPanel
         range={range}
         anchor="2026-07-30"
         zoom={56}
-        events={[cached]}
-        loading={true}
+        events={[]}
+        loading={false}
         error={null}
         displayMode="scope"
         onEventClick={vi.fn()}
