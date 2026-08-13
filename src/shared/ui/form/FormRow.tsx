@@ -4,7 +4,13 @@ import type { ReactNode } from "react";
 
 interface FormRowProps {
   "data-testid"?: string;
-  icon: ReactNode;
+  /**
+   * Optional icon. When omitted, the icon column stays reserved at 20px so
+   * the content column always starts at the same offset — this is how
+   * title rows (no icon) align with regular field rows without `pl-[48px]`
+   * magic numbers. The grid track is structural, not conditional.
+   */
+  icon?: ReactNode;
   children: ReactNode;
   trailing?: ReactNode;
   className?: string;
@@ -28,8 +34,8 @@ export function FormRow({
         className,
       )}
     >
-      <Group justify="center" gap={0} wrap="nowrap" className="text-foreground-muted">
-        {icon}
+      <Group justify="center" gap={0} wrap="nowrap" className="text-foreground-muted" aria-hidden={icon === undefined}>
+        {icon ?? <span className="w-5" />}
       </Group>
       <div className="min-w-0 flex items-center">{children}</div>
       {trailing !== undefined && (

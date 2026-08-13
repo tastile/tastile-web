@@ -1,12 +1,12 @@
 import { cn } from "@/shared/lib/cn";
+import type { Plan } from "@/shared/model/v1/tile-types";
+import type { Window } from "@/shared/model/v1/window";
 import type { Locale } from "@/shared/stores/locale-store";
 import type {
   RecurringSlice,
   SourceAuthoringSlice,
   TimeSlice,
 } from "@/shared/stores/quick-create-store";
-import type { Plan } from "@/tile/model/v1/tile";
-import type { Window } from "@/tile/model/v1/window";
 import { Accordion } from "@mantine/core";
 import {
   Calendar,

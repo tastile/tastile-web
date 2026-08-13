@@ -14,7 +14,7 @@ import {
   buildCreateTile,
   substituteTileId,
 } from "./build-command";
-import { TileKind, PlanRole } from "@/tile/model/v1/constants";
+import { TileKind, PlanRole } from "@/shared/model/v1/constants";
 
 function recurringSnapshot() {
   return {

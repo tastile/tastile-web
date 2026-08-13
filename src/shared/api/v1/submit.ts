@@ -1,9 +1,9 @@
 import { recordTileCreateAttempt } from "@/shared/analytics/tile-create";
 import { getCoreToken } from "@/shared/api/core-token";
 import { isCloudDirectEnabled } from "@/shared/api/endpoints";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
+import type { ApiError } from "@/shared/model/v1/envelope";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { ApiErrorKind } from "@/tile/model/v1/constants";
-import type { ApiError } from "@/tile/model/v1/envelope";
 import type { ApiClient } from "./endpoints";
 import { buildQuickCreateSchedulePayload } from "./quick-create-schedule-wire";
 import { publishScheduleDefinition } from "./schedule-definition";

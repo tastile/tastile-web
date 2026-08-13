@@ -3,7 +3,7 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { TileId } from "@/shared/model/ids";
-import { Tile } from "@/tile/model/tile";
+import { Tile } from "@/tile/model/types";
 import { renderWithMantine } from "@/test/render-with-mantine";
 import { RightSidebar } from "./RightSidebar";
 

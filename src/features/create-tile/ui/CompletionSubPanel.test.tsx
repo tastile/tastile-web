@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { renderWithMantine as render } from "@/test/render-with-mantine";
-import { ConditionKind } from "@/tile/model/v1/constants";
+import { ConditionKind } from "@/shared/model/v1/constants";
 import type { CompletionSubPanelProps } from "./CompletionSubPanel";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

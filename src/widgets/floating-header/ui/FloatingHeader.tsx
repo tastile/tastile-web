@@ -1,6 +1,5 @@
 "use client";
 
-import { ExecutionControls } from "@/features/execute-tile/ui/ExecutionControls";
 import { useActiveTile } from "@/shared/hooks/use-active-tile";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
@@ -30,6 +29,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { ExecutionControls } from "./ExecutionControls";
 
 interface FloatingHeaderProps {
   userName: string;

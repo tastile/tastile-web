@@ -1,7 +1,7 @@
 import { Button } from "@mantine/core";
 
 import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
-import { AuthShell } from "../auth-shell";
+import { AuthShell } from "../shell";
 
 export default async function EmailPage({
   searchParams,

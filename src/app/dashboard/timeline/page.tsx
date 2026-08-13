@@ -1,6 +1,6 @@
 import { MinuteClockProvider } from "@/shared/hooks/minute-clock";
 import { Suspense } from "react";
-import { TimelinePageClient } from "./timeline-page-client";
+import { TimelinePageClient } from "./page-client";
 
 export default function TimelinePage() {
   return (

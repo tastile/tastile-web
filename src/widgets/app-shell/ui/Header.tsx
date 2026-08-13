@@ -1,8 +1,6 @@
 "use client";
 
-import { AccountMenu } from "@/app/app/account-menu";
-import type { SyncStatus } from "@/execution/model/execution";
-import { ActiveExecutionBar } from "@/features/execute-tile/ui/ActiveExecutionBar";
+import type { SyncStatus } from "@/execution/model/types";
 import { pickDisplayLabel } from "@/shared/auth/display-label";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { profileQueryOptions, safeSessionQueryOptions } from "@/shared/query/auth-query-options";
@@ -10,6 +8,8 @@ import { TastileLogo } from "@/shared/ui/TastileLogo";
 import { ActionIcon } from "@mantine/core";
 import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
+import { AccountMenu } from "./AccountMenu";
+import { ActiveExecutionBar } from "./ActiveExecutionBar";
 
 interface HeaderProps {
   executionState?: {

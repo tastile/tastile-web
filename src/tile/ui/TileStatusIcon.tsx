@@ -2,7 +2,7 @@
 
 import { TILE_STATUS_COLORS } from "@/lib/styles/tile-card-styles";
 import { cn } from "@/shared/lib/cn";
-import type { TileLifecycle } from "@/tile/model/tile";
+import type { TileLifecycle } from "@/tile/model/types";
 import { ActionIcon } from "@mantine/core";
 import { CheckCircle2, Circle, CircleDot } from "lucide-react";
 

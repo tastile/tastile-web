@@ -46,4 +46,17 @@ describe("FormRow", () => {
     expect(grid.className).toContain("min-h-row-tight");
     expect(grid.className.includes("min-h-row ")).toBe(false);
   });
+
+  it("keeps the 20px icon-column track when icon is omitted", () => {
+    // Structural alignment: title rows (no icon) share the same grid as
+    // field rows, so the content column always starts at the same offset.
+    renderWithMantine(
+      <FormRow>
+        <span data-testid="content">title</span>
+      </FormRow>,
+    );
+    const grid = screen.getByTestId("form-row");
+    expect(grid.className).toContain("grid-cols-[20px_1fr_auto]");
+    expect(screen.getByTestId("content")).not.toBeNull();
+  });
 });

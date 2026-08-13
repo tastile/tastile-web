@@ -1,8 +1,8 @@
-import { PlacementSource, PlanRole, RecurringState, TileKind } from "@/tile/model/v1/constants";
-import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/tile/model/v1/envelope";
+import { PlacementSource, PlanRole, RecurringState, TileKind } from "@/shared/model/v1/constants";
+import { type ApiError, type CommandRequest, nowIso, uuidv7 } from "@/shared/model/v1/envelope";
 import { type ApiClient, type Result, postCommand, sendCommand } from "./endpoints";
 
-type CommandResult = Result<import("@/tile/model/v1/envelope").CommandResponse>;
+type CommandResult = Result<import("@/shared/model/v1/envelope").CommandResponse>;
 
 export interface CreateTileOptions {
   client: ApiClient;

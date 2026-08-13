@@ -2,7 +2,7 @@
 import { renderWithMantine as render } from "@/test/render-with-mantine";
 import { describe, expect, it, vi } from "vitest";
 import { ConditionEditor } from "./ConditionEditor";
-import { ConditionKind } from "@/tile/model/v1/constants";
+import { ConditionKind } from "@/shared/model/v1/constants";
 
 describe("ConditionEditor", () => {
   const t = (k: string) => k;

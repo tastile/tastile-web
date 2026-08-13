@@ -5,7 +5,6 @@ import { TimeInput } from "@mantine/dates";
 import { ChevronDown, ChevronUp, GitBranch, ListChecks, Plus, Search, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 
-import { RowSegmented } from "@/shared/ui/form";
 import type {
   AnchorSelector,
   CalendarTerm,
@@ -18,8 +17,9 @@ import type {
   RequirementTerm,
   TaskTerm,
   Term,
-} from "@/tile/model/v1/condition";
-import { ConditionKind } from "@/tile/model/v1/constants";
+} from "@/shared/model/v1/condition";
+import { ConditionKind } from "@/shared/model/v1/constants";
+import { RowSegmented } from "@/shared/ui/form";
 
 import { TileReferencePicker } from "./TileReferencePicker";
 import { defaultTerm } from "./default-term";
@@ -33,7 +33,7 @@ function ConditionKindSegmented({
   onChange,
   t,
 }: {
-  value: number | import("@/tile/model/v1/constants").ConditionKindValue;
+  value: number | import("@/shared/model/v1/constants").ConditionKindValue;
   onChange: (v: number) => void;
   t: (k: string) => string;
 }) {
@@ -86,15 +86,15 @@ function TermKindSegmented({
 
 function updateCalendar(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").CalendarTerm,
-  value: import("@/tile/model/v1/condition").CalendarTerm[keyof import("@/tile/model/v1/condition").CalendarTerm],
+  key: keyof import("@/shared/model/v1/condition").CalendarTerm,
+  value: import("@/shared/model/v1/condition").CalendarTerm[keyof import("@/shared/model/v1/condition").CalendarTerm],
 ) {
   if (term.kind !== "calendar") return term;
   return { kind: "calendar", value: { ...term.value, [key]: value } } as Term;
 }
 function updateMoment(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").MomentTerm,
+  key: keyof import("@/shared/model/v1/condition").MomentTerm,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
@@ -103,7 +103,7 @@ function updateMoment(
 }
 function updateRelation(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").RelationTerm,
+  key: keyof import("@/shared/model/v1/condition").RelationTerm,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
@@ -112,7 +112,7 @@ function updateRelation(
 }
 function updateTask(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").TaskTerm,
+  key: keyof import("@/shared/model/v1/condition").TaskTerm,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
@@ -121,7 +121,7 @@ function updateTask(
 }
 function updateRequirement(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").RequirementTerm,
+  key: keyof import("@/shared/model/v1/condition").RequirementTerm,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
@@ -130,7 +130,7 @@ function updateRequirement(
 }
 function updateLife(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").LifeTerm,
+  key: keyof import("@/shared/model/v1/condition").LifeTerm,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
@@ -143,7 +143,7 @@ function updateValue(term: Term, key: string, value: unknown): Term {
 }
 function updateGap(
   term: Term,
-  key: keyof import("@/tile/model/v1/condition").GapTerm,
+  key: keyof import("@/shared/model/v1/condition").GapTerm,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ) {
@@ -153,7 +153,7 @@ function updateGap(
 function updateGapAnchor(
   term: Term,
   anchorKey: "leftAnchor" | "rightAnchor",
-  field: keyof import("@/tile/model/v1/condition").AnchorSelector,
+  field: keyof import("@/shared/model/v1/condition").AnchorSelector,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ): Term {
@@ -168,7 +168,7 @@ function updateGapAnchor(
 }
 function updateGapSize(
   term: Term,
-  field: keyof import("@/tile/model/v1/condition").DurationRange,
+  field: keyof import("@/shared/model/v1/condition").DurationRange,
   // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ): Term {
@@ -643,7 +643,7 @@ export function ConditionEditor({
           if (kind === ConditionKind.TERM) {
             const currentTerm = node.term ?? defaultTerm("calendar");
             onChange({
-              kind: kind as import("@/tile/model/v1/constants").ConditionKindValue,
+              kind: kind as import("@/shared/model/v1/constants").ConditionKindValue,
               children: [],
               term: currentTerm,
             });
@@ -653,13 +653,13 @@ export function ConditionEditor({
                 ? node.children[0]
                 : { kind: ConditionKind.TERM, children: [], term: defaultTerm("calendar") };
             onChange({
-              kind: kind as import("@/tile/model/v1/constants").ConditionKindValue,
+              kind: kind as import("@/shared/model/v1/constants").ConditionKindValue,
               children: [firstChild],
               term: null,
             });
           } else {
             onChange({
-              kind: kind as import("@/tile/model/v1/constants").ConditionKindValue,
+              kind: kind as import("@/shared/model/v1/constants").ConditionKindValue,
               children: node.children,
               term: null,
             });

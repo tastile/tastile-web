@@ -1,11 +1,12 @@
 "use client";
 
 import { Button, Switch, TextInput, Textarea } from "@mantine/core";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, ListChecks, Plus, Trash2 } from "lucide-react";
 
+import type { ConditionNode } from "@/shared/model/v1/condition";
+import { ConditionKind } from "@/shared/model/v1/constants";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import type { ConditionNode } from "@/tile/model/v1/condition";
-import { ConditionKind } from "@/tile/model/v1/constants";
+import { SectionHeader } from "@/shared/ui/form";
 import { ConditionEditor } from "./ConditionEditor";
 
 function defaultShowCondition(): ConditionNode {
@@ -29,9 +30,7 @@ export function TaskDefinitionEditor({ t }: TaskDefinitionEditorProps) {
 
   return (
     <div className="flex flex-col gap-3" data-testid="task-definition-editor">
-      <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-        {t("quickCreate.tasksSectionTitle")}
-      </div>
+      <SectionHeader icon={ListChecks} title={t("quickCreate.tasksSectionTitle")} />
       {tasks.map((task, index) => (
         <div
           key={task.id}
@@ -110,9 +109,7 @@ export function TaskDefinitionEditor({ t }: TaskDefinitionEditorProps) {
           </div>
           {task.show !== null && (
             <div className="flex flex-col gap-1">
-              <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                {t("quickCreate.taskShowLabel")}
-              </div>
+              <SectionHeader title={t("quickCreate.taskShowLabel")} />
               <ConditionEditor
                 node={task.show}
                 onChange={(next) => setTaskField(task.id, "show", next)}
@@ -121,9 +118,7 @@ export function TaskDefinitionEditor({ t }: TaskDefinitionEditorProps) {
               />
             </div>
           )}
-          <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-            {t("quickCreate.taskCompleteLabel")}
-          </div>
+          <SectionHeader title={t("quickCreate.taskCompleteLabel")} />
           <ConditionEditor
             node={task.complete}
             onChange={(next) => setTaskField(task.id, "complete", next)}

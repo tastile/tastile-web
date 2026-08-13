@@ -6,7 +6,7 @@
  * auto-resolve or open a Session for user input.
  */
 
-import type { ConditionNode } from "@/tile/model/v1/condition";
+import type { ConditionNode } from "@/shared/model/v1/condition";
 import { convertCondition } from "./plan-wire";
 
 // ---------- DecisionObserve.scope numeric constants (v1/06 §Decision) ----------

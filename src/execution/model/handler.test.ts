@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Actor } from '@/tile/model/actor';
 import { TileId } from '@/shared/model/ids';
-import { getTileLifecycle, Tile } from '@/tile/model/tile';
+import { getTileLifecycle, Tile } from '@/tile/model/types';
 import { CommandEnvelope } from "./command";
 import { CommandHandler } from "./handler";
 import { AppState } from "./state";

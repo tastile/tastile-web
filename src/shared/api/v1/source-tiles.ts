@@ -4,7 +4,7 @@ import {
   type CommandResponse,
   nowIso,
   uuidv7,
-} from "@/tile/model/v1/envelope";
+} from "@/shared/model/v1/envelope";
 import { type ApiClient, type Result, getRead, sendCommand } from "./endpoints";
 
 export interface UtcSpan {

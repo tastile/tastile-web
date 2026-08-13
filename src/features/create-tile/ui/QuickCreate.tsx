@@ -38,13 +38,12 @@ import { useIsDesktop } from "@/shared/hooks/use-media-query";
 import { useTileList } from "@/shared/hooks/use-tile-list";
 import { createWorkspace, useWorkspaces } from "@/shared/hooks/use-workspaces";
 import { useTranslation } from "@/shared/i18n/use-translation";
-import { cn } from "@/shared/lib/cn";
 import type { ConditionNode } from "@/shared/model/v1/condition";
-import { PlanRole, type PlanRoleValue, TileKind } from "@/shared/model/v1/constants";
+import { PlanRole, type PlanRoleValue } from "@/shared/model/v1/constants";
 import { uuidv7 } from "@/shared/model/v1/envelope";
 import type { Window } from "@/shared/model/v1/window";
 import { hasTaskOrderCycle, useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
+import { FormRow } from "@/shared/ui/form";
 import {
   ActionIcon,
   Button,
@@ -52,6 +51,7 @@ import {
   NumberInput,
   Pill,
   SegmentedControl,
+  Stack,
   TextInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
@@ -59,27 +59,27 @@ import {
   Calendar,
   ChevronRight,
   Clock,
+  Eye,
   Layers,
   Link2,
   ListChecks,
-  MessageSquare,
   Plus,
   Repeat,
   SlidersHorizontal,
-  Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { BehaviorPreview } from "./BehaviorPreview";
 import { CompletionSubPanel } from "./CompletionSubPanel";
 import { CreateProjectModal } from "./CreateProjectModal";
 import { DurationSubPanel } from "./DurationSubPanel";
-import { EssentialRow } from "./EssentialRow";
 import { IntentSubPanel } from "./IntentSubPanel";
 import { MetaSubPanel } from "./MetaSubPanel";
 import { ReferencesSubPanel } from "./ReferencesSubPanel";
 import { TaskDetailSubPanel } from "./TaskDetailSubPanel";
+import { WorkflowBatch } from "./WorkflowBatch";
 import { REPEAT_MODE_LABEL_KEY, formatDisplayDate, weekdayLabelsFor } from "./quick-create-utils";
 
 // ============================================================
@@ -107,12 +107,13 @@ export function QuickCreate() {
   const source = useQuickCreateStore((s) => s.source);
   const recurring = useQuickCreateStore((s) => s.recurring);
   const meta = useQuickCreateStore((s) => s.meta);
+  const activePanel = useQuickCreateStore((s) => s.activePanel);
+  const setActivePanel = useQuickCreateStore((s) => s.setActivePanel);
 
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
 
   const [visualOpen, setVisualOpen] = useState(false);
-  const [activePanel, setActivePanel] = useState<SubPanelKey>("base");
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const projects = useWorkspaces();
   const refreshProjects = projects.refresh;
@@ -186,47 +187,15 @@ export function QuickCreate() {
   const [projectModalOpen, { open: openProjectModal, close: closeProjectModal }] =
     useDisclosure(false);
 
-  const headingLabel = (() => {
-    const isEdit = mode === "edit";
-    if (identity.kind === TileKind.RECURRING) {
-      return t(isEdit ? "quickCreate.titleEditRecurring" : "quickCreate.titleCreateRecurring");
-    }
-    if (plan.role === PlanRole.LABEL) {
-      return t(isEdit ? "quickCreate.titleEditLabel" : "quickCreate.titleCreateLabel");
-    }
-    return t(isEdit ? "quickCreate.titleEditTask" : "quickCreate.titleCreateTask");
-  })();
-
   const [mounted, setMounted] = useState(isOpen);
-  const [isClosing, setIsClosing] = useState(false);
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     if (isOpen) {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-      const reset = () => {
-        setMounted(true);
-        setIsClosing(false);
-      };
+      const reset = () => setMounted(true);
       if (typeof queueMicrotask === "function") queueMicrotask(reset);
       else Promise.resolve().then(reset);
     } else if (mounted) {
-      // react-doctor-disable-next-line react-hooks-js/set-state-in-effect
-      setIsClosing(true);
-      closeTimerRef.current = setTimeout(() => {
-        setMounted(false);
-        setIsClosing(false);
-        closeTimerRef.current = null;
-      }, 220);
+      setMounted(false);
     }
-    return () => {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-    };
   }, [isOpen, mounted]);
 
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -405,6 +374,11 @@ export function QuickCreate() {
 
   if (!mounted) return null;
 
+  // Detailed editor renders its body content inside QuickCreatePanel's
+  // body slot. Only active when workflowKind is "detailed".
+  const workflowKind = useQuickCreateStore((s) => s.workflowKind);
+  if (workflowKind !== "detailed") return null;
+
   // --- windows array helpers ---
   function addWindow() {
     const newWindow: Window = {
@@ -543,124 +517,53 @@ export function QuickCreate() {
     return handleSubmitForce();
   }
 
-  // --- layout classes ---
-  // Desktop is a single fixed-right panel that slides left by 24px when a
-  // sub-panel opens, exposing the dashboard underneath. The sub-panel
-  // (z-[58], positioned fixed right) covers the panel, while the parent
-  // div's `-translate-x-6` keeps the sub-panel "expansion" effect intact.
-  // Mobile keeps the custom bottom-sheet styling.
-  const panelClass = isDesktop
-    ? cn(
-        "fixed inset-y-0 right-0 z-[56]",
-        "w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-x-full opacity-0"
-          : activePanel !== "base"
-            ? "-translate-x-6"
-            : "translate-x-0",
-        "[animation:slideInFromRight_0.22s_ease-out]",
-      )
-    : cn(
-        "fixed inset-x-0 bottom-0 z-[56]",
-        "h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out",
-        isClosing
-          ? "translate-y-full opacity-0"
-          : activePanel !== "base"
-            ? "translate-y-6"
-            : "translate-y-0",
-        "[animation:slideInFromBottom_0.22s_ease-out]",
-      );
-
   const ownerId = meta.ownerSubjectId;
 
   return (
     <>
-      {/* backdrop */}
-      {/* biome-ignore lint/a11y/useKeyWithClickEvents: backdrop overlay — Escape handled by SubPanelShell */}
-      <div
-        data-testid="quick-create-backdrop"
-        className={cn(
-          "fixed inset-0 z-[55] bg-foreground/10 backdrop-blur-[1px] transition-opacity duration-300 ease-out",
-          isClosing ? "opacity-0 pointer-events-none" : "opacity-100",
-        )}
-        onClick={() => {
-          if (activePanel !== "base") setActivePanel("base");
-          else close();
-        }}
-        aria-hidden
-      />
-
-      {/* main panel */}
-      <div className={panelClass} data-testid="quick-create-panel">
-        {/* ─── composer head ─── */}
-        <div className="flex h-[68px] shrink-0 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-accent-ink">
-            <Layers className="h-4 w-4" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate text-[15px] font-semibold leading-tight text-foreground">
-              {headingLabel}
-            </h2>
-          </div>
-          <SegmentedControl
-            size="xs"
-            radius="md"
-            value={String(plan.role)}
-            onChange={(value) => setField("plan.role", Number(value) as PlanRoleValue)}
-            data-testid="quick-create-tile-kind"
-            data={[
-              {
-                value: String(PlanRole.EXECUTABLE),
-                label: t("quickCreate.behaviorExecutable"),
-              },
-              {
-                value: String(PlanRole.LABEL),
-                label: t("quickCreate.behaviorLabel"),
-              },
-            ]}
-            className="shrink-0"
-          />
-          <div className="flex shrink-0 items-center gap-2">
-            <CloseButton onClick={close} aria-label={t("tiles.closePanel")} />
-          </div>
-        </div>
-
-        {/* ─── composer body ─── */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="mx-auto max-w-[640px]">
-            {/* ── main card ── */}
-            <section className="py-2" data-testid="quick-create-tab-identity">
-              {/* title input */}
-              <TextInput
-                id="tile-title-input"
-                value={identity.title}
-                onChange={(e) => {
-                  setField("identity.title", e.target.value);
-                  if (invalidField === "title") setInvalidField(null);
-                }}
-                placeholder={t("quickCreate.titlePlaceholder")}
-                variant="unstyled"
-                size="xl"
-                fw={700}
-                data-testid="quick-create-input-title"
-                aria-required="true"
-                styles={{
-                  input: {
-                    fontSize: "1.5rem",
-                    lineHeight: "2rem",
-                    fontWeight: 700,
-                    letterSpacing: "-0.025em",
-                    padding: 0,
-                    paddingBottom: "0.75rem",
-                  },
-                }}
+      <Stack gap={0} className="h-full">
+      <Stack gap={0} className="flex-1 overflow-y-auto">
+        {/* Title */}
+        <div className="px-4 py-2">
+          <FormRow
+            icon={
+              <CloseButton
+                onClick={close}
+                aria-label={t("tiles.closePanel")}
+                data-testid="quick-create-detailed-close"
+                size="sm"
               />
+            }
+          >
+            <TextInput
+              id="tile-title-input"
+              value={identity.title}
+              onChange={(e) => {
+                setField("identity.title", e.target.value);
+                if (invalidField === "title") setInvalidField(null);
+              }}
+              placeholder={t("quickCreate.titlePlaceholder")}
+              variant="unstyled"
+              size="lg"
+              data-testid="quick-create-input-title"
+              aria-required="true"
+              classNames={{
+                input:
+                  "text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto border-b-2 border-foreground/60 focus:border-foreground",
+              }}
+            />
+          </FormRow>
+        </div>
+        <WorkflowBatch />
 
-              {/* organize row */}
-              <div
-                className="flex flex-wrap items-center gap-1.5 pb-3"
-                data-testid="quick-create-organize-row"
-              >
+        {/* ─── body ─── */}
+        <div className="px-4 py-3">
+          {/* organize row */}
+          <FormRow>
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              data-testid="quick-create-organize-row"
+            >
                 <Button
                   type="button"
                   onClick={() => setActivePanel("meta")}
@@ -673,39 +576,18 @@ export function QuickCreate() {
                   {t("quickCreate.metaExpandLabel") || "Refine"}
                 </Button>
               </div>
+          </FormRow>
+        </div>
 
-              {/* ─── essentials ─── */}
-              <div className="pt-2" data-testid="quick-create-essentials">
-                <hr className="border-border mb-2" />
-                <EssentialRow
-                  icon={Calendar}
-                  testId="quick-create-tab-plan"
-                  label={t("quickCreate.timeNavTitle")}
-                  chip={
-                    time.whenMode === "none" ? (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {t("quickCreate.whenNoneTitle")}
-                      </Pill>
-                    ) : time.whenMode === "reference" ? (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {t("quickCreate.referenceRangeTitle")}
-                      </Pill>
-                    ) : time.span.start || time.span.end ? (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {time.whenMode === "day"
-                          ? formatDisplayDate(time.span.start, true, locale, t)
-                          : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : "—"} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : "—"}`}
-                      </Pill>
-                    ) : null
-                  }
-                  clearable={
-                    time.whenMode === "reference"
-                      ? Boolean(time.referenceId)
-                      : time.whenMode !== "none"
-                        ? Boolean(time.span.start || time.span.end)
-                        : false
-                  }
-                  onClear={() => {
+        {/* Time */}
+        <div className="px-4 py-3">
+          <FormRow
+            icon={<Calendar className="h-4 w-4" aria-hidden />}
+            trailing={
+              time.whenMode !== "none" && (time.span.start || time.span.end || time.referenceId) ? (
+                <CloseButton
+                  size="xs"
+                  onClick={() => {
                     if (time.whenMode === "reference") {
                       setField("time.referenceId", null);
                       setField("time.referenceLabel", "");
@@ -714,293 +596,246 @@ export function QuickCreate() {
                       setField("time.span.end", "");
                     }
                   }}
-                  onClick={() => setActivePanel("time")}
-                  editAria={t("quickCreate.essentialRowEditAria")}
-                  clearAria={t("quickCreate.essentialRowClearAria")}
-                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+                  aria-label={t("quickCreate.essentialRowClearAria")}
                 />
-                <EssentialRow
-                  icon={Clock}
-                  testId="quick-create-duration"
-                  label={t("quickCreate.duration")}
-                  chip={
-                    time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null ? (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {time.durationMinMax.minMs !== null
-                          ? `${Math.round(time.durationMinMax.minMs / 60000)} min`
-                          : "—"}
-                        {time.durationMinMax.maxMs !== null
-                          ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)} min`
-                          : ""}
-                        <span className="ml-1 text-foreground-muted">
-                          <Link2 size={10} className="inline" aria-hidden="true" />{" "}
-                          {t("quickCreate.durationLinkedNote")}
-                        </span>
-                      </Pill>
-                    ) : null
-                  }
-                  clearable={
-                    time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null
-                  }
-                  onClear={() => {
+              ) : undefined
+            }
+          >
+            <button
+              type="button"
+              onClick={() => setActivePanel("time")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+              data-testid="quick-create-tab-plan"
+            >
+              <span className="truncate text-foreground">
+                {time.whenMode === "none"
+                  ? t("quickCreate.timeNavTitle")
+                  : time.whenMode === "reference"
+                    ? t("quickCreate.referenceRangeTitle")
+                    : time.span.start || time.span.end
+                      ? time.whenMode === "day"
+                        ? formatDisplayDate(time.span.start, true, locale, t)
+                        : `${time.span.start ? formatDisplayDate(time.span.start, false, locale, t) : "—"} → ${time.span.end ? formatDisplayDate(time.span.end, false, locale, t) : "—"}`
+                      : t("quickCreate.timeNavTitle")}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
+
+        {/* Duration */}
+        <div className="px-4 py-3">
+          <FormRow
+            icon={<Clock className="h-4 w-4" aria-hidden />}
+            trailing={
+              (time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null) ? (
+                <CloseButton
+                  size="xs"
+                  onClick={() => {
                     setField("time.durationMinMax.minMs", null);
                     setField("time.durationMinMax.maxMs", null);
                   }}
-                  onClick={() => setActivePanel("duration")}
-                  editAria={t("quickCreate.essentialRowEditAria")}
-                  clearAria={t("quickCreate.essentialRowClearAria")}
-                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+                  aria-label={t("quickCreate.essentialRowClearAria")}
                 />
-                <div data-testid="quick-create-recurring-toggle">
-                <EssentialRow
-                  icon={Repeat}
-                  testId="quick-create-tab-recurring"
-                  label={t("quickCreate.repeatChip")}
-                  chip={
-                    recurring.repeatMode === "once" ? null : (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}
-                        {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 ? (
-                          <span className="ml-1 text-foreground-muted">
-                            {weekdayLabelsFor(locale).reduce<string>((acc, label, i) => {
-                              if ((recurring.weekdayMask & (1 << i)) !== 0) {
-                                return acc ? `${acc}, ${label}` : label;
-                              }
-                              return acc;
-                            }, "")}
-                          </span>
-                        ) : null}
-                        {recurring.repeatMode === "interval" ? (
-                          <span className="ml-1 text-foreground-muted">
-                            {recurring.intervalValue}
-                            {recurring.intervalUnit === "min"
-                              ? "min"
-                              : recurring.intervalUnit === "hour"
-                                ? "h"
-                                : "d"}
-                          </span>
-                        ) : null}
-                        {recurring.repeatMode !== "condition" && recurring.endDate ? (
-                          <span className="ml-1 text-foreground-muted">
-                            ~ {recurring.endDate.slice(0, 10)}
-                          </span>
-                        ) : null}
-                      </Pill>
-                    )
-                  }
-                  clearable={recurring.repeatMode !== "once" || Boolean(recurring.endDate)}
-                  onClear={() => {
+              ) : undefined
+            }
+          >
+            <button
+              type="button"
+              onClick={() => setActivePanel("duration")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+              data-testid="quick-create-duration"
+            >
+              <span className="truncate text-foreground">
+                {time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null
+                  ? <>
+                      {time.durationMinMax.minMs !== null
+                        ? `${Math.round(time.durationMinMax.minMs / 60000)} min`
+                        : "—"}
+                      {time.durationMinMax.maxMs !== null
+                        ? ` – ${Math.round(time.durationMinMax.maxMs / 60000)} min`
+                        : ""}
+                    </>
+                  : t("quickCreate.duration")}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
+
+        {/* Repeat */}
+        <div className="px-4 py-3">
+          <FormRow
+            icon={<Repeat className="h-4 w-4" aria-hidden />}
+            trailing={
+              (recurring.repeatMode !== "once" || recurring.endDate) ? (
+                <CloseButton
+                  size="xs"
+                  onClick={() => {
                     setField("recurring.repeatMode", "once");
                     setField("recurring.weekdayMask", 0);
                     setField("recurring.endDate", "");
                   }}
-                  onClick={() => setActivePanel("recurring")}
-                  editAria={t("quickCreate.essentialRowEditAria")}
-                  clearAria={t("quickCreate.essentialRowClearAria")}
-                  confirmClearAria={t("quickCreate.essentialRowClearConfirmAria")}
-                  confirmClearLabel={t("quickCreate.essentialRowClearConfirmLabel")}
+                  aria-label={t("quickCreate.essentialRowClearAria")}
                 />
-                </div>
-                <EssentialRow
-                  icon={SlidersHorizontal}
-                  label="配置・分割"
-                  chip={
-                    <Pill size="sm" variant="default" className="pointer-events-none">
-                      priority {source.priority}
-                      {source.splitPolicy.kind === 1 ? " · split" : ""}
-                    </Pill>
-                  }
-                  clearable={false}
-                  onClick={() => setActivePanel("source-rules")}
-                  editAria="配置・分割を編集"
-                  clearAria=""
-                  confirmClearAria=""
-                  confirmClearLabel=""
-                />
-                <EssentialRow
-                  icon={Link2}
-                  label="Source関係"
-                  chip={
-                    source.relations.length === 0 ? null : (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {source.relations
-                          .slice(0, 2)
-                          .map((r) => r.referencedTitle || "—")
-                          .join(", ")}
-                        {source.relations.length > 2 ? ` +${source.relations.length - 2}` : ""}
-                      </Pill>
-                    )
-                  }
-                  clearable={false}
-                  onClick={() => setActivePanel("relations")}
-                  editAria="Source関係を編集"
-                  clearAria=""
-                  confirmClearAria=""
-                  confirmClearLabel=""
-                />
-                <EssentialRow
-                  icon={Layers}
-                  label="条件駆動Flow"
-                  chip={
-                    source.flowSequences.length === 0 ? null : (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {source.flowSequences.length}
-                        {t("quickCreate.essentialsItemsUnit")}
-                        {source.flowSequences[0]?.minimumGapMs
-                          ? ` · ${Math.round(source.flowSequences[0].minimumGapMs / 60000)}m`
-                          : ""}
-                      </Pill>
-                    )
-                  }
-                  clearable={false}
-                  onClick={() => setActivePanel("flows")}
-                  editAria="Flow sequenceを編集"
-                  clearAria=""
-                  confirmClearAria=""
-                  confirmClearLabel=""
-                />
-                <EssentialRow
-                  icon={SlidersHorizontal}
-                  label="配置ルール"
-                  chip={
-                    plan.planning.placementRules.length === 0 ? null : (
-                      <Pill size="sm" variant="default" className="pointer-events-none">
-                        {plan.planning.placementRules.length}
-                        {t("quickCreate.essentialsItemsUnit")}
-                        {plan.planning.placementRules[0]?.effect
-                          ? ` · rank ${plan.planning.placementRules[0].rank}`
-                          : ""}
-                      </Pill>
-                    )
-                  }
-                  clearable={false}
-                  onClick={() => setActivePanel("placement-rules")}
-                  editAria="配置ルールを編集"
-                  clearAria=""
-                  confirmClearAria=""
-                  confirmClearLabel=""
-                />
-              </div>
+              ) : undefined
+            }
+          >
+            <button
+              type="button"
+              onClick={() => setActivePanel("recurring")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+              data-testid="quick-create-tab-recurring"
+            >
+              <span className="truncate text-foreground">
+                {recurring.repeatMode === "once"
+                  ? t("quickCreate.repeatChip")
+                  : <>
+                      {t(REPEAT_MODE_LABEL_KEY[recurring.repeatMode])}
+                      {recurring.repeatMode === "weekly" && recurring.weekdayMask > 0 && (
+                        <span className="ml-1 text-foreground-muted">
+                          {weekdayLabelsFor(locale).reduce<string>((acc, label, i) => {
+                            if ((recurring.weekdayMask & (1 << i)) !== 0) {
+                              return acc ? `${acc}, ${label}` : label;
+                            }
+                            return acc;
+                          }, "")}
+                        </span>
+                      )}
+                      {recurring.repeatMode === "interval" && (
+                        <span className="ml-1 text-foreground-muted">
+                          {recurring.intervalValue}
+                          {recurring.intervalUnit === "min" ? "min" : recurring.intervalUnit === "hour" ? "h" : "d"}
+                        </span>
+                      )}
+                      {recurring.repeatMode !== "condition" && recurring.endDate && (
+                        <span className="ml-1 text-foreground-muted">
+                          ~ {recurring.endDate.slice(0, 10)}
+                        </span>
+                      )}
+                    </>}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
 
-              {/* ─── tasks block ─── */}
-              <div className="pt-3">
-                <hr className="border-border mb-3" />
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-foreground-muted">
-                  <ListChecks size={14} aria-hidden="true" />
-                  <span>{t("quickCreate.completionRequires")}</span>
-                  <ActionIcon
-                    type="button"
-                    variant="subtle"
-                    onClick={() => setActivePanel("completion")}
-                    aria-label={t("quickCreate.completionRequires")}
-                    className="ml-auto flex h-6 w-6 items-center justify-center rounded-md text-foreground-muted hover:bg-surface-1 hover:text-foreground focus:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
-                  >
-                    <ChevronRight size={14} aria-hidden="true" />
-                  </ActionIcon>
-                </div>
-                <div className="mt-1 mb-2 text-[10px] text-foreground-muted">
-                  {plan.completion.tasks.length === 0
-                    ? t("quickCreate.completionAddHint")
-                    : (() => {
-                        const titles: string[] = [];
-                        for (const tk of plan.completion.tasks) {
-                          const t = (tk.content?.title ?? "").trim();
-                          if (t.length > 0) titles.push(t);
-                        }
-                        if (titles.length === 0) {
-                          return t("quickCreate.completionTasksUnnamed");
-                        }
-                        const preview = titles.slice(0, 2).join(" / ");
-                        const overflow = titles.length > 2 ? ` · +${titles.length - 2}` : "";
-                        return `${preview}${overflow} ${t("quickCreate.completionSummaryTail")}`;
-                      })()}
-                </div>
-                <div className="space-y-1.5">
-                  {plan.completion.tasks.length === 0 ? (
-                    <p
-                      data-testid="quick-create-tasks-empty"
-                      className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted"
-                    >
-                      {t("quickCreate.taskNoTasksHint")}
-                    </p>
-                  ) : (
-                    plan.completion.tasks.map((tk) => (
-                      <div
-                        key={tk.id}
-                        data-testid="quick-create-task-row"
-                        className="flex min-h-[32px] items-center gap-2 rounded-md border border-border/50 bg-surface-0 px-2 py-1 text-xs"
-                      >
-                        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-border bg-surface-0" />
-                        <TextInput
-                          value={tk.content?.title ?? ""}
-                          onChange={(e) => setTaskField(tk.id, "content.title", e.target.value)}
-                          placeholder={t("quickCreate.taskUntitled")}
-                          variant="unstyled"
-                          size="xs"
-                          className="min-w-0 flex-1"
-                          styles={{ input: { padding: 0, height: 20, minHeight: 20 } }}
-                        />
-                        {tk.content?.note && (
-                          <span
-                            role="img"
-                            aria-label={t("quickCreate.taskHasNote")}
-                            title={t("quickCreate.taskHasNote")}
-                            className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded text-foreground-muted"
-                          >
-                            <MessageSquare size={10} aria-hidden="true" />
-                          </span>
-                        )}
-                        {tk.order.length > 0 && (
-                          <span
-                            role="img"
-                            aria-label={t("quickCreate.taskHasOrder", { count: tk.order.length })}
-                            title={t("quickCreate.taskHasOrder", { count: tk.order.length })}
-                            className="inline-flex h-4 shrink-0 items-center rounded bg-surface-1 px-1 text-[9px] font-semibold text-foreground-muted"
-                          >
-                            <Link2 size={9} aria-hidden="true" className="mr-0.5" />
-                            {tk.order.length}
-                          </span>
-                        )}
-                        <ActionIcon
-                          type="button"
-                          variant="subtle"
-                          size="xs"
-                          aria-label={t("quickCreate.taskEditAria")}
-                          data-testid="quick-create-task-edit"
-                          onClick={() => {
-                            setEditingTaskId(tk.id);
-                            setActivePanel("task");
-                          }}
-                        >
-                          <ChevronRight size={12} />
-                        </ActionIcon>
-                      </div>
-                    ))
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    leftSection={<Plus size={12} />}
-                    onClick={() => {
-                      const newId = addTask();
-                      setEditingTaskId(newId);
-                      setActivePanel("task");
-                    }}
-                    className="mt-1 text-foreground-muted"
-                    data-testid="quick-create-task-add"
-                  >
-                    {t("quickCreate.taskAdd")}
-                  </Button>
-                </div>
-              </div>
-            </section>
+        {/* Source config */}
+        <div className="px-4 py-3">
+          <FormRow icon={<SlidersHorizontal className="h-4 w-4" aria-hidden />}>
+            <button
+              type="button"
+              onClick={() => setActivePanel("source-rules")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+            >
+              <span className="truncate text-foreground">
+                配置・分割
+                <span className="ml-1 text-foreground-muted">
+                  priority {source.priority}
+                  {source.splitPolicy.kind === 1 ? " · split" : ""}
+                </span>
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
 
-            {/* ── behavior preview ── */}
-            <section className="pt-3">
-              <hr className="border-border mb-3" />
+        {/* Relations */}
+        <div className="px-4 py-3">
+          <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />}>
+            <button
+              type="button"
+              onClick={() => setActivePanel("relations")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+            >
+              <span className="truncate text-foreground">
+                Source関係
+                {source.relations.length > 0 && (
+                  <span className="ml-1 text-foreground-muted">
+                    {source.relations.slice(0, 2).map((r) => r.referencedTitle || "—").join(", ")}
+                    {source.relations.length > 2 ? ` +${source.relations.length - 2}` : ""}
+                  </span>
+                )}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
+
+        {/* Flow sequences */}
+        <div className="px-4 py-3">
+          <FormRow icon={<Layers className="h-4 w-4" aria-hidden />}>
+            <button
+              type="button"
+              onClick={() => setActivePanel("flows")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+            >
+              <span className="truncate text-foreground">
+                条件駆動Flow
+                {source.flowSequences.length > 0 && (
+                  <span className="ml-1 text-foreground-muted">
+                    {source.flowSequences.length}{t("quickCreate.essentialsItemsUnit")}
+                    {source.flowSequences[0]?.minimumGapMs
+                      ? ` · ${Math.round(source.flowSequences[0].minimumGapMs / 60000)}m`
+                      : ""}
+                  </span>
+                )}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
+
+        {/* Placement rules */}
+        <div className="px-4 py-3">
+          <FormRow icon={<SlidersHorizontal className="h-4 w-4" aria-hidden />}>
+            <button
+              type="button"
+              onClick={() => setActivePanel("placement-rules")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+            >
+              <span className="truncate text-foreground">
+                配置ルール
+                {plan.planning.placementRules.length > 0 && (
+                  <span className="ml-1 text-foreground-muted">
+                    {plan.planning.placementRules.length}{t("quickCreate.essentialsItemsUnit")}
+                    {plan.planning.placementRules[0]?.effect
+                      ? ` · rank ${plan.planning.placementRules[0].rank}`
+                      : ""}
+                  </span>
+                )}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
+
+        {/* Tasks block */}
+        <div className="px-4 py-3">
+          <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />}>
+            <button
+              type="button"
+              onClick={() => setActivePanel("completion")}
+              className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
+              data-testid="quick-create-completion-row"
+            >
+              <span className="truncate text-foreground">
+                {t("quickCreate.completionRequires")}
+                {plan.completion.tasks.length > 0 && (
+                  <span className="ml-1 text-foreground-muted">
+                    {plan.completion.tasks.length}{t("quickCreate.essentialsItemsUnit")}
+                  </span>
+                )}
+              </span>
+              <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
+            </button>
+          </FormRow>
+        </div>
+
+        {/* Behavior preview */}
+        <div className="px-4 py-3">
+          <FormRow icon={<Eye className="h-4 w-4" aria-hidden />}>
+            <div className="min-w-0 flex-1">
               <BehaviorPreview
                 plan={plan}
                 time={time}
@@ -1010,243 +845,186 @@ export function QuickCreate() {
                 locale={locale}
                 t={t}
               />
-            </section>
-          </div>
+            </div>
+          </FormRow>
         </div>
+      </Stack>
+      </Stack>
 
-        {/* ─── composer foot ─── */}
-        <SubmitBar
-          canSubmit={canSubmit}
-          blockedReason={
-            submitBlockedReason ?? (submitBlocked ? t("quickCreate.submitBlockedHint") : null)
-          }
-          isSubmitting={submitting}
-          serverError={serverError}
-          onClose={close}
-          onSubmit={handleSubmit}
-          submitLabel={mode === "edit" ? t("quickCreate.update") : t("quickCreate.commit")}
-          cancelLabel={t("quickCreate.cancel")}
-          onDiscardDraft={mode === "create" ? discardDraft : null}
-          discardLabel={t("quickCreate.discardDraft") || "Discard draft"}
-        />
-        {slowNotice && submitting ? (
-          <p
-            data-testid="quick-create-slow-notice"
-            className="px-4 pb-1 text-center text-xs text-foreground-muted"
-            aria-live="polite"
+      {createPortal(
+        <>
+          <IntentSubPanel
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            isDesktop={isDesktop}
+            t={t}
+          />
+
+          {/* ─── time sub-panel ─── */}
+          <SubPanelShell
+            panelKey="time"
+            activeKey={activePanel}
+            onClose={() => setActivePanel("base")}
+            headingId="time-heading"
+            title={t("quickCreate.timeNavTitle")}
+            description={t("quickCreate.timeNavSub")}
+            layout={isDesktop ? "drawer" : "sheet"}
           >
-            {t("quickCreate.takingLonger") || "Taking longer than usual..."}
-          </p>
-        ) : null}
-        {retryToast ? (
-          <div
-            role="alert"
-            data-testid="quick-create-retry-toast"
-            className="flex items-center justify-between gap-2 border-t border-danger/30 bg-danger/5 px-4 py-2"
-          >
-            <p className="flex-1 text-xs text-foreground">
-              <span className="font-semibold">{t("quickCreate.submitFailed") || "Submit failed"}</span>
-              <span className="mx-1">—</span>
-              <span>{retryToast.message}</span>
-            </p>
-            <Button
-              type="button"
-              size="xs"
-              variant="filled"
-              color="red"
-              onClick={retrySubmit}
-              data-testid="quick-create-retry-button"
-              disabled={submitting}
-            >
-              {t("quickCreate.retry") || "Retry"}
-            </Button>
-            <CloseButton
-              size="sm"
-              onClick={() => setRetryToast(null)}
-              aria-label={t("tiles.closePanel") || "Dismiss"}
+            <SchedulePanel
+              time={time}
+              windows={windows}
+              setField={setField}
+              updateWindow={updateWindow}
+              addWindow={addWindow}
+              removeWindow={removeWindow}
+              locale={locale}
+              t={t}
             />
-          </div>
-        ) : null}
-        {loadError ? (
-          <p
-            role="alert"
-            data-testid="quick-create-load-error"
-            className="px-4 pb-2 text-center text-xs text-warning"
+          </SubPanelShell>
+
+          <DurationSubPanel
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            isDesktop={isDesktop}
+            t={t}
+            time={time}
+            setField={setField}
+            getFieldError={getFieldError}
+          />
+
+          {/* ─── recurring sub-panel ─── */}
+          <SubPanelShell
+            panelKey="recurring"
+            activeKey={activePanel}
+            onClose={() => setActivePanel("base")}
+            headingId="recurring-heading"
+            title={t("quickCreate.repeatChip")}
+            layout={isDesktop ? "drawer" : "sheet"}
           >
-            {loadError}
-          </p>
-        ) : null}
-      </div>
+            <SourceGenerationPanel
+              recurring={recurring}
+              setField={setField}
+              locale={locale}
+              t={t}
+              timeOfDayStart={time.timeOfDayStart || undefined}
+              timeOfDayEnd={time.timeOfDayEnd || undefined}
+            />
+          </SubPanelShell>
 
-      <IntentSubPanel
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isDesktop={isDesktop}
-        t={t}
-      />
+          <SubPanelShell
+            panelKey="source-rules"
+            activeKey={activePanel}
+            onClose={() => setActivePanel("base")}
+            headingId="source-rules-heading"
+            title={"配置・分割・ローカル日付"}
+            layout={isDesktop ? "drawer" : "sheet"}
+          >
+            <SourceWindowPanel source={source} time={time} setField={setField} />
+          </SubPanelShell>
 
-      {/* ─── time sub-panel ─── */}
-      <SubPanelShell
-        panelKey="time"
-        activeKey={activePanel}
-        onClose={() => setActivePanel("base")}
-        headingId="time-heading"
-        title={t("quickCreate.timeNavTitle")}
-        description={t("quickCreate.timeNavSub")}
-        layout={isDesktop ? "drawer" : "sheet"}
-      >
-        <SchedulePanel
-          time={time}
-          windows={windows}
-          setField={setField}
-          updateWindow={updateWindow}
-          addWindow={addWindow}
-          removeWindow={removeWindow}
-          locale={locale}
-          t={t}
-        />
-      </SubPanelShell>
+          <SubPanelShell
+            panelKey="relations"
+            activeKey={activePanel}
+            onClose={() => setActivePanel("base")}
+            headingId="relations-heading"
+            title={"Source参照関係"}
+            layout={isDesktop ? "drawer" : "sheet"}
+          >
+            <RelationPanel
+              relations={source.relations}
+              setRelations={(relations) => setField("source.relations", relations)}
+            />
+          </SubPanelShell>
 
-      <DurationSubPanel
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isDesktop={isDesktop}
-        t={t}
-        time={time}
-        setField={setField}
-        getFieldError={getFieldError}
-      />
+          <SubPanelShell
+            panelKey="flows"
+            activeKey={activePanel}
+            onClose={() => setActivePanel("base")}
+            headingId="flows-heading"
+            title={"条件駆動Flow"}
+            layout={isDesktop ? "drawer" : "sheet"}
+          >
+            <FlowSequencePanel
+              flows={source.flowSequences}
+              setFlows={(flowSequences) => setField("source.flowSequences", flowSequences)}
+              t={t}
+              tileOptions={tilePickerData}
+              taskOptions={taskPickerData}
+              requirementOptions={requirementPickerData}
+            />
+          </SubPanelShell>
 
-      {/* ─── recurring sub-panel ─── */}
-      <SubPanelShell
-        panelKey="recurring"
-        activeKey={activePanel}
-        onClose={() => setActivePanel("base")}
-        headingId="recurring-heading"
-        title={t("quickCreate.repeatChip")}
-        layout={isDesktop ? "drawer" : "sheet"}
-      >
-        <SourceGenerationPanel
-          recurring={recurring}
-          setField={setField}
-          locale={locale}
-          t={t}
-          timeOfDayStart={time.timeOfDayStart || undefined}
-          timeOfDayEnd={time.timeOfDayEnd || undefined}
-        />
-      </SubPanelShell>
+          <SubPanelShell
+            panelKey="placement-rules"
+            activeKey={activePanel}
+            onClose={() => setActivePanel("base")}
+            headingId="placement-rules-heading"
+            title={"配置ルール"}
+            layout={isDesktop ? "drawer" : "sheet"}
+          >
+            <PlacementRulesPanel
+              rules={plan.planning.placementRules}
+              setRules={(placementRules) => setField("plan.planning.placementRules", placementRules)}
+              t={t}
+              tileOptions={tilePickerData}
+              taskOptions={taskPickerData}
+              requirementOptions={requirementPickerData}
+            />
+          </SubPanelShell>
 
-      <SubPanelShell
-        panelKey="source-rules"
-        activeKey={activePanel}
-        onClose={() => setActivePanel("base")}
-        headingId="source-rules-heading"
-        title={"配置・分割・ローカル日付"}
-        layout={isDesktop ? "drawer" : "sheet"}
-      >
-        <SourceWindowPanel source={source} time={time} setField={setField} />
-      </SubPanelShell>
+          <ReferencesSubPanel
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            isDesktop={isDesktop}
+            t={t}
+            plan={plan}
+            setField={setField}
+          />
 
-      <SubPanelShell
-        panelKey="relations"
-        activeKey={activePanel}
-        onClose={() => setActivePanel("base")}
-        headingId="relations-heading"
-        title={"Source参照関係"}
-        layout={isDesktop ? "drawer" : "sheet"}
-      >
-        <RelationPanel
-          relations={source.relations}
-          setRelations={(relations) => setField("source.relations", relations)}
-        />
-      </SubPanelShell>
+          <CompletionSubPanel
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            isDesktop={isDesktop}
+            t={t}
+            plan={plan}
+            setField={setField}
+            tilePickerData={tilePickerData}
+            taskPickerData={taskPickerData}
+            requirementPickerData={requirementPickerData}
+            time={time}
+          />
 
-      <SubPanelShell
-        panelKey="flows"
-        activeKey={activePanel}
-        onClose={() => setActivePanel("base")}
-        headingId="flows-heading"
-        title={"条件駆動Flow"}
-        layout={isDesktop ? "drawer" : "sheet"}
-      >
-        <FlowSequencePanel
-          flows={source.flowSequences}
-          setFlows={(flowSequences) => setField("source.flowSequences", flowSequences)}
-          t={t}
-          tileOptions={tilePickerData}
-          taskOptions={taskPickerData}
-          requirementOptions={requirementPickerData}
-        />
-      </SubPanelShell>
+          <MetaSubPanel
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            isDesktop={isDesktop}
+            t={t}
+            meta={meta}
+            setField={setField}
+          />
 
-      <SubPanelShell
-        panelKey="placement-rules"
-        activeKey={activePanel}
-        onClose={() => setActivePanel("base")}
-        headingId="placement-rules-heading"
-        title={"配置ルール"}
-        layout={isDesktop ? "drawer" : "sheet"}
-      >
-        <PlacementRulesPanel
-          rules={plan.planning.placementRules}
-          setRules={(placementRules) => setField("plan.planning.placementRules", placementRules)}
-          t={t}
-          tileOptions={tilePickerData}
-          taskOptions={taskPickerData}
-          requirementOptions={requirementPickerData}
-        />
-      </SubPanelShell>
+          <TaskDetailSubPanel
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            isDesktop={isDesktop}
+            t={t}
+            editingTaskId={editingTaskId}
+            setEditingTaskId={setEditingTaskId}
+            plan={plan}
+            setTaskField={setTaskField}
+            removeTask={removeTask}
+          />
 
-      <ReferencesSubPanel
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isDesktop={isDesktop}
-        t={t}
-        plan={plan}
-        setField={setField}
-      />
-
-      <CompletionSubPanel
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isDesktop={isDesktop}
-        t={t}
-        plan={plan}
-        setField={setField}
-        tilePickerData={tilePickerData}
-        taskPickerData={taskPickerData}
-        requirementPickerData={requirementPickerData}
-        time={time}
-      />
-
-      <MetaSubPanel
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isDesktop={isDesktop}
-        t={t}
-        meta={meta}
-        setField={setField}
-      />
-
-      <TaskDetailSubPanel
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-        isDesktop={isDesktop}
-        t={t}
-        editingTaskId={editingTaskId}
-        setEditingTaskId={setEditingTaskId}
-        plan={plan}
-        setTaskField={setTaskField}
-        removeTask={removeTask}
-      />
-
-      <CreateProjectModal
-        opened={projectModalOpen}
-        onClose={closeProjectModal}
-        t={t}
-        setField={setField}
-        refreshProjects={refreshProjects}
-      />
+          <CreateProjectModal
+            opened={projectModalOpen}
+            onClose={closeProjectModal}
+            t={t}
+            setField={setField}
+            refreshProjects={refreshProjects}
+          />
+        </>,
+        document.body,
+      )}
     </>
   );
 }

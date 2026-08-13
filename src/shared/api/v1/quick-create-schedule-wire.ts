@@ -1,7 +1,7 @@
+import { uuidv7 } from "@/shared/model/v1/envelope";
+import type { FrameRule } from "@/shared/model/v1/tile-types";
 import type { QuickCreateState } from "@/shared/stores/quick-create-store";
 import { tasksForSubmission } from "@/shared/stores/quick-create-store";
-import { uuidv7 } from "@/tile/model/v1/envelope";
-import type { FrameRule } from "@/tile/model/v1/tile";
 import { convertCondition, toWireSetPlanBody } from "./plan-wire";
 import {
   type AnchorModeCode,

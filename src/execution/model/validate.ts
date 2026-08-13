@@ -6,7 +6,7 @@
 // UI -> API Layer -> Domain Layer (validate) -> Infrastructure
 // ============================================================================
 
-import { getTileLifecycle } from "@/tile/model/tile";
+import { getTileLifecycle } from "@/tile/model/types";
 import type { Command } from "./command";
 import type { AppState } from "./state";
 

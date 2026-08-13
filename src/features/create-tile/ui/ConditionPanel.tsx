@@ -31,8 +31,10 @@
 
 import { Select } from "@mantine/core";
 
-import type { ConditionNode } from "@/tile/model/v1/condition";
-import { ConditionKind } from "@/tile/model/v1/constants";
+import type { ConditionNode } from "@/shared/model/v1/condition";
+import { ConditionKind } from "@/shared/model/v1/constants";
+import { FormRow } from "@/shared/ui/form";
+import { GitBranch } from "lucide-react";
 
 import { ConditionEditor } from "./ConditionEditor";
 
@@ -58,37 +60,38 @@ export function ConditionPanel({
       className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
       data-testid="completion-condition-box"
     >
-      <div className="flex items-center justify-between gap-2">
-        <strong className="text-sm font-semibold text-foreground">
-          {t("quickCreate.completionBuilderLogicLabel")}
-        </strong>
-        <Select
-          aria-label={t("quickCreate.completionBuilderLogicLabel")}
-          value={String(root.kind) ?? null}
-          onChange={(value) => {
-            if (value == null) return;
-            const nextKind = Number(value);
-            setField("plan.completion.root", {
-              ...root,
-              kind: nextKind as never,
-            });
-          }}
-          data-testid="completion-logic-select"
-          data={[
-            {
-              value: String(ConditionKind.ALL),
-              label: t("quickCreate.completionBuilderLogicAll"),
-            },
-            {
-              value: String(ConditionKind.ANY),
-              label: t("quickCreate.completionBuilderLogicAny"),
-            },
-            { value: String(ConditionKind.NOT), label: t("quickCreate.completionNot") },
-          ]}
-          comboboxProps={{ withinPortal: true }}
-          allowDeselect={false}
-        />
-      </div>
+      <FormRow icon={<GitBranch className="h-4 w-4" aria-hidden />}>
+        <span className="text-xs font-medium">{t("quickCreate.completionBuilderLogicLabel")}</span>
+        <div className="ml-auto">
+          <Select
+            aria-label={t("quickCreate.completionBuilderLogicLabel")}
+            value={String(root.kind) ?? null}
+            onChange={(value) => {
+              if (value == null) return;
+              const nextKind = Number(value);
+              setField("plan.completion.root", {
+                ...root,
+                kind: nextKind as never,
+              });
+            }}
+            data-testid="completion-logic-select"
+            data={[
+              {
+                value: String(ConditionKind.ALL),
+                label: t("quickCreate.completionBuilderLogicAll"),
+              },
+              {
+                value: String(ConditionKind.ANY),
+                label: t("quickCreate.completionBuilderLogicAny"),
+              },
+              { value: String(ConditionKind.NOT), label: t("quickCreate.completionNot") },
+            ]}
+            comboboxProps={{ withinPortal: true }}
+            allowDeselect={false}
+            size="xs"
+          />
+        </div>
+      </FormRow>
       <ConditionEditor
         node={root}
         onChange={(next) => setField("plan.completion.root", next)}

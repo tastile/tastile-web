@@ -59,7 +59,14 @@ export function ActivityBar() {
   const expanded = sidebarBehavior === "open" || (sidebarBehavior === "expandable" && hovered);
 
   const openQuickCreate = () => {
-    useQuickCreateStore.getState().openCreate({ initialAllDay: false });
+    // Per design intent, the panel always lands on a specialized form
+    // (the user switches via the top-left WorkflowChip dropdown, not
+    // a picker inside the panel). Default to Task — the most common
+    // entry from the ActivityBar + button.
+    useQuickCreateStore.getState().openCreate({
+      initialAllDay: false,
+      workflow: "task",
+    });
   };
 
   return (

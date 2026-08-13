@@ -1,8 +1,8 @@
-// @vitest-environment jsdom
+/** @vitest-environment jsdom */
 import { fireEvent, screen } from "@testing-library/react";
 import { renderWithMantine as render } from "@/test/render-with-mantine";
-import { ConditionKind } from "@/tile/model/v1/constants";
-import type { ConditionNode } from "@/tile/model/v1/condition";
+import { ConditionKind } from "@/shared/model/v1/constants";
+import type { ConditionNode } from "@/shared/model/v1/condition";
 import { describe, expect, it, vi } from "vitest";
 
 import {

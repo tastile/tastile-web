@@ -1,5 +1,6 @@
 import { cn } from "@/shared/lib/cn";
-import { Button, UnstyledButton } from "@mantine/core";
+import { FormRow } from "@/shared/ui/form";
+import { Button } from "@mantine/core";
 import { Check, ChevronRight, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -65,24 +66,26 @@ export function EssentialRow({
   const canClear = Boolean(clearable && onClear);
 
   return (
-    <div className="relative min-h-[48px]">
-      <UnstyledButton
-        onClick={onClick}
-        aria-label={editAria ?? `${label} Edit`}
-        data-testid={testId}
-        className="group flex min-h-[48px] w-full items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+    <div className="relative px-4 py-3">
+      <FormRow
+        icon={<Icon className="h-4 w-4" aria-hidden />}
+        trailing={<ChevronRight size={16} className="text-foreground-muted" />}
       >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
-          <Icon size={14} />
-        </div>
-        <span className="w-[58px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
-          {label}
-        </span>
-        <div className="min-w-0 flex-1 text-left">{chip}</div>
-        <ChevronRight size={14} className="shrink-0 text-foreground-muted" />
-      </UnstyledButton>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={editAria ?? `${label} Edit`}
+          data-testid={testId}
+          className="group flex min-h-[48px] w-full items-center gap-2 rounded-lg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <span className="w-[58px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
+            {label}
+          </span>
+          <div className="min-w-0 flex-1 text-left">{chip}</div>
+        </button>
+      </FormRow>
       {canClear ? (
-        <div className="absolute right-8 top-1/2 -translate-y-1/2">
+        <div className="absolute right-10 top-1/2 -translate-y-1/2">
           <Button
             type="button"
             onClick={(e) => {

@@ -23,14 +23,14 @@
  * field; we derive its values from `whenMode` + the calendar inputs.
  */
 
-import { ActionIcon, Button, SegmentedControl, Switch } from "@mantine/core";
+import { ActionIcon, Button, SegmentedControl, Switch, Text } from "@mantine/core";
 import { DatePickerInput, DateTimePicker, TimeInput } from "@mantine/dates";
-import { Calendar, Folder, Plus, Search, Tag, X } from "lucide-react";
+import { Calendar, Clock, Folder, Plus, Search, Tag, X } from "lucide-react";
 import { useState } from "react";
 
+import type { Window } from "@/shared/model/v1/window";
 import type { TimeOfDayMode, WhenMode } from "@/shared/stores/quick-create-store";
 import { FormDivider, FormRow, RowSegmented, SectionHeader } from "@/shared/ui/form";
-import type { Window } from "@/tile/model/v1/window";
 
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
 import { TileReferencePicker } from "./TileReferencePicker";
@@ -70,20 +70,6 @@ const WINDOW_KIND_OPTIONS = [
   { value: "2", label: "quickCreate.windowKindParentSpan" },
   { value: "3", label: "quickCreate.windowKindGap" },
 ] as const;
-
-interface BuilderLabelProps {
-  title: string;
-  hint?: string;
-}
-
-function BuilderLabel({ title, hint }: BuilderLabelProps) {
-  return (
-    <div className="flex items-baseline gap-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">
-      <span>{title}</span>
-      {hint ? <span className="font-normal normal-case tracking-normal">{hint}</span> : null}
-    </div>
-  );
-}
 
 interface ChoiceTabsProps<T extends string> {
   value: T;
@@ -177,7 +163,10 @@ function TimeOfDayEditor({
 }: TimeOfDayEditorProps) {
   return (
     <div className="space-y-2">
-      <BuilderLabel title={t("quickCreate.timeOfDayLabel")} hint={t("quickCreate.timeOfDayHint")} />
+      <SectionHeader icon={Clock} title={t("quickCreate.timeOfDayLabel")} />
+      {t("quickCreate.timeOfDayHint") ? (
+        <p className="text-xs text-foreground-muted">{t("quickCreate.timeOfDayHint")}</p>
+      ) : null}
       <ChoiceTabs<TimeOfDayMode>
         value={mode}
         onChange={onModeChange}
@@ -421,7 +410,7 @@ export function SchedulePanel({
       />
 
       <div className="space-y-2">
-        <BuilderLabel title={t("quickCreate.whenDateLabel")} />
+        <SectionHeader icon={Calendar} title={t("quickCreate.whenDateLabel")} />
         <ChoiceTabs<WhenMode>
           value={time.whenMode}
           onChange={applyWhenMode}

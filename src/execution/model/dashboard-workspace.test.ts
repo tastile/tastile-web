@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import type { TimelineSnapshot } from './execution';
+import type { TimelineSnapshot } from './types';
 import { SegmentId, TileId } from "@/shared/model/ids";
-import { Tile } from '@/tile/model/tile';
+import { Tile } from '@/tile/model/types';
 import {
 	buildChanges,
 	buildListSections,

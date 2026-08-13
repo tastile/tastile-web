@@ -21,7 +21,6 @@ function getRegion(activeKey: "intent" | "base", layout: "drawer" | "sheet" = "d
   const region = container.querySelector(
     'section[aria-labelledby="intent-heading"]',
   ) as HTMLElement;
-  expect(region).not.toBeNull();
   return region;
 }
 
@@ -40,25 +39,21 @@ describe("SubPanelShell", () => {
     expect(screen.getByText("body")).toBeInTheDocument();
   });
 
-  it("hides and inerts when idle", () => {
+  it("returns null when idle", () => {
     const region = getRegion("base");
-    expect(region).toHaveAttribute("aria-hidden", "true");
-    expect(region).toHaveAttribute("inert");
-  });
-
-  it("uses translate-x-full when idle on desktop drawer", () => {
-    const region = getRegion("base", "drawer");
-    expect(region.className).toContain("translate-x-full");
-  });
-
-  it("uses translate-y-full when idle on mobile sheet", () => {
-    const region = getRegion("base", "sheet");
-    expect(region.className).toContain("translate-y-full");
+    expect(region).toBeNull();
   });
 
   it("uses translate-x-0 when active on desktop drawer", () => {
     const region = getRegion("intent", "drawer");
+    expect(region).not.toBeNull();
     expect(region.className).toContain("translate-x-0");
+  });
+
+  it("uses translate-y-0 when active on mobile sheet", () => {
+    const region = getRegion("intent", "sheet");
+    expect(region).not.toBeNull();
+    expect(region.className).toContain("translate-y-0");
   });
 
   it("calls onClose when Esc is pressed", () => {
@@ -79,7 +74,7 @@ describe("SubPanelShell", () => {
   });
 
   it("accepts the extended panel keys used by QuickCreate", () => {
-    const { rerender, container } = render(
+    const { container } = render(
       <SubPanelShell
         panelKey="references"
         activeKey="references"
@@ -94,7 +89,10 @@ describe("SubPanelShell", () => {
     expect(
       container.querySelector('section[aria-labelledby="references-heading"]'),
     ).not.toBeNull();
-    rerender(
+  });
+
+  it("returns null when idle for extended panel keys", () => {
+    const { container } = render(
       <SubPanelShell
         panelKey="references"
         activeKey="meta"
@@ -106,9 +104,8 @@ describe("SubPanelShell", () => {
         <p>refs</p>
       </SubPanelShell>,
     );
-    const region = container.querySelector(
-      'section[aria-labelledby="references-heading"]',
-    ) as HTMLElement;
-    expect(region).toHaveAttribute("aria-hidden", "true");
+    expect(
+      container.querySelector('section[aria-labelledby="references-heading"]'),
+    ).toBeNull();
   });
 });

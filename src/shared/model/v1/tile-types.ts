@@ -6,13 +6,13 @@
  */
 
 import type { DecisionDef } from "@/shared/api/v1/decision";
-import type { ChangeRule } from "./change-set";
-import type { Completion } from "./completion";
-import type { ConditionNode } from "./condition";
-import type { PlanRoleValue } from "./constants";
-import type { Metric } from "./metric";
-import type { Reference } from "./reference";
-import type { DurationRange, Moment } from "./window";
+import type { ChangeRule } from "@/shared/model/v1/change-set";
+import type { Completion } from "@/shared/model/v1/completion";
+import type { ConditionNode } from "@/shared/model/v1/condition";
+import type { PlanRoleValue } from "@/shared/model/v1/constants";
+import type { Metric } from "@/shared/model/v1/metric";
+import type { Reference } from "@/shared/model/v1/reference";
+import type { DurationRange, Moment } from "@/shared/model/v1/window";
 
 // ---------- Planning (rules & flows) ----------
 

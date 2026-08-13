@@ -9,6 +9,7 @@ import { nav } from "./sections/app/nav";
 import { shell } from "./sections/app/shell";
 import { sidebar } from "./sections/app/sidebar";
 import { calendar } from "./sections/features/calendar";
+import { createTile } from "./sections/features/createTile";
 import { dashboard } from "./sections/features/dashboard";
 import { projects } from "./sections/features/projects";
 import {
@@ -121,7 +122,7 @@ export const translations = Object.fromEntries(
     // landing-page copy only ships for en/ja; other locales don't carry a
     // marketingLanding block, so consumers fall through to en via the
     // useTranslation() FALLBACK_LOCALE contract.
-    const extras: Dict[] = [{ quickCreate: qc }, { marketing: mkt }];
+    const extras: Dict[] = [{ quickCreate: qc }, { marketing: mkt }, { createTile: createTile[loc] as Dict }];
     if ((loc as keyof typeof marketingLanding) in marketingLanding) {
       extras.push({ marketingLanding: marketingLanding[loc as keyof typeof marketingLanding] as Dict });
     }

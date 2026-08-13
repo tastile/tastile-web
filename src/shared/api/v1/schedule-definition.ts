@@ -1,5 +1,5 @@
 import { type ApiClient, type Result, getRead, sendCommand } from "@/shared/api/v1/endpoints";
-import { type CommandRequest, nowIso, uuidv7 } from "@/tile/model/v1/envelope";
+import { type CommandRequest, nowIso, uuidv7 } from "@/shared/model/v1/envelope";
 
 export const ScheduleReferenceUsage = {
   LABEL_SPAN: 1,
@@ -237,7 +237,7 @@ export interface PublishScheduleDefinitionResult {
 }
 export type PublishScheduleDefinitionFailure = {
   ok: false;
-  error: import("@/tile/model/v1/envelope").ApiError;
+  error: import("@/shared/model/v1/envelope").ApiError;
 };
 
 function envelope<T>(payload: T, idempotencyKey: string): CommandRequest<T> {

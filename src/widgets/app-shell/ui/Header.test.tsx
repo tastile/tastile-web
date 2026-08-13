@@ -6,16 +6,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithMantine } from "@/test/render-with-mantine";
 import { Header } from "./Header";
 
-vi.mock("@/features/execute-tile/ui/ActiveExecutionBar", () => ({
+vi.mock("@/widgets/app-shell/ui/ActiveExecutionBar", () => ({
   ActiveExecutionBar: () => null,
 }));
 
-vi.mock("@/app/app/account-menu", () => ({
+vi.mock("@/widgets/app-shell/ui/AccountMenu", () => ({
   AccountMenu: () => null,
 }));
 
+const originalFetch = globalThis.fetch;
+
 afterEach(() => {
   vi.restoreAllMocks();
+  globalThis.fetch = originalFetch;
 });
 
 describe("Header identity fetch", () => {
@@ -46,7 +49,7 @@ describe("Header identity fetch", () => {
 
   it("reads identity from the safe /api/auth/session endpoint", async () => {
     const fetchMock = buildFetchMock();
-    vi.stubGlobal("fetch", fetchMock);
+    globalThis.fetch = fetchMock as typeof globalThis.fetch;
 
     renderWithMantine(
       <QueryClientProvider client={new QueryClient()}>
@@ -58,13 +61,12 @@ describe("Header identity fetch", () => {
     });
 
     const calledUrl = String(fetchMock.mock.calls[0]?.[0] ?? "");
-    // Must use the safe session route, not the legacy daemon client.
     expect(calledUrl).toContain("/api/auth/session");
   });
 
   it("does not attach Cognito token material on the session fetch", async () => {
     const fetchMock = buildFetchMock();
-    vi.stubGlobal("fetch", fetchMock);
+    globalThis.fetch = fetchMock as typeof globalThis.fetch;
 
     renderWithMantine(
       <QueryClientProvider client={new QueryClient()}>
@@ -75,14 +77,13 @@ describe("Header identity fetch", () => {
 
     const init = (fetchMock.mock.calls[0]?.[1] ?? {}) as RequestInit;
     const headers = (init.headers ?? {}) as Record<string, string>;
-    // No Authorization / no cookie forwarding to a public session route.
     expect(headers.authorization).toBeUndefined();
     expect(headers.Authorization).toBeUndefined();
   });
 
   it("calls /api/me after /api/auth/session to fetch profile fields", async () => {
     const fetchMock = buildFetchMock();
-    vi.stubGlobal("fetch", fetchMock);
+    globalThis.fetch = fetchMock as typeof globalThis.fetch;
 
     renderWithMantine(
       <QueryClientProvider client={new QueryClient()}>

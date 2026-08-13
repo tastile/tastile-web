@@ -1,7 +1,7 @@
 "use client";
 
+import { PlanRole, TileKind } from "@/shared/model/v1/constants";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { PlanRole, TileKind } from "@/tile/model/v1/constants";
 import {
   Button,
   Group,

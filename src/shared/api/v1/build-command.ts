@@ -25,8 +25,8 @@
  * migrated to the v1 store + snapshot shape in Task 6 / Task 9.
  */
 
-import { TileKind } from "@/tile/model/v1/constants";
-import { type CommandRequest, nowIso } from "@/tile/model/v1/envelope";
+import { TileKind } from "@/shared/model/v1/constants";
+import { type CommandRequest, nowIso } from "@/shared/model/v1/envelope";
 
 // ---------- input snapshot ----------
 

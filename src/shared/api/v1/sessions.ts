@@ -8,8 +8,8 @@
  * acceptance — and is NOT a generic SessionModel mirror.
  */
 
-import { ApiErrorKind } from "@/tile/model/v1/constants";
-import type { ApiError } from "@/tile/model/v1/envelope";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
+import type { ApiError } from "@/shared/model/v1/envelope";
 import type { ApiClient } from "./endpoints";
 import { type Result, getRead } from "./endpoints";
 

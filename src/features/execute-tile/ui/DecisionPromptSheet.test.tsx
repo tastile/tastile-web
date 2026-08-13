@@ -21,7 +21,7 @@ vi.mock("@/shared/api/v1/submit", () => ({
 }));
 
 import { DecisionPromptSheet } from "./DecisionPromptSheet";
-import { ApiErrorKind } from "@/tile/model/v1/constants";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
 import type { SessionView } from "@/shared/api/v1/sessions";
 
 const sessionA: SessionView = {

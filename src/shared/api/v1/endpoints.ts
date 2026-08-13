@@ -2,7 +2,7 @@
  * v1 HTTP client — typed wrapper for `tastile-core` v1 endpoints.
  *
  * Uses the v1 envelope (`CommandRequest<T>` in / out, `CommandResponse`
- * out, `ApiError` on failure) defined in `@/tile/model/v1/envelope`.
+ * out, `ApiError` on failure) defined in `@/shared/model/v1/envelope`.
  *
  * Returns `Result<T>` instead of throwing so the UI can render structured
  * failure states (validation / forbidden / stale revision / etc.) without
@@ -12,8 +12,8 @@
  * call so silent renewals are honored.
  */
 
-import { ApiErrorKind } from "@/tile/model/v1/constants";
-import type { ApiError, CommandRequest, CommandResponse } from "@/tile/model/v1/envelope";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
+import type { ApiError, CommandRequest, CommandResponse } from "@/shared/model/v1/envelope";
 
 export interface ApiClient {
   baseUrl: string;

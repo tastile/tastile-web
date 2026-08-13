@@ -1,5 +1,5 @@
-import type { FactTerm, FeedbackTerm, MetricTerm, Term } from "@/tile/model/v1/condition";
-import { HolidayKind } from "@/tile/model/v1/constants";
+import type { FactTerm, FeedbackTerm, MetricTerm, Term } from "@/shared/model/v1/condition";
+import { HolidayKind } from "@/shared/model/v1/constants";
 
 export function defaultTerm(kind: string): Term {
   switch (kind) {

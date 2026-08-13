@@ -28,12 +28,13 @@
  */
 
 import { translations } from "@/shared/i18n/translations";
+import type { ConditionNode } from "@/shared/model/v1/condition";
+import { ConditionKind, TileKind } from "@/shared/model/v1/constants";
+import { FormRow } from "@/shared/ui/form";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
-import type { ConditionNode } from "@/tile/model/v1/condition";
-import { ConditionKind, TileKind } from "@/tile/model/v1/constants";
 import { Button, Chip, NumberInput, SegmentedControl, Switch, Tooltip } from "@mantine/core";
 import { DatePickerInput } from "@mantine/dates";
-import { Calendar, Repeat } from "lucide-react";
+import { Calendar, CalendarDays, Filter, Repeat, Timer } from "lucide-react";
 import { ConditionEditor } from "./ConditionEditor";
 import type { EditorLocale } from "./date-utils";
 import { defaultTerm } from "./default-term";
@@ -73,10 +74,12 @@ type RepeatMode = (typeof REPEAT_MODE_OPTIONS)[number]["id"];
 
 function BuilderLabel({ title, hint }: { title: string; hint?: string }) {
   return (
-    <div className="flex items-baseline gap-2 text-[10px] font-semibold uppercase tracking-wider text-foreground-muted">
-      <span>{title}</span>
-      {hint ? <span className="font-normal normal-case tracking-normal">{hint}</span> : null}
-    </div>
+    <FormRow icon={null} className="items-start">
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium">{title}</span>
+        {hint ? <span className="text-xs text-foreground-muted">{hint}</span> : null}
+      </div>
+    </FormRow>
   );
 }
 
@@ -204,10 +207,9 @@ export function SourceGenerationPanel({
   const conditionEnabled = recurring.repeatMode === "condition";
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
-        <Repeat size={14} aria-hidden="true" />
-        <span>{t("quickCreate.recurrenceNavTitle")}</span>
-      </div>
+      <FormRow icon={<Repeat className="h-4 w-4" aria-hidden />}>
+        <span className="text-xs font-medium">{t("quickCreate.recurrenceNavTitle")}</span>
+      </FormRow>
       <SegmentedControl
         fullWidth
         size="sm"
@@ -228,82 +230,87 @@ export function SourceGenerationPanel({
         data-testid="recurring-mode-tabs"
       />
       {weekdayEnabled && (
-        <div className="space-y-1.5">
-          <BuilderLabel title={t("quickCreate.repeatWeekdayLabel")} />
-          <WeekdayRow
-            mask={recurring.weekdayMask}
-            onToggle={(bit) =>
-              setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))
-            }
-            locale={locale}
-          />
-        </div>
-      )}
-      {intervalEnabled && (
-        <div className="space-y-1.5">
-          <BuilderLabel title={t("quickCreate.intervalLabel") ?? "Interval"} />
-          <div className="flex items-center gap-2">
-            <NumberInput
-              min={recurring.intervalUnit === "min" ? 5 : 1}
-              step={recurring.intervalUnit === "min" ? 5 : 1}
-              value={recurring.intervalValue}
-              onChange={(value) => {
-                const num = typeof value === "number" ? value : Number(value);
-                if (!Number.isFinite(num)) return;
-                const min = recurring.intervalUnit === "min" ? 5 : 1;
-                setField("recurring.intervalValue", Math.max(min, Math.min(365, num)));
-              }}
-              size="sm"
-              className="flex-1"
-              aria-label={t("quickCreate.intervalLabel") ?? "Interval"}
-              styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-            />
-            <SegmentedControl
-              size="xs"
-              radius="md"
-              withItemsBorders={false}
-              value={recurring.intervalUnit}
-              onChange={(value) => {
-                const next = value as "min" | "hour" | "day";
-                const defaults: Record<"min" | "hour" | "day", number> = {
-                  min: 30,
-                  hour: 1,
-                  day: 1,
-                };
-                setField("recurring.intervalUnit", next);
-                if (
-                  (next === "min" && recurring.intervalValue < 5) ||
-                  (next === "hour" && recurring.intervalValue > 24) ||
-                  (next === "day" && recurring.intervalValue > 31)
-                ) {
-                  setField("recurring.intervalValue", defaults[next]);
-                }
-              }}
-              data={[
-                { value: "min", label: "min" },
-                { value: "hour", label: "h" },
-                { value: "day", label: "d" },
-              ]}
-              styles={SEGMENT_STYLES}
+        <FormRow icon={<CalendarDays className="h-4 w-4" aria-hidden />} className="items-start">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium">{t("quickCreate.repeatWeekdayLabel")}</span>
+            <WeekdayRow
+              mask={recurring.weekdayMask}
+              onToggle={(bit) =>
+                setField("recurring.weekdayMask", recurring.weekdayMask ^ (1 << bit))
+              }
+              locale={locale}
             />
           </div>
-          {timeOfDayStart && recurring.intervalUnit === "day" ? (
-            <div className="rounded bg-surface-2 px-2 py-1.5 text-xs text-foreground-muted flex items-center gap-1.5">
-              <Calendar size={12} aria-hidden="true" />
-              <span>
-                時間帯: {timeOfDayStart}
-                {timeOfDayEnd ? ` → ${timeOfDayEnd}` : ""}
-              </span>
+        </FormRow>
+      )}
+      {intervalEnabled && (
+        <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium">{t("quickCreate.intervalLabel") ?? "Interval"}</span>
+            <div className="flex items-center gap-2">
+              <NumberInput
+                min={recurring.intervalUnit === "min" ? 5 : 1}
+                step={recurring.intervalUnit === "min" ? 5 : 1}
+                value={recurring.intervalValue}
+                onChange={(value) => {
+                  const num = typeof value === "number" ? value : Number(value);
+                  if (!Number.isFinite(num)) return;
+                  const min = recurring.intervalUnit === "min" ? 5 : 1;
+                  setField("recurring.intervalValue", Math.max(min, Math.min(365, num)));
+                }}
+                size="sm"
+                className="flex-1"
+                aria-label={t("quickCreate.intervalLabel") ?? "Interval"}
+                styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+              />
+              <SegmentedControl
+                size="xs"
+                radius="md"
+                withItemsBorders={false}
+                value={recurring.intervalUnit}
+                onChange={(value) => {
+                  const next = value as "min" | "hour" | "day";
+                  const defaults: Record<"min" | "hour" | "day", number> = {
+                    min: 30,
+                    hour: 1,
+                    day: 1,
+                  };
+                  setField("recurring.intervalUnit", next);
+                  if (
+                    (next === "min" && recurring.intervalValue < 5) ||
+                    (next === "hour" && recurring.intervalValue > 24) ||
+                    (next === "day" && recurring.intervalValue > 31)
+                  ) {
+                    setField("recurring.intervalValue", defaults[next]);
+                  }
+                }}
+                data={[
+                  { value: "min", label: "min" },
+                  { value: "hour", label: "h" },
+                  { value: "day", label: "d" },
+                ]}
+                styles={SEGMENT_STYLES}
+              />
             </div>
-          ) : null}
-        </div>
+            {timeOfDayStart && recurring.intervalUnit === "day" ? (
+              <div className="rounded bg-surface-2 px-2 py-1.5 text-xs text-foreground-muted flex items-center gap-1.5">
+                <Calendar size={12} aria-hidden="true" />
+                <span>
+                  時間帯: {timeOfDayStart}
+                  {timeOfDayEnd ? ` → ${timeOfDayEnd}` : ""}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </FormRow>
       )}
       {conditionEnabled && (
-        <div className="space-y-2 rounded-lg border border-border bg-surface-0 p-3">
-          <BuilderLabel
-            title={t("quickCreate.conditionModeLabel") ?? "繰り返し条件"}
-            hint={t("quickCreate.conditionModeHint") ?? "条件が真のときだけTileを生成します"}
-          />
+        <FormRow icon={<Filter className="h-4 w-4" aria-hidden />} className="items-start">
+          <div className="flex flex-col gap-2">
+            <span className="text-xs font-medium">{t("quickCreate.conditionModeLabel") ?? "繰り返し条件"}</span>
+            {t("quickCreate.conditionModeHint") ? (
+              <span className="text-xs text-foreground-muted">{t("quickCreate.conditionModeHint")}</span>
+            ) : null}
           {/* E1b — recurring.condition affordance is kept (not removed) so users
               see the slot exists, but every interaction is disabled while
               ConditionEditor (Phase 4) is not yet wired. The wrapper span
@@ -370,16 +377,19 @@ export function SourceGenerationPanel({
               </Button>
             )}
           </Tooltip>
-        </div>
+          </div>
+        </FormRow>
       )}
-      <div className="space-y-1.5">
-        <BuilderLabel title={t("quickCreate.repeatEndLabel")} />
-        <EndDateToggle
-          endDate={recurring.endDate}
-          onChange={(next) => setField("recurring.endDate", next)}
-          t={t}
-        />
-      </div>
+      <FormRow icon={<Calendar className="h-4 w-4" aria-hidden />} className="items-start">
+        <div className="flex flex-col gap-1">
+          <span className="text-xs font-medium">{t("quickCreate.repeatEndLabel")}</span>
+          <EndDateToggle
+            endDate={recurring.endDate}
+            onChange={(next) => setField("recurring.endDate", next)}
+            t={t}
+          />
+        </div>
+      </FormRow>
     </div>
   );
 }

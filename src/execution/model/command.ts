@@ -1,6 +1,6 @@
 import { CommandId, type RequestId, type TileId } from "@/shared/model/ids";
 import type { Actor } from "@/tile/model/actor";
-import type { StartSource, Tile } from "@/tile/model/tile";
+import type { StartSource, Tile } from "@/tile/model/types";
 
 type StartupRecoveryAction =
   | "confirm_continue"

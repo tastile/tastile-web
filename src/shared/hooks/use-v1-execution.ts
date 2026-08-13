@@ -23,7 +23,7 @@ import {
   resumeExecutionCommand,
   startExecutionCommand,
 } from "@/shared/api/v1";
-import type { CommandResponse } from "@/tile/model/v1/envelope";
+import type { CommandResponse } from "@/shared/model/v1/envelope";
 import { useCallback, useState } from "react";
 
 export interface V1ExecutionSnapshot {

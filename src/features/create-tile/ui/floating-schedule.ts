@@ -3,7 +3,7 @@ import type {
   PublishScheduleDefinitionPayload,
   RequirementState,
 } from "@/shared/api/v1/schedule-definition";
-import { uuidv7 } from "@/tile/model/v1/envelope";
+import { uuidv7 } from "@/shared/model/v1/envelope";
 
 interface FloatingLabel {
   placementId: string;

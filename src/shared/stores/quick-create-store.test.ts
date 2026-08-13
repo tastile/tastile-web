@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import { hasTaskOrderCycle, tasksForSubmission, useQuickCreateStore } from "./quick-create-store";
-import { PlanRole, RecurringState, TileKind } from "@/tile/model/v1/constants";
+import { PlanRole, RecurringState, TileKind } from "@/shared/model/v1/constants";
 
 const reset = () => useQuickCreateStore.getState().reset();
 

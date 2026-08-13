@@ -1,6 +1,6 @@
 "use client";
 
-import type { PendingPrompt, PromptAction } from "@/execution/model/execution";
+import type { PendingPrompt, PromptAction } from "@/execution/model/types";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { useState } from "react";

@@ -1,7 +1,7 @@
 import type { TileId } from "@/shared/model/ids";
-import type { Tile } from "@/tile/model/tile";
+import type { Tile } from "@/tile/model/types";
 import type { EventEnvelope } from "./event";
-import { Execution, type TimelineSnapshot } from "./execution";
+import { Execution, type TimelineSnapshot } from "./types";
 
 export interface AppState {
   tiles: Map<TileId, Tile>;

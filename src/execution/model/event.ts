@@ -6,7 +6,7 @@ import {
   type TileId,
 } from "@/shared/model/ids";
 import type { Actor } from "@/tile/model/actor";
-import type { SegmentMode, Tile } from "@/tile/model/tile";
+import type { SegmentMode, Tile } from "@/tile/model/types";
 
 export type Event =
   | {

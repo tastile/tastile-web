@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { AggregateKind, ApiErrorKind } from "@/tile/model/v1/constants";
+import { AggregateKind, ApiErrorKind } from "@/shared/model/v1/constants";
 import type { ApiClient } from "@/shared/api/v1/endpoints";
 import {
   listReferenceCatalog,

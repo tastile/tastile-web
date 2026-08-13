@@ -1,13 +1,13 @@
 "use client";
 
 import type { Command } from "@/execution/model/command";
-import type { PendingPrompt, PromptAction, SyncStatus } from "@/execution/model/execution";
-import { GlobalPromptBanner } from "@/features/execute-tile/ui/GlobalPromptBanner";
+import type { PendingPrompt, PromptAction, SyncStatus } from "@/execution/model/types";
 import { useExecutionEngineContext } from "@/shared/hooks/execution-engine-context";
 import { Actor } from "@/tile/model/actor";
 import { ActionIcon } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { GlobalPromptBanner } from "./GlobalPromptBanner";
 import { Header } from "./Header";
 import { LeftTabs } from "./LeftTabs";
 import { MobileBottomTabs } from "./MobileBottomTabs";

@@ -2,10 +2,10 @@ import { ConditionPanel } from "@/features/create-tile/ui/ConditionPanel";
 import { type SubPanelKey, SubPanelShell } from "@/features/create-tile/ui/SubPanelShell";
 import { TaskDefinitionEditor } from "@/features/create-tile/ui/TaskDefinitionEditor";
 import { defaultTerm } from "@/features/create-tile/ui/default-term";
-import { FormPanel, SectionHeader } from "@/shared/ui/form";
+import type { ConditionNode } from "@/shared/model/v1/condition";
+import { ConditionKind } from "@/shared/model/v1/constants";
+import { FormPanel, FormRow, SectionHeader } from "@/shared/ui/form";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
-import type { ConditionNode } from "@/tile/model/v1/condition";
-import { ConditionKind } from "@/tile/model/v1/constants";
 import { Button, NumberInput, SegmentedControl } from "@mantine/core";
 import { AlertTriangle, Check, Clock, ListChecks, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
@@ -67,9 +67,9 @@ export function CompletionSubPanel({
           requirementOptions={requirementPickerData}
         />
         <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2" data-testid="completion-time-requirement-section">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-            {t("quickCreate.timeRequirementsTitle")}
-          </div>
+          <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+            <span className="text-xs font-medium">{t("quickCreate.timeRequirementsTitle")}</span>
+          </FormRow>
           {plan.completion.timeRequirements.map((tr, i) => {
             const minMin =
               tr.required.minMs === null ? null : Math.round(tr.required.minMs / 60000);
@@ -216,9 +216,9 @@ export function CompletionSubPanel({
           </Button>
         </div>
         <div className="flex flex-col gap-1.5">
-          <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-            {t("quickCreate.conditionAddTitle")}
-          </div>
+          <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
+            <span className="text-xs font-medium">{t("quickCreate.conditionAddTitle")}</span>
+          </FormRow>
           <SegmentedControl
             fullWidth
             size="sm"

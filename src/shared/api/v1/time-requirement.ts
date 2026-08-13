@@ -1,4 +1,4 @@
-import type { TimeRequirement } from "@/tile/model/v1/completion";
+import type { TimeRequirement } from "@/shared/model/v1/completion";
 
 /**
  * Serialize a TimeRequirement from store shape to wire shape.

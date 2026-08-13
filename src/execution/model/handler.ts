@@ -1,5 +1,5 @@
 import { EventId, SegmentId, TileId } from "@/shared/model/ids";
-import { Tile } from "@/tile/model/tile";
+import { Tile } from "@/tile/model/types";
 import type { CommandEnvelope } from "./command";
 import { eventReducer as reduce } from "./domain-reducer";
 import type { Event, EventEnvelope } from "./event";

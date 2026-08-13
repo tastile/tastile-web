@@ -1,6 +1,6 @@
 "use client";
 
-import type { PhaseKind } from "@/execution/model/execution";
+import type { PhaseKind } from "@/execution/model/types";
 import { useExecutionEngineContext } from "@/shared/hooks/execution-engine-context";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { Actor } from "@/tile/model/actor";

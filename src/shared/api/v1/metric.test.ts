@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as fc from "fast-check";
-import type { ConditionNode } from "@/tile/model/v1/condition";
+import type { ConditionNode } from "@/shared/model/v1/condition";
 import type {
   Metric,
   ScalarExpression,

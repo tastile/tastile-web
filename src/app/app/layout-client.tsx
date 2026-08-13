@@ -1,6 +1,6 @@
 "use client";
 
-import { QuickCreate } from "@/features/create-tile/ui/QuickCreate";
+import { QuickCreatePanel } from "@/features/create-tile/ui/QuickCreatePanel";
 import {
   ExecutionEngineProvider,
   useExecutionEngineContext,
@@ -63,21 +63,23 @@ export function AppLayoutClient({ children }: { children: ReactNode }) {
 }
 
 function AppLayoutInner({ children }: { children: ReactNode }) {
-  const { open } = useQuickCreateStore();
+  const { openCreate } = useQuickCreateStore();
   const { state } = useExecutionEngineContext();
 
-  // Keyboard shortcut: Cmd+N
+  // Keyboard shortcut: Cmd+N. Defaults to Task — the picker page
+  // inside the panel was intentionally removed; the user switches
+  // workflows via the top-left WorkflowChip dropdown.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault();
-        open();
+        openCreate({ workflow: "task" });
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [openCreate]);
 
   const activeTile = state.execution.activeTileId
     ? state.tiles.get(state.execution.activeTileId as import("@/shared/model/ids").TileId)
@@ -85,7 +87,9 @@ function AppLayoutInner({ children }: { children: ReactNode }) {
 
   return (
     <AppShell
-      quickCreatePanel={<QuickCreate />}
+      quickCreatePanel={
+        <QuickCreatePanel />
+      }
       executionState={{
         activeTileTitle: activeTile?.core.title ?? null,
         phaseKind: state.execution.phaseKind,

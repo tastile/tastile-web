@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { renderWithMantine as render } from "@/test/render-with-mantine";
-import { TileKind } from "@/tile/model/v1/constants";
+import { TileKind } from "@/shared/model/v1/constants";
 import "@testing-library/jest-dom/vitest";
 import { fireEvent } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";

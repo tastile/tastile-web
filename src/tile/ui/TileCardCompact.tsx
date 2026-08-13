@@ -6,7 +6,7 @@ import { cn } from "@/shared/lib/cn";
 import { formatDuration, formatFriendlyDateTime } from "@/shared/lib/tile-formatters";
 import type { TileId } from "@/shared/model/ids";
 import type { Locale } from "@/shared/stores/locale-store";
-import { type Tile, getTileLifecycle } from "@/tile/model/tile";
+import { type Tile, getTileLifecycle } from "@/tile/model/types";
 import { ActionIcon, Button } from "@mantine/core";
 import { SquarePen } from "lucide-react";
 import { LoadingCard } from "./LoadingCard";

@@ -21,10 +21,11 @@
  * aggregate stores materialized `Frame[]` (worker output).
  */
 
-import type { RecurrenceModel } from "@/tile/model/tile";
-import type { Stamp } from "@/tile/model/v1/actor";
-import type { ChangeRule } from "@/tile/model/v1/change-set";
-import type { TaskDefinition, TimeRequirement } from "@/tile/model/v1/completion";
+import type { WorkflowKind } from "@/features/create-tile/model/workflow-config";
+import { type SubPanelKey } from "@/features/create-tile/ui/SubPanelShell";
+import type { Stamp } from "@/shared/model/v1/actor";
+import type { ChangeRule } from "@/shared/model/v1/change-set";
+import type { TaskDefinition, TimeRequirement } from "@/shared/model/v1/completion";
 import {
   ConditionKind,
   PlanRole,
@@ -33,10 +34,11 @@ import {
   TaskOrderRelation,
   TileKind,
   type TileKindValue,
-} from "@/tile/model/v1/constants";
-import { uuidv7 } from "@/tile/model/v1/envelope";
-import type { FrameRule, Plan, RecurringRule } from "@/tile/model/v1/tile";
-import type { DateRange, DurationRange, Span, Window } from "@/tile/model/v1/window";
+} from "@/shared/model/v1/constants";
+import { uuidv7 } from "@/shared/model/v1/envelope";
+import type { FrameRule, Plan, RecurringRule } from "@/shared/model/v1/tile-types";
+import type { DateRange, DurationRange, Span, Window } from "@/shared/model/v1/window";
+import type { RecurrenceModel } from "@/tile/model/types";
 import { create } from "zustand";
 
 /**
@@ -108,7 +110,7 @@ export interface RecurringSlice {
   intervalValue: number;
   intervalUnit: "min" | "hour" | "day";
   /** Condition tree evaluated when repeatMode === "condition". */
-  condition: import("@/tile/model/v1/condition").ConditionNode | null;
+  condition: import("@/shared/model/v1/condition").ConditionNode | null;
   /** Set to true when recurring.condition was non-null but silently dropped by wire */
   conditionIgnored: boolean;
 }
@@ -165,8 +167,8 @@ export interface SourceAuthoringSlice {
       | "FactChanged"
       | "MetricChanged"
     >;
-    when: import("@/tile/model/v1/condition").ConditionNode | null;
-    candidateWhen: import("@/tile/model/v1/condition").ConditionNode | null;
+    when: import("@/shared/model/v1/condition").ConditionNode | null;
+    candidateWhen: import("@/shared/model/v1/condition").ConditionNode | null;
     minimumGapMs: number;
     rank: number;
     /** Whether to wrap back to the first step after the final one (generic cyclic flow). */
@@ -247,11 +249,49 @@ export interface QuickCreateState {
    * the slot time; the sidebar + button leaves it at true.
    */
   initialAllDay: boolean;
+  /**
+   * The use-case-specialized workflow this QuickCreate instance is
+   * rendering. `null` means the picker menu is open and no workflow
+   * has been chosen yet (ActivityBar + entry point). Switching
+   * workflows preserves all field data because the underlying schema
+   * is shared — only the rendered form swaps.
+   */
+  workflowKind: WorkflowKind | null;
+  /**
+   * Which sub-panel is currently active. "base" means the main body
+   * is shown. QuickCreatePanel reads this to shift the panel left
+   * when a sub-panel is open.
+   */
+  activePanel: SubPanelKey;
+  setActivePanel: (panel: SubPanelKey) => void;
+  /**
+   * When true, the dashboard mounts the legacy monolithic `QuickCreate`
+   * editor instead of the specialized `QuickCreatePanel`. Both stay
+   * mounted so the user can toggle without losing the active draft —
+   * see feedback_keep_original_workflow.md for the user-facing
+   * requirement that the original workflow never be removed.
+   */
+  useLegacyEditor: boolean;
   open: () => void;
-  openCreate: (options?: { initialAllDay?: boolean }) => void;
-  openEdit: (eventId: string, tileId?: string | null) => void;
+  openCreate: (options?: {
+    initialAllDay?: boolean;
+    workflow?: WorkflowKind;
+  }) => void;
+  openEdit: (
+    eventId: string,
+    tileId?: string | null,
+    workflow?: WorkflowKind,
+  ) => void;
   close: () => void;
   toggle: () => void;
+  /**
+   * Switch the rendered form to a different workflow. Keeps every
+   * other slice intact so user input is not lost when jumping between
+   * Event / Task / Recurring inside the same panel session.
+   */
+  setWorkflow: (kind: WorkflowKind) => void;
+  /** Toggle between the legacy monolithic editor and the specialized panel. */
+  setLegacyEditor: (on: boolean) => void;
 
   identity: TileIdentitySlice;
   plan: Plan;
@@ -512,6 +552,9 @@ export function buildDefaultQuickCreateState(): Pick<
   | "loadError"
   | "submitBlocked"
   | "initialAllDay"
+  | "workflowKind"
+  | "useLegacyEditor"
+  | "activePanel"
   | "identity"
   | "plan"
   | "time"
@@ -534,6 +577,9 @@ export function buildDefaultQuickCreateState(): Pick<
     loadError: null,
     submitBlocked: false,
     initialAllDay: false,
+    workflowKind: null,
+    useLegacyEditor: false,
+    activePanel: "base" as SubPanelKey,
     identity: defaultIdentity(),
     plan: defaultPlan(),
     time: defaultTime(),
@@ -573,15 +619,26 @@ function setDeepPath(state: QuickCreateState, path: string, value: unknown): Qui
 export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
   ...buildDefaultQuickCreateState(),
   open: () => set({ isOpen: true }),
-  openCreate: (options?: { initialAllDay?: boolean }) =>
+  openCreate: (options?: { initialAllDay?: boolean; workflow?: WorkflowKind }) =>
     set((state) => ({
       isOpen: true,
       mode: "create" as const,
       editingId: null,
+      workflowKind: options?.workflow ?? null,
       initialAllDay: options?.initialAllDay ?? state.initialAllDay,
     })),
-  openEdit: (eventId: string, tileId?: string | null) =>
-    set({ isOpen: true, mode: "edit", editingId: eventId, editingTileId: tileId ?? null }),
+  openEdit: (
+    eventId: string,
+    tileId?: string | null,
+    workflow?: WorkflowKind,
+  ) =>
+    set({
+      isOpen: true,
+      mode: "edit",
+      editingId: eventId,
+      editingTileId: tileId ?? null,
+      workflowKind: workflow ?? null,
+    }),
   close: () =>
     set({
       isOpen: false,
@@ -589,10 +646,15 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       editingId: null,
       editingTileId: null,
       loadError: null,
+      workflowKind: null,
+      activePanel: "base",
       submitState: { kind: "idle" },
       fieldErrors: new Map(),
     }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+  setWorkflow: (kind) => set({ workflowKind: kind }),
+  setLegacyEditor: (on) => set({ useLegacyEditor: on }),
+  setActivePanel: (panel) => set({ activePanel: panel }),
   getFieldError: (path) => get().fieldErrors.get(path) ?? null,
   setSubmitState: (state) => set({ submitState: state }),
   resetSubmitState: () => set({ submitState: { kind: "idle" } }),
@@ -714,8 +776,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
     })),
   loadFromEvent: (event) =>
     set(() => ({
+      isOpen: true,
+      mode: "edit" as const,
       editingId: event.id,
       editingTileId: event.tileId ?? null,
+      workflowKind: "event" as WorkflowKind,
       identity: {
         kind: TileKind.PLACEMENT,
         title: event.title,
@@ -773,6 +838,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       mode: "edit" as const,
       editingId: placementId,
       editingTileId: event.tileId ?? null,
+      workflowKind: "event" as WorkflowKind,
       loadError: null,
       submitBlocked: false,
       identity: {
@@ -847,6 +913,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       mode: "edit" as const,
       editingId: tileId,
       editingTileId: tileId,
+      workflowKind: "recurring" as WorkflowKind,
       loadError: null,
       submitBlocked: false,
       identity: {
@@ -922,6 +989,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       mode: "create" as const,
       editingId: null,
       editingTileId: null,
+      workflowKind: "recurring" as WorkflowKind,
       loadError: null,
       submitBlocked: false,
       identity: {

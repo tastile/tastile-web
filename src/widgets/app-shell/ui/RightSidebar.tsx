@@ -1,11 +1,11 @@
 "use client";
 
-import { TimelineAxis } from "@/features/execute-tile/ui/TimelineAxis";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import type { TileId } from "@/shared/model/ids";
 import type { Locale } from "@/shared/stores/locale-store";
-import { type Tile, getTileLifecycle } from "@/tile/model/tile";
+import { type Tile, getTileLifecycle } from "@/tile/model/types";
 import { TileStatusIcon } from "@/tile/ui/TileStatusIcon";
+import { TimelineAxis } from "./TimelineAxis";
 
 interface RightSidebarProps {
   onClose?: () => void;

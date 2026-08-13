@@ -5,7 +5,7 @@ import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/serv
 import { Button } from "@mantine/core";
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
-import { AuthShell } from "../auth-shell";
+import { AuthShell } from "../shell";
 
 export default async function SignupPage({
   searchParams,

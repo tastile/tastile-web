@@ -2,7 +2,7 @@
 
 import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { Tile } from "@/tile/model/tile";
+import type { Tile } from "@/tile/model/types";
 import { TileId } from "@/shared/model/ids";
 import type { TileListView } from "@/shared/hooks/use-tile-list";
 import { renderWithMantine } from "@/test/render-with-mantine";

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { serializeTimeRequirement } from "./time-requirement";
-import type { TimeRequirement } from "@/tile/model/v1/completion";
+import type { TimeRequirement } from "@/shared/model/v1/completion";
 
 describe("serializeTimeRequirement", () => {
   const baseReq: TimeRequirement = {

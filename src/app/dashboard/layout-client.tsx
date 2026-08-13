@@ -19,13 +19,15 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 
-// QuickCreate is a 3000-line client component with many submodules;
-// split it out of the layout bundle so the initial dashboard load only
-// pays for the dialog when the user actually opens it. Rendered through
-// a Zustand store internally — keeping it always-mounted (no `loading`
-// placeholder) so the store subscription is wired before open.
-const QuickCreate = dynamic(
-  () => import("@/features/create-tile/ui/QuickCreate").then((m) => m.QuickCreate),
+// QuickCreatePanel: use-case-specialized shell that dispatches Event /
+// Task / Recurring / Detailed forms. Rendered through a Zustand store
+// internally — keeping it always-mounted (no `loading` placeholder) so
+// the store subscription is wired before open.
+const QuickCreatePanel = dynamic(
+  () =>
+    import("@/features/create-tile/ui/QuickCreatePanel").then(
+      (m) => m.QuickCreatePanel,
+    ),
   { ssr: false },
 );
 
@@ -44,7 +46,7 @@ export function DashboardLayoutClient({ children }: { children: React.ReactNode 
 }
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
-  const openQuickCreate = useQuickCreateStore((s) => s.open);
+  const openQuickCreate = useQuickCreateStore((s) => s.openCreate);
   const closeQuickCreate = useQuickCreateStore((s) => s.close);
   const { t } = useTranslation();
   const { session } = useAuth();
@@ -76,7 +78,10 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       }
       if ((e.metaKey || e.ctrlKey) && e.key === "n") {
         e.preventDefault();
-        openQuickCreate();
+        // Default to Task — the picker page inside the panel was
+        // intentionally removed; the user switches via the
+        // WorkflowChip dropdown.
+        openQuickCreate({ workflow: "task" });
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -124,8 +129,8 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
         onOpenChange={(next) => (next ? openNotifications() : closeNotifications())}
         anchorRef={notificationsButtonRef}
       />
-      {/* QuickCreate: desktop = right slide, mobile = bottom slide-up */}
-      <QuickCreate />
+      {/* QuickCreatePanel: desktop = right slide, mobile = bottom slide-up. */}
+      <QuickCreatePanel />
 
       {/* Mobile side-panel floating action button (only when below md and content exists) */}
       <MobileSidePanelFab onClick={openMobileSidePanel} />

@@ -26,7 +26,7 @@ import { submitFeedback } from "@/shared/api/v1/sessions";
 import { makeClient } from "@/shared/api/v1/submit";
 import { usePendingSessions } from "@/shared/hooks/use-pending-sessions";
 import { useTranslation } from "@/shared/i18n/use-translation";
-import { ApiErrorKind } from "@/tile/model/v1/constants";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
 import { Alert, Button, Loader, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 

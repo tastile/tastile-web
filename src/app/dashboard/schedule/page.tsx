@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { SchedulePageClient } from "./schedule-page-client";
+import { SchedulePageClient } from "./page-client";
 
 export default function SchedulePage() {
   return (

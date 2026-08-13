@@ -1,8 +1,8 @@
 "use client";
 
-import type { PendingPrompt, SyncStatus } from "@/execution/model/execution";
+import type { PendingPrompt, SyncStatus } from "@/execution/model/types";
 import type { TileId } from "@/shared/model/ids";
-import type { Tile } from "@/tile/model/tile";
+import type { Tile } from "@/tile/model/types";
 import { type ReactNode, createContext, useContext } from "react";
 
 interface ExecutionEngineValue {

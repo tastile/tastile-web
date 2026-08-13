@@ -6,7 +6,7 @@
  * from Execution segments via ScalarExpression trees.
  */
 
-import type { ConditionNode } from "@/tile/model/v1/condition";
+import type { ConditionNode } from "@/shared/model/v1/condition";
 import { convertCondition } from "./plan-wire";
 
 // ---------- Metric.output numeric constants (v1/05 §Metric) ----------

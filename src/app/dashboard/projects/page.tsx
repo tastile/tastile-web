@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { ProjectsPageClient } from "./projects-page-client";
+import { ProjectsPageClient } from "./page-client";
 
 export default function ProjectsPage() {
   return (

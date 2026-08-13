@@ -1,14 +1,14 @@
 import { type SubPanelKey, SubPanelShell } from "@/features/create-tile/ui/SubPanelShell";
+import type { TaskDefinition } from "@/shared/model/v1/completion";
+import { TaskOrderRelation } from "@/shared/model/v1/constants";
+import { uuidv7 } from "@/shared/model/v1/envelope";
+import type { Plan } from "@/shared/model/v1/tile-types";
 import { hasTaskOrderCycle } from "@/shared/stores/quick-create-store";
 import { Textarea } from "@/shared/ui/Input";
-import { FormPanel } from "@/shared/ui/form";
+import { FormPanel, FormRow } from "@/shared/ui/form";
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
-import type { TaskDefinition } from "@/tile/model/v1/completion";
-import { TaskOrderRelation } from "@/tile/model/v1/constants";
-import { uuidv7 } from "@/tile/model/v1/envelope";
-import type { Plan } from "@/tile/model/v1/tile";
 import { ActionIcon, Button, SegmentedControl, Select } from "@mantine/core";
-import { Check, Link2, Plus, Trash2, X } from "lucide-react";
+import { Check, Link2, ListChecks, Plus, Trash2, X } from "lucide-react";
 
 export interface TaskDetailSubPanelProps {
   activePanel: SubPanelKey | null;
@@ -35,7 +35,7 @@ export function TaskDetailSubPanel({
 }: TaskDetailSubPanelProps) {
   return (
     <SubPanelShell
-      panelKey="task"
+      panelKey="task-details"
       activeKey={activePanel}
       onClose={() => setActivePanel("base")}
       headingId="task-heading"
@@ -55,24 +55,23 @@ export function TaskDetailSubPanel({
           const orderHasCycle = hasTaskOrderCycle(plan.completion.tasks);
           return (
             <div className="flex flex-col gap-4" data-testid="task-detail-panel">
-              <div className="flex flex-col gap-1.5">
-                <div className="text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                  {t("quickCreate.taskNoteLabel")}
+              <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs font-medium">{t("quickCreate.taskNoteLabel")}</span>
+                  <Textarea
+                    value={task.content.note ?? ""}
+                    onChange={(e) => setTaskField(task.id, "content.note", e.target.value || null)}
+                    placeholder={t("quickCreate.taskNotePlaceholder")}
+                    aria-label={t("quickCreate.taskNoteLabel")}
+                    rows={4}
+                    className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus:ring-0"
+                  />
                 </div>
-                <Textarea
-                  value={task.content.note ?? ""}
-                  onChange={(e) => setTaskField(task.id, "content.note", e.target.value || null)}
-                  placeholder={t("quickCreate.taskNotePlaceholder")}
-                  aria-label={t("quickCreate.taskNoteLabel")}
-                  rows={4}
-                  className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus:ring-0"
-                />
-              </div>
+              </FormRow>
 
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-wide text-foreground-muted">
-                  <span>{t("quickCreate.taskOrderSection")}</span>
-                </div>
+              <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-xs font-medium">{t("quickCreate.taskOrderSection")}</span>
                 {task.order.length === 0 ? (
                   <p className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted">
                     {t("quickCreate.taskOrderEmpty")}
@@ -195,7 +194,8 @@ export function TaskDetailSubPanel({
                     {t("quickCreate.taskOrderCycle")}
                   </p>
                 ) : null}
-              </div>
+                </div>
+              </FormRow>
 
               <div className="flex items-center gap-2 border-t border-border/40 pt-3">
                 <Button

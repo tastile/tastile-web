@@ -1,6 +1,6 @@
 import type { TileId } from "@/shared/model/ids";
-import { type Tile, getTileLifecycle } from "@/tile/model/tile";
-import type { TimelineSnapshot } from "./execution";
+import { type Tile, getTileLifecycle } from "@/tile/model/types";
+import type { TimelineSnapshot } from "./types";
 
 type TimelineScale = "day" | "week" | "month" | "custom";
 

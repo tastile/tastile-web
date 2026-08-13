@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TileId } from '@/shared/model/ids';
-import { Tile } from '@/tile/model/tile';
+import { Tile } from '@/tile/model/types';
 import { fromDaemonCommandRequest } from "./command";
 
 describe("fromDaemonCommandRequest", () => {

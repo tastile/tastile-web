@@ -1,7 +1,7 @@
 import type { TileListView } from "@/shared/hooks/use-tile-list";
 import { TileId } from "@/shared/model/ids";
-import type { DoneRule, ObjectiveMode, SemanticRole, Tile, TileLifecycle } from "@/tile/model/tile";
 import { DONE_RULE, OBJECTIVE_MODE, TILE_LIFECYCLE } from "@/tile/model/tile-list-view-constants";
+import type { DoneRule, ObjectiveMode, SemanticRole, Tile, TileLifecycle } from "@/tile/model/types";
 
 const LIFECYCLE_BY_CODE: Record<number, TileLifecycle> = {
   [TILE_LIFECYCLE.READY]: "ready",

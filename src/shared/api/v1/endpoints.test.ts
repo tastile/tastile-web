@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { postCommand, getRead, type ApiClient } from "./endpoints";
-import { ApiErrorKind } from "@/tile/model/v1/constants";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
 
 const mockFetch = vi.fn();
 globalThis.fetch = mockFetch as unknown as typeof fetch;

@@ -36,9 +36,9 @@ import type {
   FeedbackTerm,
   MetricTerm,
   Term,
-} from "@/tile/model/v1/condition";
-import { ConditionKind } from "@/tile/model/v1/constants";
-import { uuidv7 } from "@/tile/model/v1/envelope";
+} from "@/shared/model/v1/condition";
+import { ConditionKind } from "@/shared/model/v1/constants";
+import { uuidv7 } from "@/shared/model/v1/envelope";
 import { type DecisionDef, serializeDecision } from "./decision";
 import type { WireCompletion, WirePlanning } from "./openapi-contract";
 

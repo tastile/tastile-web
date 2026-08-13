@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { SegmentId, TileId } from '@/shared/model/ids';
-import { Tile } from '@/tile/model/tile';
+import { Tile } from '@/tile/model/types';
 import type { Event } from "./event";
 import { eventReducer } from "./domain-reducer";
 import { AppState } from "./state";
