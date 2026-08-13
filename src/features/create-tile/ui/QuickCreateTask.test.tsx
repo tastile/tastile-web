@@ -98,31 +98,27 @@ describe("QuickCreateTask", () => {
     expect(useQuickCreateStore.getState().identity.title).toBe("Buy milk");
   });
 
-  it("renders duration preset chips", () => {
+  it("renders the duration select with the default 30 min option", () => {
     renderWithMantine(<QuickCreateTask />);
-    expect(screen.getByTestId("task-duration-preset-15")).toBeInTheDocument();
-    expect(screen.getByTestId("task-duration-preset-30")).toBeInTheDocument();
-    expect(screen.getByTestId("task-duration-preset-60")).toBeInTheDocument();
-    expect(screen.getByTestId("task-duration-preset-90")).toBeInTheDocument();
-    expect(screen.getByTestId("task-duration-preset-120")).toBeInTheDocument();
+    expect(screen.getByTestId("task-duration-select")).toBeInTheDocument();
   });
 
-  it("applies a preset duration when its chip is clicked", async () => {
+  it("applies the duration when a select option is chosen", async () => {
     const user = userEvent.setup();
     renderWithMantine(<QuickCreateTask />);
 
-    await user.click(screen.getByTestId("task-duration-preset-60"));
+    await user.click(screen.getByTestId("task-duration-select"));
+    await user.click(screen.getByRole("option", { name: "1 hour", hidden: true }));
 
     const { durationMinMax } = useQuickCreateStore.getState().time;
     expect(durationMinMax.minMs).toBe(60 * 60_000);
     expect(durationMinMax.maxMs).toBe(60 * 60_000);
   });
 
-  it("reflects the default duration as the active preset on first render", () => {
+  it("reflects the default duration as the selected option on first render", () => {
     renderWithMantine(<QuickCreateTask />);
-    // durationMinMax = 30min by default → preset-30 chip should be the filled one
-    const preset30 = screen.getByTestId("task-duration-preset-30");
-    expect(preset30.getAttribute("data-variant")).toBe("filled");
+    // Mantine Select renders the selected option's label in the input value
+    expect(screen.getByTestId("task-duration-select")).toHaveValue("30 min");
   });
 
   it("renders the due-date and due-time inputs always visible", async () => {

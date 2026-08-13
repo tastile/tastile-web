@@ -1,11 +1,10 @@
 "use client";
 
 import {
-  Badge,
   Button,
   CloseButton,
   ColorInput,
-  NumberInput,
+  Select,
   Stack,
   TextInput,
   Textarea,
@@ -16,7 +15,7 @@ import {
   Folder,
   Timer,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/shared/i18n/use-translation";
@@ -27,7 +26,13 @@ import { TaskDetailsSubPanel } from "./TaskDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
 import { WorkflowBatch } from "./WorkflowBatch";
 
-const DURATION_PRESETS_MIN = [15, 30, 60, 90, 120] as const;
+const DURATION_OPTIONS = [
+  { value: "15", label: "15 min" },
+  { value: "30", label: "30 min" },
+  { value: "60", label: "1 hour" },
+  { value: "90", label: "1.5 hours" },
+  { value: "120", label: "2 hours" },
+] as const;
 
 const TASK_COLOR_SWATCHES = [
   "#3b82f6",
@@ -88,7 +93,7 @@ function msToMin(ms: number | null): number {
  *   - Title input (big, underlined — primary affordance; aligns with
  *     field rows structurally via `FormRow` no-icon)
  *   - Due date + Due time on the same row (no label, no icon column)
- *   - Duration section (chips + manual minutes input)
+ *   - Duration section (single dropdown of preset values)
  *   - Description / memo (borderless textarea)
  *   - Color row (compact swatches)
  *   - Project picker (chip row)
@@ -118,23 +123,20 @@ export function QuickCreateTask() {
   const detailsOpen = activePanel === "task-details";
   const openDetails = () => setActivePanel("task-details");
   const closeDetails = () => setActivePanel("base");
-  const [manualDuration, setManualDuration] = useState<string | number>(
-    msToMin(durationMinMs) || 30,
-  );
 
   const dueDate = useMemo(() => isoToDate(spanStart), [spanStart]);
   const dueTime = useMemo(() => isoToTime(spanStart), [spanStart]);
 
-  const presetDuration = useMemo(() => {
+  const selectedDuration = useMemo(() => {
     const m = msToMin(durationMinMs);
-    return DURATION_PRESETS_MIN.includes(m as (typeof DURATION_PRESETS_MIN)[number])
-      ? m
-      : null;
+    return DURATION_OPTIONS.find((o) => Number(o.value) === m)?.value ?? "30";
   }, [durationMinMs]);
 
   const applyDuration = useCallback(
-    (minutes: number) => {
-      setManualDuration(minutes);
+    (value: string | null) => {
+      if (!value) return;
+      const minutes = Number(value);
+      if (!Number.isFinite(minutes) || minutes <= 0) return;
       setField("time.durationMinMax.minMs", minToMs(minutes));
       setField("time.durationMinMax.maxMs", minToMs(minutes));
     },
@@ -222,39 +224,16 @@ export function QuickCreateTask() {
         {/* Duration */}
         <div className="px-4 py-3">
           <FormRow icon={<Timer className="h-4 w-4" aria-hidden />}>
-            <div className="w-full">
-              <div className="flex flex-wrap items-center gap-1.5">
-                {DURATION_PRESETS_MIN.map((m) => (
-                  <Badge
-                    key={m}
-                    variant={presetDuration === m ? "filled" : "light"}
-                    color={presetDuration === m ? "indigo" : "gray"}
-                    size="lg"
-                    style={{ cursor: "pointer", minWidth: "3.25rem" }}
-                    onClick={() => applyDuration(m)}
-                    data-testid={`task-duration-preset-${m}`}
-                  >
-                    {m < 60 ? `${m}m` : `${m / 60}h`}
-                  </Badge>
-                ))}
-              </div>
-              <NumberInput
-                value={manualDuration}
-                onChange={(v) => {
-                  setManualDuration(v);
-                  const n = typeof v === "number" ? v : Number(v);
-                  if (Number.isFinite(n) && n > 0) applyDuration(n);
-                }}
-                suffix=" min"
-                min={1}
-                max={1440}
-                size="xs"
-                mt="xs"
-                aria-label={t("quickCreate.durationManual") || "Custom minutes"}
-                placeholder={t("quickCreate.durationManual") || "Custom minutes"}
-                data-testid="task-duration-manual"
-              />
-            </div>
+            <Select
+              value={selectedDuration}
+              onChange={applyDuration}
+              data={[...DURATION_OPTIONS]}
+              size="xs"
+              aria-label={t("quickCreate.durationLabel") || "Duration"}
+              data-testid="task-duration-select"
+              allowDeselect={false}
+              checkIconPosition="right"
+            />
           </FormRow>
         </div>
 
