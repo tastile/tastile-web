@@ -11,6 +11,11 @@ import { renderWithMantine } from "@/test/render-with-mantine";
 
 vi.mock("@/shared/hooks/use-workspaces", () => ({
   useWorkspaces: vi.fn(),
+  orderWorkspaceTree: (items: unknown[]) =>
+    (items as Array<{ id: string; display_name: string }>).map((w, depth) => ({
+      workspace: w,
+      depth,
+    })),
 }));
 
 vi.mock("@/shared/hooks/use-tile-list", () => ({

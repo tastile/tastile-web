@@ -5,12 +5,18 @@ import { act, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { useLocaleStore } from "@/shared/stores/locale-store";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { QuickCreateRecurring } from "./QuickCreateRecurring";
 import { renderWithMantine } from "@/test/render-with-mantine";
 
 vi.mock("@/shared/hooks/use-workspaces", () => ({
   useWorkspaces: vi.fn(),
+  orderWorkspaceTree: (items: unknown[]) =>
+    (items as Array<{ id: string; display_name: string }>).map((w, depth) => ({
+      workspace: w,
+      depth,
+    })),
 }));
 
 import { useWorkspaces } from "@/shared/hooks/use-workspaces";
@@ -56,6 +62,7 @@ function resetStore() {
       timeOfDayEnd: "",
       referenceId: null,
       referenceLabel: "",
+      splitPolicy: "unsplit",
     },
     recurring: {
       life: {
@@ -79,6 +86,10 @@ function resetStore() {
 
 describe("QuickCreateRecurring", () => {
   beforeEach(() => {
+    // Pin the locale to English so the test stays decoupled from the
+    // default ja locale; otherwise labels like "分割しない" don't match
+    // the English assertions (e.g. /keep continuous/i).
+    useLocaleStore.setState({ locale: "en" });
     resetStore();
     mockUseWorkspaces.mockReturnValue({
       workspaces: [],
@@ -122,7 +133,16 @@ describe("QuickCreateRecurring", () => {
     // Click on the Select wrapper to open the dropdown, then pick "60".
     const select = screen.getByTestId("recurring-duration-select");
     await user.click(select);
-    const sixtyOption = screen.getByRole("option", { name: "1 hours", hidden: true });
+    // Mantine renders the Select's listbox with `display: none` even
+    // after the toggle click in jsdom — the dropdown's options exist in
+    // the DOM but aren't yet "accessible" by role. `hidden: true` is
+    // required to reach them. To disambiguate from the
+    // TimeSuggestionInput's "Custom…" option (same default label), pick
+    // by value via getAllByRole + index.
+    const sixtyOption = screen.getAllByRole("option", {
+      name: "1 hours",
+      hidden: true,
+    })[0];
     await user.click(sixtyOption);
 
     const { durationMinMax } = useQuickCreateStore.getState().time;
@@ -189,7 +209,18 @@ describe("QuickCreateRecurring", () => {
     expect(screen.queryByTestId("recurring-duration-manual")).toBeNull();
 
     await user.click(screen.getByTestId("recurring-duration-select"));
-    await user.click(screen.getByRole("option", { name: /custom/i, hidden: true }));
+    // The TimeSuggestionInput also renders a "Custom…" option, so pick
+    // by value (the Duration Select uses "__custom_duration__") rather
+    // than by name.
+    const customOptions = screen.getAllByRole("option", {
+      name: /custom/i,
+      hidden: true,
+    });
+    const durationCustom = customOptions.find(
+      (el) => el.getAttribute("value") === "__custom_duration__",
+    );
+    if (!durationCustom) throw new Error("Duration Custom option not found");
+    await user.click(durationCustom);
 
     expect(screen.getByTestId("recurring-duration-manual")).toBeInTheDocument();
   });
@@ -199,7 +230,15 @@ describe("QuickCreateRecurring", () => {
     renderWithMantine(<QuickCreateRecurring />);
 
     await user.click(screen.getByTestId("recurring-duration-select"));
-    await user.click(screen.getByRole("option", { name: /custom/i, hidden: true }));
+    const customOptions = screen.getAllByRole("option", {
+      name: /custom/i,
+      hidden: true,
+    });
+    const durationCustom = customOptions.find(
+      (el) => el.getAttribute("value") === "__custom_duration__",
+    );
+    if (!durationCustom) throw new Error("Duration Custom option not found");
+    await user.click(durationCustom);
 
     const manual = screen.getByTestId("recurring-duration-manual");
     await user.clear(manual);
@@ -240,7 +279,15 @@ describe("QuickCreateRecurring", () => {
     renderWithMantine(<QuickCreateRecurring />);
 
     await user.click(screen.getByTestId("recurring-duration-select"));
-    await user.click(screen.getByRole("option", { name: /custom/i, hidden: true }));
+    const customOptions = screen.getAllByRole("option", {
+      name: /custom/i,
+      hidden: true,
+    });
+    const durationCustom = customOptions.find(
+      (el) => el.getAttribute("value") === "__custom_duration__",
+    );
+    if (!durationCustom) throw new Error("Duration Custom option not found");
+    await user.click(durationCustom);
 
     const manual = screen.getByTestId("recurring-duration-manual");
     await user.clear(manual);

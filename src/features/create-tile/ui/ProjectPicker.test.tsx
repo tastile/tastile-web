@@ -11,6 +11,11 @@ import { ProjectPicker } from "./ProjectPicker";
 
 vi.mock("@/shared/hooks/use-workspaces", () => ({
   useWorkspaces: vi.fn(),
+  orderWorkspaceTree: (items: unknown[]) =>
+    (items as Array<{ id: string; display_name: string }>).map((w, depth) => ({
+      workspace: w,
+      depth,
+    })),
 }));
 
 import { useWorkspaces } from "@/shared/hooks/use-workspaces";

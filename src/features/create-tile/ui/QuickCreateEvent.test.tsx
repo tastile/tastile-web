@@ -12,6 +12,11 @@ import { renderWithMantine } from "@/test/render-with-mantine";
 
 vi.mock("@/shared/hooks/use-workspaces", () => ({
   useWorkspaces: vi.fn(),
+  orderWorkspaceTree: (items: unknown[]) =>
+    (items as Array<{ id: string; display_name: string }>).map((w, depth) => ({
+      workspace: w,
+      depth,
+    })),
 }));
 
 import { useWorkspaces } from "@/shared/hooks/use-workspaces";
@@ -57,6 +62,7 @@ function resetStore() {
       timeOfDayEnd: "",
       referenceId: null,
       referenceLabel: "",
+      splitPolicy: "unsplit",
     },
     meta: { ownerSubjectId: null, memo: "", isLabelOnly: false },
   });
