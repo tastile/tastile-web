@@ -31,7 +31,6 @@ import { SchedulePanel } from "@/features/create-tile/ui/SchedulePanel";
 import { SourceGenerationPanel } from "@/features/create-tile/ui/SourceGenerationPanel";
 import { SourceWindowPanel } from "@/features/create-tile/ui/SourceWindowPanel";
 import { type SubPanelKey, SubPanelShell } from "@/features/create-tile/ui/SubPanelShell";
-import { SubmitBar } from "@/features/create-tile/ui/SubmitBar";
 import { SubmitError, SubmitValidationError, makeClient, submitCreateTile, submitTile, submitUpdateTile } from "@/shared/api/v1/submit";
 import { notifyEventsChanged } from "@/shared/hooks/calendar/use-events";
 import { useIsDesktop } from "@/shared/hooks/use-media-query";
@@ -46,7 +45,6 @@ import { hasTaskOrderCycle, useQuickCreateStore } from "@/shared/stores/quick-cr
 import { FormRow } from "@/shared/ui/form";
 import {
   ActionIcon,
-  Button,
   CloseButton,
   NumberInput,
   Pill,
@@ -63,7 +61,6 @@ import {
   Layers,
   Link2,
   ListChecks,
-  Plus,
   Repeat,
   SlidersHorizontal,
 } from "lucide-react";
@@ -544,7 +541,7 @@ export function QuickCreate() {
     <>
       <Stack gap={0} className="h-full">
       <Stack gap={0} className="flex-1 overflow-y-auto">
-        {/* Title */}
+        {/* Title — close button in icon column, submit button in trailing slot */}
         <div className="px-4 py-2">
           <FormRow
             icon={
@@ -583,28 +580,6 @@ export function QuickCreate() {
         <WorkflowBatch />
 
         {/* ─── body ─── */}
-        <div className="px-4 py-3">
-          {/* organize row */}
-          <FormRow>
-            <div
-              className="flex flex-wrap items-center gap-1.5"
-              data-testid="quick-create-organize-row"
-            >
-                <Button
-                  type="button"
-                  onClick={() => setActivePanel("meta")}
-                  leftSection={<Plus size={12} />}
-                  variant="outline"
-                  size="xs"
-                  radius="xl"
-                  data-testid="quick-create-tab-meta"
-                >
-                  {t("quickCreate.metaExpandLabel") || "Refine"}
-                </Button>
-              </div>
-          </FormRow>
-        </div>
-
         {/* Time */}
         <div className="px-4 py-3">
           <FormRow
@@ -1031,15 +1006,6 @@ export function QuickCreate() {
             taskPickerData={taskPickerData}
             requirementPickerData={requirementPickerData}
             time={time}
-          />
-
-          <MetaSubPanel
-            activePanel={activePanel}
-            setActivePanel={setActivePanel}
-            isDesktop={isDesktop}
-            t={t}
-            meta={meta}
-            setField={setField}
           />
 
           <TaskDetailSubPanel
