@@ -1,30 +1,27 @@
 "use client";
 
 import {
-  Button,
   CloseButton,
-  ColorInput,
   Select,
   Stack,
   TextInput,
-  Textarea,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import {
-  FileText,
-  Folder,
-  Timer,
-} from "lucide-react";
+import { Timer } from "lucide-react";
 import { useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormRow } from "@/shared/ui/form";
-import { ProjectPicker } from "./ProjectPicker";
+import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { TaskDetailsSubPanel } from "./TaskDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
 import { WorkflowBatch } from "./WorkflowBatch";
+import { DetailsAffordanceButton } from "./sections/DetailsAffordanceButton";
+import { MemoSection } from "./sections/MemoSection";
+import { ProjectColorRow } from "./sections/ProjectColorRow";
+import { SubtasksSection } from "./sections/SubtasksSection";
 
 const DURATION_OPTIONS = [
   { value: "15", label: "15 min" },
@@ -94,10 +91,10 @@ function msToMin(ms: number | null): number {
  *     field rows structurally via `FormRow` no-icon)
  *   - Due date + Due time on the same row (no label, no icon column)
  *   - Duration section (single dropdown of preset values)
- *   - Description / memo (borderless textarea)
- *   - Color row (compact swatches)
- *   - Project picker (chip row)
- *   - "Task details" affordance (sub-panel: sub-tasks + refs)
+ *   - `DetailsAffordanceButton` (opens the "task-details" sub-panel)
+ *   - Bottom set (top-bordered group):
+ *     - `MemoSection` (borderless autosizing textarea bound to `meta.memo`)
+ *     - `ProjectColorRow` (project chip row + compact color swatches)
  *
  * Date and time live on one row (no label, no icon) — same pattern as
  * the Event form. The time input opens a dropdown of 15-min
@@ -109,19 +106,15 @@ export function QuickCreateTask() {
   const title = useQuickCreateStore((s) => s.identity.title);
   const setField = useQuickCreateStore((s) => s.setField);
   const close = useQuickCreateStore((s) => s.close);
-  const mode = useQuickCreateStore((s) => s.mode);
 
   const spanStart = useQuickCreateStore((s) => s.time.span.start);
   const spanEnd = useQuickCreateStore((s) => s.time.span.end);
   const durationMinMs = useQuickCreateStore((s) => s.time.durationMinMax.minMs);
   const durationMaxMs = useQuickCreateStore((s) => s.time.durationMinMax.maxMs);
-  const memo = useQuickCreateStore((s) => s.meta.memo);
-  const visualColor = useQuickCreateStore((s) => s.identity.visual.color);
   const activePanel = useQuickCreateStore((s) => s.activePanel);
   const setActivePanel = useQuickCreateStore((s) => s.setActivePanel);
 
   const detailsOpen = activePanel === "task-details";
-  const openDetails = () => setActivePanel("task-details");
   const closeDetails = () => setActivePanel("base");
 
   const dueDate = useMemo(() => isoToDate(spanStart), [spanStart]);
@@ -175,6 +168,7 @@ export function QuickCreateTask() {
                 size="sm"
               />
             }
+            trailing={<QuickCreateSubmitButton />}
           >
             <TextInput
               variant="unstyled"
@@ -232,7 +226,7 @@ export function QuickCreateTask() {
               value={selectedDuration}
               onChange={applyDuration}
               data={[...DURATION_OPTIONS]}
-              size="xs"
+              size="sm"
               aria-label={t("quickCreate.durationLabel") || "Duration"}
               data-testid="task-duration-select"
               allowDeselect={false}
@@ -241,68 +235,32 @@ export function QuickCreateTask() {
           </FormRow>
         </div>
 
-        {/* Memo — full width with a bottom border to make the input affordance obvious */}
-        <div className="px-4 py-3">
-          <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
-            <Textarea
-              placeholder={t("quickCreate.memoPlaceholder") || "Add a note"}
-              value={memo}
-              onChange={(e) => setField("meta.memo", e.currentTarget.value)}
-              autosize
-              minRows={2}
-              maxRows={6}
-              size="sm"
-              variant="unstyled"
-              data-testid="task-memo"
-              // Visible bottom underline is enforced by a CSS rule in
-              // `src/app/globals.css` (`.qc-underline-input--muted`) — Mantine's
-              // module-class shorthand border otherwise wins over Tailwind.
-              classNames={{
-                input:
-                  "qc-underline-input--muted bg-transparent text-sm leading-relaxed text-foreground placeholder:text-[var(--foreground-muted)] px-0 w-full",
-              }}
-            />
-          </FormRow>
-        </div>
+        {/* "Task details" affordance — opens the task-details sub-panel */}
+        <DetailsAffordanceButton
+          panelKey="task-details"
+          labelKey="quickCreate.detailsTaskTitle"
+          fallbackLabel="Task details"
+          testId="task-open-details"
+        />
 
-        {/* Project + Color */}
-        <div className="px-4 py-3">
-          <FormRow
-            icon={<Folder className="h-4 w-4" aria-hidden />}
-            trailing={
-              <ColorInput
-                value={visualColor}
-                onChange={(v) => setField("identity.visual.color", v)}
-                size="xs"
-                format="hex"
-                fixOnBlur
-                withPicker={false}
-                withEyeDropper={false}
-                aria-label={t("quickCreate.colorLabel") || "Color"}
-                swatches={TASK_COLOR_SWATCHES}
-                data-testid="task-color"
-                className="w-[120px]"
-              />
-            }
-          >
-            <ProjectPicker testId="task-project-picker" />
-          </FormRow>
-        </div>
+        {/* Bottom "set": subtasks, project + color, then memo, grouped at the
+            very bottom of every workflow form. The top border visually
+            separates the set from the workflow-specific fields above. */}
+        <div className="border-t border-border pt-1">
+          {/* Subtasks — shared section component, lives ABOVE project+color so
+              the user can edit checklist items without opening the sub-panel. */}
+          <SubtasksSection testId="task-subtasks" />
 
-        {/* Details affordance */}
-        <div className="px-4 py-3">
-          <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={openDetails}
-              data-testid="task-open-details"
-              fullWidth
-              className="w-full"
-            >
-              {t("quickCreate.detailsTaskTitle") || "Task details"}
-            </Button>
-          </FormRow>
+          {/* Project picker + color swatches (shared section component) */}
+          <ProjectColorRow
+            pickerTestId="task-project-picker"
+            colorTestId="task-color"
+            swatches={TASK_COLOR_SWATCHES}
+          />
+
+          {/* Memo — borderless autosizing textarea bound to meta.memo.
+              Sits directly under the project+color row (memo beneath project). */}
+          <MemoSection testId="task-memo" />
         </div>
       </Stack>
 
