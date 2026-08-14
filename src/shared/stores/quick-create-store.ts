@@ -565,6 +565,25 @@ function todayLocalMidnightIso(now: Date = new Date()): string {
 }
 
 /**
+ * Add `delta` minutes to an "HH:MM" string and return "HH:MM". Wraps
+ * at 24:00 back to "00:00". Returns an empty string if input is empty
+ * or unparseable so callers can leave the seed untouched when the
+ * source time is missing.
+ */
+function addMinutesToHHMM(hhmm: string, delta: number): string {
+  if (!hhmm) return "";
+  const match = /^(\d{1,2}):(\d{2})$/.exec(hhmm.trim());
+  if (!match) return "";
+  const h = Number(match[1]);
+  const m = Number(match[2]);
+  if (!Number.isFinite(h) || !Number.isFinite(m)) return "";
+  const total = ((h * 60 + m + delta) % (24 * 60) + 24 * 60) % (24 * 60);
+  const nextH = Math.floor(total / 60);
+  const nextM = total % 60;
+  return `${String(nextH).padStart(2, "0")}:${String(nextM).padStart(2, "0")}`;
+}
+
+/**
  * Apply workflow-specific initial values on `openCreate`. Mirrors the
  * intent documented in `openCreate` (slot-click → time-based entry, +
  * button / Cmd+N → form-based entry) so the panel shows meaningful
@@ -655,7 +674,10 @@ function defaultsForWorkflow(
         // sees a meaningful 09:00 starting value on first open.
         timeOfDayMode: initialAllDay ? "all-day" : "range",
         timeOfDayStart: initialAllDay ? "00:00" : "09:00",
-        timeOfDayEnd: initialAllDay ? "23:59" : "09:30",
+        // Seed a real time window (start + start + 60min) so the
+        // Daily form opens with a meaningful end-time value, not a
+        // mirror of the start. All-day overrides to 00:00–23:59.
+        timeOfDayEnd: initialAllDay ? "23:59" : addMinutesToHHMM("09:00", 60),
         referenceId: null,
         referenceLabel: "",
       },
@@ -663,7 +685,13 @@ function defaultsForWorkflow(
         life: defaultRecurringLife(),
         frameRules: [],
         rules: [],
-        repeatMode: "daily",
+        // Safer default: open the Recurring workflow in "once" mode so the
+        // user has to opt-in to recurring. Previously seeded "daily" which
+        // forced recurring whenever the user switched workflow views. The
+        // user can still pick daily/weekly/monthly/interval from the
+        // selector above — see AGENTS feedback
+        // "ビュー切り替えで誤った操作で繰り返しを有効にしてしまった".
+        repeatMode: "once",
         weekdayMask: 0b0011111, // Mon–Fri
         endDate: "",
         intervalValue: 30,
@@ -817,19 +845,13 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
     }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setWorkflow: (kind) =>
-    set((state) => {
-      // In create mode, switching workflows should reseed the
-      // workflow-specific slices (time, recurring, identity.kind).
-      // In edit mode, the loaded tile data wins — preserve it.
-      if (state.mode !== "create") return { workflowKind: kind };
-      const defaults = defaultsForWorkflow(kind, state.initialAllDay);
-      return {
-        workflowKind: kind,
-        identity: defaults.identity ?? state.identity,
-        time: defaults.time ?? state.time,
-        recurring: defaults.recurring ?? state.recurring,
-      };
-    }),
+    set(() => ({
+      // View-only transition: switching workflows preserves the
+      // underlying store data. Initial seeding happens once in
+      // `openCreate` (not here). Edit mode is unchanged because the
+      // loaded tile data is the source of truth there.
+      workflowKind: kind,
+    })),
   setLegacyEditor: (on) => set({ useLegacyEditor: on }),
   setActivePanel: (panel) => set({ activePanel: panel }),
   getFieldError: (path) => get().fieldErrors.get(path) ?? null,
