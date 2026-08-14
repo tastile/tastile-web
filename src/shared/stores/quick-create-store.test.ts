@@ -209,6 +209,74 @@ describe("useQuickCreateStore", () => {
     });
   });
 
+  describe("setWorkflow (view-only transition)", () => {
+    it("preserves identity/time/recurring when switching workflows in create mode", () => {
+      const store = useQuickCreateStore.getState();
+      store.openCreate({ workflow: "task" });
+
+      // User types a title and picks a time.
+      useQuickCreateStore.getState().setField("identity.title", "My task");
+      useQuickCreateStore.getState().setField("time.span.start", "2026-08-15T10:00:00.000Z");
+      useQuickCreateStore.getState().setField("time.span.end", "2026-08-15T10:30:00.000Z");
+
+      const before = useQuickCreateStore.getState();
+      expect(before.identity.title).toBe("My task");
+      expect(before.time.span.start).toBe("2026-08-15T10:00:00.000Z");
+      expect(before.time.durationMinMax).toEqual({
+        minMs: 30 * 60_000,
+        maxMs: 30 * 60_000,
+      });
+      expect(before.recurring.repeatMode).toBe("once");
+
+      // Switch workflow — the view changes; the data must not.
+      useQuickCreateStore.getState().setWorkflow("event");
+      let after = useQuickCreateStore.getState();
+      expect(after.workflowKind).toBe("event");
+      expect(after.identity.title).toBe("My task");
+      expect(after.time.span.start).toBe("2026-08-15T10:00:00.000Z");
+      expect(after.time.span.end).toBe("2026-08-15T10:30:00.000Z");
+      // Task-default 30-min duration is preserved (no reseed to event defaults).
+      expect(after.time.durationMinMax).toEqual({
+        minMs: 30 * 60_000,
+        maxMs: 30 * 60_000,
+      });
+      // recurring.repeatMode stays at its create-mode seed ("once") —
+      // switching workflows must not reseed it to the recurring default.
+      expect(after.recurring.repeatMode).toBe("once");
+
+      // Switch to recurring — title and time persist again.
+      useQuickCreateStore.getState().setWorkflow("recurring");
+      after = useQuickCreateStore.getState();
+      expect(after.workflowKind).toBe("recurring");
+      expect(after.identity.title).toBe("My task");
+      expect(after.time.span.start).toBe("2026-08-15T10:00:00.000Z");
+      expect(after.recurring.repeatMode).toBe("once");
+
+      // Back to task — still intact.
+      useQuickCreateStore.getState().setWorkflow("task");
+      after = useQuickCreateStore.getState();
+      expect(after.workflowKind).toBe("task");
+      expect(after.identity.title).toBe("My task");
+      expect(after.time.span.start).toBe("2026-08-15T10:00:00.000Z");
+    });
+
+    it("does not reseed in edit mode (loaded tile data wins)", () => {
+      const store = useQuickCreateStore.getState();
+      // openEdit is the entry point that loads tile data; setWorkflow
+      // must not overwrite that data, even when the user clicks the
+      // workflow chip in the panel header.
+      store.openEdit("placement-1", "tile-1", "event");
+      useQuickCreateStore.getState().setField("identity.title", "Loaded event");
+      useQuickCreateStore.getState().setField("time.span.start", "2026-09-01T09:00:00.000Z");
+
+      useQuickCreateStore.getState().setWorkflow("task");
+      const after = useQuickCreateStore.getState();
+      expect(after.workflowKind).toBe("task");
+      expect(after.identity.title).toBe("Loaded event");
+      expect(after.time.span.start).toBe("2026-09-01T09:00:00.000Z");
+    });
+  });
+
   describe("structured tasks", () => {
     it("adds UUIDv7 tasks and updates them by id", () => {
       const id = useQuickCreateStore.getState().addTask();
