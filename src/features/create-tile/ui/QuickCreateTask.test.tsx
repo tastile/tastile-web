@@ -144,8 +144,9 @@ describe("QuickCreateTask", () => {
 
     await user.click(screen.getByTestId("task-open-details"));
 
-    // Sub-panel heading becomes visible in the document
-    expect(screen.getByRole("heading", { name: /task details/i })).toBeInTheDocument();
+    // The sub-panel's heading has a stable `id` regardless of locale —
+    // assert by id to avoid coupling the test to a specific translation.
+    expect(document.getElementById("task-details-heading")).toBeInTheDocument();
   });
 
   it("closes the panel via the close button (calls store.close)", async () => {
@@ -161,5 +162,22 @@ describe("QuickCreateTask", () => {
     renderWithMantine(<QuickCreateTask />);
     expect(screen.getByTestId("workflow-batch-task")).toBeInTheDocument();
     expect(screen.getByTestId("task-project-picker")).toBeInTheDocument();
+  });
+
+  it("renders the shared SubtasksSection in the main body", () => {
+    renderWithMantine(<QuickCreateTask />);
+    expect(screen.getByTestId("task-subtasks")).toBeInTheDocument();
+  });
+
+  it("writes a new subtask to the store from the main body section", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<QuickCreateTask />);
+
+    const input = screen.getByTestId("task-subtasks-new-subtask");
+    await user.type(input, "Sub-task from main body");
+    await user.click(screen.getByTestId("task-subtasks-add"));
+
+    const tasks = useQuickCreateStore.getState().plan.completion.tasks;
+    expect(tasks.at(-1)?.content.title).toBe("Sub-task from main body");
   });
 });
