@@ -30,3 +30,12 @@ jobs:
         run: bun run check:release
         env:
           CLOUD_API_BASE: http://127.0.0.1:31400
+          # Pin TZ so vitest workers deterministically match local dev (JST).
+          # The schedule wire tests in quick-create-schedule-wire.test.ts
+          # exercise LocalDate -> Instant conversion through
+          # `new Date("YYYY-MM-DDT00:00:00")`, which is TZ-dependent on
+          # purpose -- the conflict is documented in the test itself.
+          # GitHub-hosted ubuntu-latest runners default to UTC; without
+          # this pin the same tests pass on a JST laptop and fail on CI.
+          # Mirrors deploy.yml, which already pins TZ for the release build.
+          TZ: Asia/Tokyo
