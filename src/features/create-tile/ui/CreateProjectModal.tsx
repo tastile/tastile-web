@@ -1,6 +1,17 @@
-import { createWorkspace } from "@/shared/hooks/use-workspaces";
-import { Button, Modal, TextInput } from "@mantine/core";
-import { useState } from "react";
+import {
+  Button,
+  ColorInput,
+  Modal,
+  Select,
+  TextInput,
+} from "@mantine/core";
+import { useMemo, useState } from "react";
+
+import {
+  createWorkspace,
+  orderWorkspaceTree,
+  useWorkspaces,
+} from "@/shared/hooks/use-workspaces";
 
 export interface CreateProjectModalProps {
   opened: boolean;
@@ -9,6 +20,8 @@ export interface CreateProjectModalProps {
   setField: (path: string, value: unknown) => void;
   refreshProjects: () => Promise<void>;
 }
+
+const NONE_PARENT_VALUE = "";
 
 export function CreateProjectModal({
   opened,
@@ -19,13 +32,20 @@ export function CreateProjectModal({
 }: CreateProjectModalProps) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectSlug, setNewProjectSlug] = useState("");
+  const [newProjectParentId, setNewProjectParentId] = useState<string | null>(null);
+  const [newProjectColor, setNewProjectColor] = useState<string | null>(null);
   const [newProjectBusy, setNewProjectBusy] = useState(false);
   const [newProjectError, setNewProjectError] = useState<string | null>(null);
+
+  const { workspaces, loading } = useWorkspaces();
+  const tree = useMemo(() => orderWorkspaceTree(workspaces), [workspaces]);
 
   function handleClose() {
     if (newProjectBusy) return;
     setNewProjectName("");
     setNewProjectSlug("");
+    setNewProjectParentId(null);
+    setNewProjectColor(null);
     setNewProjectError(null);
     onClose();
   }
@@ -52,14 +72,16 @@ export function CreateProjectModal({
           void createWorkspace({
             display_name: trimmedName,
             slug: newProjectSlug.trim() || null,
-            color: null,
-            parent_subject_id: null,
+            color: newProjectColor,
+            parent_subject_id: newProjectParentId,
           })
             .then(async (ws) => {
               await refreshProjects();
               setField("meta.ownerSubjectId", ws.id);
               setNewProjectName("");
               setNewProjectSlug("");
+              setNewProjectParentId(null);
+              setNewProjectColor(null);
               onClose();
             })
             .catch((err: unknown) => {
@@ -95,6 +117,52 @@ export function CreateProjectModal({
           data-testid="meta-project-create-slug"
           label={t("quickCreate.projectCreateSlugLabel")}
           size="sm"
+        />
+        <Select
+          label={t("quickCreate.projectCreateParentLabel") || "Parent project"}
+          placeholder={t("quickCreate.projectCreateParentNone") || "(none — top level)"}
+          data={[
+            {
+              value: NONE_PARENT_VALUE,
+              label:
+                t("quickCreate.projectCreateParentNone") || "(none — top level)",
+            },
+            ...tree.map((entry) => ({
+              value: entry.workspace.id,
+              label: `${"— ".repeat(entry.depth)}${entry.workspace.display_name}`,
+            })),
+          ]}
+          value={newProjectParentId ?? NONE_PARENT_VALUE}
+          onChange={(v) =>
+            setNewProjectParentId(!v || v === NONE_PARENT_VALUE ? null : v)
+          }
+          clearable={false}
+          searchable
+          disabled={newProjectBusy || loading}
+          size="sm"
+          data-testid="meta-project-create-parent"
+        />
+        <ColorInput
+          label={t("quickCreate.projectCreateColorLabel") || "Color"}
+          placeholder={t("quickCreate.projectCreateColorPlaceholder") || "#5e6ad2"}
+          format="hex"
+          fixOnBlur
+          withPicker={false}
+          withEyeDropper={false}
+          swatches={[
+            "#5e6ad2",
+            "#10b981",
+            "#a855f7",
+            "#f59e0b",
+            "#ef4444",
+            "#6b7280",
+            "#3b82f6",
+          ]}
+          value={newProjectColor ?? ""}
+          onChange={(v) => setNewProjectColor(v || null)}
+          disabled={newProjectBusy}
+          size="sm"
+          data-testid="meta-project-create-color"
         />
         <div className="flex items-center justify-end gap-2">
           <Button
