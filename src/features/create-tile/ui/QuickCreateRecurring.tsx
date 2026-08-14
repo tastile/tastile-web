@@ -41,6 +41,19 @@ const REPEAT_OPTIONS_BASE = [
   { value: "interval", label: "Interval" },
 ] as const;
 
+/**
+ * Repeat-mode selector entries shown in the segmented control. The first
+ * entry, "once", is the safe default — the user has to opt-in to a
+ * recurring schedule (see AGENTS feedback "ビュー切り替えで誤った操作で
+ * 繰り返しを有効にしてしまった"). REPEAT_OPTIONS_BASE alone omits "once"
+ * because other callers (e.g. label-key lookups) only enumerate the
+ * active modes.
+ */
+const REPEAT_OPTIONS = [
+  { value: "once", label: "Do not repeat" },
+  ...REPEAT_OPTIONS_BASE,
+] as const;
+
 const INTERVAL_UNITS = ["min", "hour", "day"] as const;
 
 const RECURRING_COLOR_SWATCHES = [
@@ -412,7 +425,7 @@ export function QuickCreateRecurring() {
   return (
     <Stack gap={0} className="h-full">
       <Stack gap={0} className="flex-1 overflow-y-auto">
-        {/* Title — close button in icon column, batch row below */}
+        {/* Title — close button in icon column, submit button in trailing slot */}
         <div className="px-4 py-2">
           <FormRow
             icon={
