@@ -78,6 +78,10 @@ export const quickCreateJa = {
   splitAllowDesc: "休憩を挟んだり、複数回に分けて進める",
   splitKeep: "分割しない",
   splitKeepDesc: "所要時間ぶんを1回でまとめて行う",
+  // QuickCreateTask panel: split policy row label (UX reorder 2026-08-14).
+  splitPolicyLabel: "分割ポリシー",
+  // QuickCreateTask panel: due-date row leading text.
+  taskDueLabel: "〆切",
   workTargetTitle: "所要時間",
   workTargetGuide: "開始/終了があれば自動算出。片方のみなら入力",
   metaTitle: "プロジェクト / タグ",
@@ -643,6 +647,10 @@ export const quickCreateZhCn = {
   splitAllowDesc: "可以休息或分多次进行",
   splitKeep: "不分割",
   splitKeepDesc: "在一次内连续完成所需时长",
+  // QuickCreateTask panel: split policy row label (UX reorder 2026-08-14).
+  splitPolicyLabel: "分割策略",
+  // QuickCreateTask panel: due-date row leading text.
+  taskDueLabel: "截止",
   workTargetTitle: "所需时间",
   workTargetGuide: "若同时设置了开始/结束则自动计算。仅设置一侧时输入",
   metaTitle: "项目 / 标签",
@@ -1202,6 +1210,10 @@ export const quickCreateKo = {
   splitAllowDesc: "휴식이나 여러 회에 걸쳐 진행",
   splitKeep: "분할하지 않음",
   splitKeepDesc: "한 번에 연속해서 소요 시간을 처리",
+  // QuickCreateTask panel: split policy row label (UX reorder 2026-08-14).
+  splitPolicyLabel: "분할 정책",
+  // QuickCreateTask panel: due-date row leading text.
+  taskDueLabel: "마감",
   workTargetTitle: "소요 시간",
   workTargetGuide: "시작/종료 모두 있으면 자동 계산. 한쪽만 있으면 입력",
   metaTitle: "프로젝트 / 태그",
@@ -1762,6 +1774,10 @@ export const quickCreateEs = {
   splitAllowDesc: "Permitir pausas y múltiples sesiones",
   splitKeep: "Sin división",
   splitKeepDesc: "Realizar la duración completa en una sola sesión",
+  // QuickCreateTask panel: split policy row label (UX reorder 2026-08-14).
+  splitPolicyLabel: "Política de división",
+  // QuickCreateTask panel: due-date row leading text.
+  taskDueLabel: "Vencimiento",
   workTargetTitle: "Duración estimada",
   workTargetGuide:
     "Se calcula automáticamente si defines inicio y fin. Indícala cuando solo definas uno.",
@@ -2325,6 +2341,10 @@ export const quickCreateEn = {
   splitAllowDesc: "Allow breaks and multiple sessions",
   splitKeep: "Keep continuous",
   splitKeepDesc: "Run the full duration in one continuous session",
+  // QuickCreateTask panel: split policy row label (UX reorder 2026-08-14).
+  splitPolicyLabel: "Split policy",
+  // QuickCreateTask panel: due-date row leading text.
+  taskDueLabel: "Due",
   workTargetTitle: "Estimated duration",
   workTargetGuide: "Auto-derived when start/end are both set. Enter when only one side is set.",
   metaTitle: "Project / Tags",
