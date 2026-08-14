@@ -15,7 +15,6 @@
 
 "use client";
 
-import { Button } from "@mantine/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
@@ -219,16 +218,18 @@ export function QuickCreatePanel() {
         }
       : null;
 
-  const discardDraft = useCallback(() => {
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.removeItem("tastile.draft.create-tile");
-      } catch {
-        // ignore — best-effort
+  // Bridge from the title-row QuickCreateSubmitButton to handleSubmit.
+  // The button dispatches `quick-create:submit` on click; this effect
+  // invokes the real submit handler when the store says we are ready.
+  useEffect(() => {
+    const handler = () => {
+      if (canSubmit && !submitting) {
+        void handleSubmit();
       }
-    }
-    reset();
-  }, [reset]);
+    };
+    window.addEventListener("quick-create:submit", handler);
+    return () => window.removeEventListener("quick-create:submit", handler);
+  }, [canSubmit, submitting, handleSubmit]);
 
   // The detailed legacy editor is now integrated into the new panel shell.
   // It renders its body content inside the same body slot as the
@@ -279,40 +280,15 @@ export function QuickCreatePanel() {
           <QuickCreateTask />
         )}
 
-        {/* Footer: error banner + submit/cancel/discard */}
-        <div className="flex flex-col gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
-          {serverError ? (
+        {/* Footer: error banner only. Cancel/Discard buttons abolished
+            per user request — close via the title-row CloseButton (X),
+            submit via the title-row QuickCreateSubmitButton. Drafts
+            auto-save to localStorage and clear on successful submit. */}
+        {serverError ? (
+          <div className="border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
             <PanelErrorBanner title={serverError.title} body={serverError.body} />
-          ) : null}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => close()}
-                disabled={submitting}
-              >
-                {t("quickCreate.cancel")}
-              </Button>
-              <Button
-                variant="subtle"
-                color="red"
-                onClick={discardDraft}
-                disabled={submitting}
-                data-testid="quick-create-discard-draft"
-              >
-                {t("quickCreate.discardDraft") || "Discard draft"}
-              </Button>
-            </div>
-            <Button
-              onClick={handleSubmit}
-              loading={submitting}
-              disabled={!canSubmit}
-              data-testid="quick-create-submit"
-            >
-              {t(mode === "edit" ? "quickCreate.update" : "quickCreate.create")}
-            </Button>
           </div>
-        </div>
+        ) : null}
       </div>
     </>
   );
