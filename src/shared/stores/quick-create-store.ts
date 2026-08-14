@@ -80,6 +80,20 @@ export interface TileIdentitySlice {
 export type WhenMode = "none" | "day" | "range" | "reference";
 export type TimeOfDayMode = "all-day" | "range" | "unspecified";
 
+/**
+ * Top-level split policy attached to the time slice. Mirrors the
+ * source-authoring `splitPolicy.kind` shape but is kept flat here so the
+ * Task form can toggle it without writing through the SourceAuthoring
+ * surface. `"unsplit"` is the conservative default; `"split"` allows the
+ * scheduler to break the required duration into multiple segments.
+ *
+ * NOTE: this field is wired UI-only for the QuickCreateTask panel —
+ * Submit does not yet emit a command that carries this flag. Wire-up
+ * is tracked as a follow-up so the submit path keeps producing the
+ * same v1 envelope as before this UX reorder.
+ */
+type TimeSplitPolicy = "unsplit" | "split";
+
 export interface TimeSlice {
   span: Span;
   durationMinMax: DurationRange;
@@ -89,6 +103,7 @@ export interface TimeSlice {
   timeOfDayEnd: string;
   referenceId: string | null;
   referenceLabel: string;
+  splitPolicy: TimeSplitPolicy;
 }
 
 /**
@@ -483,6 +498,7 @@ function defaultTime(): TimeSlice {
     timeOfDayEnd: "",
     referenceId: null,
     referenceLabel: "",
+    splitPolicy: "unsplit",
   };
 }
 
@@ -593,7 +609,10 @@ function addMinutesToHHMM(hhmm: string, delta: number): string {
  *   event     — start = next 15-min slot, end = +90 min, duration = 90 min
  *               (all-day toggle respected via `initialAllDay`)
  *   recurring — start = today at midnight, repeat = daily, duration = 30 min
- *   detailed  — no changes (legacy editor owns its own defaults)
+ *   detailed  — start = today at midnight, duration = 30 min
+ *               (aligns the legacy v1 editor with the new workflow forms
+ *               so the user lands on a sensible starting point instead of
+ *               an empty form)
  *
  * `timeOfDayMode` is driven by `initialAllDay` so the slot-click path
  * (`initialAllDay: false`) lands on a time-bearing event and the
@@ -625,6 +644,7 @@ function defaultsForWorkflow(
         timeOfDayEnd: "",
         referenceId: null,
         referenceLabel: "",
+        splitPolicy: "unsplit",
       },
     };
   }
@@ -640,6 +660,7 @@ function defaultsForWorkflow(
           timeOfDayEnd: "23:59",
           referenceId: null,
           referenceLabel: "",
+          splitPolicy: "unsplit",
         },
       };
     }
@@ -655,6 +676,7 @@ function defaultsForWorkflow(
         timeOfDayEnd: "",
         referenceId: null,
         referenceLabel: "",
+        splitPolicy: "unsplit",
       },
     };
   }
@@ -680,6 +702,7 @@ function defaultsForWorkflow(
         timeOfDayEnd: initialAllDay ? "23:59" : addMinutesToHHMM("09:00", 60),
         referenceId: null,
         referenceLabel: "",
+        splitPolicy: "unsplit",
       },
       recurring: {
         life: defaultRecurringLife(),
@@ -703,6 +726,26 @@ function defaultsForWorkflow(
         ...defaultIdentity(),
         kind: TileKind.RECURRING,
         visual: { color: "#5e6ad2", icon: "Repeat" },
+      },
+    };
+  }
+  if (workflow === "detailed") {
+    // Align the legacy v1 editor with the new workflow forms: seed today's
+    // local-midnight date and a 30-min duration so the user doesn't have
+    // to fill the time + duration sub-panels just to land on a sensible
+    // starting point. The legacy editor's sub-panels still own their own
+    // fields, so this only affects the top-level `time` slice.
+    return {
+      time: {
+        span: { start: todayLocalMidnightIso(now), end: "" },
+        durationMinMax: { minMs: DEFAULT_TASK_DURATION_MS, maxMs: DEFAULT_TASK_DURATION_MS },
+        whenMode: "day",
+        timeOfDayMode: "unspecified",
+        timeOfDayStart: "",
+        timeOfDayEnd: "",
+        referenceId: null,
+        referenceLabel: "",
+        splitPolicy: "unsplit",
       },
     };
   }
@@ -999,6 +1042,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         timeOfDayEnd: "",
         referenceId: null,
         referenceLabel: "",
+        splitPolicy: "unsplit",
       },
       meta: {
         ...useQuickCreateStore.getState().meta,
@@ -1059,6 +1103,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         timeOfDayEnd: "",
         referenceId: null,
         referenceLabel: "",
+        splitPolicy: "unsplit",
       },
       meta: {
         ...defaultMeta(),
