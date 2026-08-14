@@ -185,9 +185,13 @@ export function QuickCreateTask() {
               required
               data-testid="task-title"
               autoFocus
+              // Visible bottom underline is enforced by a CSS rule in
+              // `src/app/globals.css` (`.qc-underline-input`) — Mantine v9's
+              // `mantine-Input-input` module class sets a shorthand `border`
+              // that would otherwise win over Tailwind's `border-b-2`.
               classNames={{
                 input:
-                  "text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto border-b-2 border-foreground/60 focus:border-foreground",
+                  "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
               }}
             />
           </FormRow>
@@ -237,7 +241,7 @@ export function QuickCreateTask() {
           </FormRow>
         </div>
 
-        {/* Memo */}
+        {/* Memo — full width with a bottom border to make the input affordance obvious */}
         <div className="px-4 py-3">
           <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
             <Textarea
@@ -250,9 +254,12 @@ export function QuickCreateTask() {
               size="sm"
               variant="unstyled"
               data-testid="task-memo"
+              // Visible bottom underline is enforced by a CSS rule in
+              // `src/app/globals.css` (`.qc-underline-input--muted`) — Mantine's
+              // module-class shorthand border otherwise wins over Tailwind.
               classNames={{
                 input:
-                  "bg-transparent text-sm leading-relaxed text-foreground placeholder:text-[var(--foreground-muted)] px-0 w-full",
+                  "qc-underline-input--muted bg-transparent text-sm leading-relaxed text-foreground placeholder:text-[var(--foreground-muted)] px-0 w-full",
               }}
             />
           </FormRow>
@@ -291,6 +298,7 @@ export function QuickCreateTask() {
               onClick={openDetails}
               data-testid="task-open-details"
               fullWidth
+              className="w-full"
             >
               {t("quickCreate.detailsTaskTitle") || "Task details"}
             </Button>

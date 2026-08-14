@@ -105,6 +105,92 @@ describe("useQuickCreateStore", () => {
       expect(r.plan.role).toBe(PlanRole.EXECUTABLE);
     });
 
+    it("clears the workflow default back to the original empty-span state", () => {
+      useQuickCreateStore.getState().openCreate({ workflow: "event", initialAllDay: false });
+      expect(useQuickCreateStore.getState().time.span.start).not.toBe("");
+      useQuickCreateStore.getState().reset();
+      expect(useQuickCreateStore.getState().time.span).toEqual({ start: "", end: "" });
+    });
+  });
+
+  describe("openCreate per-workflow defaults", () => {
+    it("seeds the Task form with today's local date and a 30-min duration", () => {
+      const before = new Date();
+      useQuickCreateStore.getState().openCreate({ workflow: "task" });
+      const s = useQuickCreateStore.getState();
+      expect(s.workflowKind).toBe("task");
+      expect(s.initialAllDay).toBe(false);
+      // Start is today's local midnight (ISO). The date part should equal today.
+      const startDate = new Date(s.time.span.start);
+      expect(Number.isNaN(startDate.getTime())).toBe(false);
+      expect(startDate.getFullYear()).toBe(before.getFullYear());
+      expect(startDate.getMonth()).toBe(before.getMonth());
+      expect(startDate.getDate()).toBe(before.getDate());
+      // Hour component should be 00:00 local.
+      expect(startDate.getHours()).toBe(0);
+      // durationMinMax matches the displayed "30 min" preset.
+      expect(s.time.durationMinMax).toEqual({ minMs: 30 * 60_000, maxMs: 30 * 60_000 });
+      expect(s.time.whenMode).toBe("day");
+      // identity.kind stays PLACEMENT so the wire stays consistent with task submissions.
+      expect(s.identity.kind).toBe(TileKind.PLACEMENT);
+    });
+
+    it("seeds the Event form with the next 15-min slot and a 90-min duration", () => {
+      const before = new Date();
+      useQuickCreateStore.getState().openCreate({ workflow: "event", initialAllDay: false });
+      const s = useQuickCreateStore.getState();
+      expect(s.workflowKind).toBe("event");
+      expect(s.initialAllDay).toBe(false);
+      const start = new Date(s.time.span.start);
+      expect(Number.isNaN(start.getTime())).toBe(false);
+      expect(start.getTime()).toBeGreaterThanOrEqual(before.getTime());
+      // 15-minute grid alignment.
+      expect(start.getMinutes() % 15).toBe(0);
+      expect(start.getSeconds()).toBe(0);
+      // End = start + 90 min.
+      const end = new Date(s.time.span.end);
+      expect(end.getTime() - start.getTime()).toBe(90 * 60_000);
+      expect(s.time.durationMinMax).toEqual({ minMs: 90 * 60_000, maxMs: 90 * 60_000 });
+      expect(s.time.whenMode).toBe("range");
+      expect(s.time.timeOfDayMode).toBe("range");
+    });
+
+    it("seeds the Event form as all-day when initialAllDay=true", () => {
+      useQuickCreateStore.getState().openCreate({ workflow: "event", initialAllDay: true });
+      const s = useQuickCreateStore.getState();
+      expect(s.initialAllDay).toBe(true);
+      expect(s.time.timeOfDayMode).toBe("all-day");
+      expect(s.time.timeOfDayStart).toBe("00:00");
+      expect(s.time.timeOfDayEnd).toBe("23:59");
+      // Span is "today at local midnight" for all-day events.
+      const start = new Date(s.time.span.start);
+      expect(start.getHours()).toBe(0);
+    });
+
+    it("seeds the Recurring form with repeatMode=daily and an initial duration", () => {
+      useQuickCreateStore.getState().openCreate({ workflow: "recurring" });
+      const s = useQuickCreateStore.getState();
+      expect(s.workflowKind).toBe("recurring");
+      expect(s.recurring.repeatMode).toBe("daily");
+      expect(s.identity.kind).toBe(TileKind.RECURRING);
+      expect(s.time.durationMinMax).toEqual({ minMs: 30 * 60_000, maxMs: 30 * 60_000 });
+      expect(s.time.span.start).not.toBe("");
+      expect(s.time.whenMode).toBe("day");
+    });
+
+    it("does not overwrite slot-click time fields when called without a workflow", () => {
+      // Simulate the ScheduleTimeline slot-click flow: setField before openCreate.
+      useQuickCreateStore.getState().setField("time.span.start", "2026-07-30T09:00:00.000Z");
+      useQuickCreateStore.getState().setField("time.span.end", "2026-07-30T10:00:00.000Z");
+      useQuickCreateStore.getState().setField("time.whenMode", "day");
+
+      useQuickCreateStore.getState().openCreate({ initialAllDay: false });
+
+      const t = useQuickCreateStore.getState().time;
+      expect(t.span.start).toBe("2026-07-30T09:00:00.000Z");
+      expect(t.span.end).toBe("2026-07-30T10:00:00.000Z");
+    });
+
     it("preserves isOpen when called while panel is closed", () => {
       useQuickCreateStore.getState().close();
       expect(useQuickCreateStore.getState().isOpen).toBe(false);

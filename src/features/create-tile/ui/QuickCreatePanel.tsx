@@ -258,7 +258,7 @@ export function QuickCreatePanel() {
         aria-hidden
       />
 
-      <div className={panelClass} data-testid="quick-create-panel">
+      <div className={`quick-create-panel ${panelClass}`} data-testid="quick-create-panel">
         {/* Body: dispatch by workflowKind. Per design intent, the panel always
             renders one of the three specialized forms — the user switches
             workflows via the WorkflowChip dropdown in each form's own

@@ -29,7 +29,12 @@ export function FormRow({
     <Box
       data-testid={dataTestid ?? "form-row"}
       className={cn(
-        "grid grid-cols-[20px_1fr_auto] items-center gap-3",
+        // 2-column grid (icon + content). The trailing element lives
+        // inside the content cell so it can be right-justified without
+        // a 12px gap sitting between the content and an empty `auto`
+        // track — that gap used to leave a noticeable dead zone on the
+        // right of the title / memo underline.
+        "grid grid-cols-[20px_1fr] items-center gap-3",
         tight ? "min-h-row-tight" : "min-h-row",
         className,
       )}
@@ -37,12 +42,14 @@ export function FormRow({
       <Group justify="center" gap={0} wrap="nowrap" className="text-foreground-muted" aria-hidden={icon === undefined}>
         {icon ?? <span className="w-5" />}
       </Group>
-      <div className="min-w-0 flex items-center">{children}</div>
-      {trailing !== undefined && (
-        <Group justify="flex-end" gap={0} wrap="nowrap">
-          {trailing}
-        </Group>
-      )}
+      <div className="flex min-w-0 items-center justify-between gap-3">
+        <div className="min-w-0 flex-1">{children}</div>
+        {trailing !== undefined ? (
+          <Group justify="flex-end" gap={0} wrap="nowrap" className="shrink-0">
+            {trailing}
+          </Group>
+        ) : null}
+      </div>
     </Box>
   );
 }

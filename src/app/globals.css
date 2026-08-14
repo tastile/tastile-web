@@ -506,3 +506,59 @@ button {
     border-radius: inherit;
   }
 }
+
+/*
+ * QuickCreate panel — underlined input affordance.
+ *
+ * Mantine v9's `mantine-Input-input` and `mantine-Textarea-input` module
+ * classes set `border: 1px solid var(--input-bd)` (specificity 0,0,1,0,
+ * 0,0,2,0 on :focus-within). We re-declare the bottom underline here with
+ * a two-class + :focus selector (0,0,2,1) so it wins by specificity
+ * without `!important`.
+ *
+ * Idle vs focused colors carry intent:
+ *   - `.qc-underline-input` (title)        — subtle → primary on focus
+ *   - `.qc-underline-input--muted` (memo)  — lighter → foreground on focus
+ * Unfocused uses the two quieter "foreground-subtle" / "foreground-lighter"
+ * tones so the underline reads as a quiet affordance, not a heavy bar.
+ * A 160ms ease transition makes the swap feel like a state change, not
+ * a swap.
+ *
+ * The FormRow content div uses `flex items-center`, which leaves Mantine's
+ * wrapper at its content-based width (no stretching). Stretch it to the
+ * full grid column so the underline reaches the panel's right edge.
+ */
+.quick-create-panel .qc-underline-input {
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 2px solid var(--foreground-subtle);
+  border-radius: 0;
+  transition: border-color 160ms ease;
+}
+
+.quick-create-panel .qc-underline-input:focus,
+.quick-create-panel .qc-underline-input:focus-within {
+  border-bottom-color: var(--primary);
+}
+
+.quick-create-panel .qc-underline-input--muted {
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 2px solid var(--foreground-lighter);
+  border-radius: 0;
+  transition: border-color 160ms ease;
+}
+
+.quick-create-panel .qc-underline-input--muted:focus,
+.quick-create-panel .qc-underline-input--muted:focus-within {
+  border-bottom-color: var(--foreground);
+}
+
+.quick-create-panel .mantine-TextInput-wrapper,
+.quick-create-panel .mantine-TextInput-root,
+.quick-create-panel .mantine-Textarea-wrapper,
+.quick-create-panel .mantine-Textarea-root {
+  width: 100%;
+}

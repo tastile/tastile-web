@@ -110,24 +110,20 @@ describe("QuickCreateRecurring", () => {
     expect(useQuickCreateStore.getState().identity.title).toBe("Standup");
   });
 
-  it("renders duration preset chips", () => {
+  it("renders the duration dropdown with presets and a Custom option", () => {
     renderWithMantine(<QuickCreateRecurring />);
-    expect(
-      screen.getByTestId("recurring-duration-preset-15"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId("recurring-duration-preset-60"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByTestId("recurring-duration-preset-120"),
-    ).toBeInTheDocument();
+    expect(screen.getByTestId("recurring-duration-select")).toBeInTheDocument();
   });
 
-  it("applies a duration preset when clicked", async () => {
+  it("applies a duration preset when the dropdown value changes", async () => {
     const user = userEvent.setup();
     renderWithMantine(<QuickCreateRecurring />);
 
-    await user.click(screen.getByTestId("recurring-duration-preset-60"));
+    // Click on the Select wrapper to open the dropdown, then pick "60".
+    const select = screen.getByTestId("recurring-duration-select");
+    await user.click(select);
+    const sixtyOption = screen.getByRole("option", { name: "1 hours", hidden: true });
+    await user.click(sixtyOption);
 
     const { durationMinMax } = useQuickCreateStore.getState().time;
     expect(durationMinMax.minMs).toBe(60 * 60_000);

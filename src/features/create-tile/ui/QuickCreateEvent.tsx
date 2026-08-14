@@ -238,9 +238,13 @@ export function QuickCreateEvent() {
               required
               data-testid="event-title"
               autoFocus
+              // Visible bottom underline is enforced by a CSS rule in
+              // `src/app/globals.css` (`.qc-underline-input`) — Mantine v9's
+              // `mantine-Input-input` module class sets a shorthand `border`
+              // that would otherwise win over Tailwind's `border-b-2`.
               classNames={{
                 input:
-                  "text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto border-b-2 border-foreground/60 focus:border-foreground",
+                  "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
               }}
             />
           </FormRow>
@@ -356,6 +360,7 @@ export function QuickCreateEvent() {
               onClick={openDetails}
               data-testid="event-open-details"
               fullWidth
+              className="w-full"
             >
               {t("quickCreate.detailsEventTitle") || "Event details"}
             </Button>

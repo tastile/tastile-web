@@ -543,6 +543,144 @@ function defaultMeta(): MetaSlice {
   };
 }
 
+/**
+ * Round `now` up to the next `minutes`-minute boundary (UTC ms) and
+ * return an ISO string. Used by per-workflow initial values to seed
+ * the Event / Recurring start time at a sensible "next quarter" slot.
+ */
+function nextSlotIso(minutes: number, now: Date = new Date()): string {
+  const slotMs = minutes * 60_000;
+  const nextSlot = Math.ceil(now.getTime() / slotMs) * slotMs;
+  return new Date(nextSlot).toISOString();
+}
+
+/**
+ * "Today at local midnight" as an ISO string. Used to seed the Task
+ * form's due date so the user sees a non-empty DateInput on first open.
+ */
+function todayLocalMidnightIso(now: Date = new Date()): string {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+/**
+ * Apply workflow-specific initial values on `openCreate`. Mirrors the
+ * intent documented in `openCreate` (slot-click → time-based entry, +
+ * button / Cmd+N → form-based entry) so the panel shows meaningful
+ * defaults the moment the form mounts:
+ *
+ *   task      — due date = today, duration = 30 min
+ *   event     — start = next 15-min slot, end = +90 min, duration = 90 min
+ *               (all-day toggle respected via `initialAllDay`)
+ *   recurring — start = today at midnight, repeat = daily, duration = 30 min
+ *   detailed  — no changes (legacy editor owns its own defaults)
+ *
+ * `timeOfDayMode` is driven by `initialAllDay` so the slot-click path
+ * (`initialAllDay: false`) lands on a time-bearing event and the
+ * sidebar + button / Cmd+N paths (also `initialAllDay: false`) keep
+ * a time-bearing form. Callers that want an all-day form must pass
+ * `initialAllDay: true`.
+ *
+ * Skipped entirely when no workflow is supplied — slot-click callers
+ * already populate the time slice via `setField` before `openCreate`,
+ * so we must not overwrite those values.
+ */
+const DEFAULT_EVENT_DURATION_MS = 90 * 60_000;
+const DEFAULT_TASK_DURATION_MS = 30 * 60_000;
+const DEFAULT_RECURRING_DURATION_MS = 30 * 60_000;
+
+function defaultsForWorkflow(
+  workflow: WorkflowKind,
+  initialAllDay: boolean,
+  now: Date = new Date(),
+): Partial<Pick<QuickCreateState, "time" | "recurring" | "identity">> {
+  if (workflow === "task") {
+    return {
+      time: {
+        span: { start: todayLocalMidnightIso(now), end: "" },
+        durationMinMax: { minMs: DEFAULT_TASK_DURATION_MS, maxMs: DEFAULT_TASK_DURATION_MS },
+        whenMode: "day",
+        timeOfDayMode: "unspecified",
+        timeOfDayStart: "",
+        timeOfDayEnd: "",
+        referenceId: null,
+        referenceLabel: "",
+      },
+    };
+  }
+  if (workflow === "event") {
+    if (initialAllDay) {
+      return {
+        time: {
+          span: { start: todayLocalMidnightIso(now), end: "" },
+          durationMinMax: { minMs: DEFAULT_EVENT_DURATION_MS, maxMs: DEFAULT_EVENT_DURATION_MS },
+          whenMode: "day",
+          timeOfDayMode: "all-day",
+          timeOfDayStart: "00:00",
+          timeOfDayEnd: "23:59",
+          referenceId: null,
+          referenceLabel: "",
+        },
+      };
+    }
+    const start = nextSlotIso(15, now);
+    const end = new Date(new Date(start).getTime() + DEFAULT_EVENT_DURATION_MS).toISOString();
+    return {
+      time: {
+        span: { start, end },
+        durationMinMax: { minMs: DEFAULT_EVENT_DURATION_MS, maxMs: DEFAULT_EVENT_DURATION_MS },
+        whenMode: "range",
+        timeOfDayMode: "range",
+        timeOfDayStart: "",
+        timeOfDayEnd: "",
+        referenceId: null,
+        referenceLabel: "",
+      },
+    };
+  }
+  if (workflow === "recurring") {
+    return {
+      time: {
+        span: { start: todayLocalMidnightIso(now), end: "" },
+        durationMinMax: {
+          minMs: DEFAULT_RECURRING_DURATION_MS,
+          maxMs: DEFAULT_RECURRING_DURATION_MS,
+        },
+        whenMode: "day",
+        // Calendar-bound modes (daily/weekly/monthly) edit
+        // timeOfDayStart/End; interval mode edits span.start. The form
+        // now uses timeOfDay fields whenever repeatMode is in the
+        // calendar group, so seed those defaults here so the user
+        // sees a meaningful 09:00 starting value on first open.
+        timeOfDayMode: initialAllDay ? "all-day" : "range",
+        timeOfDayStart: initialAllDay ? "00:00" : "09:00",
+        timeOfDayEnd: initialAllDay ? "23:59" : "09:30",
+        referenceId: null,
+        referenceLabel: "",
+      },
+      recurring: {
+        life: defaultRecurringLife(),
+        frameRules: [],
+        rules: [],
+        repeatMode: "daily",
+        weekdayMask: 0b0011111, // Mon–Fri
+        endDate: "",
+        intervalValue: 30,
+        intervalUnit: "min",
+        condition: null,
+        conditionIgnored: false,
+      },
+      identity: {
+        ...defaultIdentity(),
+        kind: TileKind.RECURRING,
+        visual: { color: "#5e6ad2", icon: "Repeat" },
+      },
+    };
+  }
+  return {};
+}
+
 export function buildDefaultQuickCreateState(): Pick<
   QuickCreateState,
   | "isOpen"
@@ -619,14 +757,40 @@ function setDeepPath(state: QuickCreateState, path: string, value: unknown): Qui
 export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
   ...buildDefaultQuickCreateState(),
   open: () => set({ isOpen: true }),
-  openCreate: (options?: { initialAllDay?: boolean; workflow?: WorkflowKind }) =>
-    set((state) => ({
-      isOpen: true,
-      mode: "create" as const,
-      editingId: null,
-      workflowKind: options?.workflow ?? null,
-      initialAllDay: options?.initialAllDay ?? state.initialAllDay,
-    })),
+  openCreate: (options?: { initialAllDay?: boolean; workflow?: WorkflowKind }) => {
+    const workflow = options?.workflow ?? null;
+    const initialAllDay = options?.initialAllDay ?? false;
+    if (!workflow) {
+      return set((state) => ({
+        isOpen: true,
+        mode: "create" as const,
+        editingId: null,
+        workflowKind: null,
+        initialAllDay: options?.initialAllDay ?? state.initialAllDay,
+      }));
+    }
+    const defaults = defaultsForWorkflow(workflow, initialAllDay);
+    return set((state) => {
+      const base = buildDefaultQuickCreateState();
+      return {
+        ...base,
+        isOpen: true,
+        mode: "create" as const,
+        editingId: null,
+        editingTileId: null,
+        loadError: null,
+        submitBlocked: false,
+        initialAllDay,
+        workflowKind: workflow,
+        activePanel: state.activePanel,
+        submitState: { kind: "idle" },
+        fieldErrors: new Map(),
+        identity: defaults.identity ?? base.identity,
+        time: defaults.time ?? base.time,
+        recurring: defaults.recurring ?? base.recurring,
+      };
+    });
+  },
   openEdit: (
     eventId: string,
     tileId?: string | null,
@@ -652,7 +816,20 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       fieldErrors: new Map(),
     }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
-  setWorkflow: (kind) => set({ workflowKind: kind }),
+  setWorkflow: (kind) =>
+    set((state) => {
+      // In create mode, switching workflows should reseed the
+      // workflow-specific slices (time, recurring, identity.kind).
+      // In edit mode, the loaded tile data wins — preserve it.
+      if (state.mode !== "create") return { workflowKind: kind };
+      const defaults = defaultsForWorkflow(kind, state.initialAllDay);
+      return {
+        workflowKind: kind,
+        identity: defaults.identity ?? state.identity,
+        time: defaults.time ?? state.time,
+        recurring: defaults.recurring ?? state.recurring,
+      };
+    }),
   setLegacyEditor: (on) => set({ useLegacyEditor: on }),
   setActivePanel: (panel) => set({ activePanel: panel }),
   getFieldError: (path) => get().fieldErrors.get(path) ?? null,

@@ -72,6 +72,8 @@ describe("cognito login url", () => {
 
 	it("treats external providers as disabled unless configured", () => {
 		const previous = process.env.COGNITO_SUPPORTED_IDENTITY_PROVIDERS;
+		const previousEnabled = process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS;
+		delete process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS;
 		delete process.env.COGNITO_SUPPORTED_IDENTITY_PROVIDERS;
 		delete process.env.NEXT_PUBLIC_COGNITO_SUPPORTED_IDENTITY_PROVIDERS;
 
@@ -87,6 +89,11 @@ describe("cognito login url", () => {
 			delete process.env.COGNITO_SUPPORTED_IDENTITY_PROVIDERS;
 		} else {
 			process.env.COGNITO_SUPPORTED_IDENTITY_PROVIDERS = previous;
+		}
+		if (previousEnabled === undefined) {
+			delete process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS;
+		} else {
+			process.env.NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS = previousEnabled;
 		}
 	});
 
