@@ -1,9 +1,11 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import {
   Combobox,
   type ComboboxProps,
   InputBase,
+  Text,
   useCombobox,
 } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +25,8 @@ export interface TimeSuggestionInputProps {
 }
 
 const HHMM_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+const CUSTOM_TIME_VALUE = "__custom_time__";
+const CUSTOM_TIME_OPTION_INDEX = 0;
 
 function normalizeTime(raw: string): string | null {
   const m = HHMM_RE.exec(raw.trim());
@@ -56,6 +60,7 @@ export function TimeSuggestionInput({
   comboboxProps,
   defaultScrollTo,
 }: TimeSuggestionInputProps) {
+  const { t } = useTranslation();
   const combobox = useCombobox({
     onDropdownClose: () => combobox.resetSelectedOption(),
   });
@@ -78,18 +83,22 @@ export function TimeSuggestionInput({
   const [draft, setDraft] = useState(value);
 
   useEffect(() => {
-    if (!combobox.dropdownOpened) {
+    if (
+      !combobox.dropdownOpened &&
+      document.activeElement !== inputRef.current
+    ) {
       setDraft(value);
     }
   }, [value, combobox.dropdownOpened]);
 
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!combobox.dropdownOpened) return;
     if (scrollTarget) {
       const idx = presets.indexOf(scrollTarget);
-      if (idx >= 0) combobox.selectOption(idx);
+      if (idx >= 0) combobox.selectOption(idx + 1);
     }
     const id = requestAnimationFrame(() => {
       const root = scrollRef.current;
@@ -117,6 +126,12 @@ export function TimeSuggestionInput({
   };
 
   const handleOptionSubmit = (val: string) => {
+    if (val === CUSTOM_TIME_VALUE) {
+      combobox.closeDropdown();
+      inputRef.current?.focus();
+      return;
+    }
+
     setDraft(val);
     onChange(val);
     combobox.closeDropdown();
@@ -131,6 +146,7 @@ export function TimeSuggestionInput({
     >
       <Combobox.Target>
         <InputBase
+          ref={inputRef}
           size={size}
           value={draft}
           onChange={(e) => {
@@ -143,6 +159,14 @@ export function TimeSuggestionInput({
             combobox.closeDropdown();
           }}
           onKeyDown={(e) => {
+            if (
+              e.key === "Enter" &&
+              combobox.getSelectedOptionIndex() === CUSTOM_TIME_OPTION_INDEX
+            ) {
+              e.preventDefault();
+              return;
+            }
+
             if (e.key === "Enter") {
               e.preventDefault();
               commit(draft);
@@ -152,7 +176,7 @@ export function TimeSuggestionInput({
               combobox.closeDropdown();
             }
           }}
-          placeholder="--:--"
+          placeholder={t("quickCreate.timePlaceholder") || "--:--"}
           aria-label={ariaLabel}
           data-testid={dataTestid}
           className={className}
@@ -168,13 +192,21 @@ export function TimeSuggestionInput({
       </Combobox.Target>
       <Combobox.Dropdown>
         <Combobox.Options>
+          <Combobox.Option value={CUSTOM_TIME_VALUE}>
+            <span className="text-sm">
+              {t("quickCreate.timeCustom") || "Custom…"}
+            </span>
+            <Text component="span" size="xs" c="dimmed">
+              {t("quickCreate.timeCustomHint") || "Type any HH:MM"}
+            </Text>
+          </Combobox.Option>
           <div
             ref={scrollRef}
             className="max-h-[220px] overflow-y-auto"
           >
-            {presets.map((t) => (
-              <Combobox.Option key={t} value={t}>
-                <span className="font-mono text-sm tabular-nums">{t}</span>
+            {presets.map((time) => (
+              <Combobox.Option key={time} value={time}>
+                <span className="font-mono text-sm tabular-nums">{time}</span>
               </Combobox.Option>
             ))}
           </div>
