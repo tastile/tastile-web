@@ -2,9 +2,7 @@
 
 import {
   Badge,
-  Button,
   CloseButton,
-  ColorInput,
   Group,
   NumberInput,
   SegmentedControl,
@@ -17,24 +15,26 @@ import { DateInput } from "@mantine/dates";
 import {
   CalendarDays,
   CalendarRange,
-  FileText,
-  Folder,
   Repeat,
   Sun,
   Timer,
 } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormRow } from "@/shared/ui/form";
-import { ProjectPicker } from "./ProjectPicker";
+import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { RecurringDetailsSubPanel } from "./RecurringDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
 import { WorkflowBatch } from "./WorkflowBatch";
+import { DetailsAffordanceButton } from "./sections/DetailsAffordanceButton";
+import { MemoSection } from "./sections/MemoSection";
+import { ProjectColorRow } from "./sections/ProjectColorRow";
+import { SubtasksSection } from "./sections/SubtasksSection";
 
-const REPEAT_OPTIONS = [
+const REPEAT_OPTIONS_BASE = [
   { value: "daily", label: "Daily" },
   { value: "weekly", label: "Weekly" },
   { value: "monthly", label: "Monthly" },
@@ -123,8 +123,10 @@ function isCalendarMode(mode: string): boolean {
  *   - All day switch (calendar modes only)
  *   - Repeat until (toggle + date)
  *   - Duration per instance (Select + custom NumberInput)
- *   - Project picker + color
- *   - "Recurring details" affordance (sub-panel)
+ *   - `DetailsAffordanceButton` (opens the "recurring-details" sub-panel)
+ *   - Bottom set (top-bordered group):
+ *     - `MemoSection` (borderless autosizing textarea bound to `meta.memo`)
+ *     - `ProjectColorRow` (project chip row + compact color swatches)
  *
  * The icon column is supplied structurally by `FormRow`. Time input opens
  * a 15-min dropdown (anchored to the current value) and also accepts
@@ -136,7 +138,6 @@ export function QuickCreateRecurring() {
   const title = useQuickCreateStore((s) => s.identity.title);
   const setField = useQuickCreateStore((s) => s.setField);
   const close = useQuickCreateStore((s) => s.close);
-  const visualColor = useQuickCreateStore((s) => s.identity.visual.color);
 
   const spanStart = useQuickCreateStore((s) => s.time.span.start);
   const timeOfDayMode = useQuickCreateStore((s) => s.time.timeOfDayMode);
@@ -155,7 +156,6 @@ export function QuickCreateRecurring() {
   const setActivePanel = useQuickCreateStore((s) => s.setActivePanel);
 
   const detailsOpen = activePanel === "recurring-details";
-  const openDetails = () => setActivePanel("recurring-details");
   const closeDetails = () => setActivePanel("base");
 
   const allDay = timeOfDayMode === "all-day";
@@ -172,14 +172,37 @@ export function QuickCreateRecurring() {
     (next: string) => {
       if (calendarMode) {
         setField("time.timeOfDayStart", next);
-        setField("time.timeOfDayEnd", next); // mirror start so the wire has both bounds; user can refine per-instance via duration
+        // Weekly/Monthly keep the legacy single-picker behaviour: mirror
+        // start into end so the wire still has both bounds and the user
+        // can refine per-instance via duration. Daily uses a separate
+        // end-time picker (see `updateDailyEndTime` below) so its
+        // end stays authored by the user.
+        if (repeatMode !== "daily") {
+          setField("time.timeOfDayEnd", next);
+        }
         if (timeOfDayMode !== "range") setField("time.timeOfDayMode", "range");
         return;
       }
       const result = timeToIso(spanStart, next);
       if (result) setField("time.span.start", result);
     },
-    [calendarMode, setField, spanStart, timeOfDayMode],
+    [calendarMode, repeatMode, setField, spanStart, timeOfDayMode],
+  );
+
+  const updateDailyStartTime = useCallback(
+    (next: string) => {
+      setField("time.timeOfDayStart", next);
+      if (timeOfDayMode !== "range") setField("time.timeOfDayMode", "range");
+    },
+    [setField, timeOfDayMode],
+  );
+
+  const updateDailyEndTime = useCallback(
+    (next: string) => {
+      setField("time.timeOfDayEnd", next);
+      if (timeOfDayMode !== "range") setField("time.timeOfDayMode", "range");
+    },
+    [setField, timeOfDayMode],
   );
 
   const updateStartDate = useCallback(
@@ -211,7 +234,7 @@ export function QuickCreateRecurring() {
 
   const handleRepeatChange = useCallback(
     (value: string) => {
-      const next = value as typeof REPEAT_OPTIONS[number]["value"];
+      const next = value as (typeof REPEAT_OPTIONS)[number]["value"];
       setField("recurring.repeatMode", next);
     },
     [setField],
@@ -285,6 +308,17 @@ export function QuickCreateRecurring() {
   );
 
   // ---------- duration (Select + custom) ----------
+  //
+  // The dropdown shows preset values plus a "Custom…" sentinel. The
+  // Select value is held in local UI state (`isCustomMode`) so picking
+  // Custom doesn't immediately re-derive back to the preset string —
+  // if the Select's value were derived purely from `isDurationPreset`
+  // (which is computed from the store value), the store never changes
+  // on a Custom selection, so `isDurationPreset` would stay true and
+  // the dropdown would flicker back to e.g. "30 min" before the user
+  // could interact with the NumberInput. The store still holds the
+  // actual minute count (preset or custom); `isCustomMode` only tracks
+  // which option the dropdown should display right now.
 
   const durationMinutes = msToMin(durationMinMs);
   const isDurationPreset =
@@ -293,9 +327,31 @@ export function QuickCreateRecurring() {
       durationMinutes as (typeof DURATION_PRESETS_MIN)[number],
     );
 
+  // Whether the Select is currently displaying the Custom sentinel.
+  // Initial seed: if the store already holds a custom value (e.g. the
+  // user reopened the panel after typing 45), we start in custom mode.
+  const [isCustomMode, setIsCustomMode] = useState(!isDurationPreset);
+
   const [customDuration, setCustomDuration] = useState<string | number>(
     isDurationPreset ? durationMinutes : durationMinutes || 30,
   );
+
+  // Tracks the most recent duration we wrote ourselves from the custom
+  // NumberInput, so the mirror effect can distinguish self-writes from
+  // external store changes (template load, seed reset, …).
+  const lastSelfWrittenDurationRef = useRef<number | null>(null);
+
+  // Mirror external store changes (template load, seed reset, …) into
+  // the local Custom-mode flag. We skip the flip when the new duration
+  // equals our last self-written value, so typing a preset (e.g. "30")
+  // in the NumberInput while in custom mode doesn't kick us back to
+  // the "30 min" preset. This is the correct mirror pattern; without
+  // it the dropdown desyncs from the store after a template swap.
+  // react-doctor-disable-next-line react-hooks-js/set-state-in-effect
+  useEffect(() => {
+    if (lastSelfWrittenDurationRef.current === durationMinutes) return;
+    setIsCustomMode(!isDurationPreset);
+  }, [isDurationPreset, durationMinutes]);
 
   const DURATION_OPTIONS = useMemo(
     () => [
@@ -311,9 +367,9 @@ export function QuickCreateRecurring() {
     [t],
   );
 
-  const selectedDuration = isDurationPreset
-    ? String(durationMinutes)
-    : DURATION_CUSTOM_VALUE;
+  const selectedDuration = isCustomMode
+    ? DURATION_CUSTOM_VALUE
+    : String(durationMinutes);
 
   const applyDuration = useCallback(
     (minutes: number) => {
@@ -328,11 +384,13 @@ export function QuickCreateRecurring() {
       if (!value || value === DURATION_CUSTOM_VALUE) {
         // Switching into custom — keep the user's current value as the
         // custom seed so they don't lose what they had.
-        setCustomDuration(durationMinutes || 30);
+        setIsCustomMode(true);
+        setCustomDuration(durationMinutes > 0 ? durationMinutes : 30);
         return;
       }
       const minutes = Number(value);
       if (!Number.isFinite(minutes) || minutes <= 0) return;
+      setIsCustomMode(false);
       setCustomDuration(minutes);
       applyDuration(minutes);
     },
@@ -343,7 +401,10 @@ export function QuickCreateRecurring() {
     (v: string | number) => {
       setCustomDuration(v);
       const n = typeof v === "number" ? v : Number(v);
-      if (Number.isFinite(n) && n > 0) applyDuration(n);
+      if (Number.isFinite(n) && n > 0) {
+        lastSelfWrittenDurationRef.current = n;
+        applyDuration(n);
+      }
     },
     [applyDuration],
   );
@@ -362,6 +423,7 @@ export function QuickCreateRecurring() {
                 size="sm"
               />
             }
+            trailing={<QuickCreateSubmitButton />}
           >
             <TextInput
               variant="unstyled"
@@ -443,13 +505,13 @@ export function QuickCreateRecurring() {
                   }}
                   min={1}
                   max={365}
-                  size="xs"
+                  size="sm"
                   className="w-24"
                   data-testid="recurring-interval-value"
                 />
                 <SegmentedControl
                   fullWidth
-                  size="xs"
+                  size="sm"
                   value={intervalUnit}
                   onChange={setIntervalUnit}
                   data={INTERVAL_UNITS.map((u) => ({ value: u, label: u }))}
@@ -462,29 +524,76 @@ export function QuickCreateRecurring() {
 
         {/* Time row — adapts to repeat mode */}
         {calendarMode ? (
-          <div className="px-4 py-3">
-            <FormRow
-              icon={<Sun className="h-4 w-4" aria-hidden />}
-              trailing={
-                <TimeSuggestionInput
-                  value={timeOfDayValue}
-                  onChange={updateTime}
-                  aria-label={t("quickCreate.timeOfDayLabel") || "Time of day"}
-                  data-testid="recurring-time-of-day"
-                  className="w-[5.5rem]"
+          // Daily mode: a real time window (start + end) — the start-only
+          // picker was an obvious gap because almost no real use case fits
+          // "start at 09:00 with no end". Weekly/Monthly keep the legacy
+          // single-picker behaviour (All day + start, mirrored to end).
+          repeatMode === "daily" ? (
+            <>
+              {/* All day — its own row, mirroring the Event pattern */}
+              <div className="px-4 py-3">
+                <FormRow>
+                  <span className="text-sm text-foreground">
+                    {t("quickCreate.allDay") || "All day"}
+                  </span>
+                  <Switch
+                    checked={allDay}
+                    onChange={(e) => toggleAllDay(e.currentTarget.checked)}
+                    size="sm"
+                    data-testid="recurring-all-day-toggle"
+                    className="ml-auto"
+                  />
+                </FormRow>
+              </div>
+              {/* Time window — start + end pickers on a single row */}
+              <div className="px-4 py-3">
+                <FormRow
+                  icon={<Sun className="h-4 w-4" aria-hidden />}
+                  trailing={
+                    <TimeSuggestionInput
+                      value={timeOfDayEnd}
+                      onChange={updateDailyEndTime}
+                      aria-label={t("quickCreate.endTimeLabel") || "End time"}
+                      data-testid="recurring-daily-end-time"
+                      className="w-[5.5rem]"
+                    />
+                  }
+                >
+                  <TimeSuggestionInput
+                    value={timeOfDayStart}
+                    onChange={updateDailyStartTime}
+                    aria-label={t("quickCreate.startTimeLabel") || "Start time"}
+                    data-testid="recurring-daily-start-time"
+                    className="w-[5.5rem]"
+                  />
+                </FormRow>
+              </div>
+            </>
+          ) : (
+            <div className="px-4 py-3">
+              <FormRow
+                icon={<Sun className="h-4 w-4" aria-hidden />}
+                trailing={
+                  <TimeSuggestionInput
+                    value={timeOfDayValue}
+                    onChange={updateTime}
+                    aria-label={t("quickCreate.timeOfDayLabel") || "Time of day"}
+                    data-testid="recurring-time-of-day"
+                    className="w-[5.5rem]"
+                  />
+                }
+              >
+                <Switch
+                  checked={allDay}
+                  onChange={(e) => toggleAllDay(e.currentTarget.checked)}
+                  label={t("quickCreate.allDay") || "All day"}
+                  size="sm"
+                  data-testid="recurring-all-day-toggle"
+                  className="w-full"
                 />
-              }
-            >
-              <Switch
-                checked={allDay}
-                onChange={(e) => toggleAllDay(e.currentTarget.checked)}
-                label={t("quickCreate.allDay") || "All day"}
-                size="sm"
-                data-testid="recurring-all-day-toggle"
-                className="w-full"
-              />
-            </FormRow>
-          </div>
+              </FormRow>
+            </div>
+          )
         ) : (
           <div className="px-4 py-3">
             <FormRow
@@ -526,7 +635,7 @@ export function QuickCreateRecurring() {
                     value={endDateValue}
                     onChange={updateEndDate}
                     valueFormat={DATE_FMT}
-                    size="xs"
+                    size="sm"
                     popoverProps={{ withinPortal: false }}
                     data-testid="recurring-end-date"
                     className="w-[10rem]"
@@ -551,7 +660,7 @@ export function QuickCreateRecurring() {
                 value={selectedDuration}
                 onChange={handleDurationChange}
                 data={DURATION_OPTIONS}
-                size="xs"
+                size="sm"
                 aria-label={t("quickCreate.durationLabel") || "Duration"}
                 data-testid="recurring-duration-select"
                 allowDeselect={false}
@@ -565,7 +674,7 @@ export function QuickCreateRecurring() {
                   suffix=" min"
                   min={1}
                   max={1440}
-                  size="xs"
+                  size="sm"
                   mt="xs"
                   aria-label={t("quickCreate.durationManual") || "Custom minutes"}
                   placeholder={t("quickCreate.durationManual") || "Custom minutes"}
@@ -577,44 +686,33 @@ export function QuickCreateRecurring() {
           </FormRow>
         </div>
 
-        {/* Project + Color */}
-        <div className="px-4 py-3">
-          <FormRow
-            icon={<Folder className="h-4 w-4" aria-hidden />}
-            trailing={
-              <ColorInput
-                value={visualColor}
-                onChange={(v) => setField("identity.visual.color", v)}
-                size="xs"
-                format="hex"
-                fixOnBlur
-                withPicker={false}
-                withEyeDropper={false}
-                aria-label={t("quickCreate.colorLabel") || "Color"}
-                swatches={RECURRING_COLOR_SWATCHES}
-                data-testid="recurring-color"
-                className="w-[120px]"
-              />
-            }
-          >
-            <ProjectPicker testId="recurring-project-picker" />
-          </FormRow>
-        </div>
+        {/* "Recurring details" affordance — opens the recurring-details sub-panel */}
+        <DetailsAffordanceButton
+          panelKey="recurring-details"
+          labelKey="quickCreate.detailsRecurringTitle"
+          fallbackLabel="Recurring details"
+          testId="recurring-open-details"
+        />
 
-        {/* Details affordance */}
-        <div className="px-4 py-3">
-          <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={openDetails}
-              data-testid="recurring-open-details"
-              fullWidth
-              className="w-full"
-            >
-              {t("quickCreate.detailsRecurringTitle") || "Recurring details"}
-            </Button>
-          </FormRow>
+        {/* Bottom "set": subtasks, project + color, then memo, grouped at the
+            very bottom of every workflow form. The top border visually
+            separates the set from the workflow-specific fields above. */}
+        <div className="border-t border-border pt-1">
+          {/* Subtasks — shared section component. Recurring tiles share the
+              unified `plan.completion.tasks[]` array so the section renders
+              an empty "no sub-tasks" hint until the user adds one. */}
+          <SubtasksSection testId="recurring-subtasks" />
+
+          {/* Project picker + color swatches (shared section component) */}
+          <ProjectColorRow
+            pickerTestId="recurring-project-picker"
+            colorTestId="recurring-color"
+            swatches={RECURRING_COLOR_SWATCHES}
+          />
+
+          {/* Memo — borderless autosizing textarea bound to meta.memo.
+              Sits directly under the project+color row (memo beneath project). */}
+          <MemoSection testId="recurring-memo" />
         </div>
       </Stack>
 
