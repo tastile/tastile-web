@@ -148,22 +148,12 @@ test.describe("QuickCreate panel binding (#23 A5a)", () => {
     await expect(page.getByTestId("quick-create-input-title")).toHaveValue(title);
   });
 
-  test("Discard draft button clears localStorage and resets the form", async ({ page }) => {
-    const title = `A5a discard ${Date.now()}`;
-    await page.getByTestId("quick-create-input-title").fill(title);
-    await page.waitForTimeout(700);
-
-    const draftBefore = await page.evaluate(() =>
-      window.localStorage.getItem("tastile.draft.create-tile"),
-    );
-    expect(draftBefore, "draft persisted").not.toBeNull();
-
-    await page.getByTestId("quick-create-discard-draft").click();
-    const draftAfter = await page.evaluate(() =>
-      window.localStorage.getItem("tastile.draft.create-tile"),
-    );
-    expect(draftAfter, "draft cleared after discard").toBeNull();
-    await expect(page.getByTestId("quick-create-input-title")).toHaveValue("");
+  test("Discard draft button is absent — close via title-row CloseButton", async ({ page }) => {
+    // Cancel/Discard buttons were abolished from the panel footer
+    // (user requirement: "そもそも廃止する"). The panel only closes via
+    // the title-row CloseButton (X); drafts persist in localStorage
+    // until successful submit clears them.
+    await expect(page.getByTestId("quick-create-discard-draft")).toHaveCount(0);
   });
 
   test("JSON.stringify of all form slices is non-empty (no silent drop)", async ({ page }) => {
