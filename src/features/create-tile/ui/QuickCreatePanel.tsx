@@ -74,23 +74,20 @@ function pickPanelClass(isClosing: boolean, isDesktop: boolean, hasSubPanel: boo
 
 export function QuickCreatePanel() {
   const isOpen = useQuickCreateStore((s) => s.isOpen);
-  const useLegacyEditor = useQuickCreateStore((s) => s.useLegacyEditor);
   const close = useQuickCreateStore((s) => s.close);
-  const reset = useQuickCreateStore((s) => s.reset);
-  const setWorkflow = useQuickCreateStore((s) => s.setWorkflow);
-  const mode = useQuickCreateStore((s) => s.mode);
   const workflowKind = useQuickCreateStore((s) => s.workflowKind);
   const activePanel = useQuickCreateStore((s) => s.activePanel);
   const setActivePanel = useQuickCreateStore((s) => s.setActivePanel);
   const submitBlocked = useQuickCreateStore((s) => s.submitBlocked);
-  const submitState = useQuickCreateStore((s) => s.submitState);
-  const setSubmitState = useQuickCreateStore((s) => s.setSubmitState);
   const setCanSubmit = useQuickCreateStore((s) => s.setCanSubmit);
   const setSubmitBlockedReason = useQuickCreateStore(
     (s) => s.setSubmitBlockedReason,
   );
-
-  const title = useQuickCreateStore((s) => s.identity.title);
+  const mode = useQuickCreateStore((s) => s.mode);
+  const reset = useQuickCreateStore((s) => s.reset);
+  const submitState = useQuickCreateStore((s) => s.submitState);
+  const canSubmit = useQuickCreateStore((s) => s.canSubmit);
+  const setSubmitState = useQuickCreateStore((s) => s.setSubmitState);
 
   const isDesktop = useIsDesktop();
   const { t } = useTranslation();
@@ -130,12 +127,16 @@ export function QuickCreatePanel() {
     };
   }, [isOpen, mounted]);
 
-  // Submit handler — title is the only field required by all three workflows.
+  // The submit button lives in the title row (right of the title input)
+  // via the per-workflow QuickCreateSubmitButton component. Each workflow
+  // reads `identity.title` and `submitBlocked` from the same store slice
+  // to drive `canSubmit` — we just keep those signals warm here so the
+  // submit button reflects state changes that originate elsewhere (e.g.
+  // a sub-panel validation failure that flips `submitBlocked`).
+  const title = useQuickCreateStore((s) => s.identity.title);
   const titleOk = title.trim().length > 0;
-  const canSubmit = titleOk && !submitBlocked;
-
   useEffect(() => {
-    setCanSubmit(canSubmit);
+    setCanSubmit(titleOk && !submitBlocked);
     if (!titleOk) {
       setSubmitBlockedReason(t("quickCreate.titleRequired"));
     } else if (submitBlocked) {
@@ -260,16 +261,13 @@ export function QuickCreatePanel() {
       />
 
       <div className={`quick-create-panel ${panelClass}`} data-testid="quick-create-panel">
-        {/* Body: dispatch by workflowKind. Per design intent, the panel always
-            renders one of the three specialized forms — the user switches
-            workflows via the WorkflowChip dropdown in each form's own
-            header, not from a picker page inside the panel. When
-            `workflowKind` is null (no entry point has chosen one), fall
-            through to the Task form since Task is the most common default
-            for the ActivityBar + entry. Each form body owns its own
-            header (chip + title + close button) — the chrome here only
-            supplies the backdrop, body slot, and footer so we don't
-            double up. */}
+        {/* Body: dispatch by workflowKind. Each workflow body owns its own
+            header (close button + title input + submit button) and body
+            — the chrome here only supplies the backdrop, the workflow
+            dispatch, and the entry animation. The submit button moved
+            from the bottom footer into the title row's trailing slot
+            (QuickCreateSubmitButton) so the user can submit without
+            leaving the row they're typing on. */}
         {workflowKind === "event" ? (
           <QuickCreateEvent />
         ) : workflowKind === "recurring" ? (
