@@ -198,7 +198,7 @@ export function QuickCreateEvent() {
   return (
     <Stack gap={0} className="h-full">
       <Stack gap={0} className="flex-1 overflow-y-auto">
-        {/* Title — close button in icon column, batch row below */}
+        {/* Title — close button in icon column, submit button in trailing slot */}
         <div className="px-4 py-2">
           <FormRow
             icon={
