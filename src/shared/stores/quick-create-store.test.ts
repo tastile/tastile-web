@@ -167,11 +167,14 @@ describe("useQuickCreateStore", () => {
       expect(start.getHours()).toBe(0);
     });
 
-    it("seeds the Recurring form with repeatMode=daily and an initial duration", () => {
+    it("seeds the Recurring form with repeatMode=once and an initial duration", () => {
+      // Safer default per AGENTS feedback "ビュー切り替えで誤った操作で
+      // 繰り返しを有効にしてしまった" — the user has to opt-in to a
+      // recurring schedule from the segmented control.
       useQuickCreateStore.getState().openCreate({ workflow: "recurring" });
       const s = useQuickCreateStore.getState();
       expect(s.workflowKind).toBe("recurring");
-      expect(s.recurring.repeatMode).toBe("daily");
+      expect(s.recurring.repeatMode).toBe("once");
       expect(s.identity.kind).toBe(TileKind.RECURRING);
       expect(s.time.durationMinMax).toEqual({ minMs: 30 * 60_000, maxMs: 30 * 60_000 });
       expect(s.time.span.start).not.toBe("");
