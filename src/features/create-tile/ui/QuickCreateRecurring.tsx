@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Badge,
   CloseButton,
   Group,
   NumberInput,
@@ -29,6 +28,7 @@ import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { RecurringDetailsSubPanel } from "./RecurringDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
 import { WorkflowBatch } from "./WorkflowBatch";
+import { weekdayLabelsFor } from "./quick-create-utils";
 import { DetailsAffordanceButton } from "./sections/DetailsAffordanceButton";
 import { MemoSection } from "./sections/MemoSection";
 import { ProjectColorRow } from "./sections/ProjectColorRow";
@@ -64,8 +64,6 @@ const RECURRING_COLOR_SWATCHES = [
   "#ef4444",
   "#6b7280",
 ];
-
-const WEEKDAY_LABELS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 const DATE_FMT = "YYYY-MM-DD";
 
@@ -146,7 +144,7 @@ function isCalendarMode(mode: string): boolean {
  * custom entry.
  */
 export function QuickCreateRecurring() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
 
   const title = useQuickCreateStore((s) => s.identity.title);
   const setField = useQuickCreateStore((s) => s.setField);
@@ -176,6 +174,11 @@ export function QuickCreateRecurring() {
 
   const startDate = useMemo(() => isoToDate(spanStart), [spanStart]);
   const startTime = useMemo(() => isoToTime(spanStart), [spanStart]);
+
+  // Translated weekday labels — bit 0 = Sunday … bit 6 = Saturday, matching
+  // the store's `weekdayMask` convention. Resolved via the i18n tree so the
+  // chip rows stay in lockstep with the rest of the locale.
+  const weekdayLabels = useMemo(() => weekdayLabelsFor(locale), [locale]);
 
   // ---------- time row logic (adaptive by repeat mode) ----------
 
@@ -484,20 +487,24 @@ export function QuickCreateRecurring() {
                 className="flex flex-wrap gap-1.5"
                 data-testid="recurring-weekday-row"
               >
-                {WEEKDAY_LABELS_EN.map((label, bit) => {
+                {weekdayLabels.map((label, bit) => {
                   const active = (weekdayMask & (1 << bit)) !== 0;
                   return (
-                    <Badge
+                    <button
                       key={bit}
-                      variant={active ? "filled" : "light"}
-                      color={active ? "indigo" : "gray"}
-                      size="lg"
-                      style={{ cursor: "pointer", minWidth: "2.75rem" }}
+                      type="button"
                       onClick={() => toggleWeekday(bit)}
+                      aria-pressed={active}
                       data-testid={`recurring-weekday-${bit}`}
+                      className={
+                        "inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors " +
+                        (active
+                          ? "border-primary bg-primary text-primary-fg shadow-sm"
+                          : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2")
+                      }
                     >
                       {label}
-                    </Badge>
+                    </button>
                   );
                 })}
               </div>
