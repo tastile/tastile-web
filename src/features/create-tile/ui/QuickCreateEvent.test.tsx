@@ -137,9 +137,9 @@ describe("QuickCreateEvent", () => {
 
     await user.click(screen.getByTestId("event-open-details"));
 
-    expect(
-      screen.getByRole("heading", { name: /event details/i }),
-    ).toBeInTheDocument();
+    // The sub-panel's heading has a stable `id` regardless of locale —
+    // assert by id to avoid coupling the test to a specific translation.
+    expect(document.getElementById("event-details-heading")).toBeInTheDocument();
   });
 
   it("closing the panel via the close button resets isOpen", async () => {
@@ -155,5 +155,27 @@ describe("QuickCreateEvent", () => {
     renderWithMantine(<QuickCreateEvent />);
     expect(screen.getByTestId("event-project-picker")).toBeInTheDocument();
     expect(screen.getByTestId("event-color")).toBeInTheDocument();
+  });
+
+  it("renders the shared SubtasksSection in the main body", () => {
+    renderWithMantine(<QuickCreateEvent />);
+    expect(screen.getByTestId("event-subtasks")).toBeInTheDocument();
+  });
+
+  it("shows the empty hint when no subtasks exist on the Event form", () => {
+    // Empty the seeded "Mark done" task so the test exercises the empty path.
+    useQuickCreateStore.setState((s) => ({
+      plan: {
+        ...s.plan,
+        completion: {
+          ...s.plan.completion,
+          tasks: [],
+        },
+      },
+    }));
+
+    renderWithMantine(<QuickCreateEvent />);
+    expect(screen.getByTestId("event-subtasks")).toBeInTheDocument();
+    expect(screen.getByTestId("event-subtasks-empty")).toBeInTheDocument();
   });
 });
