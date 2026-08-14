@@ -1,18 +1,11 @@
 "use client";
 
 import {
-  Button,
   CloseButton,
-  ColorInput,
   Stack,
   Switch,
   TextInput,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
-import {
-  FileText,
-  Folder,
-} from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
@@ -20,9 +13,13 @@ import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormRow } from "@/shared/ui/form";
 import { EventDetailsSubPanel } from "./EventDetailsSubPanel";
-import { ProjectPicker } from "./ProjectPicker";
-import { TimeSuggestionInput } from "./TimeSuggestionInput";
+import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { WorkflowBatch } from "./WorkflowBatch";
+import { DateTimeRow } from "./sections/DateTimeRow";
+import { DetailsAffordanceButton } from "./sections/DetailsAffordanceButton";
+import { MemoSection } from "./sections/MemoSection";
+import { ProjectColorRow } from "./sections/ProjectColorRow";
+import { SubtasksSection } from "./sections/SubtasksSection";
 
 const EVENT_COLOR_SWATCHES = [
   "#3b82f6",
@@ -33,26 +30,12 @@ const EVENT_COLOR_SWATCHES = [
   "#6b7280",
 ];
 
-const DATE_FMT = "YYYY-MM-DD";
-
 /** Default event duration: 1.5 hours (90 minutes). */
 const DEFAULT_DURATION_MS = 90 * 60_000;
 
 function nowHHMM(): string {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
-
-function isoToDate(iso: string): Date | null {
-  if (!iso) return null;
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function dateToIso(date: Date | null): string {
-  if (!date) return "";
-  const d = new Date(date);
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
 }
 
 function isoToTime(iso: string): string {
@@ -83,9 +66,10 @@ function timeToIso(baseIso: string, time: string): string {
  *   - Start row (date + time as 2 columns, 1 row — no label, no icon)
  *   - End row (date + time as 2 columns, 1 row — no label, no icon)
  *   - All day row (plain switch — no label, no icon)
- *   - Color row (icon column)
- *   - Project picker (icon column)
- *   - "Event details" affordance (sub-panel: period-label toggle + sub-tasks + refs)
+ *   - `DetailsAffordanceButton` (opens the "event-details" sub-panel)
+ *   - Bottom set (top-bordered group):
+ *     - `MemoSection` (borderless autosizing textarea bound to `meta.memo`)
+ *     - `ProjectColorRow` (project chip row + compact color swatches)
  *
  * The icon column is supplied structurally by `FormRow` (shared/ui/form)
  * — sections that need it use `FormRow`, sections that don't (start/end/
@@ -101,27 +85,22 @@ export function QuickCreateEvent() {
   const title = useQuickCreateStore((s) => s.identity.title);
   const setField = useQuickCreateStore((s) => s.setField);
   const close = useQuickCreateStore((s) => s.close);
-  const mode = useQuickCreateStore((s) => s.mode);
 
   const spanStart = useQuickCreateStore((s) => s.time.span.start);
   const spanEnd = useQuickCreateStore((s) => s.time.span.end);
   const whenMode = useQuickCreateStore((s) => s.time.whenMode);
   const timeOfDayMode = useQuickCreateStore((s) => s.time.timeOfDayMode);
-  const visualColor = useQuickCreateStore((s) => s.identity.visual.color);
   const activePanel = useQuickCreateStore((s) => s.activePanel);
   const setActivePanel = useQuickCreateStore((s) => s.setActivePanel);
 
   const allDay = timeOfDayMode === "all-day";
 
   const detailsOpen = activePanel === "event-details";
-  const openDetails = () => setActivePanel("event-details");
   const closeDetails = () => setActivePanel("base");
 
   /** Tracks whether the user explicitly changed the end time. */
   const [endTimeManuallySet, setEndTimeManuallySet] = useState(false);
 
-  const startDate = useMemo(() => isoToDate(spanStart), [spanStart]);
-  const endDate = useMemo(() => isoToDate(spanEnd), [spanEnd]);
   const startTime = useMemo(() => isoToTime(spanStart), [spanStart]);
   const endTime = useMemo(() => isoToTime(spanEnd), [spanEnd]);
 
@@ -157,9 +136,11 @@ export function QuickCreateEvent() {
     [setField, spanStart, spanEnd],
   );
 
+  // DateTimeRow already converts the date-input's YYYY-MM-DD string into
+  // an ISO before calling back, so we receive ISO here (or "" on clear).
   const updateStartDate = useCallback(
     (value: string | null) => {
-      const iso = value ? dateToIso(new Date(value)) : "";
+      const iso = value ?? "";
       setField("time.span.start", iso);
       if (!spanEnd && iso) setField("time.span.end", iso);
       if (iso && whenMode === "none") setField("time.whenMode", "day");
@@ -188,7 +169,7 @@ export function QuickCreateEvent() {
 
   const updateEndDate = useCallback(
     (value: string | null) => {
-      const iso = value ? dateToIso(new Date(value)) : "";
+      const iso = value ?? "";
       setField("time.span.end", iso);
       // Determine if the event spans multiple days.
       const start = new Date(spanStart);
@@ -228,6 +209,7 @@ export function QuickCreateEvent() {
                 size="sm"
               />
             }
+            trailing={<QuickCreateSubmitButton />}
           >
             <TextInput
               variant="unstyled"
@@ -252,64 +234,30 @@ export function QuickCreateEvent() {
         <WorkflowBatch />
 
         {/* Start row — Date + Time on one row; no label needed. */}
-        <div className="px-4 py-3">
-          <FormRow
-            trailing={
-              !allDay ? (
-                <TimeSuggestionInput
-                  value={startTime}
-                  onChange={updateStartTime}
-                  aria-label={t("quickCreate.startTimeLabel") || "Start time"}
-                  data-testid="event-start-time"
-                  className="w-[5.5rem]"
-                  defaultScrollTo={defaultTimeScroll}
-                />
-              ) : null
-            }
-          >
-            <DateInput
-              value={startDate}
-              onChange={updateStartDate}
-              valueFormat={DATE_FMT}
-              placeholder={t("quickCreate.startDate") || "Start date"}
-              size="sm"
-              clearable
-              popoverProps={{ withinPortal: false }}
-              data-testid={allDay ? "event-start-all-day" : "event-start-date"}
-              className="w-full"
-            />
-          </FormRow>
-        </div>
+        <DateTimeRow
+          dateValue={spanStart}
+          onDateChange={updateStartDate}
+          timeValue={allDay ? undefined : startTime}
+          onTimeChange={allDay ? undefined : updateStartTime}
+          datePlaceholder={t("quickCreate.startDate") || "Start date"}
+          ariaLabelTime={t("quickCreate.startTimeLabel") || "Start time"}
+          dateTestId={allDay ? "event-start-all-day" : "event-start-date"}
+          timeTestId="event-start-time"
+          defaultTimeScrollTo={defaultTimeScroll}
+        />
 
         {/* End row */}
-        <div className="px-4 py-3">
-          <FormRow
-            trailing={
-              !allDay ? (
-                <TimeSuggestionInput
-                  value={endTime}
-                  onChange={updateEndTime}
-                  aria-label={t("quickCreate.endTimeLabel") || "End time"}
-                  data-testid="event-end-time"
-                  className="w-[5.5rem]"
-                  defaultScrollTo={defaultEndTimeScroll}
-                />
-              ) : null
-            }
-          >
-            <DateInput
-              value={endDate}
-              onChange={updateEndDate}
-              valueFormat={DATE_FMT}
-              placeholder={t("quickCreate.endDate") || "End date"}
-              size="sm"
-              clearable
-              popoverProps={{ withinPortal: false }}
-              data-testid={allDay ? "event-end-all-day" : "event-end-date"}
-              className="w-full"
-            />
-          </FormRow>
-        </div>
+        <DateTimeRow
+          dateValue={spanEnd}
+          onDateChange={updateEndDate}
+          timeValue={allDay ? undefined : endTime}
+          onTimeChange={allDay ? undefined : updateEndTime}
+          datePlaceholder={t("quickCreate.endDate") || "End date"}
+          ariaLabelTime={t("quickCreate.endTimeLabel") || "End time"}
+          dateTestId={allDay ? "event-end-all-day" : "event-end-date"}
+          timeTestId="event-end-time"
+          defaultTimeScrollTo={defaultEndTimeScroll}
+        />
 
         {/* All day */}
         <div className="px-4 py-3">
@@ -327,44 +275,33 @@ export function QuickCreateEvent() {
           </FormRow>
         </div>
 
-        {/* Project + Color */}
-        <div className="px-4 py-3">
-          <FormRow
-            icon={<Folder className="h-4 w-4" aria-hidden />}
-            trailing={
-              <ColorInput
-                value={visualColor}
-                onChange={(v) => setField("identity.visual.color", v)}
-                size="xs"
-                format="hex"
-                fixOnBlur
-                withPicker={false}
-                withEyeDropper={false}
-                aria-label={t("quickCreate.colorLabel") || "Color"}
-                swatches={EVENT_COLOR_SWATCHES}
-                data-testid="event-color"
-                className="w-[120px]"
-              />
-            }
-          >
-            <ProjectPicker testId="event-project-picker" />
-          </FormRow>
-        </div>
+        {/* "Event details" affordance — opens the event-details sub-panel */}
+        <DetailsAffordanceButton
+          panelKey="event-details"
+          labelKey="quickCreate.detailsEventTitle"
+          fallbackLabel="Event details"
+          testId="event-open-details"
+        />
 
-        {/* Details affordance */}
-        <div className="px-4 py-3">
-          <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={openDetails}
-              data-testid="event-open-details"
-              fullWidth
-              className="w-full"
-            >
-              {t("quickCreate.detailsEventTitle") || "Event details"}
-            </Button>
-          </FormRow>
+        {/* Bottom "set": subtasks, project + color, then memo, grouped at the
+            very bottom of every workflow form. The top border visually
+            separates the set from the workflow-specific fields above. */}
+        <div className="border-t border-border pt-1">
+          {/* Subtasks — shared section component. Events share the unified
+              `plan.completion.tasks[]` array so the section renders an empty
+              "no sub-tasks" hint until the user adds one. */}
+          <SubtasksSection testId="event-subtasks" />
+
+          {/* Project picker + color swatches (shared section component) */}
+          <ProjectColorRow
+            pickerTestId="event-project-picker"
+            colorTestId="event-color"
+            swatches={EVENT_COLOR_SWATCHES}
+          />
+
+          {/* Memo — borderless autosizing textarea bound to meta.memo.
+              Sits directly under the project+color row (memo beneath project). */}
+          <MemoSection testId="event-memo" />
         </div>
       </Stack>
 
