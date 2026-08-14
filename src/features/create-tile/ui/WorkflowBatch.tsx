@@ -37,9 +37,9 @@ export function WorkflowBatch() {
               onClick={() => handleSelect(kind)}
               data-testid={`workflow-batch-${kind}`}
               className={
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors " +
+                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors " +
                 (active
-                  ? "border-foreground/20 bg-foreground text-background"
+                  ? "border-primary bg-primary text-primary-fg shadow-sm"
                   : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2")
               }
             >
