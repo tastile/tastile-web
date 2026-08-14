@@ -60,7 +60,7 @@ export function ProjectPicker({
           setField("meta.ownerSubjectId", val || null);
         }}
         data={data}
-        size="xs"
+        size="sm"
         searchable
         clearable={false}
         data-testid={testId}
