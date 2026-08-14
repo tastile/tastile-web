@@ -77,10 +77,31 @@ import { CreateProjectModal } from "./CreateProjectModal";
 import { DurationSubPanel } from "./DurationSubPanel";
 import { IntentSubPanel } from "./IntentSubPanel";
 import { MetaSubPanel } from "./MetaSubPanel";
+import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { ReferencesSubPanel } from "./ReferencesSubPanel";
 import { TaskDetailSubPanel } from "./TaskDetailSubPanel";
 import { WorkflowBatch } from "./WorkflowBatch";
 import { REPEAT_MODE_LABEL_KEY, formatDisplayDate, weekdayLabelsFor } from "./quick-create-utils";
+import { MemoSection } from "./sections/MemoSection";
+import { ProjectColorRow } from "./sections/ProjectColorRow";
+
+// ============================================================
+// Main component
+// ============================================================
+
+/**
+ * Color palette for the detailed workflow's `ProjectColorRow`. Matches the
+ * brand-purple-led swatch set used by the Recurring form so the legacy
+ * editor doesn't visually drift from the specialized workflows.
+ */
+const DETAILED_COLOR_SWATCHES = [
+  "#5e6ad2",
+  "#10b981",
+  "#a855f7",
+  "#f59e0b",
+  "#ef4444",
+  "#6b7280",
+];
 
 // ============================================================
 // Main component
@@ -529,11 +550,12 @@ export function QuickCreate() {
             icon={
               <CloseButton
                 onClick={close}
-                aria-label={t("tiles.closePanel")}
+                aria-label={t("quickCreate.cancel")}
                 data-testid="quick-create-detailed-close"
                 size="sm"
               />
             }
+            trailing={<QuickCreateSubmitButton />}
           >
             <TextInput
               id="tile-title-input"
@@ -547,9 +569,13 @@ export function QuickCreate() {
               size="lg"
               data-testid="quick-create-input-title"
               aria-required="true"
+              // Visible bottom underline is enforced by a CSS rule in
+              // `src/app/globals.css` (`.qc-underline-input`) — Mantine v9's
+              // `mantine-Input-input` module class sets a shorthand `border`
+              // that would otherwise win over Tailwind's `border-b-2`.
               classNames={{
                 input:
-                  "text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto border-b-2 border-foreground/60 focus:border-foreground",
+                  "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
               }}
             />
           </FormRow>
@@ -847,6 +873,19 @@ export function QuickCreate() {
               />
             </div>
           </FormRow>
+        </div>
+
+        {/* Bottom set: Project + Color + Memo — same shared sections as
+            Event/Task/Recurring. Wrapped in a top-bordered container so the
+            user sees a coherent "set" at the bottom of the form. The legacy
+            MetaSubPanel / "Refine" pill button above stay untouched. */}
+        <div className="border-t border-border pt-1">
+          <ProjectColorRow
+            pickerTestId="detailed-project-picker"
+            colorTestId="detailed-color"
+            swatches={DETAILED_COLOR_SWATCHES}
+          />
+          <MemoSection testId="detailed-memo" />
         </div>
       </Stack>
       </Stack>
