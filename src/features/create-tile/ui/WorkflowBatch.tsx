@@ -15,7 +15,6 @@ export function WorkflowBatch() {
   const { t } = useTranslation();
   const activeKind = useQuickCreateStore((s) => s.workflowKind);
   const setWorkflow = useQuickCreateStore((s) => s.setWorkflow);
-  const setLegacyEditor = useQuickCreateStore((s) => s.setLegacyEditor);
 
   function handleSelect(kind: WorkflowKind) {
     setWorkflow(kind);
