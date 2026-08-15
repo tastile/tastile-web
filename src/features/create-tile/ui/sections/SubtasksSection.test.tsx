@@ -82,6 +82,18 @@ function seedThreeTasks() {
   }));
 }
 
+function resetEmptyTasks() {
+  useQuickCreateStore.setState((s) => ({
+    plan: {
+      ...s.plan,
+      completion: {
+        ...s.plan.completion,
+        tasks: [],
+      },
+    },
+  }));
+}
+
 describe("SubtasksSection", () => {
   beforeEach(() => {
     // Pin the locale to en so the English fallback strings are assertable.
@@ -118,37 +130,14 @@ describe("SubtasksSection", () => {
     expect(input).toBeInTheDocument();
   });
 
-  it("renders the Add button when there are no tasks", () => {
-    actResetEmptyTasks();
+  it("renders the underline add affine when there are no tasks", () => {
+    resetEmptyTasks();
     renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
     expect(screen.getByTestId("subtasks-test-id-add")).toBeInTheDocument();
   });
 
-  it("writes the new-task title to the store when the form is submitted", async () => {
-    actResetEmptyTasks();
-    const user = userEvent.setup();
-    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
-
-    const input = screen.getByTestId("subtasks-test-id-new-subtask");
-    await user.type(input, "Write tests");
-    await user.click(screen.getByTestId("subtasks-test-id-add"));
-
-    const tasks = useQuickCreateStore.getState().plan.completion.tasks;
-    expect(tasks.length).toBe(1);
-    expect(tasks[0]?.content.title).toBe("Write tests");
-  });
-
-  it("does not add an empty task when the input is blank", async () => {
-    actResetEmptyTasks();
-    const user = userEvent.setup();
-    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
-
-    await user.click(screen.getByTestId("subtasks-test-id-add"));
-    expect(useQuickCreateStore.getState().plan.completion.tasks.length).toBe(0);
-  });
-
   it("renders the empty hint and CTA when no tasks exist", () => {
-    actResetEmptyTasks();
+    resetEmptyTasks();
     renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
     expect(screen.getByTestId("subtasks-test-id-empty")).toBeInTheDocument();
     expect(
@@ -157,12 +146,97 @@ describe("SubtasksSection", () => {
     expect(screen.getByTestId("subtasks-test-id-add-first")).toBeInTheDocument();
   });
 
-  it("focuses the add-input when the empty-state CTA is clicked", async () => {
-    actResetEmptyTasks();
+  it("opens the add modal when the underline affine is clicked", async () => {
     const user = userEvent.setup();
     renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+
+    await user.click(screen.getByTestId("subtasks-test-id-add"));
+    expect(
+      screen.getByTestId("subtasks-test-id-modal-root"),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the add modal when the empty-state CTA is clicked", async () => {
+    resetEmptyTasks();
+    const user = userEvent.setup();
+    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+
     await user.click(screen.getByTestId("subtasks-test-id-add-first"));
-    expect(screen.getByTestId("subtasks-test-id-new-subtask")).toHaveFocus();
+    expect(
+      screen.getByTestId("subtasks-test-id-modal-root"),
+    ).toBeInTheDocument();
+  });
+
+  it("creates a new task with the modal's title field", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+
+    await user.click(screen.getByTestId("subtasks-test-id-add"));
+    const titleInput = screen.getByTestId(
+      "subtasks-test-id-modal-title",
+    ) as HTMLInputElement;
+    await user.type(titleInput, "Write tests");
+    await user.click(screen.getByTestId("subtasks-test-id-modal-submit"));
+
+    const tasks = useQuickCreateStore.getState().plan.completion.tasks;
+    expect(tasks.length).toBe(2);
+    const created = tasks.find((task) => task.content.title === "Write tests");
+    expect(created).toBeDefined();
+    expect(created?.done).toBe(false);
+  });
+
+  it("does not submit the modal when the title is blank", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+
+    await user.click(screen.getByTestId("subtasks-test-id-add"));
+    const submit = screen.getByTestId("subtasks-test-id-modal-submit");
+    expect(submit).toBeDisabled();
+  });
+
+  it("opens the modal in edit mode via the menu's Edit item", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+
+    fireEvent.click(
+      screen.getByTestId("subtasks-test-id-row-task_seed-menu-trigger"),
+    );
+    await user.click(
+      document.body.querySelector<HTMLElement>(
+        '[data-testid="subtasks-test-id-row-task_seed-menu-edit"]',
+      ) as HTMLElement,
+    );
+
+    const titleInput = screen.getByTestId(
+      "subtasks-test-id-modal-title",
+    ) as HTMLInputElement;
+    expect(titleInput.value).toBe("Mark done");
+  });
+
+  it("updates the existing task when the edit modal is submitted", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+
+    fireEvent.click(
+      screen.getByTestId("subtasks-test-id-row-task_seed-menu-trigger"),
+    );
+    await user.click(
+      document.body.querySelector<HTMLElement>(
+        '[data-testid="subtasks-test-id-row-task_seed-menu-edit"]',
+      ) as HTMLElement,
+    );
+
+    const titleInput = screen.getByTestId(
+      "subtasks-test-id-modal-title",
+    ) as HTMLInputElement;
+    await user.clear(titleInput);
+    await user.type(titleInput, "Renamed");
+    await user.click(screen.getByTestId("subtasks-test-id-modal-submit"));
+
+    const tasks = useQuickCreateStore.getState().plan.completion.tasks;
+    expect(tasks.length).toBe(1);
+    expect(tasks[0]?.id).toBe("task_seed");
+    expect(tasks[0]?.content.title).toBe("Renamed");
   });
 
   it("removes a task when the menu's Delete item is clicked", async () => {
@@ -252,7 +326,6 @@ describe("SubtasksSection", () => {
     seedThreeTasks();
     renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
 
-    // Open each menu and check the disabled state of the items.
     const checkRow = (taskId: string, isFirst: boolean, isLast: boolean) => {
       fireEvent.click(
         screen.getByTestId(`subtasks-test-id-row-${taskId}-menu-trigger`),
@@ -270,8 +343,6 @@ describe("SubtasksSection", () => {
       else expect(up).not.toHaveAttribute("data-disabled");
       if (isLast) expect(down).toHaveAttribute("data-disabled");
       else expect(down).not.toHaveAttribute("data-disabled");
-      // Close the menu by pressing Escape so the next row's trigger is
-      // not blocked by a still-open dropdown.
       fireEvent.keyDown(document.activeElement ?? document.body, {
         key: "Escape",
       });
@@ -280,47 +351,55 @@ describe("SubtasksSection", () => {
     checkRow("task_b", false, false);
     checkRow("task_c", false, true);
   });
+});
 
-  it("opens the note popover via the menu and persists the note on Save", async () => {
-    const user = userEvent.setup();
-    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
-
-    fireEvent.click(
-      screen.getByTestId("subtasks-test-id-row-task_seed-menu-trigger"),
-    );
-    await user.click(
-      document.body.querySelector<HTMLElement>(
-        '[data-testid="subtasks-test-id-row-task_seed-menu-edit-note"]',
-      ) as HTMLElement,
-    );
-
-    const textarea = screen.getByTestId(
-      "subtasks-test-id-row-task_seed-note-textarea",
-    ) as HTMLTextAreaElement;
-    await user.type(textarea, "Why we need this");
-    await user.click(
-      screen.getByTestId("subtasks-test-id-row-task_seed-note-save"),
-    );
-
-    const task = useQuickCreateStore.getState().plan.completion.tasks[0];
-    expect(task?.content.note).toBe("Why we need this");
+describe("TaskDefinitionEditorModal", () => {
+  beforeEach(() => {
+    useLocaleStore.setState({ locale: "en" });
+    resetStore();
   });
 
-  it("renders the new row's title input focused after add", async () => {
-    actResetEmptyTasks();
+  afterEach(() => {
+    resetStore();
+    useLocaleStore.setState({ locale: "ja" });
+    vi.clearAllMocks();
+  });
+
+  it("accepts a note and an order rule on submit", async () => {
     const user = userEvent.setup();
-    renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
+    renderWithMantine(<SubtasksSection testId="modal-test-id" />);
 
-    await user.type(
-      screen.getByTestId("subtasks-test-id-new-subtask"),
-      "Jump focus",
-    );
-    await user.click(screen.getByTestId("subtasks-test-id-add"));
+    await user.click(screen.getByTestId("modal-test-id-add"));
+    const titleInput = screen.getByTestId(
+      "modal-test-id-modal-title",
+    ) as HTMLInputElement;
+    await user.type(titleInput, "Structured");
 
-    // The newly added row's title input (empty by default) should hold focus.
-    const titleInputs = screen.getAllByTestId(/subtasks-test-id-row-.+-title$/);
-    const focused = titleInputs.find((el) => el === document.activeElement);
-    expect(focused).toBeDefined();
+    const noteInput = screen.getByTestId(
+      "modal-test-id-modal-note",
+    ) as HTMLTextAreaElement;
+    await user.type(noteInput, "Why this matters");
+
+    await user.click(screen.getByTestId("modal-test-id-modal-order-add"));
+
+    const taskId = useQuickCreateStore.getState().plan.completion.tasks[0]?.id;
+    // The new task can't be its own target, so the picker falls back to
+    // the existing "Mark done" task seeded by the default store. We
+    // verify the rule was added by length + that the order list
+    // rendered.
+    expect(
+      screen.getByTestId("modal-test-id-modal-order-list"),
+    ).toBeInTheDocument();
+    expect(taskId).toBeDefined();
+
+    await user.click(screen.getByTestId("modal-test-id-modal-submit"));
+
+    const stored = useQuickCreateStore
+      .getState()
+      .plan.completion.tasks.find((task) => task.content.title === "Structured");
+    expect(stored).toBeDefined();
+    expect(stored?.content.note).toBe("Why this matters");
+    expect(stored?.order.length).toBe(1);
   });
 });
 
@@ -337,10 +416,6 @@ describe("TaskDetailsSubPanel — SubtasksSection smoke", () => {
   });
 
   it("mounts the SubtasksSection inside the sub-panel", () => {
-    // SubPanelShell only renders its body when `activePanel === panelKey`.
-    // The smoke test seeds the panel key via the store, then asserts the
-    // shared subtask section testid is reachable to prove the
-    // deduplication wiring landed correctly.
     useQuickCreateStore.setState((s) => ({
       ...s,
       activePanel: "task-details",
@@ -361,15 +436,3 @@ describe("TaskDetailsSubPanel — SubtasksSection smoke", () => {
     ).toBeInTheDocument();
   });
 });
-
-function actResetEmptyTasks() {
-  useQuickCreateStore.setState((s) => ({
-    plan: {
-      ...s.plan,
-      completion: {
-        ...s.plan.completion,
-        tasks: [],
-      },
-    },
-  }));
-}
