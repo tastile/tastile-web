@@ -108,7 +108,7 @@ type TimeSplitPolicy = "unsplit" | "split";
  * fields so the wire builders for the other workflows (Event, Task,
  * Detailed) keep working unchanged.
  */
-export type TimeModel =
+type TimeModel =
   | "duration_only"
   | "fixed_window"
   | "window_with_duration";
@@ -690,6 +690,8 @@ function defaultsForWorkflow(
   if (workflow === "task") {
     return {
       time: {
+        timeModel: "duration_only",
+        schedulableWindow: { start: "", end: "" },
         span: { start: todayLocalMidnightIso(now), end: "" },
         durationMinMax: { minMs: DEFAULT_TASK_DURATION_MS, maxMs: DEFAULT_TASK_DURATION_MS },
         whenMode: "day",
@@ -706,6 +708,8 @@ function defaultsForWorkflow(
     if (initialAllDay) {
       return {
         time: {
+          timeModel: "fixed_window",
+          schedulableWindow: { start: "00:00", end: "23:59" },
           span: { start: todayLocalMidnightIso(now), end: "" },
           durationMinMax: { minMs: DEFAULT_EVENT_DURATION_MS, maxMs: DEFAULT_EVENT_DURATION_MS },
           whenMode: "day",
@@ -722,6 +726,8 @@ function defaultsForWorkflow(
     const end = new Date(new Date(start).getTime() + DEFAULT_EVENT_DURATION_MS).toISOString();
     return {
       time: {
+        timeModel: "fixed_window",
+        schedulableWindow: { start: "", end: "" },
         span: { start, end },
         durationMinMax: { minMs: DEFAULT_EVENT_DURATION_MS, maxMs: DEFAULT_EVENT_DURATION_MS },
         whenMode: "range",
@@ -737,6 +743,13 @@ function defaultsForWorkflow(
   if (workflow === "recurring") {
     return {
       time: {
+        // Default the Recurring form to "window_with_duration" with a
+        // 09:00–17:00 schedulable window — the most common authoring
+        // shape ("do 30 min sometime between 9 and 5"). The user can
+        // still flip to "duration_only" or "fixed_window" via the new
+        // time-model radio.
+        timeModel: "window_with_duration",
+        schedulableWindow: { start: "09:00", end: "17:00" },
         span: { start: todayLocalMidnightIso(now), end: "" },
         durationMinMax: {
           minMs: DEFAULT_RECURRING_DURATION_MS,
@@ -775,6 +788,14 @@ function defaultsForWorkflow(
         intervalUnit: "min",
         condition: null,
         conditionIgnored: false,
+        // Default Monthly authoring to By day with today's day-of-month
+        // so the user lands on a meaningful value instead of an empty
+        // field. The user can switch to By weekday from the segmented
+        // control above; the opposing field is reset on switch.
+        monthlyKind: "by_day",
+        monthlyDayOfMonth: now.getDate(),
+        monthlyWeekOfMonth: 1,
+        monthlyWeekday: 0,
       },
       identity: {
         ...defaultIdentity(),
@@ -791,6 +812,8 @@ function defaultsForWorkflow(
     // fields, so this only affects the top-level `time` slice.
     return {
       time: {
+        timeModel: "duration_only",
+        schedulableWindow: { start: "", end: "" },
         span: { start: todayLocalMidnightIso(now), end: "" },
         durationMinMax: { minMs: DEFAULT_TASK_DURATION_MS, maxMs: DEFAULT_TASK_DURATION_MS },
         whenMode: "day",
@@ -1088,6 +1111,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         },
       },
       time: {
+        timeModel: "fixed_window",
+        schedulableWindow: { start: "", end: "" },
         span: { start: event.start, end: event.end },
         durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
         whenMode: event.start || event.end ? (event.end ? "range" : "day") : "none",
@@ -1149,6 +1174,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         },
       },
       time: {
+        timeModel: "fixed_window",
+        schedulableWindow: { start: "", end: "" },
         span: { start: event.start, end: event.end },
         durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
         whenMode: event.start || event.end ? (event.end ? "range" : "day") : "none",
