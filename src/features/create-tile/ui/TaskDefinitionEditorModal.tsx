@@ -58,11 +58,50 @@ function emptyDraft(complete: ConditionNode): DraftTask {
   };
 }
 
+// Sentinel id baked into the freshly-created draft so the modal can
+// reach a non-null `term.value.taskId` without knowing the new task's
+// id yet. `handleSubmit` swaps the sentinel for the real id returned
+// by `addTask` before the condition is written back to the store.
+const DRAFT_TASK_ID_SENTINEL = "__new__";
+
 function defaultComplete(id: string): ConditionNode {
   return {
     kind: ConditionKind.TERM,
     children: [],
     term: { kind: "task", value: { taskId: id, state: 2 } },
+  };
+}
+
+/**
+ * Walk a condition tree and rewrite any `term.kind === "task"` whose
+ * `taskId` matches the placeholder sentinel into the real task id.
+ * Used by `handleSubmit` so a brand-new task's `complete` / `show`
+ * condition points back at itself (instead of `__new__`).
+ */
+function substituteTaskIdInCondition(
+  node: ConditionNode | null,
+  sentinel: string,
+  realId: string,
+): ConditionNode | null {
+  if (!node) return node;
+  const rewrittenTerm =
+    node.term?.kind === "task" && node.term.value.taskId === sentinel
+      ? {
+          kind: "task" as const,
+          value: { ...node.term.value, taskId: realId },
+        }
+      : node.term;
+  return {
+    ...node,
+    term: rewrittenTerm,
+    // ConditionNode.children is a non-nullable array per the v1
+    // ConditionNode shape, so we discard any null children returned
+    // by the recursive walk. In practice the tree is built via
+    // defaultComplete() which never produces null children, but the
+    // type narrowing keeps tsc happy.
+    children: node.children
+      .map((child) => substituteTaskIdInCondition(child, sentinel, realId))
+      .filter((child): child is ConditionNode => child !== null),
   };
 }
 
@@ -122,7 +161,7 @@ export function TaskDefinitionEditorModal({
         })),
       };
     }
-    return emptyDraft(defaultComplete("__new__"));
+    return emptyDraft(defaultComplete(DRAFT_TASK_ID_SENTINEL));
   });
 
   // Hydrate the draft when the modal opens or the existing task changes.
@@ -142,7 +181,7 @@ export function TaskDefinitionEditorModal({
         })),
       });
     } else {
-      setDraft(emptyDraft(defaultComplete("__new__")));
+      setDraft(emptyDraft(defaultComplete(DRAFT_TASK_ID_SENTINEL)));
     }
   }, [opened, existing]);
 
@@ -166,11 +205,25 @@ export function TaskDefinitionEditorModal({
       targetId = addTask(trimmedTitle);
     }
     if (!targetId) return;
+    // New tasks carry the placeholder sentinel in their default
+    // `complete` / `show` condition. After `addTask` mints the real
+    // id, rewrite those trees so the stored task points back at itself
+    // instead of `__new__`.
+    const nextComplete = substituteTaskIdInCondition(
+      draft.complete,
+      DRAFT_TASK_ID_SENTINEL,
+      targetId,
+    );
+    const nextShow = substituteTaskIdInCondition(
+      draft.show,
+      DRAFT_TASK_ID_SENTINEL,
+      targetId,
+    );
     setTaskField(targetId, "content.title", trimmedTitle);
     setTaskField(targetId, "content.note", draft.note && draft.note.length > 0 ? draft.note : null);
     setTaskField(targetId, "done", draft.done);
-    setTaskField(targetId, "show", draft.show);
-    setTaskField(targetId, "complete", draft.complete);
+    setTaskField(targetId, "show", nextShow);
+    setTaskField(targetId, "complete", nextComplete);
     setTaskField(
       targetId,
       "order",
