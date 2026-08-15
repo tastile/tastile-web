@@ -348,4 +348,90 @@ describe("useQuickCreateStore", () => {
       expect(useQuickCreateStore.getState().submitState).toEqual({ kind: "idle" });
     });
   });
+
+  // The Recurring form was extended with a three-pattern time model
+  // (duration_only / fixed_window / window_with_duration) and a
+  // Monthly-pattern tagged union. These tests cover the seed defaults
+  // and the basic setField wiring for the new fields. The reset-on-flip
+  // semantics live in the UI's setMonthlyKind callback, not the store,
+  // because the store's setField is a plain setter.
+  describe("Recurring extensions — timeModel + Monthly fields", () => {
+    it("seeds time.timeModel to 'duration_only' on a fresh store", () => {
+      // After `reset()` the store has the bare default — no workflow
+      // seeding yet, so timeModel reflects the cross-workflow default.
+      reset();
+      expect(useQuickCreateStore.getState().time.timeModel).toBe("duration_only");
+    });
+
+    it("seeds time.schedulableWindow to {start:'', end:''} on a fresh store", () => {
+      reset();
+      expect(useQuickCreateStore.getState().time.schedulableWindow).toEqual({
+        start: "",
+        end: "",
+      });
+    });
+
+    it("seeds recurring.monthlyKind to null and the opposing fields to sensible non-null defaults on a fresh store", () => {
+      reset();
+      const r = useQuickCreateStore.getState().recurring;
+      expect(r.monthlyKind).toBeNull();
+      // The non-active field defaults stay populated so the wire has
+      // something to read if the user later flips the kind without
+      // picking a new value.
+      expect(r.monthlyDayOfMonth).toBe(1);
+      expect(r.monthlyWeekOfMonth).toBe(1);
+      expect(r.monthlyWeekday).toBe(0);
+    });
+
+    it("openCreate({ workflow: 'recurring' }) seeds window_with_duration and a 09:00–17:00 schedulable window", () => {
+      useQuickCreateStore.getState().openCreate({ workflow: "recurring" });
+      const t = useQuickCreateStore.getState().time;
+      expect(t.timeModel).toBe("window_with_duration");
+      expect(t.schedulableWindow).toEqual({ start: "09:00", end: "17:00" });
+    });
+
+    it("openCreate({ workflow: 'recurring' }) seeds monthlyKind to 'by_day' and monthlyDayOfMonth to today's day", () => {
+      useQuickCreateStore.getState().openCreate({ workflow: "recurring" });
+      const r = useQuickCreateStore.getState().recurring;
+      expect(r.monthlyKind).toBe("by_day");
+      expect(r.monthlyDayOfMonth).toBe(new Date().getDate());
+    });
+
+    it("setField('recurring.monthlyKind', 'by_day') writes the value but does not touch the by_weekday fields (UI callback owns the reset)", () => {
+      // Seed a by_weekday state first.
+      useQuickCreateStore.setState((s) => ({
+        recurring: {
+          ...s.recurring,
+          monthlyKind: "by_weekday",
+          monthlyWeekOfMonth: 2,
+          monthlyWeekday: 3,
+        },
+      }));
+      useQuickCreateStore.getState().setField(
+        "recurring.monthlyKind",
+        "by_day",
+      );
+      const r = useQuickCreateStore.getState().recurring;
+      expect(r.monthlyKind).toBe("by_day");
+      // setField is a plain setter; the cross-field reset happens in the
+      // UI's setMonthlyKind callback (which calls multiple setField paths).
+      expect(r.monthlyWeekOfMonth).toBe(2);
+      expect(r.monthlyWeekday).toBe(3);
+    });
+
+    it("setField('time.timeModel', 'fixed_window') writes the new value", () => {
+      useQuickCreateStore.getState().setField("time.timeModel", "fixed_window");
+      expect(useQuickCreateStore.getState().time.timeModel).toBe("fixed_window");
+    });
+
+    it("setField('time.schedulableWindow.start', '08:30') writes the nested string", () => {
+      useQuickCreateStore.getState().setField(
+        "time.schedulableWindow.start",
+        "08:30",
+      );
+      expect(useQuickCreateStore.getState().time.schedulableWindow.start).toBe(
+        "08:30",
+      );
+    });
+  });
 });
