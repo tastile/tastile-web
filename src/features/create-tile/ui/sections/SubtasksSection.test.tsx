@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -262,7 +262,10 @@ describe("SubtasksSection", () => {
     const checkbox = screen.getByTestId(
       "subtasks-test-id-row-task_seed-checkbox",
     );
-    expect(checkbox).toHaveAttribute("aria-checked", "false");
+    // Mantine v9's Checkbox renders a native `<input type="checkbox">` and
+    // toggles the `checked` property (not `aria-checked`). Use jsdom's
+    // checked reflection via jest-dom's `toBeChecked` matcher.
+    expect(checkbox).not.toBeChecked();
     await user.click(checkbox);
     expect(useQuickCreateStore.getState().plan.completion.tasks[0]?.done).toBe(
       true,
@@ -270,7 +273,7 @@ describe("SubtasksSection", () => {
     expect(screen.getByTestId("subtasks-test-id-progress")).toHaveTextContent(
       "1/1 done",
     );
-    expect(checkbox).toHaveAttribute("aria-checked", "true");
+    expect(checkbox).toBeChecked();
   });
 
   it("duplicates a task via the menu and resets done to false", async () => {
@@ -420,7 +423,7 @@ describe("TaskDetailsSubPanel — SubtasksSection smoke", () => {
       ...s,
       activePanel: "task-details",
     }));
-    render(
+    renderWithMantine(
       <TaskDetailsSubPanel
         opened
         onClose={() => {}}
@@ -428,8 +431,12 @@ describe("TaskDetailsSubPanel — SubtasksSection smoke", () => {
         durationMaxMs={null}
       />,
     );
+    // The sub-panel passes `bare` to SubtasksSection, which omits the
+    // outer wrapper. Probe the inner markup to confirm the section is
+    // mounted (the seeded task renders as a row, and the underline add
+    // affordance is always present).
     expect(
-      screen.getByTestId("task-details-subtasks"),
+      screen.getByTestId("task-details-subtasks-row-task_seed"),
     ).toBeInTheDocument();
     expect(
       screen.getByTestId("task-details-subtasks-add"),
