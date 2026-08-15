@@ -223,7 +223,13 @@ export function TaskDefinitionEditorModal({
       <Stack gap="md">
         <TextInput
           value={draft.title}
-          onChange={(e) => setDraft((prev) => ({ ...prev, title: e.currentTarget.value }))}
+          onChange={(e) => {
+            // Capture the value up-front: React 19 nulls `currentTarget` on
+            // the pooled synthetic event before the setState reducer runs,
+            // so we cannot read it inside the updater.
+            const value = e.currentTarget.value;
+            setDraft((prev) => ({ ...prev, title: value }));
+          }}
           label={t(`${i18nPrefix}.subtaskTitleLabel`) || "Title"}
           placeholder={t(`${i18nPrefix}.taskTitlePlaceholder`) || "What needs to happen?"}
           required
@@ -232,12 +238,13 @@ export function TaskDefinitionEditorModal({
         />
         <Textarea
           value={draft.note ?? ""}
-          onChange={(e) =>
+          onChange={(e) => {
+            const value = e.currentTarget.value;
             setDraft((prev) => ({
               ...prev,
-              note: e.currentTarget.value.length > 0 ? e.currentTarget.value : null,
-            }))
-          }
+              note: value.length > 0 ? value : null,
+            }));
+          }}
           label={t(`${i18nPrefix}.subtaskNoteLabel`) || "Note"}
           placeholder={t(`${i18nPrefix}.taskDescriptionPlaceholder`) || "Why this task matters"}
           autosize
