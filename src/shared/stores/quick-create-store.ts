@@ -377,6 +377,23 @@ export interface QuickCreateState {
   removeTask: (taskId: string) => void;
   reorderTasks: (fromIndex: number, toIndex: number) => void;
   setTaskField: (taskId: string, path: string, value: unknown) => void;
+  /**
+   * Flip the authoring-time `done` checkbox on a sub-task. Runtime
+   * completion lives on `Execution.taskRuns[]`; this only edits the
+   * sub-task editor's author-side state.
+   */
+  toggleTaskDone: (taskId: string) => void;
+  /**
+   * Insert a shallow copy of an existing sub-task immediately after the
+   * source row. Resets `done` to `false` (a duplicate starts fresh) and
+   * uses the source's `content.title` verbatim — the user renames it
+   * inline. `order[]` rules are copied as-is, so any task-to-task
+   * dependencies the source declared are inherited.
+   *
+   * Returns the new task id; returns an empty string if the source id
+   * is not found so callers can no-op gracefully.
+   */
+  duplicateTask: (taskId: string) => string;
   /** Convenience: flips `plan.role` between EXECUTABLE / LABEL in sync with `meta.isLabelOnly`. */
   setLabelOnly: (isLabelOnly: boolean) => void;
   /**
@@ -495,6 +512,7 @@ function defaultTask(title = ""): TaskDefinition {
       term: { kind: "task", value: { taskId: id, state: 2 } },
     },
     order: [],
+    done: false,
   };
 }
 
@@ -1085,6 +1103,52 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         },
       },
     })),
+  toggleTaskDone: (taskId) =>
+    set((state) => {
+      let found = false;
+      const tasks = state.plan.completion.tasks.map((task) => {
+        if (task.id !== taskId) return task;
+        found = true;
+        return { ...task, done: !task.done };
+      });
+      if (!found) return state;
+      return {
+        plan: {
+          ...state.plan,
+          completion: {
+            ...state.plan.completion,
+            tasks,
+          },
+        },
+      };
+    }),
+  duplicateTask: (taskId) => {
+    let newId = "";
+    set((state) => {
+      const source = state.plan.completion.tasks.find((task) => task.id === taskId);
+      if (!source) return state;
+      const fresh = defaultTask(source.content.title);
+      newId = fresh.id;
+      const duplicate: TaskDefinition = {
+        ...fresh,
+        content: { title: source.content.title, note: source.content.note },
+        order: source.order.map((rule) => ({ ...rule })),
+      };
+      const tasks = [...state.plan.completion.tasks];
+      const insertAt = tasks.findIndex((task) => task.id === taskId) + 1;
+      tasks.splice(insertAt, 0, duplicate);
+      return {
+        plan: {
+          ...state.plan,
+          completion: {
+            ...state.plan.completion,
+            tasks,
+          },
+        },
+      };
+    });
+    return newId;
+  },
   setLabelOnly: (isLabelOnly) =>
     set(() => ({
       meta: { ...useQuickCreateStore.getState().meta, isLabelOnly },
