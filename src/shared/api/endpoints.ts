@@ -494,6 +494,14 @@ const LEGACY_ENDPOINTS = {
   } as EndpointMeta,
 
   // Access (projects/workspaces)
+  listMySubjects: {
+    method: "GET",
+    path: "/access/subjects",
+    tag: "Read",
+    summary: "List subjects visible to me (caller USER + owned WORKSPACEs)",
+    auth: true,
+    keywords: ["subjects", "personal", "scope", "workspaces", "projects", "list"],
+  } as EndpointMeta,
   listMyWorkspaces: {
     method: "GET",
     path: "/access/subjects?kind=1",
