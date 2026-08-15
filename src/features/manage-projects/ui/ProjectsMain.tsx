@@ -2,6 +2,7 @@
 
 import { useTileList } from "@/shared/hooks/use-tile-list";
 import { type Workspace, updateWorkspace, useWorkspaces } from "@/shared/hooks/use-workspaces";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { mapListView } from "@/shared/lib/map-list-view-to-tile";
 import { Input } from "@/shared/ui/Input";
 import { PageContainer, PageHeader } from "@/shared/ui/page-header/PageHeader";
@@ -11,32 +12,51 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export function ProjectsMain() {
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const ownerId = searchParams.get("owner");
   const { workspaces, refresh, loading: wsLoading } = useWorkspaces();
   const project = ownerId ? workspaces.find((w) => w.id === ownerId) : null;
+  const isPersonal = project?.kind === 0;
 
   const { tiles, loading } = useTileList({
     ownerIds: ownerId ? [ownerId] : undefined,
     limit: 500,
   });
 
+  const headerTitle = project
+    ? isPersonal
+      ? t("panels.projects.personal")
+      : project.display_name
+    : "All Projects";
+  const headerDescription = project
+    ? isPersonal
+      ? t("panels.projects.personalDescription")
+      : "Tiles owned by this workspace"
+    : "Select a project from the sidebar";
+
   return (
     <PageContainer>
-      <PageHeader
-        title={project ? project.display_name : "All Projects"}
-        description={
-          project ? "Tiles owned by this workspace" : "Select a project from the sidebar"
-        }
-      />
+      <PageHeader title={headerTitle} description={headerDescription} />
 
-      {project && (
+      {project && !isPersonal && (
         <ProjectEditForm
           key={project.id}
           project={project}
           tileCount={tiles.length}
           onSaved={refresh}
         />
+      )}
+
+      {/* v1/15 §6 #15: USER subject is the implicit personal scope and cannot
+          be renamed or deleted. Show a read-only badge instead of the edit form. */}
+      {project && isPersonal && (
+        <section className="mt-4 rounded-lg border border-border/40 bg-surface-1 p-4 text-xs text-foreground-subtle">
+          <span className="font-semibold">{t("panels.projects.personal")}</span>
+          <span className="ml-2 text-[10px] text-foreground-lighter">
+            {t("panels.projects.personalLocked")}
+          </span>
+        </section>
       )}
 
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
