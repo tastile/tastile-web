@@ -1416,4 +1416,216 @@ describe("buildQuickCreateSchedulePayload", () => {
       expect(payload.source_schedule?.window.end_offset_ms).toBe(5_400_000);
     });
   });
+
+  // The Recurring form was extended with a three-pattern time model
+  // (duration_only / fixed_window / window_with_duration) and a Monthly
+  // tagged union (by_day / by_weekday). These tests cover the wire-side
+  // round-trip of the three new source_schedule fields:
+  //   - schedule_kind mirrors state.time.timeModel
+  //   - schedulable_window is the {start,end} HH:MM pair when
+  //     timeModel === "window_with_duration", else null
+  //   - monthly_rule is the tagged union when repeatMode === "monthly",
+  //     else null
+  describe("Recurring extensions — schedule_kind / schedulable_window / monthly_rule", () => {
+    it("emits schedule_kind='duration_only' when timeModel is duration_only", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Daily 30" };
+      state.time = {
+        ...state.time,
+        timeModel: "duration_only",
+        schedulableWindow: { start: "", end: "" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.schedule_kind).toBe("duration_only");
+    });
+
+    it("emits schedule_kind='fixed_window' when timeModel is fixed_window", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Daily 9-10" };
+      state.time = {
+        ...state.time,
+        timeModel: "fixed_window",
+        schedulableWindow: { start: "", end: "" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.schedule_kind).toBe("fixed_window");
+    });
+
+    it("emits schedule_kind='window_with_duration' and the HH:MM schedulable_window when timeModel is window_with_duration", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Window 9-17" };
+      state.time = {
+        ...state.time,
+        timeModel: "window_with_duration",
+        schedulableWindow: { start: "09:00", end: "17:00" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.schedule_kind).toBe("window_with_duration");
+      expect(payload.source_schedule?.schedulable_window).toEqual({
+        start: "09:00",
+        end: "17:00",
+      });
+    });
+
+    it("emits schedulable_window=null for timeModels other than window_with_duration", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Duration only" };
+      state.time = {
+        ...state.time,
+        timeModel: "duration_only",
+        schedulableWindow: { start: "09:00", end: "17:00" }, // populated but ignored
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.schedulable_window).toBeNull();
+    });
+
+    it("emits monthly_rule.by_day when repeatMode=monthly and monthlyKind=by_day", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Monthly 15th" };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "monthly",
+        monthlyKind: "by_day",
+        monthlyDayOfMonth: 15,
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.monthly_rule).toEqual({
+        by_day: { day_of_month: 15 },
+      });
+    });
+
+    it("emits monthly_rule.by_weekday when repeatMode=monthly and monthlyKind=by_weekday", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "2nd Tuesday" };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "monthly",
+        monthlyKind: "by_weekday",
+        monthlyWeekOfMonth: 2,
+        monthlyWeekday: 2,
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.monthly_rule).toEqual({
+        by_weekday: { week: 2, weekday: 2 },
+      });
+    });
+
+    it("emits monthly_rule.by_weekday.week='last' when monthlyWeekOfMonth is 5", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Last Friday" };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "monthly",
+        monthlyKind: "by_weekday",
+        monthlyWeekOfMonth: 5,
+        monthlyWeekday: 5,
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.monthly_rule).toEqual({
+        by_weekday: { week: "last", weekday: 5 },
+      });
+    });
+
+    it("emits monthly_rule=null for repeatMode != 'monthly'", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Daily" };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "daily",
+        monthlyKind: "by_day", // populated but ignored
+        monthlyDayOfMonth: 7,
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      expect(payload.source_schedule?.monthly_rule).toBeNull();
+    });
+
+    it("emits source_window using schedulable window minute bounds (not duration width) for window_with_duration", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Window 9-17 + 30 min" };
+      state.time = {
+        ...state.time,
+        timeModel: "window_with_duration",
+        schedulableWindow: { start: "09:00", end: "17:00" },
+        durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
+      };
+      // Mirror durationMinMax into completion.timeRequirements[0].required
+      // — the wire builder enforces consistency between the two fields.
+      state.plan = {
+        ...state.plan,
+        completion: {
+          ...state.plan.completion,
+          timeRequirements: state.plan.completion.timeRequirements.map(
+            (requirement, index) =>
+              index === 0
+                ? {
+                    ...requirement,
+                    required: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
+                  }
+                : requirement,
+          ),
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      // 9:00 = 540 min, 17:00 = 1020 min — the placement window spans
+      // the schedulable window, not the 30-min duration width.
+      expect(payload.source_schedule?.window).toEqual({
+        start_offset_ms: 540 * 60_000,
+        end_offset_ms: 1020 * 60_000,
+      });
+    });
+
+    it("emits source_window using duration width for timeModels other than window_with_duration", () => {
+      const state = buildDefaultQuickCreateState();
+      state.identity = { ...state.identity, title: "Fixed window 9-10" };
+      state.time = {
+        ...state.time,
+        timeModel: "fixed_window",
+        schedulableWindow: { start: "", end: "" },
+        durationMinMax: { minMs: 60 * 60_000, maxMs: 60 * 60_000 },
+      };
+      // Mirror durationMinMax into completion.timeRequirements[0].required
+      // — the wire builder enforces consistency between the two fields.
+      state.plan = {
+        ...state.plan,
+        completion: {
+          ...state.plan.completion,
+          timeRequirements: state.plan.completion.timeRequirements.map(
+            (requirement, index) =>
+              index === 0
+                ? {
+                    ...requirement,
+                    required: { minMs: 60 * 60_000, maxMs: 60 * 60_000 },
+                  }
+                : requirement,
+          ),
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(state);
+
+      // Legacy behaviour: window is {0, duration}.
+      expect(payload.source_schedule?.window).toEqual({
+        start_offset_ms: 0,
+        end_offset_ms: 60 * 60_000,
+      });
+    });
+  });
 });
