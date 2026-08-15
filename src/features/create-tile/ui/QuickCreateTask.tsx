@@ -283,7 +283,7 @@ export function QuickCreateTask() {
                 value={selectedDuration}
                 onChange={handleDurationChange}
                 data={DURATION_OPTIONS}
-                size="xs"
+                size="sm"
                 aria-label={t("quickCreate.durationLabel") || "Duration"}
                 data-testid="task-duration-select"
                 allowDeselect={false}
@@ -297,7 +297,7 @@ export function QuickCreateTask() {
                   suffix=" min"
                   min={1}
                   max={1440}
-                  size="xs"
+                  size="sm"
                   mt="xs"
                   aria-label={t("quickCreate.durationManual") || "Custom minutes"}
                   placeholder={t("quickCreate.durationManual") || "Custom minutes"}
