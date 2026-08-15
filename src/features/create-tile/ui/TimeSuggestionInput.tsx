@@ -5,7 +5,6 @@ import {
   Combobox,
   type ComboboxProps,
   InputBase,
-  Text,
   useCombobox,
 } from "@mantine/core";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -25,8 +24,6 @@ export interface TimeSuggestionInputProps {
 }
 
 const HHMM_RE = /^([01]?\d|2[0-3]):([0-5]\d)$/;
-const CUSTOM_TIME_VALUE = "__custom_time__";
-const CUSTOM_TIME_OPTION_INDEX = 0;
 
 function normalizeTime(raw: string): string | null {
   const m = HHMM_RE.exec(raw.trim());
@@ -43,10 +40,12 @@ function normalizeTime(raw: string): string | null {
  * `defaultScrollTo` is used if provided; otherwise the dropdown opens at
  * the top.
  *
- * The input also accepts free-form entry: typing intermediate states
- * (e.g. "2", "22", "22:") stays local to the field so the user can keep
- * editing, and a normalized HH:MM is committed to `onChange` only on blur
- * or when a preset is clicked.
+ * The input itself is always editable, so the user can type any HH:MM
+ * directly — there is no separate "Custom…" entry in the dropdown (the
+ * field is the custom path). Typing intermediate states (e.g. "2",
+ * "22", "22:") stays local to the field so the user can keep editing,
+ * and a normalized HH:MM is committed to `onChange` only on blur or when
+ * a preset is clicked.
  */
 export function TimeSuggestionInput({
   value,
@@ -98,7 +97,7 @@ export function TimeSuggestionInput({
     if (!combobox.dropdownOpened) return;
     if (scrollTarget) {
       const idx = presets.indexOf(scrollTarget);
-      if (idx >= 0) combobox.selectOption(idx + 1);
+      if (idx >= 0) combobox.selectOption(idx);
     }
     const id = requestAnimationFrame(() => {
       const root = scrollRef.current;
@@ -126,12 +125,6 @@ export function TimeSuggestionInput({
   };
 
   const handleOptionSubmit = (val: string) => {
-    if (val === CUSTOM_TIME_VALUE) {
-      combobox.closeDropdown();
-      inputRef.current?.focus();
-      return;
-    }
-
     setDraft(val);
     onChange(val);
     combobox.closeDropdown();
@@ -159,14 +152,6 @@ export function TimeSuggestionInput({
             combobox.closeDropdown();
           }}
           onKeyDown={(e) => {
-            if (
-              e.key === "Enter" &&
-              combobox.getSelectedOptionIndex() === CUSTOM_TIME_OPTION_INDEX
-            ) {
-              e.preventDefault();
-              return;
-            }
-
             if (e.key === "Enter") {
               e.preventDefault();
               commit(draft);
@@ -192,14 +177,6 @@ export function TimeSuggestionInput({
       </Combobox.Target>
       <Combobox.Dropdown>
         <Combobox.Options>
-          <Combobox.Option value={CUSTOM_TIME_VALUE}>
-            <span className="text-sm">
-              {t("quickCreate.timeCustom") || "Custom…"}
-            </span>
-            <Text component="span" size="xs" c="dimmed">
-              {t("quickCreate.timeCustomHint") || "Type any HH:MM"}
-            </Text>
-          </Combobox.Option>
           <div
             ref={scrollRef}
             className="max-h-[220px] overflow-y-auto"
