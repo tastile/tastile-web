@@ -95,6 +95,33 @@ export interface PublishScheduleDefinitionPayload {
       max_segments: number | null;
     };
     priority: number;
+    /**
+     * Optional. The time model the user picked in the Recurring form.
+     *  - "duration_only"        : no fixed time, only a required duration
+     *  - "fixed_window"         : explicit start/end, no required duration
+     *  - "window_with_duration" : schedulable window + a required duration
+     * Best-effort until the v1 daemon adopts it; unknown fields are
+     * ignored by the current daemon.
+     */
+    schedule_kind?: "duration_only" | "fixed_window" | "window_with_duration" | null;
+    /**
+     * Optional. The HH:MM schedulable window bounds used when
+     * `schedule_kind === "window_with_duration"`. `null` for the other
+     * shapes (the legacy wire does not need a window the user did not set).
+     */
+    schedulable_window?: { start: string; end: string } | null;
+    /**
+     * Optional. Tagged-union describing the Monthly pattern the user
+     * picked. `null` when the rule is not Monthly.
+     *  - by_day:     { by_day: { day_of_month: 1..31 } }
+     *  - by_weekday: { by_weekday: { week: 1..4 | "last", weekday: 0..6 } }
+     * Until the v1 daemon adopts `monthly_rule`, the existing
+     * `generation.interval_ms: DAY_MS` fallback is sent alongside.
+     */
+    monthly_rule?:
+      | null
+      | { by_day: { day_of_month: number } }
+      | { by_weekday: { week: number | "last"; weekday: number } };
   } | null;
   source_horizon?: { start: string; end: string } | null;
   tile: {
