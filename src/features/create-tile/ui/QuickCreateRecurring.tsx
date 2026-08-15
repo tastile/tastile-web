@@ -25,7 +25,7 @@ import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { FormRow, RowSegmented } from "@/shared/ui/form";
+import { FormDivider, FormRow, RowSegmented } from "@/shared/ui/form";
 import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { RecurringDetailsSubPanel } from "./RecurringDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
@@ -1040,6 +1040,14 @@ export function QuickCreateRecurring() {
               unified `plan.completion.tasks[]` array so the section renders
               an empty "no sub-tasks" hint until the user adds one. */}
           <SubtasksSection testId="recurring-subtasks" />
+
+          {/* Divider — visually separates the Subtasks section (a task-graph
+              construct) from the project + memo group below, which are
+              tile-scope concerns rather than task-graph concerns. Memo
+              still sits directly under Project + Color. */}
+          <div data-testid="recurring-bottom-divider">
+            <FormDivider />
+          </div>
 
           {/* Project picker + color swatches (shared section component) */}
           <ProjectColorRow
