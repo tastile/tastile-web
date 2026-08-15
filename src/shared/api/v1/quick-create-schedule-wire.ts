@@ -183,7 +183,62 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
 }
 
 function sourceWindow(state: QuickCreateScheduleState, duration: number) {
+  // "window_with_duration" treats the schedulable window as the placement
+  // window, not the duration. The user picked e.g. "between 9-17, complete
+  // a 30-min task" — the wire should report the window so the scheduler
+  // looks for any free 30-min slot inside 9-17, instead of a 30-min slot
+  // whose start is anchored at 9-17's width.
+  if (state.time.timeModel === "window_with_duration") {
+    const start = minuteOfDay(state.time.schedulableWindow.start);
+    const end = minuteOfDay(state.time.schedulableWindow.end);
+    if (start !== null && end !== null && end > start) {
+      return {
+        start_offset_ms: start * MIN_MS,
+        end_offset_ms: end * MIN_MS,
+      };
+    }
+  }
   return { start_offset_ms: 0, end_offset_ms: duration };
+}
+
+function scheduleKindWire(state: QuickCreateScheduleState):
+  | "duration_only"
+  | "fixed_window"
+  | "window_with_duration" {
+  return state.time.timeModel;
+}
+
+function schedulableWindowWire(state: QuickCreateScheduleState):
+  | { start: string; end: string }
+  | null {
+  if (state.time.timeModel !== "window_with_duration") return null;
+  const { start, end } = state.time.schedulableWindow;
+  if (!start || !end) return null;
+  return { start, end };
+}
+
+function monthlyRuleWire(state: QuickCreateScheduleState):
+  | null
+  | { by_day: { day_of_month: number } }
+  | { by_weekday: { week: number | "last"; weekday: number } } {
+  if (state.recurring.repeatMode !== "monthly") return null;
+  if (state.recurring.monthlyKind === "by_day") {
+    const dayOfMonth = state.recurring.monthlyDayOfMonth;
+    if (dayOfMonth === null) return null;
+    return { by_day: { day_of_month: dayOfMonth } };
+  }
+  if (state.recurring.monthlyKind === "by_weekday") {
+    const week = state.recurring.monthlyWeekOfMonth;
+    const weekday = state.recurring.monthlyWeekday;
+    if (week === null || weekday === null) return null;
+    return {
+      by_weekday: {
+        week: week === 5 ? "last" : week,
+        weekday,
+      },
+    };
+  }
+  return null;
 }
 
 function windowRule(
@@ -438,6 +493,9 @@ export function buildQuickCreateSchedulePayload(
         max_segments: state.source.splitPolicy.maxSegments,
       },
       priority: state.source.priority,
+      schedule_kind: scheduleKindWire(state),
+      schedulable_window: schedulableWindowWire(state),
+      monthly_rule: monthlyRuleWire(state),
     },
     source_horizon: { start: horizonStart, end: horizonEnd },
     tile: {
