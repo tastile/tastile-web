@@ -23,7 +23,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
-import { ChevronRight, FolderPlus, Plus } from "lucide-react";
+import { ChevronRight, FolderPlus, Plus, User as UserIcon } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 
@@ -115,6 +115,13 @@ export function ProjectsSidePanel() {
       });
   }
 
+  function handleDeleteEntry(workspace: Workspace, displayName: string) {
+    // v1/15 §6 #15: USER subject is the implicit personal scope and cannot
+    // be deleted (no UI affordance, server enforces via kind filter).
+    if (workspace.kind === 0) return;
+    handleDelete(workspace.id, displayName);
+  }
+
   const slugProps = form.getInputProps("slug");
 
   return (
@@ -190,10 +197,15 @@ export function ProjectsSidePanel() {
             onChange={(value) => setParentId(value || null)}
             data={[
               { value: "", label: "Top level" },
-              ...orderWorkspaceTree(workspaces).map(({ workspace, depth }) => ({
-                value: workspace.id,
-                label: `${"　".repeat(depth)}${workspace.display_name}`,
-              })),
+              // v1/15 §6 #15: USER subject is the implicit personal scope and
+              // cannot be a workspace parent. Filter it out before passing
+              // the tree to the dropdown.
+              ...orderWorkspaceTree(workspaces.filter((w) => w.kind !== 0)).map(
+                ({ workspace, depth }) => ({
+                  value: workspace.id,
+                  label: `${"　".repeat(depth)}${workspace.display_name}`,
+                }),
+              ),
             ]}
             size="xs"
             allowDeselect={false}
@@ -244,7 +256,7 @@ export function ProjectsSidePanel() {
               workspaces={workspaces}
               currentOwner={currentOwner}
               onSelect={handleSelect}
-              onDelete={handleDelete}
+              onDelete={handleDeleteEntry}
             />
           )}
         </div>
@@ -265,13 +277,18 @@ interface ProjectsTreeProps {
   workspaces: Workspace[];
   currentOwner: string | null;
   onSelect: (id: string | null) => void;
-  onDelete: (id: string, displayName: string) => void;
+  onDelete: (workspace: Workspace, displayName: string) => void;
 }
 
 function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: ProjectsTreeProps) {
-  const treeData = useMemo(() => buildProjectTree(workspaces), [workspaces]);
+  const { t } = useTranslation();
+  const treeData = useMemo(() => buildProjectTree(workspaces, t), [workspaces, t]);
   const colorById = useMemo(
     () => new Map(workspaces.map((w) => [w.id, w.color] as const)),
+    [workspaces],
+  );
+  const kindById = useMemo(
+    () => new Map(workspaces.map((w) => [w.id, w.kind] as const)),
     [workspaces],
   );
   const tree = useTree({ initialExpandedState: getTreeExpandedState(treeData, "*") });
@@ -279,7 +296,9 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
   const renderNode = useCallback(
     ({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
       const color = colorById.get(node.value) ?? undefined;
+      const kind = kindById.get(node.value) ?? 1;
       const isSelected = currentOwner === node.value;
+      const isPersonal = kind === 0;
       const displayName = String(node.label ?? "");
       return (
         <div
@@ -315,31 +334,50 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
             className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
             data-testid={`project-select-${node.value}`}
           >
-            <span
-              aria-hidden
-              className="h-2.5 w-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: color ?? "#6b7280" }}
-            />
+            {isPersonal ? (
+              <UserIcon
+                aria-hidden
+                className="h-3 w-3 shrink-0 text-foreground-subtle"
+              />
+            ) : (
+              <span
+                aria-hidden
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: color ?? "#6b7280" }}
+              />
+            )}
             <span className="min-w-0 flex-1 truncate">{displayName}</span>
           </Button>
-          <ActionIcon
-            variant="subtle"
-            size="sm"
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(node.value, displayName);
-            }}
-            aria-label={`Delete ${displayName}`}
-            className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
-            data-testid={`project-delete-${node.value}`}
-          >
-            ×
-          </ActionIcon>
+          {/* v1/15 §6 #15: USER subject is the implicit personal scope and
+              cannot be deleted. Hide the × button on the personal row. */}
+          {!isPersonal && (
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(
+                  workspaces.find((w) => w.id === node.value) ??
+                  ({
+                    id: node.value,
+                    kind,
+                    display_name: displayName,
+                  } as Workspace),
+                  displayName,
+                );
+              }}
+              aria-label={`Delete ${displayName}`}
+              className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
+              data-testid={`project-delete-${node.value}`}
+            >
+              ×
+            </ActionIcon>
+          )}
         </div>
       );
     },
-    [tree, colorById, currentOwner, onSelect, onDelete],
+    [tree, colorById, kindById, currentOwner, onSelect, onDelete, workspaces],
   );
 
   return (
@@ -354,7 +392,10 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
 }
 
 /** Nested TreeNodeData built from the flat workspace list via parent links. */
-function buildProjectTree(workspaces: Workspace[]): TreeNodeData[] {
+function buildProjectTree(
+  workspaces: Workspace[],
+  t: (key: string) => string,
+): TreeNodeData[] {
   const byParent = new Map<string | null, Workspace[]>();
   const ids = new Set(workspaces.map((w) => w.id));
   for (const w of workspaces) {
@@ -364,12 +405,21 @@ function buildProjectTree(workspaces: Workspace[]): TreeNodeData[] {
     byParent.set(parent, arr);
   }
   for (const arr of byParent.values()) {
-    arr.sort((a, b) => a.display_name.localeCompare(b.display_name, "ja"));
+    // v1/15 §6 #15: pin USER-kind (kind=0) first in any sibling group as
+    // defense-in-depth even though list_subjects_handler already orders
+    // USER first server-side. localeCompare on the empty display_name
+    // would otherwise be ambiguous.
+    arr.sort((a, b) => {
+      if (a.kind === 0 && b.kind !== 0) return -1;
+      if (a.kind !== 0 && b.kind === 0) return 1;
+      return a.display_name.localeCompare(b.display_name, "ja");
+    });
   }
+  const personalLabel = t("panels.projects.personal");
   const build = (parent: string | null): TreeNodeData[] =>
     (byParent.get(parent) ?? []).map((w) => ({
       value: w.id,
-      label: w.display_name,
+      label: w.kind === 0 ? personalLabel : w.display_name,
       children: build(w.id),
     }));
   return build(null);
