@@ -23,6 +23,7 @@ vi.mock("@/shared/stores/quick-create-store", () => ({
                 term: { kind: "task", value: { taskId: "task_1", state: 2 } },
               },
               order: [],
+              done: false,
             },
             {
               id: "task_2",
@@ -34,6 +35,7 @@ vi.mock("@/shared/stores/quick-create-store", () => ({
                 term: { kind: "task", value: { taskId: "task_2", state: 2 } },
               },
               order: [],
+              done: false,
             },
           ],
         },
