@@ -580,6 +580,21 @@ conditionMoveDown: "下へ移動",
   subtaskAddAria: "サブタスクを追加",
   subtaskTitleAria: "サブタスクのタイトル",
   subtaskRemoveAria: "サブタスクを削除",
+  // Subtasks per-row overflow menu + note editor (2026-08-15)
+  subtaskMoveUp: "上へ移動",
+  subtaskMoveDown: "下へ移動",
+  subtaskDuplicate: "複製",
+  subtaskDelete: "削除",
+  subtaskEditNote: "ノートを編集",
+  subtaskNotePlaceholder: "このサブタスクの目的",
+  subtaskNoteAria: "サブタスクのノート",
+  subtaskNoteSave: "ノートを保存",
+  subtaskNoteClear: "ノートをクリア",
+  subtaskDoneAria: "完了にする",
+  subtaskUndoneAria: "未完了にする",
+  subtasksProgress: "{done}/{total} 完了",
+  subtasksEmptyHint: "サブタスクでこのタイルを trackable なステップに分割できます。",
+  subtasksAddFirst: "サブタスクを追加",
 };
 
 // Skeleton quick-create entries for the 3 new locales (zh-CN / ko / es).
@@ -1161,6 +1176,21 @@ export const quickCreateZhCn = {
   subtaskAddAria: "添加子任务",
   subtaskTitleAria: "子任务标题",
   subtaskRemoveAria: "删除子任务",
+  // Subtasks per-row overflow menu + note editor (2026-08-15)
+  subtaskMoveUp: "上移",
+  subtaskMoveDown: "下移",
+  subtaskDuplicate: "复制",
+  subtaskDelete: "删除",
+  subtaskEditNote: "编辑备注",
+  subtaskNotePlaceholder: "此子任务的目的",
+  subtaskNoteAria: "子任务备注",
+  subtaskNoteSave: "保存备注",
+  subtaskNoteClear: "清除备注",
+  subtaskDoneAria: "标记完成",
+  subtaskUndoneAria: "标记未完成",
+  subtasksProgress: "{done}/{total} 已完成",
+  subtasksEmptyHint: "子任务可将此卡片拆分为可跟踪的步骤。",
+  subtasksAddFirst: "添加子任务",
 };
 
 export const quickCreateKo = {
@@ -1739,6 +1769,21 @@ export const quickCreateKo = {
   subtaskAddAria: "하위 작업 추가",
   subtaskTitleAria: "하위 작업 제목",
   subtaskRemoveAria: "하위 작업 삭제",
+  // Subtasks per-row overflow menu + note editor (2026-08-15)
+  subtaskMoveUp: "위로 이동",
+  subtaskMoveDown: "아래로 이동",
+  subtaskDuplicate: "복제",
+  subtaskDelete: "삭제",
+  subtaskEditNote: "노트 편집",
+  subtaskNotePlaceholder: "이 하위 작업의 목적",
+  subtaskNoteAria: "하위 작업 노트",
+  subtaskNoteSave: "노트 저장",
+  subtaskNoteClear: "노트 지우기",
+  subtaskDoneAria: "완료로 표시",
+  subtaskUndoneAria: "미완료로 표시",
+  subtasksProgress: "{done}/{total} 완료",
+  subtasksEmptyHint: "하위 작업으로 이 타일을 추적 가능한 단계로 나눌 수 있습니다.",
+  subtasksAddFirst: "하위 작업 추가",
 };
 
 export const quickCreateEs = {
@@ -2319,6 +2364,21 @@ export const quickCreateEs = {
   subtaskAddAria: "Añadir sub-tarea",
   subtaskTitleAria: "Título de la sub-tarea",
   subtaskRemoveAria: "Eliminar sub-tarea",
+  // Subtasks per-row overflow menu + note editor (2026-08-15)
+  subtaskMoveUp: "Mover arriba",
+  subtaskMoveDown: "Mover abajo",
+  subtaskDuplicate: "Duplicar",
+  subtaskDelete: "Eliminar",
+  subtaskEditNote: "Editar nota",
+  subtaskNotePlaceholder: "Propósito de esta sub-tarea",
+  subtaskNoteAria: "Nota de la sub-tarea",
+  subtaskNoteSave: "Guardar nota",
+  subtaskNoteClear: "Borrar nota",
+  subtaskDoneAria: "Marcar como hecho",
+  subtaskUndoneAria: "Marcar como no hecho",
+  subtasksProgress: "{done}/{total} hechas",
+  subtasksEmptyHint: "Las sub-tareas dividen esta tarjeta en pasos rastreables.",
+  subtasksAddFirst: "Añadir sub-tarea",
 };
 
 export const quickCreateEn = {
@@ -2903,4 +2963,19 @@ conditionMoveDown: "Move down",
   subtaskAddAria: "Add sub-task",
   subtaskTitleAria: "Sub-task title",
   subtaskRemoveAria: "Remove sub-task",
+  // Subtasks per-row overflow menu + note editor (2026-08-15)
+  subtaskMoveUp: "Move up",
+  subtaskMoveDown: "Move down",
+  subtaskDuplicate: "Duplicate",
+  subtaskDelete: "Delete",
+  subtaskEditNote: "Edit note",
+  subtaskNotePlaceholder: "Why this sub-task matters",
+  subtaskNoteAria: "Sub-task note",
+  subtaskNoteSave: "Save note",
+  subtaskNoteClear: "Clear note",
+  subtaskDoneAria: "Mark done",
+  subtaskUndoneAria: "Mark not done",
+  subtasksProgress: "{done}/{total} done",
+  subtasksEmptyHint: "Sub-tasks break this tile into trackable steps.",
+  subtasksAddFirst: "Add a sub-task",
 };
