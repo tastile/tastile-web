@@ -22,7 +22,7 @@ vi.mock("@/shared/hooks/use-workspaces", () => ({
     workspaces: [
       {
         id: "ws-1",
-        kind: 0,
+        kind: 1,
         display_name: "Test project",
         slug: "test-project",
         email: null,
