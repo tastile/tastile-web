@@ -54,6 +54,8 @@ function resetStore() {
       visual: { color: "#5e6ad2", icon: "Repeat" },
     },
     time: {
+      timeModel: "fixed_window",
+      schedulableWindow: { start: "", end: "" },
       span: { start: "", end: "" },
       durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
       whenMode: "none",
@@ -79,6 +81,10 @@ function resetStore() {
       intervalUnit: "min",
       condition: null,
       conditionIgnored: false,
+      monthlyKind: null,
+      monthlyDayOfMonth: 1,
+      monthlyWeekOfMonth: 1,
+      monthlyWeekday: 0,
     },
     meta: { ownerSubjectId: null, memo: "", isLabelOnly: false },
   });
