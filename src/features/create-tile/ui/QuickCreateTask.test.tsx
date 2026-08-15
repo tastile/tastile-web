@@ -325,9 +325,13 @@ describe("QuickCreateTask", () => {
     const user = userEvent.setup();
     renderWithMantine(<QuickCreateTask />);
 
-    const input = screen.getByTestId("task-subtasks-new-subtask");
-    await user.type(input, "Sub-task from main body");
+    // The new SubtasksSection uses a Modal for adding tasks, not an
+    // inline input. Click the add button to open the modal, type into
+    // the modal title input, then submit.
     await user.click(screen.getByTestId("task-subtasks-add"));
+    const input = screen.getByTestId("task-subtasks-modal-title");
+    await user.type(input, "Sub-task from main body");
+    await user.click(screen.getByTestId("task-subtasks-modal-submit"));
 
     const tasks = useQuickCreateStore.getState().plan.completion.tasks;
     expect(tasks.at(-1)?.content.title).toBe("Sub-task from main body");
