@@ -56,6 +56,14 @@ export interface TaskDefinition {
   show: ConditionNode | null;
   complete: ConditionNode;
   order: TaskOrderRule[];
+  /**
+   * Authoring-time checkbox. Distinct from `Execution.taskRuns[]` (runtime
+   * completion). Allows the QuickCreate sub-task editor to expose a
+   * per-row "done" toggle without leaking business logic into the client;
+   * the spec keeps the runtime state on `Execution`. See
+   * `tastile-core/v1/13-completion.md` for the boundary.
+   */
+  done: boolean;
 }
 
 // ---------- Completion (root + elements) ----------
