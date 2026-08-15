@@ -326,7 +326,13 @@ export function SubtasksSection({
   );
 
   return bare ? (
-    <>{sectionBody}</>
+    <FormRow
+      data-testid={testId}
+      icon={<ListChecks className="h-4 w-4" aria-hidden />}
+      className="items-start"
+    >
+      {sectionBody}
+    </FormRow>
   ) : (
     <div className="px-4 py-3" data-testid={testId}>
       {sectionBody}
