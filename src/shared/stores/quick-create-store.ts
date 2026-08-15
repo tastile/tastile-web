@@ -94,10 +94,42 @@ export type TimeOfDayMode = "all-day" | "range" | "unspecified";
  */
 type TimeSplitPolicy = "unsplit" | "split";
 
+/**
+ * Three-pattern time model that drives the Recurring form's time row
+ * (and the v1 wire's `schedule_kind`). Each variant maps to a distinct
+ * authoring shape:
+ *
+ *   - `"duration_only"`       — only a per-instance duration, no fixed time
+ *   - `"fixed_window"`        — start + end time-of-day, no duration requirement
+ *   - `"window_with_duration"`— schedulable window + duration to place inside
+ *
+ * The Recurring form keeps this in sync with the legacy
+ * `timeOfDayMode` / `timeOfDayStart` / `timeOfDayEnd` / `durationMinMax`
+ * fields so the wire builders for the other workflows (Event, Task,
+ * Detailed) keep working unchanged.
+ */
+export type TimeModel =
+  | "duration_only"
+  | "fixed_window"
+  | "window_with_duration";
+
 export interface TimeSlice {
+  /** Primary switch that drives the Recurring form's time row + wire schedule_kind. */
+  timeModel: TimeModel;
+  /**
+   * Schedulable window for `"window_with_duration"` — the time-of-day
+   * range inside which the placement worker may fit the required
+   * duration. HH:MM strings (matches the legacy `timeOfDayStart/End`
+   * shape so the UI can reuse `TimeSuggestionInput`).
+   */
+  schedulableWindow: { start: string; end: string };
   span: Span;
   durationMinMax: DurationRange;
   whenMode: WhenMode;
+  // LEGACY — kept because the Event / Task / Detailed forms still
+  // author through these. The Recurring form mirrors writes here so
+  // cross-workflow wire builders stay green. Prefer `timeModel` +
+  // `schedulableWindow` for new Recurring-only logic.
   timeOfDayMode: TimeOfDayMode;
   timeOfDayStart: string;
   timeOfDayEnd: string;
@@ -128,6 +160,22 @@ export interface RecurringSlice {
   condition: import("@/shared/model/v1/condition").ConditionNode | null;
   /** Set to true when recurring.condition was non-null but silently dropped by wire */
   conditionIgnored: boolean;
+  /**
+   * Monthly pattern switch. The user picks ONE pattern per form
+   * submission (not both) — the other is dropped to `null` so the
+   * wire emits a clean tagged union on `monthly_rule`.
+   *
+   * - `"by_day"`     → `monthlyDayOfMonth` (1-31)
+   * - `"by_weekday"` → `monthlyWeekOfMonth` (1-5, where 5 = "last") + `monthlyWeekday` (0-6)
+   * - `null`         → no Monthly pattern authored yet
+   */
+  monthlyKind: "by_day" | "by_weekday" | null;
+  /** 1-31. Only meaningful when `monthlyKind === "by_day"`. */
+  monthlyDayOfMonth: number | null;
+  /** 1-5 (5 is the alias for "last" week of the month). Only meaningful when `monthlyKind === "by_weekday"`. */
+  monthlyWeekOfMonth: number | null;
+  /** 0-6 (Mon..Sun). Stored as a single-bit mirror on `weekdayMask` for weekly reuse. */
+  monthlyWeekday: number | null;
 }
 
 interface AdvancedSlice {
@@ -490,6 +538,8 @@ function defaultTime(): TimeSlice {
   // appears in /v1/timeline even when surrounding SourceTile placements
   // (e.g. V1_015 休憩 seed) cover the adjacent slots.
   return {
+    timeModel: "duration_only",
+    schedulableWindow: { start: "", end: "" },
     span: { start: "", end: "" },
     durationMinMax: { minMs: null, maxMs: null },
     whenMode: "none",
@@ -525,6 +575,10 @@ function defaultRecurring(): RecurringSlice {
     intervalUnit: "min",
     condition: null,
     conditionIgnored: false,
+    monthlyKind: null,
+    monthlyDayOfMonth: 1,
+    monthlyWeekOfMonth: 1,
+    monthlyWeekday: 0, // bit 0 (Monday) — matches the weekdayMask convention
   };
 }
 
