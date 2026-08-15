@@ -384,6 +384,8 @@ interface StoreTaskDefinition {
     relation: number;
     when?: ConditionNode | null;
   }>;
+  /** Authoring-time done flag; see `TaskDefinition.done` for semantics. */
+  done: boolean;
 }
 
 interface StoreCompletion {
@@ -439,6 +441,8 @@ interface LocalWireCompletion {
       relation: number;
       when: unknown;
     }>;
+    /** Authoring-time done flag mirrored from `TaskDefinition.done`. */
+    done: boolean;
   }>;
 }
 
@@ -490,6 +494,7 @@ function convertTask(task: StoreTaskDefinition): LocalWireCompletion["tasks"][nu
       relation: o.relation,
       when: o.when ? convertCondition(o.when) : null,
     })),
+    done: task.done,
   };
 }
 
