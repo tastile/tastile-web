@@ -133,6 +133,12 @@ describe("buildQuickCreateSchedulePayload", () => {
         max_segments: 4,
       },
       priority: 25,
+      // buildDefaultQuickCreateState seeds timeModel="duration_only" and an
+      // empty schedulable window. The Recurring-form echo fields therefore
+      // collapse to the legacy behaviour for this fixture.
+      schedule_kind: "duration_only",
+      schedulable_window: null,
+      monthly_rule: null,
     });
     expect(payload.windows[0].rules[0]).toMatchObject({
       weekday_mask: 0b0101010,
