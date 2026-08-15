@@ -147,14 +147,15 @@ describe("buildQuickCreateSchedulePayload", () => {
       holiday_kind: 2,
       date_range: { start: "2026-07-28", end: "2026-09-30" },
     });
-    expect(payload.plan.completion.tasks).toHaveLength(1);
+    // buildDefaultQuickCreateState now seeds an empty sub-task list
+    // (the user adds tasks through the modal), so completion.tasks is
+    // empty and completion.root stays at the default `All: []` shape.
+    expect(payload.plan.completion.tasks).toEqual([]);
     expect(payload.plan.completion.time_requirements[0]?.preferred).toEqual({
       min: 2_400_000,
       max: 3_000_000,
     });
-    expect(payload.plan.completion.root).toEqual({
-      All: [payload.plan.completion.tasks[0].complete],
-    });
+    expect(payload.plan.completion.root).toEqual({ All: [] });
     expect(payload.plan.decisions).toHaveLength(1);
     expect(payload.plan.references[0]).toMatchObject({
       target: 0,
