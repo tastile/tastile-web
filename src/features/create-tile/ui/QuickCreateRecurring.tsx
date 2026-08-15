@@ -12,8 +12,10 @@ import {
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import {
+  CalendarClock,
   CalendarDays,
   CalendarRange,
+  Hourglass,
   Repeat,
   Sun,
   Timer,
@@ -23,7 +25,7 @@ import { createPortal } from "react-dom";
 
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
-import { FormRow } from "@/shared/ui/form";
+import { FormRow, RowSegmented } from "@/shared/ui/form";
 import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
 import { RecurringDetailsSubPanel } from "./RecurringDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
@@ -154,11 +156,26 @@ export function QuickCreateRecurring() {
   const timeOfDayMode = useQuickCreateStore((s) => s.time.timeOfDayMode);
   const timeOfDayStart = useQuickCreateStore((s) => s.time.timeOfDayStart);
   const timeOfDayEnd = useQuickCreateStore((s) => s.time.timeOfDayEnd);
+  const timeModel = useQuickCreateStore((s) => s.time.timeModel);
+  const schedulableWindowStart = useQuickCreateStore(
+    (s) => s.time.schedulableWindow.start,
+  );
+  const schedulableWindowEnd = useQuickCreateStore(
+    (s) => s.time.schedulableWindow.end,
+  );
   const repeatMode = useQuickCreateStore((s) => s.recurring.repeatMode);
   const weekdayMask = useQuickCreateStore((s) => s.recurring.weekdayMask);
   const intervalValue = useQuickCreateStore((s) => s.recurring.intervalValue);
   const intervalUnit = useQuickCreateStore((s) => s.recurring.intervalUnit);
   const endDate = useQuickCreateStore((s) => s.recurring.endDate);
+  const monthlyKind = useQuickCreateStore((s) => s.recurring.monthlyKind);
+  const monthlyDayOfMonth = useQuickCreateStore(
+    (s) => s.recurring.monthlyDayOfMonth,
+  );
+  const monthlyWeekOfMonth = useQuickCreateStore(
+    (s) => s.recurring.monthlyWeekOfMonth,
+  );
+  const monthlyWeekday = useQuickCreateStore((s) => s.recurring.monthlyWeekday);
 
   const durationMinMs = useQuickCreateStore(
     (s) => s.time.durationMinMax.minMs,
@@ -285,6 +302,127 @@ export function QuickCreateRecurring() {
       }
     },
     [intervalValue, setField],
+  );
+
+  // ---------- time model radio ----------
+  //
+  // The user picks one of three authoring shapes. The wire mirrors this
+  // to `schedule_kind` and only reads the legacy `timeOfDayStart/End` /
+  // `durationMinMax` fields when the legacy shape is active. Switching
+  // modes does NOT clear the legacy fields — it would lose user input.
+  const setTimeModel = useCallback(
+    (next: string) => {
+      const value = next as
+        | "duration_only"
+        | "fixed_window"
+        | "window_with_duration";
+      setField("time.timeModel", value);
+      // Mirror the legacy timeOfDayMode so the cross-workflow wire
+      // builders keep producing sensible output. "duration_only" implies
+      // no time-of-day constraint; the other two use the range pattern.
+      if (value === "duration_only") {
+        if (timeOfDayMode !== "unspecified") {
+          setField("time.timeOfDayMode", "unspecified");
+        }
+      } else if (
+        timeOfDayMode === "unspecified" ||
+        timeOfDayMode === "all-day"
+      ) {
+        setField("time.timeOfDayMode", "range");
+        if (!timeOfDayStart)
+          setField("time.timeOfDayStart", DEFAULT_TIME_OF_DAY_START);
+        if (!timeOfDayEnd)
+          setField("time.timeOfDayEnd", DEFAULT_TIME_OF_DAY_END);
+      }
+    },
+    [setField, timeOfDayMode, timeOfDayStart, timeOfDayEnd],
+  );
+
+  const updateSchedulableWindowStart = useCallback(
+    (next: string) => setField("time.schedulableWindow.start", next),
+    [setField],
+  );
+
+  const updateSchedulableWindowEnd = useCallback(
+    (next: string) => setField("time.schedulableWindow.end", next),
+    [setField],
+  );
+
+  // ---------- monthly pattern controls ----------
+  //
+  // Single pattern per submission — flipping the kind clears the opposing
+  // fields so the wire emits a clean tagged union on `monthly_rule`.
+  const setMonthlyKind = useCallback(
+    (next: string) => {
+      const value = next as "by_day" | "by_weekday" | null;
+      if (value === "by_day") {
+        setField("recurring.monthlyKind", "by_day");
+        setField("recurring.monthlyWeekOfMonth", null);
+        setField("recurring.monthlyWeekday", null);
+        // Restore a sensible day-of-month seed the first time the user
+        // switches away from null.
+        if (monthlyDayOfMonth == null) {
+          setField("recurring.monthlyDayOfMonth", new Date().getDate());
+        }
+      } else if (value === "by_weekday") {
+        setField("recurring.monthlyKind", "by_weekday");
+        setField("recurring.monthlyDayOfMonth", null);
+        if (monthlyWeekOfMonth == null) setField("recurring.monthlyWeekOfMonth", 1);
+        if (monthlyWeekday == null) setField("recurring.monthlyWeekday", 0);
+      } else {
+        setField("recurring.monthlyKind", null);
+        setField("recurring.monthlyDayOfMonth", null);
+        setField("recurring.monthlyWeekOfMonth", null);
+        setField("recurring.monthlyWeekday", null);
+      }
+    },
+    [setField, monthlyDayOfMonth, monthlyWeekOfMonth, monthlyWeekday],
+  );
+
+  const updateMonthlyDayOfMonth = useCallback(
+    (v: string | number) => {
+      const n = typeof v === "number" ? v : Number(v);
+      if (!Number.isFinite(n)) return;
+      const clamped = Math.max(1, Math.min(31, Math.round(n)));
+      setField("recurring.monthlyDayOfMonth", clamped);
+    },
+    [setField],
+  );
+
+  const updateMonthlyWeekOfMonth = useCallback(
+    (next: string | null) => {
+      if (next == null) {
+        setField("recurring.monthlyWeekOfMonth", null);
+        return;
+      }
+      if (next === "last") {
+        setField("recurring.monthlyWeekOfMonth", 5);
+        return;
+      }
+      const n = Number(next);
+      if (Number.isFinite(n) && n >= 1 && n <= 4) {
+        setField("recurring.monthlyWeekOfMonth", n);
+      }
+    },
+    [setField],
+  );
+
+  const updateMonthlyWeekday = useCallback(
+    (next: string | null) => {
+      if (next == null) {
+        setField("recurring.monthlyWeekday", null);
+        return;
+      }
+      const n = Number(next);
+      if (!Number.isFinite(n)) return;
+      setField("recurring.monthlyWeekday", n);
+      // Mirror to weekdayMask so the wire builder's monthly→weekdayMask
+      // shortcut can fall back on the same single-bit convention.
+      if (repeatMode === "monthly") {
+        setField("recurring.weekdayMask", 1 << n);
+      }
+    },
+    [setField, repeatMode],
   );
 
   // ---------- repeat until ----------
@@ -542,8 +680,188 @@ export function QuickCreateRecurring() {
           </div>
         ) : null}
 
-        {/* Time row — adapts to repeat mode */}
-        {calendarMode ? (
+        {/* Monthly secondary controls — By day (1-31) or By weekday
+            (week-of-month × weekday). Single pattern per submission. */}
+        {repeatMode === "monthly" ? (
+          <div className="px-4 py-3">
+            <FormRow icon={<CalendarClock className="h-4 w-4" aria-hidden />}>
+              <Stack gap="xs" className="w-full">
+                <SegmentedControl
+                  fullWidth
+                  size="sm"
+                  value={monthlyKind ?? ""}
+                  onChange={(v) => setMonthlyKind(v)}
+                  data={[
+                    {
+                      value: "by_day",
+                      label:
+                        t("quickCreate.monthlyByDay") || "By day",
+                    },
+                    {
+                      value: "by_weekday",
+                      label:
+                        t("quickCreate.monthlyByWeekday") || "By weekday",
+                    },
+                  ]}
+                  data-testid="recurring-monthly-kind"
+                />
+                {monthlyKind === "by_day" ? (
+                  <NumberInput
+                    label={
+                      t("quickCreate.monthlyDayOfMonthLabel") || "Day of month"
+                    }
+                    value={monthlyDayOfMonth ?? 1}
+                    onChange={updateMonthlyDayOfMonth}
+                    min={1}
+                    max={31}
+                    size="sm"
+                    data-testid="recurring-monthly-day-of-month"
+                  />
+                ) : null}
+                {monthlyKind === "by_weekday" ? (
+                  <Group gap="xs" align="flex-end" wrap="wrap" className="w-full">
+                    <Select
+                      label={
+                        t("quickCreate.monthlyWeekOfMonthLabel") ||
+                        "Week of month"
+                      }
+                      value={
+                        monthlyWeekOfMonth === 5
+                          ? "last"
+                          : monthlyWeekOfMonth != null
+                            ? String(monthlyWeekOfMonth)
+                            : "1"
+                      }
+                      onChange={updateMonthlyWeekOfMonth}
+                      data={[
+                        {
+                          value: "1",
+                          label:
+                            t("quickCreate.monthlyWeekFirst") || "1st",
+                        },
+                        {
+                          value: "2",
+                          label:
+                            t("quickCreate.monthlyWeekSecond") || "2nd",
+                        },
+                        {
+                          value: "3",
+                          label:
+                            t("quickCreate.monthlyWeekThird") || "3rd",
+                        },
+                        {
+                          value: "4",
+                          label:
+                            t("quickCreate.monthlyWeekFourth") || "4th",
+                        },
+                        {
+                          value: "last",
+                          label: t("quickCreate.monthlyLastWeek") || "Last",
+                        },
+                      ]}
+                      allowDeselect={false}
+                      size="sm"
+                      className="w-28"
+                      data-testid="recurring-monthly-week-of-month"
+                    />
+                    <Select
+                      aria-label={
+                        t("quickCreate.monthlyByWeekday") || "Weekday"
+                      }
+                      value={
+                        monthlyWeekday != null ? String(monthlyWeekday) : "0"
+                      }
+                      onChange={updateMonthlyWeekday}
+                      data={weekdayLabels.map((label, bit) => ({
+                        value: String(bit),
+                        label,
+                      }))}
+                      allowDeselect={false}
+                      size="sm"
+                      className="w-28"
+                      data-testid="recurring-monthly-weekday"
+                    />
+                  </Group>
+                ) : null}
+              </Stack>
+            </FormRow>
+          </div>
+        ) : null}
+
+        {/* Time-model radio — primary switch that drives the time row.
+            "duration_only" hides the time-of-day row entirely;
+            "fixed_window" keeps the existing daily start+end pickers;
+            "window_with_duration" reveals a schedulable window pair. */}
+        <div className="px-4 py-3">
+          <RowSegmented
+            icon={Hourglass}
+            data-testid="recurring-time-model"
+            value={timeModel}
+            onChange={(v) => setTimeModel(v)}
+            options={[
+              {
+                value: "duration_only",
+                label:
+                  t("quickCreate.timeModelDurationOnly") || "Duration only",
+              },
+              {
+                value: "fixed_window",
+                label:
+                  t("quickCreate.timeModelFixedWindow") || "Fixed window",
+              },
+              {
+                value: "window_with_duration",
+                label:
+                  t("quickCreate.timeModelWindowWithDuration") ||
+                  "Window + duration",
+              },
+            ]}
+          />
+        </div>
+
+        {/* Time row — adapts to repeat mode AND time model */}
+        {timeModel === "duration_only" ? (
+          // No fixed time — the placement worker only knows the per-instance
+          // duration (set below). Show a hint instead of the time pickers so
+          // the user sees the authoring choice is honored.
+          <div className="px-4 py-3" data-testid="recurring-duration-only-hint">
+            <FormRow icon={<Hourglass className="h-4 w-4" aria-hidden />}>
+              <span className="text-xs text-foreground-muted">
+                {t("quickCreate.timeModelDurationOnlyHint") ||
+                  "No fixed time — duration only"}
+              </span>
+            </FormRow>
+          </div>
+        ) : timeModel === "window_with_duration" ? (
+          // Schedulable window — earliest/latest time-of-day inside which
+          // the placement worker may fit the required duration.
+          <div className="px-4 py-3">
+            <FormRow
+              icon={<Sun className="h-4 w-4" aria-hidden />}
+              trailing={
+                <TimeSuggestionInput
+                  value={schedulableWindowEnd}
+                  onChange={updateSchedulableWindowEnd}
+                  aria-label={
+                    t("quickCreate.schedulableWindowEndLabel") || "Latest time"
+                  }
+                  data-testid="recurring-schedulable-window-end"
+                  className="w-[5.5rem]"
+                />
+              }
+            >
+              <TimeSuggestionInput
+                value={schedulableWindowStart}
+                onChange={updateSchedulableWindowStart}
+                aria-label={
+                  t("quickCreate.schedulableWindowStartLabel") || "Earliest time"
+                }
+                data-testid="recurring-schedulable-window-start"
+                className="w-[5.5rem]"
+              />
+            </FormRow>
+          </div>
+        ) : calendarMode ? (
           // Daily mode: a real time window (start + end) — the start-only
           // picker was an obvious gap because almost no real use case fits
           // "start at 09:00 with no end". Weekly/Monthly keep the legacy
