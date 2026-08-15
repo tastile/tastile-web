@@ -58,6 +58,8 @@ function resetStore() {
       visual: { color: "#3b82f6", icon: "check-circle" },
     },
     time: {
+      timeModel: "duration_only",
+      schedulableWindow: { start: "", end: "" },
       span: { start: "", end: "" },
       durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
       whenMode: "none",
