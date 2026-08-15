@@ -418,6 +418,193 @@ describe("QuickCreateRecurring", () => {
 
     renderWithMantine(<QuickCreateRecurring />);
     expect(screen.getByTestId("recurring-subtasks")).toBeInTheDocument();
-    expect(screen.getByTestId("recurring-subtasks-empty")).toBeInTheDocument();
+    // Empty state renders only the underline add affine; the empty
+    // wrapper testid was removed when the hint + CTA were dropped.
+    expect(screen.getByTestId("recurring-subtasks-add")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("recurring-subtasks-empty"),
+    ).not.toBeInTheDocument();
+  });
+
+  // ---- Time-model radio + adaptive time row (Recurring extensions) ----
+
+  it("renders the time-model radio with three options", () => {
+    renderWithMantine(<QuickCreateRecurring />);
+    const radio = screen.getByTestId("recurring-time-model");
+    expect(radio).toBeInTheDocument();
+    // Three SegmentedControl options: duration_only, fixed_window,
+    // window_with_duration. Each option is a labelled <input type="radio">.
+    expect(screen.getByRole("radio", { name: /duration only/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /fixed window/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /window \+ duration/i })).toBeInTheDocument();
+  });
+
+  it("reflects the seeded timeModel (fixed_window from resetStore) as the selected radio", () => {
+    renderWithMantine(<QuickCreateRecurring />);
+    const fixedWindow = screen.getByRole("radio", { name: /fixed window/i }) as HTMLInputElement;
+    expect(fixedWindow.checked).toBe(true);
+  });
+
+  it("shows the duration-only hint when timeModel=duration_only and hides time-of-day pickers", () => {
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        time: { ...s.time, timeModel: "duration_only" as const },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(screen.getByTestId("recurring-duration-only-hint")).toBeInTheDocument();
+    // Daily / weekly time-of-day pickers should not render under duration_only.
+    expect(screen.queryByTestId("recurring-daily-start-time")).toBeNull();
+    expect(screen.queryByTestId("recurring-time-of-day")).toBeNull();
+  });
+
+  it("shows the schedulable-window pair when timeModel=window_with_duration", () => {
+    // resetStore seeds empty schedulable window; seed non-empty so the
+    // pickers reflect authored values.
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        time: {
+          ...s.time,
+          timeModel: "window_with_duration" as const,
+          schedulableWindow: { start: "09:00", end: "17:00" },
+        },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(screen.getByTestId("recurring-schedulable-window-start")).toBeInTheDocument();
+    expect(screen.getByTestId("recurring-schedulable-window-end")).toBeInTheDocument();
+    // Daily / weekly time-of-day pickers should NOT render under window_with_duration.
+    expect(screen.queryByTestId("recurring-daily-start-time")).toBeNull();
+  });
+
+  it("writes the new timeModel to the store when a different radio option is clicked", async () => {
+    const user = userEvent.setup();
+    renderWithMantine(<QuickCreateRecurring />);
+
+    expect(useQuickCreateStore.getState().time.timeModel).toBe("fixed_window");
+
+    await user.click(screen.getByRole("radio", { name: /window \+ duration/i }));
+
+    expect(useQuickCreateStore.getState().time.timeModel).toBe("window_with_duration");
+  });
+
+  it("writes the new schedulable-window start to the store when the start picker changes", async () => {
+    const user = userEvent.setup();
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        time: {
+          ...s.time,
+          timeModel: "window_with_duration" as const,
+          schedulableWindow: { start: "", end: "" },
+        },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+
+    const start = screen.getByTestId("recurring-schedulable-window-start");
+    await user.clear(start);
+    await user.type(start, "08:30");
+    // Tab/blur so the TimeSuggestionInput commits the normalized value.
+    await user.tab();
+
+    expect(useQuickCreateStore.getState().time.schedulableWindow.start).toBe(
+      "08:30",
+    );
+  });
+
+  // ---- Monthly secondary controls ----
+
+  it("renders the Monthly kind segmented control with by_day and by_weekday options", () => {
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        recurring: { ...s.recurring, repeatMode: "monthly" as const },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(screen.getByTestId("recurring-monthly-kind")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /by day/i })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: /by weekday/i })).toBeInTheDocument();
+  });
+
+  it("shows the day-of-month NumberInput when monthlyKind=by_day", () => {
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        recurring: {
+          ...s.recurring,
+          repeatMode: "monthly" as const,
+          monthlyKind: "by_day" as const,
+          monthlyDayOfMonth: 15,
+        },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(screen.getByTestId("recurring-monthly-day-of-month")).toBeInTheDocument();
+    expect(screen.queryByTestId("recurring-monthly-week-of-month")).toBeNull();
+    expect(screen.queryByTestId("recurring-monthly-weekday")).toBeNull();
+  });
+
+  it("shows the week-of-month + weekday Selects when monthlyKind=by_weekday", () => {
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        recurring: {
+          ...s.recurring,
+          repeatMode: "monthly" as const,
+          monthlyKind: "by_weekday" as const,
+          monthlyWeekOfMonth: 2,
+          monthlyWeekday: 2,
+        },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(screen.getByTestId("recurring-monthly-week-of-month")).toBeInTheDocument();
+    expect(screen.getByTestId("recurring-monthly-weekday")).toBeInTheDocument();
+    expect(screen.queryByTestId("recurring-monthly-day-of-month")).toBeNull();
+  });
+
+  it("flipping monthlyKind from by_day to by_weekday clears monthlyDayOfMonth in the UI callback", async () => {
+    const user = userEvent.setup();
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        recurring: {
+          ...s.recurring,
+          repeatMode: "monthly" as const,
+          monthlyKind: "by_day" as const,
+          monthlyDayOfMonth: 15,
+        },
+      }));
+    });
+    renderWithMantine(<QuickCreateRecurring />);
+
+    await user.click(screen.getByRole("radio", { name: /by weekday/i }));
+
+    const r = useQuickCreateStore.getState().recurring;
+    expect(r.monthlyKind).toBe("by_weekday");
+    // UI callback resets the opposing field so the wire emits a clean
+    // tagged union.
+    expect(r.monthlyDayOfMonth).toBeNull();
+  });
+
+  // ---- Bottom-set divider ----
+
+  it("renders the bottom divider between Subtasks and ProjectColor", () => {
+    renderWithMantine(<QuickCreateRecurring />);
+    const divider = screen.getByTestId("recurring-bottom-divider");
+    const subtasks = screen.getByTestId("recurring-subtasks");
+    const project = screen.getByTestId("recurring-project-picker");
+    // The divider must appear AFTER Subtasks and BEFORE Project+Color.
+    expect(subtasks.compareDocumentPosition(divider) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(divider.compareDocumentPosition(project) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // ---- openCreate seed for the Recurring workflow ----
+
+  it("openCreate({ workflow: 'recurring' }) seeds window_with_duration + 09:00–17:00 schedulable window and monthlyKind=by_day", () => {
+    useQuickCreateStore.getState().openCreate({ workflow: "recurring" });
+    const t = useQuickCreateStore.getState().time;
+    const r = useQuickCreateStore.getState().recurring;
+    expect(t.timeModel).toBe("window_with_duration");
+    expect(t.schedulableWindow).toEqual({ start: "09:00", end: "17:00" });
+    expect(r.monthlyKind).toBe("by_day");
+    expect(r.monthlyDayOfMonth).toBe(new Date().getDate());
   });
 });
