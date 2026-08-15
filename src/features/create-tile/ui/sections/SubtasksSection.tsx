@@ -198,7 +198,7 @@ export function SubtasksSection({
   const [noteDraft, setNoteDraft] = useState("");
 
   const newTaskInputRef = useRef<HTMLInputElement | null>(null);
-  const titleInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const titleInputRefs = useRef<Record<string, HTMLElement | null>>({});
   const pendingFocusId = useRef<string | null>(null);
 
   // After `addTask` mutates the store, focus the new row's title input
@@ -209,9 +209,9 @@ export function SubtasksSection({
   useEffect(() => {
     if (!pendingFocusId.current) return;
     const el = titleInputRefs.current[pendingFocusId.current];
-    if (el) {
-      el.focus();
-      el.select();
+    if (el && "select" in el) {
+      (el as HTMLInputElement).focus();
+      (el as HTMLInputElement).select();
     }
     pendingFocusId.current = null;
   }, [tasks]);
@@ -294,7 +294,6 @@ export function SubtasksSection({
               type="button"
               variant="subtle"
               size="xs"
-              align="left"
               onClick={focusAddInput}
               data-testid={`${testId}-add-first`}
               className="self-start"
@@ -474,18 +473,6 @@ export function SubtasksSection({
                         </Menu.Item>
                       </Menu.Dropdown>
                     </Menu>
-                  </div>
-                  {/* Keep the legacy testid so older callers/tests still
-                      resolve, even though the actual remove action is now
-                      driven from the menu. */}
-                  <Collapse in={false}>
-                    <button
-                      type="button"
-                      data-testid={`${testId}-remove-${task.id}`}
-                      className="hidden"
-                      aria-hidden
-                    />
-                  </Collapse>
                   </div>
                 </div>
               );
