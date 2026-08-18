@@ -34,6 +34,7 @@ function resetStore() {
     submitState: { kind: "idle" },
     canSubmit: false,
     mode: "create",
+    baseline: null,
   });
 }
 
@@ -92,5 +93,73 @@ describe("QuickCreateSubmitButton", () => {
     await user.click(screen.getByTestId("quick-create-submit"));
     expect(listener).toHaveBeenCalledTimes(1);
     window.removeEventListener("quick-create:submit", listener);
+  });
+
+  // Final submit gate in edit mode:
+  //   canSubmit && isDirty && !submitting
+  // In edit mode, isDirty === false when baseline is null OR when state
+  // matches baseline. The button must stay disabled in both cases so a
+  // no-op open+close round-trip never fires an UPDATE.
+  describe("edit-mode dirty gate", () => {
+    it("is disabled in edit mode when canSubmit is true but baseline is null", () => {
+      // Simulate the panel right after openEdit but before the loader
+      // has captured a baseline. canSubmit is true (title OK, no load
+      // failure) but the dirty gate must keep the button disabled.
+      useQuickCreateStore.setState({
+        mode: "edit",
+        canSubmit: true,
+        baseline: null,
+      });
+      renderWithMantine(<QuickCreateSubmitButton />);
+      expect(screen.getByTestId("quick-create-submit")).toBeDisabled();
+    });
+
+    it("is disabled in edit mode when canSubmit is true and state matches baseline", () => {
+      // Seed a real baseline so selectIsDirty computes against the
+      // captured string. State equals baseline ⇒ not dirty.
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "Standup");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.setState({ canSubmit: true });
+      renderWithMantine(<QuickCreateSubmitButton />);
+      expect(screen.getByTestId("quick-create-submit")).toBeDisabled();
+    });
+
+    it("is enabled in edit mode when state diverges from baseline (with Update label)", () => {
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "Standup");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().setField("identity.title", "Standup (edited)");
+      useQuickCreateStore.setState({ canSubmit: true });
+      renderWithMantine(<QuickCreateSubmitButton />);
+      const btn = screen.getByTestId("quick-create-submit");
+      expect(btn).toBeEnabled();
+      expect(btn).toHaveTextContent(/update/i);
+    });
+
+    it("is enabled in create mode when canSubmit is true regardless of baseline (with Create label)", () => {
+      useQuickCreateStore.setState({
+        mode: "create",
+        canSubmit: true,
+        baseline: null,
+      });
+      renderWithMantine(<QuickCreateSubmitButton />);
+      const btn = screen.getByTestId("quick-create-submit");
+      expect(btn).toBeEnabled();
+      expect(btn).toHaveTextContent(/create/i);
+    });
+
+    it("stays disabled while submitting even when isDirty is true", () => {
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "Standup");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().setField("identity.title", "Standup (edited)");
+      useQuickCreateStore.setState({
+        canSubmit: true,
+        submitState: { kind: "submitting" },
+      });
+      renderWithMantine(<QuickCreateSubmitButton />);
+      expect(screen.getByTestId("quick-create-submit")).toBeDisabled();
+    });
   });
 });

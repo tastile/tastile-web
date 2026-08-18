@@ -133,6 +133,16 @@ export function QuickCreatePanel() {
   // to drive `canSubmit` — we just keep those signals warm here so the
   // submit button reflects state changes that originate elsewhere (e.g.
   // a sub-panel validation failure that flips `submitBlocked`).
+  //
+  // Reason-text priority: title-required beats submit-blocked, because
+  // the title is the user's first actionable error — they can fix it
+  // while the panel is open even if the loader is still blocked. This
+  // mirrors the legacy QuickCreate.tsx flip (load-blocked > first
+  // validation error) but keeps the title as the primary signal since
+  // it is the one input the user has direct control over. The
+  // `QuickCreateSubmitButton` adds the `isDirty` check independently so
+  // the button stays disabled in edit mode until something actually
+  // diverges from the loaded baseline.
   const title = useQuickCreateStore((s) => s.identity.title);
   const titleOk = title.trim().length > 0;
   useEffect(() => {

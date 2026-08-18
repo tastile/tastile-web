@@ -50,7 +50,6 @@ import {
   Pill,
   SegmentedControl,
   Stack,
-  TextInput,
 } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import {
@@ -74,7 +73,7 @@ import { CreateProjectModal } from "./CreateProjectModal";
 import { DurationSubPanel } from "./DurationSubPanel";
 import { IntentSubPanel } from "./IntentSubPanel";
 import { MetaSubPanel } from "./MetaSubPanel";
-import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
+import { QuickCreateHeader } from "./QuickCreateHeader";
 import { ReferencesSubPanel } from "./ReferencesSubPanel";
 import { TaskDetailSubPanel } from "./TaskDetailSubPanel";
 import { WorkflowBatch } from "./WorkflowBatch";
@@ -373,11 +372,14 @@ export function QuickCreate() {
     if (!durationValid) errors.set("time.durationMinMax", t("quickCreate.invalidDurationRange"));
     setFieldErrors(errors);
     setCanSubmitFromStore(errors.size === 0 && !submitBlocked);
+    // Load-blocked wins over field-level errors: if the loader could not
+    // confirm the tile state, the user must reload/close regardless of
+    // which validation strings we surface — so show that reason first.
     setSubmitBlockedReasonFromStore(
-      errors.size > 0
-        ? (errors.values().next().value ?? null)
-        : submitBlocked
-          ? t("quickCreate.submitBlockedHint")
+      submitBlocked
+        ? t("quickCreate.submitBlockedHint")
+        : errors.size > 0
+          ? (errors.values().next().value ?? null)
           : null,
     );
   }, [
@@ -541,42 +543,19 @@ export function QuickCreate() {
     <>
       <Stack gap={0} className="h-full">
       <Stack gap={0} className="flex-1 overflow-y-auto">
-        {/* Title — close button in icon column, submit button in trailing slot */}
-        <div className="px-4 py-2">
-          <FormRow
-            icon={
-              <CloseButton
-                onClick={close}
-                aria-label={t("quickCreate.cancel")}
-                data-testid="quick-create-detailed-close"
-                size="sm"
-              />
-            }
-            trailing={<QuickCreateSubmitButton />}
-          >
-            <TextInput
-              id="tile-title-input"
-              value={identity.title}
-              onChange={(e) => {
-                setField("identity.title", e.target.value);
-                if (invalidField === "title") setInvalidField(null);
-              }}
-              placeholder={t("quickCreate.titlePlaceholder")}
-              variant="unstyled"
-              size="lg"
-              data-testid="quick-create-input-title"
-              aria-required="true"
-              // Visible bottom underline is enforced by a CSS rule in
-              // `src/app/globals.css` (`.qc-underline-input`) — Mantine v9's
-              // `mantine-Input-input` module class sets a shorthand `border`
-              // that would otherwise win over Tailwind's `border-b-2`.
-              classNames={{
-                input:
-                  "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
-              }}
-            />
-          </FormRow>
-        </div>
+        <QuickCreateHeader
+          value={identity.title}
+          onChange={(next) => {
+            setField("identity.title", next);
+            if (invalidField === "title") setInvalidField(null);
+          }}
+          onClose={close}
+          placeholder={t("quickCreate.titlePlaceholder")}
+          closeTestId="quick-create-detailed-close"
+          closeAriaLabel={t("quickCreate.cancel")}
+          titleTestId="quick-create-input-title"
+          required
+        />
         <WorkflowBatch />
 
         {/* ─── body ─── */}

@@ -1,5 +1,5 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { hasTaskOrderCycle, tasksForSubmission, useQuickCreateStore } from "./quick-create-store";
+import { hasTaskOrderCycle, selectIsDirty, tasksForSubmission, useQuickCreateStore } from "./quick-create-store";
 import { PlanRole, RecurringState, TileKind } from "@/shared/model/v1/constants";
 
 const reset = () => useQuickCreateStore.getState().reset();
@@ -432,6 +432,239 @@ describe("useQuickCreateStore", () => {
       expect(useQuickCreateStore.getState().time.schedulableWindow.start).toBe(
         "08:30",
       );
+    });
+  });
+
+  // The dirty-tracking gate is the final source of truth for the edit-mode
+  // submit button. `selectIsDirty` returns:
+  //   - `true`  when `mode === "create"` (always ready when valid)
+  //   - `false` when `mode === "edit"` and `baseline === null` (loader hasn't
+  //     finished hydrating yet — keeps the button disabled)
+  //   - `JSON.stringify(normalizeForCompare(state)) !== baseline` otherwise
+  // `captureBaseline` is called at the end of every loader's seeding step.
+  describe("baseline + isDirty (edit-mode submit gate)", () => {
+    it("seeds baseline === null on a fresh store", () => {
+      reset();
+      expect(useQuickCreateStore.getState().baseline).toBeNull();
+    });
+
+    it("selectIsDirty returns true in create mode regardless of state", () => {
+      reset();
+      // Empty create form is still "ready" (button enable is driven by
+      // canSubmit + title; dirty is always true so the gate composes).
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+    });
+
+    it("selectIsDirty returns false in edit mode before baseline is captured", () => {
+      reset();
+      useQuickCreateStore.getState().openEdit("evt-1", "tile-1", "event");
+      expect(useQuickCreateStore.getState().baseline).toBeNull();
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+    });
+
+    it("captureBaseline snapshots the editable state", () => {
+      reset();
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "hello");
+      useQuickCreateStore.getState().setField("meta.memo", "world");
+      useQuickCreateStore.getState().captureBaseline();
+      const s = useQuickCreateStore.getState();
+      expect(s.baseline).not.toBeNull();
+      // After capturing, the state equals the baseline → not dirty.
+      expect(selectIsDirty(s)).toBe(false);
+    });
+
+    it("setField flips isDirty to true after baseline", () => {
+      reset();
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "hello");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().setField("identity.title", "hello-edited");
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+    });
+
+    it("restoring the original value flips isDirty back to false", () => {
+      reset();
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "hello");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().setField("identity.title", "X");
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+      useQuickCreateStore.getState().setField("identity.title", "hello");
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+    });
+
+    it("addTask / removeTask / setTaskField / reorderTasks / duplicateTask / toggleTaskDone flip isDirty", () => {
+      reset();
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "t");
+      useQuickCreateStore.getState().captureBaseline();
+
+      // baseline.tasks === []. addTask adds one row → dirty. Removing
+      // it returns to the empty baseline → clean.
+      const t1 = useQuickCreateStore.getState().addTask("T1");
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+      useQuickCreateStore.getState().setTaskField(t1, "content.title", "T1b");
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+      useQuickCreateStore.getState().removeTask(t1);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+
+      // Seed two tasks, capture baseline, reorder, reverse reorder.
+      const tA = useQuickCreateStore.getState().addTask("A");
+      const tB = useQuickCreateStore.getState().addTask("B");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().reorderTasks(0, 1);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+      useQuickCreateStore.getState().reorderTasks(1, 0);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+
+      // duplicateTask creates a new row → dirty.
+      useQuickCreateStore.getState().duplicateTask(tA);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+      // toggleTaskDone flips the author-side done flag → dirty.
+      useQuickCreateStore.getState().captureBaseline();
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+      useQuickCreateStore.getState().toggleTaskDone(tB);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+    });
+
+    it("setLabelOnly flips isDirty", () => {
+      reset();
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "t");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().setLabelOnly(true);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+    });
+
+    it("setWorkflow / setActivePanel / setLegacyEditor do NOT flip isDirty", () => {
+      reset();
+      useQuickCreateStore.setState({ mode: "edit" });
+      useQuickCreateStore.getState().setField("identity.title", "t");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().setWorkflow("event");
+      useQuickCreateStore.getState().setActivePanel("time");
+      useQuickCreateStore.getState().setLegacyEditor(true);
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+    });
+
+    it("reset clears baseline", () => {
+      reset();
+      useQuickCreateStore.getState().setField("identity.title", "t");
+      useQuickCreateStore.getState().captureBaseline();
+      expect(useQuickCreateStore.getState().baseline).not.toBeNull();
+      useQuickCreateStore.getState().reset();
+      expect(useQuickCreateStore.getState().baseline).toBeNull();
+    });
+
+    it("close clears baseline", () => {
+      reset();
+      useQuickCreateStore.getState().setField("identity.title", "t");
+      useQuickCreateStore.getState().captureBaseline();
+      useQuickCreateStore.getState().close();
+      expect(useQuickCreateStore.getState().baseline).toBeNull();
+    });
+
+    it("loadFromEvent captures baseline so subsequent setField flips isDirty", () => {
+      reset();
+      const event = {
+        id: "evt-1",
+        title: "Standup",
+        start: "2026-09-01T09:00:00.000Z",
+        end: "2026-09-01T09:30:00.000Z",
+        allDay: false,
+        color: "#3b82f6",
+        memo: "",
+      };
+      // Cast to the minimal shape the store accepts.
+      useQuickCreateStore.getState().loadFromEvent(event as never);
+      expect(useQuickCreateStore.getState().mode).toBe("edit");
+      expect(useQuickCreateStore.getState().baseline).not.toBeNull();
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(false);
+      useQuickCreateStore.getState().setField("identity.title", "Standup (edit)");
+      expect(selectIsDirty(useQuickCreateStore.getState())).toBe(true);
+    });
+
+    it("loadFromEvent maps allDay=true to time.timeOfDayMode === 'all-day'", () => {
+      reset();
+      useQuickCreateStore.getState().loadFromEvent({
+        id: "evt-1",
+        title: "Holiday",
+        start: "2026-09-01T00:00:00.000Z",
+        end: "2026-09-02T00:00:00.000Z",
+        allDay: true,
+        color: "#3b82f6",
+        memo: "",
+      } as never);
+      const t = useQuickCreateStore.getState().time;
+      expect(t.timeOfDayMode).toBe("all-day");
+      expect(t.timeOfDayStart).toBe("00:00");
+      expect(t.timeOfDayEnd).toBe("23:59");
+    });
+
+    it("loadFromPlacementEvent captures baseline synchronously even when async enrichment fails", async () => {
+      reset();
+      // Mock the dynamic import to throw on every call.
+      vi.resetModules();
+      vi.doMock("@/shared/api/endpoints", () => ({
+        getCoreClient: () => ({
+          call: () => Promise.reject(new Error("network down")),
+        }),
+      }));
+      // Re-import the store so the mocked module is bound to its dynamic import.
+      const { useQuickCreateStore: reimported } = await import(
+        "./quick-create-store"
+      );
+      reimported.getState().reset();
+      await reimported.getState().loadFromPlacementEvent({
+        id: "evt-1",
+        title: "Standup",
+        start: "2026-09-01T09:00:00.000Z",
+        end: "2026-09-01T09:30:00.000Z",
+        allDay: false,
+        color: "#3b82f6",
+        tileId: "tile-1",
+        memo: "",
+      } as never);
+      // After the failed enrichment, baseline is captured (from event
+      // data), loadError is set, submitBlocked stays false (the loader
+      // does not block submit on partial enrichment).
+      const s = reimported.getState();
+      expect(s.baseline).not.toBeNull();
+      expect(s.loadError).toMatch(/Could not load full tile data/);
+      expect(s.submitBlocked).toBe(false);
+      vi.doUnmock("@/shared/api/endpoints");
+      vi.resetModules();
+    });
+
+    it("loadFromTemplate captures baseline (mode=create so isDirty stays true regardless)", () => {
+      reset();
+      useQuickCreateStore.getState().loadFromTemplate({
+        id: "tpl-1",
+        title: "Daily standup",
+        note: "Routine",
+        recurrence: undefined,
+      });
+      const s = useQuickCreateStore.getState();
+      expect(s.mode).toBe("create");
+      expect(s.baseline).not.toBeNull();
+      expect(selectIsDirty(s)).toBe(true);
+    });
+
+    it("selectIsDirty uses a deterministic key order regardless of object construction", () => {
+      // The same editable state built two different ways must produce the
+      // same baseline string — that is what makes the dirty gate
+      // reproducible.
+      reset();
+      useQuickCreateStore.getState().setField("identity.title", "X");
+      useQuickCreateStore.getState().captureBaseline();
+      const a = useQuickCreateStore.getState().baseline;
+      // Reset and rebuild with explicit key order on the next snapshot.
+      useQuickCreateStore.getState().reset();
+      useQuickCreateStore.getState().setField("identity.title", "X");
+      useQuickCreateStore.getState().captureBaseline();
+      const b = useQuickCreateStore.getState().baseline;
+      expect(a).toBe(b);
     });
   });
 });

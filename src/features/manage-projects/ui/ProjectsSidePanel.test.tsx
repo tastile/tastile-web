@@ -5,6 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ProjectsSidePanel } from "./ProjectsSidePanel";
 import { renderWithMantine } from "@/test/render-with-mantine";
+import { type Workspace } from "@/shared/hooks/use-workspaces";
 
 const mockCreateWorkspace = vi.fn();
 const mockDeleteWorkspace = vi.fn();
@@ -28,7 +29,8 @@ vi.mock("@/shared/hooks/use-workspaces", () => ({
 	useWorkspaces: () => mockUseProjects(),
 	createWorkspace: (...args: unknown[]) => mockCreateWorkspace(...args),
 	deleteWorkspace: (...args: unknown[]) => mockDeleteWorkspace(...args),
-	orderWorkspaceTree: (items: unknown[]) => items,
+	orderWorkspaceTree: (items: Workspace[]) =>
+		items.map((workspace) => ({ workspace, depth: 0 })),
 }));
 
 // Mantine Select renders a plain combobox in jsdom; stub it out so we can drive
@@ -55,8 +57,38 @@ vi.mock("@mantine/core", async () => {
 				<option value="ws-existing">Existing workspace</option>
 			</select>
 		),
-		Tree: () => null,
-		useTree: () => ({ toggleExpanded: vi.fn() }),
+		// Mantine's real Tree renders its rows through a `renderNode` callback.
+		// In jsdom that component does not settle, so this stub flattens the
+		// nested data and invokes the SAME `renderNode` (and therefore the real
+		// `onSelect` / `onDelete` handlers from ProjectsSidePanel) so the delete
+		// affordance and its failure path stay testable.
+		Tree: ({
+			data,
+			renderNode,
+		}: {
+			data: Array<{ value: string; label: string; children?: typeof data }>;
+			renderNode: (payload: Record<string, unknown>) => React.ReactNode;
+		}) => {
+const rows: React.ReactNode[] = [];
+		const visit = (nodes: typeof data) => {
+			for (const node of nodes) {
+				rows.push(
+					<div key={node.value}>
+						{renderNode({
+							node,
+							expanded: true,
+							hasChildren: Boolean(node.children?.length),
+							elementProps: { role: "treeitem" },
+						})}
+					</div>,
+				);
+				if (node.children) visit(node.children);
+			}
+		};
+			visit(data);
+			return <>{rows}</>;
+		},
+		useTree: () => ({ toggleExpanded: () => {} }),
 		getTreeExpandedState: () => ({}),
 	};
 });
@@ -221,5 +253,100 @@ describe("ProjectsSidePanel create flow", () => {
 
 		resolveCreate({ id: "ws-new" });
 		await waitFor(() => expect(mockRefresh).toHaveBeenCalledTimes(1));
+	});
+});
+
+describe("ProjectsSidePanel delete flow", () => {
+	const baseWorkspaces = [
+		{
+			id: "me",
+			kind: 0,
+			display_name: "Personal",
+			slug: null,
+			email: null,
+			parent_subject_id: null,
+			color: null,
+			owner_user_id: "user-1",
+			disabled_at: null,
+			created_at: "2026-01-01T00:00:00.000Z",
+			updated_at: "2026-01-01T00:00:00.000Z",
+		},
+		{
+			id: "ws-team",
+			kind: 1,
+			display_name: "Team",
+			slug: "team",
+			email: null,
+			parent_subject_id: null,
+			color: "#3b82f6",
+			owner_user_id: "user-1",
+			disabled_at: null,
+			created_at: "2026-01-01T00:00:00.000Z",
+			updated_at: "2026-01-01T00:00:00.000Z",
+		},
+	];
+
+	beforeEach(() => {
+		mockRefresh.mockResolvedValue(undefined);
+		mockUseProjects.mockReturnValue({
+			workspaces: baseWorkspaces,
+			loading: false,
+			error: null,
+			refresh: mockRefresh,
+		});
+	});
+
+	it("shows the delete affordance on every row including the personal scope", async () => {
+		vi.spyOn(window, "confirm").mockReturnValue(false);
+		renderWithMantine(<ProjectsSidePanel />);
+
+		// The × button is rendered for the USER-kind personal row too —
+		// the server enforces the "cannot delete personal scope" rule
+		// (v1/15 §6 #15), the client no longer hides the affordance.
+		expect(await screen.findByTestId("project-delete-me")).toBeTruthy();
+		expect(screen.getByTestId("project-delete-ws-team")).toBeTruthy();
+	});
+
+	it("attempts deletion of the personal scope and surfaces the server rejection as an alert", async () => {
+		const alertSpy = vi.spyOn(window, "alert").mockImplementation(() => {});
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		mockDeleteWorkspace.mockRejectedValueOnce(new Error("personal scope protected"));
+
+		renderWithMantine(<ProjectsSidePanel />);
+		const user = userEvent.setup();
+		await user.click(await screen.findByTestId("project-delete-me"));
+
+		await waitFor(() =>
+			expect(mockDeleteWorkspace).toHaveBeenCalledWith("me"),
+		);
+		expect(alertSpy).toHaveBeenCalledWith(
+			"Failed to delete: personal scope protected",
+		);
+		// No refresh on failure; the panel stays intact.
+		expect(mockRefresh).not.toHaveBeenCalled();
+	});
+
+	it("deletes a non-personal workspace and refreshes the list", async () => {
+		vi.spyOn(window, "confirm").mockReturnValue(true);
+		mockDeleteWorkspace.mockResolvedValue(undefined);
+
+		renderWithMantine(<ProjectsSidePanel />);
+		const user = userEvent.setup();
+		await user.click(await screen.findByTestId("project-delete-ws-team"));
+
+		await waitFor(() =>
+			expect(mockDeleteWorkspace).toHaveBeenCalledWith("ws-team"),
+		);
+		expect(mockRefresh).toHaveBeenCalledTimes(1);
+	});
+
+	it("does not delete when the user cancels the confirmation dialog", async () => {
+		vi.spyOn(window, "confirm").mockReturnValue(false);
+
+		renderWithMantine(<ProjectsSidePanel />);
+		const user = userEvent.setup();
+		await user.click(await screen.findByTestId("project-delete-ws-team"));
+
+		expect(mockDeleteWorkspace).not.toHaveBeenCalled();
 	});
 });

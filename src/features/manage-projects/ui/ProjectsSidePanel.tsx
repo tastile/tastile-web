@@ -23,7 +23,7 @@ import {
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
-import { ChevronRight, FolderPlus, Plus, User as UserIcon } from "lucide-react";
+import { ChevronRight, FolderPlus, Plus } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 
@@ -116,9 +116,8 @@ export function ProjectsSidePanel() {
   }
 
   function handleDeleteEntry(workspace: Workspace, displayName: string) {
-    // v1/15 §6 #15: USER subject is the implicit personal scope and cannot
-    // be deleted (no UI affordance, server enforces via kind filter).
-    if (workspace.kind === 0) return;
+    // No client-side kind filter — the server enforces the personal
+    // scope protection (v1/15 §6 #15) and will surface the failure.
     handleDelete(workspace.id, displayName);
   }
 
@@ -298,7 +297,6 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
       const color = colorById.get(node.value) ?? undefined;
       const kind = kindById.get(node.value) ?? 1;
       const isSelected = currentOwner === node.value;
-      const isPersonal = kind === 0;
       const displayName = String(node.label ?? "");
       return (
         <div
@@ -328,52 +326,41 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
           ) : (
             <span aria-hidden className="h-4 w-4 shrink-0" />
           )}
-          <Button
+          <button
             type="button"
             onClick={() => onSelect(node.value)}
-            className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm"
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-transparent px-2 py-1.5 text-left text-sm hover:bg-transparent"
             data-testid={`project-select-${node.value}`}
           >
-            {isPersonal ? (
-              <UserIcon
-                aria-hidden
-                className="h-3 w-3 shrink-0 text-foreground-subtle"
-              />
-            ) : (
-              <span
-                aria-hidden
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
-                style={{ backgroundColor: color ?? "#6b7280" }}
-              />
-            )}
+            <span
+              aria-hidden
+              className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-inset ring-border/40"
+              style={{ backgroundColor: color ?? "#6b7280" }}
+            />
             <span className="min-w-0 flex-1 truncate">{displayName}</span>
-          </Button>
-          {/* v1/15 §6 #15: USER subject is the implicit personal scope and
-              cannot be deleted. Hide the × button on the personal row. */}
-          {!isPersonal && (
-            <ActionIcon
-              variant="subtle"
-              size="sm"
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(
-                  workspaces.find((w) => w.id === node.value) ??
-                  ({
-                    id: node.value,
-                    kind,
-                    display_name: displayName,
-                  } as Workspace),
-                  displayName,
-                );
-              }}
-              aria-label={`Delete ${displayName}`}
-              className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
-              data-testid={`project-delete-${node.value}`}
-            >
-              ×
-            </ActionIcon>
-          )}
+          </button>
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(
+                workspaces.find((w) => w.id === node.value) ??
+                ({
+                  id: node.value,
+                  kind,
+                  display_name: displayName,
+                } as Workspace),
+                displayName,
+              );
+            }}
+            aria-label={`Delete ${displayName}`}
+            className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
+            data-testid={`project-delete-${node.value}`}
+          >
+            ×
+          </ActionIcon>
         </div>
       );
     },

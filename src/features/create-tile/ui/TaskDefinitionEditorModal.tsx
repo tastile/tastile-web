@@ -10,7 +10,6 @@ import {
   Switch,
   Text,
   TextInput,
-  Textarea,
 } from "@mantine/core";
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -22,6 +21,7 @@ import { TaskOrderRelation } from "@/shared/model/v1/constants";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 
 import { ConditionEditor } from "./ConditionEditor";
+import { QuickCreateHeader } from "./QuickCreateHeader";
 
 interface DraftTask {
   title: string;
@@ -266,44 +266,57 @@ export function TaskDefinitionEditorModal({
     <Modal
       opened={opened}
       onClose={onClose}
-      title={taskId
-        ? t(`${i18nPrefix}.subtaskEditTitle`) || "Edit sub-task"
-        : t(`${i18nPrefix}.subtaskAddTitle`) || "Add sub-task"}
-      size="lg"
       centered
+      withCloseButton={false}
+      size="md"
       data-testid={`${testIdSuffix}-root`}
     >
-      <Stack gap="md">
+      <QuickCreateHeader
+        value={draft.title}
+        onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
+        onClose={onClose}
+        placeholder={t(`${i18nPrefix}.taskTitlePlaceholder`) || "What needs to happen?"}
+        closeTestId={`${testIdSuffix}-cancel`}
+        closeAriaLabel={t(`${i18nPrefix}.cancel`) || "Cancel"}
+        titleTestId={`${testIdSuffix}-title`}
+        required
+        autoFocus
+        padded={false}
+        submitButton={
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            data-testid={`${testIdSuffix}-submit`}
+          >
+            {taskId
+              ? t(`${i18nPrefix}.save`) || "Save"
+              : t(`${i18nPrefix}.add`) || "Add"}
+          </Button>
+        }
+      />
+      <Stack gap="md" className="px-4 pb-4 pt-2">
         <TextInput
-          value={draft.title}
+          value={draft.note ?? ""}
           onChange={(e) => {
             // Capture the value up-front: React 19 nulls `currentTarget` on
             // the pooled synthetic event before the setState reducer runs,
             // so we cannot read it inside the updater.
-            const value = e.currentTarget.value;
-            setDraft((prev) => ({ ...prev, title: value }));
-          }}
-          label={t(`${i18nPrefix}.subtaskTitleLabel`) || "Title"}
-          placeholder={t(`${i18nPrefix}.taskTitlePlaceholder`) || "What needs to happen?"}
-          required
-          withAsterisk
-          data-testid={`${testIdSuffix}-title`}
-        />
-        <Textarea
-          value={draft.note ?? ""}
-          onChange={(e) => {
             const value = e.currentTarget.value;
             setDraft((prev) => ({
               ...prev,
               note: value.length > 0 ? value : null,
             }));
           }}
-          label={t(`${i18nPrefix}.subtaskNoteLabel`) || "Note"}
           placeholder={t(`${i18nPrefix}.taskDescriptionPlaceholder`) || "Why this task matters"}
-          autosize
-          minRows={2}
-          maxRows={6}
+          variant="unstyled"
+          size="sm"
           data-testid={`${testIdSuffix}-note`}
+          classNames={{
+            input:
+              "qc-underline-input--muted bg-transparent text-sm leading-relaxed text-foreground placeholder:text-[var(--foreground-muted)] px-0 h-auto",
+          }}
         />
 
         <div className="flex flex-col gap-1.5">
@@ -322,6 +335,7 @@ export function TaskDefinitionEditorModal({
               }));
             }}
             label={t(`${i18nPrefix}.taskShowEnabledLabel`) || "Only show when…"}
+            size="sm"
             data-testid={`${testIdSuffix}-show-toggle`}
           />
           {draft.show !== null && (
@@ -357,7 +371,7 @@ export function TaskDefinitionEditorModal({
             </Text>
             <Button
               type="button"
-              size="compact-xs"
+              size="sm"
               variant="subtle"
               leftSection={<Plus className="h-3 w-3" aria-hidden />}
               onClick={addOrderRule}
@@ -368,7 +382,7 @@ export function TaskDefinitionEditorModal({
             </Button>
           </div>
           {draft.order.length === 0 ? (
-            <Text size="xs" c="dimmed" data-testid={`${testIdSuffix}-order-empty`}>
+            <Text size="sm" c="dimmed" data-testid={`${testIdSuffix}-order-empty`}>
               {t(`${i18nPrefix}.taskOrderEmpty`) || "No ordering constraints."}
             </Text>
           ) : (
@@ -389,7 +403,7 @@ export function TaskDefinitionEditorModal({
                       { value: String(TaskOrderRelation.BEFORE), label: t(`${i18nPrefix}.taskOrderBefore`) || "Before" },
                       { value: String(TaskOrderRelation.AFTER), label: t(`${i18nPrefix}.taskOrderAfter`) || "After" },
                     ]}
-                    size="xs"
+                    size="sm"
                     className="w-28"
                     aria-label={t(`${i18nPrefix}.taskOrderRelationAria`) || "Relation"}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-relation`}
@@ -401,7 +415,7 @@ export function TaskDefinitionEditorModal({
                       updateOrderRule(rule.id, { targetTaskId: value });
                     }}
                     data={targetOptions}
-                    size="xs"
+                    size="sm"
                     className="flex-1"
                     aria-label={t(`${i18nPrefix}.taskOrderTargetAria`) || "Target task"}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-target`}
@@ -410,6 +424,7 @@ export function TaskDefinitionEditorModal({
                     type="button"
                     variant="subtle"
                     color="red"
+                    size="sm"
                     onClick={() => removeOrderRule(rule.id)}
                     aria-label={t(`${i18nPrefix}.removeItem`) || "Remove"}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-remove`}
@@ -426,29 +441,9 @@ export function TaskDefinitionEditorModal({
           checked={draft.done}
           onChange={(e) => setDraft((prev) => ({ ...prev, done: e.currentTarget.checked }))}
           label={t(`${i18nPrefix}.subtaskDoneLabel`) || "Mark as done"}
+          size="sm"
           data-testid={`${testIdSuffix}-done`}
         />
-
-        <div className="flex justify-end gap-2 border-t border-border pt-3">
-          <Button
-            type="button"
-            variant="default"
-            onClick={onClose}
-            data-testid={`${testIdSuffix}-cancel`}
-          >
-            {t(`${i18nPrefix}.cancel`) || "Cancel"}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            data-testid={`${testIdSuffix}-submit`}
-          >
-            {taskId
-              ? t(`${i18nPrefix}.save`) || "Save"
-              : t(`${i18nPrefix}.add`) || "Add"}
-          </Button>
-        </div>
       </Stack>
     </Modal>
   );

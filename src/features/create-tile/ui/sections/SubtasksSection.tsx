@@ -2,7 +2,6 @@
 
 import {
   ActionIcon,
-  Button,
   Checkbox,
   Stack,
   Text,
@@ -187,7 +186,7 @@ export function SubtasksSection({
           </span>
           {tasks.length > 0 && (
             <Text
-              size="xs"
+              size="sm"
               c="dimmed"
               data-testid={`${testId}-progress`}
             >
@@ -196,24 +195,7 @@ export function SubtasksSection({
           )}
         </div>
 
-        {tasks.length === 0 ? (
-          <div className="flex flex-col gap-1.5" data-testid={`${testId}-empty`}>
-            <Text size="xs" c="dimmed" data-testid={`${testId}-empty-hint`}>
-              {t(emptyHintKey) || fallbackEmptyHint}
-            </Text>
-            <Button
-              type="button"
-              variant="subtle"
-              size="xs"
-              onClick={openCreate}
-              data-testid={`${testId}-add-first`}
-              className="self-start"
-            >
-              {t(addFirstKey) || fallbackAddFirst}
-            </Button>
-          </div>
-        ) : (
-          <Stack gap={2}>
+        <Stack gap={2}>
             {tasks.map((task, idx) => (
               <div
                 key={task.id}
@@ -221,7 +203,7 @@ export function SubtasksSection({
                 className="flex items-center gap-2"
               >
                 <Checkbox
-                  size="xs"
+                  size="sm"
                   checked={task.done}
                   onChange={() => toggleTaskDone(task.id)}
                   aria-label={
@@ -236,7 +218,7 @@ export function SubtasksSection({
                   onChange={(e) =>
                     setTaskField(task.id, "content.title", e.currentTarget.value)
                   }
-                  size="xs"
+                  size="sm"
                   className={
                     task.done
                       ? "flex-1 line-through text-dimmed"
@@ -303,7 +285,6 @@ export function SubtasksSection({
               </div>
             ))}
           </Stack>
-        )}
 
         <button
           type="button"

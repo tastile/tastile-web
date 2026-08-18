@@ -11,7 +11,7 @@ interface FormRowProps {
    * magic numbers. The grid track is structural, not conditional.
    */
   icon?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
   trailing?: ReactNode;
   className?: string;
   tight?: boolean;

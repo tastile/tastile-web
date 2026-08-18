@@ -432,6 +432,164 @@ export interface QuickCreateState {
   setFieldErrors: (errors: Map<string, string>) => void;
   setCanSubmit: (v: boolean) => void;
   setSubmitBlockedReason: (reason: string | null) => void;
+  /**
+   * `JSON.stringify(normalizeForCompare(state))` captured at the moment a
+   * loader (or `openEdit`) finished seeding the panel. `null` means "no
+   * baseline captured yet" — `selectIsDirty` treats that as "clean" so the
+   * submit button stays disabled until hydration completes. The comparison
+   * is the deterministic key-order subset returned by `normalizeForCompare`,
+   * so the same input always yields the same baseline string.
+   */
+  baseline: string | null;
+  /**
+   * Snapshot the current editable state into `baseline`. Called at the end
+   * of every loader's data-seeding step so the next `setField` / `addTask`
+   * / `removeTask` / `setTaskField` flips `selectIsDirty` to true.
+   */
+  captureBaseline: () => void;
+}
+
+/**
+ * Pure selector for the dirty flag. In create mode this is always `true`
+ * (the panel is "ready to submit when valid" the moment the user fills the
+ * title); in edit mode it returns `false` until `captureBaseline` runs at
+ * the end of the loader, and after that returns whether the editable
+ * state has diverged from the captured baseline.
+ */
+export function selectIsDirty(state: QuickCreateState): boolean {
+  if (state.mode === "create") return true;
+  if (state.baseline === null) return false;
+  return JSON.stringify(normalizeForCompare(state)) !== state.baseline;
+}
+
+/**
+ * Build a stable plain-object view of the form-bearing slices so that
+ * `JSON.stringify` produces a deterministic key-order output regardless of
+ * how the original objects were constructed. Field order is explicit (no
+ * spread) so the same input always yields the same string — that is what
+ * makes the dirty gate reproducible.
+ *
+ * Includes EVERY slice the panel can edit, including wire-silently-dropped
+ * ones (`frameRules`, `recurring.condition`, `source.relations`,
+ * `source.flowSequences`, `plan.planning.flows`, `plan.metrics`,
+ * `plan.decisions`, `advanced.changeSets`, `advanced.rules`) — see
+ * `docs/plans/2026-08-15-quickcreate-edit-gate.md` for the rationale.
+ * Excludes only transient UI flags (mode, isOpen, panel state, etc.).
+ */
+function normalizeForCompare(state: QuickCreateState): Record<string, unknown> {
+  return {
+    identity: {
+      kind: state.identity.kind,
+      title: state.identity.title,
+      description: state.identity.description,
+      externalId: state.identity.externalId,
+      visual: {
+        color: state.identity.visual.color,
+        icon: state.identity.visual.icon,
+      },
+    },
+    time: {
+      timeModel: state.time.timeModel,
+      schedulableWindow: {
+        start: state.time.schedulableWindow.start,
+        end: state.time.schedulableWindow.end,
+      },
+      span: { start: state.time.span.start, end: state.time.span.end },
+      durationMinMax: {
+        minMs: state.time.durationMinMax.minMs,
+        maxMs: state.time.durationMinMax.maxMs,
+      },
+      whenMode: state.time.whenMode,
+      timeOfDayMode: state.time.timeOfDayMode,
+      timeOfDayStart: state.time.timeOfDayStart,
+      timeOfDayEnd: state.time.timeOfDayEnd,
+      referenceId: state.time.referenceId,
+      referenceLabel: state.time.referenceLabel,
+      splitPolicy: state.time.splitPolicy,
+    },
+    windows: [...state.windows].sort((a, b) => a.id.localeCompare(b.id)),
+    plan: {
+      role: state.plan.role,
+      references: state.plan.references,
+      completion: {
+        root: state.plan.completion.root,
+        // `timeRequirements[]` is excluded: its entries are server-side
+        // structural rows whose `id` is `Math.random()`-generated and
+        // whose user-authored content (`required.{minMs,maxMs}`) is
+        // mirrored into `time.durationMinMax` above. Including them
+        // would make the baseline non-reproducible across `reset()`.
+        //
+        // Task order is preserved (no sort by id) so that a user-driven
+        // `reorderTasks(...)` registers as dirty. Sorting by id would
+        // make the normalized form invariant under reorder, which
+        // contradicts the user-facing semantics of dragging a task in
+        // the UI.
+        tasks: state.plan.completion.tasks,
+      },
+      planning: {
+        placementRules: state.plan.planning.placementRules,
+        nestingRules: state.plan.planning.nestingRules,
+        flows: state.plan.planning.flows,
+      },
+      metrics: state.plan.metrics,
+      decisions: state.plan.decisions,
+    },
+    source: {
+      offsetMin: state.source.offsetMin,
+      excludedDates: state.source.excludedDates,
+      preferredDurationMinMax: {
+        minMs: state.source.preferredDurationMinMax.minMs,
+        maxMs: state.source.preferredDurationMinMax.maxMs,
+      },
+      splitPolicy: {
+        kind: state.source.splitPolicy.kind,
+        minSegmentMs: state.source.splitPolicy.minSegmentMs,
+        maxSegmentMs: state.source.splitPolicy.maxSegmentMs,
+        maxSegments: state.source.splitPolicy.maxSegments,
+      },
+      priority: state.source.priority,
+      include: state.source.include,
+      anchorMode: state.source.anchorMode,
+      relations: state.source.relations,
+      flowSequences: state.source.flowSequences,
+    },
+    recurring: {
+      life: {
+        active: {
+          startDate: state.recurring.life.active.startDate,
+          endDate: state.recurring.life.active.endDate,
+        },
+        state: state.recurring.life.state,
+        // `changed` is a server-side audit Stamp (timestamp + actor) — the
+        // panel does not author it, and its `at` timestamp can differ
+        // across captures even when nothing else has changed. Excluded so
+        // the baseline is reproducible.
+      },
+      frameRules: state.recurring.frameRules,
+      rules: state.recurring.rules,
+      repeatMode: state.recurring.repeatMode,
+      weekdayMask: state.recurring.weekdayMask,
+      endDate: state.recurring.endDate,
+      intervalValue: state.recurring.intervalValue,
+      intervalUnit: state.recurring.intervalUnit,
+      condition: state.recurring.condition,
+      conditionIgnored: state.recurring.conditionIgnored,
+      monthlyKind: state.recurring.monthlyKind,
+      monthlyDayOfMonth: state.recurring.monthlyDayOfMonth,
+      monthlyWeekOfMonth: state.recurring.monthlyWeekOfMonth,
+      monthlyWeekday: state.recurring.monthlyWeekday,
+    },
+    recurrence: state.recurrence,
+    advanced: {
+      changeSets: state.advanced.changeSets,
+      rules: state.advanced.rules,
+    },
+    meta: {
+      ownerSubjectId: state.meta.ownerSubjectId,
+      memo: state.meta.memo,
+      isLabelOnly: state.meta.isLabelOnly,
+    },
+  };
 }
 
 // ---------- defaults ----------
@@ -523,7 +681,7 @@ function defaultPlan(): Plan {
     completion: {
       root: defaultConditionRoot(),
       timeRequirements: [defaultTimeRequirement()],
-      tasks: [defaultTask("Mark done")],
+      tasks: [],
     },
     planning: {
       placementRules: [],
@@ -669,6 +827,22 @@ function addMinutesToHHMM(hhmm: string, delta: number): string {
   const nextH = Math.floor(total / 60);
   const nextM = total % 60;
   return `${String(nextH).padStart(2, "0")}:${String(nextM).padStart(2, "0")}`;
+}
+
+/**
+ * Inverse of `isoToTime` (defined per-workflow). Returns "HH:MM" extracted
+ * from an ISO timestamp, or "" when the input is empty / unparseable.
+ * Used by `loadFromEvent` / `loadFromPlacementEvent` to seed
+ * `time.timeOfDayStart/End` when hydrating an edit-mode panel so the
+ * legacy `timeOfDay` fields round-trip cleanly.
+ */
+function hhmmFromIso(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const h = String(d.getHours()).padStart(2, "0");
+  const m = String(d.getMinutes()).padStart(2, "0");
+  return `${h}:${m}`;
 }
 
 /**
@@ -872,6 +1046,7 @@ export function buildDefaultQuickCreateState(): Pick<
   | "canSubmit"
   | "submitBlockedReason"
   | "fieldErrors"
+  | "baseline"
 > {
   return {
     isOpen: false,
@@ -897,6 +1072,7 @@ export function buildDefaultQuickCreateState(): Pick<
     canSubmit: false,
     submitBlockedReason: null,
     fieldErrors: new Map(),
+    baseline: null,
   };
 }
 
@@ -980,6 +1156,7 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       activePanel: "base",
       submitState: { kind: "idle" },
       fieldErrors: new Map(),
+      baseline: null,
     }),
   toggle: () => set((state) => ({ isOpen: !state.isOpen })),
   setWorkflow: (kind) =>
@@ -998,6 +1175,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
   setFieldErrors: (errors) => set({ fieldErrors: errors }),
   setCanSubmit: (v) => set({ canSubmit: v }),
   setSubmitBlockedReason: (reason) => set({ submitBlockedReason: reason }),
+  captureBaseline: () =>
+    set({ baseline: JSON.stringify(normalizeForCompare(get())) }),
   setField: (path, value) =>
     set((state) => {
       const next = setDeepPath(state, path, value);
@@ -1157,7 +1336,14 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         role: isLabelOnly ? PlanRole.LABEL : PlanRole.EXECUTABLE,
       },
     })),
-  loadFromEvent: (event) =>
+  loadFromEvent: (event) => {
+    // Map `allDay` directly to `time.timeOfDayMode` so the Event form's
+    // `allDay` Switch reflects the loaded state on open (instead of
+    // silently defaulting to a time-bearing event when the user opens an
+    // all-day placement for edit).
+    const allDay = event.allDay === true;
+    const startHHMM = allDay ? "00:00" : hhmmFromIso(event.start);
+    const endHHMM = allDay ? "23:59" : hhmmFromIso(event.end);
     set(() => ({
       isOpen: true,
       mode: "edit" as const,
@@ -1180,9 +1366,9 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         span: { start: event.start, end: event.end },
         durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
         whenMode: event.start || event.end ? (event.end ? "range" : "day") : "none",
-        timeOfDayMode: "unspecified",
-        timeOfDayStart: "",
-        timeOfDayEnd: "",
+        timeOfDayMode: allDay ? "all-day" : event.end ? "range" : "unspecified",
+        timeOfDayStart: startHHMM,
+        timeOfDayEnd: endHHMM,
         referenceId: null,
         referenceLabel: "",
         splitPolicy: "unsplit",
@@ -1191,7 +1377,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         ...useQuickCreateStore.getState().meta,
         memo: event.memo ?? "",
       },
-    })),
+    }));
+    // Capture baseline after seeding so the next `setField` flips
+    // `selectIsDirty` to true.
+    get().captureBaseline();
+  },
   loadFromPlacementEvent: async (event) => {
     // 1. Immediately open the panel in edit mode with event-level data so the
     //    user sees a responsive UI while the full tile fetch is in flight.
@@ -1219,6 +1409,14 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
     const colon = event.id.indexOf(":");
     const placementId = colon > 0 ? event.id.slice(0, colon) : event.id;
 
+    // Map `allDay` directly to `time.timeOfDayMode` so the Event form's
+    // `allDay` Switch reflects the loaded state on open. Without this,
+    // opening an all-day placement silently lands on a time-bearing form
+    // (see loadFromEvent for the same rationale).
+    const allDay = event.allDay === true;
+    const startHHMM = allDay ? "00:00" : hhmmFromIso(event.start);
+    const endHHMM = allDay ? "23:59" : hhmmFromIso(event.end);
+
     set({
       isOpen: true,
       mode: "edit" as const,
@@ -1243,9 +1441,9 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         span: { start: event.start, end: event.end },
         durationMinMax: { minMs: 30 * 60_000, maxMs: 30 * 60_000 },
         whenMode: event.start || event.end ? (event.end ? "range" : "day") : "none",
-        timeOfDayMode: "unspecified",
-        timeOfDayStart: "",
-        timeOfDayEnd: "",
+        timeOfDayMode: allDay ? "all-day" : event.end ? "range" : "unspecified",
+        timeOfDayStart: startHHMM,
+        timeOfDayEnd: endHHMM,
         referenceId: null,
         referenceLabel: "",
         splitPolicy: "unsplit",
@@ -1255,6 +1453,10 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         memo: event.memo ?? "",
       },
     });
+    // Capture baseline from the synchronous phase so even an unenriched
+    // open (no tile id, or tile fetch that fails) still gets a usable
+    // isDirty gate.
+    get().captureBaseline();
 
     // 2. Async-enrich with full tile data (description / externalId / plan.role).
     //    Failures are surfaced as a banner but do NOT block submit — the event-
@@ -1289,8 +1491,13 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
           },
         },
       }));
+      // Re-capture baseline so the async enrichment (which mutates
+      // identity fields) doesn't itself flip isDirty to true.
+      get().captureBaseline();
     } catch {
-      // Non-fatal — the basic event data is still usable.
+      // Non-fatal — the basic event data is still usable. Keep the
+      // baseline captured from the synchronous phase; loadError is the
+      // banner, submitBlocked stays false so the user can edit-and-submit.
       set({
         loadError: `Could not load full tile data for ${tileId}. Basic fields are still editable.`,
       });
@@ -1362,6 +1569,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         },
         recurrence: null,
       });
+      // Capture baseline only on the success branch. On failure the
+      // baseline stays null so `selectIsDirty` returns false (button
+      // stays disabled) and the loadError banner + submitBlocked gate
+      // are the only signals the user sees.
+      get().captureBaseline();
       return tile;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -1392,6 +1604,11 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
       meta: defaultMeta(),
       recurrence: template.recurrence,
     });
+    // Mode is "create" so the baseline snapshot is informational only —
+    // `selectIsDirty` always returns true in create mode and the gate
+    // is driven by `canSubmit`. Capturing keeps the round-trip
+    // deterministic if a future flow flips to edit mode mid-session.
+    get().captureBaseline();
   },
   reset: () =>
     set((state) => ({

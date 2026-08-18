@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  CloseButton,
   Group,
   NumberInput,
   SegmentedControl,
   Select,
   Stack,
   Switch,
-  TextInput,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import {
@@ -26,7 +24,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormDivider, FormRow, RowSegmented } from "@/shared/ui/form";
-import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
+import { QuickCreateHeader } from "./QuickCreateHeader";
 import { RecurringDetailsSubPanel } from "./RecurringDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
 import { WorkflowBatch } from "./WorkflowBatch";
@@ -566,39 +564,17 @@ export function QuickCreateRecurring() {
   return (
     <Stack gap={0} className="h-full">
       <Stack gap={0} className="flex-1 overflow-y-auto">
-        {/* Title — close button in icon column, submit button in trailing slot */}
-        <div className="px-4 py-2">
-          <FormRow
-            icon={
-              <CloseButton
-                onClick={close}
-                aria-label={t("quickCreate.cancel")}
-                data-testid="quick-create-recurring-close"
-                size="sm"
-              />
-            }
-            trailing={<QuickCreateSubmitButton />}
-          >
-            <TextInput
-              variant="unstyled"
-              size="lg"
-              placeholder={t("quickCreate.titlePlaceholder") || t("quickCreate.placeholder")}
-              value={title}
-              onChange={(e) => setField("identity.title", e.currentTarget.value)}
-              required
-              data-testid="recurring-title"
-              autoFocus
-              // Visible bottom underline is enforced by a CSS rule in
-              // `src/app/globals.css` (`.qc-underline-input`) — Mantine v9's
-              // `mantine-Input-input` module class sets a shorthand `border`
-              // that would otherwise win over Tailwind's `border-b-2`.
-              classNames={{
-                input:
-                  "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
-              }}
-            />
-          </FormRow>
-        </div>
+        <QuickCreateHeader
+          value={title}
+          onChange={(next) => setField("identity.title", next)}
+          onClose={close}
+          placeholder={t("quickCreate.titlePlaceholder") || t("quickCreate.placeholder")}
+          closeTestId="quick-create-recurring-close"
+          closeAriaLabel={t("quickCreate.cancel")}
+          titleTestId="recurring-title"
+          required
+          autoFocus
+        />
         <WorkflowBatch />
 
         {/* Repeat mode — chosen first so the time row below can adapt */}

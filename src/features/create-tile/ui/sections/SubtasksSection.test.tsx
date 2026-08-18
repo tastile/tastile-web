@@ -136,14 +136,19 @@ describe("SubtasksSection", () => {
     expect(screen.getByTestId("subtasks-test-id-add")).toBeInTheDocument();
   });
 
-  it("renders the empty hint and CTA when no tasks exist", () => {
+  it("does not render the empty hint or CTA wrapper when no tasks exist", () => {
     resetEmptyTasks();
     renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
-    expect(screen.getByTestId("subtasks-test-id-empty")).toBeInTheDocument();
+    // The empty wrapper, hint copy and CTA button were dropped; the
+    // underline add affine now stands alone as the only empty-state
+    // affordance.
+    expect(screen.queryByTestId("subtasks-test-id-empty")).not.toBeInTheDocument();
     expect(
-      screen.getByTestId("subtasks-test-id-empty-hint"),
-    ).toBeInTheDocument();
-    expect(screen.getByTestId("subtasks-test-id-add-first")).toBeInTheDocument();
+      screen.queryByTestId("subtasks-test-id-empty-hint"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("subtasks-test-id-add-first"),
+    ).not.toBeInTheDocument();
   });
 
   it("opens the add modal when the underline affine is clicked", async () => {
@@ -156,12 +161,12 @@ describe("SubtasksSection", () => {
     ).toBeInTheDocument();
   });
 
-  it("opens the add modal when the empty-state CTA is clicked", async () => {
+  it("opens the add modal when the underline affine is clicked in the empty state", async () => {
     resetEmptyTasks();
     const user = userEvent.setup();
     renderWithMantine(<SubtasksSection testId="subtasks-test-id" />);
 
-    await user.click(screen.getByTestId("subtasks-test-id-add-first"));
+    await user.click(screen.getByTestId("subtasks-test-id-add"));
     expect(
       screen.getByTestId("subtasks-test-id-modal-root"),
     ).toBeInTheDocument();

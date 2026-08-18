@@ -184,6 +184,14 @@ describe("QuickCreateEvent", () => {
 
     renderWithMantine(<QuickCreateEvent />);
     expect(screen.getByTestId("event-subtasks")).toBeInTheDocument();
-    expect(screen.getByTestId("event-subtasks-empty")).toBeInTheDocument();
+    // Empty state renders only the underline add affine; the empty
+    // wrapper testid was removed when the hint + CTA were dropped.
+    expect(screen.getByTestId("event-subtasks-add")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("event-subtasks-empty-hint"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByTestId("event-subtasks-add-first"),
+    ).not.toBeInTheDocument();
   });
 });

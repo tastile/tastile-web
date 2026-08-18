@@ -1,8 +1,8 @@
 "use client";
 
-import { Button, NumberInput, TextInput } from "@mantine/core";
+import { Button, NumberInput, Select, TextInput } from "@mantine/core";
 import { TimeInput } from "@mantine/dates";
-import { ChevronDown, ChevronUp, GitBranch, ListChecks, Plus, Search, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, GitBranch, Plus, Search, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 
 import type {
@@ -75,7 +75,15 @@ function TermKindSegmented({
     { value: "life", label: t("quickCreate.termLife") },
   ];
   return (
-    <RowSegmented icon={ListChecks} options={options} value={value} onChange={onChange} compact />
+    <Select
+      data={options}
+      value={value}
+      onChange={(v) => {
+        if (v !== null) onChange(v);
+      }}
+      size="sm"
+      aria-label="Term kind"
+    />
   );
 }
 
@@ -211,7 +219,7 @@ function PickerButton({
     <>
       <Button
         type="button"
-        size="xs"
+        size="sm"
         variant={hasValue ? "light" : "filled"}
         onClick={() => setOpened(true)}
         leftSection={<Search size={12} aria-hidden="true" />}
@@ -270,7 +278,7 @@ function TermFields({
               onChange={(value) =>
                 onChange(updateCalendar(term, "weekdayMask", Number(value) || 0))
               }
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -282,7 +290,7 @@ function TermFields({
               id={`${fieldIdBase}-offsetMin`}
               value={term.value.offsetMin}
               onChange={(value) => onChange(updateCalendar(term, "offsetMin", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -302,7 +310,7 @@ function TermFields({
                   ),
                 )
               }
-              size="xs"
+              size="sm"
               variant="filled"
               styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
@@ -321,7 +329,7 @@ function TermFields({
                   ),
                 )
               }
-              size="xs"
+              size="sm"
               variant="filled"
               styles={{ input: { backgroundColor: "var(--surface-2)" } }}
             />
@@ -348,7 +356,7 @@ function TermFields({
               id={`${fieldIdBase}-offsetMs`}
               value={term.value.offsetMs}
               onChange={(value) => onChange(updateMoment(term, "offsetMs", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -374,7 +382,7 @@ function TermFields({
               id={`${fieldIdBase}-relation`}
               value={term.value.relation}
               onChange={(value) => onChange(updateRelation(term, "relation", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -386,7 +394,7 @@ function TermFields({
               id={`${fieldIdBase}-windowKind`}
               value={term.value.windowKind}
               onChange={(value) => onChange(updateRelation(term, "windowKind", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -410,7 +418,7 @@ function TermFields({
               id={`${fieldIdBase}-state`}
               value={term.value.state}
               onChange={(value) => onChange(updateTask(term, "state", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -434,7 +442,7 @@ function TermFields({
               id={`${fieldIdBase}-state`}
               value={term.value.state}
               onChange={(value) => onChange(updateRequirement(term, "state", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -454,7 +462,7 @@ function TermFields({
               id={`${fieldIdBase}-id`}
               value={String(v[idKey] ?? "")}
               onChange={(e) => onChange(updateValue(term, idKey, e.target.value))}
-              size="xs"
+              size="sm"
             />
           </label>
           <label htmlFor={`${fieldIdBase}-op`} className="space-y-1">
@@ -463,7 +471,7 @@ function TermFields({
               id={`${fieldIdBase}-op`}
               value={v.op}
               onChange={(value) => onChange(updateValue(term, "op", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -483,7 +491,7 @@ function TermFields({
                   updateValue(term, "value", Number.isFinite(num) && raw.trim() !== "" ? num : raw),
                 );
               }}
-              size="xs"
+              size="sm"
             />
           </label>
         </div>
@@ -507,7 +515,7 @@ function TermFields({
               id={`${fieldIdBase}-state`}
               value={term.value.state}
               onChange={(value) => onChange(updateLife(term, "state", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -522,7 +530,7 @@ function TermFields({
               id={`${gapIdBase}-scope`}
               value={term.value.scope}
               onChange={(value) => onChange(updateGap(term, "scope", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -543,7 +551,7 @@ function TermFields({
               onChange={(value) =>
                 onChange(updateGapAnchor(term, "leftAnchor", "point", Number(value) || 0))
               }
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -564,7 +572,7 @@ function TermFields({
               onChange={(value) =>
                 onChange(updateGapAnchor(term, "rightAnchor", "point", Number(value) || 0))
               }
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -574,7 +582,7 @@ function TermFields({
               id={`${gapIdBase}-sizeMin`}
               value={term.value.size?.minMs ?? 0}
               onChange={(value) => onChange(updateGapSize(term, "minMs", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -584,7 +592,7 @@ function TermFields({
               id={`${gapIdBase}-sizeMax`}
               value={term.value.size?.maxMs ?? 0}
               onChange={(value) => onChange(updateGapSize(term, "maxMs", Number(value) || 0))}
-              size="xs"
+              size="sm"
               className="w-full"
             />
           </label>
@@ -712,7 +720,7 @@ export function ConditionEditor({
                   <div className="flex items-center gap-1">
                     <Button
                       type="button"
-                      size="xs"
+                      size="sm"
                       variant="subtle"
                       leftSection={<ChevronUp size={14} aria-hidden="true" />}
                       onClick={() => {
@@ -727,7 +735,7 @@ export function ConditionEditor({
                     />
                     <Button
                       type="button"
-                      size="xs"
+                      size="sm"
                       variant="subtle"
                       leftSection={<ChevronDown size={14} aria-hidden="true" />}
                       onClick={() => {
@@ -742,7 +750,7 @@ export function ConditionEditor({
                     />
                     <Button
                       type="button"
-                      size="xs"
+                      size="sm"
                       variant="subtle"
                       leftSection={<Trash2 size={14} aria-hidden="true" />}
                       onClick={() => {

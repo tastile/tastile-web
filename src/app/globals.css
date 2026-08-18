@@ -527,8 +527,14 @@ button {
  * The FormRow content div uses `flex items-center`, which leaves Mantine's
  * wrapper at its content-based width (no stretching). Stretch it to the
  * full grid column so the underline reaches the panel's right edge.
+ *
+ * The same underline applies to QuickCreateHeader instances rendered
+ * inside Mantine modals (e.g. TaskDefinitionEditorModal), so the rule
+ * scopes to both `.quick-create-panel` and `.mantine-Modal-content` via
+ * `:where(...)` (specificity 0,0,1,0 + 0,0,1,0 = 0,0,1,0 on the inner
+ * element, which still loses to Mantine's `border` shorthand).
  */
-.quick-create-panel .qc-underline-input {
+:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input {
   border-top: 0;
   border-left: 0;
   border-right: 0;
@@ -537,12 +543,12 @@ button {
   transition: border-color 160ms ease;
 }
 
-.quick-create-panel .qc-underline-input:focus,
-.quick-create-panel .qc-underline-input:focus-within {
+:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input:focus,
+:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input:focus-within {
   border-bottom-color: var(--primary);
 }
 
-.quick-create-panel .qc-underline-input--muted {
+:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input--muted {
   border-top: 0;
   border-left: 0;
   border-right: 0;
@@ -551,14 +557,14 @@ button {
   transition: border-color 160ms ease;
 }
 
-.quick-create-panel .qc-underline-input--muted:focus,
-.quick-create-panel .qc-underline-input--muted:focus-within {
+:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input--muted:focus,
+:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input--muted:focus-within {
   border-bottom-color: var(--foreground);
 }
 
-.quick-create-panel .mantine-TextInput-wrapper,
-.quick-create-panel .mantine-TextInput-root,
-.quick-create-panel .mantine-Textarea-wrapper,
-.quick-create-panel .mantine-Textarea-root {
+:where(.quick-create-panel, .mantine-Modal-content) .mantine-TextInput-wrapper,
+:where(.quick-create-panel, .mantine-Modal-content) .mantine-TextInput-root,
+:where(.quick-create-panel, .mantine-Modal-content) .mantine-Textarea-wrapper,
+:where(.quick-create-panel, .mantine-Modal-content) .mantine-Textarea-root {
   width: 100%;
 }
