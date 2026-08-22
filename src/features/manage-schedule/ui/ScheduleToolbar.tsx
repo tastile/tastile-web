@@ -1,9 +1,9 @@
 // src/components/schedule/ScheduleToolbar.tsx
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { ActionIcon, Button, SegmentedControl } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useTranslation } from "@/shared/i18n/use-translation";
 import type { DisplayMode, ScheduleView } from "./useTimelineState";
 
 export interface ScheduleToolbarProps {
