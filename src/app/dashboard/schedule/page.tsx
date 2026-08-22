@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { Suspense } from "react";
 import { SchedulePageClient } from "./page-client";

@@ -1,3 +1,5 @@
+"use client";
+
 import { useTranslation } from "@/shared/i18n/use-translation";
 
 export default function SettingsPage() {
