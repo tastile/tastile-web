@@ -1,16 +1,18 @@
 import { coreUrl } from "@/lib/account/api-token-session";
-import { verifyCognitoAccessToken } from "@/shared/auth/access-token-verification";
-import { tryGetCognitoEnv } from "@/shared/auth/env";
+import { getAuth } from "@/shared/auth/better-auth/server";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const accessToken = bearerToken(request.headers.get("authorization"));
-  const env = tryGetCognitoEnv();
-  if (!accessToken || !env) {
-    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  // The bearer() plugin lets BetterAuth resolve a session from an
+  // `Authorization: Bearer <sessionToken>` header, which is how native
+  // clients (Android / desktop) authenticate against this route.
+  let userSub: string | null = null;
+  try {
+    const session = await getAuth().api.getSession({ headers: request.headers });
+    userSub = session?.user?.id ?? null;
+  } catch (error) {
+    console.warn("[mobile-api-token] session resolution failed:", error);
   }
-
-  const userSub = await verifyCognitoAccessToken({ accessToken, env });
   if (!userSub) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
@@ -44,9 +46,4 @@ export async function POST(request: Request) {
     ...created,
     token_id: created.token_id ?? created.id,
   });
-}
-
-function bearerToken(value: string | null): string | null {
-  const match = value?.match(/^Bearer\s+(\S+)$/i);
-  return match?.[1] ?? null;
 }

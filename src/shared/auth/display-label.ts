@@ -23,7 +23,7 @@ export function pickDisplayLabel(args: {
   return args.ownerId ? args.ownerId.slice(0, 8) : args.sub.slice(0, 8);
 }
 
-export function emailLocalPart(email: string | null | undefined): string | null {
+function emailLocalPart(email: string | null | undefined): string | null {
   if (!email) return null;
   const at = email.indexOf("@");
   if (at <= 0) return null;

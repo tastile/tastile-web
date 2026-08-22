@@ -47,7 +47,7 @@ describe("POST /api/stripe/webhook", () => {
     expect(body.error).toMatch(/Invalid signature/);
   });
 
-  it("extracts cognito_sub from client_reference_id and invalidates cache", async () => {
+  it("extracts tastile_user_id from client_reference_id and invalidates cache", async () => {
     constructEvent.mockReturnValueOnce({
       id: "evt_1",
       type: "checkout.session.completed",
@@ -61,11 +61,11 @@ describe("POST /api/stripe/webhook", () => {
     expect(invalidateSubscriptionCache).toHaveBeenCalledWith("user-42");
   });
 
-  it("extracts cognito_sub from subscription metadata", async () => {
+  it("extracts tastile_user_id from subscription metadata", async () => {
     constructEvent.mockReturnValueOnce({
       id: "evt_2",
       type: "customer.subscription.updated",
-      data: { object: { id: "sub_x", customer: "cus_x", metadata: { cognito_sub: "user-99" } } },
+      data: { object: { id: "sub_x", customer: "cus_x", metadata: { tastile_user_id: "user-99" } } },
     });
     const { POST } = await import("./route");
     const res = await POST(makeRequest("ok", "t=1,v1=ok"));
@@ -73,7 +73,7 @@ describe("POST /api/stripe/webhook", () => {
     expect(invalidateSubscriptionCache).toHaveBeenCalledWith("user-99");
   });
 
-  it("tolerates events with no cognito_sub (no cache invalidate)", async () => {
+  it("tolerates events with no tastile_user_id (no cache invalidate)", async () => {
     constructEvent.mockReturnValueOnce({
       id: "evt_3",
       type: "ping",

@@ -30,9 +30,9 @@ export async function POST(request: Request) {
       },
     ],
     subscription_data: {
-      metadata: { cognito_sub: userSub },
+      metadata: { tastile_user_id: userSub },
     },
-    metadata: { cognito_sub: userSub },
+    metadata: { tastile_user_id: userSub },
     success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/preferences/account?tab=subscription&billing=success`,
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?billing=cancelled`,
   });

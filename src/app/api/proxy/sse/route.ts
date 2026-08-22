@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
 
   const apiToken = getApiTokenFromRequest(request);
   if (!apiToken) {
-    const userSub = await resolveAuthenticatedUserSub({ cookieStore: request.cookies });
+    const userSub = await resolveAuthenticatedUserSub({ requestHeaders: request.headers });
     if (!userSub) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }

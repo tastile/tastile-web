@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { getCoreClient } from "@/shared/api/endpoints";
-import { getAccountIdTokenClaims, getAccountOwnerId } from "@/shared/auth/account-session";
+import { getAccountOwnerId } from "@/shared/auth/account-session";
+import { resolveAuthenticatedSession } from "@/shared/auth/authenticated-session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,8 +42,8 @@ export async function GET(): Promise<Response> {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
   }
 
-  const [claims, profileRes] = await Promise.all([
-    getAccountIdTokenClaims(),
+  const [sessionUser, profileRes] = await Promise.all([
+    resolveAuthenticatedSession(),
     getCoreClient().call<OwnerProfileView>("getOwnerProfile", {
       pathParams: { kind: "0", id: ownerId },
     }),
@@ -58,8 +59,8 @@ export async function GET(): Promise<Response> {
     if (upstreamStatus === 404) {
       return NextResponse.json({
         owner_id: ownerId,
-        email: claims?.email ?? null,
-        email_verified: claims?.emailVerified ?? false,
+        email: sessionUser?.email ?? null,
+        email_verified: sessionUser?.emailVerified ?? false,
         display_name: null,
         avatar_url: null,
         bio: null,
@@ -73,8 +74,8 @@ export async function GET(): Promise<Response> {
 
   return NextResponse.json({
     owner_id: ownerId,
-    email: claims?.email ?? null,
-    email_verified: claims?.emailVerified ?? false,
+    email: sessionUser?.email ?? null,
+    email_verified: sessionUser?.emailVerified ?? false,
     display_name: profileRes.data.display_name,
     avatar_url: profileRes.data.avatar_url,
     bio: profileRes.data.bio,

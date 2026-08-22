@@ -1,36 +1,26 @@
-import { verifyCognitoAccessToken } from "@/shared/auth/access-token-verification";
-import { getAccountAccessToken, getAccountIdTokenClaims } from "@/shared/auth/account-session";
-import { tryGetCognitoEnv } from "@/shared/auth/env";
 import { NextResponse } from "next/server";
 
+import { resolveAuthenticatedSession } from "@/shared/auth/authenticated-session";
+
+// Account profile sourced from the BetterAuth user record (ADR 2026-08-22).
+// The shape mirrors the former Cognito-claims payload so the settings UI
+// keeps working unchanged.
+
 export async function GET() {
-  const env = tryGetCognitoEnv();
-  if (!env) return NextResponse.json({ error: "cognito_not_configured" }, { status: 500 });
+  const session = await resolveAuthenticatedSession();
+  if (!session) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
 
-  const response = NextResponse.json({});
-  const accessToken = await getAccountAccessToken(response);
-  if (!accessToken) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
-
-  const sub = await verifyCognitoAccessToken({ accessToken, env });
-  if (!sub) return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
-
-  // Read profile attributes from the id_token (sub, email, email_verified,
-  // preferred_username). The id_token was validated by Cognito at issuance,
-  // and /oauth2/userInfo above already proved the access_token is alive.
-  // Avoid calling GetUser: its strict scope/region requirements reject
-  // tokens that userInfo accepts, making the profile unviewable.
-  const claims = await getAccountIdTokenClaims();
   const profile = {
-    username: claims?.preferredUsername ?? sub,
-    email: claims?.email ?? null,
-    emailVerified: claims?.emailVerified ?? false,
-    userStatus: null as string | null,
-    preferredUsername: claims?.preferredUsername ?? null,
+    sub: session.id,
+    username: session.name ?? session.email ?? session.id,
+    email: session.email,
+    emailVerified: session.emailVerified,
+    // Cognito-era fields retained as null for UI compatibility.
+    userStatus: null,
+    preferredUsername: null,
   };
 
-  const json = NextResponse.json({ profile: { ...profile, sub } });
-  for (const cookie of response.cookies.getAll()) {
-    json.cookies.set(cookie);
-  }
-  return json;
+  return NextResponse.json({ profile });
 }

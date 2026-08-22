@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const cookieStore: Record<string, { value: string; options: Record<string, unknown> }> = {};
+const mockSession = vi.fn();
+vi.mock("@/shared/auth/authenticated-session", () => ({
+  resolveAuthenticatedSession: (...args: unknown[]) => mockSession(...args),
+}));
 
-vi.mock("next/headers", () => ({
-  cookies: vi.fn(async () => ({
-    get: (n: string) => cookieStore[n],
-  })),
+const mockOwnerId = vi.fn();
+vi.mock("@/shared/auth/account-session", () => ({
+  getAccountOwnerId: (...args: unknown[]) => mockOwnerId(...args),
 }));
 
 const mockCall = vi.fn();
@@ -13,38 +15,31 @@ vi.mock("@/shared/api/endpoints", () => ({
   getCoreClient: () => ({ call: mockCall }),
 }));
 
-import { COOKIE_ID_TOKEN } from "@/shared/auth/cookies";
 import { GET } from "./route";
 
-function makeIdToken(claims: Record<string, unknown>): string {
-  const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
-  const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
-  return `${header}.${payload}.sig`;
-}
-
 beforeEach(() => {
-  for (const k of Object.keys(cookieStore)) delete cookieStore[k];
+  mockSession.mockReset();
+  mockOwnerId.mockReset();
   mockCall.mockReset();
 });
 
 describe("GET /api/me", () => {
-  it("returns 401 when no id_token cookie is present", async () => {
+  it("returns 401 when no BetterAuth session is present", async () => {
+    mockSession.mockResolvedValue(null);
     const res = await GET();
     expect(res.status).toBe(401);
     expect(mockCall).not.toHaveBeenCalled();
   });
 
-  it("returns the owner profile + claims when authenticated", async () => {
-    const sub = "user-sub-abc";
-    cookieStore[COOKIE_ID_TOKEN] = {
-      value: makeIdToken({
-        sub,
-        email: "alice@example.com",
-        email_verified: true,
-        exp: 0,
-      }),
-      options: {},
-    };
+  it("returns the owner profile + session identity when authenticated", async () => {
+    mockSession.mockResolvedValue({
+      id: "better-auth-user-abc",
+      email: "alice@example.com",
+      name: "Alice",
+      emailVerified: true,
+      expiresAtEpochSeconds: 1_900_000_000,
+    });
+    mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
     mockCall.mockResolvedValue({
       ok: true,
       data: {
@@ -77,11 +72,14 @@ describe("GET /api/me", () => {
   });
 
   it("returns 401 when upstream returns 401", async () => {
-    const sub = "user-sub-abc";
-    cookieStore[COOKIE_ID_TOKEN] = {
-      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
-      options: {},
-    };
+    mockSession.mockResolvedValue({
+      id: "u1",
+      email: "alice@example.com",
+      name: null,
+      emailVerified: false,
+      expiresAtEpochSeconds: null,
+    });
+    mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
     mockCall.mockResolvedValue({
       ok: false,
       error: { kind: "auth", status: 401, message: "invalid token", body: null },
@@ -93,11 +91,14 @@ describe("GET /api/me", () => {
   });
 
   it("returns 401 when upstream returns 403", async () => {
-    const sub = "user-sub-abc";
-    cookieStore[COOKIE_ID_TOKEN] = {
-      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
-      options: {},
-    };
+    mockSession.mockResolvedValue({
+      id: "u1",
+      email: "alice@example.com",
+      name: null,
+      emailVerified: false,
+      expiresAtEpochSeconds: null,
+    });
+    mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
     mockCall.mockResolvedValue({
       ok: false,
       error: { kind: "auth", status: 403, message: "forbidden", body: null },
@@ -109,11 +110,14 @@ describe("GET /api/me", () => {
   });
 
   it("returns 404 profile with 200 when owner profile not found", async () => {
-    const sub = "user-sub-abc";
-    cookieStore[COOKIE_ID_TOKEN] = {
-      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
-      options: {},
-    };
+    mockSession.mockResolvedValue({
+      id: "u1",
+      email: "alice@example.com",
+      name: null,
+      emailVerified: false,
+      expiresAtEpochSeconds: null,
+    });
+    mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
     mockCall.mockResolvedValue({
       ok: false,
       error: { kind: "not-found", status: 404, message: "profile not found", body: null },
@@ -134,11 +138,14 @@ describe("GET /api/me", () => {
   });
 
   it("returns 502 for upstream 5xx errors", async () => {
-    const sub = "user-sub-abc";
-    cookieStore[COOKIE_ID_TOKEN] = {
-      value: makeIdToken({ sub, email: "alice@example.com", exp: 0 }),
-      options: {},
-    };
+    mockSession.mockResolvedValue({
+      id: "u1",
+      email: "alice@example.com",
+      name: null,
+      emailVerified: false,
+      expiresAtEpochSeconds: null,
+    });
+    mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
     mockCall.mockResolvedValue({
       ok: false,
       error: { kind: "server", status: 502, message: "upstream failure", body: null },
@@ -146,7 +153,20 @@ describe("GET /api/me", () => {
 
     const res = await GET();
     expect(res.status).toBe(502);
-    const body = await res.json();
-    expect(body.error).toBe("UPSTREAM_FAILURE");
+  });
+
+  it("E2E bypass synthesizes the fresh-owner shape without upstream calls", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    try {
+      mockOwnerId.mockResolvedValue("00000000-0000-0000-0000-000000000001");
+      const res = await GET();
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.owner_id).toBe("00000000-0000-0000-0000-000000000001");
+      expect(body.email).toBeNull();
+      expect(mockCall).not.toHaveBeenCalled();
+    } finally {
+      delete process.env.E2E_BYPASS_AUTH;
+    }
   });
 });

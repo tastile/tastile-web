@@ -8,10 +8,7 @@ function safeOrigin(raw?: string | null): string | null {
   }
 }
 
-export function getCognitoPublicOrigin(callbackUrl?: string): string {
-  return (
-    safeOrigin(process.env.NEXT_PUBLIC_APP_URL) ??
-    safeOrigin(callbackUrl) ??
-    "http://localhost:3000"
-  );
+/** Public origin of this deployment, from NEXT_PUBLIC_APP_URL (fallback localhost). */
+export function getPublicOrigin(): string {
+  return safeOrigin(process.env.NEXT_PUBLIC_APP_URL) ?? "http://localhost:3000";
 }

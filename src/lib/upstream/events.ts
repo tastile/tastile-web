@@ -10,10 +10,7 @@
 //! mapping.
 
 import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
-import { setAuthCookies } from "@/shared/auth/cookies";
-import { ensureBridgeAuth } from "@/shared/auth/refresh-bridge-auth";
-import { parseIdTokenClaims } from "@/shared/auth/server";
-import { cookies } from "next/headers";
+import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import { NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
 
@@ -108,7 +105,6 @@ function envelope<T>(payload: T): Record<string, unknown> {
 
 async function bridgeHeaders(extra?: Record<string, string>): Promise<{
   headers: Record<string, string>;
-  refreshedTokens: import("@/shared/auth/server").CognitoTokenSet | null;
 } | null> {
   if (isE2EBypass()) {
     return {
@@ -117,16 +113,14 @@ async function bridgeHeaders(extra?: Record<string, string>): Promise<{
         "x-owner-id": DEV_ACTOR_SUBJECT_ID,
         "x-actor-id": DEV_ACTOR_SUBJECT_ID,
       },
-      refreshedTokens: null,
     };
   }
 
-  const cookieStore = await cookies();
-  const auth = await ensureBridgeAuth({ cookieStore });
+  const userSub = await resolveAuthenticatedUserSub();
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
-  if (auth.status === "unauthorized" || !bridgeSecret) {
+  if (!userSub || !bridgeSecret) {
     console.warn(
-      `[upstream] bridgeHeaders: auth=${auth.status}, bridgeSecret=${bridgeSecret ? "set" : "MISSING"}`,
+      `[upstream] bridgeHeaders: auth=${userSub ? "ok" : "unauthorized"}, bridgeSecret=${bridgeSecret ? "set" : "MISSING"}`,
     );
     return null;
   }
@@ -135,28 +129,9 @@ async function bridgeHeaders(extra?: Record<string, string>): Promise<{
     headers: {
       ...(extra ?? {}),
       "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": auth.userSub,
+      "x-tastile-web-session-user": userSub,
     },
-    refreshedTokens: auth.refreshedTokens,
   };
-}
-
-async function applyRefreshedAuthCookies(
-  response: NextResponse,
-  refreshedTokens: import("@/shared/auth/server").CognitoTokenSet | null,
-): Promise<void> {
-  if (!refreshedTokens) return;
-  const claims = parseIdTokenClaims(refreshedTokens.id_token);
-  await setAuthCookies(
-    {
-      idToken: refreshedTokens.id_token,
-      accessToken: refreshedTokens.access_token,
-      refreshToken: refreshedTokens.refresh_token ?? null,
-      sub: claims.sub,
-      expiresIn: refreshedTokens.expires_in,
-    },
-    response,
-  );
 }
 
 function unauthenticatedUpstreamResponse(): NextResponse {
@@ -277,7 +252,6 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
     const errBody = await readJsonOrText(res);
     const errResponse = upstreamError(res.status, errBody);
     if (errResponse instanceof NextResponse) {
-      await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
     }
     return errResponse;
   }
@@ -325,7 +299,6 @@ export async function upstreamListTimeline(q: TimelineQuery): Promise<Response> 
   }
 
   const response = NextResponse.json({ occurrences: events });
-  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
   return response;
 }
 
@@ -393,7 +366,6 @@ export async function upstreamCreateCalendarEvent(
   });
   if (!tileRes.ok) {
     const errResponse = upstreamError(tileRes.status, await readJsonOrText(tileRes));
-    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
     return errResponse;
   }
   const tileBody = (await readJsonOrText(tileRes)) as Record<string, unknown> | null;
@@ -437,7 +409,6 @@ export async function upstreamCreateCalendarEvent(
   });
   if (!placementRes.ok) {
     const errResponse = upstreamError(placementRes.status, await readJsonOrText(placementRes));
-    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
     return errResponse;
   }
   const placementBody = (await readJsonOrText(placementRes)) as Record<string, unknown> | null;
@@ -464,7 +435,6 @@ export async function upstreamCreateCalendarEvent(
     updatedAt: nowIso,
   };
   const response = NextResponse.json({ event: toCamel(event) }, { status: 201 });
-  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
   return response;
 }
 
@@ -487,12 +457,10 @@ export async function upstreamUpdateTile(
   });
   if (!res.ok) {
     const errResponse = upstreamError(res.status, await readJsonOrText(res));
-    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
     return errResponse;
   }
   const tile = await readJsonOrText(res);
   const response = NextResponse.json({ tile: toCamel(tile) }, { status: 200 });
-  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
   return response;
 }
 
@@ -514,16 +482,13 @@ export async function upstreamArchiveTile(tileId: string): Promise<NextResponse>
   });
   if (res.status === 204) {
     const response = new NextResponse(null, { status: 204 });
-    await applyRefreshedAuthCookies(response, auth.refreshedTokens);
     return response;
   }
   if (!res.ok) {
     const errResponse = upstreamError(res.status, await readJsonOrText(res));
-    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
     return errResponse;
   }
   const response = new NextResponse(null, { status: 204 });
-  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
   return response;
 }
 
@@ -538,15 +503,12 @@ export async function upstreamClosePlacement(placementId: string): Promise<NextR
   });
   if (res.status === 204) {
     const response = new NextResponse(null, { status: 204 });
-    await applyRefreshedAuthCookies(response, auth.refreshedTokens);
     return response;
   }
   if (!res.ok) {
     const errResponse = upstreamError(res.status, await readJsonOrText(res));
-    await applyRefreshedAuthCookies(errResponse, auth.refreshedTokens);
     return errResponse;
   }
   const response = new NextResponse(null, { status: 204 });
-  await applyRefreshedAuthCookies(response, auth.refreshedTokens);
   return response;
 }

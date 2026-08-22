@@ -17,12 +17,12 @@ export type SubscriptionState =
 const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, { state: SubscriptionState; expiresAt: number }>();
 
-export function invalidateSubscriptionCache(cognitoSub?: string): void {
-  if (!cognitoSub) {
+export function invalidateSubscriptionCache(userSubject?: string): void {
+  if (!userSubject) {
     cache.clear();
     return;
   }
-  cache.delete(cognitoSub);
+  cache.delete(userSubject);
 }
 
 function intervalForPriceId(priceId: string | undefined): SubscriptionInterval {
@@ -39,18 +39,18 @@ function escapeCustomerSearchValue(value: string): string {
 
 async function lookupCustomerBySub(
   stripe: Stripe,
-  cognitoSub: string,
+  userSubject: string,
 ): Promise<Stripe.Customer | null> {
   const result = await stripe.customers.search({
-    query: `metadata['cognito_sub']:${escapeCustomerSearchValue(cognitoSub)}`,
+    query: `metadata['tastile_user_id']:${escapeCustomerSearchValue(userSubject)}`,
     limit: 1,
   });
   return result.data[0] ?? null;
 }
 
-async function fetchSubscriptionFromStripe(cognitoSub: string): Promise<SubscriptionState> {
+async function fetchSubscriptionFromStripe(userSubject: string): Promise<SubscriptionState> {
   const stripe = getStripe();
-  const customer = await lookupCustomerBySub(stripe, cognitoSub);
+  const customer = await lookupCustomerBySub(stripe, userSubject);
   if (!customer) {
     return { status: "free" };
   }
@@ -79,18 +79,18 @@ async function fetchSubscriptionFromStripe(cognitoSub: string): Promise<Subscrip
   };
 }
 
-export async function getSubscriptionForUser(cognitoSub: string): Promise<SubscriptionState> {
-  const hit = cache.get(cognitoSub);
+export async function getSubscriptionForUser(userSubject: string): Promise<SubscriptionState> {
+  const hit = cache.get(userSubject);
   if (hit && hit.expiresAt > Date.now()) {
     return hit.state;
   }
   try {
-    const state = await fetchSubscriptionFromStripe(cognitoSub);
-    cache.set(cognitoSub, { state, expiresAt: Date.now() + CACHE_TTL_MS });
+    const state = await fetchSubscriptionFromStripe(userSubject);
+    cache.set(userSubject, { state, expiresAt: Date.now() + CACHE_TTL_MS });
     return state;
   } catch (err) {
     if (hit) return hit.state;
-    console.error("[billing] Stripe lookup failed", { cognitoSub, err });
+    console.error("[billing] Stripe lookup failed", { userSubject, err });
     return { status: "free" };
   }
 }

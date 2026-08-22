@@ -5,7 +5,8 @@ import "./globals.css";
 
 import { DemoSiteBanner } from "@/features/marketing/ui/DemoSiteBanner";
 import { themeScript } from "@/lib/theme-script";
-import { getCognitoPublicOrigin } from "@/shared/auth/public-origin";
+import { getPublicOrigin } from "@/shared/auth/public-origin";
+import { getTranslation } from "@/shared/i18n/get-translation";
 import { GoogleAnalytics } from "@/shared/ui/GoogleAnalytics";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
 import type { Metadata } from "next";
@@ -18,10 +19,14 @@ const zenKaku = Zen_Kaku_Gothic_New({
   display: "swap",
 });
 
+const META_LOCALE = "en" as const;
+const ROOT_TITLE = getTranslation(META_LOCALE, "app.metadata.title");
+const ROOT_DESCRIPTION = getTranslation(META_LOCALE, "app.metadata.description");
+
 export const metadata: Metadata = {
-  title: "Tastile — Execution Control",
-  description: "Stop managing tasks. Start controlling execution.",
-  metadataBase: new URL(getCognitoPublicOrigin()),
+  title: ROOT_TITLE,
+  description: ROOT_DESCRIPTION,
+  metadataBase: new URL(getPublicOrigin()),
   manifest: "/manifest.json",
   icons: {
     icon: "/icon?v=6",
@@ -29,8 +34,8 @@ export const metadata: Metadata = {
     apple: "/apple-icon.png",
   },
   openGraph: {
-    title: "Tastile — Execution Control",
-    description: "Stop managing tasks. Start controlling execution.",
+    title: ROOT_TITLE,
+    description: ROOT_DESCRIPTION,
     type: "website",
   },
 };

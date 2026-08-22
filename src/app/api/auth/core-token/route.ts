@@ -8,8 +8,8 @@ import { NextResponse } from "next/server";
 // directly, so data traffic no longer flows through /api/proxy.
 //
 // Auth boundary contract:
-//  - This route returns a v1 API token ONLY. Cognito id_token / access_token /
-//    refresh_token must never appear in the response body.
+//  - This route returns a v1 API token ONLY. BetterAuth session tokens must
+//    never appear in the response body.
 //  - The token is short-lived and independently revocable. The long-lived
 //    COOKIE_API_TOKEN used by the proxy is never returned here.
 //  - Callers must hold the token in memory only. It is cached in an httpOnly
@@ -39,7 +39,7 @@ function parseCachedToken(raw: string | undefined): CachedToken | null {
 
 export async function GET(): Promise<NextResponse> {
   const jar = await cookies();
-  const userSub = await resolveAuthenticatedUserSub({ cookieStore: jar });
+  const userSub = await resolveAuthenticatedUserSub();
   if (!userSub) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }

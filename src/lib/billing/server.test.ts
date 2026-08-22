@@ -29,7 +29,7 @@ describe("getSubscriptionForUser", () => {
     const state = await getSubscriptionForUser("sub-1");
     expect(state).toEqual({ status: "free" });
     expect(customersSearch).toHaveBeenCalledWith({
-      query: "metadata['cognito_sub']:'sub-1'",
+      query: "metadata['tastile_user_id']:'sub-1'",
       limit: 1,
     });
   });
@@ -107,14 +107,14 @@ describe("getSubscriptionForUser", () => {
     });
   });
 
-  it("escapes single quotes in the cognito sub when searching", async () => {
+  it("escapes single quotes in the user id when searching", async () => {
     customersSearch.mockResolvedValueOnce({ data: [] });
     const { getSubscriptionForUser, invalidateSubscriptionCache } =
       await import("./server");
     invalidateSubscriptionCache();
     await getSubscriptionForUser("abc'd");
     expect(customersSearch).toHaveBeenCalledWith({
-      query: "metadata['cognito_sub']:'abc\'d'",
+      query: "metadata['tastile_user_id']:'abc\'d'",
       limit: 1,
     });
   });

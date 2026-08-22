@@ -3,16 +3,16 @@ import { getStripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 
-function extractCognitoSub(event: Stripe.Event): string | undefined {
+function extractUserSubject(event: Stripe.Event): string | undefined {
   const obj = event.data.object as unknown as Record<string, unknown>;
   // Checkout Session: client_reference_id is the authoritative link.
   if (typeof obj.client_reference_id === "string") return obj.client_reference_id;
-  // Subscription: metadata.cognito_sub (set by checkout.subscription_data.metadata).
+  // Subscription: metadata.tastile_user_id (set by checkout.subscription_data.metadata).
   const subMeta = (obj as { metadata?: Record<string, unknown> }).metadata;
-  if (subMeta && typeof subMeta.cognito_sub === "string") return subMeta.cognito_sub;
+  if (subMeta && typeof subMeta.tastile_user_id === "string") return subMeta.tastile_user_id;
   // Fall back to top-level metadata for any event type.
   const topMeta = (obj as { metadata?: Record<string, unknown> }).metadata;
-  if (topMeta && typeof topMeta.cognito_sub === "string") return topMeta.cognito_sub;
+  if (topMeta && typeof topMeta.tastile_user_id === "string") return topMeta.tastile_user_id;
   return undefined;
 }
 
@@ -43,16 +43,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  const cognitoSub = extractCognitoSub(event);
-  if (cognitoSub) {
-    invalidateSubscriptionCache(cognitoSub);
+  const userSubject = extractUserSubject(event);
+  if (userSubject) {
+    invalidateSubscriptionCache(userSubject);
   }
 
   switch (event.type) {
     case "checkout.session.completed":
       console.log("[billing] checkout.session.completed", {
         id: event.id,
-        cognitoSub,
+        userSubject,
         customer: (event.data.object as { customer?: string }).customer,
         subscription: (event.data.object as { subscription?: string }).subscription,
       });
@@ -60,10 +60,10 @@ export async function POST(request: Request) {
     case "customer.subscription.created":
     case "customer.subscription.updated":
     case "customer.subscription.deleted":
-      console.log("[billing]", event.type, { id: event.id, cognitoSub });
+      console.log("[billing]", event.type, { id: event.id, userSubject });
       break;
     case "invoice.payment_failed":
-      console.warn("[billing] invoice.payment_failed", { id: event.id, cognitoSub });
+      console.warn("[billing] invoice.payment_failed", { id: event.id, userSubject });
       break;
     default:
       // Ignore unhandled event types so we do not 4xx Stripe.
