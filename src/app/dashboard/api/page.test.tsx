@@ -6,7 +6,37 @@ import ApiExplorer from "./page";
 import { renderWithMantine } from "@/test/render-with-mantine";
 
 vi.mock("@/shared/i18n/use-translation", () => ({
-	useTranslation: () => ({ t: (key: string) => key, locale: "ja" as const }),
+	useTranslation: () => ({
+		t: (key: string, params?: Record<string, string | number>) => {
+			const m: Record<string, string> = {
+				"dashboard.api.runRequest": "Run request",
+				"dashboard.api.searchPlaceholder": "Search endpoints, paths, keywords…",
+				"dashboard.api.searchAria": "Search endpoints",
+				"dashboard.api.copyAsCurl": "Copy as curl",
+				"dashboard.api.responseLabel": "Response",
+				"dashboard.api.responsePlaceholder": "// Click Run request to invoke this endpoint.",
+				"dashboard.api.statusOk": "OK",
+				"dashboard.api.empty": "No endpoints match your filters.",
+				"dashboard.api.title": "API explorer",
+				"dashboard.api.table.method": "Method",
+				"dashboard.api.table.path": "Path",
+				"dashboard.api.table.summary": "Summary",
+				"dashboard.api.table.tag": "Tag",
+				"dashboard.api.table.auth": "Auth",
+				"dashboard.api.publicLabel": "public",
+				"dashboard.api.authRequired": "auth required",
+				"dashboard.api.pathLabel": "Path: {name}",
+				"dashboard.api.tagFilterAll": "All",
+				"dashboard.api.liveBadge": "Live · {url}",
+				"dashboard.api.downloadOpenApi": "Download OpenAPI",
+				"common.refresh": "Refresh",
+			};
+			const raw = m[key] ?? key;
+			if (!params) return raw;
+			return raw.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? ""));
+		},
+		locale: "ja" as const,
+	}),
 }));
 
 const callMock = vi.fn();

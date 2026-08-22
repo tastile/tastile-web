@@ -47,7 +47,7 @@ export function ProjectColorRow({
             fixOnBlur
             withPicker={false}
             withEyeDropper={false}
-            aria-label={t("quickCreate.colorLabel") || "Color"}
+            aria-label={t("quickCreate.colorLabel")}
             swatches={swatches}
             data-testid={colorTestId}
             className={colorClassName}

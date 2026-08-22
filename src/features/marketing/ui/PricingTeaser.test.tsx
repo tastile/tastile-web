@@ -13,6 +13,13 @@ const teaserDict: Dict["pricing"] = {
 	monthly: "Monthly",
 	yearly: "Yearly",
 	yearlyNote: "save 17%",
+	intervalAria: "Billing interval",
+	proPriceMonthly: "$5",
+	proPriceYearly: "$50",
+	proSuffixMonthly: "/mo",
+	proSuffixYearly: "/yr",
+	bandPrefixFree: "01 / ",
+	bandPrefixPro: "02 / ",
 	forLabel: "For",
 	free: {
 		name: "Free",

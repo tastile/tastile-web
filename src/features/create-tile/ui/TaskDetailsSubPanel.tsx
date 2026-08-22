@@ -38,7 +38,7 @@ export function TaskDetailsSubPanel({
       activeKey={activePanel}
       onClose={onClose}
       headingId="task-details-heading"
-      title={t("quickCreate.detailsTaskTitle") || "Task details"}
+      title={t("quickCreate.detailsTaskTitle")}
       description={t("quickCreate.detailsSubDescription") || ""}
       layout="drawer"
     >
@@ -47,15 +47,14 @@ export function TaskDetailsSubPanel({
 
         <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.timeRequirementLabel") || "Time requirement"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.timeRequirementLabel")}</span>
             <Text size="sm" c="dimmed">
               {durationMinMs == null
-                ? t("quickCreate.durationNoneTitle") || "No required duration"
+                ? t("quickCreate.durationNoneTitle")
                 : `${Math.round((durationMinMs ?? 0) / 60_000)} min`}
             </Text>
             <Text size="xs" c="dimmed">
-              {t("quickCreate.durationNoneSub") ||
-                "Adjust the base form duration chip to change this."}
+              {t("quickCreate.durationNoneSub")}
             </Text>
           </div>
         </FormRow>
@@ -69,7 +68,7 @@ export function TaskDetailsSubPanel({
             }}
             data-testid="task-details-clear-refs"
           >
-            {t("quickCreate.detailsClearReferences") || "Clear references"}
+            {t("quickCreate.detailsClearReferences")}
           </Button>
         </FormRow>
       </Stack>

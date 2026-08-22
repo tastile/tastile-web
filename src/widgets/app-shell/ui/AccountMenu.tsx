@@ -33,7 +33,7 @@ export function AccountMenu({
   const side = menuPlacement === "up" ? "top" : "bottom";
 
   async function handleSignOut() {
-    router.push("/auth/cognito/logout");
+    router.push("/auth/logout");
   }
 
   const initials = displayName

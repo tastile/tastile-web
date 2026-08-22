@@ -22,11 +22,13 @@
  */
 
 import { DecisionPromptSheet } from "@/features/execute-tile/ui/DecisionPromptSheet";
+import { useTranslation } from "@/shared/i18n/use-translation";
 
 export default function PromptPage() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-[590] text-foreground">Pending decisions</h1>
+      <h1 className="text-lg font-[590] text-foreground">{t("dashboard.legacy.promptTitle")}</h1>
       <div className="rounded-xl bg-surface-elevated p-4">
         <DecisionPromptSheet />
       </div>

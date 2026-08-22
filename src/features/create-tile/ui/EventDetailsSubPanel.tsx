@@ -34,18 +34,18 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
       activeKey={activePanel}
       onClose={onClose}
       headingId="event-details-heading"
-      title={t("quickCreate.detailsEventTitle") || "Event details"}
+      title={t("quickCreate.detailsEventTitle")}
       description={t("quickCreate.detailsSubDescription") || ""}
       layout="drawer"
     >
       <Stack gap="md">
         <FormRow icon={<Tag className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.periodLabelTitle") || "Period label"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.periodLabelTitle")}</span>
             <Switch
               checked={isLabelOnly}
               onChange={(e) => setLabelOnly(e.currentTarget.checked)}
-              label={t("quickCreate.periodLabelDescription") || "Treat as a passive label (no execution)"}
+              label={t("quickCreate.periodLabelDescription")}
               size="sm"
               data-testid="event-label-only-toggle"
             />
@@ -54,11 +54,11 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
 
         <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.subtasksLabel") || "Sub-tasks"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.subtasksLabel")}</span>
             <Stack gap={2}>
               {tasks.length === 0 ? (
                 <Text size="sm" c="dimmed">
-                  {t("quickCreate.subtasksEmpty") || "No sub-tasks yet"}
+                  {t("quickCreate.subtasksEmpty")}
                 </Text>
               ) : (
                 tasks.map((task) => (
@@ -74,17 +74,17 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
               )}
             </Stack>
             <Text size="xs" c="dimmed">
-              {t("quickCreate.subtasksHint") || "Add or edit sub-tasks from the base view."}
+              {t("quickCreate.subtasksHint")}
             </Text>
           </div>
         </FormRow>
 
         <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.referencesLabel") || "References"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.referencesLabel")}</span>
             <Text size="sm" c="dimmed">
               {references.length === 0
-                ? t("quickCreate.referencesEmpty") || "No references yet"
+                ? t("quickCreate.referencesEmpty")
                 : `${references.length} reference${references.length === 1 ? "" : "s"}`}
             </Text>
             <Button
@@ -95,7 +95,7 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
               }}
               data-testid="event-details-clear-refs"
             >
-              {t("quickCreate.detailsClearReferences") || "Clear references"}
+              {t("quickCreate.detailsClearReferences")}
             </Button>
           </div>
         </FormRow>

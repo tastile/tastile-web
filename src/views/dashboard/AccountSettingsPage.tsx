@@ -24,10 +24,11 @@ type Profile = {
 type Notice = { tone: "success" | "error"; text: string } | null;
 
 export default function AccountSettings() {
+  const { t } = useTranslation();
   return (
     <Suspense
       fallback={
-        <div className="p-8 text-sm text-foreground-subtle">Loading account settings...</div>
+        <div className="p-8 text-sm text-foreground-subtle">{t("preferences.account.loadingFallback")}</div>
       }
     >
       <AccountPageInner />

@@ -162,10 +162,7 @@ export function SubtasksSection({
 
   const progressText =
     tasks.length > 0
-      ? t(progressKey, { done: doneCount, total: tasks.length }) ||
-        fallbackProgress
-          .replace("{done}", String(doneCount))
-          .replace("{total}", String(tasks.length))
+      ? t(progressKey, { done: doneCount, total: tasks.length })
       : "";
 
   const openCreate = () => setCreatingOpen(true);
@@ -182,7 +179,7 @@ export function SubtasksSection({
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-medium">
-            {t(headingKey) || fallbackHeading}
+            {t(headingKey)}
           </span>
           {tasks.length > 0 && (
             <Text
@@ -208,8 +205,8 @@ export function SubtasksSection({
                   onChange={() => toggleTaskDone(task.id)}
                   aria-label={
                     task.done
-                      ? t(undoneAriaKey) || fallbackUndoneAria
-                      : t(doneAriaKey) || fallbackDoneAria
+                      ? t(undoneAriaKey)
+                      : t(doneAriaKey)
                   }
                   data-testid={`${testId}-row-${task.id}-checkbox`}
                 />
@@ -224,7 +221,7 @@ export function SubtasksSection({
                       ? "flex-1 line-through text-dimmed"
                       : "flex-1"
                   }
-                  aria-label={t(titleAriaKey) || fallbackTitleAria}
+                  aria-label={t(titleAriaKey)}
                   data-testid={`${testId}-row-${task.id}-title`}
                 />
                 <FloatingMenu>
@@ -232,7 +229,7 @@ export function SubtasksSection({
                     <ActionIcon
                       size="sm"
                       variant="subtle"
-                      aria-label={t(menuAriaKey) || fallbackMenuAria}
+                      aria-label={t(menuAriaKey)}
                       data-testid={`${testId}-row-${task.id}-menu-trigger`}
                     >
                       <MoreVertical className="h-3.5 w-3.5" aria-hidden />
@@ -245,7 +242,7 @@ export function SubtasksSection({
                       data-testid={`${testId}-row-${task.id}-menu-move-up`}
                     >
                       <ArrowUp className="h-3.5 w-3.5" aria-hidden />
-                      <span>{t(moveUpKey) || fallbackMoveUp}</span>
+                      <span>{t(moveUpKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuItem
                       disabled={idx === tasks.length - 1}
@@ -253,32 +250,32 @@ export function SubtasksSection({
                       data-testid={`${testId}-row-${task.id}-menu-move-down`}
                     >
                       <ArrowDown className="h-3.5 w-3.5" aria-hidden />
-                      <span>{t(moveDownKey) || fallbackMoveDown}</span>
+                      <span>{t(moveDownKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuItem
                       onClick={() => openEdit(task.id)}
                       data-testid={`${testId}-row-${task.id}-menu-edit`}
                     >
                       <Pencil className="h-3.5 w-3.5" aria-hidden />
-                      <span>{t(editKey) || fallbackEdit}</span>
+                      <span>{t(editKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuItem
                       onClick={() => duplicateTask(task.id)}
                       data-testid={`${testId}-row-${task.id}-menu-duplicate`}
                     >
                       <Copy className="h-3.5 w-3.5" aria-hidden />
-                      <span>{t(duplicateKey) || fallbackDuplicate}</span>
+                      <span>{t(duplicateKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuSeparator />
                     <FloatingMenuItem
                       onClick={() => removeTask(task.id)}
                       data-testid={`${testId}-row-${task.id}-menu-delete`}
                       data-danger=""
-                      aria-label={t(removeAriaKey) || fallbackRemoveAria}
+                      aria-label={t(removeAriaKey)}
                       className="text-red-600 dark:text-red-400"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden />
-                      <span>{t(deleteKey) || fallbackDelete}</span>
+                      <span>{t(deleteKey)}</span>
                     </FloatingMenuItem>
                   </FloatingMenuContent>
                 </FloatingMenu>
@@ -293,7 +290,7 @@ export function SubtasksSection({
           className="mt-1 inline-flex items-center gap-1 self-start border-0 border-b border-dashed border-foreground-muted/40 bg-transparent px-0 py-0.5 text-xs text-foreground-muted hover:border-foreground-muted hover:text-foreground"
         >
           <Plus className="h-3 w-3" aria-hidden />
-          {t(addPlaceholderKey) || fallbackAddPlaceholder}
+          {t(addPlaceholderKey)}
         </button>
       </div>
 

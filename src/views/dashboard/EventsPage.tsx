@@ -2,6 +2,7 @@
 
 import { type Result, getCoreClient } from "@/shared/api/endpoints";
 import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Card } from "@/shared/ui/Card";
 import { Dropdown } from "@/shared/ui/Dropdown";
 import { EmptyState } from "@/shared/ui/Empty";
@@ -33,6 +34,7 @@ interface DebugEvent {
 }
 
 export default function Events() {
+  const { t } = useTranslation();
   const [events, setEvents] = useState<Result<
     { events: DebugEvent[]; count: number } | DebugEvent[]
   > | null>(null);
@@ -77,32 +79,32 @@ export default function Events() {
   const sidePanel = useMemo(
     () => (
       <PageSummaryPanel
-        title="Events log"
-        description="Raw fact stream. Append-only — there is no UPDATE on an event. Every state in the UI was derived from one of these."
+        title={t("dashboard.events.title")}
+        description={t("dashboard.events.description")}
         sections={[
           {
-            heading: "Counts",
+            heading: t("dashboard.events.sections.counts"),
             items: [
-              { label: "Loaded", value: list.length },
-              { label: "Distinct types", value: types.length - 1 },
+              { label: t("dashboard.events.labels.loaded"), value: list.length },
+              { label: t("dashboard.events.labels.distinctTypes"), value: types.length - 1 },
               {
-                label: "Filter",
-                value: typeFilter === "All" ? "all types" : typeFilter,
+                label: t("dashboard.events.labels.filter"),
+                value: typeFilter === "All" ? t("dashboard.events.allTypes") : typeFilter,
               },
             ],
           },
           {
-            heading: "Related",
+            heading: t("dashboard.events.sections.related"),
             items: [
-              { label: "Timeline", value: "→", href: "/dashboard/timeline" },
-              { label: "Runtime", value: "→", href: "/dashboard/runtime" },
-              { label: "API explorer", value: "→", href: "/dashboard/api" },
+              { label: t("dashboard.events.labels.timeline"), value: "→", href: "/dashboard/timeline" },
+              { label: t("dashboard.events.labels.runtime"), value: "→", href: "/dashboard/runtime" },
+              { label: t("dashboard.events.labels.apiExplorer"), value: "→", href: "/dashboard/api" },
             ],
           },
         ]}
       />
     ),
-    [list.length, types.length, typeFilter],
+    [list.length, types.length, typeFilter, t],
   );
   useSidePanel(sidePanel);
 
@@ -133,9 +135,9 @@ export default function Events() {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow={<span className="font-mono text-ink-3">append-only · debug</span>}
-        title="Events log"
-        description="The raw fact stream. Every state in the UI was derived from one of these. Append-only — there is no UPDATE on an event."
+        eyebrow={<span className="font-mono text-ink-3">{t("dashboard.events.eyebrow")}</span>}
+        title={t("dashboard.events.title")}
+        description={t("dashboard.events.description")}
         meta={
           <>
             <Badge
@@ -145,7 +147,7 @@ export default function Events() {
               radius="xl"
               leftSection={<Database size={12} />}
             >
-              {list.length} events
+              {t("dashboard.events.countLabel", { count: list.length })}
             </Badge>
             <Badge
               variant="light"
@@ -154,7 +156,7 @@ export default function Events() {
               radius="xl"
               leftSection={<Terminal size={12} />}
             >
-              GET /debug/events
+              {t("dashboard.events.endpointPath")}
             </Badge>
           </>
         }
@@ -167,7 +169,7 @@ export default function Events() {
               disabled={!list.length}
               leftSection={<Download size={14} />}
             >
-              Download JSON
+              {t("dashboard.events.downloadJson")}
             </Button>
             <Button
               variant="default"
@@ -176,7 +178,7 @@ export default function Events() {
               loading={loading}
               leftSection={<RefreshCw size={14} />}
             >
-              Refresh
+              {t("common.refresh")}
             </Button>
           </>
         }
@@ -186,8 +188,8 @@ export default function Events() {
         <TextInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by type, id, actor, tile…"
-          aria-label="Search by type, id, actor, tile"
+          placeholder={t("dashboard.events.searchPlaceholder")}
+          aria-label={t("dashboard.events.searchAria")}
           leftSection={<Search size={14} />}
           size="sm"
           className="flex-1"
@@ -198,7 +200,10 @@ export default function Events() {
             value={typeFilter}
             onChange={(val) => setTypeFilter(val)}
             size="medium"
-            items={types.map((t) => ({ value: t, label: t }))}
+            items={types.map((typeValue) => ({
+              value: typeValue,
+              label: typeValue === "All" ? t("dashboard.events.filterAll") : typeValue,
+            }))}
             className="min-w-[120px]"
           />
         </div>
@@ -207,7 +212,7 @@ export default function Events() {
       <Card padded={false}>
         {loading ? (
           <div className="flex items-center gap-2 p-6 text-sm text-ink-3">
-            <Loader size="xs" /> Reading event log…
+            <Loader size="xs" /> {t("dashboard.events.loading")}
           </div>
         ) : !events?.ok ? (
           <div className="p-6">
@@ -217,8 +222,8 @@ export default function Events() {
           <div className="p-6">
             <EmptyState
               icon={<Database className="h-6 w-6" />}
-              title="No events match your filter"
-              description="Loosen the search or switch the type filter back to All."
+              title={t("dashboard.events.empty.title")}
+              description={t("dashboard.events.empty.body")}
             />
           </div>
         ) : (
@@ -226,11 +231,11 @@ export default function Events() {
             <thead className="border-b border-border bg-surface-0 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
               <tr>
                 <th className="w-8 px-2 py-2" />
-                <th className="w-20 px-2 py-2">Type</th>
-                <th className="px-2 py-2">ID</th>
-                <th className="px-2 py-2">Actor</th>
-                <th className="hidden px-2 py-2 md:table-cell">Tile</th>
-                <th className="px-2 py-2 text-right">When</th>
+                <th className="w-20 px-2 py-2">{t("dashboard.events.table.type")}</th>
+                <th className="px-2 py-2">{t("dashboard.events.table.id")}</th>
+                <th className="px-2 py-2">{t("dashboard.events.table.actor")}</th>
+                <th className="hidden px-2 py-2 md:table-cell">{t("dashboard.events.table.tile")}</th>
+                <th className="px-2 py-2 text-right">{t("dashboard.events.table.when")}</th>
               </tr>
             </thead>
             <tbody>
@@ -262,6 +267,7 @@ function FragmentRow({
   isOpen: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <>
       <tr
@@ -304,17 +310,17 @@ function FragmentRow({
         <tr className="border-b border-border bg-surface-0">
           <td colSpan={6} className="px-4 py-3">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-              <Code2 className="h-3 w-3" /> Payload
+              <Code2 className="h-3 w-3" /> {t("dashboard.events.payloadHeading")}
             </div>
             <pre className="max-h-80 overflow-auto rounded-md border border-border bg-surface-1 p-3 font-mono text-[11px] text-ink-1">
               {JSON.stringify(event.payload ?? {}, null, 2)}
             </pre>
             <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
-              <Field label="Event ID" value={event.id} />
-              <Field label="Occurred" value={event.occurred_at} />
-              <Field label="Tile" value={event.tile_id ?? "—"} />
+              <Field label={t("dashboard.events.detail.eventId")} value={event.id} />
+              <Field label={t("dashboard.events.table.occurred")} value={event.occurred_at} />
+              <Field label={t("dashboard.events.table.tile")} value={event.tile_id ?? "—"} />
               <Field
-                label="Actor"
+                label={t("dashboard.events.table.actor")}
                 value={
                   event.actor
                     ? `${event.actor.kind}${event.actor.id ? ` · ${event.actor.id}` : ""}`
@@ -347,12 +353,13 @@ function ErrorState({
   error?: { kind: string; message: string; status: number };
   onRetry: () => void;
 }) {
+  const { t } = useTranslation();
   if (!error) {
     return (
       <EmptyState
         icon={<Activity className="h-6 w-6" />}
-        title="No events"
-        description="Run a command on the engine to generate events."
+        title={t("dashboard.events.empty.initialTitle")}
+        description={t("dashboard.events.empty.initialBody")}
       />
     );
   }
@@ -372,7 +379,7 @@ function ErrorState({
         onClick={onRetry}
         leftSection={<RefreshCw size={12} />}
       >
-        Retry
+        {t("common.retry")}
       </Button>
     </Alert>
   );

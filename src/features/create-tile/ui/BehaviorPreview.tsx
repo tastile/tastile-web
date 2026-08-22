@@ -375,6 +375,7 @@ function TasksPreview({ plan, t, hasTasks }: TasksPreviewProps) {
   if (!hasTasks) return null;
 
   const untitled = t("behaviorPreviewUntitledFallback");
+  const moreCount = t("quickCreate.panel.behaviorPreview.moreCount");
 
   return (
     <div className="space-y-1.5">
@@ -391,7 +392,8 @@ function TasksPreview({ plan, t, hasTasks }: TasksPreviewProps) {
         ))}
         {plan.completion.tasks.length > 3 && (
           <div className="text-[10px] text-foreground-muted">
-            +{plan.completion.tasks.length - 3}件
+            +{plan.completion.tasks.length - 3}
+            {moreCount}
           </div>
         )}
       </div>
@@ -437,7 +439,7 @@ export function BehaviorPreview({
     >
       <Accordion.Item value="behavior-preview">
         <Accordion.Control className="text-xs font-semibold text-foreground min-h-[36px] py-1">
-          {t("quickCreate.behaviorPreviewTitle") || "このタイルの挙動"}
+          {t("quickCreate.behaviorPreviewTitle")}
         </Accordion.Control>
         <Accordion.Panel>
           <div className="space-y-4">

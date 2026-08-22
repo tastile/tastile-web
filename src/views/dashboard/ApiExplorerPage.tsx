@@ -11,6 +11,7 @@ import {
   resolveCoreBaseUrl,
 } from "@/shared/api/endpoints";
 import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { Card } from "@/shared/ui/Card";
 import { PageSummaryPanel } from "@/shared/ui/PageSummaryPanel";
@@ -30,6 +31,7 @@ const methodStyle: Record<Method, string> = {
 };
 
 export default function ApiExplorer() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const [focus, setFocus] = useState<EndpointKey | null>(null);
   const [filterTag, setFilterTag] = useState<ApiTag | "All">("All");
@@ -37,29 +39,29 @@ export default function ApiExplorer() {
   const sidePanel = useMemo(
     () => (
       <PageSummaryPanel
-        title="API explorer"
-        description="All endpoints grouped by tag. Click a row to inspect the request shape and try it against the live daemon."
+        title={t("dashboard.api.title")}
+        description={t("dashboard.api.description")}
         sections={[
           {
-            heading: "Counts",
+            heading: t("dashboard.api.sections.counts"),
             items: [
-              { label: "Endpoints", value: Object.keys(ENDPOINTS).length },
-              { label: "Tags", value: TAG_ORDER.length },
-              { label: "Tag filter", value: filterTag },
+              { label: t("dashboard.api.labels.endpoints"), value: Object.keys(ENDPOINTS).length },
+              { label: t("dashboard.api.labels.tags"), value: TAG_ORDER.length },
+              { label: t("dashboard.api.labels.tagFilter"), value: filterTag },
             ],
           },
           {
-            heading: "Related",
+            heading: t("dashboard.api.sections.related"),
             items: [
-              { label: "Runtime", value: "→", href: "/dashboard/runtime" },
-              { label: "Events log", value: "→", href: "/dashboard/events" },
-              { label: "Quota", value: "→", href: "/dashboard/quota" },
+              { label: t("dashboard.api.labels.runtime"), value: "→", href: "/dashboard/runtime" },
+              { label: t("dashboard.api.labels.eventsLog"), value: "→", href: "/dashboard/events" },
+              { label: t("dashboard.api.labels.quota"), value: "→", href: "/dashboard/quota" },
             ],
           },
         ]}
       />
     ),
-    [filterTag],
+    [filterTag, t],
   );
   useSidePanel(sidePanel);
 
@@ -82,9 +84,9 @@ export default function ApiExplorer() {
   return (
     <PageContainer>
       <PageHeader
-        eyebrow={<span className="font-mono text-ink-3">tastile-core</span>}
-        title="API explorer"
-        description="Every core operation grouped by tag. Inspect request inputs and run it against your connected core."
+        eyebrow={<span className="font-mono text-ink-3">{t("dashboard.api.eyebrow")}</span>}
+        title={t("dashboard.api.title")}
+        description={t("dashboard.api.description")}
         meta={
           <>
             <Badge
@@ -94,19 +96,19 @@ export default function ApiExplorer() {
               radius="xl"
               leftSection={<Database size={12} />}
             >
-              Live · {liveBaseUrl()}
+              {t("dashboard.api.liveBadge", { url: liveBaseUrl() })}
             </Badge>
             <Badge variant="light" color="gray" size="sm" radius="xl">
-              {Object.keys(ENDPOINTS).length} endpoints
+              {t("dashboard.api.endpointsLabel", { count: Object.keys(ENDPOINTS).length })}
             </Badge>
             <Badge variant="light" color="gray" size="sm" radius="xl">
-              {TAG_ORDER.length} tags
+              {t("dashboard.api.tagsLabel", { count: TAG_ORDER.length })}
             </Badge>
           </>
         }
         actions={
           <Button variant="default" size="sm" leftSection={<Code2 size={14} />}>
-            Download OpenAPI
+            {t("dashboard.api.downloadOpenApi")}
           </Button>
         }
       />
@@ -115,8 +117,8 @@ export default function ApiExplorer() {
         <TextInput
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search endpoints, paths, keywords…"
-          aria-label="Search endpoints, paths, keywords"
+          placeholder={t("dashboard.api.searchPlaceholder")}
+          aria-label={t("dashboard.api.searchAria")}
           leftSection={<Search size={14} />}
           size="sm"
           className="flex-1"
@@ -129,18 +131,18 @@ export default function ApiExplorer() {
             variant="filled"
             radius="sm"
           >
-            All
+            {t("dashboard.api.tagFilterAll")}
           </Chip>
-          {TAG_ORDER.map((t) => (
+          {TAG_ORDER.map((tag) => (
             <Chip
-              key={t}
-              checked={filterTag === t}
-              onChange={() => setFilterTag(t)}
+              key={tag}
+              checked={filterTag === tag}
+              onChange={() => setFilterTag(tag)}
               size="xs"
               variant="filled"
               radius="sm"
             >
-              {t} {ENDPOINTS_BY_TAG[t].length}
+              {t("dashboard.api.tagFilterWithCount", { tag, count: ENDPOINTS_BY_TAG[tag].length })}
             </Chip>
           ))}
         </div>
@@ -150,11 +152,13 @@ export default function ApiExplorer() {
         <table className="w-full table-fixed text-left text-sm">
           <thead className="bg-surface-0">
             <tr className="border-b border-border text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-              <th className="w-20 px-3 py-2">Method</th>
-              <th className="px-3 py-2">Path</th>
-              <th className="px-3 py-2">Summary</th>
-              <th className="hidden w-24 px-3 py-2 md:table-cell">Tag</th>
-              <th className="hidden w-16 px-3 py-2 text-right md:table-cell">Auth</th>
+              <th className="w-20 px-3 py-2">{t("dashboard.api.table.method")}</th>
+              <th className="px-3 py-2">{t("dashboard.api.table.path")}</th>
+              <th className="px-3 py-2">{t("dashboard.api.table.summary")}</th>
+              <th className="hidden w-24 px-3 py-2 md:table-cell">{t("dashboard.api.table.tag")}</th>
+              <th className="hidden w-16 px-3 py-2 text-right md:table-cell">
+                {t("dashboard.api.table.auth")}
+              </th>
               <th className="w-10 px-3 py-2" />
             </tr>
           </thead>
@@ -201,7 +205,7 @@ export default function ApiExplorer() {
                     {m.auth ? (
                       <Lock className="ml-auto h-3 w-3 text-ink-3" />
                     ) : (
-                      <span className="text-[10px] text-ink-4">public</span>
+                      <span className="text-[10px] text-ink-4">{t("dashboard.api.publicLabel")}</span>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
@@ -213,7 +217,7 @@ export default function ApiExplorer() {
             {keys.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-3 py-12 text-center text-sm text-ink-4">
-                  No endpoints match your filters.
+                  {t("dashboard.api.empty")}
                 </td>
               </tr>
             ) : null}
@@ -235,6 +239,7 @@ function EndpointDetail({
   endpointKey: EndpointKey;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const meta = ENDPOINTS[endpointKey];
   const [response, setResponse] = useState<Result<unknown> | null>(null);
   const [running, setRunning] = useState(false);
@@ -284,7 +289,12 @@ function EndpointDetail({
             {meta.tag}
           </span>
         </div>
-        <ActionIcon variant="subtle" size="sm" onClick={onClose} aria-label="Close detail">
+        <ActionIcon
+          variant="subtle"
+          size="sm"
+          onClick={onClose}
+          aria-label={t("dashboard.api.closeDetailAria")}
+        >
           <X size={14} />
         </ActionIcon>
       </div>
@@ -304,11 +314,11 @@ function EndpointDetail({
             {meta.auth ? (
               <span className="inline-flex items-center gap-1 rounded border border-status-warn/30 bg-status-warn-soft px-1.5 py-0.5 text-[10px] font-medium text-status-warn">
                 <Lock className="h-2.5 w-2.5" />
-                auth required
+                {t("dashboard.api.authRequired")}
               </span>
             ) : (
               <span className="rounded border border-status-active/30 bg-status-active-soft px-1.5 py-0.5 text-[10px] font-medium text-status-active">
-                public
+                {t("dashboard.api.publicLabel")}
               </span>
             )}
           </div>
@@ -321,7 +331,7 @@ function EndpointDetail({
                     htmlFor={`api-path-param-${name}`}
                     className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
                   >
-                    Path: {name}
+                    {t("dashboard.api.pathLabel", { name })}
                   </label>
                   <TextInput
                     id={`api-path-param-${name}`}
@@ -343,7 +353,7 @@ function EndpointDetail({
               htmlFor="api-query-params"
               className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
             >
-              Query parameters (optional JSON object)
+              {t("dashboard.api.queryLabel")}
             </label>
             <TextInput
               id="api-query-params"
@@ -360,11 +370,11 @@ function EndpointDetail({
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-                  Request body
+                  {t("dashboard.api.bodyLabel")}
                 </span>
                 <Button onClick={() => setBodyText(defaultBody(endpointKey))}>
                   <Text size="xs" c="dimmed">
-                    Reset
+                    {t("common.reset")}
                   </Text>
                 </Button>
               </div>
@@ -378,7 +388,7 @@ function EndpointDetail({
             </div>
           ) : (
             <div className="mt-4 rounded-md border border-dashed border-border bg-surface-0 p-3 text-xs text-ink-3">
-              GET request — no body required. Auth header is added automatically when required.
+              {t("dashboard.api.getNoBody")}
             </div>
           )}
 
@@ -391,7 +401,7 @@ function EndpointDetail({
               disabled={running}
               leftSection={<PlayCircle size={14} />}
             >
-              Run request
+              {t("dashboard.api.runRequest")}
             </Button>
             <Button
               variant="default"
@@ -399,7 +409,7 @@ function EndpointDetail({
               onClick={() => copyToClipboard(curlCommand(meta.method, meta.path, bodyText))}
               leftSection={<Copy size={14} />}
             >
-              Copy as curl
+              {t("dashboard.api.copyAsCurl")}
             </Button>
             <span className="ml-auto font-mono text-[10px] text-ink-4">{endpointKey}</span>
           </div>
@@ -408,7 +418,7 @@ function EndpointDetail({
         <div className="p-4">
           <div className="mb-1.5 flex items-center justify-between">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-              Response
+              {t("dashboard.api.responseLabel")}
             </span>
             {response ? (
               <span
@@ -420,7 +430,7 @@ function EndpointDetail({
                 )}
               >
                 {response.ok ? response.status : response.error.status}{" "}
-                {response.ok ? "OK" : response.error.kind}
+                {response.ok ? t("dashboard.api.statusOk") : response.error.kind}
                 {response.ok ? ` · ${response.latencyMs}ms` : ""}
               </span>
             ) : null}
@@ -432,7 +442,7 @@ function EndpointDetail({
                   null,
                   2,
                 )
-              : "// Click Run request to invoke this endpoint."}
+              : t("dashboard.api.responsePlaceholder")}
           </pre>
           {response && !response.ok ? (
             <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light" mt="sm">

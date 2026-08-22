@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { FormRow } from "@/shared/ui/form";
 import { NumberInput } from "@mantine/core";
 import { Timer } from "lucide-react";
@@ -13,12 +14,13 @@ export function RequiredTimePanel({
   minutes: number;
   onChange: (minutes: number) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
       <div className="flex flex-col gap-1">
-        <span className="text-xs font-medium">Required time</span>
+        <span className="text-xs font-medium">{t("quickCreate.durationTitle")}</span>
         <NumberInput
-          aria-label="Required time (min)"
+          aria-label={t("quickCreate.durationInputLabel")}
           min={MIN_MINUTES}
           step={5}
           value={minutes}
@@ -29,9 +31,7 @@ export function RequiredTimePanel({
             input: { backgroundColor: "var(--surface-2)" },
           }}
         />
-        <p className="text-xs text-foreground-muted">
-          Actual start and end times are decided later from available time.
-        </p>
+        <p className="text-xs text-foreground-muted">{t("quickCreate.durationSub")}</p>
       </div>
     </FormRow>
   );

@@ -53,7 +53,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
         <div className="mt-12 flex justify-center">
           <div
             role="tablist"
-            aria-label="Billing interval"
+            aria-label={t.intervalAria}
             className="inline-flex items-center rounded-full border border-surface-2 bg-surface-0 p-1 text-sm"
           >
             {(["monthly", "yearly"] as const).map((value) => {
@@ -94,7 +94,8 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               <p
                 className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
               >
-                01 / {t.free.name}
+                {t.bandPrefixFree}
+                {t.free.name}
               </p>
               <p
                 className={`mt-3 text-4xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
@@ -147,7 +148,8 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 <p
                   className={`text-[11px] font-medium uppercase tracking-[0.22em] text-primary ${display}`}
                 >
-                  02 / {t.pro.name}
+                  {t.bandPrefixPro}
+                  {t.pro.name}
                 </p>
                 <span
                   className={`rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary-fg ${display}`}
@@ -158,9 +160,9 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
               <p
                 className={`mt-3 flex items-baseline gap-2 text-4xl font-semibold leading-none tracking-tight text-foreground lg:text-6xl ${display}`}
               >
-                {billingInterval === "monthly" ? "$5" : "$50"}
+                {billingInterval === "monthly" ? t.proPriceMonthly : t.proPriceYearly}
                 <span className="text-base font-normal text-foreground-muted">
-                  /{billingInterval === "monthly" ? "mo" : "yr"}
+                  {billingInterval === "monthly" ? t.proSuffixMonthly : t.proSuffixYearly}
                 </span>
               </p>
             </div>

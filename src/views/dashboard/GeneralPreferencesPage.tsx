@@ -168,7 +168,9 @@ export default function GeneralPreferences() {
               <p className="text-sm font-semibold text-foreground">
                 {t("preferences.notifications.browser")}
               </p>
-              <p className="mt-1 text-xs text-foreground-muted">Status: {notificationPermission}</p>
+              <p className="mt-1 text-xs text-foreground-muted">
+                {t("preferences.notifications.statusLabel", { permission: notificationPermission })}
+              </p>
               {notificationStatus ? (
                 <p className="mt-2 text-xs text-foreground-muted">{notificationStatus}</p>
               ) : null}
@@ -207,14 +209,14 @@ export default function GeneralPreferences() {
           />
         </div>
         <div className="mt-5 flex items-center justify-between gap-4">
-          <p className="text-sm text-foreground-muted">Lock after leaving for</p>
+          <p className="text-sm text-foreground-muted">{t("preferences.securityLock.lockAfterLeavingFor")}</p>
           <div className="flex items-center gap-2">
             <NumberInput
               value={securityLockMinutes}
               min={0}
               max={240}
               size="xs"
-              suffix={" min"}
+              suffix={` ${t("preferences.securityLock.minutesSuffix")}`}
               onChange={(value) => {
                 const val = Math.max(0, Number(value) || 0);
                 updateSecurityLockMinutes(val);

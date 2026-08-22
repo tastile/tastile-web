@@ -151,7 +151,7 @@ export function QuickCreateTask() {
       })),
       {
         value: DURATION_CUSTOM_VALUE,
-        label: t("quickCreate.durationCustom") || "Custom…",
+        label: t("quickCreate.durationCustom"),
       },
     ],
     [t],
@@ -223,8 +223,8 @@ export function QuickCreateTask() {
   // submit side without re-touching the form.
   const splitPolicyOptions = useMemo(
     () => [
-      { value: "split", label: t("quickCreate.splitAllow") || "Allow split" },
-      { value: "unsplit", label: t("quickCreate.splitKeep") || "Keep continuous" },
+      { value: "split", label: t("quickCreate.splitAllow") },
+      { value: "unsplit", label: t("quickCreate.splitKeep") },
     ],
     [t],
   );
@@ -242,7 +242,7 @@ export function QuickCreateTask() {
           value={title}
           onChange={(next) => setField("identity.title", next)}
           onClose={close}
-          placeholder={t("quickCreate.titlePlaceholder") || t("quickCreate.placeholder")}
+          placeholder={t("quickCreate.titlePlaceholder")}
           closeTestId="quick-create-task-close"
           closeAriaLabel={t("quickCreate.cancel")}
           titleTestId="task-title"
@@ -260,7 +260,7 @@ export function QuickCreateTask() {
                 onChange={handleDurationChange}
                 data={DURATION_OPTIONS}
                 size="sm"
-                aria-label={t("quickCreate.durationLabel") || "Duration"}
+                aria-label={t("quickCreate.durationLabel")}
                 data-testid="task-duration-select"
                 allowDeselect={false}
                 checkIconPosition="right"
@@ -275,8 +275,8 @@ export function QuickCreateTask() {
                   max={1440}
                   size="sm"
                   mt="xs"
-                  aria-label={t("quickCreate.durationManual") || "Custom minutes"}
-                  placeholder={t("quickCreate.durationManual") || "Custom minutes"}
+                  aria-label={t("quickCreate.durationManual")}
+                  placeholder={t("quickCreate.durationManual")}
                   data-testid="task-duration-manual"
                   className="w-full"
                 />
@@ -304,7 +304,7 @@ export function QuickCreateTask() {
               <TimeSuggestionInput
                 value={dueTime}
                 onChange={updateDueTime}
-                aria-label={t("quickCreate.dueTimeLabel") || "Due time"}
+                aria-label={t("quickCreate.dueTimeLabel")}
                 data-testid="task-due-time"
                 className="w-[5.5rem]"
               />
@@ -314,7 +314,7 @@ export function QuickCreateTask() {
               value={dueDate}
               onChange={updateDueDate}
               valueFormat={DATE_FMT}
-              placeholder={t("quickCreate.dueDatePlaceholder") || "Date (optional)"}
+              placeholder={t("quickCreate.dueDatePlaceholder")}
               size="sm"
               clearable
               popoverProps={{ withinPortal: false }}

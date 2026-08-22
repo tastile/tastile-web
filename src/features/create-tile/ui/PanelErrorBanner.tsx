@@ -2,6 +2,8 @@
 
 import { CloseButton } from "@mantine/core";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
+
 interface Props {
   title: string;
   body: string;
@@ -9,6 +11,7 @@ interface Props {
 }
 
 export function PanelErrorBanner({ title, body, onDismiss }: Props) {
+  const { t } = useTranslation();
   return (
     <div
       role="alert"
@@ -18,7 +21,9 @@ export function PanelErrorBanner({ title, body, onDismiss }: Props) {
         <p className="text-sm font-medium">{title}</p>
         <p className="text-xs text-[var(--foreground-muted)]">{body}</p>
       </div>
-      {onDismiss ? <CloseButton onClick={onDismiss} aria-label="Dismiss error" /> : null}
+      {onDismiss ? (
+        <CloseButton onClick={onDismiss} aria-label={t("common.close")} />
+      ) : null}
     </div>
   );
 }

@@ -18,6 +18,50 @@ vi.mock("@/components/NavControls", () => ({
 	ThemeToggle: () => <button type="button">theme</button>,
 }));
 
+vi.mock("@/shared/i18n/use-translation", () => ({
+	useTranslation: () => ({
+		t: (key: string, params?: Record<string, string | number>) => {
+			const m: Record<string, string> = {
+				"auth.signup.heading": "Create account",
+				"auth.signup.nameLabel": "Name",
+				"auth.signup.emailLabel": "Email",
+				"auth.signup.passwordLabel": "Password",
+				"auth.signup.backToSignin": "Back to sign in",
+				"auth.signup.success": "Verification email sent. Confirm your address, then sign in.",
+				"auth.signup.termsLink": "Terms of Service",
+				"auth.signup.privacyLink": "Privacy Policy",
+				"auth.signup.legalNotice":
+					"By continuing, you agree to our {termsLink} and {privacyLink}.",
+				"auth.signup.errorEmailExists": "An account with this email already exists.",
+				"auth.signup.errorFallback": "Sign-up failed. Please try again.",
+				"auth.login.heading": "Sign in",
+				"auth.login.emailLabel": "Email",
+				"auth.login.passwordLabel": "Password",
+				"auth.login.submit": "Sign in with email",
+				"auth.login.google": "Continue with Google",
+				"auth.login.apple": "Continue with Apple",
+				"auth.login.createAccount": "Create account",
+				"auth.login.termsLink": "Terms of Service",
+				"auth.login.privacyLink": "Privacy Policy",
+				"auth.login.legalNotice":
+					"By continuing, you agree to our {termsLink} and {privacyLink}.",
+				"auth.login.errors.noSession": "Sign-in is required.",
+				"auth.login.errors.sessionExpired":
+					"Your session has expired. Please sign in again.",
+				"auth.login.errors.invalidEmailOrPassword": "Incorrect email or password.",
+				"auth.login.errors.emailNotVerified":
+					"Please verify your email address before signing in.",
+				"auth.login.errors.fallback": "Authentication failed. Please try again.",
+				"auth.login.errors.generic": "Sign-in failed: {code}",
+			};
+			const raw = m[key] ?? key;
+			if (!params) return raw;
+			return raw.replace(/\{(\w+)\}/g, (_, name: string) => String(params[name] ?? ""));
+		},
+		locale: "en" as const,
+	}),
+}));
+
 describe("marketing page layout consistency", () => {
 	afterEach(() => {
 		vi.unstubAllEnvs();
@@ -87,7 +131,8 @@ describe("marketing page layout consistency", () => {
 	});
 
 	it("renders only configured providers in the compact login shell", async () => {
-		vi.stubEnv("NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS", "Google");
+		vi.stubEnv("GOOGLE_CLIENT_ID", "google-client-id");
+		vi.stubEnv("GOOGLE_CLIENT_SECRET", "google-client-secret");
 
 		const { container } = renderWithMantine(
 			await LoginPage({ searchParams: Promise.resolve({}) }),
@@ -95,37 +140,25 @@ describe("marketing page layout consistency", () => {
 
 		expect(container.querySelector("header")).toBeNull();
 		expect(container.querySelector("footer")).toBeNull();
-expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
-			expect(screen.queryByText("Start execution control right away")).toBeNull();
-			expect(screen.getByRole("link", { name: "Continue with Google" })).toBeTruthy();
-			expect(screen.queryByText("Continue with Apple")).toBeNull();
-			expect(screen.getByRole("link", { name: "Continue with passkey or email" })).toBeTruthy();
-			expect(screen.getByRole("link", { name: "Create account" })).toBeTruthy();
+		expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
+		expect(screen.queryByText("Start execution control right away")).toBeNull();
+		expect(screen.getByRole("button", { name: "Continue with Google" })).toBeTruthy();
+		expect(screen.queryByText("Continue with Apple")).toBeNull();
+		expect(screen.getByRole("button", { name: "Sign in with email" })).toBeTruthy();
+		expect(screen.getByRole("link", { name: "Create account" })).toBeTruthy();
 	});
 
-	it("preserves native auth query values in compact provider links", async () => {
-		vi.stubEnv(
-			"NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS",
-			"Google,SignInWithApple",
-		);
+	it("omits social providers when they are not configured", async () => {
+		vi.stubEnv("GOOGLE_CLIENT_ID", "");
+		vi.stubEnv("GOOGLE_CLIENT_SECRET", "");
 
 		const { container } = renderWithMantine(
-			await LoginPage({
-				searchParams: Promise.resolve({
-					redirect_uri: "tastile://auth/callback",
-					state: "abcdefghijklmnop",
-					code_challenge: "qrstuvwxyz123456",
-					platform: "android",
-				}),
-			}),
+			await LoginPage({ searchParams: Promise.resolve({}) }),
 		);
 
-		const googleHref = container
-			.querySelector<HTMLAnchorElement>('a[href^="/auth/cognito/login?provider=Google"]')
-			?.getAttribute("href");
-		expect(googleHref).toContain("redirect_uri=tastile%3A%2F%2Fauth%2Fcallback");
-		expect(googleHref).toContain("state=abcdefghijklmnop");
-		expect(googleHref).toContain("code_challenge=qrstuvwxyz123456");
-		expect(googleHref).toContain("platform=android");
+		expect(container.querySelector('[data-testid="login-panel"]')).toBeTruthy();
+		expect(screen.queryByText("Continue with Google")).toBeNull();
+		expect(screen.queryByText("Continue with Apple")).toBeNull();
+		expect(screen.getByRole("button", { name: "Sign in with email" })).toBeTruthy();
 	});
 });

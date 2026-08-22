@@ -201,7 +201,7 @@ export function FloatingHeader({
               <FloatingMenuItem
                 className="cursor-pointer flex items-center gap-2"
                 onClick={() => {
-                  window.location.href = "/auth/cognito/logout";
+                  window.location.href = "/auth/logout";
                 }}
               >
                 <LogOut className="h-4 w-4 shrink-0" />

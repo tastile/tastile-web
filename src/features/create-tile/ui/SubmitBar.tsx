@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, Group } from "@mantine/core";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { PanelErrorBanner } from "./PanelErrorBanner";
 
 interface Props {
@@ -30,6 +31,7 @@ export function SubmitBar({
   onDiscardDraft,
   discardLabel,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
       {serverError ? <PanelErrorBanner title={serverError.title} body={serverError.body} /> : null}
@@ -46,7 +48,7 @@ export function SubmitBar({
               disabled={isSubmitting}
               data-testid="quick-create-discard-draft"
             >
-              {discardLabel ?? "Discard draft"}
+              {discardLabel ?? t("quickCreate.discardDraft")}
             </Button>
           ) : null}
         </div>

@@ -119,13 +119,12 @@ export function CreateProjectModal({
           size="sm"
         />
         <Select
-          label={t("quickCreate.projectCreateParentLabel") || "Parent project"}
-          placeholder={t("quickCreate.projectCreateParentNone") || "(none — top level)"}
+          label={t("quickCreate.projectCreateParentLabel")}
+          placeholder={t("quickCreate.projectCreateParentNone")}
           data={[
             {
               value: NONE_PARENT_VALUE,
-              label:
-                t("quickCreate.projectCreateParentNone") || "(none — top level)",
+              label: t("quickCreate.projectCreateParentNone"),
             },
             ...tree.map((entry) => ({
               value: entry.workspace.id,
@@ -143,8 +142,8 @@ export function CreateProjectModal({
           data-testid="meta-project-create-parent"
         />
         <ColorInput
-          label={t("quickCreate.projectCreateColorLabel") || "Color"}
-          placeholder={t("quickCreate.projectCreateColorPlaceholder") || "#5e6ad2"}
+          label={t("quickCreate.projectCreateColorLabel")}
+          placeholder={t("quickCreate.projectCreateColorPlaceholder")}
           format="hex"
           fixOnBlur
           withPicker={false}

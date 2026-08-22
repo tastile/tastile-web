@@ -202,7 +202,7 @@ export function QuickCreateEvent() {
           value={title}
           onChange={(next) => setField("identity.title", next)}
           onClose={close}
-          placeholder={t("quickCreate.titlePlaceholder") || t("quickCreate.placeholder")}
+          placeholder={t("quickCreate.titlePlaceholder")}
           closeTestId="quick-create-event-close"
           closeAriaLabel={t("quickCreate.cancel")}
           titleTestId="event-title"
@@ -217,8 +217,8 @@ export function QuickCreateEvent() {
           onDateChange={updateStartDate}
           timeValue={allDay ? undefined : startTime}
           onTimeChange={allDay ? undefined : updateStartTime}
-          datePlaceholder={t("quickCreate.startDate") || "Start date"}
-          ariaLabelTime={t("quickCreate.startTimeLabel") || "Start time"}
+          datePlaceholder={t("quickCreate.startDate")}
+          ariaLabelTime={t("quickCreate.startTimeLabel")}
           dateTestId={allDay ? "event-start-all-day" : "event-start-date"}
           timeTestId="event-start-time"
           defaultTimeScrollTo={defaultTimeScroll}
@@ -230,8 +230,8 @@ export function QuickCreateEvent() {
           onDateChange={updateEndDate}
           timeValue={allDay ? undefined : endTime}
           onTimeChange={allDay ? undefined : updateEndTime}
-          datePlaceholder={t("quickCreate.endDate") || "End date"}
-          ariaLabelTime={t("quickCreate.endTimeLabel") || "End time"}
+          datePlaceholder={t("quickCreate.endDate")}
+          ariaLabelTime={t("quickCreate.endTimeLabel")}
           dateTestId={allDay ? "event-end-all-day" : "event-end-date"}
           timeTestId="event-end-time"
           defaultTimeScrollTo={defaultEndTimeScroll}
@@ -241,7 +241,7 @@ export function QuickCreateEvent() {
         <div className="px-4 py-3">
           <FormRow>
             <span className="text-sm text-foreground">
-              {t("quickCreate.allDay") || "All day"}
+              {t("quickCreate.allDay")}
             </span>
             <Switch
               checked={allDay}

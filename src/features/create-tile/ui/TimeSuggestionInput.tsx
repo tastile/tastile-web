@@ -161,7 +161,7 @@ export function TimeSuggestionInput({
               combobox.closeDropdown();
             }
           }}
-          placeholder={t("quickCreate.timePlaceholder") || "--:--"}
+          placeholder={t("quickCreate.timePlaceholder")}
           aria-label={ariaLabel}
           data-testid={dataTestid}
           className={className}

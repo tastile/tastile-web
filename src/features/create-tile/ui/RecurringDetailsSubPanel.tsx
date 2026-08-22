@@ -35,18 +35,17 @@ export function RecurringDetailsSubPanel({
       activeKey={activePanel}
       onClose={onClose}
       headingId="recurring-details-heading"
-      title={t("quickCreate.detailsRecurringTitle") || "Recurring details"}
+      title={t("quickCreate.detailsRecurringTitle")}
       description={t("quickCreate.detailsSubDescription") || ""}
       layout="drawer"
     >
       <Stack gap="md">
         <FormRow icon={<Repeat className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.frameRulesLabel") || "Frame rules"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.frameRulesLabel")}</span>
             <Text size="sm" c="dimmed">
               {frameRules.length === 0
-                ? t("quickCreate.frameRulesEmpty") ||
-                  "No frame rules yet — defaults apply."
+                ? t("quickCreate.frameRulesEmpty")
                 : `${frameRules.length} rule${frameRules.length === 1 ? "" : "s"}`}
             </Text>
           </div>
@@ -54,10 +53,10 @@ export function RecurringDetailsSubPanel({
 
         <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.referencesLabel") || "References"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.referencesLabel")}</span>
             <Text size="sm" c="dimmed">
               {references.length === 0
-                ? t("quickCreate.referencesEmpty") || "No references yet"
+                ? t("quickCreate.referencesEmpty")
                 : `${references.length} reference${references.length === 1 ? "" : "s"}`}
             </Text>
             <Button
@@ -68,7 +67,7 @@ export function RecurringDetailsSubPanel({
               }}
               data-testid="recurring-details-clear-refs"
             >
-              {t("quickCreate.detailsClearReferences") || "Clear references"}
+              {t("quickCreate.detailsClearReferences")}
             </Button>
           </div>
         </FormRow>

@@ -113,15 +113,15 @@ describe("SubtasksSection", () => {
     expect(screen.getByTestId("subtasks-test-id")).toBeInTheDocument();
   });
 
-  it("renders the heading with the English fallback when the i18n key resolves to empty", () => {
+  it("renders the heading with the i18n-resolved text", () => {
     renderWithMantine(
       <SubtasksSection
         testId="subtasks-test-id"
-        headingKey="quickCreate.__intentionally_missing__"
-        fallbackHeading="Custom sub-tasks heading"
+        headingKey="quickCreate.subtasksLabel"
       />,
     );
-    expect(screen.getByText("Custom sub-tasks heading")).toBeInTheDocument();
+    // en locale: quickCreate.subtasksLabel = "Sub-tasks"
+    expect(screen.getByText("Sub-tasks")).toBeInTheDocument();
   });
 
   it("renders existing tasks from the store", () => {

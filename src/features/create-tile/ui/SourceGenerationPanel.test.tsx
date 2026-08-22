@@ -140,7 +140,16 @@ function renderConditionPanel(
       recurring={recurring}
       setField={setField}
       locale="en"
-      t={(key) => key}
+      t={(key) =>
+        // Mirror the en→ja mapping used in the bundle for the keys this
+        // test asserts on. After ADR-0003 the panel renders button labels
+        // via t() instead of inline literals, so the mock has to return the
+        // translated string for the assertion to find it by accessible
+        // name.
+        key === "quickCreate.panel.sourceGeneration.removeCondition"
+          ? "条件を外す"
+          : key
+      }
     />,
   );
 }

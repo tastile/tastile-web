@@ -2,6 +2,7 @@
 
 import { type SourceTileRead, listSourceTiles } from "@/shared/api/v1/source-tiles";
 import { makeClient } from "@/shared/api/v1/submit";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { uuidv7 } from "@/shared/model/v1/envelope";
 import type { SourceRelationDraft } from "@/shared/stores/quick-create-store";
 import { FormRow } from "@/shared/ui/form";
@@ -39,6 +40,7 @@ function newRelation(): SourceRelationDraft {
 }
 
 export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
+  const { t } = useTranslation();
   const [sources, setSources] = useState<SourceTileRead[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -63,9 +65,9 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
     <Stack gap="md" p="md">
       <FormRow icon={<Network className="h-4 w-4" aria-hidden />}>
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium">参照関係</span>
+          <span className="text-xs font-medium">{t("quickCreate.panel.relations.heading")}</span>
           <span className="text-xs text-foreground-muted">
-            両端が対等なSource間の関係を定義します。関係の向きが便宜上の入れ子表示を決めます。
+            {t("quickCreate.panel.relations.description")}
           </span>
         </div>
       </FormRow>
@@ -74,12 +76,12 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
         <Stack key={relation.id} gap="xs" p="sm" className="rounded-lg border border-border">
           <Group justify="space-between">
             <Text fw={600} size="xs">
-              関係 {index + 1}
+              {t("quickCreate.panel.relations.relationIndexLabel", { index: index + 1 })}
             </Text>
             <ActionIcon
               variant="subtle"
               color="red"
-              aria-label="関係を削除"
+              aria-label={t("quickCreate.panel.relations.removeRelationAria")}
               onClick={() => setRelations(relations.filter((item) => item.id !== relation.id))}
             >
               <Trash2 size={15} />
@@ -87,7 +89,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
           </Group>
           <FormRow icon={<ExternalLink className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">参照するSource</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.relations.referencedSourceLabel")}</span>
               <Select
                 searchable
                 value={relation.referencedSourceTileId || null}
@@ -108,17 +110,17 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
 
           <FormRow icon={<Network className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">関係</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.relations.relationKindLabel")}</span>
               <Select
                 value={String(relation.kind)}
                 data={[
-                  { value: "0", label: "内側に配置 (INSIDE)" },
-                  { value: "1", label: "前に配置 (BEFORE)" },
-                  { value: "2", label: "後に配置 (AFTER)" },
-                  { value: "3", label: "開始を揃える (STARTS_AT)" },
-                  { value: "4", label: "終了を揃える (ENDS_AT)" },
-                  { value: "5", label: "同じSpan (SAME_SPAN)" },
-                  { value: "6", label: "同じ長さ (SAME_DURATION)" },
+                  { value: "0", label: t("quickCreate.panel.relations.kindInside") },
+                  { value: "1", label: t("quickCreate.panel.relations.kindBefore") },
+                  { value: "2", label: t("quickCreate.panel.relations.kindAfter") },
+                  { value: "3", label: t("quickCreate.panel.relations.kindStartsAt") },
+                  { value: "4", label: t("quickCreate.panel.relations.kindEndsAt") },
+                  { value: "5", label: t("quickCreate.panel.relations.kindSameSpan") },
+                  { value: "6", label: t("quickCreate.panel.relations.kindSameDuration") },
                 ]}
                 onChange={(value) => update(relation.id, { kind: Number(value) })}
               />
@@ -127,15 +129,15 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
 
           <FormRow icon={<MoveHorizontal className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">オフセット & 優先度</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.relations.offsetPriorityLabel")}</span>
               <Group grow>
                 <NumberInput
-                  label="オフセット（分）"
+                  label={t("quickCreate.panel.relations.offsetMinutesLabel")}
                   value={relation.offsetMs / 60_000}
                   onChange={(value) => update(relation.id, { offsetMs: (Number(value) || 0) * 60_000 })}
                 />
                 <NumberInput
-                  label="表示優先度"
+                  label={t("quickCreate.panel.relations.priorityLabel")}
                   value={relation.summaryPriority}
                   onChange={(value) => update(relation.id, { summaryPriority: Number(value) || 0 })}
                 />
@@ -145,13 +147,13 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
 
           <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">長さ</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.relations.durationLabel")}</span>
               <Select
                 value={relation.durationKind}
                 data={[
-                  { value: "subject", label: "このSourceの長さ" },
-                  { value: "reference", label: "参照Sourceと同じ長さ" },
-                  { value: "fixed", label: "固定の長さ" },
+                  { value: "subject", label: t("quickCreate.panel.relations.durationSubject") },
+                  { value: "reference", label: t("quickCreate.panel.relations.durationReference") },
+                  { value: "fixed", label: t("quickCreate.panel.relations.durationFixed") },
                 ]}
                 onChange={(value) =>
                   update(relation.id, {
@@ -165,7 +167,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
           {relation.durationKind === "fixed" ? (
             <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium">固定時間（分）</span>
+                <span className="text-xs font-medium">{t("quickCreate.panel.relations.fixedMinutesLabel")}</span>
                 <NumberInput
                   min={1}
                   value={(relation.fixedDurationMs ?? 0) / 60_000}
@@ -179,12 +181,12 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
 
           <FormRow icon={<Scissors className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">割り当ての分割</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.relations.allocationSplitLabel")}</span>
               <Select
                 value={relation.splitPolicy.kind}
                 data={[
-                  { value: "unsplit", label: "分割しない" },
-                  { value: "split", label: "複数Placementへ分割" },
+                  { value: "unsplit", label: t("quickCreate.panel.relations.splitUnsplit") },
+                  { value: "split", label: t("quickCreate.panel.relations.splitMultiple") },
                 ]}
                 onChange={(value) =>
                   update(relation.id, {
@@ -200,7 +202,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
 
           <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">割り当てる合計時間（分）</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.relations.totalAllocationLabel")}</span>
               <NumberInput
                 min={1}
                 value={relation.splitPolicy.requiredTotalDurationMs / 60_000}
@@ -219,10 +221,10 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
           {relation.splitPolicy.kind === "split" ? (
             <FormRow icon={<Scissors className="h-4 w-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium">分割設定</span>
+                <span className="text-xs font-medium">{t("quickCreate.panel.relations.splitSettingsLabel")}</span>
                 <Group grow>
                   <NumberInput
-                    label="最小segment（分）"
+                    label={t("quickCreate.panel.relations.minSegmentLabel")}
                     min={1}
                     value={(relation.splitPolicy.minSegmentMs ?? 0) / 60_000}
                     onChange={(value) =>
@@ -235,7 +237,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
                     }
                   />
                   <NumberInput
-                    label="最大segment（分）"
+                    label={t("quickCreate.panel.relations.maxSegmentLabel")}
                     min={1}
                     value={(relation.splitPolicy.maxSegmentMs ?? 0) / 60_000}
                     onChange={(value) =>
@@ -258,7 +260,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
         leftSection={<Plus size={15} />}
         onClick={() => setRelations([...relations, newRelation()])}
       >
-        関係を追加
+        {t("quickCreate.panel.relations.addRelation")}
       </Button>
     </Stack>
   );

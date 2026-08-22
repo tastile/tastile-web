@@ -188,7 +188,7 @@ export interface SourceGenerationPanelProps {
   /** UI locale for weekday labels. */
   locale: EditorLocale;
   /** Translation lookup. */
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   /** Current timeOfDay settings, surfaced when interval mode joins the panel. */
   timeOfDayStart?: string;
   timeOfDayEnd?: string;
@@ -246,7 +246,7 @@ export function SourceGenerationPanel({
       {intervalEnabled && (
         <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium">{t("quickCreate.intervalLabel") ?? "Interval"}</span>
+            <span className="text-xs font-medium">{t("quickCreate.panel.sourceGeneration.intervalLabel")}</span>
             <div className="flex items-center gap-2">
               <NumberInput
                 min={recurring.intervalUnit === "min" ? 5 : 1}
@@ -260,7 +260,7 @@ export function SourceGenerationPanel({
                 }}
                 size="sm"
                 className="flex-1"
-                aria-label={t("quickCreate.intervalLabel") ?? "Interval"}
+                aria-label={t("quickCreate.panel.sourceGeneration.intervalLabelAria")}
                 styles={{ input: { backgroundColor: "var(--surface-2)" } }}
               />
               <SegmentedControl
@@ -296,8 +296,14 @@ export function SourceGenerationPanel({
               <div className="rounded bg-surface-2 px-2 py-1.5 text-xs text-foreground-muted flex items-center gap-1.5">
                 <Calendar size={12} aria-hidden="true" />
                 <span>
-                  時間帯: {timeOfDayStart}
-                  {timeOfDayEnd ? ` → ${timeOfDayEnd}` : ""}
+                  {timeOfDayEnd
+                    ? t("quickCreate.panel.sourceGeneration.timeOfDayRange", {
+                        start: timeOfDayStart,
+                        end: timeOfDayEnd,
+                      })
+                    : t("quickCreate.panel.sourceGeneration.timeOfDayPrefix", {
+                        start: timeOfDayStart,
+                      })}
                 </span>
               </div>
             ) : null}
@@ -307,10 +313,7 @@ export function SourceGenerationPanel({
       {conditionEnabled && (
         <FormRow icon={<Filter className="h-4 w-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-2">
-            <span className="text-xs font-medium">{t("quickCreate.conditionModeLabel") ?? "繰り返し条件"}</span>
-            {t("quickCreate.conditionModeHint") ? (
-              <span className="text-xs text-foreground-muted">{t("quickCreate.conditionModeHint")}</span>
-            ) : null}
+            <span className="text-xs font-medium">{t("quickCreate.panel.sourceGeneration.conditionModeLabel")}</span>
           {/* E1b — recurring.condition affordance is kept (not removed) so users
               see the slot exists, but every interaction is disabled while
               ConditionEditor (Phase 4) is not yet wired. The wrapper span
@@ -337,7 +340,7 @@ export function SourceGenerationPanel({
                     // No-op — E1b reserved (Phase 4). Submit path is unaffected.
                   }}
                 >
-                  条件を外す
+                  {t("quickCreate.panel.sourceGeneration.removeCondition")}
                 </Button>
                 <div aria-disabled="true" className="pointer-events-none opacity-60">
                   <ConditionEditor
@@ -370,7 +373,7 @@ export function SourceGenerationPanel({
                 }}
                 className="cursor-not-allowed"
               >
-                繰り返し条件を追加
+                {t("quickCreate.panel.sourceGeneration.addRecurrenceCondition")}
                 <span id="recurring-condition-disabled-reason" className="sr-only">
                   {RECURRING_CONDITION_DISABLED_TOOLTIP}
                 </span>

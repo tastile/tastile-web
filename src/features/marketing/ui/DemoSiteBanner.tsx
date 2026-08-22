@@ -1,27 +1,13 @@
 "use client";
 
-import { useLocaleStore } from "@/shared/stores/locale-store";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { AlertTriangle } from "lucide-react";
 
 const X_DM_URL = "https://twitter.com/361do_sleep";
 const REPO_URL = "https://github.com/tastile/tastile-web";
 
-const COPY = {
-  ja: {
-    text: "このサイトは開発中です。デモとしての提供であり、品質や可用性は保証されません。データは予告無くリセットされる可能性があります。",
-    xLink: "X: @361do_sleep",
-    repoLink: "ソース: GitHub",
-  },
-  en: {
-    text: "This site is under active development. It is provided as a demo; quality and availability are not guaranteed. Data may be reset without notice.",
-    xLink: "X: @361do_sleep",
-    repoLink: "Source: GitHub",
-  },
-} as const;
-
 export function DemoSiteBanner() {
-  const locale = useLocaleStore((s) => s.locale);
-  const copy = locale === "ja" ? COPY.ja : COPY.en;
+  const { t } = useTranslation();
 
   return (
     <output
@@ -31,14 +17,14 @@ export function DemoSiteBanner() {
       <div className="layout-shell flex h-full items-center gap-3 text-xs">
         <AlertTriangle aria-hidden className="h-3.5 w-3.5 shrink-0" />
         <p className="flex-1 truncate">
-          {copy.text}{" "}
+          {t("demoBanner.text")}{" "}
           <a
             href={X_DM_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="ml-2 underline underline-offset-2 hover:opacity-80"
           >
-            {copy.xLink}
+            {t("demoBanner.xLink")}
           </a>
           <span aria-hidden> · </span>
           <a
@@ -47,7 +33,7 @@ export function DemoSiteBanner() {
             rel="noopener noreferrer"
             className="underline underline-offset-2 hover:opacity-80"
           >
-            {copy.repoLink}
+            {t("demoBanner.repoLink")}
           </a>
         </p>
       </div>

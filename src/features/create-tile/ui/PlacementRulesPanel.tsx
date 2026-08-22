@@ -12,7 +12,7 @@ import { defaultTerm } from "./default-term";
 interface PlacementRulesPanelProps {
   rules: PlacementRule[];
   setRules: (rules: PlacementRule[]) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: Record<string, string | number>) => string;
   tileOptions: { value: string; label: string }[];
   taskOptions: { value: string; label: string }[];
   requirementOptions: { value: string; label: string }[];
@@ -54,9 +54,9 @@ export function PlacementRulesPanel({
     <Stack gap="md" p="md">
       <FormRow icon={<Scale className="h-4 w-4" aria-hidden />}>
         <div className="flex flex-col gap-1">
-          <span className="text-xs font-medium">配置ルール</span>
+          <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.heading")}</span>
           <span className="text-xs text-foreground-muted">
-            Permit / Deny / Limit / Score / Recordをrank付きの同じルール集合で評価します。
+            {t("quickCreate.panel.placementRules.description")}
           </span>
         </div>
       </FormRow>
@@ -64,12 +64,12 @@ export function PlacementRulesPanel({
         <Stack key={rule.id} gap="sm" p="sm" className="rounded-lg border border-border">
           <Group justify="space-between">
             <Text fw={600} size="xs">
-              Rule {index + 1}
+              {t("quickCreate.panel.placementRules.ruleIndexLabel", { index: index + 1 })}
             </Text>
             <ActionIcon
               color="red"
               variant="subtle"
-              aria-label="配置ルールを削除"
+              aria-label={t("quickCreate.panel.placementRules.removeRuleAria")}
               onClick={() => setRules(rules.filter((item) => item.id !== rule.id))}
             >
               <Trash2 size={15} />
@@ -77,16 +77,16 @@ export function PlacementRulesPanel({
           </Group>
           <FormRow icon={<Scale className="h-4 w-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
-              <span className="text-xs font-medium">効果 & Rank</span>
+              <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.effectRankLabel")}</span>
               <Group grow>
                 <Select
                   value={String(rule.effect.kind)}
                   data={[
-                    { value: "0", label: "Permit scope" },
-                    { value: "1", label: "Deny scope" },
-                    { value: "2", label: "Limit span" },
-                    { value: "3", label: "Score scope" },
-                    { value: "4", label: "Record requirement" },
+                    { value: "0", label: t("quickCreate.panel.placementRules.effectPermit") },
+                    { value: "1", label: t("quickCreate.panel.placementRules.effectDeny") },
+                    { value: "2", label: t("quickCreate.panel.placementRules.effectLimit") },
+                    { value: "3", label: t("quickCreate.panel.placementRules.effectScore") },
+                    { value: "4", label: t("quickCreate.panel.placementRules.effectRecord") },
                   ]}
                   onChange={(value) =>
                     update(rule.id, {
@@ -95,7 +95,7 @@ export function PlacementRulesPanel({
                   }
                 />
                 <NumberInput
-                  label="rank"
+                  label={t("quickCreate.panel.placementRules.rankLabel")}
                   value={rule.rank}
                   onChange={(value) => update(rule.id, { rank: Number(value) || 0 })}
                 />
@@ -106,14 +106,14 @@ export function PlacementRulesPanel({
             <FormRow icon={<Filter className="h-4 w-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium">適用条件</span>
+                  <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.conditionLabel")}</span>
                   <Button
                     size="compact-xs"
                     variant="outline"
                     color="red"
                     onClick={() => update(rule.id, { when: null })}
                   >
-                    条件を外す
+                    {t("quickCreate.panel.placementRules.removeCondition")}
                   </Button>
                 </div>
                 <ConditionEditor
@@ -132,16 +132,16 @@ export function PlacementRulesPanel({
               variant="outline"
               onClick={() => update(rule.id, { when: initialCondition() })}
             >
-              適用条件を追加
+              {t("quickCreate.panel.placementRules.addCondition")}
             </Button>
           )}
           {rule.effect.kind === 2 ? (
             <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium">時間制限（分）</span>
+                <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.timeLimitLabel")}</span>
                 <Group grow>
                   <NumberInput
-                    label="最小"
+                    label={t("quickCreate.panel.placementRules.minLabel")}
                     min={0}
                     value={(rule.effect.span?.minMs ?? 0) / 60_000}
                     onChange={(value) =>
@@ -157,7 +157,7 @@ export function PlacementRulesPanel({
                     }
                   />
                   <NumberInput
-                    label="最大"
+                    label={t("quickCreate.panel.placementRules.maxLabel")}
                     min={0}
                     value={(rule.effect.span?.maxMs ?? 0) / 60_000}
                     onChange={(value) =>
@@ -179,7 +179,7 @@ export function PlacementRulesPanel({
           {rule.effect.kind === 3 ? (
             <FormRow icon={<Star className="h-4 w-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium">Score</span>
+                <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.scoreLabel")}</span>
                 <NumberInput
                   value={rule.effect.score ?? 0}
                   onChange={(value) =>
@@ -194,12 +194,12 @@ export function PlacementRulesPanel({
           {rule.effect.kind === 4 ? (
             <FormRow icon={<FileCheck className="h-4 w-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
-                <span className="text-xs font-medium">実行記録</span>
+                <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.executionRecordLabel")}</span>
                 <Select
                   value={String(rule.effect.record ?? 0)}
                   data={[
-                    { value: "0", label: "任意" },
-                    { value: "1", label: "必須" },
+                    { value: "0", label: t("quickCreate.panel.placementRules.recordOptional") },
+                    { value: "1", label: t("quickCreate.panel.placementRules.recordRequired") },
                   ]}
                   onChange={(value) =>
                     update(rule.id, {
@@ -217,7 +217,7 @@ export function PlacementRulesPanel({
         leftSection={<Plus size={15} />}
         onClick={() => setRules([...rules, defaultRule()])}
       >
-        配置ルールを追加
+        {t("quickCreate.panel.placementRules.addRule")}
       </Button>
     </Stack>
   );

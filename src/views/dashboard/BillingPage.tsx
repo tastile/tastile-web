@@ -1,40 +1,45 @@
 "use client";
 
 import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { PageSummaryPanel } from "@/shared/ui/PageSummaryPanel";
 import { SubscriptionSection } from "@/shared/ui/SubscriptionSection";
 import { Card as MantineCard, Progress, Stack, Text } from "@mantine/core";
 
-const BILLING_SIDE_PANEL = (
-  <PageSummaryPanel
-    title="Billing"
-    description="Manage your subscription, payment method, and invoice history. Pro features unlock when the webhook confirms."
-    sections={[
-      {
-        heading: "Quick links",
-        items: [
-          { label: "Quota", value: "→", href: "/dashboard/quota" },
-          { label: "Account", value: "→", href: "/dashboard/preferences/account" },
-          { label: "Pricing", value: "→", href: "/pricing" },
-        ],
-      },
-      {
-        heading: "Related",
-        items: [
-          { label: "Timeline", value: "→", href: "/dashboard/timeline" },
-          { label: "API explorer", value: "→", href: "/dashboard/api" },
-        ],
-      },
-    ]}
-  />
-);
-
 export default function Billing() {
-  useSidePanel(BILLING_SIDE_PANEL);
+  const { t } = useTranslation();
+  const sidePanel = (
+    <PageSummaryPanel
+      title={t("dashboard.billing.title")}
+      description={t("dashboard.billing.description")}
+      sections={[
+        {
+          heading: t("dashboard.billing.sections.quickLinks"),
+          items: [
+            { label: t("dashboard.billing.labels.quota"), value: "→", href: "/dashboard/quota" },
+            {
+              label: t("dashboard.billing.labels.account"),
+              value: "→",
+              href: "/dashboard/preferences/account",
+            },
+            { label: t("dashboard.billing.labels.pricing"), value: "→", href: "/pricing" },
+          ],
+        },
+        {
+          heading: t("dashboard.billing.sections.related"),
+          items: [
+            { label: t("dashboard.billing.labels.timeline"), value: "→", href: "/dashboard/timeline" },
+            { label: t("dashboard.billing.labels.apiExplorer"), value: "→", href: "/dashboard/api" },
+          ],
+        },
+      ]}
+    />
+  );
+  useSidePanel(sidePanel);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-[590] text-foreground">Billing</h1>
+      <h1 className="text-2xl font-[590] text-foreground">{t("dashboard.billing.title")}</h1>
       <SubscriptionSection />
       <MantineCard
         radius="md"
@@ -44,24 +49,24 @@ export default function Billing() {
         className="border-border"
       >
         <Text size="lg" fw={590} mb="md">
-          Usage
+          {t("dashboard.billing.usageHeading")}
         </Text>
         <Stack gap="md">
           <div>
             <div className="flex justify-between text-sm mb-1">
               <Text size="sm" c="dimmed">
-                Tiles
+                {t("dashboard.billing.labels.tiles")}
               </Text>
-              <Text size="sm">Up to 50 cloud</Text>
+              <Text size="sm">{t("dashboard.billing.labels.tilesDescription")}</Text>
             </div>
             <Progress value={0} size="sm" radius="xl" />
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1">
               <Text size="sm" c="dimmed">
-                History
+                {t("dashboard.billing.labels.history")}
               </Text>
-              <Text size="sm">30 days</Text>
+              <Text size="sm">{t("dashboard.billing.labels.historyDescription")}</Text>
             </div>
           </div>
         </Stack>

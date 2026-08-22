@@ -42,8 +42,12 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
           {/* Left — old way. */}
           <div className="grid gap-6 border-b border-surface-2 pb-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
             <div className="flex items-start gap-3">
-              <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>OLD</span>
-              <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>× 47</span>
+              <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>
+                {t.oldLabel}
+              </span>
+              <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>
+                {t.oldCount}
+              </span>
             </div>
             <div>
               <p
@@ -71,7 +75,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
           {/* Right — Tastile. Active, primary accent, no card border but emphasized. */}
           <div className="grid gap-6 pt-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
             <div className="flex items-start gap-3">
-              <span className={`${mono} text-sm text-primary tabular-nums`}>NEW</span>
+              <span className={`${mono} text-sm text-primary tabular-nums`}>{t.newLabel}</span>
               <span className="mkt-pulse-dot inline-block h-2 w-2 translate-y-1.5 rounded-full bg-primary" />
             </div>
             <div>
@@ -90,7 +94,10 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
               {/* Live execution card — not a "card", but a live data strip. */}
               <div className="mt-8 border-l-2 border-primary pl-5">
                 <div className="flex items-center gap-3">
-                  <span className={`${mono} text-[11px] text-foreground-muted`}>09:00 / 60m</span>
+                  <span className={`${mono} text-[11px] text-foreground-muted`}>
+                    {t.liveAtPrefix}
+                    {t.liveAtDuration}
+                  </span>
                   <span className={`${mono} text-[10px] uppercase tracking-[0.22em] text-primary`}>
                     {t.timelineKindLabel}
                   </span>

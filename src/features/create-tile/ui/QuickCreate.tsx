@@ -709,7 +709,7 @@ export function QuickCreate() {
               className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
             >
               <span className="truncate text-foreground">
-                配置・分割
+                {t("quickCreate.tab.sourceRules")}
                 <span className="ml-1 text-foreground-muted">
                   priority {source.priority}
                   {source.splitPolicy.kind === 1 ? " · split" : ""}
@@ -729,7 +729,7 @@ export function QuickCreate() {
               className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
             >
               <span className="truncate text-foreground">
-                Source関係
+                {t("quickCreate.tab.relations")}
                 {source.relations.length > 0 && (
                   <span className="ml-1 text-foreground-muted">
                     {source.relations.slice(0, 2).map((r) => r.referencedTitle || "—").join(", ")}
@@ -751,7 +751,7 @@ export function QuickCreate() {
               className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
             >
               <span className="truncate text-foreground">
-                条件駆動Flow
+                {t("quickCreate.tab.flows")}
                 {source.flowSequences.length > 0 && (
                   <span className="ml-1 text-foreground-muted">
                     {source.flowSequences.length}{t("quickCreate.essentialsItemsUnit")}
@@ -775,7 +775,7 @@ export function QuickCreate() {
               className="flex min-w-0 flex-1 items-center gap-2 text-left text-sm"
             >
               <span className="truncate text-foreground">
-                配置ルール
+                {t("quickCreate.tab.placementRules")}
                 {plan.planning.placementRules.length > 0 && (
                   <span className="ml-1 text-foreground-muted">
                     {plan.planning.placementRules.length}{t("quickCreate.essentialsItemsUnit")}
@@ -909,7 +909,7 @@ export function QuickCreate() {
             activeKey={activePanel}
             onClose={() => setActivePanel("base")}
             headingId="source-rules-heading"
-            title={"配置・分割・ローカル日付"}
+            title={t("quickCreate.subpanel.sourceRules")}
             layout={isDesktop ? "drawer" : "sheet"}
           >
             <SourceWindowPanel source={source} time={time} setField={setField} />
@@ -920,7 +920,7 @@ export function QuickCreate() {
             activeKey={activePanel}
             onClose={() => setActivePanel("base")}
             headingId="relations-heading"
-            title={"Source参照関係"}
+            title={t("quickCreate.subpanel.relations")}
             layout={isDesktop ? "drawer" : "sheet"}
           >
             <RelationPanel
@@ -934,7 +934,7 @@ export function QuickCreate() {
             activeKey={activePanel}
             onClose={() => setActivePanel("base")}
             headingId="flows-heading"
-            title={"条件駆動Flow"}
+            title={t("quickCreate.subpanel.flows")}
             layout={isDesktop ? "drawer" : "sheet"}
           >
             <FlowSequencePanel
@@ -952,7 +952,7 @@ export function QuickCreate() {
             activeKey={activePanel}
             onClose={() => setActivePanel("base")}
             headingId="placement-rules-heading"
-            title={"配置ルール"}
+            title={t("quickCreate.subpanel.placementRules")}
             layout={isDesktop ? "drawer" : "sheet"}
           >
             <PlacementRulesPanel

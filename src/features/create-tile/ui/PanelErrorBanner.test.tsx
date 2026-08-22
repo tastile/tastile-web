@@ -6,6 +6,10 @@ import { describe, expect, it, vi } from "vitest";
 import { renderWithMantine as render } from "@/test/render-with-mantine";
 import { PanelErrorBanner } from "./PanelErrorBanner";
 
+vi.mock("@/shared/i18n/use-translation", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 describe("PanelErrorBanner", () => {
   it("renders title and body with role=alert", () => {
     render(<PanelErrorBanner title="Network error" body="Could not reach server" />);
@@ -19,12 +23,12 @@ describe("PanelErrorBanner", () => {
     render(
       <PanelErrorBanner title="x" body="y" onDismiss={onDismiss} />,
     );
-    await userEvent.click(screen.getByRole("button", { name: /dismiss/i }));
+    await userEvent.click(screen.getByRole("button", { name: "common.close" }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
   it("hides dismiss button when onDismiss absent", () => {
     render(<PanelErrorBanner title="x" body="y" />);
-    expect(screen.queryByRole("button", { name: /dismiss/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "common.close" })).not.toBeInTheDocument();
   });
 });

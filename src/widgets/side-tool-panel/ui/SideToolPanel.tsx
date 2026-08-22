@@ -2,6 +2,7 @@
 "use client";
 
 import { useSidePanelContent } from "@/shared/context/side-panel-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 
 /**
@@ -15,11 +16,12 @@ import { cn } from "@/shared/lib/cn";
  * missing.
  */
 export function SideToolPanel() {
+  const { t } = useTranslation();
   const content = useSidePanelContent();
 
   return (
     <aside
-      aria-label="Detail panel"
+      aria-label={t("sideToolPanel.ariaLabel")}
       className={cn(
         "hidden md:flex w-64 shrink-0 flex-col",
         "border-r border-border bg-surface-0",

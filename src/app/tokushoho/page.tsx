@@ -1,131 +1,145 @@
+import { getTranslation } from "@/shared/i18n/get-translation";
 import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
 import { SiteFooter } from "@/shared/ui/SiteFooter";
 import { SiteHeader } from "@/shared/ui/SiteHeader";
 
+const PAGE_LOCALE = "en" as const;
+
 export const metadata = {
-  title: "Commercial Disclosure (Tokushoho) - Tastile",
-  description: "Disclosed under Article 11 of the Act on Specified Commercial Transactions.",
+  title: getTranslation(PAGE_LOCALE, "legal.tokushoho.metaTitle"),
+  description: getTranslation(PAGE_LOCALE, "legal.tokushoho.metaDescription"),
 };
 
 export default function TokushohoPage() {
+  const title = getTranslation(PAGE_LOCALE, "legal.tokushoho.title");
+  const preamble = getTranslation(PAGE_LOCALE, "legal.tokushoho.preamble");
+  const sellerLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.seller");
+  const operatingManagerLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.operatingManager");
+  const operatorName = getTranslation(PAGE_LOCALE, "legal.tokushoho.operatorName");
+  const addressLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.address");
+  const addressValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.addressValue");
+  const phoneLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.phone");
+  const phoneValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.phoneValue");
+  const emailLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.email");
+  const emailValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.emailValue");
+  const priceLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.price");
+  const priceValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.priceValue");
+  const otherChargesLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.otherCharges");
+  const otherChargesValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.otherChargesValue");
+  const paymentMethodsLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.paymentMethods");
+  const paymentMethodsValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.paymentMethodsValue");
+  const paymentTimingLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.paymentTiming");
+  const paymentTimingValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.paymentTimingValue");
+  const serviceDeliveryLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.serviceDelivery");
+  const serviceDeliveryValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.serviceDeliveryValue");
+  const returnsRefundsLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.returnsRefunds");
+  const returnsRefundsValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.returnsRefundsValue");
+  const signupPeriodLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.signupPeriod");
+  const signupPeriodValue = getTranslation(PAGE_LOCALE, "legal.tokushoho.signupPeriodValue");
+  const systemRequirementsLabel = getTranslation(PAGE_LOCALE, "legal.tokushoho.systemRequirements");
+  const systemRequirementsValue = getTranslation(
+    PAGE_LOCALE,
+    "legal.tokushoho.systemRequirementsValue",
+  );
+
   return (
     <div className="min-h-dvh bg-background flex flex-col">
-      <SiteHeader translations={getHeaderTranslations("en")} />
+      <SiteHeader translations={getHeaderTranslations(PAGE_LOCALE)} />
       <main className="flex-1">
         <div className="layout-shell max-w-3xl py-12">
-          <h1 className="mb-8 text-3xl font-[510] tracking-[-0.02em] text-foreground">
-            Commercial Disclosure (Tokushoho)
-          </h1>
+          <h1 className="mb-8 text-3xl font-[510] tracking-[-0.02em] text-foreground">{title}</h1>
 
           <div className="prose dark:prose-invert max-w-none">
-            <p className="mb-6 text-foreground-muted">
-              Disclosed in accordance with Article 11 of the Act on Specified Commercial
-              Transactions.
-            </p>
+            <p className="mb-6 text-foreground-muted">{preamble}</p>
 
             <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-            <table className="w-full border-collapse text-sm">
-              <tbody>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Seller
-                  </th>
-                  <td className="py-3 text-foreground-muted">Yusuke Kimura</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Operating Manager
-                  </th>
-                  <td className="py-3 text-foreground-muted">Yusuke Kimura</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Address
-                  </th>
-                  <td className="py-3 text-foreground-muted">Disclosed promptly upon request.</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Phone
-                  </th>
-                  <td className="py-3 text-foreground-muted">Disclosed promptly upon request.</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Email
-                  </th>
-                  <td className="py-3 text-foreground-muted">support@tastile.app</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Price
-                  </th>
-                  <td className="py-3 text-foreground-muted">
-                    Amounts listed on each plan page (tax included).
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Other charges
-                  </th>
-                  <td className="py-3 text-foreground-muted">None</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Payment methods
-                  </th>
-                  <td className="py-3 text-foreground-muted">Credit card, Apple Pay, Google Pay</td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Payment timing
-                  </th>
-                  <td className="py-3 text-foreground-muted">
-                    Credit card payments are processed immediately.
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Service delivery
-                  </th>
-                  <td className="py-3 text-foreground-muted">
-                    The service is available immediately after payment is confirmed.
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Returns & refunds
-                  </th>
-                  <td className="py-3 text-foreground-muted">
-                    Due to the nature of digital content, returns and refunds are not accepted for
-                    customer convenience. If there is a technical issue with the service, please
-                    contact support@tastile.app. We will investigate and respond accordingly.
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    Sign-up period
-                  </th>
-                  <td className="py-3 text-foreground-muted">
-                    No particular restriction. The service can be used continuously.
-                  </td>
-                </tr>
-                <tr className="border-b border-border">
-                  <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
-                    System requirements
-                  </th>
-                  <td className="py-3 text-foreground-muted">
-                    An internet connection is required. Recommended browsers: Google Chrome, Safari,
-                    Firefox, Microsoft Edge. Mobile: latest iOS / Android.
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+              <table className="w-full border-collapse text-sm">
+                <tbody>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {sellerLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{operatorName}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {operatingManagerLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{operatorName}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {addressLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{addressValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {phoneLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{phoneValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {emailLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{emailValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {priceLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{priceValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {otherChargesLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{otherChargesValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {paymentMethodsLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{paymentMethodsValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {paymentTimingLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{paymentTimingValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {serviceDeliveryLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{serviceDeliveryValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {returnsRefundsLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{returnsRefundsValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {signupPeriodLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{signupPeriodValue}</td>
+                  </tr>
+                  <tr className="border-b border-border">
+                    <th className="py-3 pr-4 text-left font-[590] text-foreground whitespace-nowrap">
+                      {systemRequirementsLabel}
+                    </th>
+                    <td className="py-3 text-foreground-muted">{systemRequirementsValue}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-        </div>
       </main>
-      <SiteFooter translations={getFooterTranslations("en")} />
+      <SiteFooter translations={getFooterTranslations(PAGE_LOCALE)} />
     </div>
   );
 }

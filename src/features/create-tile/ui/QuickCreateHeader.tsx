@@ -3,6 +3,7 @@
 import { CloseButton, TextInput } from "@mantine/core";
 import type { ReactNode } from "react";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { FormRow } from "@/shared/ui/form";
 
 import { QuickCreateSubmitButton } from "./QuickCreateSubmitButton";
@@ -63,17 +64,18 @@ export function QuickCreateHeader({
   placeholder,
   titleTestId,
   closeTestId,
-  closeAriaLabel = "Cancel",
+  closeAriaLabel,
   required = false,
   autoFocus = false,
   padded = true,
 }: QuickCreateHeaderProps) {
+  const { t } = useTranslation();
   const formRow = (
     <FormRow
       icon={
         <CloseButton
           onClick={onClose}
-          aria-label={closeAriaLabel}
+          aria-label={closeAriaLabel ?? t("common.cancel")}
           data-testid={closeTestId}
           size="sm"
         />

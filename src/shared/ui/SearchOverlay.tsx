@@ -1,26 +1,44 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { Search } from "lucide-react";
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
-const DASHBOARD_ROUTES = [
-  { path: "/dashboard", label: "Dashboard" },
-  { path: "/dashboard/timeline", label: "Timeline" },
-  { path: "/dashboard/events", label: "Events" },
-  { path: "/dashboard/preferences", label: "Settings" },
-  { path: "/dashboard/billing", label: "Billing" },
-  { path: "/dashboard/projects", label: "Projects" },
-  { path: "/dashboard/api", label: "API" },
-  { path: "/dashboard/quota", label: "Quota" },
-  { path: "/dashboard/runtime", label: "Runtime" },
+type SearchOverlayRouteKey =
+  | "searchOverlay.routes.dashboard"
+  | "searchOverlay.routes.timeline"
+  | "searchOverlay.routes.events"
+  | "searchOverlay.routes.settings"
+  | "searchOverlay.routes.billing"
+  | "searchOverlay.routes.projects"
+  | "searchOverlay.routes.api"
+  | "searchOverlay.routes.quota"
+  | "searchOverlay.routes.runtime";
+
+const DASHBOARD_ROUTES: Array<{ path: string; labelKey: SearchOverlayRouteKey }> = [
+  { path: "/dashboard", labelKey: "searchOverlay.routes.dashboard" },
+  { path: "/dashboard/timeline", labelKey: "searchOverlay.routes.timeline" },
+  { path: "/dashboard/events", labelKey: "searchOverlay.routes.events" },
+  { path: "/dashboard/preferences", labelKey: "searchOverlay.routes.settings" },
+  { path: "/dashboard/billing", labelKey: "searchOverlay.routes.billing" },
+  { path: "/dashboard/projects", labelKey: "searchOverlay.routes.projects" },
+  { path: "/dashboard/api", labelKey: "searchOverlay.routes.api" },
+  { path: "/dashboard/quota", labelKey: "searchOverlay.routes.quota" },
+  { path: "/dashboard/runtime", labelKey: "searchOverlay.routes.runtime" },
 ];
 
 function SearchOverlayInner({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const routes = useMemo(
+    () => DASHBOARD_ROUTES.map((r) => ({ ...r, label: t(r.labelKey) })),
+    [t],
+  );
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -33,10 +51,10 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
   const deferredQuery = useDeferredValue(query);
   const filteredRoutes = useMemo(
     () =>
-      DASHBOARD_ROUTES.filter((r) =>
+      routes.filter((r) =>
         deferredQuery ? r.label.toLowerCase().includes(deferredQuery.toLowerCase()) : false,
       ),
-    [deferredQuery],
+    [deferredQuery, routes],
   );
 
   const results = useMemo(
@@ -73,7 +91,7 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
     // react-doctor-disable-next-line react-doctor/no-noninteractive-element-interactions
     <dialog
       ref={dialogRef}
-      aria-label="Search pages"
+      aria-label={t("searchOverlay.ariaLabel")}
       onClose={onClose}
       onMouseDown={handleBackdropClick}
       className="mx-auto mt-24 max-w-[600px] w-[92vw] rounded-xl border border-border bg-surface-elevated shadow-lg text-left [&::backdrop]:bg-foreground/5 [&::backdrop]:backdrop-blur-sm p-0"
@@ -84,8 +102,8 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
           <input
             ref={inputRef}
             type="text"
-            placeholder="Search pages…"
-            aria-label="Search pages"
+            placeholder={t("searchOverlay.placeholder")}
+            aria-label={t("searchOverlay.inputAria")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -95,7 +113,7 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-subtle outline-none"
           />
           <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-foreground-subtle">
-            ESC
+            {t("searchOverlay.esc")}
           </kbd>
         </div>
         {results.length > 0 && (
@@ -114,14 +132,16 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
                     : "text-foreground-muted hover:bg-surface-2"
                 }`}
               >
-                <span className="text-foreground-subtle">→</span>
+                <span className="text-foreground-subtle">{t("searchOverlay.arrow")}</span>
                 {r.label}
               </Button>
             ))}
           </div>
         )}
         {query && results.length === 0 && (
-          <div className="p-4 text-center text-xs text-foreground-subtle">No results</div>
+          <div className="p-4 text-center text-xs text-foreground-subtle">
+            {t("searchOverlay.noResults")}
+          </div>
         )}
       </div>
     </dialog>

@@ -33,7 +33,7 @@ export function ProjectPicker({
   const data = [
     {
       value: NONE_VALUE,
-      label: t("quickCreate.projectOwnerDefault") || "Personal",
+      label: t("quickCreate.projectOwnerDefault"),
     },
     ...workspaces.map((w) => ({
       value: w.id,
@@ -42,7 +42,7 @@ export function ProjectPicker({
     })),
     {
       value: CREATE_VALUE,
-      label: t("quickCreate.projectCreateLabel") || "New project",
+      label: t("quickCreate.projectCreateLabel"),
     },
   ];
 

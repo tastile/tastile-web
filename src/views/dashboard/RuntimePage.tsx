@@ -261,7 +261,7 @@ export default function Runtime() {
         />
         <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
           <EnvRow label="Base URL" value={coreBaseUrl()} />
-          <EnvRow label="Auth" value="Cognito JWT · Bearer" />
+          <EnvRow label="Auth" value="BetterAuth session · Bearer" />
           <EnvRow label="Token source" value="window.__tastileIdToken" />
           <EnvRow
             label="Spec"

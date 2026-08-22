@@ -513,7 +513,7 @@ export function QuickCreateRecurring() {
       })),
       {
         value: DURATION_CUSTOM_VALUE,
-        label: t("quickCreate.durationCustom") || "Custom…",
+        label: t("quickCreate.durationCustom"),
       },
     ],
     [t],
@@ -568,7 +568,7 @@ export function QuickCreateRecurring() {
           value={title}
           onChange={(next) => setField("identity.title", next)}
           onClose={close}
-          placeholder={t("quickCreate.titlePlaceholder") || t("quickCreate.placeholder")}
+          placeholder={t("quickCreate.titlePlaceholder")}
           closeTestId="quick-create-recurring-close"
           closeAriaLabel={t("quickCreate.cancel")}
           titleTestId="recurring-title"
@@ -631,7 +631,7 @@ export function QuickCreateRecurring() {
             <FormRow icon={<Timer className="h-4 w-4" aria-hidden />}>
               <Group gap="xs" align="flex-end" wrap="wrap" className="w-full">
                 <NumberInput
-                  label={t("quickCreate.intervalValueLabel") || "Every"}
+                  label={t("quickCreate.intervalValueLabel")}
                   value={intervalValue}
                   onChange={(v) => {
                     const n = typeof v === "number" ? v : Number(v);
@@ -670,22 +670,18 @@ export function QuickCreateRecurring() {
                   data={[
                     {
                       value: "by_day",
-                      label:
-                        t("quickCreate.monthlyByDay") || "By day",
+                      label: t("quickCreate.monthlyByDay"),
                     },
                     {
                       value: "by_weekday",
-                      label:
-                        t("quickCreate.monthlyByWeekday") || "By weekday",
+                      label: t("quickCreate.monthlyByWeekday"),
                     },
                   ]}
                   data-testid="recurring-monthly-kind"
                 />
                 {monthlyKind === "by_day" ? (
-                  <NumberInput
-                    label={
-                      t("quickCreate.monthlyDayOfMonthLabel") || "Day of month"
-                    }
+<NumberInput
+                      label={t("quickCreate.monthlyDayOfMonthLabel")}
                     value={monthlyDayOfMonth ?? 1}
                     onChange={updateMonthlyDayOfMonth}
                     min={1}
@@ -697,10 +693,7 @@ export function QuickCreateRecurring() {
                 {monthlyKind === "by_weekday" ? (
                   <Group gap="xs" align="flex-end" wrap="wrap" className="w-full">
                     <Select
-                      label={
-                        t("quickCreate.monthlyWeekOfMonthLabel") ||
-                        "Week of month"
-                      }
+                      label={t("quickCreate.monthlyWeekOfMonthLabel")}
                       value={
                         monthlyWeekOfMonth === 5
                           ? "last"
@@ -712,27 +705,23 @@ export function QuickCreateRecurring() {
                       data={[
                         {
                           value: "1",
-                          label:
-                            t("quickCreate.monthlyWeekFirst") || "1st",
+                          label: t("quickCreate.monthlyWeekFirst"),
                         },
                         {
                           value: "2",
-                          label:
-                            t("quickCreate.monthlyWeekSecond") || "2nd",
+                          label: t("quickCreate.monthlyWeekSecond"),
                         },
                         {
                           value: "3",
-                          label:
-                            t("quickCreate.monthlyWeekThird") || "3rd",
+                          label: t("quickCreate.monthlyWeekThird"),
                         },
                         {
                           value: "4",
-                          label:
-                            t("quickCreate.monthlyWeekFourth") || "4th",
+                          label: t("quickCreate.monthlyWeekFourth"),
                         },
                         {
                           value: "last",
-                          label: t("quickCreate.monthlyLastWeek") || "Last",
+                          label: t("quickCreate.monthlyLastWeek"),
                         },
                       ]}
                       allowDeselect={false}
@@ -741,9 +730,7 @@ export function QuickCreateRecurring() {
                       data-testid="recurring-monthly-week-of-month"
                     />
                     <Select
-                      aria-label={
-                        t("quickCreate.monthlyByWeekday") || "Weekday"
-                      }
+                      aria-label={t("quickCreate.monthlyByWeekday")}
                       value={
                         monthlyWeekday != null ? String(monthlyWeekday) : "0"
                       }
@@ -777,19 +764,15 @@ export function QuickCreateRecurring() {
             options={[
               {
                 value: "duration_only",
-                label:
-                  t("quickCreate.timeModelDurationOnly") || "Duration only",
+                label: t("quickCreate.timeModelDurationOnly"),
               },
               {
                 value: "fixed_window",
-                label:
-                  t("quickCreate.timeModelFixedWindow") || "Fixed window",
+                label: t("quickCreate.timeModelFixedWindow"),
               },
               {
                 value: "window_with_duration",
-                label:
-                  t("quickCreate.timeModelWindowWithDuration") ||
-                  "Window + duration",
+                label: t("quickCreate.timeModelWindowWithDuration"),
               },
             ]}
           />
@@ -803,8 +786,7 @@ export function QuickCreateRecurring() {
           <div className="px-4 py-3" data-testid="recurring-duration-only-hint">
             <FormRow icon={<Hourglass className="h-4 w-4" aria-hidden />}>
               <span className="text-xs text-foreground-muted">
-                {t("quickCreate.timeModelDurationOnlyHint") ||
-                  "No fixed time — duration only"}
+                {t("quickCreate.timeModelDurationOnlyHint")}
               </span>
             </FormRow>
           </div>
@@ -818,9 +800,7 @@ export function QuickCreateRecurring() {
                 <TimeSuggestionInput
                   value={schedulableWindowEnd}
                   onChange={updateSchedulableWindowEnd}
-                  aria-label={
-                    t("quickCreate.schedulableWindowEndLabel") || "Latest time"
-                  }
+                  aria-label={t("quickCreate.schedulableWindowEndLabel")}
                   data-testid="recurring-schedulable-window-end"
                   className="w-[5.5rem]"
                 />
@@ -829,9 +809,7 @@ export function QuickCreateRecurring() {
               <TimeSuggestionInput
                 value={schedulableWindowStart}
                 onChange={updateSchedulableWindowStart}
-                aria-label={
-                  t("quickCreate.schedulableWindowStartLabel") || "Earliest time"
-                }
+                aria-label={t("quickCreate.schedulableWindowStartLabel")}
                 data-testid="recurring-schedulable-window-start"
                 className="w-[5.5rem]"
               />
@@ -847,16 +825,16 @@ export function QuickCreateRecurring() {
               {/* All day — its own row, mirroring the Event pattern */}
               <div className="px-4 py-3">
                 <FormRow>
-                  <span className="text-sm text-foreground">
-                    {t("quickCreate.allDay") || "All day"}
-                  </span>
-                  <Switch
-                    checked={allDay}
-                    onChange={(e) => toggleAllDay(e.currentTarget.checked)}
-                    size="sm"
-                    data-testid="recurring-all-day-toggle"
-                    className="ml-auto"
-                  />
+<span className="text-sm text-foreground">
+                {t("quickCreate.allDay")}
+              </span>
+              <Switch
+                checked={allDay}
+                onChange={(e) => toggleAllDay(e.currentTarget.checked)}
+                size="sm"
+                data-testid="recurring-all-day-toggle"
+                className="ml-auto"
+              />
                 </FormRow>
               </div>
               {/* Time window — start + end pickers on a single row */}
@@ -867,17 +845,17 @@ export function QuickCreateRecurring() {
                     <TimeSuggestionInput
                       value={timeOfDayEnd}
                       onChange={updateDailyEndTime}
-                      aria-label={t("quickCreate.endTimeLabel") || "End time"}
+                      aria-label={t("quickCreate.endTimeLabel")}
                       data-testid="recurring-daily-end-time"
                       className="w-[5.5rem]"
                     />
                   }
                 >
-                  <TimeSuggestionInput
-                    value={timeOfDayStart}
-                    onChange={updateDailyStartTime}
-                    aria-label={t("quickCreate.startTimeLabel") || "Start time"}
-                    data-testid="recurring-daily-start-time"
+<TimeSuggestionInput
+                      value={timeOfDayStart}
+                      onChange={updateDailyStartTime}
+                      aria-label={t("quickCreate.startTimeLabel")}
+                      data-testid="recurring-daily-start-time"
                     className="w-[5.5rem]"
                   />
                 </FormRow>
@@ -891,17 +869,17 @@ export function QuickCreateRecurring() {
                   <TimeSuggestionInput
                     value={timeOfDayValue}
                     onChange={updateTime}
-                    aria-label={t("quickCreate.timeOfDayLabel") || "Time of day"}
+                    aria-label={t("quickCreate.timeOfDayLabel")}
                     data-testid="recurring-time-of-day"
                     className="w-[5.5rem]"
                   />
                 }
               >
-                <Switch
-                  checked={allDay}
-                  onChange={(e) => toggleAllDay(e.currentTarget.checked)}
-                  label={t("quickCreate.allDay") || "All day"}
-                  size="sm"
+<Switch
+                    checked={allDay}
+                    onChange={(e) => toggleAllDay(e.currentTarget.checked)}
+                    label={t("quickCreate.allDay")}
+                    size="sm"
                   data-testid="recurring-all-day-toggle"
                   className="w-full"
                 />
@@ -915,17 +893,17 @@ export function QuickCreateRecurring() {
                 <TimeSuggestionInput
                   value={timeOfDayValue}
                   onChange={updateTime}
-                  aria-label={t("quickCreate.startTimeLabel") || "Start time"}
+                  aria-label={t("quickCreate.startTimeLabel")}
                   data-testid="recurring-start-time"
                   className="w-[5.5rem]"
                 />
               }
             >
-              <DateInput
-                value={startDate}
-                onChange={updateStartDate}
-                valueFormat={DATE_FMT}
-                placeholder={t("quickCreate.startDate") || "First occurrence"}
+<DateInput
+                  value={startDate}
+                  onChange={updateStartDate}
+                  valueFormat={DATE_FMT}
+                  placeholder={t("quickCreate.startDate")}
                 size="sm"
                 clearable
                 popoverProps={{ withinPortal: false }}
@@ -941,7 +919,7 @@ export function QuickCreateRecurring() {
           <FormRow icon={<CalendarRange className="h-4 w-4" aria-hidden />}>
             <Group justify="space-between" wrap="nowrap" className="w-full">
               <span className="text-sm text-foreground">
-                {t("quickCreate.repeatEndLabel") || "Repeat until"}
+                {t("quickCreate.repeatEndLabel")}
               </span>
               <Group gap="xs" wrap="nowrap">
                 {endDate ? (
@@ -975,7 +953,7 @@ export function QuickCreateRecurring() {
                 onChange={handleDurationChange}
                 data={DURATION_OPTIONS}
                 size="sm"
-                aria-label={t("quickCreate.durationLabel") || "Duration"}
+                aria-label={t("quickCreate.durationLabel")}
                 data-testid="recurring-duration-select"
                 allowDeselect={false}
                 checkIconPosition="right"
@@ -990,8 +968,8 @@ export function QuickCreateRecurring() {
                   max={1440}
                   size="sm"
                   mt="xs"
-                  aria-label={t("quickCreate.durationManual") || "Custom minutes"}
-                  placeholder={t("quickCreate.durationManual") || "Custom minutes"}
+                  aria-label={t("quickCreate.durationManual")}
+                  placeholder={t("quickCreate.durationManual")}
                   data-testid="recurring-duration-manual"
                   className="w-full"
                 />
