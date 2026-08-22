@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
+import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import {
   clearLegacyAuthCookies,
@@ -20,25 +21,29 @@ import { safeNextPath } from "@/shared/auth/safe-next-path";
 //      attach bridge headers on every request,
 //   4. redirects to the `next` target (default /dashboard).
 //
+// Redirects are anchored to the PUBLIC origin (NEXT_PUBLIC_APP_URL), never
+// request.url: behind nginx/Cloudflare the internal host is localhost:3000,
+// and trusting it sent production users to https://localhost:3000/... .
+//
 // The response intentionally excludes every BetterAuth credential; only the
 // core API token cookie is written here.
 
-function loginRedirect(request: NextRequest): NextResponse {
-  const url = new URL("/login", request.url);
+function loginRedirect(): NextResponse {
+  const url = new URL("/login", getPublicOrigin());
   url.searchParams.set("error", "no_session");
   return NextResponse.redirect(url);
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   if (process.env.E2E_BYPASS_AUTH === "1") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/dashboard", getPublicOrigin()));
   }
 
   const userSub = await resolveAuthenticatedUserSub();
-  if (!userSub) return loginRedirect(request);
+  if (!userSub) return loginRedirect();
 
   const nextPath = safeNextPath(request.nextUrl.searchParams.get("next")) ?? "/dashboard";
-  const response = NextResponse.redirect(new URL(nextPath, request.url));
+  const response = NextResponse.redirect(new URL(nextPath, getPublicOrigin()));
 
   // Best-effort cleanup of Cognito-era cookies before writing new values.
   await clearLegacyAuthCookies(response);

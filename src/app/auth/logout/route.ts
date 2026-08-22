@@ -1,12 +1,15 @@
-import { type NextRequest, NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
 import { getAuth } from "@/shared/auth/better-auth/server";
+import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { clearTastileCookies } from "@/shared/auth/cookies";
 
 // Server-side sign-out: revokes the BetterAuth session (its Set-Cookie is
 // forwarded) and clears every Tastile-owned cookie, then returns to /.
+// Redirect anchors on the PUBLIC origin (see api/auth/bridge — request.url
+// behind the reverse proxy resolves to the internal localhost host).
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const response = NextResponse.redirect(new URL("/", getPublicOrigin()));
   try {
     const result = await getAuth().api.signOut({ headers: request.headers });
     const betterAuthHeaders = (result as { headers?: Headers }).headers;
