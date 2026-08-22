@@ -266,7 +266,7 @@ function ProjectsCheckboxSection({
 
   if (loading) {
     return (
-      <div className="space-y-1.5 px-3 py-2" role="status" aria-label="Loading projects">
+      <div className="space-y-1.5 px-3 py-2" role="status" aria-label={t("panels.calendar.loadingProjects")}>
         {Array.from({ length: 3 }, (_, i) => (
           <Skeleton key={i} className="h-3 w-full" />
         ))}
@@ -348,7 +348,7 @@ function ProjectsTree({
               variant="subtle"
               size="sm"
               type="button"
-              aria-label={expanded ? "Collapse" : "Expand"}
+              aria-label={expanded ? t("shell.activityBar.expanded") : t("shell.activityBar.collapsed")}
               onClick={() => tree.toggleExpanded(node.value)}
               className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
             >

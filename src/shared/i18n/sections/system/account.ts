@@ -63,6 +63,13 @@ export const account = {
         proPlanPrice: "$4",
         loading: "Loading...",
         error: "Could not load subscription info",
+        menu: {
+          accountSettings: "Account settings",
+          billing: "Billing",
+          upgradeToPro: "Upgrade to Pro",
+          signOut: "Sign out",
+          avatarPlaceholder: "User avatar placeholder",
+        },
         features: {
           free: [
             "Up to 10 active tiles",
@@ -144,6 +151,13 @@ export const account = {
         proPlanPrice: "4ドル",
         loading: "読み込み中...",
         error: "サブスク情報を取得できませんでした",
+        menu: {
+          accountSettings: "アカウント設定",
+          billing: "請求",
+          upgradeToPro: "Pro にアップグレード",
+          signOut: "ログアウト",
+          avatarPlaceholder: "ユーザーアバターのプレースホルダー",
+        },
         features: {
           free: ["10 タイルまで", "基本的な実行制御", "Web ダッシュボード", "手動タイル管理"],
           pro: [
@@ -220,6 +234,13 @@ export const account = {
         proPlanPrice: "$4",
         loading: "加载中...",
         error: "无法加载订阅信息",
+        menu: {
+          accountSettings: "账户设置",
+          billing: "账单",
+          upgradeToPro: "升级到 Pro",
+          signOut: "登出",
+          avatarPlaceholder: "用户头像占位符",
+        },
         features: {
           free: [
             "最多 10 个活动卡片",
@@ -271,7 +292,7 @@ export const account = {
           revokeFallback: "토큰 만료에 실패했습니다.",
         },
       },
-      subscription: {
+subscription: {
         title: "플랜",
         currentPlan: "현재 플랜",
         proBadge: "Pro",
@@ -293,7 +314,7 @@ export const account = {
         statusCanceled: "해지됨",
         statusFree: "무료 플랜",
         nextBilling: "다음 결제일",
-        autoRenew: "자동 �신 켜짐",
+        autoRenew: "자동 갱신 켜짐",
         autoRenewOff: "자동 갱신 꺼짐",
         freePlanName: "Free",
         freePlanPrice: "$0",
@@ -301,6 +322,13 @@ export const account = {
         proPlanPrice: "$4",
         loading: "로드 중...",
         error: "구독 정보를 가져올 수 없습니다",
+        menu: {
+          accountSettings: "계정 설정",
+          billing: "결제",
+          upgradeToPro: "Pro로 업그레이드",
+          signOut: "로그아웃",
+          avatarPlaceholder: "사용자 아바타 자리표시자",
+        },
         features: {
           free: [
             "활성 타일 최대 10개",
@@ -382,6 +410,13 @@ export const account = {
         proPlanPrice: "$4",
         loading: "Cargando...",
         error: "No se pudo cargar la información de la suscripción",
+        menu: {
+          accountSettings: "Ajustes de cuenta",
+          billing: "Facturación",
+          upgradeToPro: "Actualizar a Pro",
+          signOut: "Cerrar sesión",
+          avatarPlaceholder: "Marcador de avatar del usuario",
+        },
         features: {
           free: [
             "Hasta 10 tarjetas activas",

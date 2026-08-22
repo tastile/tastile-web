@@ -1,10 +1,12 @@
 // src/components/schedule/ErrorBanner.tsx
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Alert } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 
 export function ErrorBanner({ error }: { error: Error | null }) {
+  const { t } = useTranslation();
   if (!error) return null;
   return (
     <div
@@ -16,7 +18,7 @@ export function ErrorBanner({ error }: { error: Error | null }) {
         variant="light"
         color="red"
         icon={<AlertCircle className="h-4 w-4" />}
-        title={`Couldn't load events: ${error.message}`}
+        title={t("schedule.error.loadFailed", { message: error.message })}
         data-testid="cal-error"
         className="pointer-events-auto w-full max-w-2xl"
       />

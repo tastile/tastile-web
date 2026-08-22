@@ -23,16 +23,14 @@ const SEGMENT_STYLES = {
   label: { color: "var(--foreground)" },
 } as const;
 
-const SCHEDULE_VIEWS = [
-  { id: "recurring", label: "Recurring", icon: RefreshCw },
-  { id: "upcoming", label: "Upcoming", icon: CalendarClock },
-] as const;
+const SCHEDULE_VIEW_IDS = ["recurring", "upcoming"] as const;
 
 export function ScheduleSidePanel() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
+  const { t } = useTranslation();
 
   const currentView = searchParams.get("view") ?? "recurring";
 
@@ -45,11 +43,24 @@ export function ScheduleSidePanel() {
     });
   }
 
+  const scheduleViews = [
+    {
+      id: "recurring",
+      label: t("panels.schedule.views.recurring"),
+      icon: RefreshCw,
+    },
+    {
+      id: "upcoming",
+      label: t("panels.schedule.views.upcoming"),
+      icon: CalendarClock,
+    },
+  ] as const;
+
   return (
     <div className="flex flex-col gap-6 pt-2 select-none">
       <div className="px-4 pb-1 pt-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
-          Schedule Views
+          {t("panels.schedule.scheduleViews")}
         </span>
       </div>
 
@@ -61,7 +72,7 @@ export function ScheduleSidePanel() {
           withItemsBorders={false}
           value={currentView}
           onChange={(next) => handleSelect(next)}
-          data={SCHEDULE_VIEWS.map((v) => ({
+          data={scheduleViews.map((v) => ({
             value: v.id,
             label: (
               <span className="inline-flex items-center gap-1.5">
@@ -211,7 +222,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
               variant="subtle"
               size="sm"
               type="button"
-              aria-label={expanded ? "Collapse" : "Expand"}
+              aria-label={expanded ? t("shell.activityBar.expanded") : t("shell.activityBar.collapsed")}
               onClick={() => tree.toggleExpanded(node.value)}
               className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
             >

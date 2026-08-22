@@ -69,7 +69,7 @@ export function DecisionPromptSheet() {
                 const kind = result.error.kind;
                 if (kind === ApiErrorKind.CONFLICT || kind === ApiErrorKind.STALE_REVISION) {
                   await refetch();
-                  setError("This decision was updated. Please review and resubmit.");
+                  setError(t("execution.decision.staleResubmit"));
                 } else if (kind === ApiErrorKind.NOT_FOUND) {
                   await refetch();
                   setActiveId(null);
@@ -95,7 +95,7 @@ export function DecisionPromptSheet() {
       <Stack align="center" gap="sm" data-testid="decision-loading" py="lg">
         <Loader size="sm" />
         <Text size="sm" c="dimmed">
-          Loading pending prompts...
+          {t("execution.decision.loading")}
         </Text>
       </Stack>
     );
@@ -105,7 +105,7 @@ export function DecisionPromptSheet() {
     return (
       <Stack align="center" gap="xs" data-testid="decision-empty" py="lg">
         <Text size="sm" c="dimmed">
-          No pending prompts.
+          {t("execution.decision.empty")}
         </Text>
       </Stack>
     );
@@ -114,7 +114,7 @@ export function DecisionPromptSheet() {
   return (
     <Stack gap="sm" data-testid="decision-prompt-sheet">
       <Text fw={500} size="lg">
-        Pending prompts
+        {t("execution.decision.pendingHeadline")}
       </Text>
       {sessions.map((session) => (
         <Button

@@ -28,12 +28,12 @@ export function ProjectsMain() {
     ? isPersonal
       ? t("panels.projects.personal")
       : project.display_name
-    : "All Projects";
+    : t("panels.projects.allProjects");
   const headerDescription = project
     ? isPersonal
       ? t("panels.projects.personalDescription")
-      : "Tiles owned by this workspace"
-    : "Select a project from the sidebar";
+      : t("panels.projects.selectFromSidebar")
+    : t("panels.projects.selectFromSidebar");
 
   return (
     <PageContainer>
@@ -70,11 +70,13 @@ export function ProjectsMain() {
               owner_id: {project.id.slice(0, 8)} · slug: {project.slug ?? "(none)"}
             </>
           ) : (
-            "All project tiles"
+            t("panels.projects.allProjects")
           )}
         </span>
         <span className="font-mono text-[10px] text-foreground-lighter">
-          {loading || wsLoading ? "Loading..." : `${tiles.length} items found`}
+          {loading || wsLoading
+            ? t("panels.projects.loadingProjects")
+            : t("panels.projects.itemsFound", { count: tiles.length })}
         </span>
       </div>
 
@@ -87,7 +89,7 @@ export function ProjectsMain() {
         )}
         {!loading && tiles.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface-1 py-12 text-foreground-subtle">
-            <p className="text-sm">No tiles in this project.</p>
+            <p className="text-sm">{t("panels.projects.tilesEmpty")}</p>
           </div>
         )}
         {!loading && tiles.length > 0 && (
@@ -111,6 +113,7 @@ function ProjectEditForm({
   tileCount: number;
   onSaved: () => Promise<void>;
 }) {
+  const { t } = useTranslation();
   // Keyed by project.id at the call site — state re-initializes on project change.
   // react-doctor-disable-next-line react-doctor/no-derived-useState
   const [name, setName] = useState(project.display_name);
@@ -121,7 +124,7 @@ function ProjectEditForm({
 
   function save() {
     if (!name.trim()) {
-      setError("name required");
+      setError(t("panels.projects.nameRequired"));
       return;
     }
     setSaving(true);
@@ -148,7 +151,7 @@ function ProjectEditForm({
   return (
     <section className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-border/40 bg-surface-1 p-4 md:grid-cols-3">
       <label htmlFor="project-name" className="flex flex-col gap-1 text-xs">
-        <span className="font-semibold text-foreground-subtle">Name</span>
+        <span className="font-semibold text-foreground-subtle">{t("panels.projects.nameLabel")}</span>
         <Input
           id="project-name"
           value={name}
@@ -157,18 +160,18 @@ function ProjectEditForm({
         />
       </label>
       <label htmlFor="project-slug" className="flex flex-col gap-1 text-xs">
-        <span className="font-semibold text-foreground-subtle">Slug</span>
+        <span className="font-semibold text-foreground-subtle">{t("panels.projects.slugLabel")}</span>
         <Input
           id="project-slug"
           value={slug}
           onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"))}
           pattern="[a-z0-9-]+"
           maxLength={40}
-          placeholder="my-project"
+          placeholder={t("panels.projects.slugHint")}
         />
       </label>
       <label htmlFor="project-color" className="flex flex-col gap-1 text-xs">
-        <span className="font-semibold text-foreground-subtle">Color</span>
+        <span className="font-semibold text-foreground-subtle">{t("panels.projects.colorLabel")}</span>
         <input
           id="project-color"
           type="color"
@@ -185,7 +188,7 @@ function ProjectEditForm({
         <div className="flex items-center gap-2">
           {error && <span className="text-status-danger">{error}</span>}
           <Button onClick={save} disabled={saving || !name.trim()} size="sm">
-            {saving ? "Saving..." : "Save"}
+            {saving ? t("panels.projects.saving") : t("common.save")}
           </Button>
         </div>
       </div>

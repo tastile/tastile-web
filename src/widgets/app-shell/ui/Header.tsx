@@ -104,7 +104,7 @@ export function Header({ executionState }: HeaderProps) {
           <div
             role="img"
             className="h-9 w-9 rounded-full bg-surface-2"
-            aria-label="User avatar placeholder"
+            aria-label={t("account.menu.avatarPlaceholder")}
           />
         )}
       </div>

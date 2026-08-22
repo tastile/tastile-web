@@ -1,6 +1,7 @@
 "use client";
 
 import { getLastVisitedPath } from "@/shared/hooks/use-track-visit";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { useRouter } from "next/navigation";
 import { Suspense, useEffect } from "react";
 
@@ -19,9 +20,12 @@ const REDIRECTABLE_PATHS = [
 ];
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   return (
     <Suspense
-      fallback={<div className="p-6 text-xs text-foreground-subtle">Loading dashboard...</div>}
+      fallback={
+        <div className="p-6 text-xs text-foreground-subtle">{t("dashboard.loading.dashboard")}</div>
+      }
     >
       <DashboardPageInner />
     </Suspense>

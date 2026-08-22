@@ -65,11 +65,15 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
           {t("shell.floatingHeader.notifications")}
         </FloatingMenuLabel>
         {loading ? (
-          <div className="p-4 text-center text-xs text-foreground-subtle">Loading...</div>
+          <div className="p-4 text-center text-xs text-foreground-subtle">
+            {t("common.loading")}
+          </div>
         ) : error ? (
           <div className="p-4 text-center text-xs text-danger">{error.message}</div>
         ) : notifications.length === 0 ? (
-          <div className="p-4 text-center text-xs text-foreground-subtle">No notifications yet</div>
+          <div className="p-4 text-center text-xs text-foreground-subtle">
+            {t("notifications.empty")}
+          </div>
         ) : (
           <div className="max-h-80 overflow-y-auto">
             {notifications.map((n) => (

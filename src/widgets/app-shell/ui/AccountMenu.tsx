@@ -8,6 +8,7 @@ import {
   FloatingMenuSeparator,
   FloatingMenuTrigger,
 } from "@/shared/ui/floating-menu";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
@@ -29,6 +30,7 @@ export function AccountMenu({
   email,
   menuPlacement = "down",
 }: AccountMenuProps) {
+  const { t } = useTranslation();
   const router = useRouter();
   const side = menuPlacement === "up" ? "top" : "bottom";
 
@@ -101,24 +103,24 @@ export function AccountMenu({
                 plan === "pro" ? "bg-primary/10 text-primary" : "bg-surface-2 text-foreground-muted"
               }`}
             >
-              {plan === "pro" ? "Pro" : "Free"}
+              {plan === "pro" ? t("account.subscription.proBadge") : t("account.subscription.freeBadge")}
             </span>
           </div>
         </FloatingMenuLabel>
         <FloatingMenuSeparator />
         <FloatingMenuItem asChild>
           <Link href="/dashboard/preferences/account" className="w-full">
-            Account settings
+            {t("account.menu.accountSettings")}
           </Link>
         </FloatingMenuItem>
         <FloatingMenuItem asChild>
           <Link href={plan === "pro" ? "/dashboard/billing" : "/pricing"} className="w-full">
-            {plan === "pro" ? "Billing" : "Upgrade to Pro"}
+            {plan === "pro" ? t("account.menu.billing") : t("account.menu.upgradeToPro")}
           </Link>
         </FloatingMenuItem>
         <FloatingMenuSeparator />
         <FloatingMenuItem onSelect={handleSignOut} className="text-danger">
-          Sign out
+          {t("account.menu.signOut")}
         </FloatingMenuItem>
       </FloatingMenuContent>
     </FloatingMenu>

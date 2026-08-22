@@ -3,6 +3,7 @@
 import type { Command } from "@/execution/model/command";
 import type { PendingPrompt, PromptAction, SyncStatus } from "@/execution/model/types";
 import { useExecutionEngineContext } from "@/shared/hooks/execution-engine-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Actor } from "@/tile/model/actor";
 import { ActionIcon } from "@mantine/core";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -39,6 +40,7 @@ export function AppShell({
   executionState,
 }: AppShellProps) {
   const { execute } = useExecutionEngineContext();
+  const { t } = useTranslation();
   const [showSidebar, setShowSidebar] = useState(true);
   const handlingPromptActionRef = useRef(false);
   const setHandlingPromptAction = (v: boolean) => {
@@ -101,7 +103,7 @@ export function AppShell({
       {executionState?.pendingPrompt?.actions.includes("confirm_stop_at") ? (
         <div className="fixed top-28 left-1/2 z-[69] w-[min(96vw,820px)] -translate-x-1/2 rounded-xl bg-surface-elevated p-3 backdrop-blur">
           <label className="flex flex-col gap-1 text-xs font-semibold text-foreground-muted">
-            Stop at
+            {t("execution.prompt.stopAt")}
             <input
               type="datetime-local"
               value={startupRecoveryStopAt}

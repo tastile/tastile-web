@@ -36,9 +36,15 @@ export function TasksMain() {
 
     const num = Number.parseInt(range, 10);
     const unit = range.slice(-1);
-    const unitStr = unit === "d" ? "days" : unit === "w" ? "weeks" : unit === "m" ? "months" : "";
+    const unitStr = unit === "d"
+      ? t("panels.tasks.days")
+      : unit === "w"
+        ? t("panels.tasks.weeks")
+        : unit === "m"
+          ? t("panels.tasks.months")
+          : "";
     if (!Number.isNaN(num)) {
-      parts.push(`Range: ${num} ${unitStr}`);
+      parts.push(`${t("panels.tasks.filterRange")}: ${num} ${unitStr}`);
     }
 
     const gParts = granularity.split(",");
@@ -46,30 +52,30 @@ export function TasksMain() {
     if (minPart) {
       const mins = minPart.replace("min_", "").replace("m", "");
       if (mins !== "0") {
-        parts.push(`Min duration: ${mins}m`);
+        parts.push(`${t("panels.tasks.filterMinDuration")}: ${mins}m`);
       }
     }
 
     if (gParts.includes("important_only")) {
-      parts.push("High Priority");
+      parts.push(t("panels.tasks.highPriorityOnly"));
     }
     if (gParts.includes("no_low_priority")) {
-      parts.push("No Low Priority");
+      parts.push(t("panels.tasks.excludeLowPriority"));
     }
 
     if (search) {
-      parts.push(`Search: "${search}"`);
+      parts.push(`${t("panels.tasks.filterSearch")}: "${search}"`);
     }
 
-    return parts.length > 0 ? parts.join(" • ") : "All Tasks";
-  }, [range, granularity, search]);
+    return parts.length > 0 ? parts.join(" • ") : t("panels.tasks.allTasks");
+  }, [range, granularity, search, t]);
 
   const handleStart = useCallback(
     async (tileId: TileId) => {
       const id = tileId.toString();
       const item = tiles.find((tile) => tile.id === id);
       if (!item?.plan_id) {
-        setStartError("This tile has no plan_id; start command cannot be sent.");
+        setStartError(t("panels.tasks.startErrorMissingPlan"));
         return;
       }
 
@@ -101,7 +107,7 @@ export function TasksMain() {
 
   return (
     <PageContainer>
-      <PageHeader title="Tasks" description={t("tasks.subtitle")} />
+      <PageHeader title={t("panels.tasks.title")} description={t("tasks.subtitle")} />
 
       {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
@@ -109,7 +115,7 @@ export function TasksMain() {
           {filterDesc}
         </span>
         <span className="font-mono text-[10px] text-foreground-lighter">
-          {loading ? "Loading..." : `${tiles.length} items found`}
+          {loading ? t("panels.projects.loadingProjects") : t("panels.projects.itemsFound", { count: tiles.length })}
         </span>
       </div>
       {startError ? (
@@ -128,7 +134,7 @@ export function TasksMain() {
         )}
         {!loading && tiles.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
-            <p className="text-sm">No tasks found matching the current filters.</p>
+            <p className="text-sm">{t("panels.tasks.empty")}</p>
           </div>
         )}
         {!loading && tiles.length > 0 && (

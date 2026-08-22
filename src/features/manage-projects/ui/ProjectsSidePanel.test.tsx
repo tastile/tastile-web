@@ -22,7 +22,15 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/shared/i18n/use-translation", () => ({
-	useTranslation: () => ({ t: (key: string) => key }),
+	useTranslation: () => ({ t: (key: string, params?: Record<string, string | number>) => {
+		if (params) {
+			return Object.entries(params).reduce(
+				(acc, [k, v]) => acc.replace(`{${k}}`, String(v)),
+				key,
+			);
+		}
+		return key;
+	} }),
 }));
 
 vi.mock("@/shared/hooks/use-workspaces", () => ({
@@ -165,10 +173,10 @@ describe("ProjectsSidePanel create flow", () => {
 		await waitFor(() => expect(mockCreateWorkspace).toHaveBeenCalledTimes(1));
 		expect(await screen.findByText("server exploded")).toBeTruthy();
 
-		// busy flag reset: submit button returns to its "Create" label.
+		// busy flag reset: submit button returns to its "common.create" key.
 		await waitFor(() => {
 			expect(
-				screen.getByRole("button", { name: "Create" }),
+				screen.getByRole("button", { name: "common.create" }),
 			).toBeTruthy();
 		});
 	});
@@ -320,7 +328,7 @@ describe("ProjectsSidePanel delete flow", () => {
 			expect(mockDeleteWorkspace).toHaveBeenCalledWith("me"),
 		);
 		expect(alertSpy).toHaveBeenCalledWith(
-			"Failed to delete: personal scope protected",
+			"panels.projects.deleteFailed",
 		);
 		// No refresh on failure; the panel stays intact.
 		expect(mockRefresh).not.toHaveBeenCalled();

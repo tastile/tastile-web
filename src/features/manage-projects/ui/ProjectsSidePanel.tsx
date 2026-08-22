@@ -55,7 +55,7 @@ export function ProjectsSidePanel() {
     mode: "uncontrolled",
     initialValues: { name: "", slug: "", color: DEFAULT_COLOR },
     validate: {
-      name: (value) => (value.trim().length === 0 ? "Name is required" : null),
+      name: (value) => (value.trim().length === 0 ? t("panels.projects.newModalNameRequired") : null),
     },
   });
 
@@ -101,7 +101,7 @@ export function ProjectsSidePanel() {
   }
 
   function handleDelete(id: string, displayName: string) {
-    if (typeof window !== "undefined" && !window.confirm(`Delete project "${displayName}"?`))
+    if (typeof window !== "undefined" && !window.confirm(t("panels.projects.deleteConfirm", { name: displayName })))
       return;
     void deleteWorkspace(id)
       .then(async () => {
@@ -110,7 +110,7 @@ export function ProjectsSidePanel() {
       })
       .catch((e: unknown) => {
         if (typeof window !== "undefined") {
-          window.alert(`Failed to delete: ${(e as Error).message}`);
+          window.alert(t("panels.projects.deleteFailed", { message: (e as Error).message }));
         }
       });
   }
@@ -140,7 +140,7 @@ export function ProjectsSidePanel() {
         </ActionIcon>
       </div>
 
-      <Modal opened={creating} onClose={resetForm} title="New project" centered size="sm">
+      <Modal opened={creating} onClose={resetForm} title={t("panels.projects.newProjectTitle")} centered size="sm">
         {/* react-doctor-disable-next-line react-hooks-js/refs */}
         <form
           onSubmit={form.onSubmit((values) => handleCreate(values))}
@@ -148,16 +148,16 @@ export function ProjectsSidePanel() {
         >
           <TextInput
             {...form.getInputProps("name")}
-            placeholder="Project name"
+            placeholder={t("panels.projects.projectNamePlaceholder")}
             maxLength={80}
             required
             data-testid="project-create-name"
-            label="Name"
+            label={t("panels.projects.nameLabel")}
             size="sm"
           />
           <TextInput
             {...slugProps}
-            placeholder="slug (optional)"
+            placeholder={t("panels.projects.slugPlaceholder")}
             onChange={(event) => {
               const normalized = event.currentTarget.value
                 .toLowerCase()
@@ -167,7 +167,7 @@ export function ProjectsSidePanel() {
             pattern="[a-z0-9-]+"
             maxLength={40}
             data-testid="project-create-slug"
-            label="Slug"
+            label={t("panels.projects.slugLabel")}
             size="sm"
           />
           <div>
@@ -175,27 +175,27 @@ export function ProjectsSidePanel() {
               htmlFor="project-color"
               className="mb-1 block text-[10px] text-foreground-subtle"
             >
-              Color
+              {t("panels.projects.colorLabel")}
             </label>
             <ColorInput
               id="project-color"
               {...form.getInputProps("color")}
-              aria-label="Project color"
+              aria-label={t("panels.projects.colorLabel")}
               data-testid="project-create-color"
             />
           </div>
           <Select
-            aria-label="Parent project"
+            aria-label={t("panels.projects.parentProjectAria")}
             label={
               <span className="flex items-center gap-1 text-[10px] text-foreground-subtle">
                 <FolderPlus className="h-3 w-3" aria-hidden />
-                Parent project
+                {t("panels.projects.parentProjectLabel")}
               </span>
             }
             value={parentId ?? null}
             onChange={(value) => setParentId(value || null)}
             data={[
-              { value: "", label: "Top level" },
+              { value: "", label: t("panels.projects.parentProjectTop") },
               // v1/15 §6 #15: USER subject is the implicit personal scope and
               // cannot be a workspace parent. Filter it out before passing
               // the tree to the dropdown.
@@ -212,11 +212,11 @@ export function ProjectsSidePanel() {
             data-testid="project-create-parent"
           />
           <div className="flex items-center gap-2 justify-end">
-            <Button title="Cancel" onClick={resetForm} disabled={creatingBusy} variant="outline">
-              Cancel
+            <Button title={t("common.cancel")} onClick={resetForm} disabled={creatingBusy} variant="outline">
+              {t("common.cancel")}
             </Button>
             <Button type="submit" disabled={creatingBusy} data-testid="project-create-submit">
-              {creatingBusy ? "Creating..." : "Create"}
+              {creatingBusy ? t("panels.projects.creating") : t("common.create")}
             </Button>
 
             {createError && <span className="text-[10px] text-status-danger">{createError}</span>}
@@ -313,7 +313,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
               variant="subtle"
               size="sm"
               type="button"
-              aria-label={expanded ? "Collapse" : "Expand"}
+              aria-label={expanded ? t("panels.projects.treeCollapse") : t("panels.projects.treeExpand")}
               onClick={() => tree.toggleExpanded(node.value)}
               className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
             >
@@ -355,7 +355,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
                 displayName,
               );
             }}
-            aria-label={`Delete ${displayName}`}
+            aria-label={`${t("common.delete")} ${displayName}`}
             className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
             data-testid={`project-delete-${node.value}`}
           >

@@ -57,6 +57,18 @@ vi.mock("@/tile/ui/TileCardCompact", () => ({
   TileCardCompact: ({ tile }: { tile: { id: string } }) => <li>{tile.id}</li>,
 }));
 
+vi.mock("@/shared/i18n/use-translation", () => ({
+  useTranslation: () => ({ t: (key: string, params?: Record<string, string | number>) => {
+    if (params) {
+      return Object.entries(params).reduce(
+        (acc, [k, v]) => acc.replace(`{${k}}`, String(v)),
+        key,
+      );
+    }
+    return key;
+  } }),
+}));
+
 beforeEach(() => {
   mockUpdateWorkspace.mockReset();
   mockRefresh.mockReset();

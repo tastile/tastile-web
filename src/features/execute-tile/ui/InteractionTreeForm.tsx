@@ -20,6 +20,7 @@
  */
 
 import type { InteractionNode } from "@/shared/api/v1/sessions";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button, Radio, Stack, TextInput } from "@mantine/core";
 import { useState } from "react";
 
@@ -38,7 +39,9 @@ export function InteractionTreeForm({
   busy = false,
   onSubmit,
 }: InteractionTreeFormProps) {
+  const { t } = useTranslation();
   const [answers, setAnswers] = useState<AnswerMap>({});
+  const continueLabel = t("execution.decision.interactionContinue");
 
   if (node.kind === "input") {
     const current = answers[node.id] ?? node.value ?? "";
@@ -58,7 +61,7 @@ export function InteractionTreeForm({
             void onSubmit(answers);
           }}
         >
-          Continue
+          {continueLabel}
         </Button>
       </Stack>
     );
@@ -93,7 +96,7 @@ export function InteractionTreeForm({
           void onSubmit(answers);
         }}
       >
-        Continue
+        {continueLabel}
       </Button>
     </Stack>
   );

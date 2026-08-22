@@ -20,6 +20,10 @@ vi.mock("@/shared/api/v1/submit", () => ({
   }),
 }));
 
+vi.mock("@/shared/i18n/use-translation", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 import { DecisionPromptSheet } from "./DecisionPromptSheet";
 import { ApiErrorKind } from "@/shared/model/v1/constants";
 import type { SessionView } from "@/shared/api/v1/sessions";
@@ -197,7 +201,7 @@ describe("DecisionPromptSheet", () => {
     );
 
     const alert = await screen.findByTestId("decision-feedback-error");
-    expect(alert.textContent).toMatch(/updated/i);
+    expect(alert.textContent).toBe("execution.decision.staleResubmit");
     const form = await screen.findByTestId("decision-active-form");
     expect(form.getAttribute("data-base-revision")).toBe("10");
   });
