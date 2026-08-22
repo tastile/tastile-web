@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 
 import { ensureDefaultApiTokenForUser } from "@/lib/account/api-token-session";
-import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import {
   clearLegacyAuthCookies,
   setBridgeIdentityCookie,
 } from "@/shared/auth/cookies";
+import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { safeNextPath } from "@/shared/auth/safe-next-path";
 
 // Post-login hand-off between the BetterAuth session and the tastile-core

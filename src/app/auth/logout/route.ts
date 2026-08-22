@@ -1,8 +1,8 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
 import { getAuth } from "@/shared/auth/better-auth/server";
-import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { clearTastileCookies } from "@/shared/auth/cookies";
+import { getPublicOrigin } from "@/shared/auth/public-origin";
 
 // Server-side sign-out: revokes the BetterAuth session (its Set-Cookie is
 // forwarded) and clears every Tastile-owned cookie, then returns to /.
