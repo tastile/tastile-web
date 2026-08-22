@@ -1,4 +1,5 @@
 import { PricingCard } from "@/features/marketing/ui/PricingCard";
+import { getTranslation } from "@/shared/i18n/get-translation";
 import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
 import { translations } from "@/shared/i18n/translations";
 import { SiteFooter } from "@/shared/ui/SiteFooter";
@@ -7,8 +8,8 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 
 export const metadata = {
-  title: "Pricing — Tastile",
-  description: "Simple, transparent pricing for Tastile.",
+  title: getTranslation("en", "metadata.pricing.title"),
+  description: getTranslation("en", "metadata.pricing.description"),
 };
 
 // Static export: page is rendered at build time. The language is fixed to
@@ -81,7 +82,7 @@ export default function PricingPage() {
           </div>
         </div>
       </main>
-      <SiteFooter translations={getFooterTranslations(LANG)} />
+      <SiteFooter translations={getFooterTranslations(LANG)} locale={LANG}/>
     </div>
   );
 }

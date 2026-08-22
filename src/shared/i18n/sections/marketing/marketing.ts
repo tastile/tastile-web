@@ -60,6 +60,7 @@ export const marketingJa = {
     openWebApp: "Webアプリを開く",
   },
   footer: {
+    language: "言語",
     copyright: "© 2026 Tastile. All rights reserved.",
   },
 };
@@ -126,6 +127,7 @@ export const marketingEn = {
     openWebApp: "Open Web App",
   },
   footer: {
+    language: "Language",
     copyright: "© 2026 Tastile. All rights reserved.",
   },
 };
@@ -196,6 +198,7 @@ export const marketingZhCn = {
     openWebApp: "打开网页应用",
   },
   footer: {
+    language: "语言",
     copyright: "© 2026 Tastile. All rights reserved.",
   },
 };
@@ -262,6 +265,7 @@ export const marketingKo = {
     openWebApp: "웹 앱 열기",
   },
   footer: {
+    language: "언어",
     copyright: "© 2026 Tastile. All rights reserved.",
   },
 };
@@ -328,6 +332,7 @@ export const marketingEs = {
     openWebApp: "Abrir aplicación web",
   },
   footer: {
+    language: "Idioma",
     copyright: "© 2026 Tastile. All rights reserved.",
   },
 };

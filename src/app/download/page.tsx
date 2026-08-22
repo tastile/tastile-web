@@ -1,4 +1,5 @@
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
+import { getTranslation } from "@/shared/i18n/get-translation";
 import { getFooterTranslations, getHeaderTranslations } from "@/shared/i18n/server-translations";
 import { translations } from "@/shared/i18n/translations";
 import type { Locale } from "@/shared/stores/locale-store";
@@ -9,8 +10,8 @@ import { Button, Pill } from "@mantine/core";
 import { ArrowUpRight, Download } from "lucide-react";
 
 export const metadata = {
-  title: "Download Tastile — Execution Control",
-  description: "Download Tastile for Windows. Start controlling your execution today.",
+  title: getTranslation("en", "metadata.download.title"),
+  description: getTranslation("en", "metadata.download.description"),
 };
 
 type MarketingDownload = {
@@ -118,7 +119,7 @@ export default async function DownloadPage({
           </div>
         </div>
       </main>
-      <SiteFooter translations={getFooterTranslations(lang)} />
+      <SiteFooter translations={getFooterTranslations(lang)} locale={lang}/>
     </div>
   );
 }

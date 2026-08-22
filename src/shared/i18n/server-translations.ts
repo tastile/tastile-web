@@ -39,6 +39,7 @@ export function getFooterTranslations(locale: Locale) {
     privacy: get(locale, "marketing.nav.privacy"),
     terms: get(locale, "marketing.nav.terms"),
     tokushoho: get(locale, "marketing.nav.tokushoho"),
+    language: get(locale, "marketing.footer.language"),
     copyright: get(locale, "marketing.footer.copyright"),
   };
 }

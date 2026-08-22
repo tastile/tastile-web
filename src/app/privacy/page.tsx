@@ -85,7 +85,7 @@ export default function PrivacyPage() {
           </div>
         </div>
       </main>
-      <SiteFooter translations={getFooterTranslations(PAGE_LOCALE)} />
+      <SiteFooter translations={getFooterTranslations(PAGE_LOCALE)} locale={PAGE_LOCALE}/>
     </div>
   );
 }

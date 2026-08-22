@@ -1,8 +1,10 @@
+import { LocaleSwitcher } from "@/features/marketing/ui/LocaleSwitcher";
 import { TastileLogo } from "@/shared/ui/TastileLogo";
 import Link from "next/link";
 
 export function SiteFooter({
   translations,
+  locale,
 }: {
   translations: {
     webApp: string;
@@ -11,8 +13,10 @@ export function SiteFooter({
     privacy: string;
     terms: string;
     tokushoho: string;
+    language: string;
     copyright: string;
   };
+  locale: Parameters<typeof LocaleSwitcher>[0]["currentLocale"];
 }) {
   return (
     <footer className="bg-surface-0 py-10">
@@ -41,7 +45,10 @@ export function SiteFooter({
             {translations.tokushoho}
           </Link>
         </nav>
-        <p className="text-xs text-foreground-subtle md:text-right">{translations.copyright}</p>
+        <div className="flex flex-col items-start gap-4 md:items-end">
+          <LocaleSwitcher currentLocale={locale} label={translations.language} />
+          <p className="text-xs text-foreground-subtle md:text-right">{translations.copyright}</p>
+        </div>
       </div>
     </footer>
   );
