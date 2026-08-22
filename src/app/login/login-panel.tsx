@@ -96,27 +96,6 @@ export function LoginPanel(props: {
             </div>
           ) : null}
 
-          <form onSubmit={handleEmailSignIn} className="my-2 space-y-2">
-            <TextInput
-              name="email"
-              type="email"
-              label={t("auth.login.emailLabel")}
-              autoComplete="email"
-              required
-              data-testid="login-email-input"
-            />
-            <PasswordInput
-              name="password"
-              label={t("auth.login.passwordLabel")}
-              autoComplete="current-password"
-              required
-              data-testid="login-password-input"
-            />
-            <Button type="submit" fullWidth loading={pending} leftSection={<Fingerprint className="h-4 w-4" aria-hidden="true" />}>
-              {t("auth.login.submit")}
-            </Button>
-          </form>
-
           <div className="my-2 space-y-2">
             {props.googleEnabled ? (
               <Button
@@ -139,6 +118,29 @@ export function LoginPanel(props: {
               </Button>
             ) : null}
           </div>
+          <hr className="mx-1 opacity-20" />
+
+          <form onSubmit={handleEmailSignIn} className="my-2 space-y-2">
+            <TextInput
+              name="email"
+              type="email"
+              label={t("auth.login.emailLabel")}
+              autoComplete="email"
+              required
+              data-testid="login-email-input"
+            />
+            <PasswordInput
+              name="password"
+              label={t("auth.login.passwordLabel")}
+              autoComplete="current-password"
+              required
+              data-testid="login-password-input"
+            />
+            <Button type="submit" fullWidth loading={pending} leftSection={<Fingerprint className="h-4 w-4" aria-hidden="true" />}>
+              {t("auth.login.submit")}
+            </Button>
+          </form>
+
           <hr className="mx-1 opacity-20" />
           <Button component={Link} href="/auth/signup" fullWidth className="my-2" variant="subtle">
             {t("auth.login.createAccount")}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import {
   FloatingMenu,
   FloatingMenuContent,
@@ -8,7 +9,6 @@ import {
   FloatingMenuSeparator,
   FloatingMenuTrigger,
 } from "@/shared/ui/floating-menu";
-import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { ChevronUp } from "lucide-react";
 import Image from "next/image";
