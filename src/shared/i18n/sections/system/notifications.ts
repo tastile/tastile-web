@@ -11,6 +11,7 @@ export const notifications = {
       accessUpdated: "Access updated",
       accessOther: "Access notification",
       generic: "Notification",
+      empty: "No notifications yet",
     },
   },
   ja: {
@@ -23,6 +24,7 @@ export const notifications = {
       accessUpdated: "アクセス権が更新されました",
       accessOther: "アクセス通知があります",
       generic: "通知があります",
+      empty: "通知はまだありません",
     },
   },
   "zh-CN": {
@@ -35,6 +37,7 @@ export const notifications = {
       accessUpdated: "访问权限已更新",
       accessOther: "访问通知",
       generic: "通知",
+      empty: "暂无通知",
     },
   },
   ko: {
@@ -47,6 +50,7 @@ export const notifications = {
       accessUpdated: "접근 권한 업데이트됨",
       accessOther: "접근 알림",
       generic: "알림",
+      empty: "아직 알림이 없습니다",
     },
   },
   es: {
@@ -59,6 +63,7 @@ export const notifications = {
       accessUpdated: "Acceso actualizado",
       accessOther: "Notificación de acceso",
       generic: "Notificación",
+      empty: "Aún no hay notificaciones",
     },
   },
 } satisfies Record<Locale, Record<string, unknown>>;

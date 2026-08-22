@@ -7,6 +7,7 @@ export const tasks = {
     },
     panels: {
       tasks: {
+        title: "Tasks",
         search: "Search",
         searchPlaceholder: "Search tasks…",
         timeRange: "Time Range",
@@ -20,6 +21,13 @@ export const tasks = {
         highPriorityOnly: "High Priority Only",
         excludeLowPriority: "Exclude Low Priority",
         resetToDefaults: "Reset to Defaults",
+        filterRange: "Range",
+        filterMinDuration: "Min duration",
+        filterSearch: "Search",
+        allTasks: "All Tasks",
+        empty: "No tasks found matching the current filters.",
+        startErrorMissingPlan:
+          "This tile has no plan_id; start command cannot be sent.",
       },
     },
   },
@@ -29,6 +37,7 @@ export const tasks = {
     },
     panels: {
       tasks: {
+        title: "タスク",
         search: "検索",
         searchPlaceholder: "タスクを検索…",
         timeRange: "時間範囲",
@@ -42,6 +51,13 @@ export const tasks = {
         highPriorityOnly: "高優先度のみ",
         excludeLowPriority: "低優先度を除外",
         resetToDefaults: "デフォルトに戻す",
+        filterRange: "範囲",
+        filterMinDuration: "最小時間",
+        filterSearch: "検索",
+        allTasks: "すべてのタスク",
+        empty: "現在のフィルターに一致するタスクはありません。",
+        startErrorMissingPlan:
+          "このタイルには plan_id が無いため、開始コマンドを送れません。",
       },
     },
   },
@@ -51,6 +67,7 @@ export const tasks = {
     },
     panels: {
       tasks: {
+        title: "任务",
         search: "搜索",
         searchPlaceholder: "搜索任务…",
         timeRange: "时间范围",
@@ -64,6 +81,12 @@ export const tasks = {
         highPriorityOnly: "仅高优先级",
         excludeLowPriority: "排除低优先级",
         resetToDefaults: "恢复默认",
+        filterRange: "范围",
+        filterMinDuration: "最短时间",
+        filterSearch: "搜索",
+        allTasks: "所有任务",
+        empty: "未找到符合当前筛选条件的任务。",
+        startErrorMissingPlan: "此卡片没有 plan_id；无法发送开始命令。",
       },
     },
   },
@@ -73,6 +96,7 @@ export const tasks = {
     },
     panels: {
       tasks: {
+        title: "작업",
         search: "검색",
         searchPlaceholder: "작업 검색…",
         timeRange: "시간 범위",
@@ -86,6 +110,12 @@ export const tasks = {
         highPriorityOnly: "높은 우선순위만",
         excludeLowPriority: "낮은 우선순위 제외",
         resetToDefaults: "기본값으로 재설정",
+        filterRange: "범위",
+        filterMinDuration: "최소 시간",
+        filterSearch: "검색",
+        allTasks: "모든 작업",
+        empty: "현재 필터와 일치하는 작업이 없습니다.",
+        startErrorMissingPlan: "이 타일에 plan_id가 없어 시작 명령을 보낼 수 없습니다.",
       },
     },
   },
@@ -95,6 +125,7 @@ export const tasks = {
     },
     panels: {
       tasks: {
+        title: "Tareas",
         search: "Buscar",
         searchPlaceholder: "Buscar tareas…",
         timeRange: "Rango de tiempo",
@@ -108,6 +139,13 @@ export const tasks = {
         highPriorityOnly: "Solo alta prioridad",
         excludeLowPriority: "Excluir baja prioridad",
         resetToDefaults: "Restablecer valores",
+        filterRange: "Rango",
+        filterMinDuration: "Duración mín.",
+        filterSearch: "Buscar",
+        allTasks: "Todas las tareas",
+        empty: "No se encontraron tareas con los filtros actuales.",
+        startErrorMissingPlan:
+          "Esta tarjeta no tiene plan_id; no se puede enviar el comando de inicio.",
       },
     },
   },

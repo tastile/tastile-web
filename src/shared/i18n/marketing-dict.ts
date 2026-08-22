@@ -62,6 +62,9 @@ export type Dict = {
     eyebrow: string;
     title: [string, string];
     lead: string;
+    oldLabel: string;
+    oldCount: string;
+    newLabel: string;
     leftLabel: string;
     leftItems: string[];
     rightLabel: string;
@@ -71,6 +74,8 @@ export type Dict = {
     timelineSubtitle: string;
     timelineKindLabel: string;
     timelineLiveTitle: string;
+    liveAtPrefix: string;
+    liveAtDuration: string;
     timeline: Array<{
       time: string;
       title: string;
@@ -85,6 +90,13 @@ export type Dict = {
     monthly: string;
     yearly: string;
     yearlyNote: string;
+    intervalAria: string;
+    proPriceMonthly: string;
+    proPriceYearly: string;
+    proSuffixMonthly: string;
+    proSuffixYearly: string;
+    bandPrefixFree: string;
+    bandPrefixPro: string;
     forLabel: string;
     free: {
       name: string;
@@ -332,6 +344,9 @@ function reshape(flat: FlatMarketingLanding): Dict {
       eyebrow: pickString(manifesto, "eyebrow"),
       title: [pickString(manifesto, "title0"), pickString(manifesto, "title1")],
       lead: pickString(manifesto, "lead"),
+      oldLabel: pickString(manifesto, "oldLabel"),
+      oldCount: pickString(manifesto, "oldCount"),
+      newLabel: pickString(manifesto, "newLabel"),
       leftLabel: pickString(manifesto, "leftLabel"),
       leftItems,
       rightLabel: pickString(manifesto, "rightLabel"),
@@ -341,6 +356,8 @@ function reshape(flat: FlatMarketingLanding): Dict {
       timelineSubtitle: pickString(manifesto, "timelineSubtitle"),
       timelineKindLabel: pickString(manifesto, "timelineKindLabel"),
       timelineLiveTitle: pickString(manifesto, "timelineLiveTitle"),
+      liveAtPrefix: pickString(manifesto, "liveAtPrefix"),
+      liveAtDuration: pickString(manifesto, "liveAtDuration"),
       timeline,
     },
     pricing: {
@@ -350,6 +367,13 @@ function reshape(flat: FlatMarketingLanding): Dict {
       monthly: pickString(pricing, "monthly"),
       yearly: pickString(pricing, "yearly"),
       yearlyNote: pickString(pricing, "yearlyNote"),
+      intervalAria: pickString(pricing, "intervalAria"),
+      proPriceMonthly: pickString(pricing, "proPriceMonthly"),
+      proPriceYearly: pickString(pricing, "proPriceYearly"),
+      proSuffixMonthly: pickString(pricing, "proSuffixMonthly"),
+      proSuffixYearly: pickString(pricing, "proSuffixYearly"),
+      bandPrefixFree: pickString(pricing, "bandPrefixFree"),
+      bandPrefixPro: pickString(pricing, "bandPrefixPro"),
       forLabel: pickString(pricing, "forLabel"),
       free: {
         name: pickString(pricing, "freeName"),

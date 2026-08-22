@@ -6,7 +6,9 @@ import { header } from "./sections/app/header";
 import { language } from "./sections/app/language";
 import { languageToggle } from "./sections/app/languageToggle";
 import { nav } from "./sections/app/nav";
+import { searchOverlay } from "./sections/app/searchOverlay";
 import { shell } from "./sections/app/shell";
+import { sideToolPanel } from "./sections/app/sideToolPanel";
 import { sidebar } from "./sections/app/sidebar";
 import { calendar } from "./sections/features/calendar";
 import { createTile } from "./sections/features/createTile";
@@ -23,6 +25,7 @@ import { schedule } from "./sections/features/schedule";
 import { tasks } from "./sections/features/tasks";
 import { tiles } from "./sections/features/tiles";
 import { timeline } from "./sections/features/timeline";
+import { demoBanner } from "./sections/marketing/demoBanner";
 import {
   marketingEn,
   marketingEs,
@@ -35,8 +38,11 @@ import {
   marketingLandingJa,
 } from "./sections/marketing/marketingLanding";
 import { account } from "./sections/system/account";
+import { app } from "./sections/system/app";
 import { auth } from "./sections/system/auth";
 import { execution } from "./sections/system/execution";
+import { legal } from "./sections/system/legal";
+import { notFound } from "./sections/system/notFound";
 import { notifications } from "./sections/system/notifications";
 import { preferences } from "./sections/system/preferences";
 import { prompt } from "./sections/system/prompt";
@@ -66,24 +72,30 @@ function deepMerge(...sources: Dict[]): Dict {
 
 const sections = [
   account,
+  app,
   auth,
   calendar,
   common,
   dashboard,
+  demoBanner,
   execution,
   language,
+  legal,
+  nav,
+  notFound,
   notifications,
   preferences,
   prompt,
   projects,
   schedule,
+  searchOverlay,
   settings,
   shell,
-  nav,
-  header,
   sidebar,
+  sideToolPanel,
   activityBar,
   floatingHeader,
+  header,
   languageToggle,
   tasks,
   tiles,
