@@ -47,6 +47,7 @@ export const preferences = {
           "This browser does not support notifications here. Showing a local preview instead.",
         sent: "Sent a test notification.",
         testBody: "This is a test notification from Tastile.",
+        previewTitle: "Tastile",
         statusLabel: "Status: {permission}",
       },
       securityLock: {
@@ -114,6 +115,7 @@ export const preferences = {
           "このブラウザでは通知がサポートされていません。代わりにローカルプレビューを表示します。",
         sent: "テスト通知を送信しました。",
         testBody: "これはTastileからのテスト通知です。",
+        previewTitle: "Tastile",
         statusLabel: "ステータス: {permission}",
       },
       securityLock: {
@@ -181,6 +183,7 @@ export const preferences = {
           "此浏览器在此环境下不支持通知，将显示本地预览。",
         sent: "已发送测试通知。",
         testBody: "这是来自 Tastile 的测试通知。",
+        previewTitle: "Tastile",
         statusLabel: "状态: {permission}",
       },
       securityLock: {
@@ -248,6 +251,7 @@ export const preferences = {
           "이 브라우저에서는 알림이 지원되지 않습니다. 로컬 미리보기를 대신 표시합니다.",
         sent: "테스트 알림을 보냈습니다.",
         testBody: "Tastile의 테스트 알림입니다.",
+        previewTitle: "Tastile",
         statusLabel: "상태: {permission}",
       },
       securityLock: {
@@ -315,6 +319,7 @@ export const preferences = {
           "Este navegador no admite notificaciones aquí. Se muestra una vista previa local.",
         sent: "Se ha enviado una notificación de prueba.",
         testBody: "Esta es una notificación de prueba de Tastile.",
+        previewTitle: "Tastile",
         statusLabel: "Estado: {permission}",
       },
       securityLock: {

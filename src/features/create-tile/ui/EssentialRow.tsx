@@ -1,3 +1,4 @@
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { FormRow } from "@/shared/ui/form";
 import { Button } from "@mantine/core";
@@ -30,6 +31,7 @@ export function EssentialRow({
   testId?: string;
 }) {
   const [armed, setArmed] = useState(false);
+  const { t } = useTranslation();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export function EssentialRow({
         <button
           type="button"
           onClick={onClick}
-          aria-label={editAria ?? `${label} Edit`}
+          aria-label={editAria ?? `${label} ${t("quickCreate.essentialRowEditSuffix")}`}
           data-testid={testId}
           className="group flex min-h-[48px] w-full items-center gap-2 rounded-lg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
         >
@@ -92,7 +94,7 @@ export function EssentialRow({
               e.stopPropagation();
               handleClearClick();
             }}
-            aria-label={armed ? (confirmClearAria ?? "Confirm") : (clearAria ?? "Clear selection")}
+            aria-label={armed ? (confirmClearAria ?? t("common.confirm")) : (clearAria ?? t("quickCreate.essentialRowClearDefaultAria"))}
             data-armed={armed ? "true" : undefined}
             variant="subtle"
             size="xs"
@@ -107,7 +109,7 @@ export function EssentialRow({
             {armed ? (
               <>
                 <Check size={12} />
-                {confirmClearLabel ?? "Confirm"}
+                {confirmClearLabel ?? t("common.confirm")}
               </>
             ) : (
               <X size={12} />

@@ -257,7 +257,7 @@ export function QuickCreateEvent() {
         <DetailsAffordanceButton
           panelKey="event-details"
           labelKey="quickCreate.detailsEventTitle"
-          fallbackLabel="Event details"
+          fallbackLabel={t("quickCreate.detailsEventTitle")}
           testId="event-open-details"
         />
 

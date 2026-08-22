@@ -270,7 +270,7 @@ export function QuickCreateTask() {
                 <NumberInput
                   value={customDuration}
                   onChange={handleCustomDurationChange}
-                  suffix=" min"
+                  suffix={` ${t("quickCreate.minutesUnit")}`}
                   min={1}
                   max={1440}
                   size="sm"
@@ -328,7 +328,7 @@ export function QuickCreateTask() {
         <DetailsAffordanceButton
           panelKey="task-details"
           labelKey="quickCreate.detailsTaskTitle"
-          fallbackLabel="Task details"
+          fallbackLabel={t("quickCreate.detailsTaskTitle")}
           testId="task-open-details"
         />
 

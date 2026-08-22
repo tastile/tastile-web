@@ -34,26 +34,6 @@ import { MemoSection } from "./sections/MemoSection";
 import { ProjectColorRow } from "./sections/ProjectColorRow";
 import { SubtasksSection } from "./sections/SubtasksSection";
 
-const REPEAT_OPTIONS_BASE = [
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "interval", label: "Interval" },
-] as const;
-
-/**
- * Repeat-mode selector entries shown in the segmented control. The first
- * entry, "once", is the safe default — the user has to opt-in to a
- * recurring schedule (see AGENTS feedback "ビュー切り替えで誤った操作で
- * 繰り返しを有効にしてしまった"). REPEAT_OPTIONS_BASE alone omits "once"
- * because other callers (e.g. label-key lookups) only enumerate the
- * active modes.
- */
-const REPEAT_OPTIONS = [
-  { value: "once", label: "Do not repeat" },
-  ...REPEAT_OPTIONS_BASE,
-] as const;
-
 const INTERVAL_UNITS = ["min", "hour", "day"] as const;
 
 const RECURRING_COLOR_SWATCHES = [
@@ -478,6 +458,22 @@ export function QuickCreateRecurring() {
     DURATION_PRESETS_MIN.includes(
       durationMinutes as (typeof DURATION_PRESETS_MIN)[number],
     );
+
+  // ---------- repeat options (segmented) ----------
+  //
+  // Built per-render via useMemo so the labels go through i18n. The first
+  // entry, "once", is the safe default — the user has to opt-in to a
+  // recurring schedule.
+  const REPEAT_OPTIONS = useMemo(
+    () => [
+      { value: "once", label: t("quickCreate.repeatOnce") },
+      { value: "daily", label: t("quickCreate.repeatDaily") },
+      { value: "weekly", label: t("quickCreate.repeatWeekly") },
+      { value: "monthly", label: t("quickCreate.repeatMonthly") },
+      { value: "interval", label: t("quickCreate.repeatInterval") },
+    ],
+    [t],
+  );
 
   // Whether the Select is currently displaying the Custom sentinel.
   // Initial seed: if the store already holds a custom value (e.g. the
@@ -963,7 +959,7 @@ export function QuickCreateRecurring() {
                 <NumberInput
                   value={customDuration}
                   onChange={handleCustomDurationChange}
-                  suffix=" min"
+                  suffix={` ${t("quickCreate.minutesUnit")}`}
                   min={1}
                   max={1440}
                   size="sm"
@@ -982,7 +978,7 @@ export function QuickCreateRecurring() {
         <DetailsAffordanceButton
           panelKey="recurring-details"
           labelKey="quickCreate.detailsRecurringTitle"
-          fallbackLabel="Recurring details"
+          fallbackLabel={t("quickCreate.detailsRecurringTitle")}
           testId="recurring-open-details"
         />
 

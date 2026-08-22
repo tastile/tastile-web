@@ -95,7 +95,7 @@ export default function GeneralPreferences() {
     }
     showNotification({
       kind: "prompt_pending",
-      title: "Tastile",
+      title: t("preferences.notifications.previewTitle"),
       body: preview,
       tag: `settings-test-${Date.now()}`,
     });
@@ -176,7 +176,9 @@ export default function GeneralPreferences() {
               ) : null}
               {notificationPreview ? (
                 <div className="mt-3 rounded-md border border-border bg-surface-1 px-3 py-2">
-                  <p className="text-xs font-semibold text-foreground">Tastile</p>
+                  <p className="text-xs font-semibold text-foreground">
+                    {t("preferences.notifications.previewTitle")}
+                  </p>
                   <p className="mt-1 text-xs text-foreground-muted">{notificationPreview}</p>
                 </div>
               ) : null}

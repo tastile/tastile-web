@@ -12,6 +12,7 @@ export const notifications = {
       accessOther: "Access notification",
       generic: "Notification",
       empty: "No notifications yet",
+      brandTitle: "Tastile",
     },
   },
   ja: {
@@ -25,6 +26,7 @@ export const notifications = {
       accessOther: "アクセス通知があります",
       generic: "通知があります",
       empty: "通知はまだありません",
+      brandTitle: "Tastile",
     },
   },
   "zh-CN": {
@@ -38,6 +40,7 @@ export const notifications = {
       accessOther: "访问通知",
       generic: "通知",
       empty: "暂无通知",
+      brandTitle: "Tastile",
     },
   },
   ko: {
@@ -51,6 +54,7 @@ export const notifications = {
       accessOther: "접근 알림",
       generic: "알림",
       empty: "아직 알림이 없습니다",
+      brandTitle: "Tastile",
     },
   },
   es: {
@@ -64,6 +68,7 @@ export const notifications = {
       accessOther: "Notificación de acceso",
       generic: "Notificación",
       empty: "Aún no hay notificaciones",
+      brandTitle: "Tastile",
     },
   },
 } satisfies Record<Locale, Record<string, unknown>>;

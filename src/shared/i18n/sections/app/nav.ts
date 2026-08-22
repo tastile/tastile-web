@@ -19,6 +19,9 @@ export const nav = {
       tiles: "Tiles",
       dashboard: "Dashboard",
       billing: "Billing",
+      openMenuAria: "Open navigation menu",
+      closeMenuAria: "Close menu",
+      menuTitle: "Menu",
     },
   },
   ja: {
@@ -39,6 +42,9 @@ export const nav = {
       tiles: "タイル",
       dashboard: "ダッシュボード",
       billing: "請求",
+      openMenuAria: "ナビゲーションメニューを開く",
+      closeMenuAria: "メニューを閉じる",
+      menuTitle: "メニュー",
     },
   },
   "zh-CN": {
@@ -59,6 +65,9 @@ export const nav = {
       tiles: "卡片",
       dashboard: "仪表板",
       billing: "账单",
+      openMenuAria: "打开导航菜单",
+      closeMenuAria: "关闭菜单",
+      menuTitle: "菜单",
     },
   },
   ko: {
@@ -79,6 +88,9 @@ export const nav = {
       tiles: "타일",
       dashboard: "대시보드",
       billing: "결제",
+      openMenuAria: "탐색 메뉴 열기",
+      closeMenuAria: "메뉴 닫기",
+      menuTitle: "메뉴",
     },
   },
   es: {
@@ -99,6 +111,9 @@ export const nav = {
       tiles: "Tarjetas",
       dashboard: "Panel",
       billing: "Facturación",
+      openMenuAria: "Abrir menú de navegación",
+      closeMenuAria: "Cerrar menú",
+      menuTitle: "Menú",
     },
   },
 } satisfies Record<Locale, Record<string, unknown>>;

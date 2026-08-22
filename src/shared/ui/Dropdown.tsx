@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Select } from "@mantine/core";
 import type * as React from "react";
 
@@ -43,7 +44,7 @@ export function Dropdown({
   items,
   value,
   defaultValue,
-  placeholder = "Select...",
+  placeholder,
   size = "small",
   invalid,
   disabled = false,
@@ -54,6 +55,8 @@ export function Dropdown({
   name,
   "aria-label": ariaLabel,
 }: DropdownProps) {
+  const { t } = useTranslation();
+  const resolvedPlaceholder = placeholder ?? t("common.selectPlaceholder");
   // Mantine Select uses `data` (string or {value,label}[]) and emits a single
   // string value. Items are mapped straight through — only string options are
   // supported by the existing callers. `renderItem` / `renderTrigger` /
@@ -72,7 +75,7 @@ export function Dropdown({
       data={data}
       value={isControlled ? (value ?? null) : undefined}
       defaultValue={defaultValue ?? undefined}
-      placeholder={placeholder}
+      placeholder={resolvedPlaceholder}
       size={SIZE_MAP[size]}
       error={invalid}
       disabled={disabled}

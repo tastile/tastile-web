@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { PANEL_ANIM_ATTR } from "@/shared/ui/panel-styles";
 import { ActionIcon } from "@mantine/core";
 import { ArrowLeft } from "lucide-react";
@@ -47,6 +48,7 @@ export function SubPanelShell({
   children,
   layout,
 }: Props) {
+  const { t } = useTranslation();
   const isActive = activeKey === panelKey;
 
   const onCloseRef = useRef(onClose);
@@ -126,7 +128,7 @@ export function SubPanelShell({
           variant="subtle"
           size="sm"
           onClick={onClose}
-          aria-label={`Back from ${title}`}
+          aria-label={t("quickCreate.subpanelBackFrom", { title })}
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
         </ActionIcon>

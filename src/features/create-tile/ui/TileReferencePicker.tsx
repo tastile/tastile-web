@@ -114,7 +114,7 @@ export function TileReferencePicker({
           return;
         }
         if (!isSearchResponse(res.data)) {
-          setError("Unexpected response");
+          setError(t("quickCreate.tilePickerUnexpectedResponse"));
           setResults([]);
           return;
         }

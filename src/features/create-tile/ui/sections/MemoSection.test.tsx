@@ -49,15 +49,15 @@ describe("MemoSection", () => {
     expect(screen.getByTestId("memo-test-id")).toBeInTheDocument();
   });
 
-  it("uses the English fallback when the i18n key resolves to empty", () => {
+  it("falls back to an empty placeholder when the i18n key resolves to empty", () => {
     renderWithMantine(
       <MemoSection
         testId="memo-test-id"
         placeholderKey="quickCreate.__intentionally_missing__"
-        fallbackPlaceholder="Note placeholder"
       />,
     );
-    expect(screen.getByPlaceholderText("Note placeholder")).toBeInTheDocument();
+    const textarea = screen.getByTestId("memo-test-id") as HTMLTextAreaElement;
+    expect(textarea.placeholder).toBe("");
   });
 
   it("reflects the current meta.memo as the textarea value", () => {

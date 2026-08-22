@@ -82,7 +82,7 @@ function TermKindSegmented({
         if (v !== null) onChange(v);
       }}
       size="sm"
-      aria-label="Term kind"
+      aria-label={t("quickCreate.termKindAria")}
     />
   );
 }
@@ -457,7 +457,7 @@ function TermFields({
       return (
         <div className="grid grid-cols-3 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-id`} className="space-y-1">
-            <span className="block text-foreground-muted">ID</span>
+            <span className="block text-foreground-muted">{t("quickCreate.termIdLabel")}</span>
             <TextInput
               id={`${fieldIdBase}-id`}
               value={String(v[idKey] ?? "")}
@@ -466,7 +466,7 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${fieldIdBase}-op`} className="space-y-1">
-            <span className="block text-foreground-muted">op</span>
+            <span className="block text-foreground-muted">{t("quickCreate.termOpLabel")}</span>
             <NumberInput
               id={`${fieldIdBase}-op`}
               value={v.op}
@@ -476,7 +476,7 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${fieldIdBase}-value`} className="space-y-1">
-            <span className="block text-foreground-muted">value</span>
+            <span className="block text-foreground-muted">{t("quickCreate.termValueLabel")}</span>
             <TextInput
               id={`${fieldIdBase}-value`}
               value={v.value === null || v.value === undefined ? "" : String(v.value)}
@@ -501,7 +501,7 @@ function TermFields({
       return (
         <div className="grid grid-cols-2 gap-2 text-xs">
           <label htmlFor={`${fieldIdBase}-target`} className="space-y-1">
-            <span className="block text-foreground-muted">target</span>
+            <span className="block text-foreground-muted">{t("quickCreate.termTargetLabel")}</span>
             <PickerButton
               value={term.value.target}
               onChange={(v) => onChange(updateLife(term, "target", v ?? ""))}
@@ -510,7 +510,7 @@ function TermFields({
             />
           </label>
           <label htmlFor={`${fieldIdBase}-state`} className="space-y-1">
-            <span className="block text-foreground-muted">state</span>
+            <span className="block text-foreground-muted">{t("quickCreate.termStateLabel")}</span>
             <NumberInput
               id={`${fieldIdBase}-state`}
               value={term.value.state}

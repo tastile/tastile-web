@@ -11,6 +11,10 @@ vi.mock("@/components/NavControls", () => ({
 	ThemeToggle: () => <button type="button">theme</button>,
 }));
 
+vi.mock("@/shared/i18n/use-translation", () => ({
+	useTranslation: () => ({ t: (key: string) => key, locale: "en" }),
+}));
+
 if (typeof window.matchMedia !== "function") {
 	Object.defineProperty(window, "matchMedia", {
 		writable: true,
@@ -61,14 +65,14 @@ describe("SiteHeader", () => {
 	it("renders a mobile navigation trigger button", () => {
 		renderHeader();
 
-		expect(screen.getByRole("button", { name: "Open navigation menu" })).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "nav.openMenuAria" })).toBeInTheDocument();
 	});
 
 	it("opens the mobile drawer when the trigger is clicked", async () => {
 		const user = userEvent.setup();
 		renderHeader();
 
-		await user.click(screen.getByRole("button", { name: "Open navigation menu" }));
+		await user.click(screen.getByRole("button", { name: "nav.openMenuAria" }));
 
 		const drawer = await screen.findByRole("dialog");
 		expect(drawer).toBeInTheDocument();

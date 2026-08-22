@@ -3,6 +3,8 @@ import { DEFAULT_LOCALE } from "@/shared/stores/locale-store";
 
 type FmtOptions = Intl.DateTimeFormatOptions;
 
+type TFunction = (key: string, params?: Record<string, string | number>) => string;
+
 const dtFormatters = new Map<string, Intl.DateTimeFormat>();
 function getDtFormatter(locale: Locale, opts: FmtOptions): Intl.DateTimeFormat {
   const key = `${locale}|${JSON.stringify(opts)}`;
@@ -24,8 +26,15 @@ function getDtFormatter(locale: Locale, opts: FmtOptions): Intl.DateTimeFormat {
   return fmt;
 }
 
-export function formatDuration(minutes: number | null, locale: Locale = DEFAULT_LOCALE): string {
-  if (minutes === null || minutes === undefined) return locale === "ja" ? "Not set" : "unspecified";
+export function formatDuration(
+  minutes: number | null,
+  locale: Locale = DEFAULT_LOCALE,
+  t?: TFunction,
+): string {
+  if (minutes === null || minutes === undefined) {
+    if (t) return t("tiles.durationLabels.notSet");
+    return locale === "ja" ? "Not set" : "unspecified";
+  }
 
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
@@ -46,7 +55,7 @@ function _formatDateTime(
   locale: "ja" | "en" = "ja",
   timeZone?: string | null,
 ): string {
-  if (!date) return locale === "ja" ? "Not set" : "unscheduled";
+  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
 
   return getDtFormatter(locale, {
     month: "numeric",
@@ -61,8 +70,12 @@ export function formatFriendlyDateTime(
   date: Date | null,
   locale: Locale = DEFAULT_LOCALE,
   timeZone?: string | null,
+  t?: TFunction,
 ): string {
-  if (!date) return locale === "ja" ? "Not set" : "unscheduled";
+  if (!date) {
+    if (t) return t("tiles.durationLabels.notSet");
+    return locale === "ja" ? "未設定" : "unscheduled";
+  }
 
   const now = new Date();
   const targetDate = new Date(date);
@@ -84,11 +97,23 @@ export function formatFriendlyDateTime(
     timeZone: timeZone ?? undefined,
   }).format(targetDate);
 
-  if (locale === "ja") {
-    if (diffDays === 0) return `Today ${timeStr}`;
-    if (diffDays === 1) return `Tomorrow ${timeStr}`;
-    if (diffDays === -1) return `Yesterday ${timeStr}`;
+  if (t) {
+    if (diffDays === 0) return t("tiles.durationLabels.today", { time: timeStr });
+    if (diffDays === 1) return t("tiles.durationLabels.tomorrow", { time: timeStr });
+    if (diffDays === -1) return t("tiles.durationLabels.yesterday", { time: timeStr });
+  } else {
+    if (locale === "ja") {
+      if (diffDays === 0) return `Today ${timeStr}`;
+      if (diffDays === 1) return `Tomorrow ${timeStr}`;
+      if (diffDays === -1) return `Yesterday ${timeStr}`;
+    } else {
+      if (diffDays === 0) return `Today ${timeStr}`;
+      if (diffDays === 1) return `Tomorrow ${timeStr}`;
+      if (diffDays === -1) return `Yesterday ${timeStr}`;
+    }
+  }
 
+  if (locale === "ja") {
     const dayOfWeek = getDtFormatter("ja", {
       weekday: "short",
       timeZone: timeZone ?? undefined,
@@ -100,10 +125,6 @@ export function formatFriendlyDateTime(
     }).format(targetDate);
     return `${dateStr}(${dayOfWeek}) ${timeStr}`;
   }
-  if (diffDays === 0) return `Today ${timeStr}`;
-  if (diffDays === 1) return `Tomorrow ${timeStr}`;
-  if (diffDays === -1) return `Yesterday ${timeStr}`;
-
   const dateStr = getDtFormatter("en", {
     month: "short",
     day: "numeric",
@@ -117,7 +138,7 @@ function _formatTimeOnly(
   locale: Locale = DEFAULT_LOCALE,
   timeZone?: string | null,
 ): string {
-  if (!date) return locale === "ja" ? "Not set" : "unscheduled";
+  if (!date) return locale === "ja" ? "未設定" : "unscheduled";
   return getDtFormatter(locale, {
     hour: "2-digit",
     minute: "2-digit",

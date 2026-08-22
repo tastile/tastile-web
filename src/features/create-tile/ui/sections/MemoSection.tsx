@@ -11,8 +11,6 @@ interface MemoSectionProps {
   testId: string;
   /** Override the i18n placeholder key. Default: `quickCreate.memoPlaceholder`. */
   placeholderKey?: string;
-  /** English fallback used when the i18n key resolves to empty. */
-  fallbackPlaceholder?: string;
 }
 
 /**
@@ -27,7 +25,6 @@ interface MemoSectionProps {
 export function MemoSection({
   testId,
   placeholderKey = "quickCreate.memoPlaceholder",
-  fallbackPlaceholder = "Add a note",
 }: MemoSectionProps) {
   const { t } = useTranslation();
   const memo = useQuickCreateStore((s) => s.meta.memo);
@@ -37,7 +34,7 @@ export function MemoSection({
     <div className="px-4 py-3">
       <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
         <Textarea
-          placeholder={t(placeholderKey) || fallbackPlaceholder}
+          placeholder={t(placeholderKey)}
           value={memo}
           onChange={(e) => setField("meta.memo", e.currentTarget.value)}
           autosize

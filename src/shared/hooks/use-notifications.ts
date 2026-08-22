@@ -93,7 +93,7 @@ export function useNotifications() {
         if (item.readAt) continue;
         emitOnce(seenSystemNotifications.current, `access:${item.id}`, {
           kind: "prompt_pending",
-          title: "Tastile",
+          title: t("notifications.brandTitle"),
           body: item.message,
           tag: `access:${item.id}`,
         });
@@ -116,7 +116,7 @@ export function useNotifications() {
           : "tile_started";
         emitOnce(seenSystemNotifications.current, item.id, {
           kind,
-          title: "Tastile",
+          title: t("notifications.brandTitle"),
           body: item.message,
           tag: item.id,
         });

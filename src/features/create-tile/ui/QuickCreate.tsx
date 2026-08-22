@@ -159,7 +159,7 @@ export function QuickCreate() {
         const scopeLabel = tr.observation?.scope ?? "";
         const label = minLabel
           ? `${scopeLabel ? `${scopeLabel} · ` : ""}${minLabel} ${i + 1}`
-          : `Time req ${i + 1}`;
+          : t("quickCreate.timeRequirementDefault", { index: i + 1 });
         return { value: tr.id, label };
       }),
     [plan.completion.timeRequirements],

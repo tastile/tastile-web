@@ -190,7 +190,7 @@ export function TaskDefinitionEditorModal({
       .filter((task) => task.id !== taskId)
       .map((task) => ({
         value: task.id,
-        label: task.content.title || t(`${i18nPrefix}.taskUntitled`) || "Untitled",
+        label: task.content.title || t(`${i18nPrefix}.taskUntitled`),
       }));
     return options;
   }, [tasks, taskId, t, i18nPrefix]);
@@ -275,9 +275,9 @@ export function TaskDefinitionEditorModal({
         value={draft.title}
         onChange={(next) => setDraft((prev) => ({ ...prev, title: next }))}
         onClose={onClose}
-        placeholder={t(`${i18nPrefix}.taskTitlePlaceholder`) || "What needs to happen?"}
+        placeholder={t(`${i18nPrefix}.taskTitlePlaceholder`)}
         closeTestId={`${testIdSuffix}-cancel`}
-        closeAriaLabel={t(`${i18nPrefix}.cancel`) || "Cancel"}
+        closeAriaLabel={t(`${i18nPrefix}.cancel`)}
         titleTestId={`${testIdSuffix}-title`}
         required
         autoFocus
@@ -291,8 +291,8 @@ export function TaskDefinitionEditorModal({
             data-testid={`${testIdSuffix}-submit`}
           >
             {taskId
-              ? t(`${i18nPrefix}.save`) || "Save"
-              : t(`${i18nPrefix}.add`) || "Add"}
+              ? t(`${i18nPrefix}.save`)
+              : t(`${i18nPrefix}.add`)}
           </Button>
         }
       />
@@ -309,7 +309,7 @@ export function TaskDefinitionEditorModal({
               note: value.length > 0 ? value : null,
             }));
           }}
-          placeholder={t(`${i18nPrefix}.taskDescriptionPlaceholder`) || "Why this task matters"}
+          placeholder={t(`${i18nPrefix}.taskDescriptionPlaceholder`)}
           variant="unstyled"
           size="sm"
           data-testid={`${testIdSuffix}-note`}
@@ -321,7 +321,7 @@ export function TaskDefinitionEditorModal({
 
         <div className="flex flex-col gap-1.5">
           <Text size="sm" fw={500}>
-            {t(`${i18nPrefix}.taskShowLabel`) || "Show condition"}
+            {t(`${i18nPrefix}.taskShowLabel`)}
           </Text>
           <Switch
             checked={draft.show !== null}
@@ -334,7 +334,7 @@ export function TaskDefinitionEditorModal({
                   : null,
               }));
             }}
-            label={t(`${i18nPrefix}.taskShowEnabledLabel`) || "Only show when…"}
+            label={t(`${i18nPrefix}.taskShowEnabledLabel`)}
             size="sm"
             data-testid={`${testIdSuffix}-show-toggle`}
           />
@@ -352,7 +352,7 @@ export function TaskDefinitionEditorModal({
 
         <div className="flex flex-col gap-1.5">
           <Text size="sm" fw={500}>
-            {t(`${i18nPrefix}.taskCompleteLabel`) || "Complete condition"}
+            {t(`${i18nPrefix}.taskCompleteLabel`)}
           </Text>
           <ConditionEditor
             node={draft.complete}
@@ -367,7 +367,7 @@ export function TaskDefinitionEditorModal({
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center justify-between">
             <Text size="sm" fw={500}>
-              {t(`${i18nPrefix}.taskOrderLabel`) || "Order rules"}
+              {t(`${i18nPrefix}.taskOrderLabel`)}
             </Text>
             <Button
               type="button"
@@ -378,12 +378,12 @@ export function TaskDefinitionEditorModal({
               disabled={targetOptions.length === 0}
               data-testid={`${testIdSuffix}-order-add`}
             >
-              {t(`${i18nPrefix}.taskOrderAdd`) || "Add rule"}
+              {t(`${i18nPrefix}.taskOrderAdd`)}
             </Button>
           </div>
           {draft.order.length === 0 ? (
             <Text size="sm" c="dimmed" data-testid={`${testIdSuffix}-order-empty`}>
-              {t(`${i18nPrefix}.taskOrderEmpty`) || "No ordering constraints."}
+              {t(`${i18nPrefix}.taskOrderEmpty`)}
             </Text>
           ) : (
             <Stack gap="xs" data-testid={`${testIdSuffix}-order-list`}>
@@ -400,12 +400,12 @@ export function TaskDefinitionEditorModal({
                       updateOrderRule(rule.id, { relation: Number(value) });
                     }}
                     data={[
-                      { value: String(TaskOrderRelation.BEFORE), label: t(`${i18nPrefix}.taskOrderBefore`) || "Before" },
-                      { value: String(TaskOrderRelation.AFTER), label: t(`${i18nPrefix}.taskOrderAfter`) || "After" },
+                      { value: String(TaskOrderRelation.BEFORE), label: t(`${i18nPrefix}.taskOrderBefore`) },
+                      { value: String(TaskOrderRelation.AFTER), label: t(`${i18nPrefix}.taskOrderAfter`) },
                     ]}
                     size="sm"
                     className="w-28"
-                    aria-label={t(`${i18nPrefix}.taskOrderRelationAria`) || "Relation"}
+                    aria-label={t(`${i18nPrefix}.taskOrderRelationAria`)}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-relation`}
                   />
                   <Select
@@ -417,7 +417,7 @@ export function TaskDefinitionEditorModal({
                     data={targetOptions}
                     size="sm"
                     className="flex-1"
-                    aria-label={t(`${i18nPrefix}.taskOrderTargetAria`) || "Target task"}
+                    aria-label={t(`${i18nPrefix}.taskOrderTargetAria`)}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-target`}
                   />
                   <ActionIcon
@@ -426,7 +426,7 @@ export function TaskDefinitionEditorModal({
                     color="red"
                     size="sm"
                     onClick={() => removeOrderRule(rule.id)}
-                    aria-label={t(`${i18nPrefix}.removeItem`) || "Remove"}
+                    aria-label={t(`${i18nPrefix}.removeItem`)}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-remove`}
                   >
                     <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -440,7 +440,7 @@ export function TaskDefinitionEditorModal({
         <Checkbox
           checked={draft.done}
           onChange={(e) => setDraft((prev) => ({ ...prev, done: e.currentTarget.checked }))}
-          label={t(`${i18nPrefix}.subtaskDoneLabel`) || "Mark as done"}
+          label={t(`${i18nPrefix}.subtaskDoneLabel`)}
           size="sm"
           data-testid={`${testIdSuffix}-done`}
         />

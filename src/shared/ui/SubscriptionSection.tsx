@@ -178,7 +178,7 @@ export function SubscriptionSection() {
             <h4 className="text-lg font-semibold text-foreground">{subDict.freePlanName}</h4>
             {!isPro && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
-                Current
+                {t("account.subscription.currentBadge")}
               </span>
             )}
           </div>
@@ -201,7 +201,7 @@ export function SubscriptionSection() {
             <h4 className="text-lg font-semibold text-foreground">{subDict.proPlanName}</h4>
             {isPro && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-success/10 text-success">
-                Current
+                {t("account.subscription.currentBadge")}
               </span>
             )}
           </div>

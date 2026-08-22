@@ -5,6 +5,7 @@ import { floatingHeader } from "./sections/app/floatingHeader";
 import { header } from "./sections/app/header";
 import { language } from "./sections/app/language";
 import { languageToggle } from "./sections/app/languageToggle";
+import { metadata } from "./sections/app/metadata";
 import { nav } from "./sections/app/nav";
 import { searchOverlay } from "./sections/app/searchOverlay";
 import { shell } from "./sections/app/shell";
@@ -46,6 +47,7 @@ import { notFound } from "./sections/system/notFound";
 import { notifications } from "./sections/system/notifications";
 import { preferences } from "./sections/system/preferences";
 import { prompt } from "./sections/system/prompt";
+import { securityLock } from "./sections/system/securityLock";
 import { settings } from "./sections/system/settings";
 
 type Dict = Record<string, unknown>;
@@ -81,6 +83,7 @@ const sections = [
   execution,
   language,
   legal,
+  metadata,
   nav,
   notFound,
   notifications,
@@ -89,6 +92,7 @@ const sections = [
   projects,
   schedule,
   searchOverlay,
+  securityLock,
   settings,
   shell,
   sidebar,

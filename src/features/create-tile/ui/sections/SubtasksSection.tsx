@@ -36,64 +36,34 @@ interface SubtasksSectionProps {
   testId?: string;
   /** i18n key for the section heading. */
   headingKey?: string;
-  /** Fallback heading label when i18n unavailable. */
-  fallbackHeading?: string;
   /** i18n key for the inviting empty-state hint. */
   emptyHintKey?: string;
-  /** Fallback for the inviting empty-state hint. */
-  fallbackEmptyHint?: string;
   /** i18n key for the empty-state CTA button. */
   addFirstKey?: string;
-  /** Fallback for the empty-state CTA button. */
-  fallbackAddFirst?: string;
   /** i18n key for the underline add-input placeholder. */
   addPlaceholderKey?: string;
-  /** Fallback placeholder for the underline add-input. */
-  fallbackAddPlaceholder?: string;
   /** i18n key for the per-existing-subtask title input aria-label. */
   titleAriaKey?: string;
-  /** Fallback aria for the title input. */
-  fallbackTitleAria?: string;
   /** i18n key for the per-row menu trigger aria-label. */
   menuAriaKey?: string;
-  /** Fallback aria for the per-row menu trigger. */
-  fallbackMenuAria?: string;
   /** i18n key for the menu item: move up. */
   moveUpKey?: string;
-  /** Fallback for move-up menu item label. */
-  fallbackMoveUp?: string;
   /** i18n key for the menu item: move down. */
   moveDownKey?: string;
-  /** Fallback for move-down menu item label. */
-  fallbackMoveDown?: string;
   /** i18n key for the menu item: edit. */
   editKey?: string;
-  /** Fallback for edit menu item label. */
-  fallbackEdit?: string;
   /** i18n key for the menu item: duplicate. */
   duplicateKey?: string;
-  /** Fallback for duplicate menu item label. */
-  fallbackDuplicate?: string;
   /** i18n key for the menu item: delete. */
   deleteKey?: string;
-  /** Fallback for delete menu item label. */
-  fallbackDelete?: string;
   /** i18n key for the remove-subtask button aria-label. */
   removeAriaKey?: string;
-  /** Fallback aria for the remove button. */
-  fallbackRemoveAria?: string;
   /** i18n key for the per-row done checkbox aria-label. */
   doneAriaKey?: string;
-  /** Fallback for done aria-label. */
-  fallbackDoneAria?: string;
   /** i18n key for the per-row undone checkbox aria-label. */
   undoneAriaKey?: string;
-  /** Fallback for undone aria-label. */
-  fallbackUndoneAria?: string;
   /** i18n key for the progress text (parameterised `{done}` / `{total}`). */
   progressKey?: string;
-  /** Fallback for progress text (literal, e.g. "2/5 done"). */
-  fallbackProgress?: string;
   /**
    * Skip the outer `<div className="px-4 py-3">` wrapper so the section
    * can be dropped into a container that already owns its padding
@@ -116,35 +86,20 @@ interface SubtasksSectionProps {
 export function SubtasksSection({
   testId = "subtasks-section",
   headingKey = "quickCreate.subtasksLabel",
-  fallbackHeading = "Sub-tasks",
   emptyHintKey = "quickCreate.subtasksEmptyHint",
-  fallbackEmptyHint = "Sub-tasks break this tile into trackable steps.",
   addFirstKey = "quickCreate.subtasksAddFirst",
-  fallbackAddFirst = "Add a sub-task",
   addPlaceholderKey = "quickCreate.subtaskAddPlaceholder",
-  fallbackAddPlaceholder = "Add a sub-task",
   titleAriaKey = "quickCreate.subtaskTitleAria",
-  fallbackTitleAria = "Sub-task title",
   menuAriaKey = "quickCreate.subtaskMenuAria",
-  fallbackMenuAria = "Sub-task actions",
   moveUpKey = "quickCreate.subtaskMoveUp",
-  fallbackMoveUp = "Move up",
   moveDownKey = "quickCreate.subtaskMoveDown",
-  fallbackMoveDown = "Move down",
   editKey = "quickCreate.subtaskEdit",
-  fallbackEdit = "Edit",
   duplicateKey = "quickCreate.subtaskDuplicate",
-  fallbackDuplicate = "Duplicate",
   deleteKey = "quickCreate.subtaskDelete",
-  fallbackDelete = "Delete",
   removeAriaKey = "quickCreate.subtaskRemoveAria",
-  fallbackRemoveAria = "Remove sub-task",
   doneAriaKey = "quickCreate.subtaskDoneAria",
-  fallbackDoneAria = "Mark done",
   undoneAriaKey = "quickCreate.subtaskUndoneAria",
-  fallbackUndoneAria = "Mark not done",
   progressKey = "quickCreate.subtasksProgress",
-  fallbackProgress = "{done}/{total} done",
   bare = false,
 }: SubtasksSectionProps) {
   const { t } = useTranslation();

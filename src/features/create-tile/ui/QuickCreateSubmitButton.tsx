@@ -51,7 +51,7 @@ export function QuickCreateSubmitButton() {
       data-testid="quick-create-submit"
       size="sm"
     >
-      {label || "Create"}
+      {label}
     </Button>
   );
 }

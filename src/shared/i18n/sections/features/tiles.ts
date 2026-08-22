@@ -21,6 +21,14 @@ export const tiles = {
       doneDefinition: "Done when",
       startAt: "Start",
       duration: "Duration",
+      durationLabels: {
+        notSet: "Not set",
+        unspecified: "unspecified",
+        unscheduled: "unscheduled",
+        today: "Today {time}",
+        tomorrow: "Tomorrow {time}",
+        yesterday: "Yesterday {time}",
+      },
       noTiles: "No tiles yet",
       unscheduled: "Unscheduled",
       source: {
@@ -55,6 +63,14 @@ export const tiles = {
       doneDefinition: "完了条件",
       startAt: "開始",
       duration: "所要",
+      durationLabels: {
+        notSet: "未設定",
+        unspecified: "未指定",
+        unscheduled: "未スケジュール",
+        today: "今日 {time}",
+        tomorrow: "明日 {time}",
+        yesterday: "昨日 {time}",
+      },
       noTiles: "タイルがありません",
       unscheduled: "未スケジュール",
       source: {
@@ -89,6 +105,14 @@ export const tiles = {
       doneDefinition: "完成条件",
       startAt: "开始",
       duration: "时长",
+      durationLabels: {
+        notSet: "未设置",
+        unspecified: "未指定",
+        unscheduled: "未排期",
+        today: "今天 {time}",
+        tomorrow: "明天 {time}",
+        yesterday: "昨天 {time}",
+      },
       noTiles: "暂无卡片",
       unscheduled: "未排期",
       source: {
@@ -123,6 +147,14 @@ export const tiles = {
       doneDefinition: "완료 조건",
       startAt: "시작",
       duration: "소요 시간",
+      durationLabels: {
+        notSet: "설정되지 않음",
+        unspecified: "지정되지 않음",
+        unscheduled: "예약되지 않음",
+        today: "오늘 {time}",
+        tomorrow: "내일 {time}",
+        yesterday: "어제 {time}",
+      },
       noTiles: "아직 타일이 없습니다",
       unscheduled: "예약되지 않음",
       source: {
@@ -157,6 +189,14 @@ export const tiles = {
       doneDefinition: "Hecho cuando",
       startAt: "Inicio",
       duration: "Duración",
+      durationLabels: {
+        notSet: "Sin establecer",
+        unspecified: "sin especificar",
+        unscheduled: "sin programar",
+        today: "Hoy {time}",
+        tomorrow: "Mañana {time}",
+        yesterday: "Ayer {time}",
+      },
       noTiles: "Aún no hay tarjetas",
       unscheduled: "Sin programar",
       source: {

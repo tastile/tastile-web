@@ -7,6 +7,7 @@ import {
   getTimeoutMinutes,
   shouldRequireUnlock,
 } from "@/lib/security/security-lock-policy";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { useEffect, useState } from "react";
 
@@ -57,18 +58,18 @@ async function ensureCredentialId() {
   });
 
   const id = credential?.id;
-  if (!id) throw new Error("Credential creation failed.");
+  if (!id) throw new Error("securityLock.errors.credential");
   localStorage.setItem(SECURITY_LOCK_CREDENTIAL_ID_KEY, id);
   return id;
 }
 
 async function requestPlatformUnlock() {
   if (!window.PublicKeyCredential) {
-    throw new Error("WebAuthn is unavailable.");
+    throw new Error("securityLock.errors.webauthn");
   }
   const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
   if (!available) {
-    throw new Error("Platform authenticator is unavailable.");
+    throw new Error("securityLock.errors.platform");
   }
 
   const credentialId = await ensureCredentialId();
@@ -89,6 +90,7 @@ async function requestPlatformUnlock() {
 }
 
 export function SecurityLockGate({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation();
   // Resolve the lock state from localStorage lazily so the first render
   // already reflects whether the lock is required — no effect, no extra
   // render. SSR falls back to "checking" because localStorage is unavailable
@@ -107,6 +109,18 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
     return needsLock ? "locked" : "unlocked";
   });
   const [message, setMessage] = useState("");
+
+  // Map an internal error key thrown by `requestPlatformUnlock` to a
+  // translated message. The thrown errors use the dotted key path so
+  // the message survives translation lookup; if the translation is
+  // missing we fall back to the raw key so the user still sees the cause.
+  const translateError = (raw: string): string => {
+    if (raw.startsWith("securityLock.errors.")) {
+      const translated = t(raw);
+      if (translated) return translated;
+    }
+    return t("securityLock.errors.unlockFailed");
+  };
 
   useEffect(() => {
     const markLeft = () => {
@@ -135,7 +149,8 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
       localStorage.setItem(SECURITY_LOCK_LEFT_AT_KEY, String(Date.now()));
       setState("unlocked");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unlock failed.");
+      const raw = error instanceof Error ? error.message : "";
+      setMessage(translateError(raw));
       setState("unavailable");
     }
   }
@@ -146,10 +161,10 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
       {state !== "unlocked" && state !== "checking" ? (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-background/95 p-6 backdrop-blur">
           <div className="w-full max-w-md rounded-2xl bg-surface-1 p-6">
-            <p className="text-sm font-medium text-primary">Tastile Security</p>
-            <h2 className="mt-2 text-2xl font-semibold text-foreground">Unlock Tastile</h2>
+            <p className="text-sm font-medium text-primary">{t("securityLock.heading")}</p>
+            <h2 className="mt-2 text-2xl font-semibold text-foreground">{t("securityLock.title")}</h2>
             <p className="mt-3 text-sm text-foreground-muted">
-              Use the standard unlock method for this device to continue.
+              {t("securityLock.subtitle")}
             </p>
             {message ? <p className="mt-3 text-sm text-danger">{message}</p> : null}
             <Button
@@ -159,7 +174,7 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
               variant="subtle"
               size="compact-sm"
             >
-              Unlock with this device
+              {t("securityLock.unlockAction")}
             </Button>
             {state === "unavailable" ? (
               <Button
@@ -169,7 +184,7 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
                 variant="subtle"
                 size="compact-sm"
               >
-                Continue
+                {t("securityLock.continueAction")}
               </Button>
             ) : null}
           </div>

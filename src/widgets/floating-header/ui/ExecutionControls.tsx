@@ -17,6 +17,7 @@
 
 import { useV1ActiveTile } from "@/shared/hooks/use-v1-active-tile";
 import { snapshotFromActiveTile, useV1Execution } from "@/shared/hooks/use-v1-execution";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button } from "@mantine/core";
 import { Pause, Play, Square } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -32,6 +33,7 @@ function formatRemaining(target: Date, nowMs: number): string {
 }
 
 export function ExecutionControls() {
+  const { t } = useTranslation();
   const { snapshot, loading } = useV1ActiveTile();
   const tileSnapshot = snapshot ? snapshotFromActiveTile(snapshot) : null;
   const { state, run } = useV1Execution(tileSnapshot);
@@ -63,7 +65,7 @@ export function ExecutionControls() {
   if (loading && !tileSnapshot) {
     return (
       <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
-        No execution
+        {t("execution.controls.noExecution")}
       </div>
     );
   }
@@ -71,7 +73,7 @@ export function ExecutionControls() {
   if (!tileSnapshot) {
     return (
       <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
-        No execution
+        {t("execution.controls.noExecution")}
       </div>
     );
   }
@@ -107,12 +109,12 @@ export function ExecutionControls() {
           }
           disabled={state.busy !== null}
           className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
-          aria-label="Start execution"
+          aria-label={t("execution.controls.startAria")}
           data-testid="execution-start"
           variant="subtle"
           size="compact-sm"
         >
-          <Play className="h-3 w-3" /> Start
+          <Play className="h-3 w-3" /> {t("execution.controls.start")}
         </Button>
       )}
       {hasExecution && (
@@ -122,34 +124,34 @@ export function ExecutionControls() {
             onClick={onClick("pause")}
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-[11px] font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
-            aria-label="Pause execution"
+            aria-label={t("execution.controls.pauseAria")}
             variant="subtle"
             size="compact-sm"
           >
-            <Pause className="h-3 w-3" /> Pause
+            <Pause className="h-3 w-3" /> {t("execution.controls.pause")}
           </Button>
           <Button
             type="button"
             onClick={onClick("resume")}
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-[11px] font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
-            aria-label="Resume execution"
+            aria-label={t("execution.controls.resumeAria")}
             variant="subtle"
             size="compact-sm"
           >
-            <Play className="h-3 w-3" /> Resume
+            <Play className="h-3 w-3" /> {t("execution.controls.resume")}
           </Button>
           <Button
             type="button"
             onClick={onClick("finish")}
             disabled={state.busy !== null}
             className="flex h-7 items-center gap-1 rounded-md bg-status-warn px-2 text-[11px] font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
-            aria-label="Finish execution"
+            aria-label={t("execution.controls.finishAria")}
             data-testid="execution-finish"
             variant="subtle"
             size="compact-sm"
           >
-            <Square className="h-3 w-3" /> Finish
+            <Square className="h-3 w-3" /> {t("execution.controls.finish")}
           </Button>
         </>
       )}

@@ -33,6 +33,12 @@ interface WorkflowComposerProps {
 }
 
 const QUICK_DURATIONS = [15, 25, 50, 90] as const;
+// Sentinel string for the auto-created default first task. Compared by
+// exact equality so the composer can detect "the user hasn't touched
+// this row yet" and surface the translated default step label instead of
+// the literal English text. Kept as a constant so any rename stays in
+// one place.
+const MARK_DONE_TITLE_DEFAULT = "Mark done";
 const WEEKDAY_BITS = [
   { bit: 0, key: "quickCreate.weekdayMon" },
   { bit: 1, key: "quickCreate.weekdayTue" },
@@ -623,7 +629,7 @@ export function WorkflowComposer({ t, onOpenDetails }: WorkflowComposerProps) {
                 )}
                 <TextInput
                   value={
-                    task.content.title === "Mark done"
+                    task.content.title === MARK_DONE_TITLE_DEFAULT
                       ? t("quickCreate.workflowDefaultStep")
                       : task.content.title
                   }

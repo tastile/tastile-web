@@ -1,4 +1,5 @@
 "use client";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Dropdown } from "@/shared/ui/Dropdown";
 import { useEffect, useRef, useState } from "react";
 
@@ -50,6 +51,7 @@ export function TimelineAxis({
   maxVisibleBlocks,
   maxCanvasHeightPx,
 }: TimelineAxisProps) {
+  const { t } = useTranslation();
   const legacyItems = items ?? [];
   const [zoom, setZoom] = useState(1);
   const [scope, setScope] = useState<"day" | "around-now">("day");
@@ -97,7 +99,7 @@ export function TimelineAxis({
   })();
 
   if (visible.length === 0 && legacyItems.length === 0) {
-    return <p className="text-sm text-foreground-muted">No upcoming timeline items</p>;
+    return <p className="text-sm text-foreground-muted">{t("execution.timeline.empty")}</p>;
   }
 
   if (visible.length > 0) {
@@ -128,13 +130,13 @@ export function TimelineAxis({
               onChange={(val) => setScope(val as "day" | "around-now")}
               size="tiny"
               items={[
-                { value: "day", label: "24h" },
-                { value: "around-now", label: "Now ±12h" },
+                { value: "day", label: t("execution.timeline.scope24h") },
+                { value: "around-now", label: t("execution.timeline.scope12h") },
               ]}
               className="w-28"
             />
             <input
-              aria-label="timeline-zoom"
+              aria-label={t("execution.timeline.zoomAria")}
               type="range"
               min={0.5}
               max={3}
@@ -146,7 +148,7 @@ export function TimelineAxis({
         ) : null}
         {omitted > 0 ? (
           <p className="mb-2 text-[10px] uppercase tracking-wider text-foreground-muted">
-            +{omitted} omitted
+            {t("execution.timeline.omitted", { count: omitted })}
           </p>
         ) : null}
         <div className="relative min-h-[320px]" style={{ height: scaledHeight }}>

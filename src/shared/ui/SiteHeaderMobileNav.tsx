@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { Button, Drawer } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { Menu, X } from "lucide-react";
@@ -16,6 +17,7 @@ interface SiteHeaderMobileNavProps {
 }
 
 export function SiteHeaderMobileNav({ translations, hideAuth }: SiteHeaderMobileNavProps) {
+  const { t } = useTranslation();
   const [opened, { open, close }] = useDisclosure(false);
 
   return (
@@ -24,7 +26,7 @@ export function SiteHeaderMobileNav({ translations, hideAuth }: SiteHeaderMobile
         type="button"
         variant="subtle"
         size="sm"
-        aria-label="Open navigation menu"
+        aria-label={t("nav.openMenuAria")}
         onClick={open}
         className="sm:hidden inline-flex items-center justify-center rounded-md p-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
       >
@@ -37,8 +39,11 @@ export function SiteHeaderMobileNav({ translations, hideAuth }: SiteHeaderMobile
         position="right"
         size="min(18rem, 90vw)"
         withCloseButton
-        closeButtonProps={{ icon: <X className="h-4 w-4" />, "aria-label": "Close menu" }}
-        title="Menu"
+        closeButtonProps={{
+          icon: <X className="h-4 w-4" />,
+          "aria-label": t("nav.closeMenuAria"),
+        }}
+        title={t("nav.menuTitle")}
         transitionProps={{ transition: "slide-left", duration: 240 }}
         overlayProps={{ backgroundOpacity: 0.4, blur: 2 }}
         classNames={{ content: "rounded-l-md" }}

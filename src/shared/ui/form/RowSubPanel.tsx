@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { Button, Group } from "@mantine/core";
 import { ChevronRight, type LucideIcon } from "lucide-react";
@@ -24,6 +25,7 @@ export function RowSubPanel({
   emptyLabel,
   disabled,
 }: RowSubPanelProps) {
+  const { t } = useTranslation();
   const isEmpty = value.trim() === "";
   return (
     <FormRow
@@ -52,7 +54,7 @@ export function RowSubPanel({
         <span
           className={isEmpty ? "text-xs text-foreground-muted" : "text-sm text-foreground-muted"}
         >
-          {isEmpty ? (emptyLabel ?? "Not set") : value}
+          {isEmpty ? (emptyLabel ?? t("common.notSet")) : value}
         </span>
       </Button>
     </FormRow>

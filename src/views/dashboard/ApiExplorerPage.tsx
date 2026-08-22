@@ -246,7 +246,7 @@ function EndpointDetail({
   const [pathParams, setPathParams] = useState<Record<string, string>>({});
   const [queryText, setQueryText] = useState("");
   const [bodyText, setBodyText] = useState<string>(
-    meta.method === "GET" ? "" : defaultBody(endpointKey),
+    meta.method === "GET" ? "" : defaultBody(endpointKey, t),
   );
   const placeholders = [...meta.path.matchAll(/\{([^}]+)\}/g)].map((match) => match[1]);
 
@@ -372,7 +372,7 @@ function EndpointDetail({
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
                   {t("dashboard.api.bodyLabel")}
                 </span>
-                <Button onClick={() => setBodyText(defaultBody(endpointKey))}>
+                <Button onClick={() => setBodyText(defaultBody(endpointKey, t))}>
                   <Text size="xs" c="dimmed">
                     {t("common.reset")}
                   </Text>
@@ -455,7 +455,10 @@ function EndpointDetail({
   );
 }
 
-function defaultBody(k: EndpointKey): string {
+function defaultBody(
+  k: EndpointKey,
+  t: (key: string) => string,
+): string {
   switch (k) {
     case "createTile":
       return JSON.stringify(
@@ -464,7 +467,7 @@ function defaultBody(k: EndpointKey): string {
           tile: {
             core: {
               id: "00000000-0000-0000-0000-000000000000",
-              title: "Untitled",
+              title: t("dashboard.api.placeholderTileTitle"),
               nextAction: null,
               doneDefinition: null,
               startedAt: null,
@@ -538,7 +541,7 @@ function defaultBody(k: EndpointKey): string {
       );
     case "attachMemo":
       return JSON.stringify(
-        { tile_id: "00000000-0000-0000-0000-000000000000", body: "Quick note" },
+        { tile_id: "00000000-0000-0000-0000-000000000000", body: t("dashboard.api.placeholderMemoBody") },
         null,
         2,
       );

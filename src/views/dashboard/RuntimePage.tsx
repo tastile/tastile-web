@@ -2,6 +2,7 @@
 
 import { ENDPOINTS, type Result, getCoreClient, resolveCoreBaseUrl } from "@/shared/api/endpoints";
 import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { Card, CardHeader } from "@/shared/ui/Card";
 import { PageSummaryPanel } from "@/shared/ui/PageSummaryPanel";
@@ -38,6 +39,7 @@ interface VersionData {
 }
 
 export default function Runtime() {
+  const { t } = useTranslation();
   const [health, setHealth] = useState<Result<HealthData> | null>(null);
   const [version, setVersion] = useState<Result<VersionData> | null>(null);
   const [paths, setPaths] = useState<Result<RuntimePaths> | null>(null);
@@ -46,38 +48,50 @@ export default function Runtime() {
   const sidePanel = useMemo(
     () => (
       <PageSummaryPanel
-        title="Runtime"
-        description="Live health, version, and storage paths of the local tastile-core daemon. The same daemon the desktop client talks to."
+        title={t("dashboard.runtime.title")}
+        description={t("dashboard.runtime.description")}
         sections={[
           {
-            heading: "Health",
+            heading: t("dashboard.runtime.healthHeading"),
             items: [
               {
-                label: "Status",
+                label: t("dashboard.runtime.labels.status"),
                 value: health?.ok ? health.data.status : "—",
               },
               {
-                label: "Version",
+                label: t("dashboard.runtime.labels.version"),
                 value: version?.ok ? version.data.version : "—",
               },
               {
-                label: "API",
+                label: t("dashboard.runtime.labels.api"),
                 value: version?.ok ? (version.data.api_version ?? "—") : "—",
               },
             ],
           },
           {
-            heading: "Related",
+            heading: t("dashboard.runtime.relatedHeading"),
             items: [
-              { label: "Events log", value: "→", href: "/dashboard/events" },
-              { label: "API explorer", value: "→", href: "/dashboard/api" },
-              { label: "Quota", value: "→", href: "/dashboard/quota" },
+              {
+                label: t("dashboard.runtime.labels.eventsLog"),
+                value: "→",
+                href: "/dashboard/events",
+              },
+              {
+                label: t("dashboard.runtime.labels.apiExplorer"),
+                value: "→",
+                href: "/dashboard/api",
+              },
+              {
+                label: t("dashboard.runtime.labels.quota"),
+                value: "→",
+                href: "/dashboard/quota",
+              },
             ],
           },
         ]}
       />
     ),
-    [health, version],
+    [health, version, t],
   );
   useSidePanel(sidePanel);
 
@@ -108,8 +122,8 @@ export default function Runtime() {
     <PageContainer>
       <PageHeader
         eyebrow={<span className="font-mono text-ink-3">tastile-core</span>}
-        title="Runtime"
-        description="Live health, version, and storage paths of the local tastile-core daemon. The same data the engine uses to verify itself."
+        title={t("dashboard.runtime.title")}
+        description={t("dashboard.runtime.description")}
         meta={
           <>
             <Badge
@@ -125,7 +139,11 @@ export default function Runtime() {
                 />
               }
             >
-              {health?.ok ? "Healthy" : health ? "Error" : "Loading"}
+              {health?.ok
+                ? t("dashboard.runtime.status.healthy")
+                : health
+                  ? t("dashboard.runtime.status.error")
+                  : t("dashboard.runtime.status.loading")}
             </Badge>
             <Badge variant="light" color="gray" size="sm" radius="xl">
               {version?.ok ? `v${version.data.version}` : "—"}
@@ -149,7 +167,7 @@ export default function Runtime() {
             loading={loading}
             leftSection={<RefreshCw size={14} />}
           >
-            Refresh
+            {t("common.refresh")}
           </Button>
         }
       />
@@ -157,25 +175,40 @@ export default function Runtime() {
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader
-            title="Health"
-            description="Liveness & readiness from /health"
+            title={t("dashboard.runtime.healthHeading")}
+            description={t("dashboard.runtime.healthDesc")}
             action={<EndpointChip k="getHealth" />}
           />
           <div className="mt-4">
             {health === null ? (
-              <LoadingRow label="Checking…" />
+              <LoadingRow label={t("dashboard.runtime.checking")} />
             ) : health.ok ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-status-active">
                   <CheckCircle2 className="h-4 w-4" />
-                  <span className="text-sm font-semibold">Healthy</span>
+                  <span className="text-sm font-semibold">
+                    {t("dashboard.runtime.healthyLabel")}
+                  </span>
                 </div>
                 <dl className="space-y-1.5 text-xs">
-                  <Row label="Status" value={String(health.data.status ?? "ok")} />
+                  <Row
+                    label={t("dashboard.runtime.labels.status")}
+                    value={String(health.data.status ?? "ok")}
+                  />
                   {health.data.uptime_sec !== undefined ? (
-                    <Row label="Uptime" value={formatUptime(health.data.uptime_sec)} mono />
+                    <Row
+                      label={t("dashboard.runtime.labels.uptime")}
+                      value={formatUptime(health.data.uptime_sec)}
+                      mono
+                    />
                   ) : null}
-                  {health.data.build ? <Row label="Build" value={health.data.build} mono /> : null}
+                  {health.data.build ? (
+                    <Row
+                      label={t("dashboard.runtime.labels.build")}
+                      value={health.data.build}
+                      mono
+                    />
+                  ) : null}
                 </dl>
               </div>
             ) : (
@@ -186,24 +219,40 @@ export default function Runtime() {
 
         <Card>
           <CardHeader
-            title="Version"
-            description="Build info from /version"
+            title={t("dashboard.runtime.versionTitle")}
+            description={t("dashboard.runtime.versionDesc")}
             action={<EndpointChip k="getVersion" />}
           />
           <div className="mt-4">
             {version === null ? (
-              <LoadingRow label="Checking…" />
+              <LoadingRow label={t("dashboard.runtime.checking")} />
             ) : version.ok ? (
               <dl className="space-y-1.5 text-xs">
-                <Row label="Version" value={version.data.version} mono />
+                <Row
+                  label={t("dashboard.runtime.labels.version")}
+                  value={version.data.version}
+                  mono
+                />
                 {version.data.api_version ? (
-                  <Row label="API" value={version.data.api_version} mono />
+                  <Row
+                    label={t("dashboard.runtime.labels.api")}
+                    value={version.data.api_version}
+                    mono
+                  />
                 ) : null}
                 {version.data.commit ? (
-                  <Row label="Commit" value={version.data.commit} mono />
+                  <Row
+                    label={t("dashboard.runtime.labels.commit")}
+                    value={version.data.commit}
+                    mono
+                  />
                 ) : null}
                 {version.data.built_at ? (
-                  <Row label="Built" value={version.data.built_at} mono />
+                  <Row
+                    label={t("dashboard.runtime.labels.built")}
+                    value={version.data.built_at}
+                    mono
+                  />
                 ) : null}
               </dl>
             ) : (
@@ -214,13 +263,13 @@ export default function Runtime() {
 
         <Card>
           <CardHeader
-            title="Storage"
-            description="Where data lives on disk"
+            title={t("dashboard.runtime.storageHeading")}
+            description={t("dashboard.runtime.storageDesc")}
             action={<EndpointChip k="getRuntimePaths" />}
           />
           <div className="mt-4">
             {paths === null ? (
-              <LoadingRow label="Reading paths…" />
+              <LoadingRow label={t("dashboard.runtime.readingPaths")} />
             ) : paths.ok ? (
               <ul className="space-y-1.5 text-xs">
                 {Object.entries(paths.data).map(([k, v]) => (
@@ -232,7 +281,7 @@ export default function Runtime() {
                   </li>
                 ))}
                 {Object.keys(paths.data).length === 0 ? (
-                  <li className="text-ink-4">No paths reported.</li>
+                  <li className="text-ink-4">{t("dashboard.runtime.noPathsReported")}</li>
                 ) : null}
               </ul>
             ) : (
@@ -244,28 +293,36 @@ export default function Runtime() {
 
       <Card>
         <CardHeader
-          title="Health probes"
-          description="Public endpoints that don't need auth. Useful for uptime checks and liveness."
+          title={t("dashboard.runtime.probesTitle")}
+          description={t("dashboard.runtime.probesDesc")}
         />
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <ProbeRow k="getHealth" label="Liveness" />
-          <ProbeRow k="getReady" label="Readiness" />
-          <ProbeRow k="getVersion" label="Build info" />
+          <ProbeRow k="getHealth" label={t("dashboard.runtime.labels.liveness")} />
+          <ProbeRow k="getReady" label={t("dashboard.runtime.labels.readiness")} />
+          <ProbeRow k="getVersion" label={t("dashboard.runtime.labels.buildInfo")} />
         </div>
       </Card>
 
       <Card>
         <CardHeader
-          title="Daemon environment"
-          description="What the web client talks to. Override with NEXT_PUBLIC_TASTILE_CORE_URL."
+          title={t("dashboard.runtime.daemonTitle")}
+          description={t("dashboard.runtime.daemonDesc")}
         />
         <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
-          <EnvRow label="Base URL" value={coreBaseUrl()} />
-          <EnvRow label="Auth" value="BetterAuth session · Bearer" />
-          <EnvRow label="Token source" value="window.__tastileIdToken" />
+          <EnvRow label={t("dashboard.runtime.labels.baseUrl")} value={coreBaseUrl()} />
           <EnvRow
-            label="Spec"
-            value={`OpenAPI 3.0.3 · ${Object.keys(ENDPOINTS).length} operations`}
+            label={t("dashboard.runtime.labels.auth")}
+            value={t("dashboard.runtime.authValue")}
+          />
+          <EnvRow
+            label={t("dashboard.runtime.labels.tokenSource")}
+            value={t("dashboard.runtime.tokenSourceValue")}
+          />
+          <EnvRow
+            label={t("dashboard.runtime.labels.spec")}
+            value={t("dashboard.runtime.openApiSummary", {
+              count: Object.keys(ENDPOINTS).length,
+            })}
           />
         </dl>
       </Card>
@@ -274,6 +331,7 @@ export default function Runtime() {
 }
 
 function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
+  const { t } = useTranslation();
   const [result, setResult] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(false);
   async function run() {
@@ -312,7 +370,7 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
           loading={loading}
           leftSection={!loading ? <Activity size={12} /> : undefined}
         >
-          Probe
+          {t("dashboard.runtime.probe")}
         </Button>
       </div>
     </div>

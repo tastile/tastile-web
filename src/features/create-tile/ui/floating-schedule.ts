@@ -149,9 +149,18 @@ export function buildFloatingSchedulePayload(
 
 export function formatFloatingScheduleSummary(
   input: Pick<FloatingScheduleInput, "requiredMinutes" | "label">,
-) {
+  t?: (key: string, params?: Record<string, string | number>) => string,
+): string[] {
+  if (!t) {
+    return [
+      `Required time: ${input.requiredMinutes} min`,
+      `Available window: ${input.label?.title ?? "Not set"}`,
+    ];
+  }
   return [
-    `Required time: ${input.requiredMinutes} min`,
-    `Available window: ${input.label?.title ?? "Not set"}`,
+    t("floatingSchedule.requiredMinutes", { minutes: input.requiredMinutes }),
+    t("floatingSchedule.availableWindow", {
+      title: input.label?.title ?? t("common.notSet"),
+    }),
   ];
 }

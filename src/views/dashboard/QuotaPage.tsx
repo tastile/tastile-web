@@ -2,6 +2,7 @@
 
 import { type Result, getCoreClient } from "@/shared/api/endpoints";
 import { useSidePanel } from "@/shared/context/side-panel-context";
+import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { Card } from "@/shared/ui/Card";
 import { PageSummaryPanel } from "@/shared/ui/PageSummaryPanel";
@@ -23,6 +24,7 @@ interface QuotaData {
 }
 
 export default function Quota() {
+  const { t } = useTranslation();
   const [data, setData] = useState<Result<QuotaData> | null>(null);
   const [session, setSession] = useState<Result<unknown> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,24 +32,24 @@ export default function Quota() {
   const sidePanel = useMemo(
     () => (
       <PageSummaryPanel
-        title="Quota"
-        description="Plan limits and current usage. Read-only — upgrade from the pricing page when you need more headroom."
+        title={t("dashboard.quota.title")}
+        description={t("dashboard.quota.description")}
         sections={[
           {
-            heading: "Plan",
+            heading: t("dashboard.quota.planHeading"),
             items: [
               {
-                label: "Tier",
+                label: t("dashboard.quota.tierLabel"),
                 value: data?.ok ? (data.data.plan ?? "free") : "—",
               },
               {
-                label: "Tiles",
+                label: t("dashboard.quota.tilesLabel"),
                 value: data?.ok
                   ? `${data.data.tiles_used ?? 0} / ${data.data.tiles_limit ?? "—"}`
                   : "—",
               },
               {
-                label: "History",
+                label: t("dashboard.quota.historyLabel"),
                 value: data?.ok
                   ? `${data.data.history_days ?? 0}d / ${data.data.history_limit_days ?? "—"}d`
                   : "—",
@@ -55,17 +57,29 @@ export default function Quota() {
             ],
           },
           {
-            heading: "Related",
+            heading: t("dashboard.quota.relatedHeading"),
             items: [
-              { label: "Billing", value: "→", href: "/dashboard/billing" },
-              { label: "Timeline", value: "→", href: "/dashboard/timeline" },
-              { label: "API explorer", value: "→", href: "/dashboard/api" },
+              {
+                label: t("dashboard.runtime.labels.billing"),
+                value: "→",
+                href: "/dashboard/billing",
+              },
+              {
+                label: t("dashboard.runtime.labels.timeline"),
+                value: "→",
+                href: "/dashboard/timeline",
+              },
+              {
+                label: t("dashboard.runtime.labels.apiExplorer"),
+                value: "→",
+                href: "/dashboard/api",
+              },
             ],
           },
         ]}
       />
     ),
-    [data],
+    [data, t],
   );
   useSidePanel(sidePanel);
 
@@ -98,8 +112,8 @@ export default function Quota() {
     <PageContainer>
       <PageHeader
         eyebrow={<span className="font-mono text-ink-3">auth · quota</span>}
-        title="Quota"
-        description="Plan limits and current usage. Read-only — upgrade from the pricing page when you need more."
+        title={t("dashboard.quota.title")}
+        description={t("dashboard.quota.description")}
         meta={
           <>
             <Badge
@@ -111,7 +125,9 @@ export default function Quota() {
                 <StatusDot status={data?.ok ? "active" : "pending"} size="xs" pulse={data?.ok} />
               }
             >
-              {data?.ok ? "Live" : "Loading"}
+              {data?.ok
+                ? t("dashboard.quota.status.live")
+                : t("dashboard.quota.status.loading")}
             </Badge>
             <Badge
               variant="light"
@@ -132,14 +148,16 @@ export default function Quota() {
             loading={loading}
             leftSection={<RefreshCw size={14} />}
           >
-            Refresh
+            {t("common.refresh")}
           </Button>
         }
       />
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Tiles</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            {t("dashboard.quota.tilesHeading")}
+          </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-mono text-4xl font-semibold tabular-nums text-ink-1">
               {tilesUsed}
@@ -160,43 +178,44 @@ export default function Quota() {
             />
           </div>
           <div className="mt-1.5 flex items-center justify-between text-[11px] text-ink-3">
-            <span>{tilesPct}% used</span>
-            <span>{Math.max(0, tilesLimit - tilesUsed)} remaining</span>
+            <span>{t("dashboard.quota.percentUsed", { percent: tilesPct })}</span>
+            <span>
+              {t("dashboard.quota.remaining", { count: Math.max(0, tilesLimit - tilesUsed) })}
+            </span>
           </div>
           {tilesPct >= 80 ? (
             <Alert icon={<IconAlertTriangle size={16} />} color="yellow" variant="light" mt="sm">
-              Approaching your tile limit. Upgrade for more capacity.
+              {t("dashboard.quota.tileLimitWarning")}
             </Alert>
           ) : null}
         </Card>
 
         <Card>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
-            History retention
+            {t("dashboard.quota.historyRetentionHeading")}
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="font-mono text-4xl font-semibold tabular-nums text-ink-1">
               {historyUsed}
             </span>
-            <span className="text-sm text-ink-3">/ {historyLimit} days</span>
+            <span className="text-sm text-ink-3">{t("dashboard.quota.days", { days: historyLimit })}</span>
           </div>
-          <p className="mt-3 text-xs text-ink-3">
-            Events older than the retention window are pruned. Export before upgrading if you need
-            them.
-          </p>
+          <p className="mt-3 text-xs text-ink-3">{t("dashboard.quota.retentionHelp")}</p>
           <div className="mt-3">
             <Link
               href="/dashboard/events"
               className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
             >
-              <Gauge className="h-3 w-3" /> Open events log
+              <Gauge className="h-3 w-3" /> {t("dashboard.quota.openEventsLog")}
             </Link>
           </div>
         </Card>
       </section>
 
       <Card>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Plan</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+          {t("dashboard.quota.planHeading")}
+        </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <div className="grid h-12 w-12 place-items-center rounded-md bg-accent-soft text-accent">
             <Sparkles className="h-5 w-5" />
@@ -205,18 +224,22 @@ export default function Quota() {
             <div className="text-lg font-semibold capitalize text-ink-1">{String(plan)}</div>
             <p className="text-xs text-ink-3">
               {plan === "pro"
-                ? "Unlimited tiles, 1y history, desktop sync, priority support."
-                : "Up to 50 tiles, 30 days history."}
+                ? t("dashboard.quota.planDescriptions.pro")
+                : t("dashboard.quota.planDescriptions.free")}
             </p>
           </div>
           <Button component={Link} href="/pricing" size="sm" leftSection={<CreditCard size={14} />}>
-            {plan === "pro" ? "Manage subscription" : "Upgrade to Pro"}
+            {plan === "pro"
+              ? t("dashboard.quota.cta.manage")
+              : t("dashboard.quota.cta.upgrade")}
           </Button>
         </div>
       </Card>
 
       <Card>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">Session</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+          {t("dashboard.quota.sessionHeading")}
+        </div>
         {session?.ok ? (
           <pre className="mt-3 max-h-72 overflow-auto rounded-md border border-border bg-surface-0 p-3 font-mono text-[11px] text-ink-1">
             {JSON.stringify(session.data, null, 2)}
@@ -227,7 +250,7 @@ export default function Quota() {
           </Alert>
         ) : (
           <div className="mt-3 flex items-center gap-2 text-xs text-ink-3">
-            <Loader size="xs" /> Loading session…
+            <Loader size="xs" /> {t("dashboard.quota.loadingSession")}
           </div>
         )}
       </Card>
