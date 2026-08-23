@@ -8,7 +8,6 @@ import {
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { AppShell } from "@/widgets/app-shell/ui/AppShell";
 import { Center, Loader } from "@mantine/core";
-import { useRouter } from "next/navigation";
 import { type ReactNode, useEffect, useState } from "react";
 
 interface SessionShape {
@@ -19,7 +18,6 @@ interface SessionShape {
 
 export function AppLayoutClient({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<"loading" | "ok">("loading");
-  const router = useRouter();
 
   useEffect(() => {
     let cancelled = false;
@@ -28,24 +26,24 @@ export function AppLayoutClient({ children }: { children: ReactNode }) {
         const res = await fetch("/api/auth/session", { cache: "no-store" });
         if (cancelled) return;
         if (!res.ok) {
-          router.replace("/login");
+          window.location.replace("/login");
           return;
         }
         const body = (await res.json()) as SessionShape;
         if (cancelled) return;
         if (!body.sub) {
-          router.replace("/login");
+          window.location.replace("/login");
           return;
         }
         setAuthState("ok");
       } catch {
-        if (!cancelled) router.replace("/login");
+        if (!cancelled) window.location.replace("/login");
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, []);
 
   if (authState === "loading") {
     return (

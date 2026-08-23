@@ -9,6 +9,7 @@ import {
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useIsClient } from "@/shared/hooks/use-is-client";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormRow } from "@/shared/ui/form";
@@ -100,6 +101,11 @@ export function QuickCreateEvent() {
 
   /** Tracks whether the user explicitly changed the end time. */
   const [endTimeManuallySet, setEndTimeManuallySet] = useState(false);
+
+  // Defer the createPortal until after mount so `document.body` is only
+  // referenced client-side. The first render returns nothing for the
+  // portal slot; the post-mount re-render mounts the sub-panel portal.
+  const mounted = useIsClient();
 
   const startTime = useMemo(() => isoToTime(spanStart), [spanStart]);
   const endTime = useMemo(() => isoToTime(spanEnd), [spanEnd]);
@@ -283,10 +289,11 @@ export function QuickCreateEvent() {
         </div>
       </Stack>
 
-      {createPortal(
-        <EventDetailsSubPanel opened={detailsOpen} onClose={closeDetails} />,
-        document.body,
-      )}
+      {mounted &&
+        createPortal(
+          <EventDetailsSubPanel opened={detailsOpen} onClose={closeDetails} />,
+          document.body,
+        )}
     </Stack>
   );
 }

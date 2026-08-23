@@ -53,6 +53,11 @@ describe("useResponsiveBreakpoint", () => {
     setMatchMedia(1200, false);
     const { result } = renderHook(() => useResponsiveBreakpoint());
     expect(result.current).toBe("desktop");
+    // Simulate matchMedia firing when the viewport crosses the threshold.
+    // In a real browser the change event also reflects the new match
+    // state on the MediaQueryList; useSyncExternalStore's getSnapshot
+    // re-reads it on the next render.
+    sharedMql.matches = true;
     act(() => {
       sharedMql._handler({ matches: true });
     });

@@ -21,6 +21,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useIsClient } from "@/shared/hooks/use-is-client";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormDivider, FormRow, RowSegmented } from "@/shared/ui/form";
@@ -488,6 +489,11 @@ export function QuickCreateRecurring() {
   // NumberInput, so the mirror effect can distinguish self-writes from
   // external store changes (template load, seed reset, …).
   const lastSelfWrittenDurationRef = useRef<number | null>(null);
+
+  // Defer the createPortal until after mount so `document.body` is only
+  // referenced client-side. The first render returns nothing for the
+  // portal slot; the post-mount re-render mounts the sub-panel portal.
+  const mounted = useIsClient();
 
   // Mirror external store changes (template load, seed reset, …) into
   // the local Custom-mode flag. We skip the flip when the new duration
@@ -1012,13 +1018,14 @@ export function QuickCreateRecurring() {
         </div>
       </Stack>
 
-      {createPortal(
-        <RecurringDetailsSubPanel
-          opened={detailsOpen}
-          onClose={closeDetails}
-        />,
-        document.body,
-      )}
+      {mounted &&
+        createPortal(
+          <RecurringDetailsSubPanel
+            opened={detailsOpen}
+            onClose={closeDetails}
+          />,
+          document.body,
+        )}
     </Stack>
   );
 }

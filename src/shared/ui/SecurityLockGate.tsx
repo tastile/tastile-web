@@ -91,23 +91,13 @@ async function requestPlatformUnlock() {
 
 export function SecurityLockGate({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
-  // Resolve the lock state from localStorage lazily so the first render
-  // already reflects whether the lock is required — no effect, no extra
-  // render. SSR falls back to "checking" because localStorage is unavailable
-  // on the server; the client picks up the real value on hydration.
-  const [state, setState] = useState<LockState>(() => {
-    if (typeof window === "undefined") return "checking";
-    const enabled = getEnabled(localStorage);
-    const timeoutMinutes = getTimeoutMinutes(localStorage);
-    const lastLeftAt = Number.parseInt(localStorage.getItem(SECURITY_LOCK_LEFT_AT_KEY) ?? "0", 10);
-    const needsLock = shouldRequireUnlock({
-      enabled,
-      timeoutMinutes,
-      lastLeftAt,
-      now: Date.now(),
-    });
-    return needsLock ? "locked" : "unlocked";
-  });
+  // Start in "checking" so SSR and the first client render produce identical
+  // markup and React doesn't warn about a hydration mismatch. The lock
+  // requirement is derived from localStorage, which only exists on the
+  // client; the effect below resolves the real state once after mount and
+  // flips to "locked" / "unlocked". The brief "checking" frame is the cost
+  // of hydration-safe rendering.
+  const [state, setState] = useState<LockState>("checking");
   const [message, setMessage] = useState("");
 
   // Map an internal error key thrown by `requestPlatformUnlock` to a
@@ -121,6 +111,19 @@ export function SecurityLockGate({ children }: { children: React.ReactNode }) {
     }
     return t("securityLock.errors.unlockFailed");
   };
+
+  useEffect(() => {
+    const enabled = getEnabled(localStorage);
+    const timeoutMinutes = getTimeoutMinutes(localStorage);
+    const lastLeftAt = Number.parseInt(localStorage.getItem(SECURITY_LOCK_LEFT_AT_KEY) ?? "0", 10);
+    const needsLock = shouldRequireUnlock({
+      enabled,
+      timeoutMinutes,
+      lastLeftAt,
+      now: Date.now(),
+    });
+    setState(needsLock ? "locked" : "unlocked");
+  }, []);
 
   useEffect(() => {
     const markLeft = () => {

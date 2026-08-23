@@ -32,8 +32,6 @@ jobs:
   contract-test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    env:
-      TASTILE_TEST_TOKEN: ${{ secrets.TASTILE_TEST_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -61,6 +59,8 @@ jobs:
 
       - name: Run schemathesis contract tests
         working-directory: tastile-web
+        env:
+          TASTILE_TEST_TOKEN: ${{ secrets.TASTILE_TEST_TOKEN }}
         run: bun run contract:test --seed=42 --max-examples=5
 
       - name: Upload schemathesis report on failure

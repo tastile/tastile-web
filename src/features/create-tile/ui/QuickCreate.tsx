@@ -126,6 +126,12 @@ export function QuickCreate() {
   const meta = useQuickCreateStore((s) => s.meta);
   const activePanel = useQuickCreateStore((s) => s.activePanel);
   const setActivePanel = useQuickCreateStore((s) => s.setActivePanel);
+  // Rules of Hooks: `workflowKind` must be subscribed here alongside the other
+  // store selectors so its call order stays stable across renders. The early
+  // return on `if (workflowKind !== "detailed")` below cannot follow a hook
+  // call without violating the rule (previously hit "Rendered more hooks than
+  // during the previous render" when the panel flipped between workflows).
+  const workflowKind = useQuickCreateStore((s) => s.workflowKind);
 
   const isDesktop = useIsDesktop();
   const { t, locale } = useTranslation();
@@ -396,7 +402,6 @@ export function QuickCreate() {
 
   // Detailed editor renders its body content inside QuickCreatePanel's
   // body slot. Only active when workflowKind is "detailed".
-  const workflowKind = useQuickCreateStore((s) => s.workflowKind);
   if (workflowKind !== "detailed") return null;
 
   // --- windows array helpers ---
@@ -844,6 +849,11 @@ export function QuickCreate() {
       </Stack>
       </Stack>
 
+      {/* The `mounted` state at the top of the component and the
+          `if (!mounted) return null;` early return at line ~401 guarantee
+          that this createPortal never executes during server render. The
+          linter cannot see across the early return, so we silence it
+          inline rather than introduce a redundant guard. */}
       {createPortal(
         <>
           <IntentSubPanel
@@ -1007,6 +1017,7 @@ export function QuickCreate() {
             refreshProjects={refreshProjects}
           />
         </>,
+        // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-in-render-or-hook-init
         document.body,
       )}
     </>

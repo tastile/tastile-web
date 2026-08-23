@@ -10,6 +10,7 @@ import { CalendarDays, Timer } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { useIsClient } from "@/shared/hooks/use-is-client";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormRow, RowSegmented } from "@/shared/ui/form";
@@ -138,6 +139,11 @@ export function QuickCreateTask() {
   // "30 min" before the user could interact with the NumberInput. The
   // store still holds the actual minute count (preset or custom).
   const [isCustomMode, setIsCustomMode] = useState(!isDurationPreset);
+
+  // Defer the createPortal until after mount so `document.body` is only
+  // referenced client-side. The first render returns nothing for the
+  // portal slot; the post-mount re-render mounts the sub-panel portal.
+  const mounted = useIsClient();
 
   const [customDuration, setCustomDuration] = useState<string | number>(
     isDurationPreset ? durationMinutes : durationMinutes || 30,
@@ -353,15 +359,16 @@ export function QuickCreateTask() {
         </div>
       </Stack>
 
-      {createPortal(
-        <TaskDetailsSubPanel
-          opened={detailsOpen}
-          onClose={closeDetails}
-          durationMinMs={durationMinMs}
-          durationMaxMs={durationMaxMs}
-        />,
-        document.body,
-      )}
+      {mounted &&
+        createPortal(
+          <TaskDetailsSubPanel
+            opened={detailsOpen}
+            onClose={closeDetails}
+            durationMinMs={durationMinMs}
+            durationMaxMs={durationMaxMs}
+          />,
+          document.body,
+        )}
     </Stack>
   );
 }
