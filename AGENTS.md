@@ -114,8 +114,11 @@ UI 変更は実 browser screenshot を `.tmp/` に残して判定。
 - `react-doctor` — UI 規約違反検出。
 - `tastile-precommit-review` — agent-initiated commit 直前の独立 review（self-approve 禁止、
   Codex ↔ Claude 別 agent で実行）。
+- `i18n-literal-guard` — policy §11 の hardcoded literal 検出、JSX / doc-comment / identifier の
+  監査と i18n bundle への移送手順を提供。
 - workspace 共通: `cross-repo-contract-check`（複数 child に跨る contract 変更）、
-  `verify-tastile-change`（commit / merge / ship の直前に実行）。
+  `verify-tastile-change`（commit / merge / ship の直前に実行）、
+  `plugin-version-audit`（pinned 依存 drift の監査）。
 
 ## Pitfalls（実測ベースの罠）
 
@@ -129,7 +132,8 @@ UI 変更は実 browser screenshot を `.tmp/` に残して判定。
 - **policy §11 violations（i18n hardcoded literal）**: `src/features/create-tile/ui/**` および
   `src/execution/model/**`、`src/shared/stores/quick-create-store.ts` の doc-comment に日本語 hardcoded
   literal が点在。i18n bundle（`src/shared/i18n/sections/**/*.ts`）は正しくできているので、JSX literal は
-  i18n 経由に統一すべき。次のスコープ大きい refactor 候補として ADR 記録予定。
+  i18n 経由に統一すべき。`.agents/skills/i18n-literal-guard/SKILL.md` の workflow と
+  `scripts/audit-i18n-literals.mts` を gate として使う。次のスコープ大きい refactor 候補として ADR 記録予定。
 - **`bun run test <path>` の罠**: 旧 AGENTS.md で `bun test src/lib/storage/event-store.test.ts` と
   書かれていたが、`src/lib/storage/` ディレクトリは FSD 移行で消滅。実体は `src/shared/...` 配下。
   `bun test path` または `bun run test:unit` 経由が安全。
