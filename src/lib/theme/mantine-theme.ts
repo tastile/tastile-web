@@ -31,15 +31,15 @@ const tastile: [string, string, string, string, string, string, string, string, 
 /**
  * DS v2.0 compliant Mantine v9 theme.
  *
- * Default-prop policy (方針 B: Permissive Core / Strict Layer):
- *   - Card / Paper: no border, no shadow, radius lg (container 層)
+ * Default-prop policy (Policy B: Permissive Core / Strict Layer):
+ *   - Card / Paper: no border, no shadow, radius lg (container layer)
  *   - Modal: no shadow, radius xl, centered
- *   - Drawer: radius 0 (画面端に張り付く)
- *   - Divider: gray.3（階層を surface で吸収、ボーダー禁止）
- *   - Button / Input / ActionIcon: radius md（affordance 確保）
- *   - ActionIcon: variant subtle（背景で階層を作る）
+ *   - Drawer: radius 0 (flush with the screen edge)
+ *   - Divider: gray.3 (hierarchy carried by surface levels, no border)
+ *   - Button / Input / ActionIcon: radius md (affordance preserved)
+ *   - ActionIcon: variant subtle (hierarchy via background)
  *
- * 視覚的階層は `--surface-X` の段差で表現し、影 / ボーダーは使用しない。
+ * Visual hierarchy is expressed via the --surface-X elevation stack; shadows and borders are not used.
  */
 export const mantineTheme = createTheme({
   colors: { tastile },
