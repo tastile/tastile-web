@@ -67,7 +67,7 @@
   --border-default: oklch(0 0 0 / 0.1);
 
   /* Focus ring tokens for the :focus-visible redesign (P2c).
-     --focus-ring is the ring width; --focus-ring-offset is the gap between
+     --focus-ring-width is the ring width; --focus-ring-offset is the gap between
      the element and the ring; --focus-ring-color is the ring stroke. */
   --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
