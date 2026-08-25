@@ -202,7 +202,7 @@
        nested-lg: xl  - lg  = 8  (parent radius 24 → child radius 16)
        nested-xl: xxl - xl  = 8  (parent radius 32 → child radius 24) */
   --spacing-nested-xs: 0.25rem;
-  --spacing-nested-sm: 0.5rem;
+  --spacing-nested-sm: 0.25rem;
   --spacing-nested-md: 0.25rem;
   --spacing-nested-lg: 0.5rem;
   --spacing-nested-xl: 0.5rem;
