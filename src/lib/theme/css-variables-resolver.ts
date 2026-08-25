@@ -23,7 +23,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     // Default (neutral) button + input surfaces.
     "--mantine-color-default": "var(--surface-1)",
     "--mantine-color-default-hover": "var(--surface-2)",
-    // DS v2 整合: デフォルト border を透明化（Mantine component 側の defaultProps と二段構え）
+    // DS v2 alignment: make default border transparent (second line of defense alongside Mantine component defaultProps)
     "--mantine-default-border": "transparent",
     "--mantine-color-default-color": "var(--foreground)",
     "--mantine-color-default-border": "var(--border)",
