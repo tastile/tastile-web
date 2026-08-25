@@ -26,7 +26,7 @@ export const cssVariablesResolver: CSSVariablesResolver = () => ({
     // DS v2 alignment: make default border transparent (second line of defense alongside Mantine component defaultProps)
     "--mantine-default-border": "transparent",
     "--mantine-color-default-color": "var(--foreground)",
-    "--mantine-color-default-border": "var(--border)",
+    "--mantine-color-default-border": "transparent",
 
     // Error / danger uses our existing --danger token.
     "--mantine-color-error": "var(--danger)",
