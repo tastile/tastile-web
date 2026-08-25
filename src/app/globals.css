@@ -66,6 +66,13 @@
   --border-subtle: oklch(0 0 0 / 0.06);
   --border-default: oklch(0 0 0 / 0.1);
 
+  /* Focus ring tokens for the :focus-visible redesign (P2c).
+     --focus-ring is the ring width; --focus-ring-offset is the gap between
+     the element and the ring; --focus-ring-color is the ring stroke. */
+  --focus-ring: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--primary);
+
   color-scheme: light;
 }
 
@@ -111,6 +118,7 @@
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
 
   --focus-ring: oklch(0.7 0.18 250 / 0.6);
+  --focus-ring-color: var(--primary);
   --surface-inset: oklch(0.15 0 0);
   --border-subtle: oklch(1 0 0 / 0.06);
   --border-default: oklch(1 0 0 / 0.1);
@@ -122,6 +130,7 @@
   --background: #010102;
   --surface-0: #08090a;
   --surface-elevated: #141516;
+  --focus-ring-color: var(--primary);
 }
 
 /* ============================================
