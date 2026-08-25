@@ -2,6 +2,9 @@ import tsParser from "@typescript-eslint/parser";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import noUnknownCSSVarInTokens from "./eslint-local-rules/no-unknown-css-var-in-tokens.mjs";
 import noInlineCSSVarOverride from "./eslint-local-rules/no-inline-css-var-override.mjs";
+import noMantineShadow from "./eslint-local-rules/no-mantine-shadow.mjs";
+import noMantineBorder from "./eslint-local-rules/no-mantine-border.mjs";
+import noTokenViolations from "./eslint-local-rules/no-token-violations.mjs";
 
 export default [
   {
@@ -32,6 +35,9 @@ export default [
         rules: {
           "no-unknown-css-var-in-tokens": noUnknownCSSVarInTokens,
           "no-inline-css-var-override": noInlineCSSVarOverride,
+          "no-mantine-shadow": noMantineShadow,
+          "no-mantine-border": noMantineBorder,
+          "no-token-violations": noTokenViolations,
         },
       },
     },
@@ -103,6 +109,18 @@ export default [
     ],
     rules: {
       "localRules/no-inline-css-var-override": "off",
+    },
+  },
+  {
+    // Local rules 3-5 — DS v2 visual baseline enforced for every consumer of
+    // Mantine surfaces + Tailwind utilities. P2b sweep (Tasks 10-30) eliminates
+    // pre-existing violations across src/**; P2a-introduced files (theme.ts)
+    // are clean by construction (theme.ts uses Object.extend which is never
+    // visited by the JSX visitor — see Ruling 2 / Ruling 7).
+    rules: {
+      "localRules/no-mantine-shadow": "error",
+      "localRules/no-mantine-border": "error",
+      "localRules/no-token-violations": "error",
     },
   },
 ];
