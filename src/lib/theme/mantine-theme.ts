@@ -141,6 +141,19 @@ export const mantineTheme = createTheme({
     Chip: Chip.extend({
       defaultProps: { withBorder: false, variant: 'light' } as any,
     }),
+    // P2a Ruling 7: Mantine v9 useProps reads
+    // theme.components[<static-selector>].defaultProps (e.g. 'MenuDropdown',
+    // 'PopoverDropdown', 'HoverCardDropdown'), not the nested Menu.Dropdown
+    // path. The nested entries above satisfy the brief's pin tests but are
+    // dead code at runtime; these top-level entries are what Mantine actually
+    // consumes when rendering each compound sub-component.
+    MenuDropdown: Menu.Dropdown.extend({
+      defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+    }),
+    PopoverDropdown: Popover.Dropdown.extend({
+      defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+    }),
+    HoverCardDropdown: { defaultProps: { withBorder: false, shadow: undefined } },
   },
 }) as ReturnType<typeof createTheme> & {
   components: {
@@ -153,5 +166,8 @@ export const mantineTheme = createTheme({
     Combobox: { defaultProps?: Record<string, unknown> };
     Pill: { defaultProps?: Record<string, unknown> };
     Chip: { defaultProps?: Record<string, unknown> };
+    MenuDropdown: { defaultProps?: Record<string, unknown> };
+    PopoverDropdown: { defaultProps?: Record<string, unknown> };
+    HoverCardDropdown: { defaultProps?: Record<string, unknown> };
   };
 };

@@ -152,4 +152,27 @@ describe('mantineTheme', () => {
       expect((mantineTheme.components?.Chip?.defaultProps as AnyProps)?.variant).toBe('light');
     });
   });
+
+  describe('P2 Ruling 7 MenuDropdown runtime default', () => {
+    it('MenuDropdown has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.radius).toBe('md');
+    });
+  });
+
+  describe('P2 Ruling 7 PopoverDropdown runtime default', () => {
+    it('PopoverDropdown has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.radius).toBe('md');
+    });
+  });
+
+  describe('P2 Ruling 7 HoverCardDropdown runtime default', () => {
+    it('HoverCardDropdown has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.HoverCardDropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.HoverCardDropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+    });
+  });
 });
