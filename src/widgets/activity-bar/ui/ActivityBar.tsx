@@ -108,7 +108,7 @@ export function ActivityBar() {
             />
           ))}
 
-          <Divider className="mx-2 my-2 shrink-0 border-border" />
+          <Divider className="mx-2 my-2 shrink-0" />
 
           <ActivityLink
             href={PREF_ITEM.path}
@@ -126,7 +126,6 @@ export function ActivityBar() {
             position="top-start"
             offset={4}
             width={176}
-            shadow="lg"
             closeOnItemClick
           >
             <Menu.Target>
@@ -138,7 +137,7 @@ export function ActivityBar() {
               />
             </Menu.Target>
 
-            <Menu.Dropdown className="border-border bg-surface-elevated">
+            <Menu.Dropdown className="bg-surface-1">
               <Menu.Label>{t("shell.activityBar.sidebarControl")}</Menu.Label>
               <Menu.Divider />
               <Menu.RadioGroup
