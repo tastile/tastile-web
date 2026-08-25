@@ -27,6 +27,7 @@
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
+    "lint:ds": "bun scripts/check-ds-coverage.mts",
     "lint:biome": "biome check .",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
