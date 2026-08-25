@@ -2,11 +2,12 @@
  * ESLint rule: disallow Mantine `shadow="..."` JSX prop.
  *
  * Background: DS v2 (P2) routes every elevation through the surface-elevation
- * tokens defined in src/app/globals.css (--elevation-1 / --elevation-2 /
- * --elevation-3). Mantine's `shadow="..."` prop renders an inline
- * `box-shadow` CSS rule that bypasses the token cascade, breaks theme
+ * tokens defined in src/app/globals.css (--surface-0 / --surface-1 / --surface-2 /
+ * --surface-3 / --surface-elevated). Mantine's `shadow="..."` prop renders an
+ * inline `box-shadow` CSS rule that bypasses the token cascade, breaks theme
  * switching, and reintroduces design drift. Consumers must reach for the
- * surface-elevation tokens via Tailwind / CSS classes instead.
+ * surface-elevation tokens via Tailwind bg-surface-X utilities / --surface-X
+ * CSS vars instead.
  *
  * Scoped to JSX only — the Mantine theme file uses Object.extend({ defaultProps:
  * { shadow: undefined } }), which is ObjectExpression and never reaches the
@@ -19,7 +20,11 @@ const rule = {
     type: 'problem',
     docs: {
       description:
-        'Disallow Mantine shadow="..." JSX prop; use DS v2 elevation tokens instead',
+        'Disallow Mantine shadow="..." JSX prop (DS v2: no shadows allowed). Use surface elevation tokens instead.',
+    },
+    messages: {
+      shadowProp:
+        'Mantine `shadow` prop is forbidden in DS v2. Use bg-surface-X tokens for visual hierarchy instead.',
     },
     schema: [],
   },
@@ -27,11 +32,7 @@ const rule = {
     return {
       JSXAttribute(node) {
         if (node.name?.name !== 'shadow') return;
-        context.report({
-          node,
-          message:
-            'Mantine shadow prop bypasses DS v2 elevation tokens. Use --elevation-* CSS var or Tailwind elevation utility instead.',
-        });
+        context.report({ node, messageId: 'shadowProp' });
       },
     };
   },
@@ -60,11 +61,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     invalid: [
       {
         code: 'const x = <Card shadow="md" />;',
-        errors: [
-          {
-            message: /Mantine shadow prop bypasses DS v2 elevation tokens/,
-          },
-        ],
+        errors: [{ messageId: 'shadowProp' }],
       },
     ],
   });

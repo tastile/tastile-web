@@ -26,8 +26,8 @@ test('valid: JSX without a shadow prop produces no errors', () => {
   assert.equal(messages.length, 0);
 });
 
-test('invalid: JSX with shadow="..." is reported with the elevation-token hint', () => {
+test('invalid: JSX with shadow="..." is reported with the shadowProp messageId', () => {
   const messages = lint('const x = <Card shadow="md" />;');
   assert.equal(messages.length, 1);
-  assert.match(messages[0].message, /Mantine shadow prop bypasses DS v2 elevation tokens/);
+  assert.equal(messages[0].messageId, 'shadowProp');
 });
