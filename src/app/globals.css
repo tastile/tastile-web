@@ -69,7 +69,7 @@
   /* Focus ring tokens for the :focus-visible redesign (P2c).
      --focus-ring is the ring width; --focus-ring-offset is the gap between
      the element and the ring; --focus-ring-color is the ring stroke. */
-  --focus-ring: 2px;
+  --focus-ring-width: 2px;
   --focus-ring-offset: 2px;
   --focus-ring-color: var(--primary);
 
