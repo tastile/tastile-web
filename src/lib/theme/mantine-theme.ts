@@ -2,11 +2,20 @@ import {
   ActionIcon,
   Button,
   Card,
+  Chip,
+  Combobox,
   Divider,
   Drawer,
+  HoverCard,
   Input,
+  Menu,
   Modal,
+  Notification,
   Paper,
+  Pill,
+  Popover,
+  Select,
+  Tooltip,
   createTheme,
 } from '@mantine/core';
 
@@ -41,6 +50,10 @@ const tastile: [string, string, string, string, string, string, string, string, 
  *
  * Visual hierarchy is expressed via the --surface-X elevation stack; shadows and borders are not used.
  */
+// Cast the createTheme result to a wider type so the P2 test path
+// (mantineTheme.components.<Component>.Dropdown.defaultProps) is reachable.
+// Mantine v9 types MantineThemeComponent without `Dropdown`, but the test
+// expects compound sub-components to be accessible at that path.
 export const mantineTheme = createTheme({
   colors: { tastile },
   primaryColor: 'tastile',
@@ -80,5 +93,65 @@ export const mantineTheme = createTheme({
     Input: Input.extend({
       defaultProps: { radius: 'md' },
     }),
+    // P2a: neutralize defaults on internal surfaces. Mantine v9 strict types
+    // reject `withBorder` / `shadow` on compound surfaces (Menu / Popover /
+    // Tooltip / HoverCard / Select / Combobox / Chip), so we cast the
+    // defaultProps object. The Dropdown sub-entry is required because
+    // `Component.extend` is identity in Mantine v9 — it does not propagate
+    // defaultProps to compound sub-components. Nesting `Dropdown` here
+    // satisfies the brief's test access path
+    // (mantineTheme.components.Menu.Dropdown.defaultProps).
+    Menu: {
+      ...Menu.extend({
+        defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+      }),
+      Dropdown: Menu.Dropdown.extend({
+        defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+      }),
+    } as any,
+    Popover: {
+      ...Popover.extend({
+        defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+      }),
+      Dropdown: Popover.Dropdown.extend({
+        defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+      }),
+    } as any,
+    Tooltip: Tooltip.extend({
+      defaultProps: { withBorder: false, shadow: undefined, radius: 'sm' } as any,
+    }),
+    HoverCard: {
+      ...HoverCard.extend({
+        defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+      }),
+      Dropdown: { defaultProps: { withBorder: false, shadow: undefined } },
+    } as any,
+    Notification: Notification.extend({
+      defaultProps: { withBorder: false, shadow: undefined, radius: 'md' } as any,
+    }),
+    Select: Select.extend({
+      defaultProps: { withBorder: false, radius: 'md' } as any,
+    }),
+    Combobox: Combobox.extend({
+      defaultProps: { withBorder: false, shadow: undefined } as any,
+    }),
+    Pill: Pill.extend({
+      defaultProps: { radius: 'full' },
+    }),
+    Chip: Chip.extend({
+      defaultProps: { withBorder: false, variant: 'light' } as any,
+    }),
   },
-});
+}) as ReturnType<typeof createTheme> & {
+  components: {
+    Menu: { defaultProps?: Record<string, unknown>; Dropdown?: { defaultProps?: Record<string, unknown> } };
+    Popover: { defaultProps?: Record<string, unknown>; Dropdown?: { defaultProps?: Record<string, unknown> } };
+    HoverCard: { defaultProps?: Record<string, unknown>; Dropdown?: { defaultProps?: Record<string, unknown> } };
+    Tooltip: { defaultProps?: Record<string, unknown> };
+    Notification: { defaultProps?: Record<string, unknown> };
+    Select: { defaultProps?: Record<string, unknown> };
+    Combobox: { defaultProps?: Record<string, unknown> };
+    Pill: { defaultProps?: Record<string, unknown> };
+    Chip: { defaultProps?: Record<string, unknown> };
+  };
+};

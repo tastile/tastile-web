@@ -87,4 +87,69 @@ describe('mantineTheme', () => {
       expect((mantineTheme.components?.Input?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
+
+  describe('P2 Menu defaultProps', () => {
+    it('Menu.Dropdown has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.Menu?.Dropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.Menu?.Dropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.Menu?.Dropdown?.defaultProps as AnyProps)?.radius).toBe('md');
+    });
+  });
+
+  describe('P2 Popover defaultProps', () => {
+    it('Popover.Dropdown has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.Popover?.Dropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.Popover?.Dropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.Popover?.Dropdown?.defaultProps as AnyProps)?.radius).toBe('md');
+    });
+  });
+
+  describe('P2 Tooltip defaultProps', () => {
+    it('Tooltip has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.radius).toBe('sm');
+    });
+  });
+
+  describe('P2 HoverCard defaultProps', () => {
+    it('HoverCard.Dropdown has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.HoverCard?.Dropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.HoverCard?.Dropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+    });
+  });
+
+  describe('P2 Notification defaultProps', () => {
+    it('Notification has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.Notification?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.Notification?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.Notification?.defaultProps as AnyProps)?.radius).toBe('md');
+    });
+  });
+
+  describe('P2 Select defaultProps', () => {
+    it('Select has withBorder false', () => {
+      expect((mantineTheme.components?.Select?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    });
+  });
+
+  describe('P2 Combobox defaultProps', () => {
+    it('Combobox has withBorder false and shadow undefined', () => {
+      expect((mantineTheme.components?.Combobox?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.Combobox?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+    });
+  });
+
+  describe('P2 Pills defaultProps', () => {
+    it('Pill has radius full', () => {
+      expect((mantineTheme.components?.Pill?.defaultProps as AnyProps)?.radius).toBe('full');
+    });
+  });
+
+  describe('P2 Chip defaultProps', () => {
+    it('Chip has withBorder false and variant light', () => {
+      expect((mantineTheme.components?.Chip?.defaultProps as AnyProps)?.withBorder).toBe(false);
+      expect((mantineTheme.components?.Chip?.defaultProps as AnyProps)?.variant).toBe('light');
+    });
+  });
 });
