@@ -3,7 +3,22 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================
-   Design System v2.0 Tokens (Supabase-inspired)
+   Design System v2.0 Tokens
+
+   --border* / --shadow* are reserved for Mantine core (Input, Button,
+   SegmentedControl, default borders). Layout, container, card, and section
+   layers must not consume them — visual hierarchy there is expressed via
+   --surface-X levels and the nested-radius spacing utilities
+   (p-nested-xs..xl, defined below in @theme inline).
+
+   Adding a new token (order matters — never reverse):
+     1. Add `--xxx` here under :root (and theme overrides if needed).
+     2. Add the corresponding `var(--xxx)` reference to
+        src/lib/theme/tokens.ts (as const).
+     3. Use it from a component (or via Tailwind utility exposed by @theme).
+
+   The ESLint rule `no-unknown-css-var-in-tokens` enforces step 2 from
+   step 3 — every var(--xxx) used in code must be defined here first.
    ============================================ */
 :root {
   --background: #f7f8f8;
@@ -177,6 +192,20 @@
   --spacing-panel: 1.5rem;
   --spacing-row: 3rem;
   --spacing-row-tight: 2.75rem;
+
+  /* Nested-radius utility (DS v2 §1: padding = parent_radius - child_radius).
+     Values mirror tokens.ts radius gaps so Tailwind-generated utilities stay
+     in lockstep with the TypeScript token map:
+       nested-xs: sm  - xs  = 4  (parent radius 8  → child radius 4)
+       nested-sm: md  - sm  = 4  (parent radius 12 → child radius 8)
+       nested-md: lg  - md  = 4  (parent radius 16 → child radius 12)
+       nested-lg: xl  - lg  = 8  (parent radius 24 → child radius 16)
+       nested-xl: xxl - xl  = 8  (parent radius 32 → child radius 24) */
+  --spacing-nested-xs: 0.25rem;
+  --spacing-nested-sm: 0.5rem;
+  --spacing-nested-md: 0.25rem;
+  --spacing-nested-lg: 0.5rem;
+  --spacing-nested-xl: 0.5rem;
 
   /* Fonts */
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
