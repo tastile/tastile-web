@@ -15,7 +15,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
       <div className="rounded-2xl bg-surface-elevated p-5 shadow-[0_18px_60px_-30px_rgba(17,18,23,0.18)] lg:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="mkt-pulse-dot inline-block size-1.5 rounded-full bg-primary" />
             <span
               className={`text-caption font-medium uppercase tracking-[0.18em] text-foreground-muted ${display}`}
             >
@@ -90,7 +90,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
                     {tile.title}
                   </p>
                   <p className="mt-0.5 flex items-center gap-1 truncate text-caption text-foreground-subtle">
-                    <MapPin className="h-3 w-3" strokeWidth={1.5} />
+                    <MapPin className="size-3" strokeWidth={1.5} />
                     <span className={body}>{tile.place}</span>
                   </p>
                   {isActive ? (
@@ -101,11 +101,11 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
                 </div>
                 <div className="shrink-0 text-foreground-muted">
                   {isActive ? (
-                    <Pause className="h-4 w-4 text-primary" strokeWidth={1.5} />
+                    <Pause className="size-4 text-primary" strokeWidth={1.5} />
                   ) : isDone ? (
-                    <CheckCircle2 className="h-4 w-4 text-foreground-subtle" strokeWidth={1.5} />
+                    <CheckCircle2 className="size-4 text-foreground-subtle" strokeWidth={1.5} />
                   ) : (
-                    <Circle className="h-4 w-4" strokeWidth={1.5} />
+                    <Circle className="size-4" strokeWidth={1.5} />
                   )}
                 </div>
               </div>
@@ -115,7 +115,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
 
         <div className="mt-5 flex items-center justify-between rounded-xl bg-surface-0 px-3 py-2.5">
           <div className="flex items-center gap-2 text-caption text-foreground-muted">
-            <AlarmClock className="h-3.5 w-3.5" strokeWidth={1.5} />
+            <AlarmClock className="size-3.5" strokeWidth={1.5} />
             <span className={body}>
               {t.previewNextLabel}{" "}
               <span className="font-[family-name:var(--font-geist-mono)] text-foreground">
@@ -124,7 +124,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
             </span>
           </div>
           <div className="flex items-center gap-1.5 rounded-full bg-foreground px-2.5 py-1 text-caption font-medium text-background">
-            <Check className="h-3 w-3" strokeWidth={2} />
+            <Check className="size-3" strokeWidth={2} />
             {t.previewNextAction}
           </div>
         </div>
@@ -132,7 +132,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
 
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-6 -top-6 hidden h-24 w-24 rounded-full bg-primary/12 blur-2xl lg:block"
+        className="pointer-events-none absolute -right-6 -top-6 hidden size-24 rounded-full bg-primary/12 blur-2xl lg:block"
       />
     </div>
   );
