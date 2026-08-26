@@ -34,7 +34,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
       <div className="layout-shell relative z-10">
         <header className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+            <p className="text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
               {t.eyebrow}
             </p>
             <h2 className={`mt-3 mkt-display-2 text-foreground ${display}`}>
@@ -76,7 +76,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 >
                   {value === "monthly" ? t.monthly : t.yearly}
                   {value === "yearly" ? (
-                    <span className="ml-2 text-[11px] font-normal text-foreground-subtle">
+                    <span className="ml-2 text-caption font-normal text-foreground-subtle">
                       {t.yearlyNote}
                     </span>
                   ) : null}
@@ -92,7 +92,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
           <article className="mkt-price-band grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-[10rem_1fr_2fr_auto] lg:items-center lg:gap-12">
             <div>
               <p
-                className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
               >
                 {t.bandPrefixFree}
                 {t.free.name}
@@ -105,7 +105,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             </div>
             <div>
               <p
-                className={`text-[11px] font-medium uppercase tracking-[0.18em] text-foreground-subtle ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.18em] text-foreground-subtle ${display}`}
               >
                 {t.forLabel}
               </p>
@@ -146,13 +146,13 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             <div>
               <div className="flex items-center gap-2">
                 <p
-                  className={`text-[11px] font-medium uppercase tracking-[0.22em] text-primary ${display}`}
+                  className={`text-caption font-medium uppercase tracking-[0.22em] text-primary ${display}`}
                 >
                   {t.bandPrefixPro}
                   {t.pro.name}
                 </p>
                 <span
-                  className={`rounded-full bg-primary px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-primary-fg ${display}`}
+                  className={`rounded-full bg-primary px-2 py-0.5 text-caption font-medium uppercase tracking-wider text-primary-fg ${display}`}
                 >
                   {t.pro.badge}
                 </span>
@@ -168,7 +168,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             </div>
             <div>
               <p
-                className={`text-[11px] font-medium uppercase tracking-[0.18em] text-primary ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.18em] text-primary ${display}`}
               >
                 {t.forLabel}
               </p>
