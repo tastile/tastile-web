@@ -203,19 +203,19 @@ export function TileReferencePicker({
           autoComplete="off"
           data-testid="tile-picker-search"
         />
-        {effectiveError && <div className="text-[11px] text-status-danger">{effectiveError}</div>}
+        {effectiveError && <div className="text-caption text-status-danger">{effectiveError}</div>}
         {currentValue && (
-          <div className="text-[10px] text-foreground-muted">
+          <div className="text-caption text-foreground-muted">
             {t("quickCreate.tilePickerCurrent")}: <span className="font-mono">{currentValue}</span>
           </div>
         )}
         <ScrollArea h={320} type="auto" viewportRef={listRef}>
           {loading && items.length === 0 ? (
-            <div className="py-4 text-center text-[11px] text-foreground-muted">
+            <div className="py-4 text-center text-caption text-foreground-muted">
               {t("quickCreate.tilePickerLoading")}
             </div>
           ) : items.length === 0 ? (
-            <div className="py-4 text-center text-[11px] text-foreground-muted">
+            <div className="py-4 text-center text-caption text-foreground-muted">
               {t("quickCreate.tilePickerEmpty")}
             </div>
           ) : (
@@ -234,7 +234,7 @@ export function TileReferencePicker({
                     data-testid={`tile-picker-item-${it.id}`}
                   >
                     <span className="min-w-0 flex-1 truncate font-medium">{it.title}</span>
-                    <span className="shrink-0 rounded bg-surface-1 px-1.5 py-0.5 text-[9px] uppercase tracking-wide text-foreground-muted">
+                    <span className="shrink-0 rounded bg-surface-1 px-1.5 py-0.5 text-caption uppercase tracking-wide text-foreground-muted">
                       {it.sub}
                     </span>
                   </button>
