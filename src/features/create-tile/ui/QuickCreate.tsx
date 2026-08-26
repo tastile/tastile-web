@@ -835,10 +835,10 @@ export function QuickCreate() {
         </div>
 
         {/* Bottom set: Project + Color + Memo — same shared sections as
-            Event/Task/Recurring. Wrapped in a top-bordered container so the
-            user sees a coherent "set" at the bottom of the form. The legacy
+            Event/Task/Recurring. Spacing-only separation above keeps the
+            "set" visually grouped at the bottom of the form. The legacy
             MetaSubPanel / "Refine" pill button above stay untouched. */}
-        <div className="border-t border-border pt-1">
+        <div className="pt-2">
           <ProjectColorRow
             pickerTestId="detailed-project-picker"
             colorTestId="detailed-color"
