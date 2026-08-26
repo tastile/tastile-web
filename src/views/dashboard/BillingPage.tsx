@@ -43,8 +43,6 @@ export default function Billing() {
       <SubscriptionSection />
       <MantineCard
         radius="md"
-        withBorder
-        shadow="xs"
         bg="var(--surface-1)"
         className="border-border"
       >
