@@ -101,7 +101,7 @@ export function FloatingHeader({
 
         {/* Center: execution status */}
         <div className="flex flex-1 items-center justify-center">
-          <div className="flex items-center gap-2 font-mono text-[11px] text-foreground-muted">
+          <div className="flex items-center gap-2 font-mono text-caption text-foreground-muted">
             <span
               aria-hidden
               className={isWorking ? "text-primary animate-pulse" : "text-foreground-subtle"}
