@@ -37,7 +37,7 @@ export function ProjectColorRow({
   return (
     <div className="px-4 py-3">
       <FormRow
-        icon={<Folder className="h-4 w-4" aria-hidden />}
+        icon={<Folder className="size-4" aria-hidden />}
         trailing={
           <ColorInput
             value={visualColor}
