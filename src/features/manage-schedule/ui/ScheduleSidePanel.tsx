@@ -59,7 +59,7 @@ export function ScheduleSidePanel() {
   return (
     <div className="flex flex-col gap-6 pt-2 select-none">
       <div className="px-4 pb-1 pt-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+        <span className="text-caption font-semibold uppercase tracking-wider text-foreground-subtle">
           {t("panels.schedule.scheduleViews")}
         </span>
       </div>
@@ -150,7 +150,7 @@ function ProjectsCheckboxSection() {
 
   if (loading) {
     return (
-      <div className="px-3 text-[10px] text-foreground-subtle">
+      <div className="px-3 text-caption text-foreground-subtle">
         {t("panels.schedule.loadingProjects")}
       </div>
     );
@@ -266,10 +266,10 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
     <div className="px-3 pt-4">
       <div className="mb-3 flex items-center gap-1.5">
         <Folder size={12} aria-hidden className="text-foreground-subtle" />
-        <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+        <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
           {t("panels.schedule.projects")}
         </p>
-        <span className="ml-auto font-mono text-[10px] text-foreground-lighter">
+        <span className="ml-auto font-mono text-caption text-foreground-lighter">
           {selected.size}/{workspaces.length}
         </span>
       </div>
