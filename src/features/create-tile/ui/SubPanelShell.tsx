@@ -109,7 +109,7 @@ export function SubPanelShell({
   const isDrawer = layout === "drawer";
 
   const positioning = isDrawer
-    ? "fixed inset-y-0 right-0 z-[58] w-[36rem] border-l border-border shadow-lg"
+    ? "fixed inset-y-0 right-0 z-[58] w-[36rem] bg-[var(--surface-1)]"
     : "absolute inset-0 z-[60]";
 
   const idleTransform = isDrawer ? "translate-x-full" : "translate-y-full";
@@ -121,9 +121,9 @@ export function SubPanelShell({
       aria-hidden={!isActive}
       inert={!isActive}
       {...{ [PANEL_ANIM_ATTR]: "" }}
-      className={`${positioning} flex flex-col bg-surface-0 transition-transform duration-150 ${exiting || !entered ? idleTransform : activeTransform} ${isActive ? "" : "pointer-events-none"}`}
+      className={`${positioning} flex flex-col transition-transform duration-150 ${exiting || !entered ? idleTransform : activeTransform} ${isActive ? "" : "pointer-events-none"}`}
     >
-      <header className="grid grid-cols-[20px_1fr_auto] items-center gap-3 px-4 py-3 border-b border-border">
+      <header className="grid grid-cols-[20px_1fr_auto] items-center gap-3 bg-[var(--surface-2)] px-4 py-3">
         <ActionIcon
           variant="subtle"
           size="sm"
