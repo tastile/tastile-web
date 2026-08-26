@@ -114,7 +114,7 @@ export function ExecutionControls() {
           variant="subtle"
           size="compact-sm"
         >
-          <Play className="h-3 w-3" /> {t("execution.controls.start")}
+          <Play className="size-3" /> {t("execution.controls.start")}
         </Button>
       )}
       {hasExecution && (
@@ -128,7 +128,7 @@ export function ExecutionControls() {
             variant="subtle"
             size="compact-sm"
           >
-            <Pause className="h-3 w-3" /> {t("execution.controls.pause")}
+            <Pause className="size-3" /> {t("execution.controls.pause")}
           </Button>
           <Button
             type="button"
@@ -139,7 +139,7 @@ export function ExecutionControls() {
             variant="subtle"
             size="compact-sm"
           >
-            <Play className="h-3 w-3" /> {t("execution.controls.resume")}
+            <Play className="size-3" /> {t("execution.controls.resume")}
           </Button>
           <Button
             type="button"
@@ -151,7 +151,7 @@ export function ExecutionControls() {
             variant="subtle"
             size="compact-sm"
           >
-            <Square className="h-3 w-3" /> {t("execution.controls.finish")}
+            <Square className="size-3" /> {t("execution.controls.finish")}
           </Button>
         </>
       )}
