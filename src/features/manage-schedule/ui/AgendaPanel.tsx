@@ -63,7 +63,7 @@ export function AgendaPanel({
                 <div className="flex items-center gap-2">
                   {renderEventBody(e as ScheduleEventData<CalendarEvent>, "agenda")}
                 </div>
-                <p className="mt-0.5 text-[11px] text-[var(--mantine-color-dimmed)]">
+                <p className="mt-0.5 text-caption text-[var(--mantine-color-dimmed)]">
                   {formatTimeRange(e.start, e.end)}
                 </p>
               </div>
