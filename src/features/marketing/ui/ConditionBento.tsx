@@ -77,7 +77,7 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
                 <p className={`text-base leading-relaxed text-foreground-muted ${body}`}>
                   {row.body}
                 </p>
-                <div className={`mt-4 border-l-2 border-primary/40 pl-4 ${body}`}>
+                <div className={`mt-4 bg-surface-2 pl-4 py-3 ${body}`}>
                   <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
                     {t.exampleLabel}
                   </p>
