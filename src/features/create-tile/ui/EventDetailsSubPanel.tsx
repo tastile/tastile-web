@@ -39,7 +39,7 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
       layout="drawer"
     >
       <Stack gap="md">
-        <FormRow icon={<Tag className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Tag className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.periodLabelTitle")}</span>
             <Switch
@@ -52,7 +52,7 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
           </div>
         </FormRow>
 
-        <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<ListChecks className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.subtasksLabel")}</span>
             <Stack gap={2}>
@@ -79,7 +79,7 @@ export function EventDetailsSubPanel({ opened, onClose }: EventDetailsSubPanelPr
           </div>
         </FormRow>
 
-        <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Link2 className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.referencesLabel")}</span>
             <Text size="sm" c="dimmed">
