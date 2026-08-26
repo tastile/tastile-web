@@ -33,7 +33,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
     : "var(--font-outfit), var(--font-zen-kaku)";
 
   return (
-    <section className="relative overflow-hidden border-y border-surface-2 bg-surface-0 py-20 lg:py-32">
+    <section className="relative overflow-hidden bg-surface-0 py-20 lg:py-32">
       {/* Background giant numeral. */}
       <div
         aria-hidden
@@ -86,7 +86,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
                 cy={CENTER}
                 r={RING_R}
                 fill="none"
-                stroke="var(--border-strong)"
+                stroke="var(--foreground-subtle)"
                 strokeWidth="1"
                 strokeDasharray="2 5"
               />
@@ -150,7 +150,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
                       cy={p.y}
                       r={NODE_R}
                       fill={isActive ? "var(--primary)" : "var(--surface-elevated)"}
-                      stroke={isActive ? "var(--primary)" : "var(--border-strong)"}
+                      stroke={isActive ? "var(--primary)" : "var(--foreground-subtle)"}
                       strokeWidth="1.5"
                       className={isActive ? "mkt-loop-node-active" : ""}
                     />
@@ -189,7 +189,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
             {t.phaseDetails.map((phase, i) => (
               <li
                 key={phase.title}
-                className="relative grid grid-cols-[5rem_1fr] gap-6 border-b border-surface-2 py-7 last:border-b-0"
+                className="relative grid grid-cols-[5rem_1fr] gap-6 py-8"
               >
                 <div className="flex flex-col items-start">
                   <span className={`${mono} text-xs text-foreground-subtle tabular-nums`}>
