@@ -114,7 +114,7 @@ function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
     <div className="flex items-center justify-between rounded-lg border border-border bg-surface-0 p-3">
       <div className="min-w-0 flex-1">
         <div className="text-xs font-semibold text-foreground">{title}</div>
-        <div className="text-[10px] text-foreground-muted">{sub}</div>
+        <div className="text-caption text-foreground-muted">{sub}</div>
       </div>
       <Switch
         checked={active}
@@ -501,7 +501,7 @@ export function SchedulePanel({
             <div className="text-xs font-semibold text-foreground">
               {t("quickCreate.referenceRangeTitle")}
             </div>
-            <div className="text-[10px] text-foreground-muted">
+            <div className="text-caption text-foreground-muted">
               {time.referenceId
                 ? time.referenceLabel || time.referenceId
                 : t("quickCreate.referenceRangeEmpty")}
