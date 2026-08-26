@@ -210,10 +210,10 @@ export function TimelineAxis({
             <span
               className={
                 item.status === "active"
-                  ? "block h-2.5 w-2.5 rounded-full bg-primary"
+                  ? "block size-2.5 rounded-full bg-primary"
                   : item.status === "done"
-                    ? "block h-2.5 w-2.5 rounded-full bg-success"
-                    : "block h-2.5 w-2.5 rounded-full bg-foreground-subtle"
+                    ? "block size-2.5 rounded-full bg-success"
+                    : "block size-2.5 rounded-full bg-foreground-subtle"
               }
             />
             <span className="absolute left-[5px] top-3 h-7 w-px bg-foreground/15" />
