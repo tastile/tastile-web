@@ -93,7 +93,7 @@ export function FloatingHeader({
           <Link
             href="/dashboard"
             aria-label={t("shell.floatingHeader.homeAria")}
-            className="flex h-8 w-8 items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
+            className="flex size-8 items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
           >
             <TastileLogo size={20} className="text-foreground" />
           </Link>
@@ -142,7 +142,7 @@ export function FloatingHeader({
             onClick={onOpenSearch}
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
-            <Search className="h-4 w-4" />
+            <Search className="size-4" />
           </ActionIcon>
 
           <ActionIcon
@@ -154,7 +154,7 @@ export function FloatingHeader({
             onClick={onOpenNotifications}
             className="hidden md:inline-flex items-center justify-center rounded-md p-1.5 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
           >
-            <Bell className="h-4 w-4" />
+            <Bell className="size-4" />
           </ActionIcon>
 
           <FloatingMenu>
@@ -184,7 +184,7 @@ export function FloatingHeader({
                   href="/dashboard/preferences/account"
                   className="w-full cursor-pointer flex items-center gap-2"
                 >
-                  <User className="h-4 w-4 shrink-0" />
+                  <User className="size-4 shrink-0" />
                   {t("shell.floatingHeader.accountSettings")}
                 </Link>
               </FloatingMenuItem>
@@ -193,7 +193,7 @@ export function FloatingHeader({
                   href="/dashboard/preferences/general"
                   className="w-full cursor-pointer flex items-center gap-2"
                 >
-                  <Settings className="h-4 w-4 shrink-0" />
+                  <Settings className="size-4 shrink-0" />
                   {t("nav.preferences")}
                 </Link>
               </FloatingMenuItem>
@@ -204,7 +204,7 @@ export function FloatingHeader({
                   window.location.href = "/auth/logout";
                 }}
               >
-                <LogOut className="h-4 w-4 shrink-0" />
+                <LogOut className="size-4 shrink-0" />
                 {t("shell.floatingHeader.logOut")}
               </FloatingMenuItem>
             </FloatingMenuContent>
@@ -239,7 +239,7 @@ export function FloatingHeader({
               }}
               className="flex h-10 items-center justify-center gap-2 rounded-md bg-surface-2 text-sm font-medium text-foreground-subtle hover:bg-surface-hover hover:text-foreground transition-colors"
             >
-              <Search className="h-4 w-4" />
+              <Search className="size-4" />
               <span>{t("shell.floatingHeader.search")}</span>
             </Button>
             <Button
@@ -252,7 +252,7 @@ export function FloatingHeader({
               }}
               className="flex h-10 items-center justify-center gap-2 rounded-md bg-surface-2 text-sm font-medium text-foreground-subtle hover:bg-surface-hover hover:text-foreground transition-colors"
             >
-              <Bell className="h-4 w-4" />
+              <Bell className="size-4" />
               <span>{t("shell.floatingHeader.notifications")}</span>
             </Button>
           </div>
@@ -273,7 +273,7 @@ export function FloatingHeader({
                       : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
                   )}
                 >
-                  <Icon className="h-4 w-4" />
+                  <Icon className="size-4" />
                   <span>{t(labelKey)}</span>
                 </Link>
               );
