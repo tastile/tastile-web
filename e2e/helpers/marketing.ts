@@ -42,3 +42,15 @@ export async function expectMainContent(page: Page): Promise<void> {
 	const text = (await main.textContent()) ?? "";
 	expect(text.trim().length).toBeGreaterThan(0);
 }
+
+/**
+ * Assert no horizontal overflow on the page (mobile regression guard).
+ * Tolerance of 1px for sub-pixel rounding across browsers.
+ */
+export async function expectNoHorizontalScroll(page: Page): Promise<void> {
+	const overflow = await page.evaluate(() => {
+		const doc = document.documentElement;
+		return doc.scrollWidth - window.innerWidth;
+	});
+	expect(overflow, "document horizontal overflow").toBeLessThanOrEqual(1);
+}
