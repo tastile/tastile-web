@@ -185,7 +185,7 @@ function RepeatPreview({ recurring, locale, t, hasRepeat }: RepeatPreviewProps) 
         <div
           key={i}
           className={cn(
-            "h-2 w-2 rounded-full",
+            "size-2 rounded-full",
             isActive ? "bg-primary" : "bg-surface-0",
           )}
         />,
@@ -316,7 +316,7 @@ function SourcePreview({ source, t }: SourcePreviewProps) {
             <div
               key={i}
               className={cn(
-                "h-2 w-2 rounded-sm",
+                "size-2 rounded-sm",
                 i < source.priority ? "bg-primary" : "bg-surface-0",
               )}
             />
@@ -386,7 +386,7 @@ function TasksPreview({ plan, t, hasTasks }: TasksPreviewProps) {
       <div className="space-y-1">
         {plan.completion.tasks.slice(0, 3).map((task) => (
           <div key={task.id} className="flex items-center gap-2 text-caption text-foreground">
-            <div className="h-3 w-3 rounded-sm bg-surface-0" />
+            <div className="size-3 rounded-sm bg-surface-0" />
             <span className="truncate">{task.content?.title || untitled}</span>
           </div>
         ))}
