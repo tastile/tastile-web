@@ -33,6 +33,7 @@
     "test": "vitest",
     "test:unit": "node scripts/run-vitest.mts",
     "test:e2e": "playwright test",
+    "audit:responsive": "bash scripts/audit-responsive-breakpoints.sh",
     "knip": "knip --no-config-hints",
     "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run knip && bun run test:unit",
     "check:release": "bun run check && bun audit --production --ignore=GHSA-qx2v-qp2m-jg93 --ignore=GHSA-6g55-p6wh-862q --ignore=GHSA-r28c-9q8g-f849 --ignore=GHSA-f88m-g3jw-g9cj && bun run build:prod",
