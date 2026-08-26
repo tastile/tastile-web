@@ -142,7 +142,7 @@ function EndDateToggle({
             <div className="text-xs font-semibold text-foreground">
               {t("quickCreate.repeatEndLabel")}
             </div>
-            <div className="text-[10px] text-foreground-muted">
+            <div className="text-caption text-foreground-muted">
               {hasEndDate ? t("quickCreate.repeatEndSetSub") : t("quickCreate.repeatEndNoneSub")}
             </div>
           </div>
