@@ -155,7 +155,7 @@ export default function Quota() {
 
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+          <div className="text-caption font-semibold uppercase tracking-wider text-ink-3">
             {t("dashboard.quota.tilesHeading")}
           </div>
           <div className="mt-3 flex items-baseline gap-2">
@@ -177,7 +177,7 @@ export default function Quota() {
               style={{ width: `${tilesPct}%` }}
             />
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px] text-ink-3">
+          <div className="mt-1.5 flex items-center justify-between text-caption text-ink-3">
             <span>{t("dashboard.quota.percentUsed", { percent: tilesPct })}</span>
             <span>
               {t("dashboard.quota.remaining", { count: Math.max(0, tilesLimit - tilesUsed) })}
@@ -191,7 +191,7 @@ export default function Quota() {
         </Card>
 
         <Card>
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+          <div className="text-caption font-semibold uppercase tracking-wider text-ink-3">
             {t("dashboard.quota.historyRetentionHeading")}
           </div>
           <div className="mt-3 flex items-baseline gap-2">
@@ -213,7 +213,7 @@ export default function Quota() {
       </section>
 
       <Card>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+        <div className="text-caption font-semibold uppercase tracking-wider text-ink-3">
           {t("dashboard.quota.planHeading")}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -237,11 +237,11 @@ export default function Quota() {
       </Card>
 
       <Card>
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+        <div className="text-caption font-semibold uppercase tracking-wider text-ink-3">
           {t("dashboard.quota.sessionHeading")}
         </div>
         {session?.ok ? (
-          <pre className="mt-3 max-h-72 overflow-auto rounded-md border border-border bg-surface-0 p-3 font-mono text-[11px] text-ink-1">
+          <pre className="mt-3 max-h-72 overflow-auto rounded-md border border-border bg-surface-0 p-3 font-mono text-caption text-ink-1">
             {JSON.stringify(session.data, null, 2)}
           </pre>
         ) : session ? (
