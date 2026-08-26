@@ -49,3 +49,25 @@ test.describe("DS v2 compliance", () => {
     await assertNoShadowOrBorder(page, "nav");
   });
 });
+
+test.describe("DS v2 focus indicator", () => {
+  test("Tab navigation produces visible :focus-visible outline", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.keyboard.press("Tab");
+    const focused = page.locator(":focus-visible").first();
+    const outlineWidth = await focused.evaluate((e) => getComputedStyle(e).outlineWidth);
+    const outlineColor = await focused.evaluate((e) => getComputedStyle(e).outlineColor);
+    expect(outlineWidth).toBe("2px");
+    expect(outlineColor).not.toBe("rgba(0, 0, 0, 0)");
+  });
+
+  test("Button receives :focus-visible outline on Tab", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.locator("button").first().focus();
+    const outlineWidth = await page
+      .locator("button")
+      .first()
+      .evaluate((e) => getComputedStyle(e).outlineWidth);
+    expect(outlineWidth).toBe("2px");
+  });
+});
