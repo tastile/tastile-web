@@ -119,7 +119,7 @@ export function TileCardCompact({
               <span
                 key={label}
                 className={cn(
-                  "px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap",
+                  "px-1.5 py-0.2 text-caption rounded font-medium tracking-wide border whitespace-nowrap",
                   isProject
                     ? "bg-primary/10 text-primary border-primary/20"
                     : "bg-surface-3/50 text-foreground-subtle border-border",
@@ -145,7 +145,7 @@ export function TileCardCompact({
                       : t("tiles.source.legacy");
                 return (
                   <span
-                    className="px-1.5 py-0.2 text-[9px] rounded font-medium tracking-wide border whitespace-nowrap bg-surface-3/50 text-foreground-subtle border-border"
+                    className="px-1.5 py-0.2 text-caption rounded font-medium tracking-wide border whitespace-nowrap bg-surface-3/50 text-foreground-subtle border-border"
                     data-source-kind={sourceKind ?? "legacy"}
                   >
                     {chipLabel}
@@ -160,18 +160,18 @@ export function TileCardCompact({
       <div className="flex items-center gap-4 shrink-0 text-xs text-foreground-subtle select-none">
         {/* Required duration */}
         {tile.objective.targetWorkMin || tile.objective.targetRestMin ? (
-          <div className="font-mono text-right min-w-[48px] bg-surface-3/50 border border-border px-1.5 py-0.5 rounded text-[10px] text-foreground-subtle">
+          <div className="font-mono text-right min-w-[48px] bg-surface-3/50 border border-border px-1.5 py-0.5 rounded text-caption text-foreground-subtle">
             {durationText}
           </div>
         ) : null}
 
         {/* Start / due datetime */}
         {showUnscheduledBadge ? (
-          <div className="text-right min-w-[90px] text-[11px] text-foreground-lighter italic">
+          <div className="text-right min-w-[90px] text-caption text-foreground-lighter italic">
             {t("tiles.unscheduled")}
           </div>
         ) : startAt ? (
-          <div className="text-right min-w-[90px] whitespace-nowrap text-[11px] text-foreground-subtle">
+          <div className="text-right min-w-[90px] whitespace-nowrap text-caption text-foreground-subtle">
             {startText}
           </div>
         ) : null}
