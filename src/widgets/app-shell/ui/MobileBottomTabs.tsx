@@ -14,7 +14,7 @@ export function MobileBottomTabs() {
   const { open } = useQuickCreateStore();
 
   return (
-    <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl bg-surface-elevated lg:hidden">
+    <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl bg-surface-1 lg:hidden">
       <MobileActionButton icon={<Plus className="h-6 w-6" />} label={t("nav.new")} onClick={open} />
       <MobileTabButton
         icon={<Settings className="h-6 w-6" />}
