@@ -151,7 +151,7 @@ export function TasksSidePanel() {
       <div className="px-3 pt-4">
         <Button
           variant="default"
-          leftSection={<RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" />}
+          leftSection={<RefreshCw className="size-3.5 text-foreground-subtle" />}
           fullWidth
           type="button"
           onClick={resetToDefaults}
@@ -179,7 +179,7 @@ function TasksSearchSection({
         {t("panels.tasks.search")}
       </p>
       <TextInput
-        leftSection={<Search className="h-3.5 w-3.5 text-foreground-subtle" aria-hidden />}
+        leftSection={<Search className="size-3.5 text-foreground-subtle" aria-hidden />}
         placeholder={t("panels.tasks.searchPlaceholder")}
         value={search}
         onChange={(event) => onApply({ q: event.currentTarget.value })}
@@ -210,7 +210,7 @@ function TasksTimeRangeSection({
     <div className="px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Clock className="h-3.5 w-3.5 text-foreground-subtle" />
+          <Clock className="size-3.5 text-foreground-subtle" />
           <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
             {t("panels.tasks.timeRange")}
           </p>
@@ -294,7 +294,7 @@ function TasksMinDurationSection({
     <div className="px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
-          <Flame className="h-3.5 w-3.5 text-foreground-subtle" />
+          <Flame className="size-3.5 text-foreground-subtle" />
           <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
             {t("panels.tasks.minDuration")}
           </p>
@@ -360,7 +360,7 @@ function TasksPrioritySection({
   return (
     <div className="px-3 pt-4">
       <div className="mb-3 flex items-center gap-1.5">
-        <ShieldAlert className="h-3.5 w-3.5 text-foreground-subtle" />
+        <ShieldAlert className="size-3.5 text-foreground-subtle" />
         <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
           {t("panels.tasks.priorityFilter")}
         </p>
