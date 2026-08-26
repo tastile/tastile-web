@@ -197,7 +197,7 @@ export function TaskDetailSubPanel({
                 </div>
               </FormRow>
 
-              <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+              <div className="flex items-center gap-2 pt-3">
                 <Button
                   type="button"
                   size="sm"
