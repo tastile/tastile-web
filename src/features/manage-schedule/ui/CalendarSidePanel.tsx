@@ -141,7 +141,7 @@ export function CalendarSidePanel({
 
       <section className="space-y-3 px-3">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+          <div className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-foreground-lighter">
             <Clock className="h-3 w-3" aria-hidden />
             <span>{t("panels.calendar.timeRange")}</span>
           </div>
@@ -161,7 +161,7 @@ export function CalendarSidePanel({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+          <div className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-foreground-lighter">
             <Filter className="h-3 w-3" aria-hidden />
             <span>{t("panels.calendar.minDuration")}</span>
           </div>
@@ -391,10 +391,10 @@ function ProjectsTree({
   return (
     <div className="px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
-        <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+        <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
           {t("panels.calendar.projects")}
         </p>
-        <span className="font-mono text-[10px] text-foreground-lighter">
+        <span className="font-mono text-caption text-foreground-lighter">
           {selected.size}/{workspaces.length}
         </span>
       </div>
