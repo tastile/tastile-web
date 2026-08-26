@@ -48,8 +48,8 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
         <ul className="mt-10 flex flex-col gap-3">
           {t.promise.map((p) => (
             <li key={p} className={`flex items-center gap-3 text-base text-foreground ${display}`}>
-              <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
-                <Check className="h-3 w-3" strokeWidth={2.5} />
+              <span className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-primary">
+                <Check className="size-3" strokeWidth={2.5} />
               </span>
               {p}
             </li>
@@ -63,7 +63,7 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
             className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-foreground px-6 py-3.5 text-sm font-medium text-background hover:bg-interactive-hover ${display}`}
           >
             {t.ctaPrimary}
-            <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} />
+            <ArrowUpRight className="size-4" strokeWidth={1.75} />
           </Link>
           <Link
             href="/download"
