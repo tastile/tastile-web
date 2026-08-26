@@ -53,7 +53,7 @@ export function ProjectsMain() {
       {project && isPersonal && (
         <section className="mt-4 rounded-lg border border-border/40 bg-surface-1 p-4 text-xs text-foreground-subtle">
           <span className="font-semibold">{t("panels.projects.personal")}</span>
-          <span className="ml-2 text-[10px] text-foreground-lighter">
+          <span className="ml-2 text-caption text-foreground-lighter">
             {t("panels.projects.personalLocked")}
           </span>
         </section>
@@ -62,7 +62,7 @@ export function ProjectsMain() {
       {/* Scope info bar: spacing (mt-2 + pb-3) carries the visual hierarchy
           from the section above (DS v2). */}
       <div className="mt-2 flex items-center justify-between pb-3 text-xs text-foreground-subtle">
-        <span className="flex items-center gap-2 rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-foreground-lighter">
+        <span className="flex items-center gap-2 rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-caption text-foreground-lighter">
           {project ? (
             <>
               <span
@@ -75,7 +75,7 @@ export function ProjectsMain() {
             t("panels.projects.allProjects")
           )}
         </span>
-        <span className="font-mono text-[10px] text-foreground-lighter">
+        <span className="font-mono text-caption text-foreground-lighter">
           {loading || wsLoading
             ? t("panels.projects.loadingProjects")
             : t("panels.projects.itemsFound", { count: tiles.length })}
@@ -182,7 +182,7 @@ function ProjectEditForm({
           className="h-8 w-full cursor-pointer rounded border border-border"
         />
       </label>
-      <div className="flex items-center justify-between font-mono text-[10px] text-foreground-subtle md:col-span-3">
+      <div className="flex items-center justify-between font-mono text-caption text-foreground-subtle md:col-span-3">
         <span>
           {tileCount} tiles · created{" "}
           {new Date(project.created_at).toLocaleDateString("en-US", { timeZone: "UTC" })}
