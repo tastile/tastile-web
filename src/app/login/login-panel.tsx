@@ -101,7 +101,7 @@ export function LoginPanel(props: {
               <Button
                 variant="outline"
                 onClick={() => handleSocial("google")}
-                leftSection={<Globe className="h-4 w-4" aria-hidden="true" />}
+                leftSection={<Globe className="size-4" aria-hidden="true" />}
                 fullWidth
               >
                 {t("auth.login.google")}
@@ -111,7 +111,7 @@ export function LoginPanel(props: {
               <Button
                 variant="outline"
                 onClick={() => handleSocial("apple")}
-                leftSection={<Apple className="h-4 w-4" aria-hidden="true" />}
+                leftSection={<Apple className="size-4" aria-hidden="true" />}
                 fullWidth
               >
                 {t("auth.login.apple")}
@@ -136,7 +136,7 @@ export function LoginPanel(props: {
               required
               data-testid="login-password-input"
             />
-            <Button type="submit" fullWidth loading={pending} leftSection={<Fingerprint className="h-4 w-4" aria-hidden="true" />}>
+            <Button type="submit" fullWidth loading={pending} leftSection={<Fingerprint className="size-4" aria-hidden="true" />}>
               {t("auth.login.submit")}
             </Button>
           </form>
