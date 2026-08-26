@@ -389,7 +389,7 @@ function ProjectsTree({
   );
 
   return (
-    <div className="border-t border-border/40 px-3 pt-4">
+    <div className="px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
           {t("panels.calendar.projects")}
