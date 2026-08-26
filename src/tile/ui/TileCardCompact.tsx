@@ -185,13 +185,13 @@ export function TileCardCompact({
             event.stopPropagation();
             onEdit(tile.core.id);
           }}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded bg-surface-2 text-foreground-muted hover:bg-surface-3 hover:text-foreground"
+          className="inline-flex size-7 shrink-0 items-center justify-center rounded bg-surface-2 text-foreground-muted hover:bg-surface-3 hover:text-foreground"
           aria-label="Edit tile"
           title="Edit tile"
           variant="subtle"
           size="sm"
         >
-          <SquarePen className="h-3.5 w-3.5" />
+          <SquarePen className="size-3.5" />
         </ActionIcon>
       ) : null}
     </>
