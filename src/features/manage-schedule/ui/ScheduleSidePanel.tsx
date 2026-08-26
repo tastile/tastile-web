@@ -263,7 +263,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
   );
 
   return (
-    <div className="border-t border-border/40 px-3 pt-4">
+    <div className="px-3 pt-4">
       <div className="mb-3 flex items-center gap-1.5">
         <Folder size={12} aria-hidden className="text-foreground-subtle" />
         <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
