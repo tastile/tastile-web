@@ -228,7 +228,7 @@ export default function Events() {
           </div>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-border bg-surface-0 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <thead className="bg-surface-0 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
               <tr>
                 <th className="w-8 px-2 py-2" />
                 <th className="w-20 px-2 py-2">{t("dashboard.events.table.type")}</th>
@@ -279,7 +279,7 @@ function FragmentRow({
           }
         }}
         tabIndex={0}
-        className="cursor-pointer border-b border-border transition-colors hover:bg-surface-2"
+        className="cursor-pointer transition-colors hover:bg-surface-2"
       >
         <td className="px-2 py-1.5 align-top">
           {isOpen ? (
@@ -307,7 +307,7 @@ function FragmentRow({
         </td>
       </tr>
       {isOpen ? (
-        <tr className="border-b border-border bg-surface-0">
+        <tr className="bg-surface-0">
           <td colSpan={6} className="px-4 py-3">
             <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
               <Code2 className="h-3 w-3" /> {t("dashboard.events.payloadHeading")}
