@@ -20,7 +20,7 @@ export function Faq({ t, lang }: { t: Dict["faq"]; lang: Lang }) {
 
       <div className="layout-shell relative z-10">
         <header className="max-w-3xl">
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+          <p className="text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
             {t.eyebrow}
           </p>
           <h2 className={`mt-3 mkt-display-2 text-foreground ${display}`}>{t.title}</h2>
@@ -35,7 +35,7 @@ export function Faq({ t, lang }: { t: Dict["faq"]; lang: Lang }) {
             <p aria-hidden className="mkt-faq-marker select-none">
               ?
             </p>
-            <div className="mt-8 flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+            <div className="mt-8 flex items-center gap-2 text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
               <span className={`${mono} tabular-nums`}>
                 {String(t.items.length).padStart(2, "0")}
               </span>
