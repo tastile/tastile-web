@@ -71,14 +71,14 @@ export function ScheduleMain() {
 
       {/* Scope info bar */}
       <div className="mt-2 flex items-center justify-between pb-3 text-xs text-foreground-subtle">
-        <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
+        <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-caption text-foreground-lighter border border-border">
           {view === "recurring"
             ? t("panels.schedule.scheduleViewRecurring")
             : view === "placements"
               ? t("panels.schedule.scheduleViewPlaced")
               : t("panels.schedule.scheduleViewUpcoming")}
         </span>
-        <span className="font-mono text-[10px] text-foreground-lighter">
+        <span className="font-mono text-caption text-foreground-lighter">
           {view === "recurring"
             ? recurring.loading
               ? t("panels.schedule.loading")
@@ -186,7 +186,7 @@ export function ScheduleMain() {
                             {t("panels.schedule.blockLabel")} {p.time_tile_id.slice(0, 8)}
                           </div>
                         </div>
-                        <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
+                        <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
                           {t("panels.schedule.placedMinutes", { minutes: p.planned_minutes })}
                         </span>
                       </div>
@@ -243,11 +243,11 @@ export function ScheduleMain() {
                         </div>
                       ) : null}
                     </div>
-                    <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
+                    <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
                       {t("panels.schedule.templateBadge")}
                     </span>
                   </div>
-                  <div className="mt-1 flex flex-wrap gap-1.5 text-[10px] text-foreground-subtle">
+                  <div className="mt-1 flex flex-wrap gap-1.5 text-caption text-foreground-subtle">
                     <span className="rounded bg-surface-3/50 px-1.5 py-0.5 border border-border">
                       {describeGenerator(template, t)}
                     </span>
