@@ -90,7 +90,7 @@ export function Header({ executionState }: HeaderProps) {
           className="rounded-md bg-surface-1 transition-colors hover:bg-surface-2"
           title={t("header.notifications")}
         >
-          <Bell className="h-5 w-5" />
+          <Bell className="size-5" />
         </ActionIcon>
         {identity ? (
           <AccountMenu
@@ -103,7 +103,7 @@ export function Header({ executionState }: HeaderProps) {
         ) : (
           <div
             role="img"
-            className="h-9 w-9 rounded-full bg-surface-2"
+            className="size-9 rounded-full bg-surface-2"
             aria-label={t("account.menu.avatarPlaceholder")}
           />
         )}
