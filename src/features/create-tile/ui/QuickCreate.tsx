@@ -567,7 +567,7 @@ export function QuickCreate() {
         {/* Time */}
         <div className="px-4 py-3">
           <FormRow
-            icon={<Calendar className="h-4 w-4" aria-hidden />}
+            icon={<Calendar className="size-4" aria-hidden />}
             trailing={
               time.whenMode !== "none" && (time.span.start || time.span.end || time.referenceId) ? (
                 <CloseButton
@@ -611,7 +611,7 @@ export function QuickCreate() {
         {/* Duration */}
         <div className="px-4 py-3">
           <FormRow
-            icon={<Clock className="h-4 w-4" aria-hidden />}
+            icon={<Clock className="size-4" aria-hidden />}
             trailing={
               (time.durationMinMax.minMs !== null || time.durationMinMax.maxMs !== null) ? (
                 <CloseButton
@@ -651,7 +651,7 @@ export function QuickCreate() {
         {/* Repeat */}
         <div className="px-4 py-3">
           <FormRow
-            icon={<Repeat className="h-4 w-4" aria-hidden />}
+            icon={<Repeat className="size-4" aria-hidden />}
             trailing={
               (recurring.repeatMode !== "once" || recurring.endDate) ? (
                 <CloseButton
@@ -707,7 +707,7 @@ export function QuickCreate() {
 
         {/* Source config */}
         <div className="px-4 py-3">
-          <FormRow icon={<SlidersHorizontal className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<SlidersHorizontal className="size-4" aria-hidden />}>
             <button
               type="button"
               onClick={() => setActivePanel("source-rules")}
@@ -727,7 +727,7 @@ export function QuickCreate() {
 
         {/* Relations */}
         <div className="px-4 py-3">
-          <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<Link2 className="size-4" aria-hidden />}>
             <button
               type="button"
               onClick={() => setActivePanel("relations")}
@@ -749,7 +749,7 @@ export function QuickCreate() {
 
         {/* Flow sequences */}
         <div className="px-4 py-3">
-          <FormRow icon={<Layers className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<Layers className="size-4" aria-hidden />}>
             <button
               type="button"
               onClick={() => setActivePanel("flows")}
@@ -773,7 +773,7 @@ export function QuickCreate() {
 
         {/* Placement rules */}
         <div className="px-4 py-3">
-          <FormRow icon={<SlidersHorizontal className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<SlidersHorizontal className="size-4" aria-hidden />}>
             <button
               type="button"
               onClick={() => setActivePanel("placement-rules")}
@@ -797,7 +797,7 @@ export function QuickCreate() {
 
         {/* Tasks block */}
         <div className="px-4 py-3">
-          <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<ListChecks className="size-4" aria-hidden />}>
             <button
               type="button"
               onClick={() => setActivePanel("completion")}
@@ -819,7 +819,7 @@ export function QuickCreate() {
 
         {/* Behavior preview */}
         <div className="px-4 py-3">
-          <FormRow icon={<Eye className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<Eye className="size-4" aria-hidden />}>
             <div className="min-w-0 flex-1">
               <BehaviorPreview
                 plan={plan}
