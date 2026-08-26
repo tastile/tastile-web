@@ -118,7 +118,7 @@ export function ScheduleToolbar({
       </ActionIcon>
       <h2 className="font-mono text-sm text-foreground" data-testid="cal-title">
         {titlePrefix ? (
-          <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+          <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-caption font-medium text-primary">
             {titlePrefix}
           </span>
         ) : null}
@@ -143,7 +143,7 @@ export function ScheduleToolbar({
         onClick={onToday}
         disabled={navDisabled}
         data-testid="cal-today"
-        className="ml-1 rounded px-2 py-0.5 text-[11px] font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
+        className="ml-1 rounded px-2 py-0.5 text-caption font-medium text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
         {t("scheduleToolbar.today")}
       </Button>
