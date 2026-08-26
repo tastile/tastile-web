@@ -1,5 +1,23 @@
 @import "tailwindcss";
 
+/* Responsive breakpoint policy (R1).
+ *
+ * The codebase uses Tailwind v4's default breakpoints as the single source of
+ * truth for responsive design:
+ *   sm: 640px    md: 768px    lg: 1024px    xl: 1280px    2xl: 1536px
+ *
+ * CSS @media rules in this file MUST use these exact values (with .98px
+ * subtraction for max-width queries to avoid double-fire at boundaries).
+ *
+ * JS hooks that need a numeric breakpoint MUST import from
+ * `src/shared/hooks/use-media-query.ts`, which exposes Tailwind-aligned values
+ * via named constants. Do NOT introduce new breakpoint constants elsewhere.
+ *
+ * Mantine v9 uses em-based breakpoints internally; those never need to align
+ * with the px-based Tailwind values because no project code reads Mantine's
+ * breakpoint numbers directly.
+ */
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ============================================
@@ -383,13 +401,15 @@ button {
   gap: 24px;
 }
 
-@media (max-width: 1024px) {
+/* Aligned with Tailwind `lg` boundary (1024px - 0.02px). */
+@media (max-width: 1023.98px) {
   .layout-grid-3 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 768px) {
+/* Aligned with Tailwind `md` boundary (768px - 0.02px). */
+@media (max-width: 767.98px) {
   .layout-shell {
     padding-inline: 16px;
   }
@@ -401,7 +421,9 @@ button {
   }
 }
 
-@media (max-width: 480px) {
+/* Aligned with Tailwind `sm` boundary. Subtract 0.02px per the policy block
+ * above to avoid double-fire at the exact 640px boundary. */
+@media (max-width: 639.98px) {
   .layout-shell {
     padding-inline: 12px;
   }
