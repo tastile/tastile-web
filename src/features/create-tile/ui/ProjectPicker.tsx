@@ -73,7 +73,7 @@ export function ProjectPicker({
               <span className="flex items-center gap-1.5">
                 {ws.color ? (
                   <span
-                    className="inline-block h-2 w-2 shrink-0 rounded-full"
+                    className="inline-block size-2 shrink-0 rounded-full"
                     style={{ backgroundColor: ws.color }}
                     aria-hidden
                   />
