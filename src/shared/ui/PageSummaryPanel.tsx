@@ -35,7 +35,7 @@ export function PageSummaryPanel({ title, description, sections, footer }: PageS
       {sections.map((section, sectionIdx) => (
         <section key={section.heading ?? `section-${sectionIdx}`} className="flex flex-col gap-1">
           {section.heading ? (
-            <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+            <p className="mb-1 px-2 text-caption font-semibold uppercase tracking-wider text-foreground-muted">
               {section.heading}
             </p>
           ) : null}
@@ -43,7 +43,7 @@ export function PageSummaryPanel({ title, description, sections, footer }: PageS
             {section.items.map((item, itemIdx) => {
               const content = (
                 <>
-                  <span className="text-[11px] uppercase tracking-wider text-foreground-muted">
+                  <span className="text-caption uppercase tracking-wider text-foreground-muted">
                     {item.label}
                   </span>
                   <span className="font-mono text-xs text-foreground">{item.value}</span>
