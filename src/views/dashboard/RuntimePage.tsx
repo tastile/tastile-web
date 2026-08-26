@@ -185,7 +185,7 @@ export default function Runtime() {
             ) : health.ok ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-status-active">
-                  <CheckCircle2 className="h-4 w-4" />
+                  <CheckCircle2 className="size-4" />
                   <span className="text-sm font-semibold">
                     {t("dashboard.runtime.healthyLabel")}
                   </span>
