@@ -70,7 +70,7 @@ export function ScheduleMain() {
       <PageHeader title={title} description={subtitle} />
 
       {/* Scope info bar */}
-      <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
+      <div className="mt-2 flex items-center justify-between pb-3 text-xs text-foreground-subtle">
         <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
           {view === "recurring"
             ? t("panels.schedule.scheduleViewRecurring")
@@ -261,7 +261,7 @@ export function ScheduleMain() {
                       className={cn(
                         "rounded px-1.5 py-0.5 border",
                         template.recurrence.selector.expression
-                          ? "bg-primary/10 text-primary border-primary/20"
+                          ? "bg-primary/10 text-primary"
                           : "bg-surface-3/50 border-border",
                       )}
                     >
