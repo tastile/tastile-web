@@ -12,7 +12,7 @@ export function DemoSiteBanner() {
   return (
     <output
       data-testid="demo-site-banner"
-      className="fixed bottom-0 left-0 right-0 z-[80] h-9 border-t border-amber-500/20 bg-amber-500/15 text-amber-900 backdrop-blur-sm dark:bg-amber-400/10 dark:text-amber-200"
+      className="fixed bottom-0 left-0 right-0 z-[80] h-9 bg-amber-500/15 text-amber-900 backdrop-blur-sm dark:bg-amber-400/10 dark:text-amber-200"
     >
       <div className="layout-shell flex h-full items-center gap-3 text-xs">
         <AlertTriangle aria-hidden className="h-3.5 w-3.5 shrink-0" />
