@@ -38,7 +38,7 @@ export function DetailsAffordanceButton({
 
   return (
     <div className="px-4 py-3">
-      <FormRow icon={<FileText className="h-4 w-4" aria-hidden />}>
+      <FormRow icon={<FileText className="size-4" aria-hidden />}>
         <Button
           variant="default"
           size="sm"
