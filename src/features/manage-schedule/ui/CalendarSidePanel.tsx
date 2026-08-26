@@ -142,7 +142,7 @@ export function CalendarSidePanel({
       <section className="space-y-3 px-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-foreground-lighter">
-            <Clock className="h-3 w-3" aria-hidden />
+            <Clock className="size-3" aria-hidden />
             <span>{t("panels.calendar.timeRange")}</span>
           </div>
           <Select
@@ -162,7 +162,7 @@ export function CalendarSidePanel({
         </div>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 text-caption font-bold uppercase tracking-wider text-foreground-lighter">
-            <Filter className="h-3 w-3" aria-hidden />
+            <Filter className="size-3" aria-hidden />
             <span>{t("panels.calendar.minDuration")}</span>
           </div>
           <Select
@@ -350,7 +350,7 @@ function ProjectsTree({
               type="button"
               aria-label={expanded ? t("shell.activityBar.expanded") : t("shell.activityBar.collapsed")}
               onClick={() => tree.toggleExpanded(node.value)}
-              className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+              className="flex size-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
             >
               <ChevronRight
                 size={12}
@@ -359,7 +359,7 @@ function ProjectsTree({
               />
             </ActionIcon>
           ) : (
-            <span aria-hidden className="h-4 w-4 shrink-0" />
+            <span aria-hidden className="size-4 shrink-0" />
           )}
           <Checkbox.Indicator
             checked={checked}
@@ -372,7 +372,7 @@ function ProjectsTree({
           />
           <span
             aria-hidden
-            className="h-2 w-2 shrink-0 rounded-full"
+            className="size-2 shrink-0 rounded-full"
             style={{ backgroundColor: color ?? "#6b7280" }}
           />
           <Button
