@@ -207,7 +207,7 @@ export function SourceGenerationPanel({
   const conditionEnabled = recurring.repeatMode === "condition";
   return (
     <div className="space-y-3">
-      <FormRow icon={<Repeat className="h-4 w-4" aria-hidden />}>
+      <FormRow icon={<Repeat className="size-4" aria-hidden />}>
         <span className="text-xs font-medium">{t("quickCreate.recurrenceNavTitle")}</span>
       </FormRow>
       <SegmentedControl
@@ -230,7 +230,7 @@ export function SourceGenerationPanel({
         data-testid="recurring-mode-tabs"
       />
       {weekdayEnabled && (
-        <FormRow icon={<CalendarDays className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<CalendarDays className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.repeatWeekdayLabel")}</span>
             <WeekdayRow
@@ -244,7 +244,7 @@ export function SourceGenerationPanel({
         </FormRow>
       )}
       {intervalEnabled && (
-        <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Timer className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.panel.sourceGeneration.intervalLabel")}</span>
             <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ export function SourceGenerationPanel({
         </FormRow>
       )}
       {conditionEnabled && (
-        <FormRow icon={<Filter className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Filter className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-2">
             <span className="text-xs font-medium">{t("quickCreate.panel.sourceGeneration.conditionModeLabel")}</span>
           {/* E1b — recurring.condition affordance is kept (not removed) so users
@@ -383,7 +383,7 @@ export function SourceGenerationPanel({
           </div>
         </FormRow>
       )}
-      <FormRow icon={<Calendar className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<Calendar className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.repeatEndLabel")}</span>
           <EndDateToggle
