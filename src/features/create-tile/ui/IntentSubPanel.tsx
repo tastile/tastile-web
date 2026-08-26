@@ -21,7 +21,7 @@ export function IntentSubPanel({ activePanel, setActivePanel, isDesktop, t }: In
       description={t("quickCreate.intentSubTitle")}
       layout={isDesktop ? "drawer" : "sheet"}
     >
-      <p className="mb-3 text-[11px] text-foreground-muted">{t("quickCreate.intentDescription")}</p>
+      <p className="mb-3 text-caption text-foreground-muted">{t("quickCreate.intentDescription")}</p>
       <SimpleGrid cols={2} spacing="xs" data-testid="intent-grid">
         {INTENT_ITEMS.map((item) => (
           <Paper key={item.key} radius="md">
