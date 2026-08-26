@@ -63,11 +63,11 @@ export { isoToLocalDate } from "./date-utils";
 
 function pickPanelClass(isClosing: boolean, isDesktop: boolean, hasSubPanel: boolean): string {
   if (isDesktop) {
-    return `fixed inset-y-0 right-0 z-[56] w-[36rem] flex flex-col bg-surface-0 shadow-lg border-l border-border transition-all duration-300 ease-out ${
+    return `fixed inset-y-0 right-0 z-[56] w-[36rem] flex flex-col bg-surface-0 transition-all duration-300 ease-out ${
       isClosing ? "translate-x-full opacity-0" : hasSubPanel ? "-translate-x-6" : "translate-x-0"
     } [animation:slideInFromRight_0.22s_ease-out]`;
   }
-  return `fixed inset-x-0 bottom-0 z-[56] h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 shadow-lg transition-all duration-300 ease-out ${
+  return `fixed inset-x-0 bottom-0 z-[56] h-[85vh] flex flex-col rounded-t-2xl bg-surface-0 transition-all duration-300 ease-out ${
     isClosing ? "translate-y-full opacity-0" : "translate-y-0"
   } [animation:slideInFromBottom_0.22s_ease-out]`;
 }
@@ -293,7 +293,7 @@ export function QuickCreatePanel() {
             submit via the title-row QuickCreateSubmitButton. Drafts
             auto-save to localStorage and clear on successful submit. */}
         {serverError ? (
-          <div className="border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
+          <div className="bg-[var(--surface-1)] p-4">
             <PanelErrorBanner title={serverError.title} body={serverError.body} />
           </div>
         ) : null}
