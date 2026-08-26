@@ -45,7 +45,7 @@ export function Faq({ t, lang }: { t: Dict["faq"]; lang: Lang }) {
 
           <ol className="mkt-timeline relative">
             {t.items.map((item, i) => (
-              <li key={item.q} className="relative border-b border-surface-2 py-7 first:border-t">
+              <li key={item.q} className="relative py-8">
                 <div className="grid gap-3 sm:grid-cols-[4rem_1fr] sm:gap-6">
                   <div className="flex items-start gap-3">
                     <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>
