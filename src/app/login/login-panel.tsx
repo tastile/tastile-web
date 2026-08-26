@@ -151,6 +151,7 @@ export function LoginPanel(props: {
 							autoComplete="email"
 							required
 							data-testid="login-email-input"
+							styles={{ input: { fontSize: "var(--text-input-size, 16px)" } }}
 						/>
 						<PasswordInput
 							name="password"
@@ -158,6 +159,7 @@ export function LoginPanel(props: {
 							autoComplete="current-password"
 							required
 							data-testid="login-password-input"
+							styles={{ input: { fontSize: "var(--text-input-size, 16px)" } }}
 						/>
 						<Button
 							type="submit"
