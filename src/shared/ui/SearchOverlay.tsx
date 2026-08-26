@@ -112,7 +112,7 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
             onKeyDown={handleKeyDown}
             className="flex-1 bg-transparent text-sm text-foreground placeholder:text-foreground-subtle outline-none"
           />
-          <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[10px] text-foreground-subtle">
+          <kbd className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-caption text-foreground-subtle">
             {t("searchOverlay.esc")}
           </kbd>
         </div>
