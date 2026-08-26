@@ -59,7 +59,7 @@ export function renderEventBody(event: ScheduleEventData<CalendarEvent>, scope: 
       {e.project ? (
         <span
           data-testid="event-project"
-          className="rounded bg-surface-2 px-1 text-[9px] uppercase tracking-wider text-foreground-subtle"
+          className="rounded bg-surface-2 px-1 text-caption uppercase tracking-wider text-foreground-subtle"
         >
           {e.project}
         </span>
