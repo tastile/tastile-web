@@ -22,7 +22,7 @@ export function LoadingCard({ variant = "comfortable" }: LoadingCardProps) {
       )}
     >
       <div className="flex items-center gap-3">
-        <Skeleton className="h-5 w-5 rounded-full" />
+        <Skeleton className="size-5 rounded-full" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-4 w-3/4" />
           {!isCompact && <Skeleton className="h-3 w-1/2" />}
