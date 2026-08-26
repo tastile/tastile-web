@@ -45,7 +45,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
       <div className="layout-shell relative z-10">
         <header className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+            <p className="text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
               {t.eyebrow}
             </p>
             <h2 className={`mt-3 mkt-display-2 text-foreground ${display}`}>{t.title}</h2>
@@ -62,7 +62,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
             <div className="mt-6 flex items-center gap-3">
               <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
               <span
-                className={`text-[11px] font-medium uppercase tracking-[0.22em] text-primary ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.22em] text-primary ${display}`}
               >
                 {t.activeLabel}
               </span>
