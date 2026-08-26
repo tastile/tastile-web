@@ -61,7 +61,7 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
   return (
     <FloatingMenu open={open} onOpenChange={onOpenChange} triggerRef={anchorRef}>
       <FloatingMenuContent align="end" sideOffset={8} className="w-80 p-0">
-        <FloatingMenuLabel className="border-b border-surface-2 px-4 py-3 text-xs font-semibold text-foreground">
+        <FloatingMenuLabel className="px-4 py-3 text-xs font-semibold text-foreground">
           {t("shell.floatingHeader.notifications")}
         </FloatingMenuLabel>
         {loading ? (
@@ -82,7 +82,7 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
                 data-testid={`notification-${n.id}`}
-                className="block w-full cursor-pointer border-b border-surface-2 px-4 py-3 text-left last:border-b-0 hover:bg-surface-1"
+                className="block w-full cursor-pointer px-4 py-3 text-left hover:bg-surface-1"
               >
                 <div className="text-xs text-foreground">{n.message}</div>
                 <div className="mt-1 font-mono text-[10px] text-foreground-subtle">
