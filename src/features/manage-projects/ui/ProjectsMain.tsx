@@ -66,7 +66,7 @@ export function ProjectsMain() {
           {project ? (
             <>
               <span
-                className="h-2 w-2 rounded-full"
+                className="size-2 rounded-full"
                 style={{ backgroundColor: project.color ?? "#6b7280" }}
               />
               owner_id: {project.id.slice(0, 8)} · slug: {project.slug ?? "(none)"}
