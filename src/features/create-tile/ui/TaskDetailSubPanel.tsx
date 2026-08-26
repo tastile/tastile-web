@@ -55,7 +55,7 @@ export function TaskDetailSubPanel({
           const orderHasCycle = hasTaskOrderCycle(plan.completion.tasks);
           return (
             <div className="flex flex-col gap-4" data-testid="task-detail-panel">
-              <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
+              <FormRow icon={<ListChecks className="size-4" aria-hidden />} className="items-start">
                 <div className="flex flex-col gap-1">
                   <span className="text-xs font-medium">{t("quickCreate.taskNoteLabel")}</span>
                   <Textarea
@@ -69,7 +69,7 @@ export function TaskDetailSubPanel({
                 </div>
               </FormRow>
 
-              <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
+              <FormRow icon={<Link2 className="size-4" aria-hidden />} className="items-start">
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium">{t("quickCreate.taskOrderSection")}</span>
                 {task.order.length === 0 ? (
