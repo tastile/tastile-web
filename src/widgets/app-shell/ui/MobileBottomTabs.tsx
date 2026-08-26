@@ -15,9 +15,9 @@ export function MobileBottomTabs() {
 
   return (
     <nav className="mx-4 mb-4 flex h-16 items-center justify-around rounded-xl bg-surface-1 lg:hidden">
-      <MobileActionButton icon={<Plus className="h-6 w-6" />} label={t("nav.new")} onClick={open} />
+      <MobileActionButton icon={<Plus className="size-6" />} label={t("nav.new")} onClick={open} />
       <MobileTabButton
-        icon={<Settings className="h-6 w-6" />}
+        icon={<Settings className="size-6" />}
         label={t("nav.settings")}
         href="/dashboard/preferences/general"
         active={pathname?.startsWith("/dashboard/preferences") ?? false}
