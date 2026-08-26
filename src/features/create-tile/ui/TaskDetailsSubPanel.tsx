@@ -45,7 +45,7 @@ export function TaskDetailsSubPanel({
       <Stack gap="md">
         <SubtasksSection testId="task-details-subtasks" bare />
 
-        <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Link2 className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.timeRequirementLabel")}</span>
             <Text size="sm" c="dimmed">
