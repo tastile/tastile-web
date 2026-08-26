@@ -72,7 +72,7 @@ export function PreferencesSidePanel() {
     <div className="flex flex-col gap-6 pt-4 px-3">
       {SECTIONS.map((section) => (
         <div key={section.labelKey} className="flex flex-col gap-1">
-          <p className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-foreground-muted">
+          <p className="mb-1 px-2 text-caption font-semibold uppercase tracking-wider text-foreground-muted">
             {t(section.labelKey)}
           </p>
           {section.items.map((tab) => {
