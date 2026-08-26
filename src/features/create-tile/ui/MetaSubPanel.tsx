@@ -43,7 +43,7 @@ export function MetaSubPanel({
             className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
           />
         </FormRow>
-        <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+        <div className="flex items-center gap-2 pt-3">
           <Button
             type="button"
             size="sm"
