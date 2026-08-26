@@ -18,7 +18,7 @@ export function LoadingOverlay({
       {loading ? (
         <output
           data-testid="day-loading"
-          className="pointer-events-none absolute inset-0 flex items-start justify-center bg-surface-0/40 pt-4 text-[10px] uppercase tracking-wider text-foreground-subtle"
+          className="pointer-events-none absolute inset-0 flex items-start justify-center bg-surface-0/40 pt-4 text-caption uppercase tracking-wider text-foreground-subtle"
         >
           {t("common.loading")}
         </output>
