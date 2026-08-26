@@ -55,7 +55,7 @@ export function ReferencesSubPanel({
                 className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
                 data-testid={`reference-card-${index}`}
               >
-                <FormRow icon={<Calendar className="h-4 w-4" aria-hidden />} className="items-start">
+                <FormRow icon={<Calendar className="size-4" aria-hidden />} className="items-start">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-medium">{t("quickCreate.referenceTargetLabel")}</span>
                     <div
@@ -65,7 +65,7 @@ export function ReferencesSubPanel({
                       )}
                       data-testid={`reference-target-card-${index}`}
                     >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 text-foreground-muted">
                         <Calendar size={18} aria-hidden="true" />
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
@@ -100,7 +100,7 @@ export function ReferencesSubPanel({
                   </div>
                 </FormRow>
 
-                <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
+                <FormRow icon={<Link2 className="size-4" aria-hidden />} className="items-start">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-medium">{t("quickCreate.referenceRelationLabel")}</span>
                     <SegmentedControl
@@ -127,7 +127,7 @@ export function ReferencesSubPanel({
                   </div>
                 </FormRow>
 
-                <FormRow icon={<Calendar className="h-4 w-4" aria-hidden />} className="items-start">
+                <FormRow icon={<Calendar className="size-4" aria-hidden />} className="items-start">
                   <div className="flex flex-col gap-1">
                     <span className="text-xs font-medium">{t("quickCreate.referenceIntervalLabel")}</span>
                     <div
