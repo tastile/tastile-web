@@ -100,7 +100,7 @@ export function SignUpPanel() {
             {t("auth.signup.backToSignin")}
           </Button>
           <section className="mx-4 text-center text-sm leading-5 text-foreground-subtle">
-            <p className="text-center text-[11px] leading-4 text-foreground-subtle">
+            <p className="text-center text-caption leading-4 text-foreground-subtle">
               {t("auth.signup.legalNotice", {
                 termsLink: t("auth.signup.termsLink"),
                 privacyLink: t("auth.signup.privacyLink"),
