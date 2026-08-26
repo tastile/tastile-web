@@ -52,7 +52,7 @@ export function Faq({ t, lang }: { t: Dict["faq"]; lang: Lang }) {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span
-                      className={`mt-2 inline-block h-2 w-2 rounded-full ${
+                      className={`mt-2 inline-block size-2 rounded-full ${
                         i === 0 ? "bg-primary mkt-pulse-dot" : "bg-surface-2"
                       }`}
                     />
