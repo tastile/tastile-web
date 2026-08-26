@@ -60,7 +60,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
               {t.lead}
             </p>
             <div className="mt-6 flex items-center gap-3">
-              <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+              <span className="mkt-pulse-dot inline-block size-1.5 rounded-full bg-primary" />
               <span
                 className={`text-caption font-medium uppercase tracking-[0.22em] text-primary ${display}`}
               >
@@ -180,7 +180,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
             </svg>
             <div
               aria-hidden
-              className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/12 blur-3xl"
+              className="pointer-events-none absolute left-1/2 top-1/2 size-24 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/12 blur-3xl"
             />
           </div>
 
@@ -196,7 +196,7 @@ export function LifecycleLoop({ t, lang }: { t: Dict["lifecycle"]; lang: Lang })
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span
-                    className={`mt-2 inline-block h-2 w-2 rounded-full ${
+                    className={`mt-2 inline-block size-2 rounded-full ${
                       i === ACTIVE_INDEX ? "bg-primary mkt-pulse-dot" : "bg-surface-2"
                     }`}
                   />
