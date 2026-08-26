@@ -77,7 +77,7 @@ export function PricingCard() {
       <ul className="mt-8 space-y-4">
         {dict.proFeatures.map((f) => (
           <li key={f.title} className="flex items-start gap-3">
-            <Check className="h-5 w-5 text-success mt-0.5 shrink-0" />
+            <Check className="size-5 text-success mt-0.5 shrink-0" />
             <div>
               <span className="font-medium text-foreground">{f.title}</span>
               <p className="text-sm text-foreground-muted">{f.desc}</p>
