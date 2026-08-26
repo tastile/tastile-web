@@ -136,7 +136,7 @@ export function ProjectsSidePanel() {
           onClick={openCreating}
           data-testid="project-create"
         >
-          <Plus className="h-3 w-3" aria-hidden />
+          <Plus className="size-3" aria-hidden />
         </ActionIcon>
       </div>
 
@@ -188,7 +188,7 @@ export function ProjectsSidePanel() {
             aria-label={t("panels.projects.parentProjectAria")}
             label={
               <span className="flex items-center gap-1 text-caption text-foreground-subtle">
-                <FolderPlus className="h-3 w-3" aria-hidden />
+                <FolderPlus className="size-3" aria-hidden />
                 {t("panels.projects.parentProjectLabel")}
               </span>
             }
@@ -315,7 +315,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
               type="button"
               aria-label={expanded ? t("panels.projects.treeCollapse") : t("panels.projects.treeExpand")}
               onClick={() => tree.toggleExpanded(node.value)}
-              className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+              className="flex size-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
             >
               <ChevronRight
                 size={12}
@@ -324,7 +324,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
               />
             </ActionIcon>
           ) : (
-            <span aria-hidden className="h-4 w-4 shrink-0" />
+            <span aria-hidden className="size-4 shrink-0" />
           )}
           <button
             type="button"
@@ -334,7 +334,7 @@ function ProjectsTree({ workspaces, currentOwner, onSelect, onDelete }: Projects
           >
             <span
               aria-hidden
-              className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-inset ring-border/40"
+              className="size-2.5 shrink-0 rounded-full ring-1 ring-inset ring-border/40"
               style={{ backgroundColor: color ?? "#6b7280" }}
             />
             <span className="min-w-0 flex-1 truncate">{displayName}</span>
