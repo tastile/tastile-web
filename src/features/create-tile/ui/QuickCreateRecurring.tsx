@@ -581,7 +581,7 @@ export function QuickCreateRecurring() {
 
         {/* Repeat mode — chosen first so the time row below can adapt */}
         <div className="px-4 py-3">
-          <FormRow icon={<Repeat className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<Repeat className="size-4" aria-hidden />}>
             <div className="w-full">
               <SegmentedControl
                 fullWidth
@@ -598,7 +598,7 @@ export function QuickCreateRecurring() {
         {/* Per-mode secondary controls */}
         {repeatMode === "weekly" ? (
           <div className="px-4 py-3">
-            <FormRow icon={<CalendarDays className="h-4 w-4" aria-hidden />}>
+            <FormRow icon={<CalendarDays className="size-4" aria-hidden />}>
               <div
                 className="flex flex-wrap gap-1.5"
                 data-testid="recurring-weekday-row"
@@ -630,7 +630,7 @@ export function QuickCreateRecurring() {
 
         {repeatMode === "interval" ? (
           <div className="px-4 py-3">
-            <FormRow icon={<Timer className="h-4 w-4" aria-hidden />}>
+            <FormRow icon={<Timer className="size-4" aria-hidden />}>
               <Group gap="xs" align="flex-end" wrap="wrap" className="w-full">
                 <NumberInput
                   label={t("quickCreate.intervalValueLabel")}
@@ -662,7 +662,7 @@ export function QuickCreateRecurring() {
             (week-of-month × weekday). Single pattern per submission. */}
         {repeatMode === "monthly" ? (
           <div className="px-4 py-3">
-            <FormRow icon={<CalendarClock className="h-4 w-4" aria-hidden />}>
+            <FormRow icon={<CalendarClock className="size-4" aria-hidden />}>
               <Stack gap="xs" className="w-full">
                 <SegmentedControl
                   fullWidth
@@ -786,7 +786,7 @@ export function QuickCreateRecurring() {
           // duration (set below). Show a hint instead of the time pickers so
           // the user sees the authoring choice is honored.
           <div className="px-4 py-3" data-testid="recurring-duration-only-hint">
-            <FormRow icon={<Hourglass className="h-4 w-4" aria-hidden />}>
+            <FormRow icon={<Hourglass className="size-4" aria-hidden />}>
               <span className="text-xs text-foreground-muted">
                 {t("quickCreate.timeModelDurationOnlyHint")}
               </span>
@@ -797,7 +797,7 @@ export function QuickCreateRecurring() {
           // the placement worker may fit the required duration.
           <div className="px-4 py-3">
             <FormRow
-              icon={<Sun className="h-4 w-4" aria-hidden />}
+              icon={<Sun className="size-4" aria-hidden />}
               trailing={
                 <TimeSuggestionInput
                   value={schedulableWindowEnd}
@@ -842,7 +842,7 @@ export function QuickCreateRecurring() {
               {/* Time window — start + end pickers on a single row */}
               <div className="px-4 py-3">
                 <FormRow
-                  icon={<Sun className="h-4 w-4" aria-hidden />}
+                  icon={<Sun className="size-4" aria-hidden />}
                   trailing={
                     <TimeSuggestionInput
                       value={timeOfDayEnd}
@@ -866,7 +866,7 @@ export function QuickCreateRecurring() {
           ) : (
             <div className="px-4 py-3">
               <FormRow
-                icon={<Sun className="h-4 w-4" aria-hidden />}
+                icon={<Sun className="size-4" aria-hidden />}
                 trailing={
                   <TimeSuggestionInput
                     value={timeOfDayValue}
@@ -918,7 +918,7 @@ export function QuickCreateRecurring() {
 
         {/* Repeat until */}
         <div className="px-4 py-3">
-          <FormRow icon={<CalendarRange className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<CalendarRange className="size-4" aria-hidden />}>
             <Group justify="space-between" wrap="nowrap" className="w-full">
               <span className="text-sm text-foreground">
                 {t("quickCreate.repeatEndLabel")}
@@ -948,7 +948,7 @@ export function QuickCreateRecurring() {
 
         {/* Duration per instance — Select + Custom NumberInput */}
         <div className="px-4 py-3">
-          <FormRow icon={<Timer className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<Timer className="size-4" aria-hidden />}>
             <div className="w-full">
               <Select
                 value={selectedDuration}
