@@ -178,14 +178,14 @@ function AccountPageInner() {
                 }`}
                 color="red"
                 title={notice.text}
-                icon={<AlertCircle className="h-4 w-4" />}
+                icon={<AlertCircle className="size-4" />}
               />
             )}
 
             <section>
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <UserRound className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
+                  <UserRound className="size-5 text-foreground-muted" aria-hidden="true" />
                   <h3 className="font-semibold text-foreground">
                     {t("preferences.account.accountHeading")}
                   </h3>
@@ -199,7 +199,7 @@ function AccountPageInner() {
                   title={t("preferences.account.refresh")}
                   onClick={() => void loadProfile()}
                 >
-                  <RefreshCw className="h-4 w-4" aria-hidden="true" />
+                  <RefreshCw className="size-4" aria-hidden="true" />
                 </Button>
               </div>
 
@@ -211,7 +211,7 @@ function AccountPageInner() {
                     <div className="flex items-center justify-between gap-4">
                       <dt className="text-foreground-subtle">{t("preferences.account.email")}</dt>
                       <Button onClick={openEmailModal} variant="subtle">
-                        <Edit className="h-4 w-4" aria-hidden="true" />
+                        <Edit className="size-4" aria-hidden="true" />
                       </Button>
                     </div>
 
@@ -243,7 +243,7 @@ function AccountPageInner() {
               title={t("preferences.account.changeEmailHeading")}
             >
               <div className="mb-4 flex items-center gap-3">
-                <Mail className="h-5 w-5 text-foreground-muted" aria-hidden="true" />
+                <Mail className="size-5 text-foreground-muted" aria-hidden="true" />
                 <h3 className="font-semibold text-foreground">
                   {t("preferences.account.changeEmailHeading")}
                 </h3>
@@ -263,7 +263,7 @@ function AccountPageInner() {
                     autoComplete="email"
                     required
                     value={pendingEmail}
-                    rightSection={<MailIcon className="h-4 w-4 text-foreground-subtle" />}
+                    rightSection={<MailIcon className="size-4 text-foreground-subtle" />}
                     onChange={(event) => setPendingEmail(event.target.value)}
                   />
                 </div>
