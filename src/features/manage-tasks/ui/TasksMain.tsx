@@ -112,10 +112,10 @@ export function TasksMain() {
       {/* Scope info bar: spacing (mt-2 + pb-3) carries the visual hierarchy
           from the section above (DS v2). */}
       <div className="mt-2 flex items-center justify-between pb-3 text-xs text-foreground-subtle">
-        <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
+        <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-caption text-foreground-lighter border border-border">
           {filterDesc}
         </span>
-        <span className="font-mono text-[10px] text-foreground-lighter">
+        <span className="font-mono text-caption text-foreground-lighter">
           {loading ? t("panels.projects.loadingProjects") : t("panels.projects.itemsFound", { count: tiles.length })}
         </span>
       </div>
