@@ -351,7 +351,7 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
     <div className="flex items-center justify-between rounded-md border border-border bg-surface-0 p-3">
       <div className="min-w-0">
         <div className="text-xs font-semibold text-ink-1">{label}</div>
-        <code className="font-mono text-[10px] text-ink-3">
+        <code className="font-mono text-caption text-ink-3">
           {meta.method} {meta.path}
         </code>
       </div>
@@ -380,7 +380,7 @@ function ProbeRow({ k, label }: { k: keyof typeof ENDPOINTS; label: string }) {
 function EndpointChip({ k }: { k: keyof typeof ENDPOINTS }) {
   const meta = ENDPOINTS[k];
   return (
-    <code className="rounded border border-border bg-surface-0 px-1.5 py-0.5 font-mono text-[10px] text-ink-3">
+    <code className="rounded border border-border bg-surface-0 px-1.5 py-0.5 font-mono text-caption text-ink-3">
       {meta.method} {meta.path}
     </code>
   );
