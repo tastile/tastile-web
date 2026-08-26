@@ -34,7 +34,7 @@ export function DurationSubPanel({
       description={t("quickCreate.durationSub")}
       layout={isDesktop ? "drawer" : "sheet"}
     >
-      <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<Timer className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.durationInputLabel")}</span>
           <SegmentedControl
@@ -66,7 +66,7 @@ export function DurationSubPanel({
       </FormRow>
 
       {time.durationMinMax.minMs !== null && (
-        <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Timer className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.durationInputLabel")}</span>
             <NumberInput
