@@ -130,7 +130,7 @@ export function SubtasksSection({
   const modalTestId = `${testId}-modal`;
 
   const sectionBody = (
-    <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
+    <FormRow icon={<ListChecks className="size-4" aria-hidden />} className="items-start">
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-medium">
@@ -187,7 +187,7 @@ export function SubtasksSection({
                       aria-label={t(menuAriaKey)}
                       data-testid={`${testId}-row-${task.id}-menu-trigger`}
                     >
-                      <MoreVertical className="h-3.5 w-3.5" aria-hidden />
+                      <MoreVertical className="size-3.5" aria-hidden />
                     </ActionIcon>
                   </FloatingMenuTrigger>
                   <FloatingMenuContent align="end" sideOffset={4}>
@@ -196,7 +196,7 @@ export function SubtasksSection({
                       onClick={() => reorderTasks(idx, idx - 1)}
                       data-testid={`${testId}-row-${task.id}-menu-move-up`}
                     >
-                      <ArrowUp className="h-3.5 w-3.5" aria-hidden />
+                      <ArrowUp className="size-3.5" aria-hidden />
                       <span>{t(moveUpKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuItem
@@ -204,21 +204,21 @@ export function SubtasksSection({
                       onClick={() => reorderTasks(idx, idx + 1)}
                       data-testid={`${testId}-row-${task.id}-menu-move-down`}
                     >
-                      <ArrowDown className="h-3.5 w-3.5" aria-hidden />
+                      <ArrowDown className="size-3.5" aria-hidden />
                       <span>{t(moveDownKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuItem
                       onClick={() => openEdit(task.id)}
                       data-testid={`${testId}-row-${task.id}-menu-edit`}
                     >
-                      <Pencil className="h-3.5 w-3.5" aria-hidden />
+                      <Pencil className="size-3.5" aria-hidden />
                       <span>{t(editKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuItem
                       onClick={() => duplicateTask(task.id)}
                       data-testid={`${testId}-row-${task.id}-menu-duplicate`}
                     >
-                      <Copy className="h-3.5 w-3.5" aria-hidden />
+                      <Copy className="size-3.5" aria-hidden />
                       <span>{t(duplicateKey)}</span>
                     </FloatingMenuItem>
                     <FloatingMenuSeparator />
@@ -229,7 +229,7 @@ export function SubtasksSection({
                       aria-label={t(removeAriaKey)}
                       className="text-red-600 dark:text-red-400"
                     >
-                      <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                      <Trash2 className="size-3.5" aria-hidden />
                       <span>{t(deleteKey)}</span>
                     </FloatingMenuItem>
                   </FloatingMenuContent>
@@ -244,7 +244,7 @@ export function SubtasksSection({
           data-testid={`${testId}-add`}
           className="mt-1 inline-flex items-center gap-1 self-start border-0 bg-transparent px-0 py-0.5 text-xs text-foreground-muted hover:text-foreground"
         >
-          <Plus className="h-3 w-3" aria-hidden />
+          <Plus className="size-3" aria-hidden />
           {t(addPlaceholderKey)}
         </button>
       </div>
@@ -261,7 +261,7 @@ export function SubtasksSection({
   return bare ? (
     <FormRow
       data-testid={testId}
-      icon={<ListChecks className="h-4 w-4" aria-hidden />}
+      icon={<ListChecks className="size-4" aria-hidden />}
       className="items-start"
     >
       {sectionBody}
