@@ -12,7 +12,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
 
   return (
     <div className="relative">
-      <div className="rounded-2xl border border-surface-2 bg-surface-elevated p-5 shadow-[0_18px_60px_-30px_rgba(17,18,23,0.18)] lg:p-6">
+      <div className="rounded-2xl bg-surface-elevated p-5 shadow-[0_18px_60px_-30px_rgba(17,18,23,0.18)] lg:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
@@ -53,12 +53,12 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
               <div
                 key={tile.title}
                 className={[
-                  "flex items-center gap-3 rounded-xl border px-3 py-2.5",
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5",
                   isActive
-                    ? "border-primary/30 bg-primary/[0.06]"
+                    ? "bg-primary/[0.06]"
                     : isDone
-                      ? "border-surface-2 bg-surface-0 opacity-60"
-                      : "border-surface-2 bg-surface-0",
+                      ? "bg-surface-0 opacity-60"
+                      : "bg-surface-0",
                 ].join(" ")}
                 style={{ animationDelay: `${200 + i * 80}ms` }}
               >
@@ -113,7 +113,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
           })}
         </div>
 
-        <div className="mt-5 flex items-center justify-between rounded-xl border border-surface-2 bg-surface-0 px-3 py-2.5">
+        <div className="mt-5 flex items-center justify-between rounded-xl bg-surface-0 px-3 py-2.5">
           <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
             <AlarmClock className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className={body}>
