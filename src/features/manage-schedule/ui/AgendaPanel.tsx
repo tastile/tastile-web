@@ -53,7 +53,7 @@ export function AgendaPanel({
           renderEvent={(e, props) => (
             <button
               {...props}
-              className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:border-[var(--agenda-view-border-color)] hover:bg-[var(--mantine-color-gray-0)] dark:hover:bg-[var(--mantine-color-dark-6)]"
+              className="group flex w-full items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 text-left transition-colors hover:bg-[var(--mantine-color-gray-0)] dark:hover:bg-[var(--mantine-color-dark-6)]"
             >
               <div
                 className="h-8 w-1 shrink-0 rounded-full"
