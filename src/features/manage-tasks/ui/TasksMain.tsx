@@ -109,8 +109,9 @@ export function TasksMain() {
     <PageContainer>
       <PageHeader title={t("panels.tasks.title")} description={t("tasks.subtitle")} />
 
-      {/* Scope info bar */}
-      <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
+      {/* Scope info bar: spacing (mt-2 + pb-3) carries the visual hierarchy
+          from the section above (DS v2). */}
+      <div className="mt-2 flex items-center justify-between pb-3 text-xs text-foreground-subtle">
         <span className="font-mono bg-surface-2 px-2 py-0.5 rounded text-[10px] text-foreground-lighter border border-border">
           {filterDesc}
         </span>
@@ -119,7 +120,7 @@ export function TasksMain() {
         </span>
       </div>
       {startError ? (
-        <div className="mt-3 rounded border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+        <div className="mt-3 rounded bg-danger/10 px-3 py-2 text-xs text-danger">
           {startError}
         </div>
       ) : null}
@@ -133,7 +134,7 @@ export function TasksMain() {
           </div>
         )}
         {!loading && tiles.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-dashed border-border rounded-lg bg-surface-1">
+          <div className="flex flex-col items-center justify-center py-12 text-foreground-subtle border border-border rounded-lg bg-surface-1">
             <p className="text-sm">{t("panels.tasks.empty")}</p>
           </div>
         )}
