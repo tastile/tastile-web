@@ -38,7 +38,7 @@ export function WorkflowBatch() {
               className={
                 "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-colors " +
                 (active
-                  ? "border-primary bg-primary text-primary-fg shadow-sm"
+                  ? "bg-primary text-primary-fg"
                   : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2")
               }
             >
