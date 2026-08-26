@@ -229,7 +229,7 @@ function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
   const referenceKind = window.kind === 1 || window.kind === 2 || window.kind === 3;
   const [pickerOpen, setPickerOpen] = useState(false);
   return (
-    <div data-testid={`window-row-${index}`} className="space-y-2 border-l-2 border-surface-2 pl-3">
+    <div data-testid={`window-row-${index}`} className="space-y-2 pl-3">
       <div className="flex items-center justify-between">
         <span className="text-xs text-foreground-muted">
           {t("quickCreate.windowsTitle")} #{index + 1}
