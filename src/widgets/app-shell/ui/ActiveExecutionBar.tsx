@@ -134,7 +134,7 @@ export function ActiveExecutionBar({
   if (mode === "header-left") {
     return (
       <div className="flex min-w-0 items-center gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-muted shrink-0">
+        <span className="text-caption font-semibold uppercase tracking-wider text-foreground-muted shrink-0">
           {t("execution.remainingLabel")}
         </span>
         <span className="text-2xl font-mono font-semibold tabular-nums text-foreground shrink-0">
