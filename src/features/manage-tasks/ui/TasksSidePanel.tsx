@@ -148,7 +148,7 @@ export function TasksSidePanel() {
         onApply={applyFilters}
         t={t}
       />
-      <div className="px-3 border-t border-border/40 pt-4">
+      <div className="px-3 pt-4">
         <Button
           variant="default"
           leftSection={<RefreshCw className="h-3.5 w-3.5 text-foreground-subtle" />}
@@ -207,7 +207,7 @@ function TasksTimeRangeSection({
   t: (key: string) => string;
 }) {
   return (
-    <div className="px-3 border-t border-border/40 pt-4">
+    <div className="px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 text-foreground-subtle" />
@@ -291,7 +291,7 @@ function TasksMinDurationSection({
   t: (key: string) => string;
 }) {
   return (
-    <div className="px-3 border-t border-border/40 pt-4">
+    <div className="px-3 pt-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Flame className="h-3.5 w-3.5 text-foreground-subtle" />
@@ -358,7 +358,7 @@ function TasksPrioritySection({
   t: (key: string) => string;
 }) {
   return (
-    <div className="px-3 border-t border-border/40 pt-4">
+    <div className="px-3 pt-4">
       <div className="mb-3 flex items-center gap-1.5">
         <ShieldAlert className="h-3.5 w-3.5 text-foreground-subtle" />
         <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
