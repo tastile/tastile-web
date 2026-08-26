@@ -16,7 +16,7 @@ export function RequiredTimePanel({
 }) {
   const { t } = useTranslation();
   return (
-    <FormRow icon={<Timer className="h-4 w-4" aria-hidden />} className="items-start">
+    <FormRow icon={<Timer className="size-4" aria-hidden />} className="items-start">
       <div className="flex flex-col gap-1">
         <span className="text-xs font-medium">{t("quickCreate.durationTitle")}</span>
         <NumberInput
