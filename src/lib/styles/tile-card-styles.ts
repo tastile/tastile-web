@@ -41,9 +41,9 @@ export const TILE_CARD_STYLES = {
   },
   statusIcon: {
     size: {
-      compact: "w-5 h-5",
-      comfortable: "w-5 h-5",
-      detailed: "w-6 h-6",
+      compact: "size-5",
+      comfortable: "size-5",
+      detailed: "size-6",
     },
   },
 } as const;
