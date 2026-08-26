@@ -47,7 +47,7 @@ export function Header({ executionState }: HeaderProps) {
   })();
 
   return (
-    <header className="flex h-14 items-center justify-between rounded-xl bg-surface-elevated px-4 lg:h-16">
+    <header className="flex h-14 items-center justify-between rounded-xl bg-surface-1 px-4 lg:h-16">
       {/* Left: App Icon */}
       <div className="flex items-center gap-2.5">
         <TastileLogo size={28} className="text-foreground" />
