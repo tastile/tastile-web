@@ -42,10 +42,10 @@ export const WorkflowChip = forwardRef<HTMLButtonElement, WorkflowChipProps>(
         {...rest}
       >
         {Icon ? (
-          <Icon aria-hidden className="h-4 w-4 shrink-0" />
+          <Icon aria-hidden className="size-4 shrink-0" />
         ) : null}
         <span className="truncate">{label}</span>
-        <ChevronDown aria-hidden className="h-3.5 w-3.5 shrink-0 opacity-70" />
+        <ChevronDown aria-hidden className="size-3.5 shrink-0 opacity-70" />
       </button>
     );
   },
