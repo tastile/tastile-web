@@ -62,7 +62,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
                     className={`flex items-center gap-3 text-base text-foreground-muted ${body}`}
                   >
                     <Circle
-                      className="h-3.5 w-3.5 shrink-0 text-foreground-subtle"
+                      className="size-3.5 shrink-0 text-foreground-subtle"
                       strokeWidth={1.5}
                     />
                     <span className="line-through decoration-foreground-subtle/40">{item}</span>
@@ -76,7 +76,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
           <div className="grid gap-6 pt-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
             <div className="flex items-start gap-3">
               <span className={`${mono} text-sm text-primary tabular-nums`}>{t.newLabel}</span>
-              <span className="mkt-pulse-dot inline-block h-2 w-2 translate-y-1.5 rounded-full bg-primary" />
+              <span className="mkt-pulse-dot inline-block size-2 translate-y-1.5 rounded-full bg-primary" />
             </div>
             <div>
               <p
