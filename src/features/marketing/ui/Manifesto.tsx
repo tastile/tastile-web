@@ -25,7 +25,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
 
       <div className="layout-shell relative z-10">
         <header className="max-w-3xl">
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+          <p className="text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
             {t.eyebrow}
           </p>
           <h2 className={`mt-3 mkt-display-2 text-foreground ${display}`}>
@@ -51,7 +51,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
             </div>
             <div>
               <p
-                className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.22em] text-foreground-subtle ${display}`}
               >
                 {t.leftLabel}
               </p>
@@ -80,7 +80,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
             </div>
             <div>
               <p
-                className={`text-[11px] font-medium uppercase tracking-[0.22em] text-primary ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.22em] text-primary ${display}`}
               >
                 {t.rightLabel}
               </p>
@@ -94,11 +94,11 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
               {/* Live execution card — not a "card", but a live data strip. */}
               <div className="mt-8 bg-surface-2 pl-5 py-4">
                 <div className="flex items-center gap-3">
-                  <span className={`${mono} text-[11px] text-foreground-muted`}>
+                  <span className={`${mono} text-caption text-foreground-muted`}>
                     {t.liveAtPrefix}
                     {t.liveAtDuration}
                   </span>
-                  <span className={`${mono} text-[10px] uppercase tracking-[0.22em] text-primary`}>
+                  <span className={`${mono} text-caption uppercase tracking-[0.22em] text-primary`}>
                     {t.timelineKindLabel}
                   </span>
                 </div>
@@ -134,7 +134,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
                     {event.time}
                   </span>
                   <span
-                    className={`${mono} text-[10px] uppercase tracking-[0.18em] ${kindColor[event.kind] ?? "text-foreground-muted"}`}
+                    className={`${mono} text-caption uppercase tracking-[0.18em] ${kindColor[event.kind] ?? "text-foreground-muted"}`}
                   >
                     {event.kind.toUpperCase()}
                   </span>
