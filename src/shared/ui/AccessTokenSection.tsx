@@ -245,7 +245,7 @@ export function AccessTokenSection() {
                           onChange={(event) => setEditingName(event.target.value)}
                           maxLength={80}
                           aria-label={t("account.tokens.nameLabel")}
-                          className="min-w-0 flex-1 rounded-md border border-border bg-surface-0 px-3 py-2 text-sm text-foreground outline-none focus:border-primary"
+                          className="min-w-0 flex-1 rounded-md border border-border bg-surface-0 px-3 py-2 text-input text-foreground outline-none focus:border-primary"
                         />
                         <Button
                           component="button"
