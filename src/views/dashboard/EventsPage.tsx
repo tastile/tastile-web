@@ -195,7 +195,7 @@ export default function Events() {
           className="flex-1"
         />
         <div className="flex items-center gap-1.5">
-          <Filter className="h-3.5 w-3.5 text-ink-3" />
+          <Filter className="size-3.5 text-ink-3" />
           <Dropdown
             value={typeFilter}
             onChange={(val) => setTypeFilter(val)}
@@ -221,7 +221,7 @@ export default function Events() {
         ) : filtered.length === 0 ? (
           <div className="p-6">
             <EmptyState
-              icon={<Database className="h-6 w-6" />}
+              icon={<Database className="size-6" />}
               title={t("dashboard.events.empty.title")}
               description={t("dashboard.events.empty.body")}
             />
@@ -283,9 +283,9 @@ function FragmentRow({
       >
         <td className="px-2 py-1.5 align-top">
           {isOpen ? (
-            <ChevronDown className="h-3.5 w-3.5 text-ink-3" />
+            <ChevronDown className="size-3.5 text-ink-3" />
           ) : (
-            <ChevronRight className="h-3.5 w-3.5 text-ink-3" />
+            <ChevronRight className="size-3.5 text-ink-3" />
           )}
         </td>
         <td className="px-2 py-1.5 align-top">
@@ -310,7 +310,7 @@ function FragmentRow({
         <tr className="bg-surface-0">
           <td colSpan={6} className="px-4 py-3">
             <div className="mb-2 flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-ink-3">
-              <Code2 className="h-3 w-3" /> {t("dashboard.events.payloadHeading")}
+              <Code2 className="size-3" /> {t("dashboard.events.payloadHeading")}
             </div>
             <pre className="max-h-80 overflow-auto rounded-md border border-border bg-surface-1 p-3 font-mono text-caption text-ink-1">
               {JSON.stringify(event.payload ?? {}, null, 2)}
@@ -357,7 +357,7 @@ function ErrorState({
   if (!error) {
     return (
       <EmptyState
-        icon={<Activity className="h-6 w-6" />}
+        icon={<Activity className="size-6" />}
         title={t("dashboard.events.empty.initialTitle")}
         description={t("dashboard.events.empty.initialBody")}
       />
