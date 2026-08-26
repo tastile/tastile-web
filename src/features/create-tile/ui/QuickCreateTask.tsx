@@ -259,7 +259,7 @@ export function QuickCreateTask() {
 
         {/* Duration — Select + Custom NumberInput (moved above due row per UX reorder 2026-08-14) */}
         <div className="px-4 py-3">
-          <FormRow icon={<Timer className="h-4 w-4" aria-hidden />}>
+          <FormRow icon={<Timer className="size-4" aria-hidden />}>
             <div className="w-full">
               <Select
                 value={selectedDuration}
@@ -305,7 +305,7 @@ export function QuickCreateTask() {
         {/* Due date + Time — now third row (UX reorder 2026-08-14), with CalendarDays icon + "Due" leading label */}
         <div className="px-4 py-3">
           <FormRow
-            icon={<CalendarDays className="h-4 w-4" aria-hidden />}
+            icon={<CalendarDays className="size-4" aria-hidden />}
             trailing={
               <TimeSuggestionInput
                 value={dueTime}
