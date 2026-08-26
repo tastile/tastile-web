@@ -67,7 +67,7 @@ export function CompletionSubPanel({
           requirementOptions={requirementPickerData}
         />
         <div className="flex flex-col gap-1.5 pt-2" data-testid="completion-time-requirement-section">
-          <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
             <span className="text-xs font-medium">{t("quickCreate.timeRequirementsTitle")}</span>
           </FormRow>
           {plan.completion.timeRequirements.map((tr, i) => {
@@ -216,7 +216,7 @@ export function CompletionSubPanel({
           </Button>
         </div>
         <div className="flex flex-col gap-1.5">
-          <FormRow icon={<ListChecks className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<ListChecks className="size-4" aria-hidden />} className="items-start">
             <span className="text-xs font-medium">{t("quickCreate.conditionAddTitle")}</span>
           </FormRow>
           <SegmentedControl
