@@ -224,7 +224,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
               type="button"
               aria-label={expanded ? t("shell.activityBar.expanded") : t("shell.activityBar.collapsed")}
               onClick={() => tree.toggleExpanded(node.value)}
-              className="flex h-4 w-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+              className="flex size-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
             >
               <ChevronRight
                 size={12}
@@ -233,7 +233,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
               />
             </ActionIcon>
           ) : (
-            <span aria-hidden className="h-4 w-4 shrink-0" />
+            <span aria-hidden className="size-4 shrink-0" />
           )}
           <Checkbox.Indicator
             checked={checked}
@@ -246,7 +246,7 @@ function ProjectsTree({ workspaces }: { workspaces: Workspace[] }) {
           />
           <span
             aria-hidden
-            className="h-2 w-2 shrink-0 rounded-full"
+            className="size-2 shrink-0 rounded-full"
             style={{ backgroundColor: color ?? "#6b7280" }}
           />
           <Button
