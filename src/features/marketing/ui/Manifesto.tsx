@@ -40,7 +40,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
         {/* Comparison: two stacked full-width blocks, not parallel cards. */}
         <div className="mt-16">
           {/* Left — old way. */}
-          <div className="grid gap-6 border-b border-surface-2 pb-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
+          <div className="grid gap-6 pb-12 lg:grid-cols-[10rem_1fr] lg:gap-12">
             <div className="flex items-start gap-3">
               <span className={`${mono} text-sm text-foreground-subtle tabular-nums`}>
                 {t.oldLabel}
@@ -92,7 +92,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
               </p>
 
               {/* Live execution card — not a "card", but a live data strip. */}
-              <div className="mt-8 border-l-2 border-primary pl-5">
+              <div className="mt-8 bg-surface-2 pl-5 py-4">
                 <div className="flex items-center gap-3">
                   <span className={`${mono} text-[11px] text-foreground-muted`}>
                     {t.liveAtPrefix}
@@ -127,7 +127,7 @@ export function Manifesto({ t, lang }: { t: Dict["manifesto"]; lang: Lang }) {
             {t.timeline.map((event) => (
               <li
                 key={`${event.time}-${event.title}`}
-                className="relative grid grid-cols-[5.5rem_1fr] gap-6 border-b border-surface-2 py-6 last:border-b-0"
+                className="relative grid grid-cols-[5.5rem_1fr] gap-6 py-7"
               >
                 <div className="flex flex-col items-start gap-1">
                   <span className={`${mono} text-sm text-foreground ${isJa ? "" : "tabular-nums"}`}>
