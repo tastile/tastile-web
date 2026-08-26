@@ -66,7 +66,7 @@ export function CompletionSubPanel({
           taskOptions={taskPickerData}
           requirementOptions={requirementPickerData}
         />
-        <div className="flex flex-col gap-1.5 border-t border-border/40 pt-2" data-testid="completion-time-requirement-section">
+        <div className="flex flex-col gap-1.5 pt-2" data-testid="completion-time-requirement-section">
           <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
             <span className="text-xs font-medium">{t("quickCreate.timeRequirementsTitle")}</span>
           </FormRow>
@@ -244,7 +244,7 @@ export function CompletionSubPanel({
           />
         </div>
         <TaskDefinitionEditor t={t} />
-        <div className="flex items-center gap-2 border-t border-border/40 pt-3">
+        <div className="flex items-center gap-2 pt-3">
           <Button
             type="button"
             size="sm"
