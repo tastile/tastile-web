@@ -33,7 +33,7 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
       <div className="relative z-10 grid grid-cols-1 gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:items-start">
         <div>
           <p className="mkt-anim mkt-anim-1 inline-flex items-center gap-2 text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
-            <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+            <span className="mkt-pulse-dot inline-block size-1.5 rounded-full bg-primary" />
             {t.badge}
           </p>
           <h1 className={`mkt-anim mkt-anim-2 mt-8 mkt-display-1 text-foreground ${display}`}>
@@ -57,7 +57,7 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
               className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background hover:bg-interactive-hover ${display}`}
             >
               {t.ctaPrimary}
-              <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} />
+              <ArrowUpRight className="size-4" strokeWidth={1.75} />
             </a>
             <a
               href={t.ctaSecondaryHref}
