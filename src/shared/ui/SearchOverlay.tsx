@@ -98,7 +98,7 @@ function SearchOverlayInner({ onClose }: { onClose: () => void }) {
     >
       <div className="flex flex-col">
         <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-          <Search className="h-4 w-4 text-foreground-subtle" />
+          <Search className="size-4 text-foreground-subtle" />
           <input
             ref={inputRef}
             type="text"
