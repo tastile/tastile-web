@@ -39,7 +39,7 @@ interface StatusDotProps {
 
 export function StatusDot({ status, size = "sm", pulse, label, className }: StatusDotProps) {
   const cls = statusClass[status];
-  const dim = size === "xs" ? "h-1.5 w-1.5" : size === "md" ? "h-2.5 w-2.5" : "h-2 w-2";
+  const dim = size === "xs" ? "size-1.5" : size === "md" ? "size-2.5" : "size-2";
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span
