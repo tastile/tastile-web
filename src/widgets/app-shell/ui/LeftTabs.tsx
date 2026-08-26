@@ -20,7 +20,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
   return (
     <aside
       className={cn(
-        "group flex flex-col gap-2 rounded-xl bg-surface-elevated p-2 transition-[width] duration-200",
+        "group flex flex-col gap-2 rounded-xl bg-surface-1 p-2 transition-[width] duration-200",
         pinnedOpen ? "w-44" : "w-14 hover:w-44",
       )}
     >
