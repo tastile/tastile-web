@@ -184,7 +184,7 @@ export function CreateProjectModal({
           </Button>
         </div>
         {newProjectError && (
-          <span className="text-[11px] text-status-danger">{newProjectError}</span>
+          <span className="text-caption text-status-danger">{newProjectError}</span>
         )}
       </form>
     </Modal>
