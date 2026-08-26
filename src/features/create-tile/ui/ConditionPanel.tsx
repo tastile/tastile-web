@@ -60,7 +60,7 @@ export function ConditionPanel({
       className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface-0 p-3"
       data-testid="completion-condition-box"
     >
-      <FormRow icon={<GitBranch className="h-4 w-4" aria-hidden />}>
+      <FormRow icon={<GitBranch className="size-4" aria-hidden />}>
         <span className="text-xs font-medium">{t("quickCreate.completionBuilderLogicLabel")}</span>
         <div className="ml-auto">
           <Select
