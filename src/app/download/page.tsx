@@ -84,7 +84,7 @@ export default async function DownloadPage({
               {t.requirements.map((req) => (
                 <li key={req} className="flex items-center gap-2">
                   <svg
-                    className="h-5 w-5 text-success"
+                    className="size-5 text-success"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
