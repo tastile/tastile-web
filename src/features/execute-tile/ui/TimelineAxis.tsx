@@ -147,7 +147,7 @@ export function TimelineAxis({
           </div>
         ) : null}
         {omitted > 0 ? (
-          <p className="mb-2 text-[10px] uppercase tracking-wider text-foreground-muted">
+          <p className="mb-2 text-caption uppercase tracking-wider text-foreground-muted">
             +{omitted} omitted
           </p>
         ) : null}
@@ -165,7 +165,7 @@ export function TimelineAxis({
               className="absolute left-0 right-0 z-0"
               style={{ top: (marker.topPx - minTop + 24) * zoom }}
             >
-              <span className="absolute -top-2 left-1 text-[10px] font-mono text-foreground-muted/80">
+              <span className="absolute -top-2 left-1 text-caption font-mono text-foreground-muted/80">
                 {marker.label}
               </span>
             </div>
@@ -185,7 +185,7 @@ export function TimelineAxis({
                 }}
               >
                 <p className="truncate text-xs font-semibold text-foreground">{block.title}</p>
-                <p className="text-[10px] uppercase tracking-wider text-foreground-muted">
+                <p className="text-caption uppercase tracking-wider text-foreground-muted">
                   {block.type}
                 </p>
               </div>
@@ -220,7 +220,7 @@ export function TimelineAxis({
           </div>
           <div className="min-w-0">
             <p className="text-sm text-foreground truncate">{item.title}</p>
-            <p className="text-[11px] uppercase tracking-wider text-foreground-muted">
+            <p className="text-caption uppercase tracking-wider text-foreground-muted">
               {item.type}
             </p>
           </div>
