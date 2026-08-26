@@ -242,7 +242,7 @@ export function SubtasksSection({
           type="button"
           onClick={openCreate}
           data-testid={`${testId}-add`}
-          className="mt-1 inline-flex items-center gap-1 self-start border-0 border-b border-dashed border-foreground-muted/40 bg-transparent px-0 py-0.5 text-xs text-foreground-muted hover:border-foreground-muted hover:text-foreground"
+          className="mt-1 inline-flex items-center gap-1 self-start border-0 bg-transparent px-0 py-0.5 text-xs text-foreground-muted hover:text-foreground"
         >
           <Plus className="h-3 w-3" aria-hidden />
           {t(addPlaceholderKey)}
