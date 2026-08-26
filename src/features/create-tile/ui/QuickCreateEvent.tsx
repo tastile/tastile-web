@@ -268,9 +268,9 @@ export function QuickCreateEvent() {
         />
 
         {/* Bottom "set": subtasks, project + color, then memo, grouped at the
-            very bottom of every workflow form. The top border visually
-            separates the set from the workflow-specific fields above. */}
-        <div className="border-t border-border pt-1">
+            very bottom of every workflow form. Spacing carries the visual
+            hierarchy from the workflow-specific fields above (DS v2). */}
+        <div className="pt-1">
           {/* Subtasks — shared section component. Events share the unified
               `plan.completion.tasks[]` array so the section renders an empty
               "no sub-tasks" hint until the user adds one. */}
