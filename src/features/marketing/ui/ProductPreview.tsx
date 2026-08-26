@@ -17,7 +17,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
           <div className="flex items-center gap-2">
             <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
             <span
-              className={`text-[11px] font-medium uppercase tracking-[0.18em] text-foreground-muted ${display}`}
+              className={`text-caption font-medium uppercase tracking-[0.18em] text-foreground-muted ${display}`}
             >
               {t.previewTodayLabel}
             </span>
@@ -34,7 +34,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
               <span
                 key={label}
                 className={[
-                  "inline-flex h-5 items-center rounded-full px-2 text-[10px] font-medium tracking-wide",
+                  "inline-flex h-5 items-center rounded-full px-2 text-caption font-medium tracking-wide",
                   isActive ? "bg-primary/15 text-primary" : "bg-surface-0 text-foreground-subtle",
                   isJa ? "font-[family-name:var(--font-zen-kaku)]" : "",
                 ].join(" ")}
@@ -62,7 +62,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
                 ].join(" ")}
                 style={{ animationDelay: `${200 + i * 80}ms` }}
               >
-                <div className="flex w-16 shrink-0 flex-col font-[family-name:var(--font-geist-mono)] text-[11px] leading-tight">
+                <div className="flex w-16 shrink-0 flex-col font-[family-name:var(--font-geist-mono)] text-caption leading-tight">
                   <span
                     className={
                       isDone
@@ -89,7 +89,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
                   >
                     {tile.title}
                   </p>
-                  <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-foreground-subtle">
+                  <p className="mt-0.5 flex items-center gap-1 truncate text-caption text-foreground-subtle">
                     <MapPin className="h-3 w-3" strokeWidth={1.5} />
                     <span className={body}>{tile.place}</span>
                   </p>
@@ -114,7 +114,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
         </div>
 
         <div className="mt-5 flex items-center justify-between rounded-xl bg-surface-0 px-3 py-2.5">
-          <div className="flex items-center gap-2 text-[11px] text-foreground-muted">
+          <div className="flex items-center gap-2 text-caption text-foreground-muted">
             <AlarmClock className="h-3.5 w-3.5" strokeWidth={1.5} />
             <span className={body}>
               {t.previewNextLabel}{" "}
@@ -123,7 +123,7 @@ export function ProductPreview({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
               </span>
             </span>
           </div>
-          <div className="flex items-center gap-1.5 rounded-full bg-foreground px-2.5 py-1 text-[11px] font-medium text-background">
+          <div className="flex items-center gap-1.5 rounded-full bg-foreground px-2.5 py-1 text-caption font-medium text-background">
             <Check className="h-3 w-3" strokeWidth={2} />
             {t.previewNextAction}
           </div>
