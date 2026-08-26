@@ -130,7 +130,7 @@ export function SubPanelShell({
           onClick={onClose}
           aria-label={t("quickCreate.subpanelBackFrom", { title })}
         >
-          <ArrowLeft className="h-4 w-4" aria-hidden />
+          <ArrowLeft className="size-4" aria-hidden />
         </ActionIcon>
         <div className="min-w-0">
           <h2 id={headingId} className="text-sm font-semibold">
