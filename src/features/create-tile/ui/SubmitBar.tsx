@@ -33,7 +33,7 @@ export function SubmitBar({
 }: Props) {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col gap-2 border-t border-[var(--border-subtle)] bg-[var(--surface-1)] p-4">
+    <div className="flex flex-col gap-2 bg-[var(--surface-1)] p-4">
       {serverError ? <PanelErrorBanner title={serverError.title} body={serverError.body} /> : null}
       <Group justify="space-between" align="center">
         <div className="flex items-center gap-2">
