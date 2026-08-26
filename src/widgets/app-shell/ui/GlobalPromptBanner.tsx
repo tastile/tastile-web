@@ -18,7 +18,7 @@ const PROMPT_TITLE_KEY: Record<PendingPrompt["kind"], string> = {
 };
 
 const SEVERITY_STYLE: Record<NonNullable<PendingPrompt["severity"]>, string> = {
-  soft: "bg-surface-elevated",
+  soft: "bg-surface-1",
   elevated: "bg-warning/10",
   critical: "bg-danger/10",
 };
