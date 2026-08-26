@@ -59,7 +59,9 @@ export function ProjectsMain() {
         </section>
       )}
 
-      <div className="mt-2 flex items-center justify-between border-b border-border/40 pb-3 text-xs text-foreground-subtle">
+      {/* Scope info bar: spacing (mt-2 + pb-3) carries the visual hierarchy
+          from the section above (DS v2). */}
+      <div className="mt-2 flex items-center justify-between pb-3 text-xs text-foreground-subtle">
         <span className="flex items-center gap-2 rounded border border-border bg-surface-2 px-2 py-0.5 font-mono text-[10px] text-foreground-lighter">
           {project ? (
             <>
@@ -88,7 +90,7 @@ export function ProjectsMain() {
           </div>
         )}
         {!loading && tiles.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-surface-1 py-12 text-foreground-subtle">
+          <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-surface-1 py-12 text-foreground-subtle">
             <p className="text-sm">{t("panels.projects.tilesEmpty")}</p>
           </div>
         )}
