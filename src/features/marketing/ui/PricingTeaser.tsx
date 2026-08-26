@@ -114,8 +114,8 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 sm:col-span-2 lg:col-span-1">
               {t.free.features.map((feature) => (
                 <li key={feature.title} className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-foreground-muted/15 text-foreground-muted">
-                    <Check className="h-2.5 w-2.5" strokeWidth={2.5} />
+                  <span className="mt-1 inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-foreground-muted/15 text-foreground-muted">
+                    <Check className="size-2.5" strokeWidth={2.5} />
                   </span>
                   <div>
                     <p className={`text-sm font-medium text-foreground ${display}`}>
@@ -177,8 +177,8 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             <ul className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2 sm:col-span-2 lg:col-span-1">
               {t.pro.features.map((feature) => (
                 <li key={feature.title} className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
-                    <Check className="h-2.5 w-2.5" strokeWidth={2.5} />
+                  <span className="mt-1 inline-flex size-4 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
+                    <Check className="size-2.5" strokeWidth={2.5} />
                   </span>
                   <div>
                     <p className={`text-sm font-medium text-foreground ${display}`}>
@@ -197,7 +197,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
                 className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-medium text-background hover:bg-interactive-hover ${display}`}
               >
                 {t.pro.cta}
-                <ArrowUpRight className="h-4 w-4" strokeWidth={1.75} />
+                <ArrowUpRight className="size-4" strokeWidth={1.75} />
               </Link>
               <p className={`max-w-[28ch] text-xs text-foreground-muted lg:text-right ${body}`}>
                 {t.pro.footnote}
