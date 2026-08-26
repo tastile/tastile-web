@@ -63,7 +63,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
 
   return (
     <Stack gap="md" p="md">
-      <FormRow icon={<Network className="h-4 w-4" aria-hidden />}>
+      <FormRow icon={<Network className="size-4" aria-hidden />}>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.relations.heading")}</span>
           <span className="text-xs text-foreground-muted">
@@ -87,7 +87,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
               <Trash2 size={15} />
             </ActionIcon>
           </Group>
-          <FormRow icon={<ExternalLink className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<ExternalLink className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.relations.referencedSourceLabel")}</span>
               <Select
@@ -108,7 +108,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
             </div>
           </FormRow>
 
-          <FormRow icon={<Network className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Network className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.relations.relationKindLabel")}</span>
               <Select
@@ -127,7 +127,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
             </div>
           </FormRow>
 
-          <FormRow icon={<MoveHorizontal className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<MoveHorizontal className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.relations.offsetPriorityLabel")}</span>
               <Group grow>
@@ -145,7 +145,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
             </div>
           </FormRow>
 
-          <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.relations.durationLabel")}</span>
               <Select
@@ -165,7 +165,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
           </FormRow>
 
           {relation.durationKind === "fixed" ? (
-            <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium">{t("quickCreate.panel.relations.fixedMinutesLabel")}</span>
                 <NumberInput
@@ -179,7 +179,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
             </FormRow>
           ) : null}
 
-          <FormRow icon={<Scissors className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Scissors className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.relations.allocationSplitLabel")}</span>
               <Select
@@ -200,7 +200,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
             </div>
           </FormRow>
 
-          <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.relations.totalAllocationLabel")}</span>
               <NumberInput
@@ -219,7 +219,7 @@ export function RelationPanel({ relations, setRelations }: RelationPanelProps) {
           </FormRow>
 
           {relation.splitPolicy.kind === "split" ? (
-            <FormRow icon={<Scissors className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<Scissors className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium">{t("quickCreate.panel.relations.splitSettingsLabel")}</span>
                 <Group grow>
