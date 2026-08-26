@@ -123,7 +123,7 @@ export default function GeneralPreferences() {
       <section className="mt-8">
         <h2 className="mb-4 text-lg font-semibold text-foreground">{t("settings.language")}</h2>
         <div className="flex items-center gap-3">
-          <Languages className="h-5 w-5 shrink-0 text-foreground-muted" />
+          <Languages className="size-5 shrink-0 text-foreground-muted" />
           <Select
             className="min-w-[14rem] flex-1"
             data={[
@@ -163,7 +163,7 @@ export default function GeneralPreferences() {
         </h2>
         <div className="flex items-start justify-between gap-4">
           <div className="flex min-w-0 gap-3">
-            <Bell className="mt-0.5 h-5 w-5 shrink-0 text-foreground-muted" />
+            <Bell className="mt-0.5 size-5 shrink-0 text-foreground-muted" />
             <div>
               <p className="text-sm font-semibold text-foreground">
                 {t("preferences.notifications.browser")}
