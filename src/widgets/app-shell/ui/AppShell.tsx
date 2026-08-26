@@ -112,7 +112,7 @@ export function AppShell({
 							type="datetime-local"
 							value={startupRecoveryStopAt}
 							onChange={(event) => setStartupRecoveryStopAt(event.target.value)}
-							className="themed-datetime-input rounded-lg bg-surface-0 px-3 py-2 text-sm text-foreground"
+							className="themed-datetime-input rounded-lg bg-surface-0 px-3 py-2 text-input text-foreground"
 						/>
 					</label>
 				</div>
