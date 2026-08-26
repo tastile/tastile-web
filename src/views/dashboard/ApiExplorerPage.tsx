@@ -203,13 +203,13 @@ export default function ApiExplorer() {
                   </td>
                   <td className="hidden px-3 py-1.5 text-right md:table-cell">
                     {m.auth ? (
-                      <Lock className="ml-auto h-3 w-3 text-ink-3" />
+                      <Lock className="ml-auto size-3 text-ink-3" />
                     ) : (
                       <span className="text-caption text-ink-4">{t("dashboard.api.publicLabel")}</span>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
-                    <ChevronRight className="ml-auto h-3.5 w-3.5 text-ink-4" />
+                    <ChevronRight className="ml-auto size-3.5 text-ink-4" />
                   </td>
                 </tr>
               );
@@ -313,7 +313,7 @@ function EndpointDetail({
             ))}
             {meta.auth ? (
               <span className="inline-flex items-center gap-1 rounded bg-status-warn-soft px-1.5 py-0.5 text-caption font-medium text-status-warn">
-                <Lock className="h-2.5 w-2.5" />
+                <Lock className="size-2.5" />
                 {t("dashboard.api.authRequired")}
               </span>
             ) : (
