@@ -61,7 +61,7 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
             </a>
             <a
               href={t.ctaSecondaryHref}
-              className={`mkt-cta inline-flex items-center gap-2 rounded-full border border-surface-2 bg-surface-0 px-5 py-3 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
+              className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-surface-0 px-5 py-3 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
             >
               {t.ctaSecondary}
             </a>
