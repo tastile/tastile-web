@@ -29,7 +29,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
         </div>
       </FormRow>
 
-      <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.sourceWindow.durationLabel")}</span>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -49,7 +49,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
         </div>
       </FormRow>
 
-      <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.sourceWindow.preferredDurationLabel")}</span>
           <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -73,7 +73,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
         </div>
       </FormRow>
 
-      <FormRow icon={<Globe className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<Globe className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.sourceWindow.utcOffsetLabel")}</span>
           <NumberInput
@@ -95,7 +95,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
         </div>
       </FormRow>
 
-      <FormRow icon={<XCircle className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<XCircle className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.sourceWindow.excludedDatesLabel")}</span>
           <TagsInput
@@ -107,7 +107,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
         </div>
       </FormRow>
 
-      <FormRow icon={<Scissors className="h-4 w-4" aria-hidden />} className="items-start">
+      <FormRow icon={<Scissors className="size-4" aria-hidden />} className="items-start">
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.sourceWindow.splitLabel")}</span>
           <Tooltip
@@ -133,7 +133,7 @@ export function SourceWindowPanel({ source, time, setField }: SourceWindowPanelP
       </FormRow>
 
       {source.splitPolicy.kind === 1 ? (
-        <FormRow icon={<Scissors className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Scissors className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.panel.sourceWindow.splitSettingsLabel")}</span>
             <SimpleGrid cols={{ base: 1, sm: 3 }}>
