@@ -169,7 +169,7 @@ export function WorkflowMenu({
             <div className="text-xs font-semibold text-foreground-muted">
               {t("quickCreate.menuPickerTitle")}
             </div>
-            <div className="text-[11px] text-foreground-muted">
+            <div className="text-caption text-foreground-muted">
               {t("quickCreate.menuPickerSubtitle")}
             </div>
           </div>
@@ -193,7 +193,7 @@ export function WorkflowMenu({
                     <span className="block text-sm font-medium text-foreground">
                       {t(`quickCreate.${config.menuLabelKey}`)}
                     </span>
-                    <span className="block text-[11px] text-foreground-muted">
+                    <span className="block text-caption text-foreground-muted">
                       {t(`quickCreate.${config.menuDescriptionKey}`)}
                     </span>
                   </span>
