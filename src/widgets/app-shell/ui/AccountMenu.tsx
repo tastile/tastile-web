@@ -50,7 +50,7 @@ export function AccountMenu({
       <FloatingMenuTrigger asChild>
         <Button
           type="button"
-          className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus:ring-2 focus:ring-foreground/20"
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-full px-1 focus:outline-none focus-visible:outline-2 focus-visible:outline-[var(--focus-ring-color)] focus-visible:outline-offset-[var(--focus-ring-offset)]"
         >
           {avatarUrl ? (
             <Image

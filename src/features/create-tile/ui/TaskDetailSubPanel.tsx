@@ -64,7 +64,7 @@ export function TaskDetailSubPanel({
                     placeholder={t("quickCreate.taskNotePlaceholder")}
                     aria-label={t("quickCreate.taskNoteLabel")}
                     rows={4}
-                    className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus:ring-0"
+                    className="w-full resize-none border-0 bg-surface-1 p-2 text-sm focus-visible:outline-none"
                   />
                 </div>
               </FormRow>

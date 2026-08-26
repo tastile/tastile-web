@@ -40,7 +40,7 @@ export function MetaSubPanel({
             aria-label={t("quickCreate.memoPlaceholder")}
             rows={6}
             data-testid="quick-create-input-meta-memo"
-            className="w-full resize-none border-0 bg-transparent p-0 text-sm focus:ring-0"
+            className="w-full resize-none border-0 bg-transparent p-0 text-sm focus-visible:outline-none"
           />
         </FormRow>
         <div className="flex items-center gap-2 pt-3">
