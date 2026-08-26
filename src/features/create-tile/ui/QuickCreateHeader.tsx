@@ -95,7 +95,7 @@ export function QuickCreateHeader({
         // Visible bottom underline is enforced by a CSS rule in
         // `src/app/globals.css` (`.qc-underline-input`) — Mantine v9's
         // `mantine-Input-input` module class sets a shorthand `border`
-        // that would otherwise win over Tailwind's `border-b-2`.
+        // that would otherwise win over the Tailwind underline utility.
         classNames={{
           input:
             "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
