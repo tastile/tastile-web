@@ -58,12 +58,12 @@ export function AccountMenu({
               alt={displayName}
               width={28}
               height={28}
-              className="block h-7 w-7 shrink-0 rounded-full object-cover"
+              className="block size-7 shrink-0 rounded-full object-cover"
               referrerPolicy="no-referrer"
               unoptimized
             />
           ) : (
-            <div className="h-7 w-7 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-xs font-medium text-foreground-muted">
+            <div className="size-7 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-xs font-medium text-foreground-muted">
               {initials}
             </div>
           )}
@@ -83,12 +83,12 @@ export function AccountMenu({
                 alt={displayName}
                 width={40}
                 height={40}
-                className="block h-10 w-10 shrink-0 rounded-full object-cover"
+                className="block size-10 shrink-0 rounded-full object-cover"
                 referrerPolicy="no-referrer"
                 unoptimized
               />
             ) : (
-              <div className="h-10 w-10 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-sm font-medium text-foreground-muted">
+              <div className="size-10 shrink-0 rounded-full bg-surface-2 flex items-center justify-center text-sm font-medium text-foreground-muted">
                 {initials}
               </div>
             )}
