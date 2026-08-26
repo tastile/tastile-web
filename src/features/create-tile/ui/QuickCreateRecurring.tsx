@@ -615,7 +615,7 @@ export function QuickCreateRecurring() {
                       className={
                         "inline-flex shrink-0 items-center rounded-full border px-3 py-1 text-xs font-semibold transition-colors " +
                         (active
-                          ? "border-primary bg-primary text-primary-fg shadow-sm"
+                          ? "border-border bg-primary text-primary-fg"
                           : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2")
                       }
                     >
@@ -989,9 +989,9 @@ export function QuickCreateRecurring() {
         />
 
         {/* Bottom "set": subtasks, project + color, then memo, grouped at the
-            very bottom of every workflow form. The top border visually
-            separates the set from the workflow-specific fields above. */}
-        <div className="border-t border-border pt-1">
+            very bottom of every workflow form. Spacing carries the visual
+            hierarchy from the workflow-specific fields above (DS v2). */}
+        <div className="pt-1">
           {/* Subtasks — shared section component. Recurring tiles share the
               unified `plan.completion.tasks[]` array so the section renders
               an empty "no sub-tasks" hint until the user adds one. */}
