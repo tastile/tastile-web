@@ -32,7 +32,7 @@ export function Hero({ t, lang }: { t: Dict["hero"]; lang: Lang }) {
 
       <div className="relative z-10 grid grid-cols-1 gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-16 lg:items-start">
         <div>
-          <p className="mkt-anim mkt-anim-1 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+          <p className="mkt-anim mkt-anim-1 inline-flex items-center gap-2 text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
             <span className="mkt-pulse-dot inline-block h-1.5 w-1.5 rounded-full bg-primary" />
             {t.badge}
           </p>
