@@ -206,7 +206,7 @@ export default function Quota() {
               href="/dashboard/events"
               className="inline-flex items-center gap-1 text-xs text-accent hover:underline"
             >
-              <Gauge className="h-3 w-3" /> {t("dashboard.quota.openEventsLog")}
+              <Gauge className="size-3" /> {t("dashboard.quota.openEventsLog")}
             </Link>
           </div>
         </Card>
@@ -217,8 +217,8 @@ export default function Quota() {
           {t("dashboard.quota.planHeading")}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-md bg-accent-soft text-accent">
-            <Sparkles className="h-5 w-5" />
+          <div className="grid size-12 place-items-center rounded-md bg-accent-soft text-accent">
+            <Sparkles className="size-5" />
           </div>
           <div className="min-w-0 flex-1">
             <div className="text-lg font-semibold capitalize text-ink-1">{String(plan)}</div>
