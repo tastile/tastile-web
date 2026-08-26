@@ -70,7 +70,7 @@ export function EssentialRow({
   return (
     <div className="relative px-4 py-3">
       <FormRow
-        icon={<Icon className="h-4 w-4" aria-hidden />}
+        icon={<Icon className="size-4" aria-hidden />}
         trailing={<ChevronRight size={16} className="text-foreground-muted" />}
       >
         <button
