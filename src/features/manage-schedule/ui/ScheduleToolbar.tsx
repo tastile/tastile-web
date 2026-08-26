@@ -114,7 +114,7 @@ export function ScheduleToolbar({
         data-testid="cal-prev"
         className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
-        <ChevronLeft className="h-4 w-4" />
+        <ChevronLeft className="size-4" />
       </ActionIcon>
       <h2 className="font-mono text-sm text-foreground" data-testid="cal-title">
         {titlePrefix ? (
@@ -134,7 +134,7 @@ export function ScheduleToolbar({
         data-testid="cal-next"
         className="rounded p-1 text-foreground-subtle hover:bg-surface-2 hover:text-foreground"
       >
-        <ChevronRight className="h-4 w-4" />
+        <ChevronRight className="size-4" />
       </ActionIcon>
       <Button
         type="button"
