@@ -22,7 +22,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
   const mono = "font-[family-name:var(--font-geist-mono)]";
 
   return (
-    <section className="relative overflow-hidden border-t border-surface-2 py-20 lg:py-32">
+    <section className="relative overflow-hidden py-20 lg:py-32">
       {/* Background giant numeral. */}
       <div
         aria-hidden
@@ -54,7 +54,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
           <div
             role="tablist"
             aria-label={t.intervalAria}
-            className="inline-flex items-center rounded-full border border-surface-2 bg-surface-0 p-1 text-sm"
+            className="inline-flex items-center rounded-full bg-surface-0 p-1 text-sm"
           >
             {(["monthly", "yearly"] as const).map((value) => {
               const isActive = billingInterval === value;
@@ -131,7 +131,7 @@ export function PricingTeaser({ t, lang }: { t: Dict["pricing"]; lang: Lang }) {
             <div className="flex flex-col items-start gap-2 sm:col-span-2 lg:col-span-1 lg:items-end">
               <Link
                 href="/login"
-                className={`mkt-cta inline-flex items-center gap-2 rounded-full border border-surface-2 bg-surface-0 px-5 py-3 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
+                className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-surface-0 px-5 py-3 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
               >
                 {t.free.cta}
               </Link>
