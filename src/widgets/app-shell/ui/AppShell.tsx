@@ -161,9 +161,9 @@ export function AppShell({
 				}}
 			>
 				{showSidebar ? (
-					<ChevronRight className="h-5 w-5" />
+					<ChevronRight className="size-5" />
 				) : (
-					<ChevronLeft className="h-5 w-5" />
+					<ChevronLeft className="size-5" />
 				)}
 			</ActionIcon>
 		</div>
