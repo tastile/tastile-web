@@ -17,7 +17,7 @@ export function ErrorBanner({ error }: { error: Error | null }) {
         role="alert"
         variant="light"
         color="red"
-        icon={<AlertCircle className="h-4 w-4" />}
+        icon={<AlertCircle className="size-4" />}
         title={t("schedule.error.loadFailed", { message: error.message })}
         data-testid="cal-error"
         className="pointer-events-auto w-full max-w-2xl"
