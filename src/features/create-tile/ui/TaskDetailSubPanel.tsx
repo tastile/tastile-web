@@ -73,7 +73,7 @@ export function TaskDetailSubPanel({
                 <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-medium">{t("quickCreate.taskOrderSection")}</span>
                 {task.order.length === 0 ? (
-                  <p className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-[10px] text-foreground-muted">
+                  <p className="rounded-md bg-surface-1 px-2.5 py-3 text-center text-caption text-foreground-muted">
                     {t("quickCreate.taskOrderEmpty")}
                   </p>
                 ) : (
@@ -154,7 +154,7 @@ export function TaskDetailSubPanel({
                             ]}
                             styles={SEGMENT_STYLES}
                           />
-                          <p className="text-[10px] text-foreground-muted">
+                          <p className="text-caption text-foreground-muted">
                             {rule.relation === TaskOrderRelation.BEFORE
                               ? `${task.content.title || t("quickCreate.taskUntitled")} → ${targetTitle}`
                               : `${targetTitle} → ${task.content.title || t("quickCreate.taskUntitled")}`}
@@ -189,7 +189,7 @@ export function TaskDetailSubPanel({
                   <p
                     role="alert"
                     data-testid="task-order-cycle"
-                    className="rounded-md bg-danger/10 px-2 py-1 text-[10px] font-semibold text-danger"
+                    className="rounded-md bg-danger/10 px-2 py-1 text-caption font-semibold text-danger"
                   >
                     {t("quickCreate.taskOrderCycle")}
                   </p>
