@@ -163,7 +163,7 @@ export function WorkflowMenu({
         <div
           role="menu"
           data-testid={testId}
-          className={`absolute z-50 min-w-[16rem] rounded-md border border-border bg-surface-elevated p-2 shadow-lg ${ALIGN_CLASS[align]} ${SIDE_CLASS[side]}`}
+          className={`absolute z-50 min-w-[16rem] rounded-md bg-surface-1 p-2 ${ALIGN_CLASS[align]} ${SIDE_CLASS[side]}`}
         >
           <div className="mb-2 px-2">
             <div className="text-xs font-semibold text-foreground-muted">
