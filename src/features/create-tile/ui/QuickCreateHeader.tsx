@@ -98,7 +98,7 @@ export function QuickCreateHeader({
         // that would otherwise win over the Tailwind underline utility.
         classNames={{
           input:
-            "qc-underline-input text-[20px] font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
+            "qc-underline-input text-title font-semibold leading-snug text-foreground placeholder:text-[var(--foreground-muted)] placeholder:font-normal bg-transparent px-0 h-auto",
         }}
       />
     </FormRow>
