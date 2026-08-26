@@ -80,7 +80,7 @@ export function EssentialRow({
           data-testid={testId}
           className="group flex min-h-[48px] w-full items-center gap-2 rounded-lg transition-colors hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-primary"
         >
-          <span className="w-[58px] shrink-0 select-none text-[11px] font-bold text-foreground-muted">
+          <span className="w-[58px] shrink-0 select-none text-caption font-bold text-foreground-muted">
             {label}
           </span>
           <div className="min-w-0 flex-1 text-left">{chip}</div>
