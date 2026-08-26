@@ -151,7 +151,7 @@ export default function ApiExplorer() {
       <Card padded={false}>
         <table className="w-full table-fixed text-left text-sm">
           <thead className="bg-surface-0">
-            <tr className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <tr className="text-caption font-semibold uppercase tracking-wider text-ink-3">
               <th className="w-20 px-3 py-2">{t("dashboard.api.table.method")}</th>
               <th className="px-3 py-2">{t("dashboard.api.table.path")}</th>
               <th className="px-3 py-2">{t("dashboard.api.table.summary")}</th>
@@ -185,7 +185,7 @@ export default function ApiExplorer() {
                   <td className="px-3 py-1.5">
                     <span
                       className={cn(
-                        "inline-flex h-5 w-fit items-center justify-center rounded px-1.5 font-mono text-[10px] font-bold",
+                        "inline-flex h-5 w-fit items-center justify-center rounded px-1.5 font-mono text-caption font-bold",
                         methodStyle[m.method as Method],
                       )}
                     >
@@ -197,7 +197,7 @@ export default function ApiExplorer() {
                   </td>
                   <td className="truncate px-3 py-1.5 text-ink-2">{m.summary}</td>
                   <td className="hidden px-3 py-1.5 md:table-cell">
-                    <span className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-ink-3">
+                    <span className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wider text-ink-3">
                       {m.tag}
                     </span>
                   </td>
@@ -205,7 +205,7 @@ export default function ApiExplorer() {
                     {m.auth ? (
                       <Lock className="ml-auto h-3 w-3 text-ink-3" />
                     ) : (
-                      <span className="text-[10px] text-ink-4">{t("dashboard.api.publicLabel")}</span>
+                      <span className="text-caption text-ink-4">{t("dashboard.api.publicLabel")}</span>
                     )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
@@ -278,14 +278,14 @@ function EndpointDetail({
         <div className="flex items-center gap-3">
           <span
             className={cn(
-              "inline-flex h-5 items-center rounded px-1.5 font-mono text-[10px] font-bold",
+              "inline-flex h-5 items-center rounded px-1.5 font-mono text-caption font-bold",
               methodStyle[meta.method as Method],
             )}
           >
             {meta.method}
           </span>
           <code className="font-mono text-sm text-ink-1">{meta.path}</code>
-          <span className="rounded border border-border bg-surface-1 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-ink-3">
+          <span className="rounded border border-border bg-surface-1 px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wider text-ink-3">
             {meta.tag}
           </span>
         </div>
@@ -306,18 +306,18 @@ function EndpointDetail({
             {meta.keywords.map((k) => (
               <span
                 key={k}
-                className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-[10px] text-ink-3"
+                className="rounded border border-border bg-surface-0 px-1.5 py-0.5 text-caption text-ink-3"
               >
                 {k}
               </span>
             ))}
             {meta.auth ? (
-              <span className="inline-flex items-center gap-1 rounded bg-status-warn-soft px-1.5 py-0.5 text-[10px] font-medium text-status-warn">
+              <span className="inline-flex items-center gap-1 rounded bg-status-warn-soft px-1.5 py-0.5 text-caption font-medium text-status-warn">
                 <Lock className="h-2.5 w-2.5" />
                 {t("dashboard.api.authRequired")}
               </span>
             ) : (
-              <span className="rounded bg-status-active-soft px-1.5 py-0.5 text-[10px] font-medium text-status-active">
+              <span className="rounded bg-status-active-soft px-1.5 py-0.5 text-caption font-medium text-status-active">
                 {t("dashboard.api.publicLabel")}
               </span>
             )}
@@ -329,7 +329,7 @@ function EndpointDetail({
                 <div key={name} className="flex flex-col gap-1">
                   <label
                     htmlFor={`api-path-param-${name}`}
-                    className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
+                    className="text-caption font-semibold uppercase tracking-wider text-ink-3"
                   >
                     {t("dashboard.api.pathLabel", { name })}
                   </label>
@@ -351,7 +351,7 @@ function EndpointDetail({
           <div className="mt-4">
             <label
               htmlFor="api-query-params"
-              className="text-[10px] font-semibold uppercase tracking-wider text-ink-3"
+              className="text-caption font-semibold uppercase tracking-wider text-ink-3"
             >
               {t("dashboard.api.queryLabel")}
             </label>
@@ -369,7 +369,7 @@ function EndpointDetail({
           {meta.method !== "GET" ? (
             <div className="mt-4">
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+                <span className="text-caption font-semibold uppercase tracking-wider text-ink-3">
                   {t("dashboard.api.bodyLabel")}
                 </span>
                 <Button onClick={() => setBodyText(defaultBody(endpointKey, t))}>
@@ -411,19 +411,19 @@ function EndpointDetail({
             >
               {t("dashboard.api.copyAsCurl")}
             </Button>
-            <span className="ml-auto font-mono text-[10px] text-ink-4">{endpointKey}</span>
+            <span className="ml-auto font-mono text-caption text-ink-4">{endpointKey}</span>
           </div>
         </div>
 
         <div className="p-4">
           <div className="mb-1.5 flex items-center justify-between">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <span className="text-caption font-semibold uppercase tracking-wider text-ink-3">
               {t("dashboard.api.responseLabel")}
             </span>
             {response ? (
               <span
                 className={cn(
-                  "rounded px-1.5 py-0.5 font-mono text-[10px]",
+                  "rounded px-1.5 py-0.5 font-mono text-caption",
                   response.ok
                     ? "bg-status-active-soft text-status-active"
                     : "bg-status-danger-soft text-status-danger",
@@ -435,7 +435,7 @@ function EndpointDetail({
               </span>
             ) : null}
           </div>
-          <pre className="min-h-[12rem] overflow-auto rounded-md border border-border bg-surface-0 p-2 font-mono text-[11px] text-ink-1">
+          <pre className="min-h-[12rem] overflow-auto rounded-md border border-border bg-surface-0 p-2 font-mono text-caption text-ink-1">
             {response
               ? JSON.stringify(
                   response.ok ? response.data : (response.error.body ?? response.error),
