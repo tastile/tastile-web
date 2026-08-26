@@ -62,5 +62,6 @@ export const designTokens = {
     title: 'var(--text-title-size)',
     body: 'var(--text-body-size)',
     caption: 'var(--text-caption-size)',
+    input: 'var(--text-input-size)',
   },
 } as const;

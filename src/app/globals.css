@@ -73,8 +73,9 @@
   --focus-ring-offset: 2px;
   --focus-ring-color: var(--primary);
 
-  /* Typography tokens — semantic 4-step scale (P3-1).
-     Strict mode: arbitrary sizes are forbidden; text-caption (12px) is the floor. */
+  /* Typography tokens — semantic 5-step scale (P3-1 + P3-3).
+     Strict mode: arbitrary sizes are forbidden; text-caption (12px) is the floor.
+     text-input (16px) is the minimum for form controls (iOS Safari auto-zoom). */
   --text-display-size: 32px;
   --text-display-line: 40px;
   --text-title-size: 20px;
@@ -83,6 +84,8 @@
   --text-body-line: 20px;
   --text-caption-size: 12px;
   --text-caption-line: 16px;
+  --text-input-size: 16px;
+  --text-input-line: 24px;
   --text-weight-semibold: 600;
   --text-weight-normal: 400;
   --text-weight-medium: 500;
@@ -230,7 +233,7 @@
   --spacing-nested-lg: 0.5rem;
   --spacing-nested-xl: 0.5rem;
 
-  /* Typography — Tailwind v4 generates text-display/title/body/caption utilities
+  /* Typography — Tailwind v4 generates text-display/title/body/caption/input utilities
      from these --text-* keys (paired with --line-height / --font-weight). */
   --text-display: var(--text-display-size);
   --text-display--line-height: var(--text-display-line);
@@ -244,6 +247,9 @@
   --text-caption: var(--text-caption-size);
   --text-caption--line-height: var(--text-caption-line);
   --text-caption--font-weight: var(--text-weight-medium);
+  --text-input: var(--text-input-size);
+  --text-input--line-height: var(--text-input-line);
+  --text-input--font-weight: var(--text-weight-normal);
 
   /* Fonts */
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
