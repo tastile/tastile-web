@@ -43,13 +43,13 @@ export function FieldRow({ label, htmlFor, hint, error, required, children }: Pr
         ) : null}
       </label>
       {hint ? (
-        <span id={hintId} className="text-[11px] text-[var(--foreground-muted)]">
+        <span id={hintId} className="text-caption text-[var(--foreground-muted)]">
           {hint}
         </span>
       ) : null}
       <div data-error={error ? "true" : undefined}>{enhanced}</div>
       {error ? (
-        <span id={errorId} role="alert" className="text-[11px] text-[var(--color-danger,#dc2626)]">
+        <span id={errorId} role="alert" className="text-caption text-[var(--color-danger,#dc2626)]">
           {error}
         </span>
       ) : null}
