@@ -218,7 +218,7 @@ function ActivityContent({ label, Icon, expanded, active = false }: ActivityCont
           flex: "0 0 40px",
         }}
       >
-        <Icon className="h-4 w-4" aria-hidden />
+        <Icon className="size-4" aria-hidden />
       </span>
       <span
         className={cn(
