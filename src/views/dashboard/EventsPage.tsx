@@ -228,7 +228,7 @@ export default function Events() {
           </div>
         ) : (
           <table className="w-full text-left text-sm">
-            <thead className="bg-surface-0 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <thead className="bg-surface-0 text-caption font-semibold uppercase tracking-wider text-ink-3">
               <tr>
                 <th className="w-8 px-2 py-2" />
                 <th className="w-20 px-2 py-2">{t("dashboard.events.table.type")}</th>
@@ -289,33 +289,33 @@ function FragmentRow({
           )}
         </td>
         <td className="px-2 py-1.5 align-top">
-          <span className="inline-flex h-5 items-center rounded bg-accent-soft px-1.5 font-mono text-[10px] font-semibold text-accent">
+          <span className="inline-flex h-5 items-center rounded bg-accent-soft px-1.5 font-mono text-caption font-semibold text-accent">
             {event.type}
           </span>
         </td>
-        <td className="px-2 py-1.5 align-top font-mono text-[11px] text-ink-1">
+        <td className="px-2 py-1.5 align-top font-mono text-caption text-ink-1">
           <span className="line-clamp-1">{event.id}</span>
         </td>
         <td className="px-2 py-1.5 align-top text-xs text-ink-2">
           {event.actor ? `${event.actor.kind}${event.actor.id ? ` · ${event.actor.id}` : ""}` : "—"}
         </td>
-        <td className="hidden px-2 py-1.5 align-top font-mono text-[11px] text-ink-3 md:table-cell">
+        <td className="hidden px-2 py-1.5 align-top font-mono text-caption text-ink-3 md:table-cell">
           {event.tile_id ?? "—"}
         </td>
-        <td className="px-2 py-1.5 text-right align-top font-mono text-[10px] text-ink-4">
+        <td className="px-2 py-1.5 text-right align-top font-mono text-caption text-ink-4">
           {formatRelative(event.occurred_at)}
         </td>
       </tr>
       {isOpen ? (
         <tr className="bg-surface-0">
           <td colSpan={6} className="px-4 py-3">
-            <div className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-wider text-ink-3">
+            <div className="mb-2 flex items-center gap-2 text-caption font-semibold uppercase tracking-wider text-ink-3">
               <Code2 className="h-3 w-3" /> {t("dashboard.events.payloadHeading")}
             </div>
-            <pre className="max-h-80 overflow-auto rounded-md border border-border bg-surface-1 p-3 font-mono text-[11px] text-ink-1">
+            <pre className="max-h-80 overflow-auto rounded-md border border-border bg-surface-1 p-3 font-mono text-caption text-ink-1">
               {JSON.stringify(event.payload ?? {}, null, 2)}
             </pre>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] sm:grid-cols-4">
+            <div className="mt-2 grid grid-cols-2 gap-2 text-caption sm:grid-cols-4">
               <Field label={t("dashboard.events.detail.eventId")} value={event.id} />
               <Field label={t("dashboard.events.table.occurred")} value={event.occurred_at} />
               <Field label={t("dashboard.events.table.tile")} value={event.tile_id ?? "—"} />
@@ -338,7 +338,7 @@ function FragmentRow({
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-surface-1 p-2">
-      <div className="text-[9px] font-semibold uppercase tracking-wider text-ink-4">{label}</div>
+      <div className="text-caption font-semibold uppercase tracking-wider text-ink-4">{label}</div>
       <div className="mt-0.5 truncate font-mono text-ink-1" title={value}>
         {value}
       </div>
