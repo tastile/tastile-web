@@ -85,7 +85,7 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
                 className="block w-full cursor-pointer px-4 py-3 text-left hover:bg-surface-1"
               >
                 <div className="text-xs text-foreground">{n.message}</div>
-                <div className="mt-1 font-mono text-[10px] text-foreground-subtle">
+                <div className="mt-1 font-mono text-caption text-foreground-subtle">
                   {n.timestamp.toLocaleTimeString(locale === "ja" ? "ja-JP" : "en-US", {
                     hour: "2-digit",
                     minute: "2-digit",
