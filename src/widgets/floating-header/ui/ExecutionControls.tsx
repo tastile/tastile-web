@@ -64,7 +64,7 @@ export function ExecutionControls() {
 
   if (loading && !tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
+      <div className="text-caption uppercase tracking-wider text-foreground-subtle">
         {t("execution.controls.noExecution")}
       </div>
     );
@@ -72,7 +72,7 @@ export function ExecutionControls() {
 
   if (!tileSnapshot) {
     return (
-      <div className="text-[10px] uppercase tracking-wider text-foreground-subtle">
+      <div className="text-caption uppercase tracking-wider text-foreground-subtle">
         {t("execution.controls.noExecution")}
       </div>
     );
@@ -92,7 +92,7 @@ export function ExecutionControls() {
 
   return (
     <div className="flex items-center gap-1.5">
-      <div className="hidden text-[10px] font-mono tabular-nums text-foreground-muted lg:block">
+      <div className="hidden text-caption font-mono tabular-nums text-foreground-muted lg:block">
         {remaining}
       </div>
       {!hasExecution && (
@@ -108,7 +108,7 @@ export function ExecutionControls() {
               })
           }
           disabled={state.busy !== null}
-          className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-caption font-semibold text-primary-fg transition-opacity hover:opacity-90 disabled:opacity-50"
           aria-label={t("execution.controls.startAria")}
           data-testid="execution-start"
           variant="subtle"
@@ -123,7 +123,7 @@ export function ExecutionControls() {
             type="button"
             onClick={onClick("pause")}
             disabled={state.busy !== null}
-            className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-[11px] font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
+            className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-caption font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
             aria-label={t("execution.controls.pauseAria")}
             variant="subtle"
             size="compact-sm"
@@ -134,7 +134,7 @@ export function ExecutionControls() {
             type="button"
             onClick={onClick("resume")}
             disabled={state.busy !== null}
-            className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-[11px] font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
+            className="flex h-7 items-center gap-1 rounded-md bg-surface-1 px-2 text-caption font-semibold text-foreground transition-colors hover:bg-surface-2 disabled:opacity-50"
             aria-label={t("execution.controls.resumeAria")}
             variant="subtle"
             size="compact-sm"
@@ -145,7 +145,7 @@ export function ExecutionControls() {
             type="button"
             onClick={onClick("finish")}
             disabled={state.busy !== null}
-            className="flex h-7 items-center gap-1 rounded-md bg-status-warn px-2 text-[11px] font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+            className="flex h-7 items-center gap-1 rounded-md bg-status-warn px-2 text-caption font-semibold text-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
             aria-label={t("execution.controls.finishAria")}
             data-testid="execution-finish"
             variant="subtle"
@@ -156,7 +156,7 @@ export function ExecutionControls() {
         </>
       )}
       {state.error && (
-        <span className="hidden text-[10px] text-status-danger lg:inline" title={state.error}>
+        <span className="hidden text-caption text-status-danger lg:inline" title={state.error}>
           {state.error}
         </span>
       )}
