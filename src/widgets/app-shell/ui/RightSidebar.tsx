@@ -62,7 +62,7 @@ export function RightSidebar({
   return (
     <aside className="relative flex w-72 min-w-0 flex-col gap-3 bg-transparent">
       {/* Next Up Card */}
-      <div className="rounded-xl bg-surface-elevated p-4">
+      <div className="rounded-xl bg-surface-1 p-4">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-foreground-muted">
           {t("sidebar.nextUp")}
         </h3>
@@ -108,7 +108,7 @@ export function RightSidebar({
       </div>
 
       {/* Timeline Card */}
-      <div className="flex-1 overflow-hidden rounded-xl bg-surface-elevated p-4">
+      <div className="flex-1 overflow-hidden rounded-xl bg-surface-1 p-4">
         <div className="mb-3 flex items-baseline justify-between gap-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground-muted">
             {t("sidebar.timeline")}
