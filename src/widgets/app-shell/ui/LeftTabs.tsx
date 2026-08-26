@@ -32,7 +32,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
         title={t("nav.new")}
       >
         <div className="flex w-10 shrink-0 items-center justify-center">
-          <Plus className="h-5 w-5" />
+          <Plus className="size-5" />
         </div>
         <span
           className={cn(
@@ -51,7 +51,7 @@ export function LeftTabs({ pinnedOpen }: LeftTabsProps) {
 
         {/* Settings - Bottom */}
         <TabButton
-          icon={<Settings className="h-5 w-5" />}
+          icon={<Settings className="size-5" />}
           label={t("nav.settings")}
           href="/dashboard/preferences"
           active={pathname?.startsWith("/dashboard/preferences")}
