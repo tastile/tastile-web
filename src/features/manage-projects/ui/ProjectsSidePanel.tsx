@@ -126,7 +126,7 @@ export function ProjectsSidePanel() {
   return (
     <div className="flex flex-col gap-2 pt-2">
       <div className="flex items-center justify-between px-4 pb-1 pt-2">
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-foreground-subtle">
+        <span className="text-caption font-semibold uppercase tracking-wider text-foreground-subtle">
           {t("panels.projects.projects")}
         </span>
         <ActionIcon
@@ -173,7 +173,7 @@ export function ProjectsSidePanel() {
           <div>
             <label
               htmlFor="project-color"
-              className="mb-1 block text-[10px] text-foreground-subtle"
+              className="mb-1 block text-caption text-foreground-subtle"
             >
               {t("panels.projects.colorLabel")}
             </label>
@@ -187,7 +187,7 @@ export function ProjectsSidePanel() {
           <Select
             aria-label={t("panels.projects.parentProjectAria")}
             label={
-              <span className="flex items-center gap-1 text-[10px] text-foreground-subtle">
+              <span className="flex items-center gap-1 text-caption text-foreground-subtle">
                 <FolderPlus className="h-3 w-3" aria-hidden />
                 {t("panels.projects.parentProjectLabel")}
               </span>
@@ -219,7 +219,7 @@ export function ProjectsSidePanel() {
               {creatingBusy ? t("panels.projects.creating") : t("common.create")}
             </Button>
 
-            {createError && <span className="text-[10px] text-status-danger">{createError}</span>}
+            {createError && <span className="text-caption text-status-danger">{createError}</span>}
           </div>
         </form>
       </Modal>
@@ -242,12 +242,12 @@ export function ProjectsSidePanel() {
           </Button>
 
           {loading && (
-            <div className="px-2 py-1.5 text-[10px] text-foreground-subtle">
+            <div className="px-2 py-1.5 text-caption text-foreground-subtle">
               {t("panels.projects.loadingProjects")}
             </div>
           )}
           {error && (
-            <div className="px-2 py-1.5 text-[10px] text-status-danger">{error.message}</div>
+            <div className="px-2 py-1.5 text-caption text-status-danger">{error.message}</div>
           )}
 
           {!loading && !error && workspaces.length > 0 && (
