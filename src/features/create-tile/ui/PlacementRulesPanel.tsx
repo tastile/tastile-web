@@ -52,7 +52,7 @@ export function PlacementRulesPanel({
 
   return (
     <Stack gap="md" p="md">
-      <FormRow icon={<Scale className="h-4 w-4" aria-hidden />}>
+      <FormRow icon={<Scale className="size-4" aria-hidden />}>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.heading")}</span>
           <span className="text-xs text-foreground-muted">
@@ -75,7 +75,7 @@ export function PlacementRulesPanel({
               <Trash2 size={15} />
             </ActionIcon>
           </Group>
-          <FormRow icon={<Scale className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Scale className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.effectRankLabel")}</span>
               <Group grow>
@@ -103,7 +103,7 @@ export function PlacementRulesPanel({
             </div>
           </FormRow>
           {rule.when ? (
-            <FormRow icon={<Filter className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<Filter className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.conditionLabel")}</span>
@@ -136,7 +136,7 @@ export function PlacementRulesPanel({
             </Button>
           )}
           {rule.effect.kind === 2 ? (
-            <FormRow icon={<Clock className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<Clock className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.timeLimitLabel")}</span>
                 <Group grow>
@@ -177,7 +177,7 @@ export function PlacementRulesPanel({
             </FormRow>
           ) : null}
           {rule.effect.kind === 3 ? (
-            <FormRow icon={<Star className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<Star className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.scoreLabel")}</span>
                 <NumberInput
@@ -192,7 +192,7 @@ export function PlacementRulesPanel({
             </FormRow>
           ) : null}
           {rule.effect.kind === 4 ? (
-            <FormRow icon={<FileCheck className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<FileCheck className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <span className="text-xs font-medium">{t("quickCreate.panel.placementRules.executionRecordLabel")}</span>
                 <Select
