@@ -49,7 +49,7 @@ export function renderEventBody(event: ScheduleEventData<CalendarEvent>, scope: 
       data-testid={`${SCOPE_TESTID[scope]}-${e.id}`}
       className="flex items-center gap-1 truncate"
     >
-      {Icon ? <Icon className="h-3 w-3 shrink-0" /> : null}
+      {Icon ? <Icon className="size-3 shrink-0" /> : null}
       {/*
         Guard: Icon may be undefined at runtime (e.g. unknown icon name,
         whitespace-only name) even when the type says FC. JSX cannot render
@@ -69,7 +69,7 @@ export function renderEventBody(event: ScheduleEventData<CalendarEvent>, scope: 
             <span
               key={t}
               data-testid={`event-tag-${t}`}
-              className="h-1.5 w-1.5 rounded-full bg-primary"
+              className="size-1.5 rounded-full bg-primary"
             />
           ))
         : null}
