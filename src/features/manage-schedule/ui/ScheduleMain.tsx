@@ -117,7 +117,7 @@ export function ScheduleMain() {
         )}
         {view === "recurring" && recurring.error && (
           <Alert
-            icon={<AlertCircle className="h-4 w-4" />}
+            icon={<AlertCircle className="size-4" />}
             title={t("panels.schedule.recurringErrorTitle")}
           >
             {recurring.error.message}
@@ -125,7 +125,7 @@ export function ScheduleMain() {
         )}
         {view === "placements" && placementsState.error && (
           <Alert
-            icon={<AlertCircle className="h-4 w-4" />}
+            icon={<AlertCircle className="size-4" />}
             title={t("panels.schedule.placementsErrorTitle")}
           >
             {placementsState.error.message}
@@ -133,7 +133,7 @@ export function ScheduleMain() {
         )}
         {view === "recurring" && !recurring.loading && recurring.templates.length === 0 && (
           <Alert
-            icon={<AlertCircle className="h-4 w-4" />}
+            icon={<AlertCircle className="size-4" />}
             title={t("panels.schedule.noRecurringTemplatesTitle")}
           >
             <p className="text-sm">{t("panels.schedule.noRecurringTemplatesBody")}</p>
@@ -144,7 +144,7 @@ export function ScheduleMain() {
           !loading &&
           filteredTiles.length === 0 && (
             <Alert
-              icon={<AlertCircle className="h-4 w-4" />}
+              icon={<AlertCircle className="size-4" />}
               title={t("panels.schedule.noTilesTitle")}
             >
               <p className="text-sm">{t("panels.schedule.noTilesBody")}</p>
@@ -155,7 +155,7 @@ export function ScheduleMain() {
           placementsCount === 0 &&
           candidatesCount === 0 && (
             <Alert
-              icon={<AlertCircle className="h-4 w-4" />}
+              icon={<AlertCircle className="size-4" />}
               title={t("panels.schedule.noPlacementsTitle")}
             >
               <p className="text-sm">{t("panels.schedule.noPlacementsBody")}</p>
