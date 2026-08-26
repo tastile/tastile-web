@@ -32,7 +32,7 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
 
       <div className="relative z-10">
         <div className="max-w-3xl">
-          <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+          <p className="text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
             {t.startHereLabel}
           </p>
           <h2 className={`mt-4 mkt-display-1 text-foreground ${display}`}>
@@ -74,7 +74,7 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
         </div>
 
         {/* Footer micro-info. */}
-        <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 pt-12 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle">
+        <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 pt-12 text-caption font-medium uppercase tracking-[0.22em] text-foreground-subtle">
           <span className={display}>{t.freeTierNote}</span>
           <span className={`${mono} text-foreground-muted`}>·</span>
           <span className={display}>{t.cancelNote}</span>
