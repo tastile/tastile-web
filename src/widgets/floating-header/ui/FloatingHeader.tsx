@@ -87,7 +87,7 @@ export function FloatingHeader({
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-40 flex h-12 items-center bg-surface-0 border-b border-border">
+      <header className="fixed inset-x-0 top-0 z-40 flex h-12 items-center bg-surface-0">
         {/* Left: logo */}
         <div className="flex w-12 shrink-0 items-center justify-center">
           <Link
@@ -228,7 +228,7 @@ export function FloatingHeader({
       >
         <div className="flex flex-col gap-4">
           {/* Quick actions (Search / Notifications) */}
-          <div className="grid grid-cols-2 gap-2 border-b border-border pb-4 shrink-0">
+          <div className="grid grid-cols-2 gap-2 pb-4 shrink-0">
             <Button
               variant="subtle"
               type="button"
