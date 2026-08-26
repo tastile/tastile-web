@@ -93,7 +93,7 @@ export function FlowSequencePanel({
 
   return (
     <Stack gap="md" p="md">
-      <FormRow icon={<ListOrdered className="h-4 w-4" aria-hidden />}>
+      <FormRow icon={<ListOrdered className="size-4" aria-hidden />}>
         <div className="flex flex-col gap-1">
           <span className="text-xs font-medium">{t("quickCreate.panel.flow.heading")}</span>
           <span className="text-xs text-foreground-muted">
@@ -116,7 +116,7 @@ export function FlowSequencePanel({
               <Trash2 size={15} />
             </ActionIcon>
           </Group>
-          <FormRow icon={<Bell className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<Bell className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.flow.observesLabel")}</span>
               <MultiSelect
@@ -127,7 +127,7 @@ export function FlowSequencePanel({
             </div>
           </FormRow>
           {flow.when ? (
-            <FormRow icon={<Filter className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<Filter className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">{t("quickCreate.panel.flow.flowConditionLabel")}</span>
@@ -160,7 +160,7 @@ export function FlowSequencePanel({
             </Button>
           )}
           {flow.candidateWhen ? (
-            <FormRow icon={<GitMerge className="h-4 w-4" aria-hidden />} className="items-start">
+            <FormRow icon={<GitMerge className="size-4" aria-hidden />} className="items-start">
               <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium">{t("quickCreate.panel.flow.candidateConditionLabel")}</span>
@@ -192,7 +192,7 @@ export function FlowSequencePanel({
               {t("quickCreate.panel.flow.addCandidateCondition")}
             </Button>
           )}
-          <FormRow icon={<ArrowRightLeft className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<ArrowRightLeft className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.flow.gapRankLabel")}</span>
               <Group grow>
@@ -210,7 +210,7 @@ export function FlowSequencePanel({
               </Group>
             </div>
           </FormRow>
-          <FormRow icon={<RefreshCw className="h-4 w-4" aria-hidden />} className="items-start">
+          <FormRow icon={<RefreshCw className="size-4" aria-hidden />} className="items-start">
             <div className="flex flex-col gap-1">
               <span className="text-xs font-medium">{t("quickCreate.panel.flow.cycleSettingsLabel")}</span>
               <Group grow>
