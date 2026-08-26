@@ -15,7 +15,7 @@ interface Props {
 export function StagedSection({ title, required, isOpen, onToggle, digest, children }: Props) {
   const Icon = isOpen ? ChevronDown : ChevronRight;
   return (
-    <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-1)]">
+    <section className="rounded-lg bg-[var(--surface-1)]">
       <button
         type="button"
         aria-expanded={isOpen}
@@ -35,7 +35,9 @@ export function StagedSection({ title, required, isOpen, onToggle, digest, child
           {isOpen ? null : digest}
         </span>
       </button>
-      {isOpen ? <div className="border-t border-[var(--border-subtle)] p-4">{children}</div> : null}
+      {isOpen ? (
+        <div className="bg-[var(--surface-2)] p-4">{children}</div>
+      ) : null}
     </section>
   );
 }
