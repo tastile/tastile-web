@@ -57,11 +57,11 @@ function TimePreview({ time, locale, t, hasTimeSetting }: TimePreviewProps) {
         <Calendar size={12} className="shrink-0" />
         <span>{t("behaviorPreviewScheduleLabel")}</span>
       </div>
-      <div className="relative h-6 rounded-md bg-surface-0 border border-border/30 overflow-hidden">
+      <div className="relative h-6 rounded-md bg-surface-0 overflow-hidden">
         {[0, 6, 12, 18].map((h) => (
           <div
             key={h}
-            className="absolute top-0 h-full border-l border-border/20"
+            className="absolute top-0 h-full"
             style={{ left: `${(h / 24) * 100}%` }}
           >
             <span className="absolute -top-0.5 -translate-x-1/2 text-[8px] text-foreground-muted/50">
@@ -70,7 +70,7 @@ function TimePreview({ time, locale, t, hasTimeSetting }: TimePreviewProps) {
           </div>
         ))}
         <div
-          className="absolute top-0.5 bottom-0.5 rounded-sm bg-primary/30 border border-primary/50"
+          className="absolute top-0.5 bottom-0.5 rounded-sm bg-primary/30"
           style={{
             left: `${startPos}%`,
             width: `${barWidth}%`,
@@ -114,9 +114,9 @@ function DurationPreview({ time, t, hasDuration }: DurationPreviewProps) {
         <Clock size={12} className="shrink-0" />
         <span>{t("behaviorPreviewExecutionTimeLabel")}</span>
       </div>
-      <div className="relative h-4 rounded-md bg-surface-0 border border-border/30 overflow-hidden">
+      <div className="relative h-4 rounded-md bg-surface-0 overflow-hidden">
         <div
-          className="absolute top-0.5 bottom-0.5 rounded-sm bg-blue-500/30 border border-blue-500/50"
+          className="absolute top-0.5 bottom-0.5 rounded-sm bg-blue-500/30"
           style={{
             left: `${minPercent}%`,
             width: `${Math.max(maxPercent - minPercent, 2)}%`,
@@ -186,7 +186,7 @@ function RepeatPreview({ recurring, locale, t, hasRepeat }: RepeatPreviewProps) 
           key={i}
           className={cn(
             "h-2 w-2 rounded-full",
-            isActive ? "bg-primary" : "bg-surface-0 border border-border/50",
+            isActive ? "bg-primary" : "bg-surface-0",
           )}
         />,
       );
@@ -256,11 +256,11 @@ function WindowPreview({ windows, t, hasWindows }: WindowPreviewProps) {
         <Layers size={12} className="shrink-0" />
         <span>{t("behaviorPreviewWindowLabel")}</span>
       </div>
-      <div className="relative h-6 rounded-md bg-surface-0 border border-border/30 overflow-hidden">
+      <div className="relative h-6 rounded-md bg-surface-0 overflow-hidden">
         {[0, 6, 12, 18].map((h) => (
           <div
             key={h}
-            className="absolute top-0 h-full border-l border-border/20"
+            className="absolute top-0 h-full"
             style={{ left: `${(h / 24) * 100}%` }}
           />
         ))}
@@ -270,7 +270,7 @@ function WindowPreview({ windows, t, hasWindows }: WindowPreviewProps) {
           return (
             <div
               key={w.id ?? i}
-              className="absolute top-0.5 bottom-0.5 rounded-sm bg-green-500/30 border border-green-500/50"
+              className="absolute top-0.5 bottom-0.5 rounded-sm bg-green-500/30"
               style={{
                 left: `${start}%`,
                 width: `${Math.max(end - start, 2)}%`,
@@ -317,7 +317,7 @@ function SourcePreview({ source, t }: SourcePreviewProps) {
               key={i}
               className={cn(
                 "h-2 w-2 rounded-sm",
-                i < source.priority ? "bg-primary" : "bg-surface-0 border border-border/50",
+                i < source.priority ? "bg-primary" : "bg-surface-0",
               )}
             />
           ))}
@@ -350,13 +350,13 @@ function RelationsPreview({ source, t, hasRelations }: RelationsPreviewProps) {
         {source.relations.slice(0, 3).map((r) => (
           <div
             key={r.id}
-            className="rounded-md bg-surface-0 border border-border/50 px-2 py-0.5 text-[10px] text-foreground"
+            className="rounded-md bg-surface-0 px-2 py-0.5 text-[10px] text-foreground"
           >
             {r.referencedTitle || "—"}
           </div>
         ))}
         {source.relations.length > 3 && (
-          <div className="rounded-md bg-surface-0 border border-border/50 px-2 py-0.5 text-[10px] text-foreground-muted">
+          <div className="rounded-md bg-surface-0 px-2 py-0.5 text-[10px] text-foreground-muted">
             +{source.relations.length - 3}
           </div>
         )}
@@ -386,7 +386,7 @@ function TasksPreview({ plan, t, hasTasks }: TasksPreviewProps) {
       <div className="space-y-1">
         {plan.completion.tasks.slice(0, 3).map((task) => (
           <div key={task.id} className="flex items-center gap-2 text-[10px] text-foreground">
-            <div className="h-3 w-3 rounded-sm border border-border/50 bg-surface-0" />
+            <div className="h-3 w-3 rounded-sm bg-surface-0" />
             <span className="truncate">{task.content?.title || untitled}</span>
           </div>
         ))}
@@ -435,7 +435,7 @@ export function BehaviorPreview({
     <Accordion
       variant="separated"
       radius="md"
-      classNames={{ item: "border-border/50 bg-surface-0" }}
+      classNames={{ item: "bg-surface-0" }}
     >
       <Accordion.Item value="behavior-preview">
         <Accordion.Control className="text-xs font-semibold text-foreground min-h-[36px] py-1">
