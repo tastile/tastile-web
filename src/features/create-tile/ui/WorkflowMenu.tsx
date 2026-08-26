@@ -186,8 +186,8 @@ export function WorkflowMenu({
                   data-testid={`workflow-menu-item-${kind}`}
                   className="group flex items-start gap-3 rounded-md px-2 py-2 text-left hover:bg-surface-2 focus:bg-surface-2 focus:outline-none"
                 >
-                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-ink">
-                    <Icon aria-hidden className="h-4 w-4" />
+                  <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-accent-soft text-accent-ink">
+                    <Icon aria-hidden className="size-4" />
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-medium text-foreground">
@@ -199,7 +199,7 @@ export function WorkflowMenu({
                   </span>
                   <ChevronRight
                     aria-hidden
-                    className="mt-2 h-4 w-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-70 group-focus:opacity-70"
+                    className="mt-2 size-4 shrink-0 opacity-0 transition-opacity group-hover:opacity-70 group-focus:opacity-70"
                   />
                 </button>
               );
