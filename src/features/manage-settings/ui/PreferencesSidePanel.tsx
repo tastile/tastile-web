@@ -99,7 +99,7 @@ export function PreferencesSidePanel() {
                 )}
                 aria-current={isActive ? "page" : undefined}
               >
-                <tab.icon className="h-4 w-4 shrink-0" />
+                <tab.icon className="size-4 shrink-0" />
                 {t(tab.labelKey)}
               </Link>
             );
