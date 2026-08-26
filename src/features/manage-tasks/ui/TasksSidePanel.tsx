@@ -175,7 +175,7 @@ function TasksSearchSection({
 }) {
   return (
     <div className="px-3">
-      <p className="mb-2 text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+      <p className="mb-2 text-caption font-bold uppercase tracking-wider text-foreground-lighter">
         {t("panels.tasks.search")}
       </p>
       <TextInput
@@ -211,11 +211,11 @@ function TasksTimeRangeSection({
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5 text-foreground-subtle" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+          <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
             {t("panels.tasks.timeRange")}
           </p>
         </div>
-        <span className="text-[11px] font-mono font-medium text-foreground-muted">
+        <span className="text-caption font-mono font-medium text-foreground-muted">
           {rangeVal}{" "}
           {rangeUnit === "d"
             ? t("panels.tasks.days")
@@ -295,11 +295,11 @@ function TasksMinDurationSection({
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <Flame className="h-3.5 w-3.5 text-foreground-subtle" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+          <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
             {t("panels.tasks.minDuration")}
           </p>
         </div>
-        <span className="text-[11px] font-mono font-medium text-foreground-muted">
+        <span className="text-caption font-mono font-medium text-foreground-muted">
           {minDuration} {t("panels.tasks.minUnit")}
         </span>
       </div>
@@ -361,7 +361,7 @@ function TasksPrioritySection({
     <div className="px-3 pt-4">
       <div className="mb-3 flex items-center gap-1.5">
         <ShieldAlert className="h-3.5 w-3.5 text-foreground-subtle" />
-        <p className="text-[10px] font-bold uppercase tracking-wider text-foreground-lighter">
+        <p className="text-caption font-bold uppercase tracking-wider text-foreground-lighter">
           {t("panels.tasks.priorityFilter")}
         </p>
       </div>
