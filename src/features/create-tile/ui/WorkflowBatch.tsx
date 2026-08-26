@@ -42,7 +42,7 @@ export function WorkflowBatch() {
                   : "border-border bg-surface-1 text-foreground-muted hover:bg-surface-2")
               }
             >
-              <Icon aria-hidden className="h-3.5 w-3.5" />
+              <Icon aria-hidden className="size-3.5" />
               {label}
             </button>
           );
