@@ -138,7 +138,7 @@ export function AccessTokenSection() {
       </div>
 
       {error ? (
-        <Alert title={error} icon={<AlertCircle className="h-4 w-4" />} color="red" />
+        <Alert title={error} icon={<AlertCircle className="size-4" />} color="red" />
       ) : null}
 
       {createdToken ? (
@@ -150,7 +150,7 @@ export function AccessTokenSection() {
               onClick={() => void copyToken(createdToken.access_token)}
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
             >
-              {clipboard.copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {clipboard.copied ? <Check className="size-4" /> : <Copy className="size-4" />}
               {clipboard.copied ? t("account.tokens.copied") : t("account.tokens.copy")}
             </Button>
           </div>
@@ -166,7 +166,7 @@ export function AccessTokenSection() {
           onClick={() => setCreating(true)}
           className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-fg hover:bg-primary-hover"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="size-4" />
           {t("account.tokens.issue")}
         </Button>
       </div>
@@ -217,7 +217,7 @@ export function AccessTokenSection() {
 
       <section className="border border-border bg-surface-0 rounded-md p-5">
         <div className="mb-4 flex items-center gap-3">
-          <KeyRound className="h-5 w-5 text-foreground-muted" />
+          <KeyRound className="size-5 text-foreground-muted" />
           <h3 className="font-semibold text-foreground">{t("account.tokens.issuedHeading")}</h3>
         </div>
 
@@ -279,7 +279,7 @@ export function AccessTokenSection() {
                       disabled={revoked}
                       className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-foreground disabled:opacity-40"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="size-4" />
                       {t("account.tokens.rename")}
                     </Button>
                     <Button
@@ -288,7 +288,7 @@ export function AccessTokenSection() {
                       disabled={revoked || submitting}
                       className="inline-flex items-center gap-1.5 rounded-full bg-surface-3 px-3 py-2 text-sm font-semibold text-danger disabled:opacity-40"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="size-4" />
                       {t("account.tokens.revoke")}
                     </Button>
                   </div>
