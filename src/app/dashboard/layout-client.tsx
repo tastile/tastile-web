@@ -166,7 +166,6 @@ function MobileSidePanelFab({ onClick }: { onClick: () => void }) {
       aria-label={t("dashboard.sidePanelOpenAria")}
       onClick={onClick}
       className="fixed bottom-6 right-6 z-40 flex md:!hidden"
-      style={{ boxShadow: "var(--mantine-shadow-lg)" }}
     >
       <PanelLeftDashed size={20} />
     </ActionIcon>
