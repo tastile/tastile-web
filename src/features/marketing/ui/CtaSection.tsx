@@ -67,14 +67,14 @@ export function CtaSection({ t, lang }: { t: Dict["finalCta"]; lang: Lang }) {
           </Link>
           <Link
             href="/download"
-            className={`mkt-cta inline-flex items-center gap-2 rounded-full border border-surface-2 bg-surface-0 px-6 py-3.5 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
+            className={`mkt-cta inline-flex items-center gap-2 rounded-full bg-surface-0 px-6 py-3.5 text-sm font-medium text-foreground hover:bg-surface-2 ${display}`}
           >
             {t.ctaSecondary}
           </Link>
         </div>
 
         {/* Footer micro-info. */}
-        <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-surface-2 pt-6 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle">
+        <div className="mt-16 flex flex-wrap items-center gap-x-6 gap-y-2 pt-12 text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-subtle">
           <span className={display}>{t.freeTierNote}</span>
           <span className={`${mono} text-foreground-muted`}>·</span>
           <span className={display}>{t.cancelNote}</span>
