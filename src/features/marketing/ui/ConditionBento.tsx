@@ -21,7 +21,7 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
       <div className="layout-shell relative z-10">
         <header className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.2fr] lg:gap-16 lg:items-end">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted">
+            <p className="text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted">
               {t.eyebrow}
             </p>
             <h2 className={`mt-3 mkt-display-2 text-foreground ${display}`}>{t.title}</h2>
@@ -38,7 +38,7 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
             <div className="mt-6 flex items-center gap-3">
               <span className={`mkt-rule-short ${mono}`} />
               <span
-                className={`text-[11px] font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
+                className={`text-caption font-medium uppercase tracking-[0.22em] text-foreground-muted ${display}`}
               >
                 {t.axisLabel}
               </span>
@@ -78,7 +78,7 @@ export function ConditionBento({ t, lang }: { t: Dict["bento"]; lang: Lang }) {
                   {row.body}
                 </p>
                 <div className={`mt-4 bg-surface-2 pl-4 py-3 ${body}`}>
-                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
+                  <p className="text-caption font-medium uppercase tracking-[0.18em] text-primary">
                     {t.exampleLabel}
                   </p>
                   <p className="mt-1 text-sm leading-relaxed text-foreground">{row.example}</p>
