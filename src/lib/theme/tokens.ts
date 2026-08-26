@@ -57,4 +57,10 @@ export const designTokens = {
     row: 48,
     'row-tight': 44,
   },
+  text: {
+    display: 'var(--text-display-size)',
+    title: 'var(--text-title-size)',
+    body: 'var(--text-body-size)',
+    caption: 'var(--text-caption-size)',
+  },
 } as const;
