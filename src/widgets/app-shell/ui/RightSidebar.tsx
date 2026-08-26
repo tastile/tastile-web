@@ -115,7 +115,7 @@ export function RightSidebar({
           </h3>
           {timelineRangeLabel ? (
             <span
-              className="text-[10px] font-medium text-foreground-muted"
+              className="text-caption font-medium text-foreground-muted"
               title={timelineRangeLabel}
             >
               {timelineRangeLabel}
