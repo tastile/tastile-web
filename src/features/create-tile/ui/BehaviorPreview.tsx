@@ -64,7 +64,7 @@ function TimePreview({ time, locale, t, hasTimeSetting }: TimePreviewProps) {
             className="absolute top-0 h-full"
             style={{ left: `${(h / 24) * 100}%` }}
           >
-            <span className="absolute -top-0.5 -translate-x-1/2 text-[8px] text-foreground-muted/50">
+            <span className="absolute -top-0.5 -translate-x-1/2 text-caption text-foreground-muted/50">
               {h}
             </span>
           </div>
@@ -77,7 +77,7 @@ function TimePreview({ time, locale, t, hasTimeSetting }: TimePreviewProps) {
           }}
         />
       </div>
-      <div className="text-[10px] text-foreground-muted">
+      <div className="text-caption text-foreground-muted">
         {time.whenMode === "day" && time.span.start
           ? formatDisplayDate(time.span.start, true, locale, t)
           : time.whenMode === "reference"
@@ -123,7 +123,7 @@ function DurationPreview({ time, t, hasDuration }: DurationPreviewProps) {
           }}
         />
       </div>
-      <div className="text-[10px] text-foreground-muted">
+      <div className="text-caption text-foreground-muted">
         {min !== null && max !== null
           ? `${formatMin(min)}〜${formatMin(max)}`
           : min !== null
@@ -233,7 +233,7 @@ function RepeatPreview({ recurring, locale, t, hasRepeat }: RepeatPreviewProps) 
         <span>{t("behaviorPreviewRecurrenceLabel")}</span>
       </div>
       <div className="flex items-center gap-0.5">{renderDots()}</div>
-      <div className="text-[10px] text-foreground-muted">
+      <div className="text-caption text-foreground-muted">
         {getRepeatLabel()}
         {recurring.endDate && ` ~ ${recurring.endDate.slice(0, 10)}`}
       </div>
@@ -279,7 +279,7 @@ function WindowPreview({ windows, t, hasWindows }: WindowPreviewProps) {
           );
         })}
       </div>
-      <div className="text-[10px] text-foreground-muted">
+      <div className="text-caption text-foreground-muted">
         {windows
           .map((w) => {
             if (w.bounds.start && w.bounds.end) {
@@ -322,11 +322,11 @@ function SourcePreview({ source, t }: SourcePreviewProps) {
             />
           ))}
         </div>
-        <span className="text-[10px] text-foreground-muted">
+        <span className="text-caption text-foreground-muted">
           {t("behaviorPreviewPriorityPrefix", { value: source.priority })}
         </span>
       </div>
-      <div className="text-[10px] text-foreground-muted">{splitLabel}</div>
+      <div className="text-caption text-foreground-muted">{splitLabel}</div>
     </div>
   );
 }
@@ -350,13 +350,13 @@ function RelationsPreview({ source, t, hasRelations }: RelationsPreviewProps) {
         {source.relations.slice(0, 3).map((r) => (
           <div
             key={r.id}
-            className="rounded-md bg-surface-0 px-2 py-0.5 text-[10px] text-foreground"
+            className="rounded-md bg-surface-0 px-2 py-0.5 text-caption text-foreground"
           >
             {r.referencedTitle || "—"}
           </div>
         ))}
         {source.relations.length > 3 && (
-          <div className="rounded-md bg-surface-0 px-2 py-0.5 text-[10px] text-foreground-muted">
+          <div className="rounded-md bg-surface-0 px-2 py-0.5 text-caption text-foreground-muted">
             +{source.relations.length - 3}
           </div>
         )}
@@ -385,13 +385,13 @@ function TasksPreview({ plan, t, hasTasks }: TasksPreviewProps) {
       </div>
       <div className="space-y-1">
         {plan.completion.tasks.slice(0, 3).map((task) => (
-          <div key={task.id} className="flex items-center gap-2 text-[10px] text-foreground">
+          <div key={task.id} className="flex items-center gap-2 text-caption text-foreground">
             <div className="h-3 w-3 rounded-sm bg-surface-0" />
             <span className="truncate">{task.content?.title || untitled}</span>
           </div>
         ))}
         {plan.completion.tasks.length > 3 && (
-          <div className="text-[10px] text-foreground-muted">
+          <div className="text-caption text-foreground-muted">
             +{plan.completion.tasks.length - 3}
             {moreCount}
           </div>
