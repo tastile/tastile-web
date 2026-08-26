@@ -30,7 +30,7 @@ export function SiteHeaderMobileNav({ translations, hideAuth }: SiteHeaderMobile
         onClick={open}
         className="sm:hidden inline-flex items-center justify-center rounded-md p-1.5 text-foreground-muted hover:bg-surface-2 hover:text-foreground"
       >
-        <Menu className="h-5 w-5" />
+        <Menu className="size-5" />
       </Button>
 
       <Drawer
@@ -40,7 +40,7 @@ export function SiteHeaderMobileNav({ translations, hideAuth }: SiteHeaderMobile
         size="min(18rem, 90vw)"
         withCloseButton
         closeButtonProps={{
-          icon: <X className="h-4 w-4" />,
+          icon: <X className="size-4" />,
           "aria-label": t("nav.closeMenuAria"),
         }}
         title={t("nav.menuTitle")}
