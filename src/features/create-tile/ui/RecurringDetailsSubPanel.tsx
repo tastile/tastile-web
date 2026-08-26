@@ -40,7 +40,7 @@ export function RecurringDetailsSubPanel({
       layout="drawer"
     >
       <Stack gap="md">
-        <FormRow icon={<Repeat className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Repeat className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.frameRulesLabel")}</span>
             <Text size="sm" c="dimmed">
@@ -51,7 +51,7 @@ export function RecurringDetailsSubPanel({
           </div>
         </FormRow>
 
-        <FormRow icon={<Link2 className="h-4 w-4" aria-hidden />} className="items-start">
+        <FormRow icon={<Link2 className="size-4" aria-hidden />} className="items-start">
           <div className="flex flex-col gap-1">
             <span className="text-xs font-medium">{t("quickCreate.referencesLabel")}</span>
             <Text size="sm" c="dimmed">
