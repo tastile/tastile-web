@@ -146,7 +146,7 @@ export function LoginPanel(props: {
             {t("auth.login.createAccount")}
           </Button>
           <section className="mx-4 text-center text-sm leading-5 text-foreground-subtle">
-            <p className="text-center text-[11px] leading-4 text-foreground-subtle">
+            <p className="text-center text-caption leading-4 text-foreground-subtle">
               {t("auth.login.legalNotice", {
                 termsLink: t("auth.login.termsLink"),
                 privacyLink: t("auth.login.privacyLink"),
