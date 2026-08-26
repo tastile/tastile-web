@@ -373,7 +373,7 @@ export function TaskDefinitionEditorModal({
               type="button"
               size="sm"
               variant="subtle"
-              leftSection={<Plus className="h-3 w-3" aria-hidden />}
+              leftSection={<Plus className="size-3" aria-hidden />}
               onClick={addOrderRule}
               disabled={targetOptions.length === 0}
               data-testid={`${testIdSuffix}-order-add`}
@@ -429,7 +429,7 @@ export function TaskDefinitionEditorModal({
                     aria-label={t(`${i18nPrefix}.removeItem`)}
                     data-testid={`${testIdSuffix}-order-rule-${rule.id}-remove`}
                   >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                    <Trash2 className="size-3.5" aria-hidden />
                   </ActionIcon>
                 </div>
               ))}
