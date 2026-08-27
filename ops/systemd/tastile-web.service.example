@@ -1,0 +1,16 @@
+[Unit]
+Description=Tastile Web (production)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tastile
+WorkingDirectory=/opt/tastile-web
+EnvironmentFile=/opt/tastile-web/.env.production
+ExecStartPre=/opt/tastile-web/scripts/sops-decrypt.sh --env=production
+ExecStart=/usr/bin/bun run start
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
