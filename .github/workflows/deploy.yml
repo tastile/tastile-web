@@ -15,7 +15,15 @@ permissions:
   contents: read
 
 jobs:
+  decrypt:
+    uses: ./.github/workflows/sops-decrypt.yml
+    with:
+      env: production
+    secrets:
+      aws_role_to_assume: ${{ secrets.AWS_OIDC_ROLE_PRODUCTION }}
+
   build-and-deploy:
+    needs: decrypt
     runs-on: ubuntu-latest
     environment: production
     outputs:
@@ -59,42 +67,24 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Create public build environment
-        env:
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-          TASTILE_DESKTOP_MANIFEST_URL: ${{ secrets.TASTILE_DESKTOP_MANIFEST_URL }}
-          NEXT_PUBLIC_TASTILE_DESKTOP_VERSION: ${{ secrets.NEXT_PUBLIC_TASTILE_DESKTOP_VERSION }}
-          TASTILE_DESKTOP_VERSION: ${{ secrets.TASTILE_DESKTOP_VERSION }}
-          NEXT_PUBLIC_GA_MEASUREMENT_ID: ${{ secrets.NEXT_PUBLIC_GA_MEASUREMENT_ID }}
-          NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN: ${{ secrets.NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN }}
-          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_CLIENT_ID }}
-          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ secrets.NEXT_PUBLIC_COGNITO_USER_POOL_ID }}
-          NEXT_PUBLIC_COGNITO_ISSUER: ${{ secrets.NEXT_PUBLIC_COGNITO_ISSUER }}
-          NEXT_PUBLIC_COGNITO_JWKS_URL: ${{ secrets.NEXT_PUBLIC_COGNITO_JWKS_URL }}
+      - name: Download decrypted .env artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: env-production
+          path: env-artifacts
+
+      - name: Stage .env for build
+        # The decrypted .env.production artifact is the source of truth for
+        # NEXT_PUBLIC_* / Stripe / Cognito envs. Next.js inlines NEXT_PUBLIC_*
+        # at build time, so the artifact must be in place before `bun run
+        # check:release` invokes `next build`.
         run: |
-          cat > .env.production <<ENVEOF
-          NEXT_PUBLIC_APP_URL=https://app.tastile.app
-          NEXT_PUBLIC_APEX_HOST=tastile.app
-          NEXT_PUBLIC_APP_HOST=app.tastile.app
-          TASTILE_DESKTOP_MANIFEST_URL=${TASTILE_DESKTOP_MANIFEST_URL}
-          NEXT_PUBLIC_TASTILE_DESKTOP_VERSION=${NEXT_PUBLIC_TASTILE_DESKTOP_VERSION}
-          TASTILE_DESKTOP_VERSION=${TASTILE_DESKTOP_VERSION}
-          NEXT_PUBLIC_GA_MEASUREMENT_ID=${NEXT_PUBLIC_GA_MEASUREMENT_ID}
-          NEXT_PUBLIC_DAEMON_BASE_URL=https://api.tastile.app
-          NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN=${NEXT_PUBLIC_COGNITO_HOSTED_UI_DOMAIN}
-          NEXT_PUBLIC_COGNITO_CLIENT_ID=${NEXT_PUBLIC_COGNITO_CLIENT_ID}
-          NEXT_PUBLIC_COGNITO_USER_POOL_ID=${NEXT_PUBLIC_COGNITO_USER_POOL_ID}
-          NEXT_PUBLIC_COGNITO_REGION=ap-northeast-1
-          NEXT_PUBLIC_COGNITO_ISSUER=${NEXT_PUBLIC_COGNITO_ISSUER}
-          NEXT_PUBLIC_COGNITO_JWKS_URL=${NEXT_PUBLIC_COGNITO_JWKS_URL}
-          NEXT_PUBLIC_COGNITO_CALLBACK_URL=https://app.tastile.app/auth/callback
-          NEXT_PUBLIC_COGNITO_LOGOUT_URL=https://app.tastile.app
-          NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=Google,SignInWithApple
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-          NEXT_PUBLIC_TASTILE_CORE_URL=https://api.tastile.app
-          NEXT_PUBLIC_CORE_DIRECT_MODE=1
-          CLOUD_API_BASE=http://127.0.0.1:31400
-          ENVEOF
+          cp env-artifacts/.env.production ./.env.production 2>/dev/null || true
+          cp env-artifacts/.env.product ./.env.product 2>/dev/null || true
+          cp env-artifacts/.env.development ./.env.development 2>/dev/null || true
+          cp env-artifacts/.env.dev ./.env.dev 2>/dev/null || true
+          cp env-artifacts/.env.staging ./.env.staging 2>/dev/null || true
+          cp env-artifacts/.env ./.env 2>/dev/null || true
 
       - name: Lint, typecheck, test, build
         env:

@@ -8,7 +8,15 @@ on:
       - master
 
 jobs:
+  decrypt:
+    uses: ./.github/workflows/sops-decrypt.yml
+    with:
+      env: development
+    secrets:
+      aws_role_to_assume: ${{ secrets.AWS_OIDC_ROLE_DEVELOPMENT }}
+
   verify:
+    needs: decrypt
     runs-on: ubuntu-latest
 
     steps:
@@ -23,8 +31,20 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Prepare non-secret production build environment
-        run: cp .env.production.example .env.production
+      - name: Download decrypted .env artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: env-development
+          path: env-artifacts
+
+      - name: Stage .env for build
+        run: |
+          cp env-artifacts/.env.development ./.env.development 2>/dev/null || true
+          cp env-artifacts/.env.dev ./.env.dev 2>/dev/null || true
+          cp env-artifacts/.env.production ./.env.production 2>/dev/null || true
+          cp env-artifacts/.env.product ./.env.product 2>/dev/null || true
+          cp env-artifacts/.env.staging ./.env.staging 2>/dev/null || true
+          cp env-artifacts/.env ./.env 2>/dev/null || true
 
       - name: Validate repository
         run: bun run check:release
