@@ -113,3 +113,5 @@ docs/trace/
 /docs/plans/evidence/**/screenshots/
 /docs/plans/evidence/**/dev-server.log
 /docs/plans/evidence/**/dev-server.pid
+# sops loader output (plain text .env files)
+!.env.*.sops
