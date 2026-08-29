@@ -105,6 +105,7 @@ docs/trace/
 # Generated / throwaway artifacts (policy §30 / §31)
 .tmp/
 /openapi.json
+/public/openapi.yaml
 /.openapi-cache.json
 # Local dev-server lifecycle artifacts (never enter release)
 /dev-server.log

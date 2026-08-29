@@ -47,6 +47,7 @@
     "dist",
     "test-results",
     "scripts/generate-openapi-types.ts",
+    "scripts/sync-openapi.ts",
     "e2e/**/*.ts",
     "e2e/**/*.tsx"
   ]

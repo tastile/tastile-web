@@ -21,6 +21,7 @@
     "nanoid": ">=3.3.18"
   },
   "scripts": {
+    "prebuild": "bun run sync:openapi",
     "dev": "next dev",
     "build": "next build",
     "build:prod": "node scripts/build-product.mts",
@@ -37,6 +38,7 @@
     "knip": "knip --no-config-hints",
     "check": "bun run lint:biome && bun run lint && bun run typecheck && bun run knip && bun run audit:responsive && bun run test:unit",
     "check:release": "bun run check && bun audit --production --ignore=GHSA-qx2v-qp2m-jg93 --ignore=GHSA-6g55-p6wh-862q --ignore=GHSA-r28c-9q8g-f849 --ignore=GHSA-f88m-g3jw-g9cj && bun run build:prod",
+    "sync:openapi": "bun run scripts/sync-openapi.ts",
     "generate-types": "bun run scripts/generate-openapi-types.ts",
     "generate-types:offline": "bun run scripts/generate-openapi-types.ts --offline",
     "doctor": "bunx react-doctor@latest"
