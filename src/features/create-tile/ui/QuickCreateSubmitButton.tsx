@@ -4,8 +4,8 @@ import { Button } from "@mantine/core";
 
 import { useTranslation } from "@/shared/i18n/use-translation";
 import {
-	selectIsDirty,
-	useQuickCreateStore,
+  selectIsDirty,
+  useQuickCreateStore,
 } from "@/shared/stores/quick-create-store";
 
 /**
@@ -23,36 +23,37 @@ import {
  * and consumers continue to find the submit affordance by id.
  */
 export function QuickCreateSubmitButton() {
-	const { t } = useTranslation();
-	const submitState = useQuickCreateStore((s) => s.submitState);
-	const canSubmit = useQuickCreateStore((s) => s.canSubmit);
-	const mode = useQuickCreateStore((s) => s.mode);
-	const isDirty = useQuickCreateStore(selectIsDirty);
+  const { t } = useTranslation();
+  const submitState = useQuickCreateStore((s) => s.submitState);
+  const canSubmit = useQuickCreateStore((s) => s.canSubmit);
+  const mode = useQuickCreateStore((s) => s.mode);
+  const isDirty = useQuickCreateStore(selectIsDirty);
 
-	const isSubmitting = submitState.kind === "submitting";
-	const label =
-		mode === "edit" ? t("quickCreate.update") : t("quickCreate.create");
+  const isSubmitting = submitState.kind === "submitting";
+  const label =
+    mode === "edit" ? t("quickCreate.update") : t("quickCreate.create");
 
-	// Final submit gate:
-	//   1. not currently submitting
-	//   2. validation passes AND not load-blocked (`canSubmit` composes both)
-	//   3. in edit mode, the editable state has diverged from the captured
-	//      baseline (so a no-op open+close round-trip never fires an UPDATE)
-	const submitEnabled =
-		!isSubmitting && canSubmit && (mode === "create" || isDirty);
+  // Final submit gate:
+  //   1. not currently submitting
+  //   2. validation passes AND not load-blocked (`canSubmit` composes both)
+  //   3. in edit mode, the editable state has diverged from the captured
+  //      baseline (so a no-op open+close round-trip never fires an UPDATE)
+  const submitEnabled =
+    !isSubmitting && canSubmit && (mode === "create" || isDirty);
 
-	const handleClick = () => {
-		window.dispatchEvent(new CustomEvent("quick-create:submit"));
-	};
+  const handleClick = () => {
+    window.dispatchEvent(new CustomEvent("quick-create:submit"));
+  };
 
-	return (
-		<Button
-			onClick={handleClick}
-			loading={isSubmitting}
-			data-testid="quick-create-submit"
-			size="sm"
-		>
-			{label}
-		</Button>
-	);
+  return (
+    <Button
+      onClick={handleClick}
+      loading={isSubmitting}
+      disabled={!submitEnabled}
+      data-testid="quick-create-submit"
+      size="sm"
+    >
+      {label}
+    </Button>
+  );
 }

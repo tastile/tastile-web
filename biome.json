@@ -24,11 +24,27 @@
       "scripts/screenshot-calendar.mts",
       "scripts/sops-decrypt.ts",
       "scripts/sops-decrypt.test.ts",
-      "knip.json"
+      "knip.json",
+      "tsconfig.json",
+      "tsconfig.tsbuildinfo",
+      "package.json",
+      "bun.lock",
+      "bun.lockb",
+      ".mcp.json",
+      ".codex/**",
+      "docs/archive/**",
+      "e2e/**",
+      "scripts/**",
+      "evidence/**",
+      "public/**",
+      "**/*.md",
+      "**/*.txt",
+      "**/*.lock",
+      "**/*.json"
     ]
   },
   "formatter": {
-    "enabled": true
+    "enabled": false
   },
   "css": {
     "parser": {

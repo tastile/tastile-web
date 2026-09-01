@@ -1,25 +1,25 @@
 "use client";
 
 import {
-	type Workspace,
-	createWorkspace,
-	deleteWorkspace,
-	orderWorkspaceTree,
-	useWorkspaces,
+  type Workspace,
+  createWorkspace,
+  deleteWorkspace,
+  orderWorkspaceTree,
+  useWorkspaces,
 } from "@/shared/hooks/use-workspaces";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import type { RenderTreeNodePayload, TreeNodeData } from "@mantine/core";
 import {
-	ActionIcon,
-	Button,
-	ColorInput,
-	Modal,
-	Select,
-	TextInput,
-	Tree,
-	getTreeExpandedState,
-	useTree,
+  ActionIcon,
+  Button,
+  ColorInput,
+  Modal,
+  Select,
+  TextInput,
+  Tree,
+  getTreeExpandedState,
+  useTree,
 } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useDisclosure } from "@mantine/hooks";
@@ -30,273 +30,273 @@ import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 const DEFAULT_COLOR = "#6b7280";
 
 type CreateFormValues = {
-	name: string;
-	slug: string;
-	color: string;
+  name: string;
+  slug: string;
+  color: string;
 };
 
 export function ProjectsSidePanel() {
-	const router = useRouter();
-	const pathname = usePathname();
-	const searchParams = useSearchParams();
-	const [, startTransition] = useTransition();
-	const { t } = useTranslation();
-	const { workspaces, refresh, loading, error } = useWorkspaces();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [, startTransition] = useTransition();
+  const { t } = useTranslation();
+  const { workspaces, refresh, loading, error } = useWorkspaces();
 
-	const currentOwner = searchParams.get("owner") ?? null;
+  const currentOwner = searchParams.get("owner") ?? null;
 
-	const [creating, { open: openCreating, close: closeCreating }] =
-		useDisclosure(false);
-	const [parentId, setParentId] = useState<string | null>(null);
-	const [createError, setCreateError] = useState<string | null>(null);
-	const [creatingBusy, setCreatingBusy] = useState(false);
-	const submittingRef = useRef(false);
+  const [creating, { open: openCreating, close: closeCreating }] =
+    useDisclosure(false);
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [creatingBusy, setCreatingBusy] = useState(false);
+  const submittingRef = useRef(false);
 
-	const form = useForm<CreateFormValues>({
-		mode: "uncontrolled",
-		initialValues: { name: "", slug: "", color: DEFAULT_COLOR },
-		validate: {
-			name: (value) =>
-				value.trim().length === 0
-					? t("panels.projects.newModalNameRequired")
-					: null,
-		},
-	});
+  const form = useForm<CreateFormValues>({
+    mode: "uncontrolled",
+    initialValues: { name: "", slug: "", color: DEFAULT_COLOR },
+    validate: {
+      name: (value) =>
+        value.trim().length === 0
+          ? t("panels.projects.newModalNameRequired")
+          : null,
+    },
+  });
 
-	function handleSelect(id: string | null) {
-		const params = new URLSearchParams(searchParams.toString());
-		if (id) params.set("owner", id);
-		else params.delete("owner");
-		startTransition(() => {
-			router.replace(`${pathname}?${params.toString()}`);
-		});
-	}
+  function handleSelect(id: string | null) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("owner", id);
+    else params.delete("owner");
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  }
 
-	function resetForm() {
-		form.reset();
-		setParentId(null);
-		setCreateError(null);
-		closeCreating();
-	}
+  function resetForm() {
+    form.reset();
+    setParentId(null);
+    setCreateError(null);
+    closeCreating();
+  }
 
-	function handleCreate(values: CreateFormValues) {
-		if (submittingRef.current) return;
-		submittingRef.current = true;
-		setCreatingBusy(true);
-		setCreateError(null);
-		void createWorkspace({
-			display_name: values.name.trim(),
-			slug: values.slug.trim() || null,
-			color: values.color,
-			parent_subject_id: parentId,
-		})
-			.then(async (ws) => {
-				await refresh();
-				handleSelect(ws.id);
-				resetForm();
-			})
-			.catch((e: unknown) => {
-				setCreateError((e as Error).message);
-			})
-			.finally(() => {
-				submittingRef.current = false;
-				setCreatingBusy(false);
-			});
-	}
+  function handleCreate(values: CreateFormValues) {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setCreatingBusy(true);
+    setCreateError(null);
+    void createWorkspace({
+      display_name: values.name.trim(),
+      slug: values.slug.trim() || null,
+      color: values.color,
+      parent_subject_id: parentId,
+    })
+      .then(async (ws) => {
+        await refresh();
+        handleSelect(ws.id);
+        resetForm();
+      })
+      .catch((e: unknown) => {
+        setCreateError((e as Error).message);
+      })
+      .finally(() => {
+        submittingRef.current = false;
+        setCreatingBusy(false);
+      });
+  }
 
-	function handleDelete(id: string, displayName: string) {
-		if (
-			typeof window !== "undefined" &&
-			!window.confirm(t("panels.projects.deleteConfirm", { name: displayName }))
-		)
-			return;
-		void deleteWorkspace(id)
-			.then(async () => {
-				await refresh();
-				if (currentOwner === id) handleSelect(null);
-			})
-			.catch((e: unknown) => {
-				if (typeof window !== "undefined") {
-					window.alert(
-						t("panels.projects.deleteFailed", {
-							message: (e as Error).message,
-						}),
-					);
-				}
-			});
-	}
+  function handleDelete(id: string, displayName: string) {
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(t("panels.projects.deleteConfirm", { name: displayName }))
+    )
+      return;
+    void deleteWorkspace(id)
+      .then(async () => {
+        await refresh();
+        if (currentOwner === id) handleSelect(null);
+      })
+      .catch((e: unknown) => {
+        if (typeof window !== "undefined") {
+          window.alert(
+            t("panels.projects.deleteFailed", {
+              message: (e as Error).message,
+            }),
+          );
+        }
+      });
+  }
 
-	function handleDeleteEntry(workspace: Workspace, displayName: string) {
-		// No client-side kind filter — the server enforces the personal
-		// scope protection (v1/15 §6 #15) and will surface the failure.
-		handleDelete(workspace.id, displayName);
-	}
+  function handleDeleteEntry(workspace: Workspace, displayName: string) {
+    // No client-side kind filter — the server enforces the personal
+    // scope protection (v1/15 §6 #15) and will surface the failure.
+    handleDelete(workspace.id, displayName);
+  }
 
-	const slugProps = form.getInputProps("slug");
+  const slugProps = form.getInputProps("slug");
 
-	return (
-		<div className="flex flex-col gap-2 pt-2">
-			<div className="flex items-center justify-between px-4 pb-1 pt-2">
-				<span className="text-caption font-semibold uppercase tracking-wider text-foreground-subtle">
-					{t("panels.projects.projects")}
-				</span>
-				<ActionIcon
-					type="button"
-					variant="outline"
-					radius="xl"
-					onClick={openCreating}
-					aria-label={t("panels.projects.newProjectTitle")}
-					data-testid="project-create"
-				>
-					<Plus className="size-3" aria-hidden />
-				</ActionIcon>
-			</div>
+  return (
+    <div className="flex flex-col gap-2 pt-2">
+      <div className="flex items-center justify-between px-4 pb-1 pt-2">
+        <span className="text-caption font-semibold uppercase tracking-wider text-foreground-subtle">
+          {t("panels.projects.projects")}
+        </span>
+        <ActionIcon
+          type="button"
+          variant="outline"
+          radius="xl"
+          onClick={openCreating}
+          aria-label={t("panels.projects.newProjectTitle")}
+          data-testid="project-create"
+        >
+          <Plus className="size-3" aria-hidden />
+        </ActionIcon>
+      </div>
 
-			<Modal
-				opened={creating}
-				onClose={resetForm}
-				title={t("panels.projects.newProjectTitle")}
-				centered
-				size="sm"
-			>
-				{/* react-doctor-disable-next-line react-hooks-js/refs */}
-				<form
-					onSubmit={form.onSubmit((values) => handleCreate(values))}
-					className="flex flex-col gap-3"
-				>
-					<TextInput
-						{...form.getInputProps("name")}
-						placeholder={t("panels.projects.projectNamePlaceholder")}
-						maxLength={80}
-						required
-						data-testid="project-create-name"
-						label={t("panels.projects.nameLabel")}
-						size="sm"
-					/>
-					<TextInput
-						{...slugProps}
-						placeholder={t("panels.projects.slugPlaceholder")}
-						onChange={(event) => {
-							const normalized = event.currentTarget.value
-								.toLowerCase()
-								.replace(/[^a-z0-9-]/g, "-");
-							form.setFieldValue("slug", normalized);
-						}}
-						pattern="[a-z0-9-]+"
-						maxLength={40}
-						data-testid="project-create-slug"
-						label={t("panels.projects.slugLabel")}
-						size="sm"
-					/>
-					<div>
-						<label
-							htmlFor="project-color"
-							className="mb-1 block text-caption text-foreground-subtle"
-						>
-							{t("panels.projects.colorLabel")}
-						</label>
-						<ColorInput
-							id="project-color"
-							{...form.getInputProps("color")}
-							aria-label={t("panels.projects.colorLabel")}
-							data-testid="project-create-color"
-						/>
-					</div>
-					<Select
-						aria-label={t("panels.projects.parentProjectAria")}
-						label={
-							<span className="flex items-center gap-1 text-caption text-foreground-subtle">
-								<FolderPlus className="size-3" aria-hidden />
-								{t("panels.projects.parentProjectLabel")}
-							</span>
-						}
-						value={parentId ?? null}
-						onChange={(value) => setParentId(value || null)}
-						data={[
-							{ value: "", label: t("panels.projects.parentProjectTop") },
-							// v1/15 §6 #15: USER subject is the implicit personal scope and
-							// cannot be a workspace parent. Filter it out before passing
-							// the tree to the dropdown.
-							...orderWorkspaceTree(workspaces.filter((w) => w.kind !== 0)).map(
-								({ workspace, depth }) => ({
-									value: workspace.id,
-									label: `${"　".repeat(depth)}${workspace.display_name}`,
-								}),
-							),
-						]}
-						size="xs"
-						allowDeselect={false}
-						comboboxProps={{ withinPortal: true }}
-						data-testid="project-create-parent"
-					/>
-					<div className="flex items-center gap-2 justify-end">
-						<Button
-							title={t("common.cancel")}
-							onClick={resetForm}
-							disabled={creatingBusy}
-							variant="outline"
-						>
-							{t("common.cancel")}
-						</Button>
-						<Button
-							type="submit"
-							disabled={creatingBusy}
-							data-testid="project-create-submit"
-						>
-							{creatingBusy
-								? t("panels.projects.creating")
-								: t("common.create")}
-						</Button>
+      <Modal
+        opened={creating}
+        onClose={resetForm}
+        title={t("panels.projects.newProjectTitle")}
+        centered
+        size="sm"
+      >
+        {/* react-doctor-disable-next-line react-hooks-js/refs */}
+        <form
+          onSubmit={form.onSubmit((values) => handleCreate(values))}
+          className="flex flex-col gap-3"
+        >
+          <TextInput
+            {...form.getInputProps("name")}
+            placeholder={t("panels.projects.projectNamePlaceholder")}
+            maxLength={80}
+            required
+            data-testid="project-create-name"
+            label={t("panels.projects.nameLabel")}
+            size="sm"
+          />
+          <TextInput
+            {...slugProps}
+            placeholder={t("panels.projects.slugPlaceholder")}
+            onChange={(event) => {
+              const normalized = event.currentTarget.value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "-");
+              form.setFieldValue("slug", normalized);
+            }}
+            pattern="[a-z0-9-]+"
+            maxLength={40}
+            data-testid="project-create-slug"
+            label={t("panels.projects.slugLabel")}
+            size="sm"
+          />
+          <div>
+            <label
+              htmlFor="project-color"
+              className="mb-1 block text-caption text-foreground-subtle"
+            >
+              {t("panels.projects.colorLabel")}
+            </label>
+            <ColorInput
+              id="project-color"
+              {...form.getInputProps("color")}
+              aria-label={t("panels.projects.colorLabel")}
+              data-testid="project-create-color"
+            />
+          </div>
+          <Select
+            aria-label={t("panels.projects.parentProjectAria")}
+            label={
+              <span className="flex items-center gap-1 text-caption text-foreground-subtle">
+                <FolderPlus className="size-3" aria-hidden />
+                {t("panels.projects.parentProjectLabel")}
+              </span>
+            }
+            value={parentId ?? null}
+            onChange={(value) => setParentId(value || null)}
+            data={[
+              { value: "", label: t("panels.projects.parentProjectTop") },
+              // v1/15 §6 #15: USER subject is the implicit personal scope and
+              // cannot be a workspace parent. Filter it out before passing
+              // the tree to the dropdown.
+              ...orderWorkspaceTree(workspaces.filter((w) => w.kind !== 0)).map(
+                ({ workspace, depth }) => ({
+                  value: workspace.id,
+                  label: `${"　".repeat(depth)}${workspace.display_name}`,
+                }),
+              ),
+            ]}
+            size="xs"
+            allowDeselect={false}
+            comboboxProps={{ withinPortal: true }}
+            data-testid="project-create-parent"
+          />
+          <div className="flex items-center gap-2 justify-end">
+            <Button
+              title={t("common.cancel")}
+              onClick={resetForm}
+              disabled={creatingBusy}
+              variant="outline"
+            >
+              {t("common.cancel")}
+            </Button>
+            <Button
+              type="submit"
+              disabled={creatingBusy}
+              data-testid="project-create-submit"
+            >
+              {creatingBusy
+                ? t("panels.projects.creating")
+                : t("common.create")}
+            </Button>
 
-						{createError && (
-							<span className="text-caption text-status-danger">
-								{createError}
-							</span>
-						)}
-					</div>
-				</form>
-			</Modal>
+            {createError && (
+              <span className="text-caption text-status-danger">
+                {createError}
+              </span>
+            )}
+          </div>
+        </form>
+      </Modal>
 
-			<div className="px-2">
-				<div className="flex flex-col space-y-0.5">
-					<Button
-						size="xs"
-						variant="outline"
-						type="button"
-						onClick={() => handleSelect(null)}
-						className={cn(
-							"flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
-							currentOwner === null
-								? "bg-surface-elevated font-medium text-foreground"
-								: "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-						)}
-					>
-						{t("panels.projects.allProjects")}
-					</Button>
+      <div className="px-2">
+        <div className="flex flex-col space-y-0.5">
+          <Button
+            size="xs"
+            variant="outline"
+            type="button"
+            onClick={() => handleSelect(null)}
+            className={cn(
+              "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+              currentOwner === null
+                ? "bg-surface-elevated font-medium text-foreground"
+                : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+            )}
+          >
+            {t("panels.projects.allProjects")}
+          </Button>
 
-					{loading && (
-						<div className="px-2 py-1.5 text-caption text-foreground-subtle">
-							{t("panels.projects.loadingProjects")}
-						</div>
-					)}
-					{error && (
-						<div className="px-2 py-1.5 text-caption text-status-danger">
-							{error.message}
-						</div>
-					)}
+          {loading && (
+            <div className="px-2 py-1.5 text-caption text-foreground-subtle">
+              {t("panels.projects.loadingProjects")}
+            </div>
+          )}
+          {error && (
+            <div className="px-2 py-1.5 text-caption text-status-danger">
+              {error.message}
+            </div>
+          )}
 
-					{!loading && !error && workspaces.length > 0 && (
-						<ProjectsTree
-							workspaces={workspaces}
-							currentOwner={currentOwner}
-							onSelect={handleSelect}
-							onDelete={handleDeleteEntry}
-						/>
-					)}
-				</div>
-			</div>
-		</div>
-	);
+          {!loading && !error && workspaces.length > 0 && (
+            <ProjectsTree
+              workspaces={workspaces}
+              currentOwner={currentOwner}
+              onSelect={handleSelect}
+              onDelete={handleDeleteEntry}
+            />
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────
@@ -308,158 +308,158 @@ export function ProjectsSidePanel() {
 // ─────────────────────────────────────────────
 
 interface ProjectsTreeProps {
-	workspaces: Workspace[];
-	currentOwner: string | null;
-	onSelect: (id: string | null) => void;
-	onDelete: (workspace: Workspace, displayName: string) => void;
+  workspaces: Workspace[];
+  currentOwner: string | null;
+  onSelect: (id: string | null) => void;
+  onDelete: (workspace: Workspace, displayName: string) => void;
 }
 
 function ProjectsTree({
-	workspaces,
-	currentOwner,
-	onSelect,
-	onDelete,
+  workspaces,
+  currentOwner,
+  onSelect,
+  onDelete,
 }: ProjectsTreeProps) {
-	const { t } = useTranslation();
-	const treeData = useMemo(
-		() => buildProjectTree(workspaces, t),
-		[workspaces, t],
-	);
-	const colorById = useMemo(
-		() => new Map(workspaces.map((w) => [w.id, w.color] as const)),
-		[workspaces],
-	);
-	const kindById = useMemo(
-		() => new Map(workspaces.map((w) => [w.id, w.kind] as const)),
-		[workspaces],
-	);
-	const tree = useTree({
-		initialExpandedState: getTreeExpandedState(treeData, "*"),
-	});
+  const { t } = useTranslation();
+  const treeData = useMemo(
+    () => buildProjectTree(workspaces, t),
+    [workspaces, t],
+  );
+  const colorById = useMemo(
+    () => new Map(workspaces.map((w) => [w.id, w.color] as const)),
+    [workspaces],
+  );
+  const kindById = useMemo(
+    () => new Map(workspaces.map((w) => [w.id, w.kind] as const)),
+    [workspaces],
+  );
+  const tree = useTree({
+    initialExpandedState: getTreeExpandedState(treeData, "*"),
+  });
 
-	const renderNode = useCallback(
-		({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
-			const color = colorById.get(node.value) ?? undefined;
-			const kind = kindById.get(node.value) ?? 1;
-			const isSelected = currentOwner === node.value;
-			const displayName = String(node.label ?? "");
-			return (
-				<div
-					{...elementProps}
-					className={cn(
-						"group flex items-center gap-1 rounded-md transition-colors",
-						isSelected
-							? "bg-surface-elevated font-medium text-foreground"
-							: "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
-					)}
-				>
-					{hasChildren ? (
-						<ActionIcon
-							variant="subtle"
-							size="sm"
-							type="button"
-							aria-label={
-								expanded
-									? t("panels.projects.treeCollapse")
-									: t("panels.projects.treeExpand")
-							}
-							onClick={() => tree.toggleExpanded(node.value)}
-							className="flex size-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
-						>
-							<ChevronRight
-								size={12}
-								aria-hidden
-								className={cn("transition-transform", expanded && "rotate-90")}
-							/>
-						</ActionIcon>
-					) : (
-						<span aria-hidden className="size-4 shrink-0" />
-					)}
-					<button
-						type="button"
-						onClick={() => onSelect(node.value)}
-						className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-transparent px-2 py-1.5 text-left text-sm hover:bg-transparent"
-						data-testid={`project-select-${node.value}`}
-					>
-						<span
-							aria-hidden
-							className="size-2.5 shrink-0 rounded-full ring-1 ring-inset ring-border/40"
-							style={{ backgroundColor: color ?? "#6b7280" }}
-						/>
-						<span className="min-w-0 flex-1 truncate">{displayName}</span>
-					</button>
-					<ActionIcon
-						variant="subtle"
-						size="sm"
-						type="button"
-						onClick={(e) => {
-							e.stopPropagation();
-							onDelete(
-								workspaces.find((w) => w.id === node.value) ??
-									({
-										id: node.value,
-										kind,
-										display_name: displayName,
-									} as Workspace),
-								displayName,
-							);
-						}}
-						aria-label={`${t("common.delete")} ${displayName}`}
-						className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
-						data-testid={`project-delete-${node.value}`}
-					>
-						×
-					</ActionIcon>
-				</div>
-			);
-		},
-		[tree, colorById, kindById, currentOwner, onSelect, onDelete, workspaces],
-	);
+  const renderNode = useCallback(
+    ({ node, expanded, hasChildren, elementProps }: RenderTreeNodePayload) => {
+      const color = colorById.get(node.value) ?? undefined;
+      const kind = kindById.get(node.value) ?? 1;
+      const isSelected = currentOwner === node.value;
+      const displayName = String(node.label ?? "");
+      return (
+        <div
+          {...elementProps}
+          className={cn(
+            "group flex items-center gap-1 rounded-md transition-colors",
+            isSelected
+              ? "bg-surface-elevated font-medium text-foreground"
+              : "text-foreground-subtle hover:bg-surface-2 hover:text-foreground",
+          )}
+        >
+          {hasChildren ? (
+            <ActionIcon
+              variant="subtle"
+              size="sm"
+              type="button"
+              aria-label={
+                expanded
+                  ? t("panels.projects.treeCollapse")
+                  : t("panels.projects.treeExpand")
+              }
+              onClick={() => tree.toggleExpanded(node.value)}
+              className="flex size-4 shrink-0 items-center justify-center text-foreground-lighter hover:text-foreground"
+            >
+              <ChevronRight
+                size={12}
+                aria-hidden
+                className={cn("transition-transform", expanded && "rotate-90")}
+              />
+            </ActionIcon>
+          ) : (
+            <span aria-hidden className="size-4 shrink-0" />
+          )}
+          <button
+            type="button"
+            onClick={() => onSelect(node.value)}
+            className="flex min-w-0 flex-1 items-center gap-2 rounded-md bg-transparent px-2 py-1.5 text-left text-sm hover:bg-transparent"
+            data-testid={`project-select-${node.value}`}
+          >
+            <span
+              aria-hidden
+              className="size-2.5 shrink-0 rounded-full ring-1 ring-inset ring-border/40"
+              style={{ backgroundColor: color ?? "#6b7280" }}
+            />
+            <span className="min-w-0 flex-1 truncate">{displayName}</span>
+          </button>
+          <ActionIcon
+            variant="subtle"
+            size="sm"
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(
+                workspaces.find((w) => w.id === node.value) ??
+                  ({
+                    id: node.value,
+                    kind,
+                    display_name: displayName,
+                  } as Workspace),
+                displayName,
+              );
+            }}
+            aria-label={`${t("common.delete")} ${displayName}`}
+            className="invisible px-1.5 py-1 text-foreground-subtle hover:text-status-danger group-hover:visible"
+            data-testid={`project-delete-${node.value}`}
+          >
+            ×
+          </ActionIcon>
+        </div>
+      );
+    },
+    [tree, colorById, kindById, currentOwner, onSelect, onDelete, workspaces],
+  );
 
-	return (
-		<Tree
-			data={treeData}
-			tree={tree}
-			levelOffset={20}
-			expandOnClick={false}
-			renderNode={renderNode}
-		/>
-	);
+  return (
+    <Tree
+      data={treeData}
+      tree={tree}
+      levelOffset={20}
+      expandOnClick={false}
+      renderNode={renderNode}
+    />
+  );
 }
 
 /** Nested TreeNodeData built from the flat workspace list via parent links. */
 function buildProjectTree(
-	workspaces: Workspace[],
-	t: (key: string) => string,
+  workspaces: Workspace[],
+  t: (key: string) => string,
 ): TreeNodeData[] {
-	const byParent = new Map<string | null, Workspace[]>();
-	const ids = new Set(workspaces.map((w) => w.id));
-	for (const w of workspaces) {
-		const parent =
-			w.parent_subject_id && ids.has(w.parent_subject_id)
-				? w.parent_subject_id
-				: null;
-		const arr = byParent.get(parent) ?? [];
-		arr.push(w);
-		byParent.set(parent, arr);
-	}
-	for (const arr of byParent.values()) {
-		// v1/15 §6 #15: pin USER-kind (kind=0) first in any sibling group as
-		// defense-in-depth even though list_subjects_handler already orders
-		// USER first server-side. localeCompare on the empty display_name
-		// would otherwise be ambiguous.
-		arr.sort((a, b) => {
-			if (a.kind === 0 && b.kind !== 0) return -1;
-			if (a.kind !== 0 && b.kind === 0) return 1;
-			return a.display_name.localeCompare(b.display_name, "ja");
-		});
-	}
-	const personalLabel = t("panels.projects.personal");
-	const build = (parent: string | null): TreeNodeData[] =>
-		(byParent.get(parent) ?? []).map((w) => ({
-			value: w.id,
-			label: w.kind === 0 ? personalLabel : w.display_name,
-			children: build(w.id),
-		}));
-	return build(null);
+  const byParent = new Map<string | null, Workspace[]>();
+  const ids = new Set(workspaces.map((w) => w.id));
+  for (const w of workspaces) {
+    const parent =
+      w.parent_subject_id && ids.has(w.parent_subject_id)
+        ? w.parent_subject_id
+        : null;
+    const arr = byParent.get(parent) ?? [];
+    arr.push(w);
+    byParent.set(parent, arr);
+  }
+  for (const arr of byParent.values()) {
+    // v1/15 §6 #15: pin USER-kind (kind=0) first in any sibling group as
+    // defense-in-depth even though list_subjects_handler already orders
+    // USER first server-side. localeCompare on the empty display_name
+    // would otherwise be ambiguous.
+    arr.sort((a, b) => {
+      if (a.kind === 0 && b.kind !== 0) return -1;
+      if (a.kind !== 0 && b.kind === 0) return 1;
+      return a.display_name.localeCompare(b.display_name, "ja");
+    });
+  }
+  const personalLabel = t("panels.projects.personal");
+  const build = (parent: string | null): TreeNodeData[] =>
+    (byParent.get(parent) ?? []).map((w) => ({
+      value: w.id,
+      label: w.kind === 0 ? personalLabel : w.display_name,
+      children: build(w.id),
+    }));
+  return build(null);
 }

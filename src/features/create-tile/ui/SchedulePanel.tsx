@@ -24,11 +24,11 @@
  */
 
 import {
-	ActionIcon,
-	Button,
-	SegmentedControl,
-	Switch,
-	Text,
+  ActionIcon,
+  Button,
+  SegmentedControl,
+  Switch,
+  Text,
 } from "@mantine/core";
 import { DatePickerInput, DateTimePicker, TimeInput } from "@mantine/dates";
 import { Calendar, Clock, Folder, Plus, Search, Tag, X } from "lucide-react";
@@ -36,14 +36,14 @@ import { useState } from "react";
 
 import type { Window } from "@/shared/model/v1/window";
 import type {
-	TimeOfDayMode,
-	WhenMode,
+  TimeOfDayMode,
+  WhenMode,
 } from "@/shared/stores/quick-create-store";
 import {
-	FormDivider,
-	FormRow,
-	RowSegmented,
-	SectionHeader,
+  FormDivider,
+  FormRow,
+  RowSegmented,
+  SectionHeader,
 } from "@/shared/ui/form";
 
 import { SEGMENT_STYLES } from "@/shared/ui/panel-styles";
@@ -51,575 +51,575 @@ import { TileReferencePicker } from "./TileReferencePicker";
 import { type EditorLocale, isoToLocalDate } from "./date-utils";
 
 const WHEN_MODE_OPTIONS: ReadonlyArray<{
-	id: WhenMode;
-	labelKey: string;
+  id: WhenMode;
+  labelKey: string;
 }> = [
-	{ id: "day", labelKey: "quickCreate.whenModeDay" },
-	{ id: "range", labelKey: "quickCreate.whenModeRange" },
-	{ id: "reference", labelKey: "quickCreate.whenModeReference" },
+  { id: "day", labelKey: "quickCreate.whenModeDay" },
+  { id: "range", labelKey: "quickCreate.whenModeRange" },
+  { id: "reference", labelKey: "quickCreate.whenModeReference" },
 ];
 
 const TIME_OF_DAY_OPTIONS: ReadonlyArray<{
-	id: TimeOfDayMode;
-	labelKey: string;
+  id: TimeOfDayMode;
+  labelKey: string;
 }> = [
-	{ id: "all-day", labelKey: "quickCreate.timeOfDayAllDay" },
-	{ id: "range", labelKey: "quickCreate.timeOfDayRange" },
-	{ id: "unspecified", labelKey: "quickCreate.timeOfDayUnspecified" },
+  { id: "all-day", labelKey: "quickCreate.timeOfDayAllDay" },
+  { id: "range", labelKey: "quickCreate.timeOfDayRange" },
+  { id: "unspecified", labelKey: "quickCreate.timeOfDayUnspecified" },
 ];
 
 const QUICK_RANGES: ReadonlyArray<{
-	labelKey: string;
-	start: string;
-	end: string;
+  labelKey: string;
+  start: string;
+  end: string;
 }> = [
-	{ labelKey: "quickCreate.quickMorning", start: "06:00", end: "10:00" },
-	{ labelKey: "quickCreate.quickMidday", start: "09:00", end: "18:00" },
-	{ labelKey: "quickCreate.quickNight", start: "18:00", end: "24:00" },
+  { labelKey: "quickCreate.quickMorning", start: "06:00", end: "10:00" },
+  { labelKey: "quickCreate.quickMidday", start: "09:00", end: "18:00" },
+  { labelKey: "quickCreate.quickNight", start: "18:00", end: "24:00" },
 ];
 
 const WINDOW_KIND_OPTIONS = [
-	{ value: "0", label: "quickCreate.windowKindCalendar" },
-	{ value: "1", label: "quickCreate.windowKindLabelSpan" },
-	{ value: "2", label: "quickCreate.windowKindParentSpan" },
-	{ value: "3", label: "quickCreate.windowKindGap" },
+  { value: "0", label: "quickCreate.windowKindCalendar" },
+  { value: "1", label: "quickCreate.windowKindLabelSpan" },
+  { value: "2", label: "quickCreate.windowKindParentSpan" },
+  { value: "3", label: "quickCreate.windowKindGap" },
 ] as const;
 
 interface ChoiceTabsProps<T extends string> {
-	value: T;
-	onChange: (next: T) => void;
-	options: ReadonlyArray<{ id: T; labelKey: string }>;
-	testIdPrefix: string;
-	t: (key: string) => string;
+  value: T;
+  onChange: (next: T) => void;
+  options: ReadonlyArray<{ id: T; labelKey: string }>;
+  testIdPrefix: string;
+  t: (key: string) => string;
 }
 
 function ChoiceTabs<T extends string>({
-	value,
-	onChange,
-	options,
-	testIdPrefix,
-	t,
+  value,
+  onChange,
+  options,
+  testIdPrefix,
+  t,
 }: ChoiceTabsProps<T>) {
-	return (
-		<SegmentedControl
-			fullWidth
-			size="sm"
-			radius="md"
-			withItemsBorders={false}
-			value={value}
-			onChange={(next) => onChange(next as T)}
-			data={options.map((opt) => ({ value: opt.id, label: t(opt.labelKey) }))}
-			styles={SEGMENT_STYLES}
-			data-testid={`${testIdPrefix}-choice-tabs`}
-		/>
-	);
+  return (
+    <SegmentedControl
+      fullWidth
+      size="sm"
+      radius="md"
+      withItemsBorders={false}
+      value={value}
+      onChange={(next) => onChange(next as T)}
+      data={options.map((opt) => ({ value: opt.id, label: t(opt.labelKey) }))}
+      styles={SEGMENT_STYLES}
+      data-testid={`${testIdPrefix}-choice-tabs`}
+    />
+  );
 }
 
 interface NullCardProps {
-	active: boolean;
-	onActivate: (mode: WhenMode) => void;
-	title: string;
-	sub: string;
-	testId: string;
+  active: boolean;
+  onActivate: (mode: WhenMode) => void;
+  title: string;
+  sub: string;
+  testId: string;
 }
 
 function NullCard({ active, onActivate, title, sub, testId }: NullCardProps) {
-	return (
-		<div className="flex items-center justify-between rounded-lg border border-border bg-surface-0 p-3">
-			<div className="min-w-0 flex-1">
-				<div className="text-xs font-semibold text-foreground">{title}</div>
-				<div className="text-caption text-foreground-muted">{sub}</div>
-			</div>
-			<Switch
-				checked={active}
-				onChange={(e) => onActivate(e.currentTarget.checked ? "none" : "day")}
-				size="md"
-				data-testid={testId}
-			/>
-		</div>
-	);
+  return (
+    <div className="flex items-center justify-between rounded-lg border border-border bg-surface-0 p-3">
+      <div className="min-w-0 flex-1">
+        <div className="text-xs font-semibold text-foreground">{title}</div>
+        <div className="text-caption text-foreground-muted">{sub}</div>
+      </div>
+      <Switch
+        checked={active}
+        onChange={(e) => onActivate(e.currentTarget.checked ? "none" : "day")}
+        size="md"
+        data-testid={testId}
+      />
+    </div>
+  );
 }
 
 function timeOfDayToSpanValues(
-	mode: TimeOfDayMode,
-	start: string,
-	end: string,
+  mode: TimeOfDayMode,
+  start: string,
+  end: string,
 ): { start: string; end: string } {
-	if (mode !== "range") return { start: "", end: "" };
-	return { start, end };
+  if (mode !== "range") return { start: "", end: "" };
+  return { start, end };
 }
 
 /** Format YYYY-MM-DD picker value from a (possibly empty) ISO string. */
 function isoToPicker(iso: string | null | undefined): string {
-	return isoToLocalDate(iso ?? "");
+  return isoToLocalDate(iso ?? "");
 }
 
 interface TimeOfDayEditorProps {
-	mode: TimeOfDayMode;
-	start: string;
-	end: string;
-	onModeChange: (next: TimeOfDayMode) => void;
-	onStartChange: (next: string) => void;
-	onEndChange: (next: string) => void;
-	onQuickPick: (start: string, end: string) => void;
-	t: (key: string) => string;
+  mode: TimeOfDayMode;
+  start: string;
+  end: string;
+  onModeChange: (next: TimeOfDayMode) => void;
+  onStartChange: (next: string) => void;
+  onEndChange: (next: string) => void;
+  onQuickPick: (start: string, end: string) => void;
+  t: (key: string) => string;
 }
 
 function TimeOfDayEditor({
-	mode,
-	start,
-	end,
-	onModeChange,
-	onStartChange,
-	onEndChange,
-	onQuickPick,
-	t,
+  mode,
+  start,
+  end,
+  onModeChange,
+  onStartChange,
+  onEndChange,
+  onQuickPick,
+  t,
 }: TimeOfDayEditorProps) {
-	return (
-		<div className="space-y-2">
-			<SectionHeader icon={Clock} title={t("quickCreate.timeOfDayLabel")} />
-			{t("quickCreate.timeOfDayHint") ? (
-				<p className="text-xs text-foreground-muted">
-					{t("quickCreate.timeOfDayHint")}
-				</p>
-			) : null}
-			<ChoiceTabs<TimeOfDayMode>
-				value={mode}
-				onChange={onModeChange}
-				options={TIME_OF_DAY_OPTIONS}
-				testIdPrefix="time-of-day"
-				t={t}
-			/>
-			{mode === "range" ? (
-				<div className="space-y-2">
-					<div className="flex items-center gap-2">
-						<TimeInput
-							aria-label={`${t("quickCreate.timeOfDayLabel")} start`}
-							value={start || "09:00"}
-							onChange={(e) => onStartChange(e.currentTarget.value)}
-							size="xs"
-							className="flex-1"
-						/>
-						<span aria-hidden="true" className="text-foreground-muted">
-							→
-						</span>
-						<TimeInput
-							aria-label={`${t("quickCreate.timeOfDayLabel")} end`}
-							value={end || "18:00"}
-							onChange={(e) => onEndChange(e.currentTarget.value)}
-							size="xs"
-							className="flex-1"
-						/>
-					</div>
-					<div
-						className="flex flex-wrap gap-1"
-						data-testid="time-of-day-quick-row"
-					>
-						{QUICK_RANGES.map((q) => (
-							<Button
-								key={q.labelKey}
-								type="button"
-								variant={
-									start === q.start && end === q.end ? "light" : "subtle"
-								}
-								size="xs"
-								onClick={() => onQuickPick(q.start, q.end)}
-								data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
-							>
-								{t(q.labelKey)}
-							</Button>
-						))}
-					</div>
-				</div>
-			) : null}
-		</div>
-	);
+  return (
+    <div className="space-y-2">
+      <SectionHeader icon={Clock} title={t("quickCreate.timeOfDayLabel")} />
+      {t("quickCreate.timeOfDayHint") ? (
+        <p className="text-xs text-foreground-muted">
+          {t("quickCreate.timeOfDayHint")}
+        </p>
+      ) : null}
+      <ChoiceTabs<TimeOfDayMode>
+        value={mode}
+        onChange={onModeChange}
+        options={TIME_OF_DAY_OPTIONS}
+        testIdPrefix="time-of-day"
+        t={t}
+      />
+      {mode === "range" ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <TimeInput
+              aria-label={`${t("quickCreate.timeOfDayLabel")} start`}
+              value={start || "09:00"}
+              onChange={(e) => onStartChange(e.currentTarget.value)}
+              size="xs"
+              className="flex-1"
+            />
+            <span aria-hidden="true" className="text-foreground-muted">
+              →
+            </span>
+            <TimeInput
+              aria-label={`${t("quickCreate.timeOfDayLabel")} end`}
+              value={end || "18:00"}
+              onChange={(e) => onEndChange(e.currentTarget.value)}
+              size="xs"
+              className="flex-1"
+            />
+          </div>
+          <div
+            className="flex flex-wrap gap-1"
+            data-testid="time-of-day-quick-row"
+          >
+            {QUICK_RANGES.map((q) => (
+              <Button
+                key={q.labelKey}
+                type="button"
+                variant={
+                  start === q.start && end === q.end ? "light" : "subtle"
+                }
+                size="xs"
+                onClick={() => onQuickPick(q.start, q.end)}
+                data-testid={`time-of-day-quick-${q.labelKey.split(".").pop()}`}
+              >
+                {t(q.labelKey)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
 }
 
 interface WindowRowProps {
-	// react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
-	window: Window;
-	index: number;
-	onUpdate: (index: number, updater: (current: Window) => Window) => void;
-	onRemove: (index: number) => void;
-	t: (key: string) => string;
-	locale: EditorLocale;
+  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
+  window: Window;
+  index: number;
+  onUpdate: (index: number, updater: (current: Window) => Window) => void;
+  onRemove: (index: number) => void;
+  t: (key: string) => string;
+  locale: EditorLocale;
 }
 
 function WindowRow({ window, index, onUpdate, onRemove, t }: WindowRowProps) {
-	const referenceKind =
-		window.kind === 1 || window.kind === 2 || window.kind === 3;
-	const [pickerOpen, setPickerOpen] = useState(false);
-	return (
-		<div data-testid={`window-row-${index}`} className="space-y-2 pl-3">
-			<div className="flex items-center justify-between">
-				<span className="text-xs text-foreground-muted">
-					{t("quickCreate.windowsTitle")} #{index + 1}
-				</span>
-				<ActionIcon
-					variant="subtle"
-					size="sm"
-					type="button"
-					onClick={() => onRemove(index)}
-					aria-label={t("quickCreate.windowRemove")}
-					className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1"
-				>
-					<X size={14} />
-				</ActionIcon>
-			</div>
-			<RowSegmented
-				icon={Calendar}
-				options={WINDOW_KIND_OPTIONS.map((opt) => ({
-					value: opt.value,
-					label: t(opt.label),
-				}))}
-				value={String(window.kind)}
-				onChange={(value) =>
-					onUpdate(index, (w) => ({ ...w, kind: Number(value) }))
-				}
-			/>
-			<FormRow icon={<Calendar size={20} />}>
-				<div className="grid w-full grid-cols-2 gap-2">
-					<DateTimePicker
-						aria-label={`${t("quickCreate.startAt")} (datetime)`}
-						value={window.bounds.start ? window.bounds.start : null}
-						onChange={(value) =>
-							onUpdate(index, (w) => ({
-								...w,
-								bounds: { ...w.bounds, start: value ?? "" },
-							}))
-						}
-						size="xs"
-						valueFormat="MM/DD HH:mm"
-						clearable
-						popoverProps={{ withinPortal: false }}
-					/>
-					<DateTimePicker
-						aria-label={`${t("quickCreate.endAt")} (datetime)`}
-						value={window.bounds.end ? window.bounds.end : null}
-						onChange={(value) =>
-							onUpdate(index, (w) => ({
-								...w,
-								bounds: { ...w.bounds, end: value ?? "" },
-							}))
-						}
-						size="xs"
-						valueFormat="MM/DD HH:mm"
-						clearable
-						popoverProps={{ withinPortal: false }}
-					/>
-				</div>
-			</FormRow>
-			{referenceKind ? (
-				<FormRow icon={<Tag size={20} />}>
-					<Button
-						type="button"
-						size="sm"
-						variant={window.referenceId ? "light" : "filled"}
-						onClick={() => setPickerOpen(true)}
-						leftSection={<Search size={12} aria-hidden="true" />}
-						data-testid={`window-reference-picker-${index}`}
-						aria-label={t("quickCreate.windowReferenceIdLabel")}
-						className="w-full justify-start"
-						styles={{
-							root: {
-								backgroundColor: window.referenceId
-									? "var(--accent-soft, var(--surface-2))"
-									: "var(--surface-2)",
-								color: window.referenceId
-									? "var(--foreground)"
-									: "var(--foreground-muted)",
-								fontWeight: 400,
-							},
-						}}
-					>
-						{window.referenceId || t("quickCreate.windowReferenceIdLabel")}
-					</Button>
-					<TileReferencePicker
-						opened={pickerOpen}
-						onClose={() => setPickerOpen(false)}
-						onSelect={(tileId) =>
-							onUpdate(index, (w) => ({
-								...w,
-								referenceId: tileId ?? null,
-							}))
-						}
-						currentValue={window.referenceId ?? null}
-					/>
-				</FormRow>
-			) : null}
-		</div>
-	);
+  const referenceKind =
+    window.kind === 1 || window.kind === 2 || window.kind === 3;
+  const [pickerOpen, setPickerOpen] = useState(false);
+  return (
+    <div data-testid={`window-row-${index}`} className="space-y-2 pl-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-foreground-muted">
+          {t("quickCreate.windowsTitle")} #{index + 1}
+        </span>
+        <ActionIcon
+          variant="subtle"
+          size="sm"
+          type="button"
+          onClick={() => onRemove(index)}
+          aria-label={t("quickCreate.windowRemove")}
+          className="text-foreground-muted hover:text-danger focus:outline-hidden focus-visible:ring-2 focus-visible:ring-background-control focus-visible:ring-offset-2 focus-visible:ring-offset-surface-1"
+        >
+          <X size={14} />
+        </ActionIcon>
+      </div>
+      <RowSegmented
+        icon={Calendar}
+        options={WINDOW_KIND_OPTIONS.map((opt) => ({
+          value: opt.value,
+          label: t(opt.label),
+        }))}
+        value={String(window.kind)}
+        onChange={(value) =>
+          onUpdate(index, (w) => ({ ...w, kind: Number(value) }))
+        }
+      />
+      <FormRow icon={<Calendar size={20} />}>
+        <div className="grid w-full grid-cols-2 gap-2">
+          <DateTimePicker
+            aria-label={`${t("quickCreate.startAt")} (datetime)`}
+            value={window.bounds.start ? window.bounds.start : null}
+            onChange={(value) =>
+              onUpdate(index, (w) => ({
+                ...w,
+                bounds: { ...w.bounds, start: value ?? "" },
+              }))
+            }
+            size="xs"
+            valueFormat="MM/DD HH:mm"
+            clearable
+            popoverProps={{ withinPortal: false }}
+          />
+          <DateTimePicker
+            aria-label={`${t("quickCreate.endAt")} (datetime)`}
+            value={window.bounds.end ? window.bounds.end : null}
+            onChange={(value) =>
+              onUpdate(index, (w) => ({
+                ...w,
+                bounds: { ...w.bounds, end: value ?? "" },
+              }))
+            }
+            size="xs"
+            valueFormat="MM/DD HH:mm"
+            clearable
+            popoverProps={{ withinPortal: false }}
+          />
+        </div>
+      </FormRow>
+      {referenceKind ? (
+        <FormRow icon={<Tag size={20} />}>
+          <Button
+            type="button"
+            size="sm"
+            variant={window.referenceId ? "light" : "filled"}
+            onClick={() => setPickerOpen(true)}
+            leftSection={<Search size={12} aria-hidden="true" />}
+            data-testid={`window-reference-picker-${index}`}
+            aria-label={t("quickCreate.windowReferenceIdLabel")}
+            className="w-full justify-start"
+            styles={{
+              root: {
+                backgroundColor: window.referenceId
+                  ? "var(--accent-soft, var(--surface-2))"
+                  : "var(--surface-2)",
+                color: window.referenceId
+                  ? "var(--foreground)"
+                  : "var(--foreground-muted)",
+                fontWeight: 400,
+              },
+            }}
+          >
+            {window.referenceId || t("quickCreate.windowReferenceIdLabel")}
+          </Button>
+          <TileReferencePicker
+            opened={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            onSelect={(tileId) =>
+              onUpdate(index, (w) => ({
+                ...w,
+                referenceId: tileId ?? null,
+              }))
+            }
+            currentValue={window.referenceId ?? null}
+          />
+        </FormRow>
+      ) : null}
+    </div>
+  );
 }
 
 export interface SchedulePanelProps {
-	time: {
-		span: { start: string; end: string };
-		whenMode: WhenMode;
-		timeOfDayMode: TimeOfDayMode;
-		timeOfDayStart: string;
-		timeOfDayEnd: string;
-		referenceId: string | null;
-		referenceLabel: string;
-	};
-	windows: Window[];
-	setField: (path: string, value: unknown) => void;
-	updateWindow: (index: number, updater: (current: Window) => Window) => void;
-	addWindow: () => void;
-	removeWindow: (index: number) => void;
-	locale: EditorLocale;
-	t: (key: string) => string;
+  time: {
+    span: { start: string; end: string };
+    whenMode: WhenMode;
+    timeOfDayMode: TimeOfDayMode;
+    timeOfDayStart: string;
+    timeOfDayEnd: string;
+    referenceId: string | null;
+    referenceLabel: string;
+  };
+  windows: Window[];
+  setField: (path: string, value: unknown) => void;
+  updateWindow: (index: number, updater: (current: Window) => Window) => void;
+  addWindow: () => void;
+  removeWindow: (index: number) => void;
+  locale: EditorLocale;
+  t: (key: string) => string;
 }
 
 export function SchedulePanel({
-	time,
-	windows,
-	setField,
-	updateWindow,
-	addWindow,
-	removeWindow,
-	locale: _locale,
-	t,
+  time,
+  windows,
+  setField,
+  updateWindow,
+  addWindow,
+  removeWindow,
+  locale: _locale,
+  t,
 }: SchedulePanelProps) {
-	const startDay = isoToPicker(time.span.start);
-	const endDay = isoToPicker(time.span.end);
-	const [referencePickerOpen, setReferencePickerOpen] = useState(false);
+  const startDay = isoToPicker(time.span.start);
+  const endDay = isoToPicker(time.span.end);
+  const [referencePickerOpen, setReferencePickerOpen] = useState(false);
 
-	function applyWhenMode(next: WhenMode) {
-		setField("time.whenMode", next);
-		if (next === "none") {
-			setField("time.span.start", "");
-			setField("time.span.end", "");
-			setField("time.timeOfDayMode", "unspecified");
-			setField("time.timeOfDayStart", "");
-			setField("time.timeOfDayEnd", "");
-		}
-		if (next === "day") {
-			setField("time.span.end", "");
-		}
-		if (next === "reference") {
-			setField("time.span.start", "");
-			setField("time.span.end", "");
-		}
-	}
+  function applyWhenMode(next: WhenMode) {
+    setField("time.whenMode", next);
+    if (next === "none") {
+      setField("time.span.start", "");
+      setField("time.span.end", "");
+      setField("time.timeOfDayMode", "unspecified");
+      setField("time.timeOfDayStart", "");
+      setField("time.timeOfDayEnd", "");
+    }
+    if (next === "day") {
+      setField("time.span.end", "");
+    }
+    if (next === "reference") {
+      setField("time.span.start", "");
+      setField("time.span.end", "");
+    }
+  }
 
-	function applyTimeOfDayMode(next: TimeOfDayMode) {
-		setField("time.timeOfDayMode", next);
-		if (next === "range") {
-			const cur = timeOfDayToSpanValues(
-				next,
-				time.timeOfDayStart || "09:00",
-				time.timeOfDayEnd || "18:00",
-			);
-			setField("time.timeOfDayStart", cur.start);
-			setField("time.timeOfDayEnd", cur.end);
-		} else {
-			setField("time.timeOfDayStart", "");
-			setField("time.timeOfDayEnd", "");
-		}
-	}
+  function applyTimeOfDayMode(next: TimeOfDayMode) {
+    setField("time.timeOfDayMode", next);
+    if (next === "range") {
+      const cur = timeOfDayToSpanValues(
+        next,
+        time.timeOfDayStart || "09:00",
+        time.timeOfDayEnd || "18:00",
+      );
+      setField("time.timeOfDayStart", cur.start);
+      setField("time.timeOfDayEnd", cur.end);
+    } else {
+      setField("time.timeOfDayStart", "");
+      setField("time.timeOfDayEnd", "");
+    }
+  }
 
-	function applyQuickPick(start: string, end: string) {
-		setField("time.timeOfDayMode", "range");
-		setField("time.timeOfDayStart", start);
-		setField("time.timeOfDayEnd", end);
-	}
+  function applyQuickPick(start: string, end: string) {
+    setField("time.timeOfDayMode", "range");
+    setField("time.timeOfDayStart", start);
+    setField("time.timeOfDayEnd", end);
+  }
 
-	return (
-		<>
-			<NullCard
-				active={time.whenMode === "none"}
-				onActivate={(mode) => applyWhenMode(mode)}
-				title={t("quickCreate.whenNoneTitle")}
-				sub={t("quickCreate.whenNoneSub")}
-				testId="when-none-toggle"
-			/>
+  return (
+    <>
+      <NullCard
+        active={time.whenMode === "none"}
+        onActivate={(mode) => applyWhenMode(mode)}
+        title={t("quickCreate.whenNoneTitle")}
+        sub={t("quickCreate.whenNoneSub")}
+        testId="when-none-toggle"
+      />
 
-			<div className="space-y-2">
-				<SectionHeader icon={Calendar} title={t("quickCreate.whenDateLabel")} />
-				<ChoiceTabs<WhenMode>
-					value={time.whenMode}
-					onChange={applyWhenMode}
-					options={WHEN_MODE_OPTIONS}
-					testIdPrefix="when-mode"
-					t={t}
-				/>
-			</div>
+      <div className="space-y-2">
+        <SectionHeader icon={Calendar} title={t("quickCreate.whenDateLabel")} />
+        <ChoiceTabs<WhenMode>
+          value={time.whenMode}
+          onChange={applyWhenMode}
+          options={WHEN_MODE_OPTIONS}
+          testIdPrefix="when-mode"
+          t={t}
+        />
+      </div>
 
-			{time.whenMode === "day" || time.whenMode === "range" ? (
-				<div
-					className="space-y-2 rounded-lg border border-border bg-surface-0 p-3"
-					data-testid="when-calendar"
-				>
-					<DatePickerInput
-						type={time.whenMode === "range" ? "range" : "default"}
-						aria-label={t("quickCreate.whenDateLabel")}
-						placeholder={
-							time.whenMode === "range"
-								? t("quickCreate.calendarRangePlaceholder")
-								: t("quickCreate.calendarDayPlaceholder")
-						}
-						value={
-							time.whenMode === "range"
-								? [startDay || null, endDay || null]
-								: startDay || null
-						}
-						onChange={(value) => {
-							if (time.whenMode === "range") {
-								if (Array.isArray(value)) {
-									const [s, e] = value;
-									setField("time.span.start", s ?? "");
-									setField("time.span.end", e ?? "");
-								}
-								return;
-							}
-							setField("time.span.start", value ?? "");
-							setField("time.span.end", "");
-						}}
-						size="xs"
-						variant="filled"
-						clearable
-						popoverProps={{ withinPortal: false }}
-						styles={{ input: { backgroundColor: "var(--surface-2)" } }}
-						data-testid="when-calendar-input"
-					/>
-					<div
-						className="flex flex-wrap gap-1"
-						data-testid="when-calendar-quick-row"
-					>
-						{[
-							{ id: "today", labelKey: "quickCreate.calendarToday", days: 0 },
-							{
-								id: "tomorrow",
-								labelKey: "quickCreate.calendarTomorrow",
-								days: 1,
-							},
-							{
-								id: "thisWeek",
-								labelKey: "quickCreate.calendarThisWeek",
-								days: 7,
-							},
-						].map((q) => (
-							<Button
-								key={q.id}
-								type="button"
-								variant="light"
-								size="xs"
-								onClick={() => {
-									const base = new Date();
-									base.setHours(0, 0, 0, 0);
-									const start = new Date(base);
-									if (q.days === 1) start.setDate(start.getDate() + 1);
-									if (q.days === 7) {
-										setField(
-											"time.span.start",
-											base.toISOString().slice(0, 10),
-										);
-										const end = new Date(base);
-										end.setDate(end.getDate() + 6);
-										setField("time.span.end", end.toISOString().slice(0, 10));
-										if (time.whenMode === "day") applyWhenMode("range");
-										return;
-									}
-									setField("time.span.start", start.toISOString().slice(0, 10));
-									setField("time.span.end", "");
-								}}
-								data-testid={`when-calendar-quick-${q.id}`}
-							>
-								{t(q.labelKey)}
-							</Button>
-						))}
-					</div>
-				</div>
-			) : null}
+      {time.whenMode === "day" || time.whenMode === "range" ? (
+        <div
+          className="space-y-2 rounded-lg border border-border bg-surface-0 p-3"
+          data-testid="when-calendar"
+        >
+          <DatePickerInput
+            type={time.whenMode === "range" ? "range" : "default"}
+            aria-label={t("quickCreate.whenDateLabel")}
+            placeholder={
+              time.whenMode === "range"
+                ? t("quickCreate.calendarRangePlaceholder")
+                : t("quickCreate.calendarDayPlaceholder")
+            }
+            value={
+              time.whenMode === "range"
+                ? [startDay || null, endDay || null]
+                : startDay || null
+            }
+            onChange={(value) => {
+              if (time.whenMode === "range") {
+                if (Array.isArray(value)) {
+                  const [s, e] = value;
+                  setField("time.span.start", s ?? "");
+                  setField("time.span.end", e ?? "");
+                }
+                return;
+              }
+              setField("time.span.start", value ?? "");
+              setField("time.span.end", "");
+            }}
+            size="xs"
+            variant="filled"
+            clearable
+            popoverProps={{ withinPortal: false }}
+            styles={{ input: { backgroundColor: "var(--surface-2)" } }}
+            data-testid="when-calendar-input"
+          />
+          <div
+            className="flex flex-wrap gap-1"
+            data-testid="when-calendar-quick-row"
+          >
+            {[
+              { id: "today", labelKey: "quickCreate.calendarToday", days: 0 },
+              {
+                id: "tomorrow",
+                labelKey: "quickCreate.calendarTomorrow",
+                days: 1,
+              },
+              {
+                id: "thisWeek",
+                labelKey: "quickCreate.calendarThisWeek",
+                days: 7,
+              },
+            ].map((q) => (
+              <Button
+                key={q.id}
+                type="button"
+                variant="light"
+                size="xs"
+                onClick={() => {
+                  const base = new Date();
+                  base.setHours(0, 0, 0, 0);
+                  const start = new Date(base);
+                  if (q.days === 1) start.setDate(start.getDate() + 1);
+                  if (q.days === 7) {
+                    setField(
+                      "time.span.start",
+                      base.toISOString().slice(0, 10),
+                    );
+                    const end = new Date(base);
+                    end.setDate(end.getDate() + 6);
+                    setField("time.span.end", end.toISOString().slice(0, 10));
+                    if (time.whenMode === "day") applyWhenMode("range");
+                    return;
+                  }
+                  setField("time.span.start", start.toISOString().slice(0, 10));
+                  setField("time.span.end", "");
+                }}
+                data-testid={`when-calendar-quick-${q.id}`}
+              >
+                {t(q.labelKey)}
+              </Button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
-			{time.whenMode === "reference" ? (
-				<div
-					data-testid="when-reference-catalog"
-					className="flex items-center gap-3 rounded-lg border border-border bg-surface-0 p-3"
-				>
-					<Folder
-						size={20}
-						className="shrink-0 text-foreground-muted"
-						aria-hidden="true"
-					/>
-					<div className="min-w-0 flex-1">
-						<div className="text-xs font-semibold text-foreground">
-							{t("quickCreate.referenceRangeTitle")}
-						</div>
-						<div className="text-caption text-foreground-muted">
-							{time.referenceId
-								? time.referenceLabel || time.referenceId
-								: t("quickCreate.referenceRangeEmpty")}
-						</div>
-					</div>
-					<Button
-						type="button"
-						size="xs"
-						variant={time.referenceId ? "light" : "default"}
-						onClick={() => setReferencePickerOpen(true)}
-						leftSection={<Search size={12} aria-hidden="true" />}
-						data-testid="when-reference-pick"
-						aria-label={t("quickCreate.tilePickerPickAria")}
-					>
-						{t("quickCreate.referenceRangePick")}
-					</Button>
-				</div>
-			) : null}
+      {time.whenMode === "reference" ? (
+        <div
+          data-testid="when-reference-catalog"
+          className="flex items-center gap-3 rounded-lg border border-border bg-surface-0 p-3"
+        >
+          <Folder
+            size={20}
+            className="shrink-0 text-foreground-muted"
+            aria-hidden="true"
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-semibold text-foreground">
+              {t("quickCreate.referenceRangeTitle")}
+            </div>
+            <div className="text-caption text-foreground-muted">
+              {time.referenceId
+                ? time.referenceLabel || time.referenceId
+                : t("quickCreate.referenceRangeEmpty")}
+            </div>
+          </div>
+          <Button
+            type="button"
+            size="xs"
+            variant={time.referenceId ? "light" : "default"}
+            onClick={() => setReferencePickerOpen(true)}
+            leftSection={<Search size={12} aria-hidden="true" />}
+            data-testid="when-reference-pick"
+            aria-label={t("quickCreate.tilePickerPickAria")}
+          >
+            {t("quickCreate.referenceRangePick")}
+          </Button>
+        </div>
+      ) : null}
 
-			<TileReferencePicker
-				opened={referencePickerOpen}
-				onClose={() => setReferencePickerOpen(false)}
-				onSelect={(tileId) => {
-					setReferencePickerOpen(false);
-					if (!tileId) {
-						setField("time.referenceId", null);
-						setField("time.referenceLabel", "");
-						return;
-					}
-					setField("time.referenceId", tileId);
-				}}
-				currentValue={time.referenceId ?? null}
-				filterPlanOnly
-			/>
+      <TileReferencePicker
+        opened={referencePickerOpen}
+        onClose={() => setReferencePickerOpen(false)}
+        onSelect={(tileId) => {
+          setReferencePickerOpen(false);
+          if (!tileId) {
+            setField("time.referenceId", null);
+            setField("time.referenceLabel", "");
+            return;
+          }
+          setField("time.referenceId", tileId);
+        }}
+        currentValue={time.referenceId ?? null}
+        filterPlanOnly
+      />
 
-			{time.whenMode !== "none" ? <FormDivider /> : null}
+      {time.whenMode !== "none" ? <FormDivider /> : null}
 
-			{time.whenMode !== "none" ? (
-				<TimeOfDayEditor
-					mode={time.timeOfDayMode}
-					start={time.timeOfDayStart}
-					end={time.timeOfDayEnd}
-					onModeChange={applyTimeOfDayMode}
-					onStartChange={(v) => setField("time.timeOfDayStart", v)}
-					onEndChange={(v) => setField("time.timeOfDayEnd", v)}
-					onQuickPick={applyQuickPick}
-					t={t}
-				/>
-			) : null}
+      {time.whenMode !== "none" ? (
+        <TimeOfDayEditor
+          mode={time.timeOfDayMode}
+          start={time.timeOfDayStart}
+          end={time.timeOfDayEnd}
+          onModeChange={applyTimeOfDayMode}
+          onStartChange={(v) => setField("time.timeOfDayStart", v)}
+          onEndChange={(v) => setField("time.timeOfDayEnd", v)}
+          onQuickPick={applyQuickPick}
+          t={t}
+        />
+      ) : null}
 
-			<FormDivider />
-			<SectionHeader icon={Calendar} title={t("quickCreate.windowsNavTitle")} />
-			{windows.map((w, i) => (
-				<WindowRow
-					key={w.id}
-					window={w}
-					index={i}
-					onUpdate={updateWindow}
-					onRemove={removeWindow}
-					t={t}
-					locale={_locale}
-				/>
-			))}
-			<Button
-				type="button"
-				size="sm"
-				variant="default"
-				leftSection={<Plus size={12} aria-hidden="true" />}
-				onClick={addWindow}
-			>
-				{t("quickCreate.windowsAdd")}
-			</Button>
-		</>
-	);
+      <FormDivider />
+      <SectionHeader icon={Calendar} title={t("quickCreate.windowsNavTitle")} />
+      {windows.map((w, i) => (
+        <WindowRow
+          key={w.id}
+          window={w}
+          index={i}
+          onUpdate={updateWindow}
+          onRemove={removeWindow}
+          t={t}
+          locale={_locale}
+        />
+      ))}
+      <Button
+        type="button"
+        size="sm"
+        variant="default"
+        leftSection={<Plus size={12} aria-hidden="true" />}
+        onClick={addWindow}
+      >
+        {t("quickCreate.windowsAdd")}
+      </Button>
+    </>
+  );
 }

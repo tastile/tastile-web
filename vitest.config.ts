@@ -3,9 +3,41 @@ import path from "path";
 
 export default defineConfig({
   envDir: false,
+  // The eslint-local-rules/__tests__/*.test.mjs fixtures use
+  // `import test from 'node:test'` (no test-runner SDK, plain ESM).
+  // Vitest 4 does NOT shim `node:test`: it exports `test` only as a
+  // named binding (no default function), so a naive alias of
+  // `node:test` -> `vitest` breaks them with
+  // "TypeError: default is not a function". We instead rewrite the
+  // import in-source for the rule fixtures so vitest's own named
+  // `test` binding is used. The fixture's call sites
+  // (`test('...', fn)`) work unchanged — vitest's `test` is
+  // callable with the same signature as `node:test`'s default. The
+  // `node:assert/strict` import is left alone (Node built-in).
+  plugins: [
+    {
+      name: "rewrite-node-test-to-vitest",
+      enforce: "pre",
+      transform(code, id) {
+        if (!id.includes("eslint-local-rules/__tests__/")) return;
+        if (!id.endsWith(".test.mjs")) return;
+        return {
+          code: `import { test } from 'vitest';\n${code.replace(
+            /import\s+test\s+from\s+['"]node:test['"];?/,
+            "",
+          )}`,
+          map: null,
+        };
+      },
+    },
+  ],
   test: {
     globals: true,
     environment: "jsdom",
+    include: [
+      "src/**/*.{test,spec}.{ts,tsx}",
+      "eslint-local-rules/__tests__/*.test.mjs",
+    ],
     exclude: [
       "e2e/**",
       "node_modules/**",

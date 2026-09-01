@@ -31,119 +31,119 @@ import { Alert, Button, Loader, Stack, Text } from "@mantine/core";
 import { useState } from "react";
 
 export function DecisionPromptSheet() {
-	const { data: sessions, isLoading, refetch } = usePendingSessions();
-	const { t } = useTranslation();
-	const [activeId, setActiveId] = useState<string | null>(null);
-	const [busy, setBusy] = useState(false);
-	const [error, setError] = useState<string | null>(null);
+  const { data: sessions, isLoading, refetch } = usePendingSessions();
+  const { t } = useTranslation();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-	const active = (sessions ?? []).find((session) => session.id === activeId);
+  const active = (sessions ?? []).find((session) => session.id === activeId);
 
-	if (active) {
-		return (
-			<Stack
-				gap="md"
-				data-testid="decision-active-form"
-				data-base-revision={active.baseRevision}
-			>
-				<Text fw={500} size="lg">
-					{active.prompt.title}
-				</Text>
-				<Text c="dimmed" size="sm">
-					{active.prompt.body}
-				</Text>
-				{error && (
-					<Alert role="alert" color="red" data-testid="decision-feedback-error">
-						{error}
-					</Alert>
-				)}
-				<InteractionTreeForm
-					node={active.interactionTree}
-					baseRevision={active.baseRevision}
-					busy={busy}
-					onSubmit={async (answers) => {
-						setBusy(true);
-						setError(null);
-						try {
-							const result = await submitFeedback(makeClient(), active.id, {
-								answers,
-								baseRevision: active.baseRevision,
-							});
-							if (!result.ok) {
-								const kind = result.error.kind;
-								if (
-									kind === ApiErrorKind.CONFLICT ||
-									kind === ApiErrorKind.STALE_REVISION
-								) {
-									await refetch();
-									setError(t("execution.decision.staleResubmit"));
-								} else if (kind === ApiErrorKind.NOT_FOUND) {
-									await refetch();
-									setActiveId(null);
-								} else {
-									setError(result.error.message);
-								}
-							} else {
-								setActiveId(null);
-								await refetch();
-							}
-						} catch {
-							setError(t("common.unexpectedError"));
-						}
-						setBusy(false);
-					}}
-				/>
-			</Stack>
-		);
-	}
+  if (active) {
+    return (
+      <Stack
+        gap="md"
+        data-testid="decision-active-form"
+        data-base-revision={active.baseRevision}
+      >
+        <Text fw={500} size="lg">
+          {active.prompt.title}
+        </Text>
+        <Text c="dimmed" size="sm">
+          {active.prompt.body}
+        </Text>
+        {error && (
+          <Alert role="alert" color="red" data-testid="decision-feedback-error">
+            {error}
+          </Alert>
+        )}
+        <InteractionTreeForm
+          node={active.interactionTree}
+          baseRevision={active.baseRevision}
+          busy={busy}
+          onSubmit={async (answers) => {
+            setBusy(true);
+            setError(null);
+            try {
+              const result = await submitFeedback(makeClient(), active.id, {
+                answers,
+                baseRevision: active.baseRevision,
+              });
+              if (!result.ok) {
+                const kind = result.error.kind;
+                if (
+                  kind === ApiErrorKind.CONFLICT ||
+                  kind === ApiErrorKind.STALE_REVISION
+                ) {
+                  await refetch();
+                  setError(t("execution.decision.staleResubmit"));
+                } else if (kind === ApiErrorKind.NOT_FOUND) {
+                  await refetch();
+                  setActiveId(null);
+                } else {
+                  setError(result.error.message);
+                }
+              } else {
+                setActiveId(null);
+                await refetch();
+              }
+            } catch {
+              setError(t("common.unexpectedError"));
+            }
+            setBusy(false);
+          }}
+        />
+      </Stack>
+    );
+  }
 
-	if (isLoading) {
-		return (
-			<Stack align="center" gap="sm" data-testid="decision-loading" py="lg">
-				<Loader size="sm" />
-				<Text size="sm" c="dimmed">
-					{t("execution.decision.loading")}
-				</Text>
-			</Stack>
-		);
-	}
+  if (isLoading) {
+    return (
+      <Stack align="center" gap="sm" data-testid="decision-loading" py="lg">
+        <Loader size="sm" />
+        <Text size="sm" c="dimmed">
+          {t("execution.decision.loading")}
+        </Text>
+      </Stack>
+    );
+  }
 
-	if (!sessions || sessions.length === 0) {
-		return (
-			<Stack align="center" gap="xs" data-testid="decision-empty" py="lg">
-				<Text size="sm" c="dimmed">
-					{t("execution.decision.empty")}
-				</Text>
-			</Stack>
-		);
-	}
+  if (!sessions || sessions.length === 0) {
+    return (
+      <Stack align="center" gap="xs" data-testid="decision-empty" py="lg">
+        <Text size="sm" c="dimmed">
+          {t("execution.decision.empty")}
+        </Text>
+      </Stack>
+    );
+  }
 
-	return (
-		<Stack gap="sm" data-testid="decision-prompt-sheet">
-			<Text fw={500} size="lg">
-				{t("execution.decision.pendingHeadline")}
-			</Text>
-			{sessions.map((session) => (
-				<Button
-					key={session.id}
-					variant="default"
-					justify="flex-start"
-					data-testid={`decision-session-${session.id}`}
-					onClick={() => {
-						setError(null);
-						setActiveId(session.id);
-					}}
-				>
-					<Stack gap={2} align="flex-start">
-						<Text size="sm" fw={500}>
-							{session.prompt.title}
-						</Text>
-						<Text size="xs" c="dimmed">
-							{session.prompt.body}
-						</Text>
-					</Stack>
-				</Button>
-			))}
-		</Stack>
-	);
+  return (
+    <Stack gap="sm" data-testid="decision-prompt-sheet">
+      <Text fw={500} size="lg">
+        {t("execution.decision.pendingHeadline")}
+      </Text>
+      {sessions.map((session) => (
+        <Button
+          key={session.id}
+          variant="default"
+          justify="flex-start"
+          data-testid={`decision-session-${session.id}`}
+          onClick={() => {
+            setError(null);
+            setActiveId(session.id);
+          }}
+        >
+          <Stack gap={2} align="flex-start">
+            <Text size="sm" fw={500}>
+              {session.prompt.title}
+            </Text>
+            <Text size="xs" c="dimmed">
+              {session.prompt.body}
+            </Text>
+          </Stack>
+        </Button>
+      ))}
+    </Stack>
+  );
 }

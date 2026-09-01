@@ -27,25 +27,25 @@
  * Base styling configuration for tile card components
  */
 export const TILE_CARD_STYLES = {
-	base: "rounded-xl bg-surface-1 transition-[background-color] duration-200 ease-in-out",
-	hover: "hover:bg-surface-2 cursor-pointer",
-	padding: {
-		compact: "p-2.5",
-		comfortable: "p-3",
-		detailed: "p-4",
-	},
-	gap: {
-		compact: "gap-2",
-		comfortable: "gap-3",
-		detailed: "gap-4",
-	},
-	statusIcon: {
-		size: {
-			compact: "size-5",
-			comfortable: "size-5",
-			detailed: "size-6",
-		},
-	},
+  base: "rounded-xl bg-surface-1 transition-[background-color] duration-200 ease-in-out",
+  hover: "hover:bg-surface-2 cursor-pointer",
+  padding: {
+    compact: "p-2.5",
+    comfortable: "p-3",
+    detailed: "p-4",
+  },
+  gap: {
+    compact: "gap-2",
+    comfortable: "gap-3",
+    detailed: "gap-4",
+  },
+  statusIcon: {
+    size: {
+      compact: "size-5",
+      comfortable: "size-5",
+      detailed: "size-6",
+    },
+  },
 } as const;
 
 /**
@@ -60,8 +60,8 @@ export const TILE_CARD_STYLES = {
  * for semantic "started" state representation.
  */
 export const TILE_STATUS_COLORS = {
-	ready: "text-foreground-muted",
-	started: "text-success",
-	done: "text-primary",
-	closed: "text-primary",
+  ready: "text-foreground-muted",
+  started: "text-success",
+  done: "text-primary",
+  closed: "text-primary",
 } as const;
