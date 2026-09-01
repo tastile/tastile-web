@@ -22,11 +22,13 @@
       "eslint.config.test.ts",
       "scripts/build-product.mts",
       "scripts/screenshot-calendar.mts",
+      "scripts/sops-decrypt.ts",
+      "scripts/sops-decrypt.test.ts",
       "knip.json"
     ]
   },
   "formatter": {
-    "enabled": false
+    "enabled": true
   },
   "css": {
     "parser": {

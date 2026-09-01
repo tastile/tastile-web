@@ -39,76 +39,78 @@
    step 3 — every var(--xxx) used in code must be defined here first.
    ============================================ */
 :root {
-  --background: #f7f8f8;
-  --surface-0: #f3f4f5;
-  --surface-1: #ffffff;
-  --surface-2: #eef1f4;
-  --surface-3: #e4e8ec;
-  --surface-elevated: #ffffff;
+	--background: #f7f8f8;
+	--surface-0: #f3f4f5;
+	--surface-1: #ffffff;
+	--surface-2: #eef1f4;
+	--surface-3: #e4e8ec;
+	--surface-elevated: #ffffff;
 
-  --foreground: #111217;
-  --foreground-muted: #4f5562;
-  --foreground-subtle: #6e7581;
-  --foreground-lighter: #8a8f98;
-  --muted: #6e7581;
+	--foreground: #111217;
+	--foreground-muted: #4f5562;
+	--foreground-subtle: #6e7581;
+	--foreground-lighter: #8a8f98;
+	--muted: #6e7581;
 
-  --interactive-base: #2f3542;
-  --interactive-hover: #1f232c;
-  --interactive-active: #13161c;
+	--interactive-base: #2f3542;
+	--interactive-hover: #1f232c;
+	--interactive-active: #13161c;
 
-  --primary: #5e6ad2;
-  --primary-foreground: #ffffff;
-  --primary-hover: #7170ff;
+	--primary: #5e6ad2;
+	--primary-foreground: #ffffff;
+	--primary-hover: #7170ff;
 
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+	--success: #10b981;
+	--warning: #f59e0b;
+	--danger: #ef4444;
 
-  --border: #e4e8ec;
-  --border-strong: #d0d6e0;
-  --border-stronger: #b4bcc8;
+	--border: #e4e8ec;
+	--border-strong: #d0d6e0;
+	--border-stronger: #b4bcc8;
 
-  --overlay: rgba(255, 255, 255, 0.95);
-  --overlay-hover: rgba(0, 0, 0, 0.04);
+	--overlay: rgba(255, 255, 255, 0.95);
+	--overlay-hover: rgba(0, 0, 0, 0.04);
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+	--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px
+		rgba(0, 0, 0, 0.06);
+	--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px
+		rgba(0, 0, 0, 0.05);
 
-  --focus-ring: oklch(0.55 0.18 250 / 0.55);
-  --ring-offset: 2px;
-  --shadow-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.04);
-  --shadow-2: 0 4px 8px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.04);
-  --shadow-3: 0 8px 24px rgb(0 0 0 / 0.08), 0 24px 48px rgb(0 0 0 / 0.06);
-  --surface-inset: oklch(0.97 0 0);
-  --border-subtle: oklch(0 0 0 / 0.06);
-  --border-default: oklch(0 0 0 / 0.1);
+	--focus-ring: oklch(0.55 0.18 250 / 0.55);
+	--ring-offset: 2px;
+	--shadow-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 3px rgb(0 0 0 / 0.04);
+	--shadow-2: 0 4px 8px rgb(0 0 0 / 0.06), 0 8px 24px rgb(0 0 0 / 0.04);
+	--shadow-3: 0 8px 24px rgb(0 0 0 / 0.08), 0 24px 48px rgb(0 0 0 / 0.06);
+	--surface-inset: oklch(0.97 0 0);
+	--border-subtle: oklch(0 0 0 / 0.06);
+	--border-default: oklch(0 0 0 / 0.1);
 
-  /* Focus ring tokens for the :focus-visible redesign (P2c).
+	/* Focus ring tokens for the :focus-visible redesign (P2c).
      --focus-ring-width is the ring width; --focus-ring-offset is the gap between
      the element and the ring; --focus-ring-color is the ring stroke. */
-  --focus-ring-width: 2px;
-  --focus-ring-offset: 2px;
-  --focus-ring-color: var(--primary);
+	--focus-ring-width: 2px;
+	--focus-ring-offset: 2px;
+	--focus-ring-color: var(--primary);
 
-  /* Typography tokens — semantic 5-step scale (P3-1 + P3-3).
+	/* Typography tokens — semantic 5-step scale (P3-1 + P3-3).
      Strict mode: arbitrary sizes are forbidden; text-caption (12px) is the floor.
      text-input (16px) is the minimum for form controls (iOS Safari auto-zoom). */
-  --text-display-size: 32px;
-  --text-display-line: 40px;
-  --text-title-size: 20px;
-  --text-title-line: 28px;
-  --text-body-size: 14px;
-  --text-body-line: 20px;
-  --text-caption-size: 12px;
-  --text-caption-line: 16px;
-  --text-input-size: 16px;
-  --text-input-line: 24px;
-  --text-weight-semibold: 600;
-  --text-weight-normal: 400;
-  --text-weight-medium: 500;
+	--text-display-size: 32px;
+	--text-display-line: 40px;
+	--text-title-size: 20px;
+	--text-title-line: 28px;
+	--text-body-size: 14px;
+	--text-body-line: 20px;
+	--text-caption-size: 12px;
+	--text-caption-line: 16px;
+	--text-input-size: 16px;
+	--text-input-line: 24px;
+	--text-weight-semibold: 600;
+	--text-weight-normal: 400;
+	--text-weight-medium: 500;
 
-  color-scheme: light;
+	color-scheme: light;
 }
 
 .dark,
@@ -116,109 +118,111 @@
 .theme-dark,
 .theme-dark-gray,
 .theme-dark-black {
-  --background: #08090a;
-  --surface-0: #0f1011;
-  --surface-1: rgba(255, 255, 255, 0.02);
-  --surface-2: rgba(255, 255, 255, 0.05);
-  --surface-3: rgba(255, 255, 255, 0.08);
-  --surface-elevated: #191a1b;
+	--background: #08090a;
+	--surface-0: #0f1011;
+	--surface-1: rgba(255, 255, 255, 0.02);
+	--surface-2: rgba(255, 255, 255, 0.05);
+	--surface-3: rgba(255, 255, 255, 0.08);
+	--surface-elevated: #191a1b;
 
-  --foreground: #f7f8f8;
-  --foreground-muted: #d0d6e0;
-  --foreground-subtle: #8a8f98;
-  --foreground-lighter: #62666d;
-  --muted: #62666d;
+	--foreground: #f7f8f8;
+	--foreground-muted: #d0d6e0;
+	--foreground-subtle: #8a8f98;
+	--foreground-lighter: #62666d;
+	--muted: #62666d;
 
-  --interactive-base: #d0d6e0;
-  --interactive-hover: #f7f8f8;
-  --interactive-active: #ffffff;
+	--interactive-base: #d0d6e0;
+	--interactive-hover: #f7f8f8;
+	--interactive-active: #ffffff;
 
-  --primary: #5e6ad2;
-  --primary-foreground: #ffffff;
-  --primary-hover: #7170ff;
+	--primary: #5e6ad2;
+	--primary-foreground: #ffffff;
+	--primary-hover: #7170ff;
 
-  --success: #10b981;
-  --warning: #f59e0b;
-  --danger: #ef4444;
+	--success: #10b981;
+	--warning: #f59e0b;
+	--danger: #ef4444;
 
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.12);
-  --border-stronger: rgba(255, 255, 255, 0.16);
+	--border: rgba(255, 255, 255, 0.08);
+	--border-strong: rgba(255, 255, 255, 0.12);
+	--border-stronger: rgba(255, 255, 255, 0.16);
 
-  --overlay: rgba(15, 16, 17, 0.95);
-  --overlay-hover: rgba(255, 255, 255, 0.05);
+	--overlay: rgba(15, 16, 17, 0.95);
+	--overlay-hover: rgba(255, 255, 255, 0.05);
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+	--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px
+		rgba(0, 0, 0, 0.3);
+	--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px
+		rgba(0, 0, 0, 0.3);
 
-  --focus-ring: oklch(0.7 0.18 250 / 0.6);
-  --focus-ring-color: var(--primary);
-  --surface-inset: oklch(0.15 0 0);
-  --border-subtle: oklch(1 0 0 / 0.06);
-  --border-default: oklch(1 0 0 / 0.1);
+	--focus-ring: oklch(0.7 0.18 250 / 0.6);
+	--focus-ring-color: var(--primary);
+	--surface-inset: oklch(0.15 0 0);
+	--border-subtle: oklch(1 0 0 / 0.06);
+	--border-default: oklch(1 0 0 / 0.1);
 
-  color-scheme: dark;
+	color-scheme: dark;
 }
 
 .theme-dark-black {
-  --background: #010102;
-  --surface-0: #08090a;
-  --surface-elevated: #141516;
-  --focus-ring-color: var(--primary);
+	--background: #010102;
+	--surface-0: #08090a;
+	--surface-elevated: #141516;
+	--focus-ring-color: var(--primary);
 }
 
 /* ============================================
    Tailwind Theme Integration
    ============================================ */
 @theme inline {
-  /* Semantic Colors */
-  --color-background: var(--background);
-  --color-surface-0: var(--surface-0);
-  --color-surface-1: var(--surface-1);
-  --color-surface-2: var(--surface-2);
-  --color-surface-3: var(--surface-3);
-  --color-surface-elevated: var(--surface-elevated);
+	/* Semantic Colors */
+	--color-background: var(--background);
+	--color-surface-0: var(--surface-0);
+	--color-surface-1: var(--surface-1);
+	--color-surface-2: var(--surface-2);
+	--color-surface-3: var(--surface-3);
+	--color-surface-elevated: var(--surface-elevated);
 
-  --color-foreground: var(--foreground);
-  --color-foreground-muted: var(--foreground-muted);
-  --color-foreground-subtle: var(--foreground-subtle);
-  --color-foreground-lighter: var(--foreground-lighter);
-  --color-muted: var(--muted);
+	--color-foreground: var(--foreground);
+	--color-foreground-muted: var(--foreground-muted);
+	--color-foreground-subtle: var(--foreground-subtle);
+	--color-foreground-lighter: var(--foreground-lighter);
+	--color-muted: var(--muted);
 
-  --color-interactive: var(--interactive-base);
-  --color-interactive-hover: var(--interactive-hover);
-  --color-interactive-active: var(--interactive-active);
+	--color-interactive: var(--interactive-base);
+	--color-interactive-hover: var(--interactive-hover);
+	--color-interactive-active: var(--interactive-active);
 
-  --color-primary: var(--primary);
-  --color-primary-fg: var(--primary-foreground);
-  --color-primary-hover: var(--primary-hover);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-danger: var(--danger);
+	--color-primary: var(--primary);
+	--color-primary-fg: var(--primary-foreground);
+	--color-primary-hover: var(--primary-hover);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-danger: var(--danger);
 
-  --color-border: var(--border);
-  --color-border-strong: var(--border-strong);
-  --color-border-stronger: var(--border-stronger);
+	--color-border: var(--border);
+	--color-border-strong: var(--border-strong);
+	--color-border-stronger: var(--border-stronger);
 
-  --color-overlay: var(--overlay);
-  --color-overlay-hover: var(--overlay-hover);
+	--color-overlay: var(--overlay);
+	--color-overlay-hover: var(--overlay-hover);
 
-  --shadow-sm: var(--shadow-sm);
-  --shadow-md: var(--shadow-md);
-  --shadow-lg: var(--shadow-lg);
+	--shadow-sm: var(--shadow-sm);
+	--shadow-md: var(--shadow-md);
+	--shadow-lg: var(--shadow-lg);
 
-  /* Radius */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-xxl: 32px;
-  --radius-xxxl: 40px;
-  --radius-full: 9999px;
+	/* Radius */
+	--radius-xs: 4px;
+	--radius-sm: 8px;
+	--radius-md: 12px;
+	--radius-lg: 16px;
+	--radius-xl: 24px;
+	--radius-xxl: 32px;
+	--radius-xxxl: 40px;
+	--radius-full: 9999px;
 
-  /* Semantic spacing — preferred for component layouts.
+	/* Semantic spacing — preferred for component layouts.
      These generate Tailwind utilities (p-control, gap-section, space-y-page, etc.).
      Tailwind's default px-2/gap-4/etc. continue to work for raw values.
        control-compact (6px) — chips, badges, dense pills, segmented buttons
@@ -229,15 +233,15 @@
        row            (48px) — row min-height (Material HIG standard)
        row-tight      (44px) — rows that contain a segmented control or compact input
   */
-  --spacing-control-compact: 0.375rem;
-  --spacing-control: 0.5rem;
-  --spacing-section: 1rem;
-  --spacing-page: 2rem;
-  --spacing-panel: 1.5rem;
-  --spacing-row: 3rem;
-  --spacing-row-tight: 2.75rem;
+	--spacing-control-compact: 0.375rem;
+	--spacing-control: 0.5rem;
+	--spacing-section: 1rem;
+	--spacing-page: 2rem;
+	--spacing-panel: 1.5rem;
+	--spacing-row: 3rem;
+	--spacing-row-tight: 2.75rem;
 
-  /* Nested-radius utility (DS v2 §1: padding = parent_radius - child_radius).
+	/* Nested-radius utility (DS v2 §1: padding = parent_radius - child_radius).
      Values mirror tokens.ts radius gaps so Tailwind-generated utilities stay
      in lockstep with the TypeScript token map:
        nested-xs: sm  - xs  = 4  (parent radius 8  → child radius 4)
@@ -245,192 +249,194 @@
        nested-md: lg  - md  = 4  (parent radius 16 → child radius 12)
        nested-lg: xl  - lg  = 8  (parent radius 24 → child radius 16)
        nested-xl: xxl - xl  = 8  (parent radius 32 → child radius 24) */
-  --spacing-nested-xs: 0.25rem;
-  --spacing-nested-sm: 0.25rem;
-  --spacing-nested-md: 0.25rem;
-  --spacing-nested-lg: 0.5rem;
-  --spacing-nested-xl: 0.5rem;
+	--spacing-nested-xs: 0.25rem;
+	--spacing-nested-sm: 0.25rem;
+	--spacing-nested-md: 0.25rem;
+	--spacing-nested-lg: 0.5rem;
+	--spacing-nested-xl: 0.5rem;
 
-  /* Typography — Tailwind v4 generates text-display/title/body/caption/input utilities
+	/* Typography — Tailwind v4 generates text-display/title/body/caption/input utilities
      from these --text-* keys (paired with --line-height / --font-weight). */
-  --text-display: var(--text-display-size);
-  --text-display--line-height: var(--text-display-line);
-  --text-display--font-weight: var(--text-weight-semibold);
-  --text-title: var(--text-title-size);
-  --text-title--line-height: var(--text-title-line);
-  --text-title--font-weight: var(--text-weight-semibold);
-  --text-body: var(--text-body-size);
-  --text-body--line-height: var(--text-body-line);
-  --text-body--font-weight: var(--text-weight-normal);
-  --text-caption: var(--text-caption-size);
-  --text-caption--line-height: var(--text-caption-line);
-  --text-caption--font-weight: var(--text-weight-medium);
-  --text-input: var(--text-input-size);
-  --text-input--line-height: var(--text-input-line);
-  --text-input--font-weight: var(--text-weight-normal);
+	--text-display: var(--text-display-size);
+	--text-display--line-height: var(--text-display-line);
+	--text-display--font-weight: var(--text-weight-semibold);
+	--text-title: var(--text-title-size);
+	--text-title--line-height: var(--text-title-line);
+	--text-title--font-weight: var(--text-weight-semibold);
+	--text-body: var(--text-body-size);
+	--text-body--line-height: var(--text-body-line);
+	--text-body--font-weight: var(--text-weight-normal);
+	--text-caption: var(--text-caption-size);
+	--text-caption--line-height: var(--text-caption-line);
+	--text-caption--font-weight: var(--text-weight-medium);
+	--text-input: var(--text-input-size);
+	--text-input--line-height: var(--text-input-line);
+	--text-input--font-weight: var(--text-weight-normal);
 
-  /* Fonts */
-  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
-  --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-  --font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic",
-    sans-serif;
-  --font-zen-kaku: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans", sans-serif;
-  --font-jp-heading: "Zen Kaku Gothic New", "YakuHanJP", "Noto Sans JP", "Hiragino Sans", sans-serif;
+	/* Fonts */
+	--font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+	--font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+	--font-jp: "YakuHanJP", "Noto Sans JP", "Hiragino Sans",
+		"Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+	--font-zen-kaku: "Zen Kaku Gothic New", "Noto Sans JP", "Hiragino Sans",
+		sans-serif;
+	--font-jp-heading: "Zen Kaku Gothic New", "YakuHanJP", "Noto Sans JP",
+		"Hiragino Sans", sans-serif;
 }
 
 /* ============================================
    Scrollbar — thin, semi-transparent, hover-only
    ============================================ */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+	scrollbar-width: thin;
+	scrollbar-color: transparent transparent;
 }
 
 *:hover {
-  scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
+	scrollbar-color: rgba(128, 128, 128, 0.3) transparent;
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+	width: 6px;
+	height: 6px;
 }
 
 *::-webkit-scrollbar-track {
-  background: transparent;
+	background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 3px;
+	background: transparent;
+	border-radius: 3px;
 }
 
 *:hover::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.3);
+	background: rgba(128, 128, 128, 0.3);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.5);
+	background: rgba(128, 128, 128, 0.5);
 }
 
 /* ============================================
    Scroll Reveal Animation
    ============================================ */
 .scroll-reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
+	opacity: 0;
+	transform: translateY(20px);
+	transition: opacity 0.7s ease, transform 0.7s ease;
 }
 
 .scroll-reveal.revealed {
-  opacity: 1;
-  transform: translateY(0);
+	opacity: 1;
+	transform: translateY(0);
 }
 
 /* Stagger children */
 .scroll-reveal.revealed > * {
-  animation: fadeInUp 0.6s ease forwards;
+	animation: fadeInUp 0.6s ease forwards;
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+	from {
+		opacity: 0;
+		transform: translateY(16px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 /* ============================================
    Selection Highlight
    ============================================ */
 ::selection {
-  background-color: color-mix(in oklch, var(--primary) 35%, transparent);
-  color: var(--foreground);
+	background-color: color-mix(in oklch, var(--primary) 35%, transparent);
+	color: var(--foreground);
 }
 
 /* ============================================
    Base Styles
    ============================================ */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans);
-  font-feature-settings: "cv01", "ss03";
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
+	background: var(--background);
+	color: var(--foreground);
+	font-family: var(--font-sans);
+	font-feature-settings: "cv01", "ss03";
+	-webkit-font-smoothing: antialiased;
+	overflow-x: hidden;
 }
 
 a,
 button {
-  transition: background-color 160ms ease, color 160ms ease;
+	transition: background-color 160ms ease, color 160ms ease;
 }
 
 .prose {
-  color: var(--foreground-muted);
+	color: var(--foreground-muted);
 }
 
 .prose h1,
 .prose h2,
 .prose h3,
 .prose strong {
-  color: var(--foreground);
+	color: var(--foreground);
 }
 
 .prose a {
-  color: var(--primary);
+	color: var(--primary);
 }
 
 .layout-shell {
-  width: 100%;
-  max-width: 1200px;
-  margin-inline: auto;
-  padding-inline: 24px;
+	width: 100%;
+	max-width: 1200px;
+	margin-inline: auto;
+	padding-inline: 24px;
 }
 
 .layout-grid-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 24px;
 }
 
 .layout-grid-3 {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 24px;
 }
 
 /* Aligned with Tailwind `lg` boundary (1024px - 0.02px). */
 @media (max-width: 1023.98px) {
-  .layout-grid-3 {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+	.layout-grid-3 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
 }
 
 /* Aligned with Tailwind `md` boundary (768px - 0.02px). */
 @media (max-width: 767.98px) {
-  .layout-shell {
-    padding-inline: 16px;
-  }
+	.layout-shell {
+		padding-inline: 16px;
+	}
 
-  .layout-grid-2,
-  .layout-grid-3 {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
-  }
+	.layout-grid-2,
+	.layout-grid-3 {
+		grid-template-columns: minmax(0, 1fr);
+		gap: 16px;
+	}
 }
 
 /* Aligned with Tailwind `sm` boundary. Subtract 0.02px per the policy block
  * above to avoid double-fire at the exact 640px boundary. */
 @media (max-width: 639.98px) {
-  .layout-shell {
-    padding-inline: 12px;
-  }
+	.layout-shell {
+		padding-inline: 12px;
+	}
 }
 
 .themed-datetime-input {
-  color-scheme: light;
+	color-scheme: light;
 }
 
 .dark .themed-datetime-input,
@@ -438,70 +444,70 @@ button {
 .theme-dark .themed-datetime-input,
 .theme-dark-gray .themed-datetime-input,
 .theme-dark-black .themed-datetime-input {
-  color-scheme: dark;
+	color-scheme: dark;
 }
 
 .themed-datetime-input::-webkit-calendar-picker-indicator {
-  opacity: 0.72;
+	opacity: 0.72;
 }
 
 /* ============================================
    Radix UI Animations
    ============================================ */
 @keyframes overlayShow {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
 @keyframes contentShow {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
 }
 
 @keyframes slideInFromRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
+	from {
+		transform: translateX(100%);
+	}
+	to {
+		transform: translateX(0);
+	}
 }
 
 @keyframes slideOutToRight {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(100%);
-  }
+	from {
+		transform: translateX(0);
+	}
+	to {
+		transform: translateX(100%);
+	}
 }
 
 @keyframes slideInFromBottom {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
 }
 
 @keyframes slideOutToBottom {
-  from {
-    transform: translateY(0);
-  }
-  to {
-    transform: translateY(100%);
-  }
+	from {
+		transform: translateY(0);
+	}
+	to {
+		transform: translateY(100%);
+	}
 }
 
 /* Dual-range slider for QuickCreate DurationRow.
@@ -509,59 +515,59 @@ button {
    pointer-events-none on the inputs lets the track click pass to
    the *other* input on the opposite side of the active thumb. */
 .duration-range {
-  height: 1.5rem;
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
+	height: 1.5rem;
+	-webkit-appearance: none;
+	appearance: none;
+	background: transparent;
 }
 .duration-range::-webkit-slider-runnable-track {
-  height: 1.5rem;
-  background: transparent;
+	height: 1.5rem;
+	background: transparent;
 }
 .duration-range::-moz-range-track {
-  height: 1.5rem;
-  background: transparent;
+	height: 1.5rem;
+	background: transparent;
 }
 .duration-range::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  pointer-events: auto;
-  height: 1rem;
-  width: 1rem;
-  border-radius: 9999px;
-  background: #ffffff;
-  border: 2px solid #5e6ad2;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  cursor: grab;
-  margin-top: 0;
-  position: relative;
-  z-index: 2;
+	-webkit-appearance: none;
+	appearance: none;
+	pointer-events: auto;
+	height: 1rem;
+	width: 1rem;
+	border-radius: 9999px;
+	background: #ffffff;
+	border: 2px solid #5e6ad2;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+	cursor: grab;
+	margin-top: 0;
+	position: relative;
+	z-index: 2;
 }
 .duration-range::-moz-range-thumb {
-  pointer-events: auto;
-  height: 1rem;
-  width: 1rem;
-  border-radius: 9999px;
-  background: #ffffff;
-  border: 2px solid #5e6ad2;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-  cursor: grab;
-  position: relative;
-  z-index: 2;
+	pointer-events: auto;
+	height: 1rem;
+	width: 1rem;
+	border-radius: 9999px;
+	background: #ffffff;
+	border: 2px solid #5e6ad2;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+	cursor: grab;
+	position: relative;
+	z-index: 2;
 }
 .duration-range:active::-webkit-slider-thumb {
-  cursor: grabbing;
+	cursor: grabbing;
 }
 .duration-range:active::-moz-range-thumb {
-  cursor: grabbing;
+	cursor: grabbing;
 }
 .duration-range:focus-visible::-webkit-slider-thumb {
-  outline: 2px solid #5e6ad2;
-  outline-offset: 2px;
+	outline: 2px solid #5e6ad2;
+	outline-offset: 2px;
 }
 .duration-range:focus-visible::-moz-range-thumb {
-  outline: 2px solid #5e6ad2;
-  outline-offset: 2px;
+	outline: 2px solid #5e6ad2;
+	outline-offset: 2px;
 }
 
 /* ActivityBar (dashboard sidebar) item colors.
@@ -579,27 +585,35 @@ button {
    If Mantine's stylesheet is ever wrapped in `@layer mantine`, these can move
    back to Tailwind classes on the component. */
 .activity-item {
-  color: var(--foreground-subtle);
+	color: var(--foreground-subtle);
 }
 .activity-item:hover {
-  background-color: var(--surface-2);
-  color: var(--foreground);
+	background-color: var(--surface-2);
+	color: var(--foreground);
 }
 .activity-item[data-active="true"] {
-  background-color: color-mix(in oklab, var(--primary) 10%, transparent);
-  color: var(--primary);
+	background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+	color: var(--primary);
 }
 .activity-item[data-active="true"]:hover {
-  background-color: color-mix(in oklab, var(--primary) 15%, transparent);
-  color: var(--primary);
+	background-color: color-mix(in oklab, var(--primary) 15%, transparent);
+	color: var(--primary);
 }
 
 @layer base {
-  :where(button, a, [role="button"], input, select, textarea, [tabindex]):focus-visible {
-    outline: 2px solid var(--focus-ring);
-    outline-offset: var(--ring-offset);
-    border-radius: inherit;
-  }
+	:where(
+			button,
+			a,
+			[role="button"],
+			input,
+			select,
+			textarea,
+			[tabindex]
+		):focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: var(--ring-offset);
+		border-radius: inherit;
+	}
 }
 
 /*
@@ -630,36 +644,105 @@ button {
  * element, which still loses to Mantine's `border` shorthand).
  */
 :where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input {
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
-  border-bottom: 2px solid var(--foreground-subtle);
-  border-radius: 0;
-  transition: border-color 160ms ease;
+	border-top: 0;
+	border-left: 0;
+	border-right: 0;
+	border-bottom: 2px solid var(--foreground-subtle);
+	border-radius: 0;
+	transition: border-color 160ms ease;
 }
 
 :where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input:focus,
-:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input:focus-within {
-  border-bottom-color: var(--primary);
+:where(.quick-create-panel, .mantine-Modal-content)
+	.qc-underline-input:focus-within {
+	border-bottom-color: var(--primary);
 }
 
 :where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input--muted {
-  border-top: 0;
-  border-left: 0;
-  border-right: 0;
-  border-bottom: 2px solid var(--foreground-lighter);
-  border-radius: 0;
-  transition: border-color 160ms ease;
+	border-top: 0;
+	border-left: 0;
+	border-right: 0;
+	border-bottom: 2px solid var(--foreground-lighter);
+	border-radius: 0;
+	transition: border-color 160ms ease;
 }
 
-:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input--muted:focus,
-:where(.quick-create-panel, .mantine-Modal-content) .qc-underline-input--muted:focus-within {
-  border-bottom-color: var(--foreground);
+:where(.quick-create-panel, .mantine-Modal-content)
+	.qc-underline-input--muted:focus,
+:where(.quick-create-panel, .mantine-Modal-content)
+	.qc-underline-input--muted:focus-within {
+	border-bottom-color: var(--foreground);
 }
 
 :where(.quick-create-panel, .mantine-Modal-content) .mantine-TextInput-wrapper,
 :where(.quick-create-panel, .mantine-Modal-content) .mantine-TextInput-root,
 :where(.quick-create-panel, .mantine-Modal-content) .mantine-Textarea-wrapper,
 :where(.quick-create-panel, .mantine-Modal-content) .mantine-Textarea-root {
-  width: 100%;
+	width: 100%;
+}
+
+/* ============================================
+   Reduced Motion Overrides
+
+   Disables non-essential motion for users who have requested reduced
+   motion at the OS level. The keyframes defined earlier in this file
+   (`fadeInUp`, `overlayShow`, `contentShow`, `slideInFromRight`,
+   `slideOutToRight`, `slideInFromBottom`, `slideOutToBottom`) are
+   redefined here as no-ops so every consumer (QuickCreatePanel,
+   Radix-driven dialogs, scroll-reveal) collapses to its final state
+   without animating. The `.scroll-reveal` transition is also killed
+   so it lands in the revealed state immediately.
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+	.scroll-reveal,
+	.scroll-reveal.revealed > * {
+		animation: none;
+		transition: none;
+		opacity: 1;
+		transform: none;
+	}
+	@keyframes fadeInUp {
+		from,
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+	@keyframes overlayShow {
+		from,
+		to {
+			opacity: 1;
+		}
+	}
+	@keyframes contentShow {
+		from,
+		to {
+			opacity: 1;
+			transform: translate(-50%, -50%) scale(1);
+		}
+	}
+	@keyframes slideInFromRight {
+		from,
+		to {
+			transform: translateX(0);
+		}
+	}
+	@keyframes slideOutToRight {
+		from,
+		to {
+			transform: translateX(0);
+		}
+	}
+	@keyframes slideInFromBottom {
+		from,
+		to {
+			transform: translateY(0);
+		}
+	}
+	@keyframes slideOutToBottom {
+		from,
+		to {
+			transform: translateY(0);
+		}
+	}
 }

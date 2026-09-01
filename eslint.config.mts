@@ -123,4 +123,18 @@ export default [
       "localRules/no-token-violations": "error",
     },
   },
+  {
+    // Per-file exemption for vendored Mantine schedule code. `shadow="md"`
+    // on the Popover in MonthYearSelect renders a Mantine-elevation token
+    // from the upstream component API; rewriting it requires an upstream
+    // patch (src/lib/vendored/** is frozen). Track as a vendored-upstream
+    // fix candidate; for now the exemption preserves the lint-clean state
+    // without re-touching the vendored file.
+    files: [
+      "src/lib/vendored/mantine-schedule/components/ScheduleHeader/MonthYearSelect/MonthYearSelect.tsx",
+    ],
+    rules: {
+      "localRules/no-mantine-shadow": "off",
+    },
+  },
 ];

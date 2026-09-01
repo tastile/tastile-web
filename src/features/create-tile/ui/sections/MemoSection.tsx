@@ -8,9 +8,9 @@ import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { FormRow } from "@/shared/ui/form";
 
 interface MemoSectionProps {
-  testId: string;
-  /** Override the i18n placeholder key. Default: `quickCreate.memoPlaceholder`. */
-  placeholderKey?: string;
+	testId: string;
+	/** Override the i18n placeholder key. Default: `quickCreate.memoPlaceholder`. */
+	placeholderKey?: string;
 }
 
 /**
@@ -23,32 +23,33 @@ interface MemoSectionProps {
  * so consumers can drop it in directly.
  */
 export function MemoSection({
-  testId,
-  placeholderKey = "quickCreate.memoPlaceholder",
+	testId,
+	placeholderKey = "quickCreate.memoPlaceholder",
 }: MemoSectionProps) {
-  const { t } = useTranslation();
-  const memo = useQuickCreateStore((s) => s.meta.memo);
-  const setField = useQuickCreateStore((s) => s.setField);
+	const { t } = useTranslation();
+	const memo = useQuickCreateStore((s) => s.meta.memo);
+	const setField = useQuickCreateStore((s) => s.setField);
 
-  return (
-    <div className="px-4 py-3">
-      <FormRow icon={<FileText className="size-4" aria-hidden />}>
-        <Textarea
-          placeholder={t(placeholderKey)}
-          value={memo}
-          onChange={(e) => setField("meta.memo", e.currentTarget.value)}
-          autosize
-          minRows={2}
-          maxRows={6}
-          size="sm"
-          variant="unstyled"
-          data-testid={testId}
-          classNames={{
-            input:
-              "qc-underline-input--muted bg-transparent text-sm leading-relaxed text-foreground placeholder:text-[var(--foreground-muted)] px-0 w-full",
-          }}
-        />
-      </FormRow>
-    </div>
-  );
+	return (
+		<div className="px-4 py-3">
+			<FormRow icon={<FileText className="size-4" aria-hidden />}>
+				<Textarea
+					placeholder={t(placeholderKey)}
+					value={memo}
+					onChange={(e) => setField("meta.memo", e.currentTarget.value)}
+					autosize
+					minRows={2}
+					maxRows={6}
+					size="sm"
+					variant="unstyled"
+					data-testid={testId}
+					aria-label={t(placeholderKey)}
+					classNames={{
+						input:
+							"qc-underline-input--muted bg-transparent text-sm leading-relaxed text-foreground placeholder:text-[var(--foreground-muted)] px-0 w-full",
+					}}
+				/>
+			</FormRow>
+		</div>
+	);
 }
