@@ -41,8 +41,12 @@ function socialProviders() {
   const providers: Record<string, unknown> = {};
   const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
   const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+  const googleAndroidClientId = process.env.GOOGLE_ANDROID_CLIENT_ID?.trim();
   if (googleClientId && googleClientSecret) {
-    providers.google = { clientId: googleClientId, clientSecret: googleClientSecret };
+    const clientIds = googleAndroidClientId
+      ? [googleClientId, googleAndroidClientId]
+      : [googleClientId];
+    providers.google = { clientId: clientIds, clientSecret: googleClientSecret };
   }
   // Sign in with Apple: APPLE_CLIENT_SECRET is the pre-signed ES256 client
   // secret JWT (better-auth 1.7 consumes a clientSecret, not raw key parts).
