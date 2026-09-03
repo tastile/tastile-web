@@ -10,6 +10,33 @@ import { useState } from "react";
 
 const BRIDGE_PATH = "/api/auth/bridge";
 
+/**
+ * Validates a caller-supplied `next` redirect target before passing it to
+ * BetterAuth as `callbackURL`. Mirrors the server-side `safeNextPath`
+ * guard in `src/shared/auth/safe-next-path.ts` so the client and server
+ * agree on what is acceptable — only same-origin, `/`-prefixed paths
+ * without a leading double slash. Anything else (including the empty
+ * string, custom-scheme URIs such as `tastile://`, or absolute URLs)
+ * falls back to the default BRIDGE_PATH.
+ */
+function safeNextParam(raw: string | null | undefined): string | null {
+	if (!raw) return null;
+	if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+	return raw;
+}
+
+function bridgeCallbackUrl(rawNext: string | null | undefined): string {
+	const next = safeNextParam(rawNext);
+	if (!next) return BRIDGE_PATH;
+	return `${BRIDGE_PATH}?next=${encodeURIComponent(next)}`;
+}
+
+function readNextFromLocation(): string | null {
+	if (typeof window === "undefined") return null;
+	const params = new URLSearchParams(window.location.search);
+	return params.get("next");
+}
+
 type ErrorKey =
 	| "no_session"
 	| "session_expired"
@@ -65,11 +92,12 @@ export function LoginPanel(props: {
 		const form = new FormData(event.currentTarget);
 		const email = String(form.get("email") ?? "");
 		const password = String(form.get("password") ?? "");
+		const callbackURL = bridgeCallbackUrl(readNextFromLocation());
 		try {
 			const result = await authClient.signIn.email({
 				email,
 				password,
-				callbackURL: BRIDGE_PATH,
+				callbackURL,
 			});
 			if (result.error) {
 				const key = errorKey(result.error.code);
@@ -82,7 +110,7 @@ export function LoginPanel(props: {
 			}
 			// Full navigation so the new session cookie is visible to the bridge
 			// route's server-side verification.
-			window.location.assign(BRIDGE_PATH);
+			window.location.assign(callbackURL);
 		} finally {
 			setPending(false);
 		}
@@ -90,7 +118,8 @@ export function LoginPanel(props: {
 
 	function handleSocial(provider: "google" | "apple") {
 		setError(null);
-		void authClient.signIn.social({ provider, callbackURL: BRIDGE_PATH });
+		const callbackURL = bridgeCallbackUrl(readNextFromLocation());
+		void authClient.signIn.social({ provider, callbackURL });
 	}
 
 	return (
