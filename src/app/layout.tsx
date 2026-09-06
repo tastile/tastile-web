@@ -9,7 +9,7 @@ import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { getTranslation } from "@/shared/i18n/get-translation";
 import { GoogleAnalytics } from "@/shared/ui/GoogleAnalytics";
 import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Zen_Kaku_Gothic_New } from "next/font/google";
 import { AppProviders } from "./providers";
 
@@ -36,15 +36,18 @@ export const metadata: Metadata = {
     shortcut: "/icon?v=6",
     apple: "/apple-icon.png",
   },
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f8f8" },
-    { media: "(prefers-color-scheme: dark)", color: "#08090a" },
-  ],
   openGraph: {
     title: ROOT_TITLE,
     description: ROOT_DESCRIPTION,
     type: "website",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f7f8f8" },
+    { media: "(prefers-color-scheme: dark)", color: "#08090a" },
+  ],
 };
 
 export default function RootLayout({
