@@ -17,6 +17,9 @@ on:
 
 jobs:
   decrypt:
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/sops-decrypt.yml
     with:
       env: development
