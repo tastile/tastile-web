@@ -6,6 +6,11 @@ on:
   # pull_request events restrict OIDC tokens to none, causing 0s
   # startup_failure on this gate; see PR #94 / issue #76.
   pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
   push:
     branches:
       - main
