@@ -1,10 +1,10 @@
 name: quality
 
+# pull_request_target grants id-token: write so the reusable
+# sops-decrypt workflow can use AWS OIDC for the role assumption.
+# pull_request events restrict OIDC tokens to none, causing 0s
+# startup_failure on this gate; see PR #95 / issue #76.
 on:
-  # pull_request_target grants id-token: write so the reusable
-  # sops-decrypt workflow can use AWS OIDC for the role assumption.
-  # pull_request events restrict OIDC tokens to none, causing 0s
-  # startup_failure on this gate; see PR #94 / issue #76.
   pull_request_target:
     types:
       - opened
