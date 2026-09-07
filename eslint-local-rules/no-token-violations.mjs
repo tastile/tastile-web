@@ -44,7 +44,7 @@ const rule = {
             ? String(node.value.value)
             : String(node.value?.expression?.value ?? '');
         if (!className) return;
-        const sourceCode = context.getSourceCode();
+        const sourceCode = context.sourceCode;
         const baseOffset = node.value.range[0];
         for (const match of className.matchAll(BORDER_REGEX)) {
           context.report({
