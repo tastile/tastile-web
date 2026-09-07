@@ -43,9 +43,10 @@ const tastile: [
  * Visual hierarchy is expressed via the --surface-X elevation stack; shadows and borders are not used.
  */
 // Cast the createTheme result to a wider type so the P2 test path
-// (mantineTheme.components.<Component>.Dropdown.defaultProps) is reachable.
-// Mantine v9 types MantineThemeComponent without `Dropdown`, but the test
-// expects compound sub-components to be accessible at that path.
+// (mantineTheme.components.<Component>.defaultProps) is reachable for the
+// static-selectors (MenuDropdown / PopoverDropdown / HoverCardDropdown).
+// Mantine v9 types MantineThemeComponent narrowly, but the test path uses
+// the wider accessor shape.
 
 // Note: Mantine v9 breakpoints are intentionally left at their em-based
 // defaults. The px-based Tailwind system (see globals.css policy block) is
@@ -92,58 +93,34 @@ export const mantineTheme = createTheme({
     Input: {
       defaultProps: { radius: "md" },
     },
-    // P2a: neutralize defaults on internal surfaces. Mantine v9 strict types
-    // reject `withBorder` / `shadow` on compound surfaces (Menu / Popover /
-    // Tooltip / HoverCard / Select / Combobox / Chip), so we cast the
-    // defaultProps object. The Dropdown sub-entry is required to satisfy the
-    // brief's test access path
-    // (mantineTheme.components.Menu.Dropdown.defaultProps). Mantine v9 reads
-    // defaults via theme.components[<static-selector>].defaultProps, so the
-    // nested Menu.Dropdown entry is informational only; the runtime default
-    // for the dropdown surface is the top-level MenuDropdown entry below
-    // (see P2a Ruling 7).
+    // P2a: neutralize defaults on internal surfaces. Mantine v9.6 does not
+    // destructure `withBorder` or `shadow` on compound surfaces (Menu /
+    // Popover / Tooltip / HoverCard / Select / Combobox / Chip), so passing
+    // them via defaultProps leaks the props through ...others onto the inner
+    // Box and onto the DOM element rendered by targetProps, producing the
+    // "React does not recognize the withBorder prop" warning. We therefore
+    // omit those keys here and rely on `--mantine-default-border: transparent`
+    // (see src/lib/theme/css-variables-resolver.ts) for the neutral border.
+    // Only `radius` is preserved on these compound surfaces.
     Menu: {
       defaultProps: {
-        withBorder: false,
-        shadow: undefined,
         radius: "md",
       } as any,
-      Dropdown: {
-        defaultProps: {
-          withBorder: false,
-          shadow: undefined,
-          radius: "md",
-        } as any,
-      },
     } as any,
     Popover: {
       defaultProps: {
-        withBorder: false,
-        shadow: undefined,
         radius: "md",
       } as any,
-      Dropdown: {
-        defaultProps: {
-          withBorder: false,
-          shadow: undefined,
-          radius: "md",
-        } as any,
-      },
     } as any,
     Tooltip: {
       defaultProps: {
-        withBorder: false,
-        shadow: undefined,
         radius: "sm",
       } as any,
     },
     HoverCard: {
       defaultProps: {
-        withBorder: false,
-        shadow: undefined,
         radius: "md",
       } as any,
-      Dropdown: { defaultProps: { withBorder: false, shadow: undefined } },
     } as any,
     Notification: {
       defaultProps: {
@@ -153,55 +130,42 @@ export const mantineTheme = createTheme({
       } as any,
     },
     Select: {
-      defaultProps: { withBorder: false, radius: "md" } as any,
+      defaultProps: { radius: "md" } as any,
     },
     Combobox: {
-      defaultProps: { withBorder: false, shadow: undefined } as any,
+      defaultProps: {} as any,
     },
     Pill: {
       defaultProps: { radius: "full" },
     },
     Chip: {
-      defaultProps: { withBorder: false, variant: "light" } as any,
+      defaultProps: { variant: "light" } as any,
     },
     // P2a Ruling 7: Mantine v9 useProps reads
     // theme.components[<static-selector>].defaultProps (e.g. 'MenuDropdown',
-    // 'PopoverDropdown', 'HoverCardDropdown'), not the nested Menu.Dropdown
-    // path. The nested entries above satisfy the brief's pin tests but are
-    // dead code at runtime; these top-level entries are what Mantine actually
-    // consumes when rendering each compound sub-component.
+    // 'PopoverDropdown', 'HoverCardDropdown'). These top-level entries are
+    // what Mantine actually consumes when rendering each compound
+    // sub-component. `withBorder` / `shadow` are intentionally omitted for
+    // the same reason as the parent compound entries above.
     MenuDropdown: {
       defaultProps: {
-        withBorder: false,
-        shadow: undefined,
         radius: "md",
       } as any,
     },
     PopoverDropdown: {
       defaultProps: {
-        withBorder: false,
-        shadow: undefined,
         radius: "md",
       } as any,
     },
     HoverCardDropdown: {
-      defaultProps: { withBorder: false, shadow: undefined },
+      defaultProps: {},
     },
   },
 }) as ReturnType<typeof createTheme> & {
   components: {
-    Menu: {
-      defaultProps?: Record<string, unknown>;
-      Dropdown?: { defaultProps?: Record<string, unknown> };
-    };
-    Popover: {
-      defaultProps?: Record<string, unknown>;
-      Dropdown?: { defaultProps?: Record<string, unknown> };
-    };
-    HoverCard: {
-      defaultProps?: Record<string, unknown>;
-      Dropdown?: { defaultProps?: Record<string, unknown> };
-    };
+    Menu: { defaultProps?: Record<string, unknown> };
+    Popover: { defaultProps?: Record<string, unknown> };
+    HoverCard: { defaultProps?: Record<string, unknown> };
     Tooltip: { defaultProps?: Record<string, unknown> };
     Notification: { defaultProps?: Record<string, unknown> };
     Select: { defaultProps?: Record<string, unknown> };
