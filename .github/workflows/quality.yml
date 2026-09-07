@@ -5,7 +5,11 @@ name: quality
 # pull_request events restrict OIDC tokens to none, causing 0s
 # startup_failure on this gate; see PR #95 / issue #76.
 on:
-  pull_request:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
   push:
     branches:
       - main
