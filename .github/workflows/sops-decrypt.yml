@@ -3,9 +3,8 @@ on:
   workflow_call:
     inputs:
       env:
-        type: choice
+        type: string
         required: true
-        options: [development, staging, production]
     secrets:
       aws_role_to_assume:
         required: true
@@ -15,7 +14,27 @@ permissions:
   contents: read
 
 jobs:
+  validate-env:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Validate env input against allowed values
+        env:
+          TASTILE_ENV_INPUT: ${{ inputs.env }}
+        run: |
+          set -euo pipefail
+          case "${TASTILE_ENV_INPUT}" in
+            development|staging|production)
+              echo "env='${TASTILE_ENV_INPUT}' accepted"
+              ;;
+            *)
+              echo "::error::env must be one of development|staging|production, got '${TASTILE_ENV_INPUT}'"
+              exit 2
+              ;;
+          esac
+
   decrypt:
+    needs: validate-env
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -63,6 +82,7 @@ jobs:
           if-no-files-found: error
 
   check:
+    needs: validate-env
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
