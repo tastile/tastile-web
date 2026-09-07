@@ -6,13 +6,6 @@ name: quality
 # startup_failure on this gate; see PR #95 / issue #76.
 on:
   pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - ready_for_review
-    branches:
-      - release-0-6-0
   push:
     branches:
       - main
