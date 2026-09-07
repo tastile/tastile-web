@@ -103,7 +103,6 @@ function updateCalendar(
 function updateMoment(
   term: Term,
   key: keyof import("@/shared/model/v1/condition").MomentTerm,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "moment") return term;
@@ -112,7 +111,6 @@ function updateMoment(
 function updateRelation(
   term: Term,
   key: keyof import("@/shared/model/v1/condition").RelationTerm,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "relation") return term;
@@ -121,7 +119,6 @@ function updateRelation(
 function updateTask(
   term: Term,
   key: keyof import("@/shared/model/v1/condition").TaskTerm,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "task") return term;
@@ -130,7 +127,6 @@ function updateTask(
 function updateRequirement(
   term: Term,
   key: keyof import("@/shared/model/v1/condition").RequirementTerm,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "requirement") return term;
@@ -139,7 +135,6 @@ function updateRequirement(
 function updateLife(
   term: Term,
   key: keyof import("@/shared/model/v1/condition").LifeTerm,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for condition terms
   value: any,
 ) {
   if (term.kind !== "life") return term;
@@ -152,7 +147,6 @@ function updateValue(term: Term, key: string, value: unknown): Term {
 function updateGap(
   term: Term,
   key: keyof import("@/shared/model/v1/condition").GapTerm,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ) {
   if (term.kind !== "gap") return term;
@@ -162,7 +156,6 @@ function updateGapAnchor(
   term: Term,
   anchorKey: "leftAnchor" | "rightAnchor",
   field: keyof import("@/shared/model/v1/condition").AnchorSelector,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ): Term {
   if (term.kind !== "gap") return term;
@@ -177,7 +170,6 @@ function updateGapAnchor(
 function updateGapSize(
   term: Term,
   field: keyof import("@/shared/model/v1/condition").DurationRange,
-  // biome-ignore lint/suspicious/noExplicitAny: inline import() type for gap term
   value: any,
 ): Term {
   if (term.kind !== "gap") return term;
