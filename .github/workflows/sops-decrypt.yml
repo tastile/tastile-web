@@ -5,7 +5,6 @@ on:
       env:
         type: string
         required: true
-        description: "Environment name; one of development|staging|production."
     secrets:
       aws_role_to_assume:
         required: true
