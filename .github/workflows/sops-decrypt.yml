@@ -128,6 +128,9 @@ jobs:
             .env.production
           retention-days: 1
           if-no-files-found: error
+          # Decrypted targets are all dotfiles (.env*). upload-artifact
+          # v4 excludes hidden files by default, so opt in explicitly.
+          include-hidden-files: true
 
   check:
     needs: validate-env
