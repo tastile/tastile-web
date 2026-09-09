@@ -74,6 +74,21 @@ jobs:
           cp env-artifacts/.env.staging ./.env.staging 2>/dev/null || true
           cp env-artifacts/.env ./.env 2>/dev/null || true
 
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as Android PR #22) and stage the copy.
+        # Pinned-revision verification stays in W04 scope.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
+
       - name: Validate repository
         run: bun run check:release
         env:
