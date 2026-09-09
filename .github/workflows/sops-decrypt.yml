@@ -79,8 +79,8 @@ jobs:
           mkdir -p /tmp/age-extract
           tar -xzf /tmp/age.tgz -C /tmp/age-extract
           sudo install -m 0755 /tmp/sops /usr/local/bin/sops
-          sudo install -m 0755 /tmp/age-extract/age /usr/local/bin/age
-          sudo install -m 0755 /tmp/age-extract/age-keygen /usr/local/bin/age-keygen
+          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
+          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
           sops --version
           age --version
 
@@ -157,8 +157,8 @@ jobs:
           mkdir -p /tmp/age-extract
           tar -xzf /tmp/age.tgz -C /tmp/age-extract
           sudo install -m 0755 /tmp/sops /usr/local/bin/sops
-          sudo install -m 0755 /tmp/age-extract/age /usr/local/bin/age
-          sudo install -m 0755 /tmp/age-extract/age-keygen /usr/local/bin/age-keygen
+          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
+          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
           sops --version
           age --version
 
