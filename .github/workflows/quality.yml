@@ -19,9 +19,16 @@ jobs:
   decrypt:
     permissions:
       contents: read
+    # Decrypt every env that has ciphertext + a registered secret.
+    # The verify job's build:prod requires a real .env.production, so
+    # development alone is not enough. Staging stays out until
+    # .env.staging.sops exists (follow-up ticket).
+    strategy:
+      matrix:
+        env: [development, production]
     uses: ./.github/workflows/sops-decrypt.yml
     with:
-      env: development
+      env: ${{ matrix.env }}
     secrets:
       sops_age_key_development: ${{ secrets.SOPS_AGE_KEY_DEVELOPMENT }}
       sops_age_key_staging: ${{ secrets.SOPS_AGE_KEY_STAGING }}
@@ -50,6 +57,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: env-development
+          path: env-artifacts
+
+      - name: Download decrypted production .env artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: env-production
           path: env-artifacts
 
       - name: Stage .env for build
