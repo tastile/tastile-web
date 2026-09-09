@@ -58,13 +58,16 @@ jobs:
           # not publish SHA256 sums alongside releases, so pin the value
           # here. Update both `AGE_VERSION` and `AGE_SHA256` together.
           AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
+          # SHA256 of sops-v3.9.0.linux.amd64. getsops/sops does not
+          # publish a checksum file for this asset (verified 2026-09-09:
+          # only .spdx.sbom.json exists), so pin the value here.
+          # Update both `SOPS_VERSION` and `SOPS_SHA256` together.
+          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
         run: |
           set -euo pipefail
           curl -fsSL -o /tmp/sops \
             "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          curl -fsSL -o /tmp/sops.sha256 \
-            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64.sha256"
-          (cd /tmp && sha256sum -c sops.sha256)
+          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
           echo "${AGE_SHA256}  /tmp/age.tgz.expected" > /tmp/age.sha256
           curl -fsSL -o /tmp/age.tgz \
             "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
@@ -138,13 +141,16 @@ jobs:
           SOPS_VERSION: v3.9.0
           AGE_VERSION: v1.2.0
           AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
+          # SHA256 of sops-v3.9.0.linux.amd64. getsops/sops does not
+          # publish a checksum file for this asset (verified 2026-09-09:
+          # only .spdx.sbom.json exists), so pin the value here.
+          # Update both `SOPS_VERSION` and `SOPS_SHA256` together.
+          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
         run: |
           set -euo pipefail
           curl -fsSL -o /tmp/sops \
             "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          curl -fsSL -o /tmp/sops.sha256 \
-            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64.sha256"
-          (cd /tmp && sha256sum -c sops.sha256)
+          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
           curl -fsSL -o /tmp/age.tgz \
             "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
           printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
