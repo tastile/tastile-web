@@ -1,12 +1,12 @@
-// Canonical source: tastile-root/scripts/sops-decrypt.test.ts @ 0745d6c
-// Local copy per spec §1 (no npm publishing infra in v1).
-import { describe, expect, it, beforeEach, mock, spyOn } from "bun:test";
+// Local fork of tastile-root/scripts/sops-decrypt.test.ts with AWS-specific
+// expectations replaced by age-recipient assertions. See sops-decrypt.ts for
+// the rationale.
+import { describe, expect, it, beforeEach } from "bun:test";
 import { parseArgs, loadConfig, decryptOne, processSourceFiles } from "./sops-decrypt";
 import type { SopsEnvConfig } from "./sops.config";
-import { mkdtempSync, writeFileSync, existsSync, statSync, readFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, writeFileSync, existsSync, statSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, delimiter } from "node:path";
-import { spawn } from "node:child_process";
 
 describe("parseArgs", () => {
   it("parses --env=development", () => {
@@ -28,7 +28,8 @@ describe("parseArgs", () => {
 describe("loadConfig", () => {
   it("returns entry for known env", () => {
     const cfg = loadConfig("development");
-    expect(cfg.kmsKeyArn).toContain("arn:aws:kms:");
+    expect(cfg.ageRecipient).toMatch(/^age1[0-9a-z]+$/);
+    expect(cfg.pairs.length).toBeGreaterThan(0);
   });
   it("throws for unknown env", () => {
     expect(() => loadConfig("nope" as never)).toThrow();
@@ -45,17 +46,20 @@ describe("decryptOne", () => {
     // Stub sops to echo plain
     const stub = `#!/usr/bin/env bash\necho "KEY=value"`;
     writeFileSync(join(dir, "sops"), stub);
+    chmodSync(join(dir, "sops"), 0o755);
     // Windows-compatible shim (no-extension shebangs aren't honored)
     writeFileSync(join(dir, "sops.bat"), `@echo off\necho KEY=value`);
     const PATH_BACKUP = process.env.PATH;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
     const cfg = loadConfig("development");
-    const result = await decryptOne(src, dst, cfg, "arn:aws:iam::123:role/test", false);
+    const result = await decryptOne(src, dst, cfg, false, "development");
     expect(existsSync(dst)).toBe(true);
     // Unix file modes aren't honored on Windows (ACL-based); check owner r/w bit
     expect((statSync(dst).mode & 0o600)).toBe(0o600);
     expect(readFileSync(dst, "utf8")).toContain("KEY=value");
     expect(result.size).toBeGreaterThan(0);
+    expect(result.age_recipient).toBe(cfg.ageRecipient);
+    expect(result.env).toBe("development");
     process.env.PATH = PATH_BACKUP;
   });
   it("rejects when sops exits non-zero", async () => {
@@ -64,12 +68,13 @@ describe("decryptOne", () => {
     writeFileSync(src, "stub");
     const stub = `#!/usr/bin/env bash\necho "boom" 1>&2\nexit 4`;
     writeFileSync(join(dir, "sops"), stub);
+    chmodSync(join(dir, "sops"), 0o755);
     // Windows-compatible shim: echo to stderr and exit 4
     writeFileSync(join(dir, "sops.bat"), `@echo off\necho boom 1>&2\nexit /b 4`);
     const PATH_BACKUP = process.env.PATH;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
     const cfg = loadConfig("development");
-    await expect(decryptOne(src, dst, cfg, "arn:aws:iam::123:role/test", false)).rejects.toThrow();
+    await expect(decryptOne(src, dst, cfg, false, "development")).rejects.toThrow();
     process.env.PATH = PATH_BACKUP;
   });
 });
@@ -81,8 +86,7 @@ describe("processSourceFiles", () => {
     const cfg = loadConfig("development");
     const stub: SopsEnvConfig = {
       ...cfg,
-      sourceFiles: [join(dir, "definitely-missing.sops")],
-      targetFiles: [join(dir, "definitely-missing.env")],
+      pairs: [{ source: join(dir, "definitely-missing.sops"), target: join(dir, "definitely-missing.env") }],
     };
     const stderrChunks: Buffer[] = [];
     const originalWrite = process.stderr.write.bind(process.stderr);
@@ -91,7 +95,7 @@ describe("processSourceFiles", () => {
       return true;
     };
     try {
-      await processSourceFiles(stub, "arn:aws:iam::123:role/test", "development", false);
+      await processSourceFiles(stub, "development", false);
     } finally {
       process.stderr.write = originalWrite;
     }

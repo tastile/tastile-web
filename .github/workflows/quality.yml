@@ -1,9 +1,11 @@
 name: quality
 
-# pull_request_target grants id-token: write so the reusable
-# sops-decrypt workflow can use AWS OIDC for the role assumption.
-# pull_request events restrict OIDC tokens to none, causing 0s
-# startup_failure on this gate; see PR #95 / issue #76.
+# Decryption uses one age private key per env (development / staging /
+# production), materialized by the sops-decrypt reusable workflow from the
+# SOPS_AGE_KEY_DEVELOPMENT / _STAGING / _PRODUCTION secrets. No AWS OIDC
+# role assumption is involved, so we no longer need id-token: write on
+# this caller; see scripts/sops.config.ts for the recipient values and
+# docs/runbooks/sops-rotation.md for rotation steps.
 on:
   pull_request:
   push:
@@ -16,13 +18,14 @@ on:
 jobs:
   decrypt:
     permissions:
-      id-token: write
       contents: read
     uses: ./.github/workflows/sops-decrypt.yml
     with:
       env: development
     secrets:
-      aws_role_to_assume: ${{ secrets.AWS_OIDC_ROLE_DEVELOPMENT }}
+      sops_age_key_development: ${{ secrets.SOPS_AGE_KEY_DEVELOPMENT }}
+      sops_age_key_staging: ${{ secrets.SOPS_AGE_KEY_STAGING }}
+      sops_age_key_production: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
 
   verify:
     needs: decrypt

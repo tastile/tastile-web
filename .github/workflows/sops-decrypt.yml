@@ -6,17 +6,27 @@ on:
         type: string
         required: true
     secrets:
-      aws_role_to_assume:
-        required: true
+      sops_age_key_development:
+        required: false
+      sops_age_key_staging:
+        required: false
+      sops_age_key_production:
+        required: false
 
+# age-based envelope decryption. One age key per env (development /
+# staging / production) is materialized to ~/.config/sops/age/keys.txt
+# before any `sops --decrypt` runs. Per-env keys mean a single leaked
+# identity cannot decrypt any other env's ciphertext. No AWS OIDC role
+# assumption, so no `id-token: write` is required here.
 permissions:
-  id-token: write
   contents: read
 
 jobs:
   validate-env:
     runs-on: ubuntu-latest
     timeout-minutes: 1
+    outputs:
+      env: ${{ inputs.env }}
     steps:
       - name: Validate env input against allowed values
         env:
@@ -40,27 +50,65 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assume AWS role
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.aws_role_to_assume }}
-          aws-region: ap-northeast-1
-
-      - name: Install sops
+      - name: Install sops + age (SHA256-pinned)
         env:
           SOPS_VERSION: v3.9.0
+          AGE_VERSION: v1.2.0
+          # SHA256 of age-v1.2.0-linux-amd64.tar.gz. FiloSottile/age does
+          # not publish SHA256 sums alongside releases, so pin the value
+          # here. Update both `AGE_VERSION` and `AGE_SHA256` together.
+          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/sops "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          curl -fsSL -o /tmp/sops.sha256 "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64.sha256"
-          cd /tmp && sha256sum -c sops.sha256
-          sudo mv /tmp/sops /usr/local/bin/sops
-          sudo chmod +x /usr/local/bin/sops
+          curl -fsSL -o /tmp/sops \
+            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
+          curl -fsSL -o /tmp/sops.sha256 \
+            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64.sha256"
+          (cd /tmp && sha256sum -c sops.sha256)
+          echo "${AGE_SHA256}  /tmp/age.tgz.expected" > /tmp/age.sha256
+          curl -fsSL -o /tmp/age.tgz \
+            "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
+          # Pin verification: assert the downloaded tarball matches the
+          # version-pinned SHA256 above. A release-tampering or MITM
+          # attack that swaps the binary will fail this check before
+          # private key material is touched.
+          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
+          mkdir -p /tmp/age-extract
+          tar -xzf /tmp/age.tgz -C /tmp/age-extract
+          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
+          sudo install -m 0755 /tmp/age-extract/age /usr/local/bin/age
+          sudo install -m 0755 /tmp/age-extract/age-keygen /usr/local/bin/age-keygen
           sops --version
+          age --version
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.0
+
+      - name: Materialize age private key (env-scoped)
+        env:
+          SOPS_AGE_KEY_DEVELOPMENT: ${{ secrets.sops_age_key_development }}
+          SOPS_AGE_KEY_STAGING: ${{ secrets.sops_age_key_staging }}
+          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.sops_age_key_production }}
+          TASTILE_ENV: ${{ inputs.env }}
+        run: |
+          set -euo pipefail
+          case "${TASTILE_ENV}" in
+            development) KEY="${SOPS_AGE_KEY_DEVELOPMENT}" ;;
+            staging)     KEY="${SOPS_AGE_KEY_STAGING}"     ;;
+            production)  KEY="${SOPS_AGE_KEY_PRODUCTION}"  ;;
+            *)
+              echo "::error::unreachable: validate-env already gated this"
+              exit 2
+              ;;
+          esac
+          if [[ -z "${KEY}" ]]; then
+            echo "::error::SOPS_AGE_KEY_${TASTILE_ENV^^} secret is not registered for this repo"
+            exit 3
+          fi
+          mkdir -p "${HOME}/.config/sops/age"
+          printf '%s\n' "${KEY}" > "${HOME}/.config/sops/age/keys.txt"
+          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
 
       - name: Run loader
         env:
@@ -74,10 +122,7 @@ jobs:
           path: |
             .env
             .env.development
-            .env.dev
-            .env.staging
             .env.production
-            .env.product
           retention-days: 1
           if-no-files-found: error
 
@@ -88,27 +133,57 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Assume AWS role
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.aws_role_to_assume }}
-          aws-region: ap-northeast-1
-
-      - name: Install sops
+      - name: Install sops + age (SHA256-pinned)
         env:
           SOPS_VERSION: v3.9.0
+          AGE_VERSION: v1.2.0
+          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
         run: |
           set -euo pipefail
-          curl -fsSL -o /tmp/sops "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          curl -fsSL -o /tmp/sops.sha256 "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64.sha256"
-          cd /tmp && sha256sum -c sops.sha256
-          sudo mv /tmp/sops /usr/local/bin/sops
-          sudo chmod +x /usr/local/bin/sops
+          curl -fsSL -o /tmp/sops \
+            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
+          curl -fsSL -o /tmp/sops.sha256 \
+            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64.sha256"
+          (cd /tmp && sha256sum -c sops.sha256)
+          curl -fsSL -o /tmp/age.tgz \
+            "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
+          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
+          mkdir -p /tmp/age-extract
+          tar -xzf /tmp/age.tgz -C /tmp/age-extract
+          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
+          sudo install -m 0755 /tmp/age-extract/age /usr/local/bin/age
+          sudo install -m 0755 /tmp/age-extract/age-keygen /usr/local/bin/age-keygen
           sops --version
+          age --version
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.0
+
+      - name: Materialize age private key (env-scoped)
+        env:
+          SOPS_AGE_KEY_DEVELOPMENT: ${{ secrets.sops_age_key_development }}
+          SOPS_AGE_KEY_STAGING: ${{ secrets.sops_age_key_staging }}
+          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.sops_age_key_production }}
+          TASTILE_ENV: ${{ inputs.env }}
+        run: |
+          set -euo pipefail
+          case "${TASTILE_ENV}" in
+            development) KEY="${SOPS_AGE_KEY_DEVELOPMENT}" ;;
+            staging)     KEY="${SOPS_AGE_KEY_STAGING}"     ;;
+            production)  KEY="${SOPS_AGE_KEY_PRODUCTION}"  ;;
+            *)
+              echo "::error::unreachable: validate-env already gated this"
+              exit 2
+              ;;
+          esac
+          if [[ -z "${KEY}" ]]; then
+            echo "::error::SOPS_AGE_KEY_${TASTILE_ENV^^} secret is not registered for this repo"
+            exit 3
+          fi
+          mkdir -p "${HOME}/.config/sops/age"
+          printf '%s\n' "${KEY}" > "${HOME}/.config/sops/age/keys.txt"
+          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
 
       - name: Verify decryptability (no plaintext artifact)
         env:
