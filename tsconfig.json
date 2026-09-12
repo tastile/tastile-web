@@ -40,13 +40,13 @@
 		"test-results",
 		"scripts/generate-openapi-types.ts",
 		"scripts/sync-openapi.ts",
-		// sops-decrypt.ts is a runtime CI helper (canonical: tastile-root/scripts/sops-decrypt.ts).
-		// Excluded from tsc because its AWS SDK deps (@aws-sdk/client-sts, @aws-sdk/client-kms)
-		// are not in package.json dependencies — they live in tastile-root's workspace lockfile.
-		// The .test.ts companion is excluded for the same reason. Runtime: invoked via `bun run`
-		// in the OIDC CI workflow which has its own dep resolution, NOT through app/src.
-		// Follow-up: add deps + remove these excludes in a dedicated chore PR.
-		"scripts/sops-decrypt.ts",
+		// scripts/sops-decrypt.test.ts uses bun:test (bun runtime only).
+		// Excluded from tsc because @types/bun is not in package.json dependencies;
+		// the test is exercised via `bun test` in CI instead. Runtime:
+		// scripts/sops-decrypt.ts itself IS type-checked (depends only on ./sops.config
+		// and node: built-ins on release-0-6-0). main branch's sops-decrypt.ts imports
+		// @aws-sdk/client-sts + @aws-sdk/client-kms; those deps live in tastile-root's
+		// workspace lockfile, not here — kept out of scope for release-0-6-0.
 		"scripts/sops-decrypt.test.ts",
 		"e2e/**/*.ts",
 		"e2e/**/*.tsx"
