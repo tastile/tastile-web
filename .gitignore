@@ -73,9 +73,18 @@ probe*raw*.json
 # local event store
 /.tastile-data/
 
-# Claude / agent / IDE tooling
-.claude/
-.agents/
+# Claude / agent / IDE tooling — config tracked, execution logs ignored
+# Skills (.claude/skills/, .agents/skills/) and hook configs ship in git so
+# Claude Code / Codex / Cursor resolve them regardless of clone state. Only
+# runtime scratch (logs, worktrees, sessions, caches) is excluded.
+.claude/logs/
+.claude/worktrees/
+.claude/sessions/
+.claude/settings.local.json
+.claude/tasks/
+.agents/worktrees/
+.agents/sessions/
+.agents/cache/
 
 # Dist artifacts / screenshots / zips
 .tmp-screens/
