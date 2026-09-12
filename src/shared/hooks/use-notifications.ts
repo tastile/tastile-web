@@ -111,16 +111,29 @@ export function useNotifications() {
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
-    if (activeTile.ok && pendingPrompts.ok) {
-      const prompt = pendingPrompts.data[0] ?? null;
-      const item = prompt
-        ? toPendingPromptNotification(prompt, t)
-        : activeTile.data
-          ? toActiveTileNotification(activeTile.data, t)
-          : null;
+    const prompt = pendingPrompts.ok ? (pendingPrompts.data[0] ?? null) : null;
+    if (prompt) {
+      // Prompt is a higher-priority, independently fetched read model.
+      // Once we have a valid pending prompt, an active-tile failure must not
+      // hide it behind the menu's error state.
+      const item = toPendingPromptNotification(prompt, t);
+      setExecutionItem(item);
+      const kind: NotificationKind = "prompt_pending";
+      emitOnce(seenSystemNotifications.current, item.id, {
+        kind,
+        title: t("notifications.brandTitle"),
+        body: item.message,
+        tag: item.id,
+      });
+    } else if (!pendingPrompts.ok) {
+      failed = true;
+      const msg = pendingPrompts.error.message;
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+    } else if (activeTile.ok) {
+      const item = activeTile.data ? toActiveTileNotification(activeTile.data, t) : null;
       setExecutionItem(item);
       if (item) {
-        const kind: NotificationKind = prompt ? "prompt_pending" : "tile_started";
+        const kind: NotificationKind = "tile_started";
         emitOnce(seenSystemNotifications.current, item.id, {
           kind,
           title: t("notifications.brandTitle"),
@@ -128,13 +141,9 @@ export function useNotifications() {
           tag: item.id,
         });
       }
-    } else if (!activeTile.ok) {
+    } else {
       failed = true;
       const msg = activeTile.error.message;
-      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
-    } else if (!pendingPrompts.ok) {
-      failed = true;
-      const msg = pendingPrompts.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
