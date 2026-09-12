@@ -22,14 +22,11 @@ vi.mock("@/lib/notifications/browser", () => ({
   showNotification: vi.fn(),
 }));
 
-// Stable translation function so the hook's useCallback dep stays stable
-// (otherwise the dep churns each render and the test below spins).
 const stableT = (key: string) => key;
 vi.mock("@/shared/i18n/use-translation", () => ({
   useTranslation: () => ({ t: stableT, locale: "en" }),
 }));
 
-// Imported after the mocks so the hook under test uses them.
 import { useNotifications } from "@/shared/hooks/use-notifications";
 
 if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
@@ -48,33 +45,41 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   });
 }
 
-type ExecutionSnapshotFixture = {
-  is_working: boolean;
-  is_on_break: boolean;
-  main_tile: { id: string; title: string } | null;
-  main_tile_started_at: string | null;
-  main_tile_ends_at: string | null;
-  pending_prompt_id: string | null;
+type ActiveTileFixture = {
+  tile_id: string;
+  placement_id: string;
+  execution_id: string | null;
+  title: string;
+  span_start: string | null;
+  span_end: string | null;
 };
 
-const executionSnapshot: ExecutionSnapshotFixture = {
-  is_working: true,
-  is_on_break: false,
-  main_tile: { id: "tile-a", title: "First" },
-  main_tile_started_at: "2026-07-23T09:00:00.000Z",
-  main_tile_ends_at: "2026-07-23T10:00:00.000Z",
-  pending_prompt_id: null,
+type PendingPromptFixture = {
+  id: string;
+  created_at: string;
+};
+
+const activeTile: ActiveTileFixture = {
+  tile_id: "tile-a",
+  placement_id: "placement-a",
+  execution_id: "execution-a",
+  title: "First",
+  span_start: "2026-07-23T09:00:00.000Z",
+  span_end: "2026-07-23T10:00:00.000Z",
+};
+
+const pendingPrompt: PendingPromptFixture = {
+  id: "prompt-a",
+  created_at: "2026-07-23T09:30:00.000Z",
 };
 
 type CallOk<T> = { ok: true; data: T; status: number; latencyMs: number };
 
-function okExecution(
-  data: ExecutionSnapshotFixture | null,
-): CallOk<ExecutionSnapshotFixture | null> {
+function ok<T>(data: T): CallOk<T> {
   return { ok: true, data, status: 200, latencyMs: 1 };
 }
 
-function failedExecution(message = "execution view unavailable") {
+function failed(message = "execution view unavailable") {
   return {
     ok: false as const,
     error: {
@@ -89,14 +94,20 @@ function failedExecution(message = "execution view unavailable") {
 function okNotifications(
   items: Array<{ id: string; message: string; created_at: string; read_at: string | null; kind: number }>,
 ): CallOk<{ items: typeof items }> {
-  return { ok: true, data: { items }, status: 200, latencyMs: 1 };
+  return ok({ items });
 }
 
 function defaultMockImpl(method: string) {
   if (method === "listAccessNotifications") {
     return Promise.resolve(okNotifications([]));
   }
-  return Promise.resolve(okExecution(executionSnapshot));
+  if (method === "getExecutionView") {
+    return Promise.resolve(ok(activeTile));
+  }
+  if (method === "getPendingPrompt") {
+    return Promise.resolve(ok<PendingPromptFixture[]>([]));
+  }
+  throw new Error(`unexpected endpoint: ${method}`);
 }
 
 function listCallsSoFar(): number {
@@ -106,8 +117,6 @@ function listCallsSoFar(): number {
 describe("useNotifications", () => {
   beforeEach(() => {
     callMock.mockReset();
-    // Default behavior: every call returns a well-formed envelope so the
-    // hook's re-renders don't blow up on `undefined.ok`.
     callMock.mockImplementation(defaultMockImpl);
   });
 
@@ -115,7 +124,7 @@ describe("useNotifications", () => {
     vi.useRealTimers();
   });
 
-  it("renders the active execution from execution-view", async () => {
+  it("renders the active tile from the current execution-view mapping", async () => {
     const { result, unmount } = renderHook(() => useNotifications());
 
     await waitFor(() => {
@@ -127,21 +136,18 @@ describe("useNotifications", () => {
     unmount();
   });
 
-  it("renders a pending prompt from execution-view", async () => {
+  it("prioritizes a pending prompt over the active tile", async () => {
     callMock.mockImplementation((method: string) => {
       if (method === "listAccessNotifications") {
         return Promise.resolve(okNotifications([]));
       }
-      return Promise.resolve(
-        okExecution({
-          ...executionSnapshot,
-          is_working: false,
-          main_tile: null,
-          main_tile_started_at: null,
-          main_tile_ends_at: null,
-          pending_prompt_id: "prompt-a",
-        }),
-      );
+      if (method === "getExecutionView") {
+        return Promise.resolve(ok(activeTile));
+      }
+      if (method === "getPendingPrompt") {
+        return Promise.resolve(ok([pendingPrompt]));
+      }
+      throw new Error(`unexpected endpoint: ${method}`);
     });
 
     const { result, unmount } = renderHook(() => useNotifications());
@@ -149,13 +155,14 @@ describe("useNotifications", () => {
     await waitFor(() => {
       expect(result.current.notifications.some((item) => item.id === "prompt:prompt-a")).toBe(true);
     });
+    expect(result.current.notifications.some((item) => item.id === "execution:tile-a")).toBe(false);
     expect(
       result.current.notifications.find((item) => item.id === "prompt:prompt-a")?.message,
     ).toBe("notifications.promptPending");
     unmount();
   });
 
-  it("clears a stale execution notification when execution-view returns no active execution", async () => {
+  it("clears a stale execution notification when there is no active tile or pending prompt", async () => {
     const { result, unmount } = renderHook(() => useNotifications());
 
     await waitFor(() => {
@@ -166,7 +173,13 @@ describe("useNotifications", () => {
       if (method === "listAccessNotifications") {
         return Promise.resolve(okNotifications([]));
       }
-      return Promise.resolve(okExecution(null));
+      if (method === "getExecutionView") {
+        return Promise.resolve(ok<ActiveTileFixture | null>(null));
+      }
+      if (method === "getPendingPrompt") {
+        return Promise.resolve(ok<PendingPromptFixture[]>([]));
+      }
+      throw new Error(`unexpected endpoint: ${method}`);
     });
 
     await act(async () => {
@@ -179,12 +192,18 @@ describe("useNotifications", () => {
     unmount();
   });
 
-  it("surfaces execution-view errors and clears them after recovery", async () => {
+  it("surfaces read-model errors and clears them after recovery", async () => {
     callMock.mockImplementation((method: string) => {
       if (method === "listAccessNotifications") {
         return Promise.resolve(okNotifications([]));
       }
-      return Promise.resolve(failedExecution());
+      if (method === "getExecutionView") {
+        return Promise.resolve(failed());
+      }
+      if (method === "getPendingPrompt") {
+        return Promise.resolve(ok<PendingPromptFixture[]>([]));
+      }
+      throw new Error(`unexpected endpoint: ${method}`);
     });
 
     const { result, unmount } = renderHook(() => useNotifications());
@@ -221,20 +240,17 @@ describe("useNotifications", () => {
     let resolveSecondList: (value: CallOk<{ items: unknown[] }>) => void = () => {};
     let listCallIdx = 0;
 
-    // Override ONLY the first two listAccessNotifications calls with
-    // pending promises. `mockImplementationOnce` is consumed in call order,
-    // so we have to inspect the method name inside the impl.
     callMock.mockImplementation((method: string) => {
       if (method === "listAccessNotifications") {
         listCallIdx++;
         if (listCallIdx === 1) {
-          return new Promise<CallOk<{ items: unknown[] }>>((r) => {
-            resolveFirstList = r;
+          return new Promise<CallOk<{ items: unknown[] }>>((resolve) => {
+            resolveFirstList = resolve;
           });
         }
         if (listCallIdx === 2) {
-          return new Promise<CallOk<{ items: unknown[] }>>((r) => {
-            resolveSecondList = r;
+          return new Promise<CallOk<{ items: unknown[] }>>((resolve) => {
+            resolveSecondList = resolve;
           });
         }
       }
@@ -253,7 +269,6 @@ describe("useNotifications", () => {
       expect(listCallsSoFar()).toBeGreaterThanOrEqual(2);
     });
 
-    // Resolve out of order: stale empty list arrives after fresh populated list.
     resolveSecondList(
       okNotifications([
         {
@@ -268,7 +283,7 @@ describe("useNotifications", () => {
     resolveFirstList(okNotifications([]));
 
     await waitFor(() => {
-      expect(result.current.notifications.some((n) => n.id === "access:notif-new")).toBe(true);
+      expect(result.current.notifications.some((item) => item.id === "access:notif-new")).toBe(true);
     });
     unmount();
   });
@@ -280,7 +295,6 @@ describe("useNotifications", () => {
     });
     const before = listCallsSoFar();
 
-    // Override the next listAccessNotifications call to return a populated list.
     callMock.mockImplementationOnce((method: string) => {
       if (method === "listAccessNotifications") {
         return Promise.resolve(
@@ -304,7 +318,7 @@ describe("useNotifications", () => {
       expect(listCallsSoFar()).toBeGreaterThan(before);
     });
     await waitFor(() => {
-      expect(result.current.notifications.some((n) => n.id === "access:n1")).toBe(true);
+      expect(result.current.notifications.some((item) => item.id === "access:n1")).toBe(true);
     });
     unmount();
   });
