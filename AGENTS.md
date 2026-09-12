@@ -14,9 +14,26 @@
 | 全体方針・認証・インフラ | `../docs/HARNESS.md`、`../docs/decisions.md` |
 | domain・schema・不変条件・API | `../tastile-core/v1/02-core-entities.md`、`.../v1/10-invariants.md`、`.../v1/14-read-model-and-endpoint.md` |
 | v1 仕様正本（旧 pomodoroom/CORE_POLICY.md、tastile_docs_bundle/ は廃止） | `../tastile-core/v1/` 配下 15 ファイル |
-| Claude Code 設定・skills 関係 | `CLAUDE.md`（同内容） |
+| Claude Code 設定・skills 関係 | `CLAUDE.md`（Claude Code 用 thin adapter — 重複解消済み、ADR pointer 経由で参照） |
+| **architectural decisions（ADR catalog）** | `../docs/adr/` 配下 11 件（Accepted）。実装判断で迷う場合は必ず catalog を確認し、なければ新 ADR を起こす |
 
-これら 4 系列を読み終えるまで実装判断しない。
+これら 6 系列を読み終えるまで実装判断しない。
+
+## Canonical architectural decisions (ADR pointer)
+
+`../docs/adr/` のうち、`tastile-web` で binding されるもの:
+
+| ADR | 適用範囲（web 側） |
+| --- | --- |
+| [ADR-0001](../docs/adr/0001-agent-toolchain.md) | Bun / ripgrep / Biome off / Knip 6 / Vitest 4 など toolchain 固定 |
+| [ADR-0003](../docs/adr/0003-i18n-inline-literal-remediation.md) | policy §11 — `i18n-literal-guard` Skill の判定基準 |
+| [ADR-0005](../docs/adr/0005-skills-and-mcp-extensions.md) | Skills catalog、Codex role canonical。`.claude/skills/` / `.agents/skills/` の境界 |
+| [ADR-0007](../docs/adr/0007-release-branch-and-ticket-workflow.md) | weekly sprint の `release-x-y-z` branch + Issue 番号 ticket branch |
+| [ADR-0008](../docs/adr/0008-structured-recovery-checkpoint.md) | soft / hard checkpoint、execution generation、fencing token |
+| [ADR-0009](../docs/adr/0009-github-projects-work-state.md) | GitHub Projects Kanban を durable work state に pin |
+| [ADR-0011](../docs/adr/0011-tastile-precommit-review-canonical-precedence.md) | 同名 Skill (web vs workspace) の cwd-based precedence rule |
+
+ADR を 1 件も読まずに実装判断した場合、pre-commit reviewer から差し戻し。
 
 ## Repository facts（repo-local のみ）
 
@@ -72,13 +89,24 @@
 | playwright e2e | `bun run test:e2e` |
 | openapi regen | `bun run generate-types` |
 | react-doctor | `bun run doctor` |
-| **standard gate** | `bun run check` = `lint:biome && lint && typecheck && knip && test:unit` |
-| **release gate** | `bun run check:release` = check + bun audit + `build:prod` |
+| **fast PR smoke** (per-PR, no build:prod) | `bun run check` (also runs in `.github/workflows/pr-smoke.yml`) |
+| **standard gate** | `bun run check:release` = check + bun audit + `build:prod` |
+| **release checkpoint journal** (ADR-0008) | `scripts/release/release-checkpoint.sh` → `docs/journal/<env>/<date>.jsonl` |
+| **release tag cut** (ADR-0007 D-4) | `scripts/release/tag-release.sh <X.Y.Z> [--push]` |
+| **journal init** | `scripts/release/init-journal.sh <env>` |
 
 完成基準は `bun run check` を **0 error / 0 actionable warning / 0 unjustified suppression** で通すこと。
 `bun audit` の 4 ignore（`GHSA-qx2v-qp2m-jg93`、`GHSA-6g55-p6wh-862q`、`GHSA-r28c-9q8g-f849`、
 `GHSA-f88m-g3jw-g9cj`）は記録済みで変更禁止。E2E touch 時は必ず Playwright を走らせる。
 UI 変更は実 browser screenshot を `.tmp/` に残して判定。
+
+CI 側の gating:
+
+- per-PR は `.github/workflows/pr-smoke.yml`（`pr-smoke / pr-smoke`）で `bun run check` のみ
+- release branch + main は `.github/workflows/quality.yml`（`quality / verify`）で `bun run check:release`
+- 公開 main への PR は `.github/workflows/release-source-check.yml`（`Release-source check / release-source`）
+  で head が `release-X-Y-Z` pattern であることを必須化する
+- weekly cron は `.github/workflows/recovery-drill.yml` で `scripts/release/` + `bun run check` を round-trip
 
 ## Repository configuration hotspots（要 attention）
 

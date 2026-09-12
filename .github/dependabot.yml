@@ -1,0 +1,119 @@
+# Dependabot configuration for tastile-web.
+#
+# Reference: https://docs.github.com/en/code-security/dependabot/dependabot-security-updates/configuring-dependabot-security-updates
+#
+# Weekly cadence, grouped by ecosystem, with a target branch pinned to
+# `main` and the active release branch. Update `target-branch` when the
+# active release branch changes (`.agents/skills/release-branch-workflow/SKILL.md`,
+# `docs/adr/0007-release-branch-and-ticket-workflow.md`).
+#
+# canonical references:
+#   - docs/adr/0001-agent-toolchain.md (Bun / Next.js / Mantine pin policy)
+#   - .agents/skills/plugin-version-audit (pinned dependency drift audit)
+#   - AGENTS.md "Repository configuration hotspots" (the four bun audit GHSA ignores)
+#
+# Pinned ignore rationale:
+#   GHSA-qx2v-qp2m-jg93 / GHSA-6g55-p6wh-862q / GHSA-r28c-9q8g-f849 /
+#   GHSA-f88m-g3jw-g9cj — see AGENTS.md L79-80. Treated as immutable until
+#   upstream advisory is reclassified; rationale archived at
+#   docs/archive/2026-07-14/2026-07-14-knip-investigation.md
+#   (note: that doc is about knip; rationale for the GHSA pins should be
+#   migrated to a dedicated audit-ignore ADR — see docs/adr/TODO).
+
+version: 2
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    target-branch:
+      - main
+      - "release-0-6-0"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "deps/npm"
+    groups:
+      mantine:
+        patterns:
+          - "@mantine/*"
+      react-stack:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      build-tooling:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "@biomejs/biome"
+          - "knip"
+          - "fast-check"
+    ignore:
+      # Pin per ADR-0001; bump requires coordinated Next.js / React 19 upgrade.
+      - dependency-name: "next"
+        versions:
+          - ">= 17.0.0"
+      - dependency-name: "@types/node"
+        versions:
+          - ">= 23.0.0"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    target-branch:
+      - main
+      - "release-0-6-0"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "deps/actions"
+    groups:
+      actions-major-bump:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    target-branch:
+      - main
+      - "release-0-6-0"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "deps/docker"
