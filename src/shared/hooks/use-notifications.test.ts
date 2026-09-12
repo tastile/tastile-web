@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { callMock } = vi.hoisted(() => ({
@@ -59,8 +59,22 @@ const executionSnapshot = {
 
 type CallOk<T> = { ok: true; data: T; status: number; latencyMs: number };
 
-function okExecution(data: typeof executionSnapshot): CallOk<typeof executionSnapshot> {
+function okExecution(
+  data: typeof executionSnapshot | null,
+): CallOk<typeof executionSnapshot | null> {
   return { ok: true, data, status: 200, latencyMs: 1 };
+}
+
+function failedExecution(message = "execution view unavailable") {
+  return {
+    ok: false as const,
+    error: {
+      kind: "server" as const,
+      status: 503,
+      message,
+      body: null,
+    },
+  };
 }
 
 function okNotifications(
@@ -90,6 +104,95 @@ describe("useNotifications", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+  });
+
+  it("renders the active execution from execution-view", async () => {
+    const { result, unmount } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((item) => item.id === "execution:tile-a")).toBe(true);
+    });
+    expect(
+      result.current.notifications.find((item) => item.id === "execution:tile-a")?.message,
+    ).toBe("notifications.running: First");
+    unmount();
+  });
+
+  it("renders a pending prompt from execution-view", async () => {
+    callMock.mockImplementation((method: string) => {
+      if (method === "listAccessNotifications") {
+        return Promise.resolve(okNotifications([]));
+      }
+      return Promise.resolve(
+        okExecution({
+          ...executionSnapshot,
+          is_working: false,
+          main_tile: null,
+          main_tile_started_at: null,
+          main_tile_ends_at: null,
+          pending_prompt_id: "prompt-a",
+        }),
+      );
+    });
+
+    const { result, unmount } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((item) => item.id === "prompt:prompt-a")).toBe(true);
+    });
+    expect(
+      result.current.notifications.find((item) => item.id === "prompt:prompt-a")?.message,
+    ).toBe("notifications.promptPending");
+    unmount();
+  });
+
+  it("clears a stale execution notification when execution-view returns no active execution", async () => {
+    const { result, unmount } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((item) => item.id === "execution:tile-a")).toBe(true);
+    });
+
+    callMock.mockImplementation((method: string) => {
+      if (method === "listAccessNotifications") {
+        return Promise.resolve(okNotifications([]));
+      }
+      return Promise.resolve(okExecution(null));
+    });
+
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((item) => item.source === "execution")).toBe(false);
+    });
+    unmount();
+  });
+
+  it("surfaces execution-view errors and clears them after recovery", async () => {
+    callMock.mockImplementation((method: string) => {
+      if (method === "listAccessNotifications") {
+        return Promise.resolve(okNotifications([]));
+      }
+      return Promise.resolve(failedExecution());
+    });
+
+    const { result, unmount } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.error?.message).toBe("execution view unavailable");
+    });
+
+    callMock.mockImplementation(defaultMockImpl);
+    await act(async () => {
+      await result.current.refresh();
+    });
+
+    await waitFor(() => {
+      expect(result.current.error).toBeNull();
+    });
+    unmount();
   });
 
   it("starts in loading state and exposes an empty list", async () => {
