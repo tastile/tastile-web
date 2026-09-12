@@ -91,7 +91,7 @@ describe("NotificationsMenu click navigation", () => {
     try {
       renderWithMantine(<Layout />);
       const button = screen.getByTestId("notification-prompt:abc-123");
-      expect(button).toBeDisabled();
+      expect((button as HTMLButtonElement).disabled).toBe(true);
       fireEvent.click(button);
       expect(assignSpy).not.toHaveBeenCalled();
     } finally {
