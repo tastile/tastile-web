@@ -48,7 +48,16 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
   });
 }
 
-const executionSnapshot = {
+type ExecutionSnapshotFixture = {
+  is_working: boolean;
+  is_on_break: boolean;
+  main_tile: { id: string; title: string } | null;
+  main_tile_started_at: string | null;
+  main_tile_ends_at: string | null;
+  pending_prompt_id: string | null;
+};
+
+const executionSnapshot: ExecutionSnapshotFixture = {
   is_working: true,
   is_on_break: false,
   main_tile: { id: "tile-a", title: "First" },
@@ -60,8 +69,8 @@ const executionSnapshot = {
 type CallOk<T> = { ok: true; data: T; status: number; latencyMs: number };
 
 function okExecution(
-  data: typeof executionSnapshot | null,
-): CallOk<typeof executionSnapshot | null> {
+  data: ExecutionSnapshotFixture | null,
+): CallOk<ExecutionSnapshotFixture | null> {
   return { ok: true, data, status: 200, latencyMs: 1 };
 }
 
