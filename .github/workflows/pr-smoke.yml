@@ -1,0 +1,44 @@
+name: pr-smoke
+
+# Fast pull-request smoke gate. Splits from `quality` so PRs targeting any
+# branch get fast feedback (biome + eslint + typecheck + knip + vitest)
+# WITHOUT the expensive `bun run check:release` path (which includes
+# `bun run build:prod` + SOPS-decrypted env). The release gate remains
+# in `.github/workflows/quality.yml` and is required only on release-*
+# and main.
+#
+# canonical references:
+#   - docs/adr/0007-release-branch-and-ticket-workflow.md
+#   - AGENTS.md "Repository configuration hotspots"
+#   - CLAUDE.md "Commands" (canonical commands table)
+#
+# Status check name: `pr-smoke / pr-smoke` — usable as a required check
+# for any branch protection on main / master / release-*.
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - 'release-*'
+
+jobs:
+  pr-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Fast local quality gate
+        run: bun run check
+        env:
+          # Pin TZ so vitest workers deterministically match local dev (JST).
+          # Mirrors quality.yml; keep both in sync if you change this.
+          TZ: Asia/Tokyo
