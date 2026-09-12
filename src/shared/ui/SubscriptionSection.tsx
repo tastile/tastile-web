@@ -158,7 +158,7 @@ export function SubscriptionSection() {
 					</span>
 				</div>
 
-				{isPro && state && state.status !== "free" && (
+				{isPro && state && (
 					<p className="text-xs text-foreground-muted mb-4">
 						{statusText}
 						{" · "}
