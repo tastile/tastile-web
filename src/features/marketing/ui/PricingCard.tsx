@@ -8,11 +8,11 @@ export function PricingCard() {
 	// W06 (2026-09-19 free launch): the page exposes the Free plan only.
 	// No checkout / upgrade CTA, no interval toggle.
 	const { t, locale } = useTranslation();
-	const dict = (
+	const proFeatures = (
 		translations[locale] as unknown as {
 			marketing: { pricing: { proFeatures: { title: string; desc: string }[] } };
 		}
-	).marketing.pricing;
+	).marketing.pricing.proFeatures;
 
 	return (
 		<div className="flex flex-col relative overflow-hidden rounded-xl border border-border bg-surface-elevated p-8">
