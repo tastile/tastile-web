@@ -30,9 +30,12 @@ describe("PricingCard free-only display (W06)", () => {
 			screen.getByRole("heading", { name: "marketing.pricing.proPlan" }),
 		).toBeTruthy();
 		expect(screen.getByText("marketing.pricing.proDesc")).toBeTruthy();
-		// proFeatures renders four feature rows.
-		expect(screen.getAllByText(/Web \/ Android 同期|実行タイル 10/).length).toBeGreaterThan(
-			0,
-		);
+		// 4 proFeatures titles in the mock dictionary (returned as keys via t).
+		expect(
+			screen.getByText("marketing.pricing.proFeatures.0.title"),
+		).toBeTruthy();
+		expect(
+			screen.getByText("marketing.pricing.proFeatures.3.title"),
+		).toBeTruthy();
 	});
 });
