@@ -162,6 +162,29 @@ describe("useNotifications", () => {
     unmount();
   });
 
+  it("shows a pending prompt even when active-tile fails", async () => {
+    callMock.mockImplementation((method: string) => {
+      if (method === "listAccessNotifications") {
+        return Promise.resolve(okNotifications([]));
+      }
+      if (method === "getExecutionView") {
+        return Promise.resolve(failed("active tile unavailable"));
+      }
+      if (method === "getPendingPrompt") {
+        return Promise.resolve(ok([pendingPrompt]));
+      }
+      throw new Error(`unexpected endpoint: ${method}`);
+    });
+
+    const { result, unmount } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((item) => item.id === "prompt:prompt-a")).toBe(true);
+    });
+    expect(result.current.error).toBeNull();
+    unmount();
+  });
+
   it("clears a stale execution notification when there is no active tile or pending prompt", async () => {
     const { result, unmount } = renderHook(() => useNotifications());
 
