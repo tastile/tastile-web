@@ -2,40 +2,21 @@ import { getPlans, getStripe } from "@/lib/stripe";
 import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import { NextResponse } from "next/server";
 
-export async function POST(request: Request) {
-  let stripe: ReturnType<typeof getStripe>;
-  let plans: ReturnType<typeof getPlans>;
-  try {
-    stripe = getStripe();
-    plans = getPlans();
-  } catch {
-    return NextResponse.json({ error: "Stripe is not configured" }, { status: 500 });
-  }
-
-  const userSub = await resolveAuthenticatedUserSub();
-  if (!userSub) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const body = await request.json().catch(() => ({}));
-  const interval = body.interval === "yearly" ? "yearly" : "monthly";
-
-  const session = await stripe.checkout.sessions.create({
-    client_reference_id: userSub,
-    mode: "subscription",
-    line_items: [
-      {
-        price: interval === "yearly" ? plans.pro_yearly.priceId : plans.pro_monthly.priceId,
-        quantity: 1,
-      },
-    ],
-    subscription_data: {
-      metadata: { tastile_user_id: userSub },
-    },
-    metadata: { tastile_user_id: userSub },
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/preferences/account?tab=subscription&billing=success`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing?billing=cancelled`,
-  });
-
-  return NextResponse.json({ url: session.url });
+// W06 (2026-09-19 free launch): new paid checkouts are disabled.
+// Existing paid users keep their subscription and can still cancel via
+// POST /api/stripe/portal — only the upgrade / new-subscription path
+// is removed.
+export async function POST(_request: Request) {
+	const _userSub = await resolveAuthenticatedUserSub();
+	void _userSub;
+	void getPlans;
+	void getStripe;
+	return NextResponse.json(
+		{
+			error: "checkout_disabled",
+			message:
+				"Paid plans are not available on or after the 2026-09-19 release.",
+		},
+		{ status: 410 },
+	);
 }
