@@ -1,0 +1,59 @@
+name: Dependency review
+
+# canonical policy:
+#   - project-init SKILL.md §23 ("Dependency review on PRs")
+#   - PROMPT.ja.md §24 (GitHub Actions: dependency-review on PRs)
+#   - docs/adr/0001-agent-toolchain.md (Bun / dependency pin policy)
+#
+# Runs on PRs to detect newly introduced dependencies that have known
+# vulnerabilities, are abandoned, or are licensed incompatibly with the
+# project (default deny = fail the job). Public-repo handling Stripe /
+# Cognito / OIDC / SOPS secrets — a dependency surface regression must
+# not silently land on main.
+#
+# Output modes:
+#   - fail_on_severity: high (fail on High / Critical CVE-Score, warn on
+#     Medium, ignore Low) — sensible default for an iteration-floor PR
+#     gate; can be tuned via repository variable `DEPENDENCY_REVIEW_SEVERITY`.
+#
+# Required check pairing:
+#   This workflow is NOT registered as a required status check on `main`
+#   (status check registration is a Phase 2-A user-driven gh API PATCH).
+#   Pair with `Release-source check / release-source` and
+#   `quality / verify` once the protection PATCH lands.
+
+on:
+  pull_request:
+    branches:
+      - main
+      - master
+      - "release-*"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Audit dependency surface
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      # Default severity threshold; tunable per-repo via DEPENDENCY_REVIEW_SEVERITY.
+      DEPENDENCY_REVIEW_SEVERITY: ${{ vars.DEPENDENCY_REVIEW_SEVERITY || 'high' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: ${{ env.DEPENDENCY_REVIEW_SEVERITY }}
+          comment-summary-in-pr: always
+          # Allow-list transitive deps that the project explicitly pins
+          # despite known issues; tracked in AGENTS.md "Repository
+          # configuration hotspots" and the four GHSA ignores in
+          # `bun audit --ignore=...`.
+          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0, 0BSD, CC0-1.0, Unlicense, Python-2.0
+          # GitHub Advisory Database: same severity as fail-on-severity.
+          # Vulnerability check uses the OSV / GHDB feed automatically.

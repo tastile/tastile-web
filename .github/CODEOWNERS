@@ -1,0 +1,66 @@
+# CODEOWNERS for tastile-web
+#
+# Format reference: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-repository-settings/about-code-owners
+# Consumed by GitHub branch protection rules; pair with
+# `.github/workflows/quality.yml` (`quality / verify`) and
+# `.github/workflows/release-source-check.yml` (`Release-source check / release-source`)
+# as required checks on `main`.
+#
+# When merging a PR, the owners below receive an automatic review request.
+# Roles here mirror the Codex / Claude agent trio catalogued in
+# `.agents/skills/subagent-coordination/SKILL.md` and ADR-0005.
+#
+# canonical references:
+#   - docs/adr/0007-release-branch-and-ticket-workflow.md (branch / PR workflow)
+#   - docs/agent-orchestration.md §11 (agent lifecycle)
+#   - .agents/skills/plugin-version-audit (dependency maintenance)
+
+# ===== PLACEHOLDER roster =====
+# Per recon audit 2026-09-12, all owners are temporarily pinned to @rebuildup
+# until the org/team roster is established. Each path entry below should be
+# reassigned to a `tastile/tastile-web-*` team once the maintainer roster is
+# ratified; tracked in the docs/adr/0007 follow-up ADR (TODO).
+
+# Default owners for everything not matched below.
+*                          @rebuildup
+
+# Release / security / deployment critical paths (require org-level review).
+/.github/                  @rebuildup
+/.github/workflows/        @rebuildup
+/CONTRIBUTING.md           @rebuildup
+/SECURITY.md               @rebuildup
+/next.config.ts            @rebuildup
+/Containerfile             @rebuildup
+
+# Auth / billing / security surface (Stripe / Cognito / SOPS).
+/src/lib/security/         @rebuildup
+/src/lib/billing/          @rebuildup
+/src/lib/api/v1/           @rebuildup
+/src/shared/api/           @rebuildup
+/src/proxy.ts              @rebuildup
+
+# Generated / vendored (must remain Knip-clean; touch via upstream PR only).
+/src/lib/vendored/         @rebuildup
+/src/lib/api/v1/openapi-generated.d.ts @rebuildup
+
+# Cross-repo contract surface (changes ripple to tastile-core / desktop / android).
+/src/upstream/             @rebuildup
+/src/shared/upstream/      @rebuildup
+
+# Quality gate / scripts (changes affect CI determinism).
+/scripts/                  @rebuildup
+/scripts/release/          @rebuildup
+/scripts/checkpoint/       @rebuildup
+/scripts/audit-i18n-literals.mts @rebuildup
+/scripts/audit-responsive-breakpoints.sh @rebuildup
+
+# i18n literal guard scope (policy §11 violations tracked).
+/src/features/create-tile/ @rebuildup
+/src/execution/model/      @rebuildup
+/src/shared/stores/quick-create-store.ts @rebuildup
+
+# AGENTS.md / CLAUDE.md / canonical contract.
+/AGENTS.md                 @rebuildup
+/CLAUDE.md                 @rebuildup
+/.claude/                  @rebuildup
+/.agents/skills/           @rebuildup
