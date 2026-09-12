@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  type NotificationKind,
   requestNotificationPermissionOnce,
   showNotification,
 } from "@/lib/notifications/browser";
