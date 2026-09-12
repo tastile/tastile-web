@@ -1,14 +1,42 @@
 name: quality
 
+# Release-only quality gate. Runs the full `bun run check:release` path
+# (lint + typecheck + knip + vitest + `bun audit` + `bun run build:prod`).
+# Splits from a generic PR gate so PRs targeting feature / ticket branches
+# get fast feedback via `.github/workflows/pr-smoke.yml` instead.
+#
+# canonical references:
+#   - docs/adr/0007-release-branch-and-ticket-workflow.md (release branch)
+#   - docs/adr/0008-structured-recovery-checkpoint.md (fencing token / env)
+#   - AGENTS.md "Repository configuration hotspots"
+#   - CLAUDE.md "Commands" (canonical commands table)
+#
+# Status check name: `quality / verify` — set as REQUIRED for branch
+# protection on `main` and as recommended check on `release-*` per
+# project-init §11 (public repository main protection).
+#
+# pull_request_target grants id-token: write so the reusable
+# sops-decrypt workflow can use AWS OIDC for the role assumption.
+# pull_request events restrict OIDC tokens to none, causing 0s
+# startup_failure on this gate; see PR #95 / issue #76.
 on:
-  pull_request:
+  pull_request_target:
+    branches:
+      - main
+      - master
+      - 'release-*'
   push:
     branches:
       - main
       - master
+      - release-*
+  workflow_dispatch:
 
 jobs:
   decrypt:
+    permissions:
+      id-token: write
+      contents: read
     uses: ./.github/workflows/sops-decrypt.yml
     with:
       env: development
@@ -22,6 +50,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # pull_request_target runs in the BASE context for OIDC, but we
+          # must verify the PR HEAD code (`bun run check:release`), not
+          # the stale base. Explicit ref pins the workflow to the head SHA
+          # the contributor is proposing. Without this, a stale-base green
+          # is a false negative for the merge gate.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -60,5 +96,5 @@ jobs:
           # purpose -- the conflict is documented in the test itself.
           # GitHub-hosted ubuntu-latest runners default to UTC; without
           # this pin the same tests pass on a JST laptop and fail on CI.
-          # Mirrors deploy.yml, which already pins TZ for the release build.
+          # Mirrors deploy.yml and pr-smoke.yml, which also pin TZ.
           TZ: Asia/Tokyo

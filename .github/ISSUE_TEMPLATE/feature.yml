@@ -1,0 +1,124 @@
+name: Feature request
+description: tastile-web への機能追加を提案する。`release-branch-workflow` Skill が canonical 手順。
+title: '[feature]: '
+labels: ['type/feature']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Feature
+
+        提案する機能の user value、acceptance criteria、scope / non-scope を記入する。
+        `project-board` Skill が必須 field を Project に同期する (ADR-0009)。
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (ADR-0009)
+      description: P0 = current sprint、 P1 = next sprint、 P2+ = backlog
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size (ADR-0009)
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+    validations:
+      required: true
+
+  - type: input
+    id: target_version
+    attributes:
+      label: Target Release (release-x-y-z 形式)
+      placeholder: 'release-0-6-0'
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: area
+    attributes:
+      label: Area / Component
+      options:
+        - label: dashboard
+        - label: tile
+        - label: execution
+        - label: calendar
+        - label: account
+        - label: billing
+        - label: design-system
+        - label: i18n
+        - label: sync
+        - label: release
+        - label: docs
+        - label: infra
+    validations:
+      required: true
+
+  - type: input
+    id: execution_generation
+    attributes:
+      label: Execution Generation (ADR-0008)
+      default: '1'
+    validations:
+      required: false
+
+  - type: textarea
+    id: user_value
+    attributes:
+      label: User value
+      placeholder: |
+        誰が、何のときに、何ができて、何ができるようになるかを 1 段落で書く。
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance criteria
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope / non-scope
+      description: 含むもの / 含まないものを cross-repo contract (core / desktop / android) 視点で書く。
+    validations:
+      required: false
+
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies / blockers
+      description: 関連 Issue / 外部依存 / cross-repo contract 変更を明記する。
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: security_review
+    attributes:
+      label: Security boundary
+      description: web 固有 security boundary (Cognito / Stripe / proxy / cookie / server-only secret) への影響を選択。
+      options:
+        - label: Cognito / Hosted UI 連携
+        - label: Stripe checkout / webhook
+        - label: Server-only secret (`TASTILE_WEB_BRIDGE_SECRET` 等)
+        - label: Cookie / token ownership
+        - label: Reverse proxy / CORS
+        - label: Production env isolation
