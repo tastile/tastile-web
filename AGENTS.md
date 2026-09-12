@@ -25,13 +25,13 @@
 
 | ADR | 適用範囲（web 側） |
 | --- | --- |
-| [ADR-0001](../adr/0001-agent-toolchain.md) | Bun / ripgrep / Biome off / Knip 6 / Vitest 4 など toolchain 固定 |
-| [ADR-0003](../adr/0003-i18n-inline-literal-remediation.md) | policy §11 — `i18n-literal-guard` Skill の判定基準 |
-| [ADR-0005](../adr/0005-skills-and-mcp-extensions.md) | Skills catalog、Codex role canonical。`.claude/skills/` / `.agents/skills/` の境界 |
-| [ADR-0007](../adr/0007-release-branch-and-ticket-workflow.md) | weekly sprint の `release-x-y-z` branch + Issue 番号 ticket branch |
-| [ADR-0008](../adr/0008-structured-recovery-checkpoint.md) | soft / hard checkpoint、execution generation、fencing token |
-| [ADR-0009](../adr/0009-github-projects-work-state.md) | GitHub Projects Kanban を durable work state に pin |
-| [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md) | 同名 Skill (web vs workspace) の cwd-based precedence rule |
+| [ADR-0001](../docs/adr/0001-agent-toolchain.md) | Bun / ripgrep / Biome off / Knip 6 / Vitest 4 など toolchain 固定 |
+| [ADR-0003](../docs/adr/0003-i18n-inline-literal-remediation.md) | policy §11 — `i18n-literal-guard` Skill の判定基準 |
+| [ADR-0005](../docs/adr/0005-skills-and-mcp-extensions.md) | Skills catalog、Codex role canonical。`.claude/skills/` / `.agents/skills/` の境界 |
+| [ADR-0007](../docs/adr/0007-release-branch-and-ticket-workflow.md) | weekly sprint の `release-x-y-z` branch + Issue 番号 ticket branch |
+| [ADR-0008](../docs/adr/0008-structured-recovery-checkpoint.md) | soft / hard checkpoint、execution generation、fencing token |
+| [ADR-0009](../docs/adr/0009-github-projects-work-state.md) | GitHub Projects Kanban を durable work state に pin |
+| [ADR-0011](../docs/adr/0011-tastile-precommit-review-canonical-precedence.md) | 同名 Skill (web vs workspace) の cwd-based precedence rule |
 
 ADR を 1 件も読まずに実装判断した場合、pre-commit reviewer から差し戻し。
 

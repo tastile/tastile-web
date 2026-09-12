@@ -114,5 +114,9 @@ docs/trace/
 /docs/plans/evidence/**/screenshots/
 /docs/plans/evidence/**/dev-server.log
 /docs/plans/evidence/**/dev-server.pid
+# Local-only commit fingerprint journal written by .githooks/pre-commit on every
+# commit. External side-effect journals (development / staging / production)
+# remain tracked under docs/journal/<env>/.
+/docs/journal/local/
 # sops loader output (plain text .env files)
 !.env.*.sops
