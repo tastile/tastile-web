@@ -126,9 +126,13 @@ export function useNotifications() {
           tag: item.id,
         });
       }
-    } else {
+    } else if (!activeTile.ok) {
       failed = true;
-      const msg = !activeTile.ok ? activeTile.error.message : pendingPrompts.error.message;
+      const msg = activeTile.error.message;
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+    } else if (!pendingPrompts.ok) {
+      failed = true;
+      const msg = pendingPrompts.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
