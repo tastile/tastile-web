@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type NotificationKind,
   requestNotificationPermissionOnce,
   showNotification,
 } from "@/lib/notifications/browser";
@@ -119,8 +120,9 @@ export function useNotifications() {
           : null;
       setExecutionItem(item);
       if (item) {
+        const kind: NotificationKind = prompt ? "prompt_pending" : "tile_started";
         emitOnce(seenSystemNotifications.current, item.id, {
-          kind: prompt ? "prompt_pending" : "tile_started",
+          kind,
           title: t("notifications.brandTitle"),
           body: item.message,
           tag: item.id,
