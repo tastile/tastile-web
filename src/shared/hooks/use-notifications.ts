@@ -78,9 +78,8 @@ export function useNotifications() {
     const client = getCoreClient();
     const [access, execution] = await Promise.all([
       fetchAccessNotifications(t),
-      // The endpoint may legitimately return null when no execution is
-      // active.  Type the result loosely so we can runtime-null-check
-      // it here instead of crashing when /v1/active-tile returns null.
+      // The execution-view read model legitimately returns null when no
+      // execution is active. Keep that state distinct from an API failure.
       client.call<ExecutionSnapshot | null>("getExecutionView"),
     ]);
     if (requestId !== requestIdRef.current) return { failed: false };
@@ -106,29 +105,34 @@ export function useNotifications() {
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
-    if (execution.ok && execution.data) {
-      const execData = execution.data;
-      const item = toExecutionNotification(execData, t);
-      setExecutionItem(item);
-      if (item) {
-        const kind: NotificationKind = execData.pending_prompt_id
-          ? "prompt_pending"
-          : "tile_started";
-        emitOnce(seenSystemNotifications.current, item.id, {
-          kind,
-          title: t("notifications.brandTitle"),
-          body: item.message,
-          tag: item.id,
-        });
+    if (execution.ok) {
+      if (execution.data) {
+        const execData = execution.data;
+        const item = toExecutionNotification(execData, t);
+        setExecutionItem(item);
+        if (item) {
+          const kind: NotificationKind = execData.pending_prompt_id
+            ? "prompt_pending"
+            : "tile_started";
+          emitOnce(seenSystemNotifications.current, item.id, {
+            kind,
+            title: t("notifications.brandTitle"),
+            body: item.message,
+            tag: item.id,
+          });
+        }
+      } else {
+        // A successful null response means there is no active execution.
+        // Clear the previous execution notification instead of leaving stale UI.
+        setExecutionItem(null);
       }
-    } else if (!execution.ok) {
+    } else {
       failed = true;
       const msg = execution.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
-    // else: execution.ok === true && execution.data === null.  No active
-    // tile, nothing to notify, no error to surface.  Skip both branches.
 
+    if (!failed) setError(null);
     setLoading(false);
     return { failed };
   }, [t]);
