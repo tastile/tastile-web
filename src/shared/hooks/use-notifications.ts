@@ -17,7 +17,7 @@ const BASE_INTERVAL_MS = 15_000;
 const MAX_BACKOFF_MS = 5 * 60_000;
 
 /** Prefix for notification IDs that carry an execution pending_prompt_id. */
-export const EXECUTION_PROMPT_PREFIX = "prompt:";
+const EXECUTION_PROMPT_PREFIX = "prompt:";
 
 /** Returns true if the notification id is an execution pending-prompt id. */
 export function isExecutionPromptNotification(id: string): boolean {
