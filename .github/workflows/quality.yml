@@ -1,19 +1,38 @@
 name: quality
 
+# Decryption uses one age private key per env (development / staging /
+# production), materialized by the sops-decrypt reusable workflow from the
+# SOPS_AGE_KEY_DEVELOPMENT / _STAGING / _PRODUCTION secrets. No AWS OIDC
+# role assumption is involved, so we no longer need id-token: write on
+# this caller; see scripts/sops.config.ts for the recipient values and
+# docs/runbooks/sops-rotation.md for rotation steps.
 on:
   pull_request:
   push:
     branches:
       - main
       - master
+      - release-*
+  workflow_dispatch:
 
 jobs:
   decrypt:
+    permissions:
+      contents: read
+    # Decrypt every env that has ciphertext + a registered secret.
+    # The verify job's build:prod requires a real .env.production, so
+    # development alone is not enough. Staging stays out until
+    # .env.staging.sops exists (follow-up ticket).
+    strategy:
+      matrix:
+        env: [development, production]
     uses: ./.github/workflows/sops-decrypt.yml
     with:
-      env: development
+      env: ${{ matrix.env }}
     secrets:
-      aws_role_to_assume: ${{ secrets.AWS_OIDC_ROLE_DEVELOPMENT }}
+      sops_age_key_development: ${{ secrets.SOPS_AGE_KEY_DEVELOPMENT }}
+      sops_age_key_staging: ${{ secrets.SOPS_AGE_KEY_STAGING }}
+      sops_age_key_production: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
 
   verify:
     needs: decrypt
@@ -40,6 +59,12 @@ jobs:
           name: env-development
           path: env-artifacts
 
+      - name: Download decrypted production .env artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: env-production
+          path: env-artifacts
+
       - name: Stage .env for build
         run: |
           cp env-artifacts/.env.development ./.env.development 2>/dev/null || true
@@ -48,6 +73,21 @@ jobs:
           cp env-artifacts/.env.product ./.env.product 2>/dev/null || true
           cp env-artifacts/.env.staging ./.env.staging 2>/dev/null || true
           cp env-artifacts/.env ./.env 2>/dev/null || true
+
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as Android PR #22) and stage the copy.
+        # Pinned-revision verification stays in W04 scope.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
 
       - name: Validate repository
         run: bun run check:release

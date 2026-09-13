@@ -1114,6 +1114,31 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
     const defaults = defaultsForWorkflow(workflow, initialAllDay);
     return set((state) => {
       const base = buildDefaultQuickCreateState();
+      const time = defaults.time ?? base.time;
+      // Mirror the workflow default duration into the first completion time
+      // requirement, exactly like setField("time.durationMinMax.*") does for
+      // later edits. Without this the wire rejects every untouched-default
+      // submit ("duration range must be represented by a completion time
+      // requirement") because defaultsForWorkflow seeds durationMinMax while
+      // defaultPlan() leaves required null/null.
+      const duration = time.durationMinMax;
+      const [firstRequirement, ...remainingRequirements] = base.plan.completion.timeRequirements;
+      const plan =
+        firstRequirement &&
+        (duration.minMs !== null || duration.maxMs !== null) &&
+        (firstRequirement.required.minMs !== duration.minMs ||
+          firstRequirement.required.maxMs !== duration.maxMs)
+          ? {
+              ...base.plan,
+              completion: {
+                ...base.plan.completion,
+                timeRequirements: [
+                  { ...firstRequirement, required: { minMs: duration.minMs, maxMs: duration.maxMs } },
+                  ...remainingRequirements,
+                ],
+              },
+            }
+          : base.plan;
       return {
         ...base,
         isOpen: true,
@@ -1128,7 +1153,8 @@ export const useQuickCreateStore = create<QuickCreateState>()((set, get) => ({
         submitState: { kind: "idle" },
         fieldErrors: new Map(),
         identity: defaults.identity ?? base.identity,
-        time: defaults.time ?? base.time,
+        plan,
+        time,
         recurring: defaults.recurring ?? base.recurring,
       };
     });

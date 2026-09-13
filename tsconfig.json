@@ -40,6 +40,13 @@
 		"test-results",
 		"scripts/generate-openapi-types.ts",
 		"scripts/sync-openapi.ts",
+		// scripts/sops-decrypt.test.ts uses bun:test (bun runtime only).
+		// Excluded from tsc because @types/bun is not in package.json dependencies;
+		// the test is exercised via `bun test` in CI instead. Runtime:
+		// scripts/sops-decrypt.ts itself IS type-checked (depends only on ./sops.config
+		// and node: built-ins on release-0-6-0). main branch's sops-decrypt.ts imports
+		// @aws-sdk/client-sts + @aws-sdk/client-kms; those deps live in tastile-root's
+		// workspace lockfile, not here — kept out of scope for release-0-6-0.
 		"scripts/sops-decrypt.test.ts",
 		"e2e/**/*.ts",
 		"e2e/**/*.tsx"

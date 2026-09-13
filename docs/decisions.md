@@ -1,5 +1,12 @@
 # Decisions
 
+> Behavior-level decisions and rationale specific to `tastile-web` are
+> recorded below chronologically. For canonical architectural decisions
+> (release-branch workflow, structured checkpoint, GitHub Projects work
+> state, Skill routing precedence, etc.) see `../docs/adr/` — that catalog
+> is the binding source of truth. ADR の新規作成や supersede は本 file を
+> 通さず、`../docs/adr/` 配下で行うこと。
+
 ## 2026-08-12 i18n and ESLint config cleanup
 
 - `src/features/create-tile/ui/BehaviorPreview.tsx` no longer carries hardcoded Japanese literals; all 18 keys (`behaviorPreviewScheduleLabel`, `behaviorPreviewExecutionTimeLabel`, `behaviorPreviewRecurrenceLabel`, `behaviorPreviewWindowLabel`, `behaviorPreviewPlacementLabel`, `behaviorPreviewObjectiveLabel`, `behaviorPreviewReferenceLabel`, `behaviorPreviewPriorityPrefix`, `behaviorPreviewSplitAllow`, `behaviorPreviewSplitKeep`, `behaviorPreviewRepeatInterval`, `behaviorPreviewRepeatIntervalUnit{Min,Hour,Day}`, `behaviorPreviewRecurrenceKind{Daily,Weekly,Interval}`, `behaviorPreviewUntitledFallback`) live in `src/shared/i18n/sections/features/quickcreate-source.ts` under all five locales (ja / en / zh-CN / ko / es). Sub-components (Duration/Repeat/Source/Relations/Tasks Preview) now take a `t` prop so the parent passes the translation function through.

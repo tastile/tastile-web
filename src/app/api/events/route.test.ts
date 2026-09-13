@@ -127,6 +127,11 @@ beforeEach(() => {
 const local = (u: string): string => `http://localhost${u}`;
 
 describe("POST /api/events", () => {
+  // Pre-existing flaky 5s-timeout noted in PR #86 body (10/1112 flaky tests
+  // on release-0-6-0). Module-reset + dynamic import race inflates the
+  // first-test cost past vitest's default. Bumped to 30s to keep
+  // `bun run check:release` green; the underlying flake is filed as a
+  // separate issue (refs #98).
   it("returns 422 when title/start/end are missing", async () => {
     const { POST } = await import("./route");
     const req = new Request(local("/api/events"), {
@@ -139,7 +144,7 @@ describe("POST /api/events", () => {
     const body = await res.json();
     expect(body.error).toMatch(/title, start, end/);
     expect(fetchMock).not.toHaveBeenCalled();
-  });
+  }, 30_000);
 
   it("forwards the create as POST /v1/tiles + POST /v1/placements in v1 envelope", async () => {
     const { POST } = await import("./route");
