@@ -111,6 +111,41 @@ function requiredDuration(state: QuickCreateScheduleState): number {
   return 60_000;
 }
 
+// An empty All/Any completion root is rejected by the daemon
+// (validate_conditions: empty composites are invalid). v1/13 composes
+// completion by referencing time requirements and tasks, so a definition
+// whose only criterion is its duration requirement completes when that
+// requirement is Met — the same shape the daemon's own publish tests use
+// for task-less definitions. Synthesize it here at the wire boundary
+// (final UUIDv7 ids known) rather than in the store so in-memory
+// authoring state stays untouched. Authored non-empty roots and
+// task-derived roots pass through unchanged.
+function withRequirementCompletion<T extends { root: unknown; time_requirements: Array<{ id: string }> }>(
+  completion: T,
+): T {
+  const root = completion.root;
+  if (typeof root === "object" && root !== null && !Array.isArray(root)) {
+    const entries = Object.entries(root);
+    const emptyComposite =
+      entries.length === 1 &&
+      (entries[0]?.[0] === "All" || entries[0]?.[0] === "Any") &&
+      Array.isArray(entries[0]?.[1]) &&
+      (entries[0]?.[1] as unknown[]).length === 0;
+    const firstRequirement = completion.time_requirements[0];
+    if (emptyComposite && firstRequirement) {
+      return {
+        ...completion,
+        root: {
+          Term: {
+            Requirement: { time_requirement: firstRequirement.id, state: "Met" },
+          },
+        },
+      };
+    }
+  }
+  return completion;
+}
+
 function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   const start =
     authoredInstant(state, "start") ?? validInstant(state.recurring.life.active.startDate);
@@ -137,7 +172,14 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     return { kind: 2 as const, ...common };
   }
   if (state.recurring.repeatMode === "once") {
-    return { kind: 0 as const, at: start ?? now.toISOString(), ...common };
+    const at = start ?? now.toISOString();
+    // A one-time anchor in the past leaves a window the worker can never
+    // fill (kind-0 qualifies only while generation_at + window overlaps
+    // [now, now+32d]). The task form defaults span.start to today-midnight,
+    // which is already past for most of the day, so clamp stale anchors to
+    // now ("create and place now"). Future anchors pass through unchanged.
+    const atClamped = Date.parse(at) < now.getTime() ? now.toISOString() : at;
+    return { kind: 0 as const, at: atClamped, ...common };
   }
   if (state.recurring.repeatMode === "weekly") {
     return {
@@ -182,7 +224,21 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   };
 }
 
-function sourceWindow(state: QuickCreateScheduleState, duration: number) {
+const PLACE_NOW_WINDOW_MS = DAY_MS;
+
+function isPlaceNow(state: QuickCreateScheduleState, now: Date): boolean {
+  if (state.time.timeModel !== "duration_only") return false;
+  if (state.recurring.repeatMode !== "once") return false;
+  // No anchor, an unparsable anchor, or a stale (past) anchor — including
+  // the task form's today-midnight default — all mean "create and place
+  // now". A future anchor is a genuine scheduled intent and keeps the
+  // tight window below.
+  if (!state.time.span.start) return true;
+  const startMs = Date.parse(state.time.span.start);
+  return Number.isNaN(startMs) || startMs < now.getTime();
+}
+
+function sourceWindow(state: QuickCreateScheduleState, duration: number, now: Date) {
   // "window_with_duration" treats the schedulable window as the placement
   // window, not the duration. The user picked e.g. "between 9-17, complete
   // a 30-min task" — the wire should report the window so the scheduler
@@ -197,6 +253,15 @@ function sourceWindow(state: QuickCreateScheduleState, duration: number) {
         end_offset_ms: end * MIN_MS,
       };
     }
+  }
+  // "Place now" (duration_only + once + no future anchor): the user
+  // declared a duration but no window. Author a 24h window from now so the
+  // scheduler takes the first free slot instead of demanding the whole
+  // duration inside [now, now+duration] — a shape that terminal-blocks
+  // (state=1, invisible in /v1/timeline) whenever seeded breaks overlap
+  // the tight window.
+  if (isPlaceNow(state, now)) {
+    return { start_offset_ms: 0, end_offset_ms: PLACE_NOW_WINDOW_MS };
   }
   return { start_offset_ms: 0, end_offset_ms: duration };
 }
@@ -449,6 +514,9 @@ export function buildQuickCreateSchedulePayload(
     },
   });
   const duration = requiredDuration(state);
+  const completion = withRequirementCompletion(
+    plan.completion as { root: unknown; time_requirements: Array<{ id: string }> },
+  );
   const authoredStart = authoredInstant(state, "start");
   const horizonStart = authoredStart ?? now.toISOString();
   const authoredHorizonEnd =
@@ -483,7 +551,7 @@ export function buildQuickCreateSchedulePayload(
     source_schedule: {
       required_duration_ms: duration,
       generation: sourceGeneration(state, now),
-      window: sourceWindow(state, duration),
+      window: sourceWindow(state, duration, now),
       source_window_include: INCLUDE_MAP[state.source.include] ?? 1,
       anchor_mode: ANCHOR_MAP[state.source.anchorMode] ?? 0,
       split_policy: {
@@ -508,7 +576,7 @@ export function buildQuickCreateSchedulePayload(
     plan: {
       role: plan.role,
       references: plan.references as PublishScheduleDefinitionPayload["plan"]["references"],
-      completion: plan.completion as PublishScheduleDefinitionPayload["plan"]["completion"],
+      completion: completion as PublishScheduleDefinitionPayload["plan"]["completion"],
       planning: {
         placement_rules: plan.planning.placement_rules,
         nesting_rules: plan.planning.nesting_rules,

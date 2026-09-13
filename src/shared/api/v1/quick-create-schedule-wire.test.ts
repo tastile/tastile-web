@@ -149,13 +149,21 @@ describe("buildQuickCreateSchedulePayload", () => {
     });
     // buildDefaultQuickCreateState now seeds an empty sub-task list
     // (the user adds tasks through the modal), so completion.tasks is
-    // empty and completion.root stays at the default `All: []` shape.
+    // empty and the wire synthesizes a requirement-Term root from the
+    // first time requirement (empty All/Any composites are daemon-invalid).
     expect(payload.plan.completion.tasks).toEqual([]);
     expect(payload.plan.completion.time_requirements[0]?.preferred).toEqual({
       min: 2_400_000,
       max: 3_000_000,
     });
-    expect(payload.plan.completion.root).toEqual({ All: [] });
+    expect(payload.plan.completion.root).toEqual({
+      Term: {
+        Requirement: {
+          time_requirement: payload.plan.completion.time_requirements[0]?.id,
+          state: "Met",
+        },
+      },
+    });
     expect(payload.plan.decisions).toHaveLength(1);
     expect(payload.plan.references[0]).toMatchObject({
       target: 0,
@@ -263,8 +271,18 @@ describe("buildQuickCreateSchedulePayload", () => {
 
     expect(payload).toBeDefined();
     expect(warnSpy).toHaveBeenCalledWith("[Phase C/D reserved] recurring.condition ignored");
-    // completion.root must NOT contain the condition AST — it should be the plain default root
-    expect(payload.plan.completion.root).toEqual({ All: [] });
+    // completion.root must NOT contain the condition AST — the empty
+    // default root is replaced by the synthesized requirement Term, never
+    // by condition-derived content.
+    expect(payload.plan.completion.root).toEqual({
+      Term: {
+        Requirement: {
+          time_requirement: payload.plan.completion.time_requirements[0]?.id,
+          state: "Met",
+        },
+      },
+    });
+    expect(JSON.stringify(payload.plan.completion.root)).not.toContain("Gap");
 
     warnSpy.mockRestore();
   });
@@ -428,7 +446,12 @@ describe("buildQuickCreateSchedulePayload", () => {
       },
     };
 
-    const payload = buildQuickCreateSchedulePayload(state);
+    const payload = buildQuickCreateSchedulePayload(
+      state,
+      // Pin the clock before the authored span: a future anchor is a
+      // genuine scheduled intent and keeps the tight duration-width window.
+      new Date("2026-07-01T00:00:00.000Z"),
+    );
     const generationAt = payload.source_schedule?.generation.at;
 
     expect(generationAt).toMatch(/^2026-07-28T\d{2}:00:00\.000Z$/);
@@ -1362,13 +1385,18 @@ describe("buildQuickCreateSchedulePayload", () => {
         span: { start: "2026-08-03T09:00:00+09:00", end: "2026-08-03T10:00:00+09:00" },
       };
 
-      const payload = buildQuickCreateSchedulePayload(state);
+      // Pin the clock before the authored span so the anchor reads as
+      // future (scheduled intent) rather than stale (place-now).
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
 
       expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
       expect(payload.source_schedule?.window.end_offset_ms).toBe(3_600_000);
     });
 
-    it("derives end_offset_ms from duration when no span is set", () => {
+    it("authors a 24h place-now window when no span is set", () => {
       const state = stateWithDuration(1_800_000, 3_600_000);
       state.identity = { ...state.identity, title: "duration only" };
       state.time = {
@@ -1377,6 +1405,47 @@ describe("buildQuickCreateSchedulePayload", () => {
       };
 
       const payload = buildQuickCreateSchedulePayload(state);
+
+      // duration_only + once + no anchor means "create and place now": the
+      // scheduler takes the first free slot inside 24h instead of demanding
+      // the whole duration inside a duration-width window (which
+      // terminal-blocks whenever seeded breaks overlap it).
+      expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
+      expect(payload.source_schedule?.window.end_offset_ms).toBe(86_400_000);
+    });
+
+    it("authors a 24h place-now window for a stale (past) anchor", () => {
+      const state = stateWithDuration(1_800_000, 1_800_000);
+      state.identity = { ...state.identity, title: "stale midnight default" };
+      state.time = {
+        ...state.time,
+        // The task form defaults span.start to today-midnight, which is
+        // already past for most of the day — same shape as the place-now
+        // path, so it gets the 24h window rather than the tight one.
+        span: { start: "2026-08-03T00:00:00.000Z", end: "" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-03T12:00:00.000Z"),
+      );
+
+      expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
+      expect(payload.source_schedule?.window.end_offset_ms).toBe(86_400_000);
+    });
+
+    it("keeps the tight duration-width window for a future anchor", () => {
+      const state = stateWithDuration(1_800_000, 1_800_000);
+      state.identity = { ...state.identity, title: "future anchor" };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-03T09:00:00.000Z", end: "" },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
 
       expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
       expect(payload.source_schedule?.window.end_offset_ms).toBe(1_800_000);
@@ -1392,7 +1461,12 @@ describe("buildQuickCreateSchedulePayload", () => {
       (state.source as { include: string }).include = "EXCLUDED";
       (state.source as { anchorMode: string }).anchorMode = "FLOATING";
 
-      const payload = buildQuickCreateSchedulePayload(state);
+      // Pin the clock before the authored span (future anchor keeps the
+      // tight duration-width window).
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
 
       expect(payload.source_schedule?.window).toEqual({
         start_offset_ms: 0,
@@ -1410,7 +1484,12 @@ describe("buildQuickCreateSchedulePayload", () => {
         span: { start: "2026-08-03T09:00:00.000Z", end: "2026-08-03T10:30:00.000Z" },
       };
 
-      const payload = buildQuickCreateSchedulePayload(state);
+      // Pin the clock before the authored span (future anchor keeps the
+      // tight duration-width window).
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
 
       expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
       expect(payload.source_schedule?.window.end_offset_ms).toBe(5_400_000);
