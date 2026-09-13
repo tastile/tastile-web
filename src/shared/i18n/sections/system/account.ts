@@ -67,7 +67,9 @@ export const account = {
         menu: {
           accountSettings: "Account settings",
           billing: "Billing",
-          upgradeToPro: "Upgrade to Pro",
+          // W06 (2026-09-19 free launch): the previous "Upgrade to Pro"
+          // menu entry was removed in AccountMenu.tsx because new paid
+          // checkouts are disabled (POST /api/stripe/checkout → 410).
           signOut: "Sign out",
           avatarPlaceholder: "User avatar placeholder",
         },
@@ -78,14 +80,7 @@ export const account = {
             "Web dashboard access",
             "Manual tile management",
           ],
-          pro: [
-            "Unlimited tiles",
-            "Advanced automation",
-            "Windows desktop client",
-            "AI-powered suggestions",
-            "Priority support",
-            "Custom integrations",
-          ],
+          pro: [],
         },
       },
     },
@@ -156,20 +151,11 @@ export const account = {
         menu: {
           accountSettings: "アカウント設定",
           billing: "請求",
-          upgradeToPro: "Pro にアップグレード",
-          signOut: "ログアウト",
           avatarPlaceholder: "ユーザーアバターのプレースホルダー",
         },
         features: {
           free: ["10 タイルまで", "基本的な実行制御", "Web ダッシュボード", "手動タイル管理"],
-          pro: [
-            "無制限のタイル",
-            "高度な自動化",
-            "Windows デスクトップクライアント",
-            "AI による提案",
-            "優先サポート",
-            "カスタム連携",
-          ],
+          pro: [],
         },
       },
     },
@@ -240,9 +226,7 @@ export const account = {
         menu: {
           accountSettings: "账户设置",
           billing: "账单",
-          upgradeToPro: "升级到 Pro",
           signOut: "登出",
-          avatarPlaceholder: "用户头像占位符",
         },
         features: {
           free: [
@@ -251,14 +235,7 @@ export const account = {
             "Web 仪表板访问",
             "手动卡片管理",
           ],
-          pro: [
-            "无限卡片",
-            "高级自动化",
-            "Windows 桌面客户端",
-            "AI 智能建议",
-            "优先支持",
-            "自定义集成",
-          ],
+          pro: [],
         },
       },
     },
@@ -329,7 +306,6 @@ subscription: {
         menu: {
           accountSettings: "계정 설정",
           billing: "결제",
-          upgradeToPro: "Pro로 업그레이드",
           signOut: "로그아웃",
           avatarPlaceholder: "사용자 아바타 자리표시자",
         },
@@ -340,14 +316,7 @@ subscription: {
             "웹 대시보드 접근",
             "수동 타일 관리",
           ],
-          pro: [
-            "무제한 타일",
-            "고급 자동화",
-            "Windows 데스크톱 클라이언트",
-            "AI 기반 제안",
-            "우선 지원",
-            "맞춤 연동",
-          ],
+          pro: [],
         },
       },
     },
@@ -418,7 +387,6 @@ subscription: {
         menu: {
           accountSettings: "Ajustes de cuenta",
           billing: "Facturación",
-          upgradeToPro: "Actualizar a Pro",
           signOut: "Cerrar sesión",
           avatarPlaceholder: "Marcador de avatar del usuario",
         },
@@ -429,14 +397,7 @@ subscription: {
             "Acceso al panel web",
             "Gestión manual de tarjetas",
           ],
-          pro: [
-            "Tarjetas ilimitadas",
-            "Automatización avanzada",
-            "Cliente de escritorio para Windows",
-            "Sugerencias con IA",
-            "Soporte prioritario",
-            "Integraciones personalizadas",
-          ],
+          pro: [],
         },
       },
     },
