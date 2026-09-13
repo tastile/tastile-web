@@ -187,7 +187,7 @@ export const dashboard = {
       quota: {
         title: "Quota",
         description:
-          "Plan limits and current usage. Read-only — upgrade from the pricing page when you need more.",
+          "Plan limits and current usage. Read-only view of the current Free plan.",
         planHeading: "Plan",
         relatedHeading: "Related",
         tierLabel: "Tier",
@@ -203,21 +203,19 @@ export const dashboard = {
         percentUsed: "{percent}% used",
         remaining: "{count} remaining",
         tileLimitWarning:
-          "Approaching your tile limit. Upgrade for more capacity.",
+          "Approaching your tile limit. The current Free plan covers a full day's schedule — review your active tiles to stay within capacity.",
         days: "/ {days} days",
         retentionHelp:
-          "Events older than the retention window are pruned. Export before upgrading if you need them.",
+          "Events older than the retention window are pruned. Export the events log if you need them.",
         openEventsLog: "Open events log",
         planDescriptions: {
-          pro: "Unlimited tiles, 1y history, desktop sync, priority support.",
+          pro: "Legacy Pro plan — billing history retained; new checkouts disabled at the 9/19 release.",
           free: "Up to 50 tiles, 30 days history.",
         },
         cta: {
           manage: "Manage subscription",
-          upgrade: "Upgrade to Pro",
-        },
-        loadingSession: "Loading session…",
-      },
+          viewPlan: "View plan details",
+        },      },
     },
   },
   ja: {
@@ -404,7 +402,7 @@ export const dashboard = {
       quota: {
         title: "クォータ",
         description:
-          "プランの上限と現在の使用状況。読み取り専用 — さらに容量が必要であれば料金ページからアップグレードしてください。",
+          "プランの上限と現在の使用状況。現在の Free プランの読み取り専用ビューです。",
         planHeading: "プラン",
         relatedHeading: "関連",
         tierLabel: "ティア",
@@ -420,21 +418,19 @@ export const dashboard = {
         percentUsed: "{percent}% 使用",
         remaining: "残り {count}",
         tileLimitWarning:
-          "タイル上限に近づいています。アップグレードして容量を増やしてください。",
+          "タイル上限に近づいています。Free プランは 1 日分をカバーします。アクティブなタイルを見直して上限内に収めてください。",
         days: "/ {days} 日",
         retentionHelp:
-          "保持期間を超えたイベントは削除されます。必要ならアップグレード前にエクスポートしてください。",
+          "保持期間を超えたイベントは削除されます。必要ならイベントログをエクスポートしてください。",
         openEventsLog: "イベントログを開く",
         planDescriptions: {
-          pro: "無制限タイル、1年履歴、デスクトップ同期、優先サポート。",
+          pro: "旧 Pro プラン — 請求履歴は維持。9/19 リリース時点で新規申し込みは停止中です。",
           free: "最大 50 タイル、30 日履歴。",
         },
         cta: {
           manage: "サブスクリプションを管理",
-          upgrade: "Pro にアップグレード",
-        },
-        loadingSession: "セッション読み込み中…",
-      },
+          viewPlan: "プラン詳細を見る",
+        },      },
     },
   },
   "zh-CN": {
@@ -616,7 +612,7 @@ export const dashboard = {
       quota: {
         title: "配额",
         description:
-          "套餐限额和当前使用情况。只读 — 需要更多容量时请从价格页升级。",
+          "套餐限额和当前使用情况。当前 Free 计划的只读视图。",
         planHeading: "套餐",
         relatedHeading: "相关",
         tierLabel: "层级",
@@ -631,20 +627,18 @@ export const dashboard = {
         },
         percentUsed: "已使用 {percent}%",
         remaining: "剩余 {count}",
-        tileLimitWarning: "正在接近卡片上限。请升级以获得更多容量。",
+        tileLimitWarning: "正在接近卡片上限。Free 计划可覆盖一天内的安排，请检查活动卡片以保持在容量范围内。",
         days: "/ {days} 天",
-        retentionHelp: "超过保留时间范围的事件会被清理。请在升级前导出以保留数据。",
+        retentionHelp: "超过保留时间范围的事件会被清理。如需保留数据，请导出事件日志。",
         openEventsLog: "打开事件日志",
         planDescriptions: {
-          pro: "无限卡片、1 年历史、桌面同步、优先支持。",
+          pro: "旧 Pro 计划 — 计费历史已保留；9/19 发布起新订阅已停止。",
           free: "最多 50 张卡片，30 天历史。",
         },
         cta: {
           manage: "管理订阅",
-          upgrade: "升级到 Pro",
-        },
-        loadingSession: "正在加载会话…",
-      },
+          viewPlan: "查看计划详情",
+        },      },
     },
   },
   ko: {
@@ -829,7 +823,7 @@ export const dashboard = {
       quota: {
         title: "쿼터",
         description:
-          "플랜 한도와 현재 사용량. 읽기 전용 — 더 많은 용량이 필요하면 가격 페이지에서 업그레이드하세요.",
+          "플랜 한도와 현재 사용량. 현재 Free 플랜의 읽기 전용 보기.",
         planHeading: "플랜",
         relatedHeading: "관련",
         tierLabel: "등급",
@@ -844,20 +838,18 @@ export const dashboard = {
         },
         percentUsed: "{percent}% 사용",
         remaining: "남음 {count}",
-        tileLimitWarning: "타일 한도에 근접했습니다. 업그레이드하여 용량을 늘리세요.",
+        tileLimitWarning: "타일 한도에 근접했습니다. Free 플랜은 하루 일정을 충분히 커버합니다. 활성 타일을 확인해 용량 내에서 운영하세요.",
         days: "/ {days} 일",
-        retentionHelp: "보존 기간을 초과한 이벤트는 제거됩니다. 필요한 경우 업그레이드 전에 내보내세요.",
+        retentionHelp: "보존 기간을 초과한 이벤트는 제거됩니다. 필요하면 이벤트 로그를 내보내세요.",
         openEventsLog: "이벤트 로그 열기",
         planDescriptions: {
-          pro: "무제한 타일, 1년 기록, 데스크톱 동기화, 우선 지원.",
-          free: "최대 50 타일, 30일 기록.",
+          pro: "레거시 Pro 플랜 — 결제 내역은 유지됩니다. 9/19 릴리스부터 신규 가입은 중단됩니다.",
+          free: "최대 50개 타일, 30일 기록.",
         },
         cta: {
           manage: "구독 관리",
-          upgrade: "Pro 로 업그레이드",
-        },
-        loadingSession: "세션 로드 중…",
-      },
+          viewPlan: "플랜 상세 보기",
+        },      },
     },
   },
   es: {
@@ -1043,7 +1035,7 @@ export const dashboard = {
       quota: {
         title: "Cuota",
         description:
-          "Límites del plan y uso actual. Sólo lectura — actualice desde la página de precios cuando necesite más.",
+          "Límites del plan y uso actual. Vista de solo lectura del plan Free actual.",
         planHeading: "Plan",
         relatedHeading: "Relacionado",
         tierLabel: "Nivel",
@@ -1058,22 +1050,18 @@ export const dashboard = {
         },
         percentUsed: "{percent}% usado",
         remaining: "Quedan {count}",
-        tileLimitWarning:
-          "Acercándose a su límite de tarjetas. Actualice para más capacidad.",
+        tileLimitWarning: "Te estás acercando al límite de tarjetas. El plan Free cubre la planificación de un día completo: revisa las tarjetas activas para mantenerte dentro del límite.",
         days: "/ {days} días",
-        retentionHelp:
-          "Los eventos fuera de la ventana de retención se eliminan. Exporte antes de actualizar si los necesita.",
+        retentionHelp: "Los eventos fuera de la ventana de retención se purgan. Exporta el registro de eventos si los necesitas.",
         openEventsLog: "Abrir registro de eventos",
         planDescriptions: {
-          pro: "Tarjetas ilimitadas, 1 año de historial, sincronización con escritorio, soporte prioritario.",
+          pro: "Plan Pro heredado — el historial de facturación se conserva; las nuevas suscripciones están deshabilitadas desde el lanzamiento del 9/19.",
           free: "Hasta 50 tarjetas, 30 días de historial.",
         },
         cta: {
-          manage: "Administrar suscripción",
-          upgrade: "Actualizar a Pro",
-        },
-        loadingSession: "Cargando sesión…",
-      },
+          manage: "Gestionar suscripción",
+          viewPlan: "Ver detalles del plan",
+        },      },
     },
   },
 } satisfies Record<Locale, Record<string, unknown>>;
