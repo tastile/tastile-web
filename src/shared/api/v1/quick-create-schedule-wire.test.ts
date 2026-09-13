@@ -287,6 +287,113 @@ describe("buildQuickCreateSchedulePayload", () => {
     warnSpy.mockRestore();
   });
 
+  it("rejects an empty completion root when no TimeRequirement is authored", () => {
+    // The daemon's validate_conditions rejects empty All/Any composites,
+    // and the wire synthesis is gated on the presence of exactly one
+    // TimeRequirement. With zero the empty root must surface as a
+    // caller-visible wire error instead of a synthesized-but-broken
+    // Requirement reference.
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "No requirements" };
+    state.plan.completion = {
+      ...state.plan.completion,
+      timeRequirements: [],
+    };
+
+    expect(() => buildQuickCreateSchedulePayload(state)).toThrow(
+      /completion root is empty and no TimeRequirement is authored/,
+    );
+  });
+
+  it("rejects an empty completion root when multiple TimeRequirements are authored", () => {
+    // Synthesizing `Requirement(Met)` for `time_requirements[0]` would
+    // silently drop the 2nd..N requirements from the completion predicate.
+    // Forbid the synthesis and require an explicit completion root that
+    // references every intended requirement.
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Multi requirements" };
+    state.plan.completion = {
+      ...state.plan.completion,
+      timeRequirements: [
+        {
+          id: "01900000-0000-7000-8000-000000000040",
+          observation: { scope: 1, source: 0, aggregate: 0, quantifier: 0 },
+          required: { minMs: 1_800_000, maxMs: 1_800_000 },
+          preferred: null,
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000041",
+          observation: { scope: 1, source: 0, aggregate: 0, quantifier: 0 },
+          required: { minMs: 3_600_000, maxMs: 3_600_000 },
+          preferred: null,
+        },
+      ],
+    };
+
+    expect(() => buildQuickCreateSchedulePayload(state)).toThrow(
+      /completion root is empty but 2 TimeRequirements are authored/,
+    );
+  });
+
+  it("preserves an authored non-empty completion root with multiple TimeRequirements", () => {
+    // When the user authors an explicit root (e.g. All: [<per-requirement
+    // Requirement>...]) the wire passes it through unchanged even with
+    // multiple TimeRequirements — the multi-requirement guard only blocks
+    // the synthesized single-Term fallback.
+    const state = buildDefaultQuickCreateState();
+    state.identity = { ...state.identity, title: "Authored multi root" };
+    state.plan.completion = {
+      ...state.plan.completion,
+      timeRequirements: [
+        {
+          id: "01900000-0000-7000-8000-000000000042",
+          observation: { scope: 1, source: 0, aggregate: 0, quantifier: 0 },
+          required: { minMs: 1_800_000, maxMs: 1_800_000 },
+          preferred: null,
+        },
+        {
+          id: "01900000-0000-7000-8000-000000000043",
+          observation: { scope: 1, source: 0, aggregate: 0, quantifier: 0 },
+          required: { minMs: 3_600_000, maxMs: 3_600_000 },
+          preferred: null,
+        },
+      ],
+      root: {
+        kind: 0, // ALL
+        children: [
+          {
+            kind: 2, // TERM
+            children: [],
+            term: { kind: "requirement", value: { requirementId: "01900000-0000-7000-8000-000000000042", state: 0 } },
+          },
+          {
+            kind: 2,
+            children: [],
+            term: { kind: "requirement", value: { requirementId: "01900000-0000-7000-8000-000000000043", state: 0 } },
+          },
+        ],
+        term: null,
+      },
+    };
+
+    const payload = buildQuickCreateSchedulePayload(state);
+
+    // The wire root has been converted to the publish shape; the
+    // authored multi-requirement predicate is preserved through the
+    // composite → composite-of-Term path. Assert the structural shape
+    // instead of comparing the wire literal verbatim.
+    const root = payload.plan.completion.root as Record<string, unknown>;
+    expect(root).toBeDefined();
+    const compositeChildren = Array.isArray(root.All)
+      ? root.All
+      : Array.isArray(root.Any)
+        ? root.Any
+        : null;
+    expect(compositeChildren).not.toBeNull();
+    expect(compositeChildren).toHaveLength(2);
+    expect(payload.plan.completion.time_requirements).toHaveLength(2);
+  });
+
   it("publishes generic wait/emit Flow sequences without a use-case discriminator", () => {
     const state = buildDefaultQuickCreateState();
     state.identity = { ...state.identity, title: "Renamed workflow" };
@@ -1397,19 +1504,37 @@ describe("buildQuickCreateSchedulePayload", () => {
     });
 
     it("authors a 24h place-now window when no span is set", () => {
-      const state = stateWithDuration(1_800_000, 3_600_000);
+      // The "place now" path is duration_only + once + an anchor the wire
+      // resolves to the past or to now. With an authored future
+      // life.active.startDate the future anchor path keeps the tight
+      // duration-width window — see "future lifecycle anchor" below —
+      // so we leave the lifecycle start empty and rely on the empty span
+      // to drive onceAnchor() to `now` (the past branch of `at < now`
+      // fires on `now - 1 ms`).
+      const state = buildDefaultQuickCreateState();
       state.identity = { ...state.identity, title: "duration only" };
       state.time = {
         ...state.time,
+        durationMinMax: { minMs: null, maxMs: null },
         span: { start: "", end: "" },
       };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "once",
+        life: {
+          ...state.recurring.life,
+          active: { startDate: "", endDate: "" },
+        },
+      };
 
+      // Pin the runtime-default clock — the canonical place-now path
+      // (duration_only + once + no authored span) needs no clock skew.
       const payload = buildQuickCreateSchedulePayload(state);
 
-      // duration_only + once + no anchor means "create and place now": the
-      // scheduler takes the first free slot inside 24h instead of demanding
-      // the whole duration inside a duration-width window (which
-      // terminal-blocks whenever seeded breaks overlap it).
+      // duration_only + once + past anchor means "create and place now":
+      // the scheduler takes the first free slot inside 24h instead of
+      // demanding the whole duration inside a duration-width window
+      // (which terminal-blocks whenever seeded breaks overlap it).
       expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
       expect(payload.source_schedule?.window.end_offset_ms).toBe(86_400_000);
     });
@@ -1449,6 +1574,47 @@ describe("buildQuickCreateSchedulePayload", () => {
 
       expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
       expect(payload.source_schedule?.window.end_offset_ms).toBe(1_800_000);
+    });
+
+    it("keeps the tight duration-width window for a future lifecycle anchor (no span)", () => {
+      // span.start is empty, but recurring.life.active.startDate is a
+      // genuine future date — the wire must treat that as the OneTime
+      // anchor (shared onceAnchor() helper) and keep the tight
+      // duration-width window instead of flipping to the 24h place-now
+      // window that an absent span.start would otherwise imply.
+      const state = stateWithDuration(1_800_000, 1_800_000);
+      state.identity = { ...state.identity, title: "future lifecycle anchor" };
+      state.time = {
+        ...state.time,
+        span: { start: "", end: "" },
+      };
+      state.recurring = {
+        ...state.recurring,
+        repeatMode: "once",
+        life: {
+          ...state.recurring.life,
+          active: { startDate: "2026-08-10", endDate: "" },
+        },
+      };
+
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+
+      // The shared onceAnchor() resolves to the future lifecycle start.
+      // authoredInstant() is null for the empty span, then
+      // validInstant("2026-08-10") parses the bare LocalDate as local
+      // midnight on the runtime timezone (Asia/Tokyo for the test
+      // runner): 2026-08-09T15:00:00Z. The window stays tight and the
+      // OneTime generation pins at the same future instant (no 24h
+      // place-now flip).
+      expect(payload.source_schedule?.window.start_offset_ms).toBe(0);
+      expect(payload.source_schedule?.window.end_offset_ms).toBe(1_800_000);
+      expect(payload.source_schedule?.generation.kind).toBe(0);
+      expect(payload.source_schedule?.generation.at).toBe(
+        "2026-08-09T15:00:00.000Z",
+      );
     });
 
     it("preserves window alongside source_window_include and anchor_mode", () => {
