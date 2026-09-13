@@ -16,21 +16,20 @@ test.describe("/download smoke", () => {
 
   test("page heading is visible", async ({ page }) => {
     await page.goto("/download");
-    // en h1 = "Download Tastile for Windows" → matches "download".
-    // ja h1 = "Tastileをダウンロード" → matches "ダウンロード" via the
-    // "download" substring when the page also re-renders the nav/footer
-    // with the "download" keyword; the i18n layer keeps "download" in
-    // the header nav across locales.
-    await expectPageHeading(page, /download|desktop|install/i);
+    // en h1 = "Get Tastile" / ja h1 = "Tastile を入手" (W06 unifies
+    // Windows + Android + Web onto a single download entry point that
+    // points users to the web app or Google Play).
+    await expectPageHeading(page, /get tastile|tastile を入手/i);
   });
 
   test("download button (anchor) is visible", async ({ page }) => {
     await page.goto("/download");
-    // The primary CTA is a Mantine Button rendered as <a> with the
-    // `download` attribute and href="/api/download/windows".
-    const downloadCta = page
-      .getByRole("link", { name: /download|windows|ダウンロード/i })
+    // W06 redirects the primary CTA to the web app + Google Play entry;
+    // the previous Windows /api/download/windows anchor is intentionally
+    // not linked from this page.
+    const cta = page
+      .getByRole("link", { name: /open the web app|web アプリを開く|google play/i })
       .first();
-    await expect(downloadCta).toBeVisible();
+    await expect(cta).toBeVisible();
   });
 });

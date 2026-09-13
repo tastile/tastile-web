@@ -16,11 +16,10 @@ test.describe("/pricing smoke", () => {
 
   test("page heading is visible", async ({ page }) => {
     await page.goto("/pricing");
-    // en h1 = "Simple, transparent pricing" → matches "pricing"/"price".
-    // ja h1 = "シンプルで透明な料金体系" → no Latin match, but "pricing"
-    // also appears in the SiteHeader nav and footer for ja, so the page
-    // still carries one of these keywords somewhere on the route.
-    await expectPageHeading(page, /pricing|plans|price/i);
+    // en h1 = "Free at the 9/19 launch" / ja h1 = "9/19 無料公開".
+    // W06 collapsed the dual Free + Pro copy into a single Free card
+    // because Pro is not available at the 9/19 release.
+    await expectPageHeading(page, /9\/?19|free|launch|無料公開/i);
   });
 
   test("at least one pricing card / pricing-related link is visible", async ({ page }) => {
