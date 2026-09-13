@@ -187,7 +187,7 @@ export const dashboard = {
       quota: {
         title: "Quota",
         description:
-          "Plan limits and current usage. Read-only — upgrade from the pricing page when you need more.",
+          "Plan limits and current usage. Read-only view of the current Free plan.",
         planHeading: "Plan",
         relatedHeading: "Related",
         tierLabel: "Tier",
@@ -402,7 +402,7 @@ export const dashboard = {
       quota: {
         title: "クォータ",
         description:
-          "プランの上限と現在の使用状況。読み取り専用 — さらに容量が必要であれば料金ページからアップグレードしてください。",
+          "プランの上限と現在の使用状況。現在の Free プランの読み取り専用ビューです。",
         planHeading: "プラン",
         relatedHeading: "関連",
         tierLabel: "ティア",
@@ -612,7 +612,7 @@ export const dashboard = {
       quota: {
         title: "配额",
         description:
-          "套餐限额和当前使用情况。只读 — 需要更多容量时请从价格页升级。",
+          "套餐限额和当前使用情况。当前 Free 计划的只读视图。",
         planHeading: "套餐",
         relatedHeading: "相关",
         tierLabel: "层级",
@@ -823,7 +823,7 @@ export const dashboard = {
       quota: {
         title: "쿼터",
         description:
-          "플랜 한도와 현재 사용량. 읽기 전용 — 더 많은 용량이 필요하면 가격 페이지에서 업그레이드하세요.",
+          "플랜 한도와 현재 사용량. 현재 Free 플랜의 읽기 전용 보기.",
         planHeading: "플랜",
         relatedHeading: "관련",
         tierLabel: "등급",
@@ -1035,7 +1035,7 @@ export const dashboard = {
       quota: {
         title: "Cuota",
         description:
-          "Límites del plan y uso actual. Sólo lectura — actualice desde la página de precios cuando necesite más.",
+          "Límites del plan y uso actual. Vista de solo lectura del plan Free actual.",
         planHeading: "Plan",
         relatedHeading: "Relacionado",
         tierLabel: "Nivel",
