@@ -51,7 +51,9 @@ describe("CoreClient", () => {
 
     await client.call("getRuntimePaths");
 
-    expect(calledUrls(fetchImpl)[0]).toBe("http://localhost/api/proxy/read/runtime-paths");
+    // Relative proxy base resolves against the page origin (vitest serves
+    // http://localhost:3000), never a port-less dummy that would hit :80.
+    expect(calledUrls(fetchImpl)[0]).toBe("http://localhost:3000/api/proxy/read/runtime-paths");
   });
 
   it("does not send an Authorization header when tokenProvider is null and bridge is off", async () => {

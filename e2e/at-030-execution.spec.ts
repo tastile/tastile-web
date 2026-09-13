@@ -1,28 +1,40 @@
 import { test, expect, type Page } from "@playwright/test";
 import { v1AuthHeaders } from "./helpers/v1";
-import { execFileSync } from "node:child_process";
 
 const OWNER = "00000000-0000-0000-0000-000000000001";
 const ACTOR = "00000000-0000-0000-0000-000000000001";
 const V1_BASE = "http://127.0.0.1:31400";
 
 function uuidv7like(): string {
-  const h = (n: number) =>
-    Math.floor(Math.random() * Math.pow(16, n)).toString(16).padStart(n, "0");
-  return `${h(8)}-${h(4)}-${h(4)}-${h(4)}-${h(12)}`;
+  // crypto.randomUUID() is v4; v7 is not exposed in Node 20. The daemon
+  // does not validate the UUID version on idempotency_key — any unique
+  // string works. Use crypto.randomUUID() for collision-free idem keys.
+  return crypto.randomUUID();
 }
 
 async function cleanDb(): Promise<void> {
-  execFileSync(
-    "docker",
-    [
-      "exec", "-i", "tastile-core-db-1", "psql",
-      "-U", "tastile", "-d", "tastile_db",
-      "-c",
-      "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_frame, v1_recurring_frame_rule, v1_materialization_state, v1_tile CASCADE;",
-    ],
-    { stdio: "ignore" },
-  );
+  const { execFileSync } = await import("node:child_process");
+  // Same 12-table truncate the canonical quick-tile-create spec uses;
+  // routed through the `docker` shim so wslc unavailability on this host
+  // does not surface as a test flake (the shim maps to the local PG).
+  // Retries on transient 40P01 deadlock / 40P05 wedge once before
+  // failing the test.
+  const sql =
+    "TRUNCATE v1_placement, v1_event, v1_change_set, v1_window, v1_recurring, v1_tile, v1_annotation, v1_source_tile, v1_source_lifecycle_event, v1_decision_session, v1_delivery, v1_feedback_txn RESTART IDENTITY CASCADE;";
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      execFileSync("docker", ["exec", "-i", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-c", sql], {
+        stdio: "ignore",
+        timeout: 60_000,
+      });
+      return;
+    } catch (err) {
+      const msg = (err as Error).message ?? String(err);
+      const transient = msg.includes("40P01") || msg.includes("40P05") || msg.includes("ETIMEDOUT");
+      if (attempt === 2 || !transient) throw err;
+      await new Promise((r) => setTimeout(r, 250));
+    }
+  }
 }
 
 const auth = v1AuthHeaders();
@@ -33,57 +45,44 @@ async function getV1(page: Page, path: string) {
   return page.request.get(`${V1_BASE}${path}`, { headers: auth });
 }
 
-async function createRecurring(page: Page, title: string) {
-  const c = await postV1(page, "/v1/tiles", {
-    idempotency_key: uuidv7like(),
-    payload: { kind: 0, title, description: null, color: "#0ea5e9", icon: "check", external_id: null, plan_role: 0 },
-  });
-  expect(c.status(), `POST /v1/tiles status: ${c.status()}`).toBeLessThan(300);
-  return (await c.json()) as { aggregate: { id: string } };
-}
-
-async function addStepFrameRule(page: Page, recurringId: string) {
-  const r = await postV1(page, `/v1/recurring/${recurringId}/frame-rules`, {
+// Create a one-shot SourceTile whose generation_at anchors at the given
+// day/time. The publish command materializes a Placement synchronously
+// (kind=0 OneTime) and returns the placement id via aggregate_meta, so
+// the worker tick is not on the critical path.
+async function createSourceTile(page: Page, title: string, atIso: string) {
+  const horizonEnd = new Date(new Date(atIso).getTime() + 60 * 60_000).toISOString();
+  const body = {
     idempotency_key: uuidv7like(),
     payload: {
-      recurring_id: recurringId,
-      rule: {
-        id: uuidv7like(),
-        active: null,
-        rank: 0,
-        generator: { Step: { step: 86_400_000, origin: null, bounds: null } },
+      tile: { title, description: null, color: "#0ea5e9", icon: "check" },
+      plan: {
+        role: 0,
+        references: [],
+        completion: { root: { All: [] }, time_requirements: [], tasks: [] },
+        planning: { placement_rules: [], nesting_rules: [] },
+        metrics: [],
+        decisions: [],
       },
+      flows: [],
+      schedule: {
+        required_duration_ms: 60 * 60_000,
+        priority: 0,
+        generation: { kind: 0, at: atIso },
+        window: { start_offset_ms: 0, end_offset_ms: 60 * 60_000 },
+        split_policy: { kind: 0 },
+      },
+      horizon: { start: atIso, end: horizonEnd },
     },
-  });
-  expect(r.status(), `POST frame-rules: ${r.status()}`).toBeLessThan(300);
-  return execFileSync(
-    "docker",
-    ["exec", "-i", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
-     `SELECT id FROM v1_recurring_frame_rule WHERE recurring_id = '${recurringId}' LIMIT 1;`],
-    { encoding: "utf8" },
-  ).trim();
-}
-
-async function materialize(page: Page, recurringId: string, frameRuleId: string, start: string, end: string) {
-  const m = await postV1(
-    page,
-    `/v1/recurring/${recurringId}/frame-rules/${frameRuleId}/materialize`,
-    {
-      idempotency_key: uuidv7like(),
-      payload: { recurring_id: recurringId, frame_rule_id: frameRuleId, range_start: start, range_end: end },
-    },
-  );
-  expect(m.status(), `POST materialize: ${m.status()}`).toBeLessThan(300);
-}
-
-async function placementIdForRecurring(page: Page, recurringId: string): Promise<string> {
-  const id = execFileSync(
-    "docker",
-    ["exec", "-i", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
-     `SELECT s.placement_id FROM v1_placement_source_ref_recurring s WHERE s.recurring_tile = '${recurringId}' LIMIT 1;`],
-    { encoding: "utf8" },
-  ).trim();
-  return id;
+  };
+  const r = await postV1(page, "/v1/source-tiles?owner_id=" + OWNER, body);
+  expect(r.status(), `POST /v1/source-tiles status: ${r.status()}`).toBeLessThan(300);
+  const json = (await r.json()) as {
+    aggregate?: { id?: string };
+    aggregate_meta?: { placement_ids?: string[] };
+  };
+  const placementId = json.aggregate_meta?.placement_ids?.[0];
+  expect(placementId, "source-tile publish must materialize a placement").toBeTruthy();
+  return { sourceTileId: json.aggregate?.id ?? "", placementId };
 }
 
 // Append a Placement-layer ChangeSet that sets span_start or span_end.
@@ -148,16 +147,14 @@ async function finishExecution(page: Page, exId: string) {
   })).status();
 }
 
-test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () => {
-  test.beforeEach(async () => { await cleanDb(); });
+test.describe.serial("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () => {
+  // Truncate once per file (the worker is long-lived across specs and
+  // shares the same DB; serial + beforeAll avoids a TRUNCATE racing with
+  // the worker's source_tick for the previous spec's last placement).
+  test.beforeAll(async () => { await cleanDb(); });
 
   test("AT-030 start_execution returns execution; GET /v1/executions/{id} shows state=Active, captured_at set, placement_id matches", async ({ page }) => {
-    const day = "2026-07-01";
-    const { aggregate } = await createRecurring(page, "AT-030 daily " + Date.now());
-    const recurringId = aggregate.id;
-    const fruid = await addStepFrameRule(page, recurringId);
-    await materialize(page, recurringId, fruid, day+"T09:00:00.000Z", day+"T10:00:00.000Z");
-    const placementId = await placementIdForRecurring(page, recurringId);
+    const { placementId } = await createSourceTile(page, "AT-030 daily " + Date.now(), "2026-09-14T01:00:00Z");
     expect(placementId.length).toBeGreaterThan(0);
 
     const start = await startExecution(page, placementId);
@@ -178,12 +175,9 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
   });
 
   test("AT-031 StartExecution captures placement_revision; later ChangeSet does not change basis.placement_revision", async ({ page }) => {
-    const day = "2026-07-01";
-    const { aggregate } = await createRecurring(page, "AT-031 daily " + Date.now());
-    const recurringId = aggregate.id;
-    const fruid = await addStepFrameRule(page, recurringId);
-    await materialize(page, recurringId, fruid, day+"T09:00:00.000Z", day+"T10:00:00.000Z");
-    const placementId = await placementIdForRecurring(page, recurringId);
+    // Anchor each test at a unique hour to avoid the seeded 休憩
+    // placement (every 30 min) blocking the OneTime materialization.
+    const { placementId } = await createSourceTile(page, "AT-031 daily " + Date.now(), "2026-09-14T03:00:00Z");
 
     const start = await startExecution(page, placementId);
     const basis1 = (await (await getV1(page, "/v1/executions/"+start.aggregate.id+"/basis")).json()) as {
@@ -192,7 +186,7 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
     const originalRev = basis1.placement_revision;
     expect(basis1.placement_id).toBe(placementId);
 
-    const cs = await appendChangeSet(page, placementId, 0, day+"T09:30:00.000Z");
+    const cs = await appendChangeSet(page, placementId, 0, "2026-09-14T03:30:00.000Z");
     expect(cs).toBeLessThan(300);
 
     const basis2 = (await (await getV1(page, "/v1/executions/"+start.aggregate.id+"/basis")).json()) as {
@@ -201,9 +195,10 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
     expect(basis2.placement_revision).toBe(originalRev);
     expect(basis2.placement_id).toBe(placementId);
 
+    const { execFileSync } = await import("node:child_process");
     const cur = execFileSync(
-      "docker",
-      ["exec", "-i", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
+      "wslc",
+      ["container", "exec", "tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
        `SELECT revision FROM v1_placement WHERE id = '${placementId}';`],
       { encoding: "utf8" },
     ).trim();
@@ -211,20 +206,16 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
   });
 
   test("AT-032 two StartExecution calls on the same placement return the same execution_id (idempotent)", async ({ page }) => {
-    const day = "2026-07-01";
-    const { aggregate } = await createRecurring(page, "AT-032 daily " + Date.now());
-    const recurringId = aggregate.id;
-    const fruid = await addStepFrameRule(page, recurringId);
-    await materialize(page, recurringId, fruid, day+"T09:00:00.000Z", day+"T10:00:00.000Z");
-    const placementId = await placementIdForRecurring(page, recurringId);
+    const { placementId } = await createSourceTile(page, "AT-032 daily " + Date.now(), "2026-09-14T05:00:00Z");
 
     const a = await startExecution(page, placementId);
     const b = await startExecution(page, placementId);
     expect(a.aggregate.id).toBe(b.aggregate.id);
 
+    const { execFileSync } = await import("node:child_process");
     const cnt = execFileSync(
-      "docker",
-      ["exec", "-i", "tastile-core-db-1", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
+      "wslc",
+      ["container", "exec", "tastile-db", "psql", "-U", "tastile", "-d", "tastile_db", "-At", "-c",
        `SELECT count(*) FROM v1_execution e JOIN v1_execution_basis b ON b.execution_id = e.id WHERE b.placement_id = '${placementId}';`],
       { encoding: "utf8" },
     ).trim();
@@ -232,12 +223,7 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
   });
 
   test("AT-033 start -> pause -> resume toggles state and open_segment_kind; segment_count grows", async ({ page }) => {
-    const day = "2026-07-01";
-    const { aggregate } = await createRecurring(page, "AT-033 daily " + Date.now());
-    const recurringId = aggregate.id;
-    const fruid = await addStepFrameRule(page, recurringId);
-    await materialize(page, recurringId, fruid, day+"T09:00:00.000Z", day+"T10:00:00.000Z");
-    const placementId = await placementIdForRecurring(page, recurringId);
+    const { placementId } = await createSourceTile(page, "AT-033 daily " + Date.now(), "2026-09-14T07:00:00Z");
 
     const start = await startExecution(page, placementId);
     const exId = start.aggregate.id;
@@ -260,12 +246,7 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
   });
 
   test("AT-035 start -> finish(kind=Normal) closes the execution; placement span in /v1/timeline is unchanged", async ({ page }) => {
-    const day = "2026-07-01";
-    const { aggregate } = await createRecurring(page, "AT-035 daily " + Date.now());
-    const recurringId = aggregate.id;
-    const fruid = await addStepFrameRule(page, recurringId);
-    await materialize(page, recurringId, fruid, day+"T09:00:00.000Z", day+"T10:00:00.000Z");
-    const placementId = await placementIdForRecurring(page, recurringId);
+    const { placementId } = await createSourceTile(page, "AT-035 daily " + Date.now(), "2026-09-14T09:00:00Z");
 
     const start = await startExecution(page, placementId);
     const exId = start.aggregate.id;
@@ -281,12 +262,14 @@ test.describe("v1 - Execution (AT-030 / AT-031 / AT-032 / AT-033 / AT-035)", () 
 
     expect(await pauseExecution(page, exId)).toBeGreaterThanOrEqual(400);
 
-    const tl = await getV1(page, "/v1/timeline?start="+day+"T00:00:00Z&end="+day+"T23:59:59Z");
+    const tl = await getV1(page, "/v1/timeline?start=2026-09-14T00:00:00Z&end=2026-09-14T23:59:59Z");
     const items = (await tl.json()) as Array<{ placement_id: string; span: { start: string; end: string } }>;
     const found = items.find((i) => i.placement_id === placementId);
     expect(found).toBeTruthy();
-    expect(found!.span.start).toBe(day+"T09:00:00Z");
-    expect(found!.span.end).toBe(day+"T10:00:00Z");
+    // SourceTile (OneTime, kind=0) materializes the placement at exactly
+    // the authored generation_at instant, spanning required_duration_ms.
+    expect(found!.span.start).toBe("2026-09-14T09:00:00Z");
+    expect(found!.span.end).toBe("2026-09-14T10:00:00Z");
   });
 
 });
