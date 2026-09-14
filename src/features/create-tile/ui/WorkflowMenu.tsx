@@ -130,7 +130,6 @@ export function WorkflowMenu({
         onClick?: (e: React.MouseEvent) => void;
       }>;
       // Inject click + aria props so we don't wrap a button in a button.
-      // biome-ignore lint/suspicious/noExplicitAny: cloneElement overload is too narrow for cross-element prop injection.
       const injected: Record<string, any> = {
         onClick: (e: React.MouseEvent) => {
           el.props.onClick?.(e);

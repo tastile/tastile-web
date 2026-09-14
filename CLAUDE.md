@@ -10,54 +10,38 @@ The workspace-level contract that binds this child repository to `tastile-core`,
 
 ## Claude Code Configuration Layout
 
-- Claude Code settings/hooks: `.claude/` (intentionally empty — no settings.json, no hooks/)
-- Agent Skills (Codex-style, canonical): `.agents/skills/` (`react-doctor`, `tastile-precommit-review`)
-- Claude Code Skills (thin adapters): `.claude/skills/`
+- Claude Code settings/hooks: `.claude/settings.json` / `.claude/hooks/` (both intentionally
+  absent — see [ADR-0005](../adr/0005-skills-and-mcp-extensions.md) for the rationale)
+- Agent Skills (Codex-style, canonical): `.agents/skills/` — `react-doctor`,
+  `tastile-precommit-review`, `i18n-literal-guard`
+- Claude Code Skills (thin adapters): `.claude/skills/` (mirrors canonical, NOT a
+  duplicate). Currently present:
+  - `.claude/skills/i18n-literal-guard/SKILL.md` → `tastile-web/.agents/skills/i18n-literal-guard/`
+  - `.claude/skills/tastile-precommit-review/SKILL.md` → `tastile-web/.agents/skills/tastile-precommit-review/`
+    (precedence per [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md))
 
-The Skill adapter pattern: a thin wrapper under `.claude/skills/` that delegates to `.agents/skills/`. Do not author new Skills in `.claude/skills/` without a corresponding canonical entry in `.agents/skills/`.
+The Skill adapter pattern is a thin wrapper under `.claude/skills/` that delegates to
+`.agents/skills/`. Do not author new Skills in `.claude/skills/` without a corresponding
+canonical entry in `.agents/skills/`. See [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md)
+for the precedence rule when canonicals exist in multiple repositories.
 
-## Commands
+## Commands, Architecture, Quality Gate, Subagent Rules
 
-The package scripts in `package.json` are the source of truth. Canonical entry points:
+Architecture / Commands / Quality Gate / Subagent Rules are the canonical contract of
+[`AGENTS.md`](./AGENTS.md). This adapter does NOT duplicate those sections — read
+AGENTS.md and reference [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md)
+for the canonical-location precedence rule.
 
-| Purpose | Command |
-| --- | --- |
-| Dev server | `bun dev` |
-| Production build (Next standalone) | `bun run build` |
-| Production artifact | `bun run build:prod` |
-| Fast local quality gate | `bun run check` (biome + eslint + typecheck + knip + vitest) |
-| Release gate | `bun run check:release` (gate + audit + build:prod) |
-| Biome only | `bun run lint:biome` |
-| ESLint only | `bun run lint` |
-| Type check only | `bun run typecheck` |
-| Knip (dead-code) | `bun run knip` |
-| Unit/component tests | `bun test` (single file: `bun test path/to/file.test.ts`) |
-| Run all tests via project wrapper | `bun run test:unit` |
-| E2E (Playwright) | `bun run test:e2e` |
-| Regenerate OpenAPI types | `bun run generate-types` |
-| React Doctor scan | `bun run doctor` |
+The Claude Code-specific notes that DO live here (and not in AGENTS.md):
 
-`bun run check` is the standard completion gate; use focused scripts only during iterative development, never as the final gate.
-
-## Architecture (current state)
-
-This is a thin-client Next.js 16 dashboard for the `tastile-core` API. **Do not introduce business logic in the client** — all domain logic is owned by `tastile-core` and surfaced through the Command/Event/Reducer contract.
-
-Directory layout follows Feature-Sliced Design (FSD):
-
-- `src/app/` — Next.js App Router routes and API handlers (also legacy `/app/*` redirects to `/dashboard` via `next.config.ts`)
-- `src/shared/` — cross-cutting primitives: `ui/`, `api/`, `lib/`, `i18n/`, `model/`, `auth/`, `stores/`, `query/`, `hooks/`, `analytics/`, `context/`
-- `src/features/` — user-facing features: `create-tile`, `execute-tile`, `manage-tasks`, `manage-projects`, `manage-schedule`, `manage-settings`, `marketing`, `view-notifications`
-- `src/widgets/` — composite UI blocks: `app-shell`, `activity-bar`, `floating-header`, `side-tool-panel`
-- `src/views/` — page-level compositions (e.g. `dashboard/`)
-- `src/{tile,execution,calendar}/` — domain slices, each with `model/` and `ui/`
-- `src/lib/` — legacy/non-FSD infrastructure (kept for `account`, `api` clients, `billing`, `notifications`, `projection`, `scheduler`, `security`, `styles`, `theme`, `upstream`, `vendored`)
-
-The historical `src/lib/{domain,core,storage,hooks}` layout from the early 2026 design docs has been superseded; the FSD plan in `docs/fsd-phase1-plan.md` documents the migration. Do not add new code to that legacy shape unless an existing module requires it.
-
-UI library: **Mantine v9** (`@mantine/core`, `@mantine/dates`, `@mantine/form`, `@mantine/hooks`) with Tailwind CSS v4. Mantine is the preferred primitive for equivalent UI state and lifecycle behavior — see `.claude/memory/feedback_mantine_first_ui.md` (auto-memory).
-
-React Compiler is enabled in `next.config.ts`. Avoid manual memoization (`useMemo`, `useCallback`) unless required by an external library that breaks under the compiler; the relevant react-doctor rule is disabled in `doctor.config.json` to reflect that.
+- Mantine v9 (`@mantine/core`, `@mantine/dates`, `@mantine/form`, `@mantine/hooks`) with
+  Tailwind CSS v4 is the preferred UI primitive set — see
+  `.claude/memory/feedback_mantine_first_ui.md` (auto-memory).
+- React Compiler is enabled in `next.config.ts`. Avoid manual memoization (`useMemo`,
+  `useCallback`) unless required by an external library that breaks under the compiler;
+  the relevant react-doctor rule is disabled in `doctor.config.json` to reflect that.
+- **No business logic in client** (mirrors AGENTS.md invariant, repeated here for the
+  Claude-only session where AGENTS.md may not have been re-read after wake-up).
 
 ## Key Cross-References
 
@@ -103,9 +87,11 @@ These are non-negotiable for any change that touches this repository:
 6. UI changes must be verified in an actual rendered browser (Playwright or equivalent) before claiming completion — type-check and unit tests are not sufficient.
 7. The release path (`bun run check:release`) is the only sanctioned signal for "ship-ready". `bun run check` is the iteration floor.
 
-## Subagent / Parallelization Rules (project-local)
+## Subagent / Parallelization Rules
 
-- Local `main` only — do not create feature branches or worktrees.
-- Disjoint file ownership per subagent; never let two subagents edit the same file in parallel.
-- Commit operations are serialized; each subagent produces its own commit covering only its owned changes.
-- Pre-commit review of agent-initiated commits must go through `.agents/skills/tastile-precommit-review`; do not self-approve.
+See [`AGENTS.md`](./AGENTS.md) "Repository invariants" and the workspace canonical
+[ADR-0007](../adr/0007-release-branch-and-ticket-workflow.md) + [ADR-0008](../adr/0008-structured-recovery-checkpoint.md).
+Claude Code-specific addition: pre-commit reviewer MUST be Codex (or a sibling Claude
+Code session with fresh context), not the same session that produced the diff. See
+[ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md) for the
+canonical-resolution precedence between the workspace generic and web-specific overlay.

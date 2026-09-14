@@ -27,7 +27,9 @@ import { v5 as uuidv5 } from "uuid";
 const TEST_USER_SUB = "e2e-bridge-test-user";
 // UUIDv5(NAMESPACE_OID, b"e2e-bridge-test-user").  Pinned offline so the spec
 // does not depend on any uuid library at runtime.
-const EXPECTED_OWNER_ID = "f4ffe1cc-03e0-56c4-99a4-1a7d00577e07";
+// NAMESPACE_OID is 6ba7b812-… (not the DNS 6ba7b810-…); verified against
+// the daemon's Uuid::NAMESPACE_OID derivation and Python's uuid.NAMESPACE_OID.
+const EXPECTED_OWNER_ID = "9a442363-dccd-5de6-a300-2f40894fcf4b";
 
 const PSQL_CONTAINER = "tastile-db";
 const PSQL_DB = "tastile_db";
@@ -47,7 +49,7 @@ function wslcPsql(sql: string): string {
 function assertExpectedOwnerId(): void {
   // Re-derive offline using the same algorithm the Rust side uses, and
   // compare.  This protects the test against silent drift in either side.
-  const derived = uuidv5(TEST_USER_SUB, "6ba7b810-9dad-11d1-80b4-00c04fd430c8"); // NAMESPACE_OID
+  const derived = uuidv5(TEST_USER_SUB, "6ba7b812-9dad-11d1-80b4-00c04fd430c8"); // NAMESPACE_OID
   expect(derived).toBe(EXPECTED_OWNER_ID);
 }
 
@@ -55,8 +57,13 @@ async function postBridgeTile(
   request: import("@playwright/test").APIRequestContext,
   title: string,
 ): Promise<import("@playwright/test").APIResponse> {
+  // NOTE: the tastile_uid cookie is supplied via test.use(storageState)
+  // below. Playwright's APIRequestContext ignores a manually-set Cookie
+  // header, so it cannot be passed here.
   return request.post("/api/proxy/v1/tiles", {
-    headers: { "content-type": "application/json" },
+    headers: {
+      "content-type": "application/json",
+    },
     data: {
       idempotency_key: crypto.randomUUID(),
       payload: {
@@ -74,6 +81,17 @@ async function postBridgeTile(
 }
 
 test.describe("bridge auth contract (H4b)", () => {
+  // The proxy resolves the bridge path from the tastile_uid cookie.
+  // (APIRequestContext drops manual Cookie headers, so storageState
+  // carries it.)
+  test.use({
+    storageState: {
+      cookies: [
+        { name: "tastile_uid", value: TEST_USER_SUB, domain: "127.0.0.1", path: "/", expires: -1, httpOnly: true, secure: false, sameSite: "Lax" },
+      ],
+      origins: [],
+    },
+  });
   test.beforeAll(() => {
     assertExpectedOwnerId();
   });

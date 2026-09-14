@@ -231,7 +231,7 @@ export default function Quota() {
           <Button component={Link} href="/pricing" size="sm" leftSection={<CreditCard size={14} />}>
             {plan === "pro"
               ? t("dashboard.quota.cta.manage")
-              : t("dashboard.quota.cta.upgrade")}
+              : t("dashboard.quota.cta.viewPlan")}
           </Button>
         </div>
       </Card>

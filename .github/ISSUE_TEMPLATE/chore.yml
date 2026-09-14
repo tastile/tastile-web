@@ -1,0 +1,98 @@
+name: Chore
+description: 内部的改善、tooling、CI、docs 等の user-visible 変更を伴わないタスクに使う。
+title: '[chore]: '
+labels: ['type/chore']
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Chore
+
+        内部改善や tooling 変更を提案する。release branch workflow と Project 連動は
+        ADR-0007 / ADR-0009 に従う。
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority (ADR-0009)
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size (ADR-0009)
+      options:
+        - XS
+        - S
+        - M
+        - L
+        - XL
+    validations:
+      required: true
+
+  - type: input
+    id: target_version
+    attributes:
+      label: Target Release (release-x-y-z 形式、空欄で backlog)
+      placeholder: 'release-0-6-0'
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: area
+    attributes:
+      label: Area / Component
+      options:
+        - label: build
+        - label: ci
+        - label: docs
+        - label: design-system
+        - label: i18n
+        - label: infra
+        - label: release
+    validations:
+      required: true
+
+  - type: input
+    id: execution_generation
+    attributes:
+      label: Execution Generation (ADR-0008)
+      default: '1'
+    validations:
+      required: false
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: 動機・目的
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Done の定義
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: touches_contract
+    attributes:
+      label: Contract への影響
+      description: canonical contract (AGENTS.md / CLAUDE.md / ADR / Skill) への影響を選択。
+      options:
+        - label: AGENTS.md / CLAUDE.md を更新
+        - label: ADR を新規作成 / revise
+        - label: Skill (`.agents/skills/` または `.claude/skills/`) を更新
+        - label: GitHub workflow / Dependabot / CODEOWNERS を更新

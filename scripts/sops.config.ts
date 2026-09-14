@@ -1,48 +1,39 @@
 // Per-repo sops config for tastile-web.
 //
-// The canonical SopsEnvConfig type lives at tastile-root/scripts/sops.config.ts
-// (committed at 019d248) and lacks the `identityHint` field introduced by Task 3.
-// Since SopsEnvConfig is a `type` alias (not an `interface`), TypeScript module
-// augmentation cannot extend it. Per-repo config files therefore re-define the
-// full type with `identityHint` appended. The loader's `loadConfig` /
-// `decryptOne` ignore fields they do not use, so the augmented shape is
-// forward-compatible with the canonical loader.
+// Local fork of tastile-root/scripts/sops.config.ts. We pin one age
+// recipient per env (development / staging / production) so a single
+// leaked identity can only decrypt the env it serves. AWS KMS is out of
+// scope for this iteration (operator directive, Daily Scrum 2026-09-07).
 //
-// Replace <account> placeholders with Terraform outputs from Task 1
-// (terraform apply in tastile-root/infra/).
+// The recipient values MUST match the matching `age:` line in `.sops.yaml`
+// and the public half of the private key registered as
+// SOPS_AGE_KEY_{DEVELOPMENT,STAGING,PRODUCTION} in repo settings. Rotation
+// is documented in docs/runbooks/sops-rotation.md.
+//
+// `pairs` is intentionally trimmed to the two envs for which this PR
+// commits ciphertext. .env.staging / .env.product / .env.dev are reserved
+// for a follow-up that brings those envelopes; until then the loader
+// gracefully skips missing source files (see processSourceFiles).
 
 export type SopsEnvConfig = {
-  kmsKeyArn: string;
-  awsRegion: string;
-  sourceFiles: string[];
-  targetFiles: string[];
-  check: boolean;
-  identityHint: "sso" | "oidc" | "instance-profile";
+  ageRecipient: string;
+  pairs: { source: string; target: string }[];
 };
 
 export const config: Record<string, SopsEnvConfig> = {
   development: {
-    awsRegion: "ap-northeast-1",
-    kmsKeyArn: "arn:aws:kms:ap-northeast-1:<account>:key/<dev-key-id>",
-    sourceFiles: [".env.development.sops", ".env.dev.sops"],
-    targetFiles: [".env.development", ".env.dev"],
-    check: false,
-    identityHint: "sso",
+    ageRecipient:
+      "age1q0rp9dflllkxy62fd6dwqfeqt9pl6ekyz2dff3sjwsy8xqrlcplsww8q5z",
+    pairs: [{ source: ".env.development.sops", target: ".env.development" }],
   },
   staging: {
-    awsRegion: "ap-northeast-1",
-    kmsKeyArn: "arn:aws:kms:ap-northeast-1:<account>:key/<staging-key-id>",
-    sourceFiles: [".env.staging.sops"],
-    targetFiles: [".env.staging"],
-    check: false,
-    identityHint: "oidc",
+    ageRecipient:
+      "age1ly2htqxgr35vgzlhg2ln3u72r9hpd8knlzzuvnhvmycfqsq9myeq3u22fx",
+    pairs: [],
   },
   production: {
-    awsRegion: "ap-northeast-1",
-    kmsKeyArn: "arn:aws:kms:ap-northeast-1:<account>:key/<production-key-id>",
-    sourceFiles: [".env.production.sops", ".env.product.sops"],
-    targetFiles: [".env.production", ".env.product"],
-    check: false,
-    identityHint: "instance-profile",
+    ageRecipient:
+      "age1dm4t40x7v95thpr426ay8tggz5jfw0f42dkwxucqum3509yv4gwqwhzl5k",
+    pairs: [{ source: ".env.production.sops", target: ".env.production" }],
   },
 };

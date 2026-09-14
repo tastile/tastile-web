@@ -85,6 +85,14 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+### Pointing dev at the production API
+
+To smoke-test the dev server against the public prod API (`https://api.tastile.app`)
+without a separate deployment, run `bun run dev:prod` or edit the canonical
+`NEXT_PUBLIC_TASTILE_CORE_URL` / `CLOUD_API_BASE` lines in `.env.development`.
+See [`docs/dev-prod-api-switch.md`](./docs/dev-prod-api-switch.md) for the
+variables, auth caveats, and troubleshooting.
+
 ## Quality Gates
 
 Fast local validation:

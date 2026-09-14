@@ -118,7 +118,6 @@ export function DayPanel({
   if (breakpoint === "mobile") {
     const renderMobileEvent = (e: ScheduleEventData) => {
       const body = renderEventBody(e as ScheduleEventData<CalendarEvent>, "month");
-      // biome-ignore lint/complexity/noUselessFragments: RenderEvent contract requires ReactElement, not null
       return (body as React.ReactElement) ?? <></>;
     };
 

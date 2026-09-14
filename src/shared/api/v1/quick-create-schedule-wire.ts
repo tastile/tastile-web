@@ -88,6 +88,19 @@ function authoredInstant(
   return Number.isNaN(local.getTime()) ? null : local.toISOString();
 }
 
+// Resolved one-shot anchor: the `at` instant the OneTime generation pins
+// against. Mirrors the `at = authoredInstant(state, "start") ??
+// validInstant(life.active.startDate) ?? now` order in sourceGeneration,
+// so the place-now window decision and the OneTime generation agree on
+// which instant counts as "the anchor".
+function onceAnchor(state: QuickCreateScheduleState, now: Date): string {
+  return (
+    authoredInstant(state, "start") ??
+    validInstant(state.recurring.life.active.startDate) ??
+    now.toISOString()
+  );
+}
+
 function requiredDuration(state: QuickCreateScheduleState): number {
   const minimum = state.time.durationMinMax.minMs;
   if (minimum !== null && minimum > 0) return minimum;
@@ -111,9 +124,65 @@ function requiredDuration(state: QuickCreateScheduleState): number {
   return 60_000;
 }
 
+// An empty All/Any completion root is rejected by the daemon
+// (validate_conditions: empty composites are invalid). v1/13 composes
+// completion by referencing time requirements and tasks, so a definition
+// whose only criterion is its duration requirement completes when that
+// requirement is Met — the same shape the daemon's own publish tests use
+// for task-less definitions. Synthesize it here at the wire boundary
+// (final UUIDv7 ids known) rather than in the store so in-memory
+// authoring state stays untouched. Authored non-empty roots and
+// task-derived roots pass through unchanged.
+//
+// Multi-requirement guard: the UI lets users author 0..N TimeRequirements
+// and the same wire path is responsible for emitting a coherent root. An
+// empty All/Any root that would otherwise be rewritten to reference
+// `time_requirements[0]` would silently drop the 2nd..N requirements from
+// the completion predicate, so we require a single TimeRequirement for
+// the synthesis to fire. With 0 the empty root propagates and the daemon
+// rejects it (caller-visible validation error); with 2+ we throw so the
+// caller must author an explicit completion root that references every
+// requirement it intends to gate on.
+function withRequirementCompletion<T extends { root: unknown; time_requirements: Array<{ id: string }> }>(
+  completion: T,
+): T {
+  const root = completion.root;
+  if (typeof root === "object" && root !== null && !Array.isArray(root)) {
+    const entries = Object.entries(root);
+    const emptyComposite =
+      entries.length === 1 &&
+      (entries[0]?.[0] === "All" || entries[0]?.[0] === "Any") &&
+      Array.isArray(entries[0]?.[1]) &&
+      (entries[0]?.[1] as unknown[]).length === 0;
+    if (emptyComposite) {
+      const requirements = completion.time_requirements;
+      if (requirements.length === 0) {
+        throw new Error(
+          "completion root is empty and no TimeRequirement is authored; add at least one time requirement or an explicit completion root",
+        );
+      }
+      if (requirements.length > 1) {
+        throw new Error(
+          "completion root is empty but " +
+            requirements.length +
+            " TimeRequirements are authored; authoring an explicit completion root that references every requirement is required",
+        );
+      }
+      return {
+        ...completion,
+        root: {
+          Term: {
+            Requirement: { time_requirement: requirements[0].id, state: "Met" },
+          },
+        },
+      };
+    }
+  }
+  return completion;
+}
+
 function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
-  const start =
-    authoredInstant(state, "start") ?? validInstant(state.recurring.life.active.startDate);
+  const start = authoredInstant(state, "start") ?? validInstant(state.recurring.life.active.startDate);
   const end =
     validInstant(state.recurring.endDate) ?? validInstant(state.recurring.life.active.endDate);
   const common = {
@@ -137,7 +206,18 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     return { kind: 2 as const, ...common };
   }
   if (state.recurring.repeatMode === "once") {
-    return { kind: 0 as const, at: start ?? now.toISOString(), ...common };
+    // Use the shared onceAnchor() so this `at` instant agrees with the
+    // place-now window decision in sourceWindow(). A future
+    // `life.active.startDate` therefore also keeps the tight duration-width
+    // window instead of silently flipping to a 24h place-now window.
+    const at = onceAnchor(state, now);
+    // A one-time anchor in the past leaves a window the worker can never
+    // fill (kind-0 qualifies only while generation_at + window overlaps
+    // [now, now+32d]). The task form defaults span.start to today-midnight,
+    // which is already past for most of the day, so clamp stale anchors to
+    // now ("create and place now"). Future anchors pass through unchanged.
+    const atClamped = Date.parse(at) < now.getTime() ? now.toISOString() : at;
+    return { kind: 0 as const, at: atClamped, ...common };
   }
   if (state.recurring.repeatMode === "weekly") {
     return {
@@ -182,7 +262,39 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
   };
 }
 
-function sourceWindow(state: QuickCreateScheduleState, duration: number) {
+const PLACE_NOW_WINDOW_MS = DAY_MS;
+
+// "Place now" path predicate. Mirrors the 5-min cap trigger in
+// requiredDuration(): duration_only + once + no usable future anchor. A
+// stale (past) authored span — e.g. the task form's today-midnight
+// default which is already past for most of the day — falls through to
+// the same path because the user has not actually scheduled a future
+// intent (the kind-0 window terminal-blocks whenever a seeded break
+// overlaps [now, now+duration]). Future authored spans and future
+// recurring.life.active.startDate anchors both keep the tight
+// duration-width window so the scheduler honors the user's intent.
+function isPlaceNow(state: QuickCreateScheduleState, now: Date): boolean {
+  if (state.time.timeModel !== "duration_only") return false;
+  if (state.recurring.repeatMode !== "once") return false;
+  // If the authored span resolves to a future instant, the user has a
+  // genuine scheduled intent — keep the tight window.
+  if (state.time.span.start) {
+    const spanMs = Date.parse(state.time.span.start);
+    if (!Number.isNaN(spanMs) && spanMs >= now.getTime()) return false;
+  }
+  // Same for a future recurring.life.active.startDate: it counts as an
+  // authored future anchor even when the span is empty. Only an absent,
+  // unparsable, or past lifecycle start falls through.
+  if (state.recurring.life.active.startDate) {
+    const lifeMs = Date.parse(state.recurring.life.active.startDate);
+    if (!Number.isNaN(lifeMs) && lifeMs >= now.getTime()) return false;
+  }
+  // No usable future anchor: place-now. The OneTime generation will clamp
+  // `at` to now (see sourceGeneration()).
+  return true;
+}
+
+function sourceWindow(state: QuickCreateScheduleState, duration: number, now: Date) {
   // "window_with_duration" treats the schedulable window as the placement
   // window, not the duration. The user picked e.g. "between 9-17, complete
   // a 30-min task" — the wire should report the window so the scheduler
@@ -197,6 +309,15 @@ function sourceWindow(state: QuickCreateScheduleState, duration: number) {
         end_offset_ms: end * MIN_MS,
       };
     }
+  }
+  // "Place now" (duration_only + once + no future anchor): the user
+  // declared a duration but no window. Author a 24h window from now so the
+  // scheduler takes the first free slot instead of demanding the whole
+  // duration inside [now, now+duration] — a shape that terminal-blocks
+  // (state=1, invisible in /v1/timeline) whenever seeded breaks overlap
+  // the tight window.
+  if (isPlaceNow(state, now)) {
+    return { start_offset_ms: 0, end_offset_ms: PLACE_NOW_WINDOW_MS };
   }
   return { start_offset_ms: 0, end_offset_ms: duration };
 }
@@ -449,6 +570,9 @@ export function buildQuickCreateSchedulePayload(
     },
   });
   const duration = requiredDuration(state);
+  const completion = withRequirementCompletion(
+    plan.completion as { root: unknown; time_requirements: Array<{ id: string }> },
+  );
   const authoredStart = authoredInstant(state, "start");
   const horizonStart = authoredStart ?? now.toISOString();
   const authoredHorizonEnd =
@@ -483,7 +607,7 @@ export function buildQuickCreateSchedulePayload(
     source_schedule: {
       required_duration_ms: duration,
       generation: sourceGeneration(state, now),
-      window: sourceWindow(state, duration),
+      window: sourceWindow(state, duration, now),
       source_window_include: INCLUDE_MAP[state.source.include] ?? 1,
       anchor_mode: ANCHOR_MAP[state.source.anchorMode] ?? 0,
       split_policy: {
@@ -508,7 +632,7 @@ export function buildQuickCreateSchedulePayload(
     plan: {
       role: plan.role,
       references: plan.references as PublishScheduleDefinitionPayload["plan"]["references"],
-      completion: plan.completion as PublishScheduleDefinitionPayload["plan"]["completion"],
+      completion: completion as PublishScheduleDefinitionPayload["plan"]["completion"],
       planning: {
         placement_rules: plan.planning.placement_rules,
         nesting_rules: plan.planning.nesting_rules,

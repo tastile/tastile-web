@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# pre-commit hook (web-local) — soft enforcement of release-sprint contract
+#
+# canonical references:
+#   - docs/adr/0007-release-branch-and-ticket-workflow.md (branch naming)
+#   - docs/adr/0008-structured-recovery-checkpoint.md (fencing token)
+#   - ../../.agent-loop/checkpoint.schema.json
+#
+# Install: `git config core.hooksPath .githooks`
+# Bypass:  `git commit --no-verify` (use sparingly; pre-commit reviewer
+#          skill still catches issues post-commit)
+
+set -euo pipefail
+
+# 1. branch name pattern check (ADR-0007 D-1)
+BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo detached)"
+CANONICAL_PATTERN='^(main|[0-9]+|release-[0-9]+-[0-9]+-[0-9]+)$'
+
+if [[ "${BRANCH}" =~ ${CANONICAL_PATTERN} ]]; then
+  echo "[pre-commit] branch '${BRANCH}' matches ADR-0007 canonical pattern ✓"
+else
+  echo "[pre-commit] WARNING: branch '${BRANCH}' does not match ADR-0007 canonical pattern (${CANONICAL_PATTERN})" >&2
+  echo "[pre-commit] expected: main / <IssueNumber> / release-X-Y-Z" >&2
+  echo "[pre-commit] hook continues (soft warning), but PR review will hard-fail" >&2
+fi
+
+# 2. check that staged files do not include banned paths (policy §10 + §11 quick scan)
+BANNED_PATH_PATTERN='(^|/)(_old/|archived/|\.py$)'
+BANNED_FILES="$(git diff --cached --name-only --diff-filter=ACMR | grep -E "${BANNED_PATH_PATTERN}" || true)"
+if [[ -n "${BANNED_FILES}" ]]; then
+  echo "[pre-commit] ERROR: staged files match banned pattern (policy §10 / §11):" >&2
+  echo "${BANNED_FILES}" >&2
+  echo "[pre-commit] re-stage with `git reset HEAD <file>` and recommit" >&2
+  exit 1
+fi
+
+# 3. emit checkpoint fingerprint (ADR-0008) — append-only, idempotent
+HEAD_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
+TZ_DEFAULT="${TZ:-Asia/Tokyo}"
+FP_TS="$(TZ="${TZ_DEFAULT}" date -Iseconds)"
+FP_ENTRY="{\"ts\":\"${FP_TS}\",\"hook\":\"pre-commit\",\"branch\":\"${BRANCH}\",\"headSha\":\"${HEAD_SHA}\",\"executionGeneration\":\"${EXECUTION_GENERATION:-1}\"}"
+
+mkdir -p docs/journal/local
+printf '%s\n' "${FP_ENTRY}" >>"docs/journal/local/$(TZ="${TZ_DEFAULT}" date +%Y-%m-%d).jsonl"
+
+echo "[pre-commit] ok (branch=${BRANCH} head=${HEAD_SHA:0:7})"

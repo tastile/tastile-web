@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
 
-import { act, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderWithMantine } from "@/test/render-with-mantine";
 import { PricingTeaser } from "./PricingTeaser";
@@ -8,64 +8,47 @@ import type { Dict, Lang } from "./LandingPage";
 
 const teaserDict: Dict["pricing"] = {
 	eyebrow: "Pricing",
-	title: ["Simple,", "transparent pricing"],
-	intro: "Start free, upgrade when you need more power.",
-	monthly: "Monthly",
-	yearly: "Yearly",
-	yearlyNote: "save 17%",
-	intervalAria: "Billing interval",
-	proPriceMonthly: "$5",
-	proPriceYearly: "$50",
-	proSuffixMonthly: "/mo",
-	proSuffixYearly: "/yr",
-	bandPrefixFree: "01 / ",
-	bandPrefixPro: "02 / ",
+	title: ["Free at", "9/19 launch"],
+	intro: "Free only at launch.",
+	monthly: "Plan",
+	yearly: "Plan",
+	yearlyNote: "Web + Android",
+	intervalAria: "Plan",
+	proPriceMonthly: "Free",
+	proPriceYearly: "Free",
+	proSuffixMonthly: "",
+	proSuffixYearly: "",
+	bandPrefixFree: "Now / ",
+	bandPrefixPro: "Not announced / ",
 	forLabel: "For",
 	free: {
 		name: "Free",
 		price: "$0",
-		tagline: "For personal use",
-		features: [{ title: "100 tiles", detail: "Local" }],
+		tagline: "The only plan available at launch",
+		features: [{ title: "Web + Android", detail: "Use from anywhere" }],
 		cta: "Start free",
 		footnote: "No card required",
 	},
 	pro: {
-		name: "Pro",
-		badge: "Most popular",
-		tagline: "For power users",
-		features: [{ title: "10,000 tiles", detail: "Local + cloud" }],
-		cta: "Upgrade",
-		footnote: "Cancel anytime",
+		name: "Free",
+		badge: "Free",
+		tagline: "Web + Android at launch",
+		features: [{ title: "10 active tiles", detail: "Concurrent tasks" }],
+		cta: "Start free",
+		footnote: "No billing or cancellation flow",
 	},
 };
 
-describe("PricingTeaser", () => {
-	it("does not define or call a bare React setter named setInterval", () => {
-		// The compiler fires a false-positive effect-needs-cleanup when a state
-		// setter is named setInterval. We name the state billingInterval and the
-		// setter setBillingInterval so the rule disappears without suppression.
-		const source = PricingTeaser.toString();
-		const codeOnly = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
-		expect(codeOnly).not.toMatch(/=\s*setInterval\b/);
-		expect(codeOnly).not.toMatch(/\[\s*interval\s*,/);
+describe("PricingTeaser free-only display (W06)", () => {
+	it("does not render an interval toggle", () => {
+		renderWithMantine(<PricingTeaser t={teaserDict} lang={"en" satisfies Lang} />);
+		expect(screen.queryAllByRole("tab")).toHaveLength(0);
 	});
 
-	it("renders monthly price by default and switches when yearly is selected", () => {
+	it("renders a single Free band with the start-free CTA only", () => {
 		renderWithMantine(<PricingTeaser t={teaserDict} lang={"en" satisfies Lang} />);
-
-		const tabs = screen.getAllByRole("tab");
-		expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
-		expect(screen.getByText("$5")).toBeTruthy();
-		expect(screen.getByText("/mo")).toBeTruthy();
-
-		// Click yearly tab and verify price updates without throwing.
-		const yearlyTab = tabs[1];
-		if (!yearlyTab) throw new Error("yearly tab missing");
-		act(() => {
-			yearlyTab.click();
-		});
-		expect(yearlyTab.getAttribute("aria-selected")).toBe("true");
-		expect(screen.getByText("$50")).toBeTruthy();
-		expect(screen.getByText("/yr")).toBeTruthy();
+		expect(screen.getByText("$0")).toBeTruthy();
+		expect(screen.getAllByText("Start free").length).toBeGreaterThan(0);
+		expect(screen.queryByText("Upgrade")).toBeNull();
 	});
 });
