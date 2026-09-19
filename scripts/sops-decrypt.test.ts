@@ -1,7 +1,7 @@
 // Local fork of tastile-root/scripts/sops-decrypt.test.ts with AWS-specific
 // expectations replaced by age-recipient assertions. See sops-decrypt.ts for
 // the rationale.
-import { describe, expect, it, beforeEach } from "bun:test";
+import { beforeEach, describe, expect, it } from "vitest";
 import { parseArgs, loadConfig, decryptOne, processSourceFiles } from "./sops-decrypt";
 import type { SopsEnvConfig } from "./sops.config";
 import { chmodSync, mkdtempSync, writeFileSync, existsSync, statSync, readFileSync } from "node:fs";
