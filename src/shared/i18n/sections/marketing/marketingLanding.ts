@@ -490,7 +490,7 @@ export const marketingLandingEn = {
     ctaPrimary: "Get started",
     ctaSecondary: "Get Android",
     freeTierNote: "Free / Free tier",
-    cancelNote: "Cancel anytime",
+    cancelNote: "No billing or cancellation flow",
     platformNote: "Web / Android",
   },
 };
