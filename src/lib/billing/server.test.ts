@@ -44,6 +44,25 @@ describe("getSubscriptionForUser", () => {
     expect(state).toEqual({ status: "free" });
   });
 
+  it("returns free when a subscription has no items", async () => {
+    customersSearch.mockResolvedValueOnce({ data: [{ id: "cus_1" }] });
+    subscriptionsList.mockResolvedValueOnce({
+      data: [
+        {
+          id: "sub_1",
+          status: "active",
+          cancel_at_period_end: false,
+          items: { data: [] },
+        },
+      ],
+    });
+    const { getSubscriptionForUser, invalidateSubscriptionCache } =
+      await import("./server");
+    invalidateSubscriptionCache();
+    const state = await getSubscriptionForUser("sub-no-items");
+    expect(state).toEqual({ status: "free" });
+  });
+
   it("returns active subscription for monthly price", async () => {
     customersSearch.mockResolvedValueOnce({ data: [{ id: "cus_1" }] });
     subscriptionsList.mockResolvedValueOnce({
@@ -52,10 +71,10 @@ describe("getSubscriptionForUser", () => {
           id: "sub_1",
           status: "active",
           cancel_at_period_end: false,
-          current_period_end: 1700000000,
           items: {
             data: [
               {
+                current_period_end: 1700000000,
                 price: { id: "price_monthly_test" },
               },
             ],
@@ -85,10 +104,10 @@ describe("getSubscriptionForUser", () => {
           id: "sub_1",
           status: "active",
           cancel_at_period_end: true,
-          current_period_end: 1800000000,
           items: {
             data: [
               {
+                current_period_end: 1800000000,
                 price: { id: "price_yearly_test" },
               },
             ],

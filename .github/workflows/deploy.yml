@@ -15,15 +15,15 @@ permissions:
   contents: read
 
 jobs:
-  decrypt:
+  sops-check:
     uses: ./.github/workflows/sops-decrypt.yml
     with:
       env: production
     secrets:
-      aws_role_to_assume: ${{ secrets.AWS_OIDC_ROLE_PRODUCTION }}
+      sops_age_key_production: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
 
   build-and-deploy:
-    needs: decrypt
+    needs: sops-check
     runs-on: ubuntu-latest
     environment: production
     outputs:
@@ -33,7 +33,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.2
 
       - name: Resolve version
         id: version
@@ -67,24 +67,33 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Download decrypted .env artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: env-production
-          path: env-artifacts
-
-      - name: Stage .env for build
-        # The decrypted .env.production artifact is the source of truth for
-        # NEXT_PUBLIC_* / Stripe / Cognito envs. Next.js inlines NEXT_PUBLIC_*
-        # at build time, so the artifact must be in place before `bun run
-        # check:release` invokes `next build`.
+      - name: Install sops + age (SHA256-pinned)
+        env:
+          SOPS_VERSION: v3.9.0
+          AGE_VERSION: v1.2.0
+          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
+          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
         run: |
-          cp env-artifacts/.env.production ./.env.production 2>/dev/null || true
-          cp env-artifacts/.env.product ./.env.product 2>/dev/null || true
-          cp env-artifacts/.env.development ./.env.development 2>/dev/null || true
-          cp env-artifacts/.env.dev ./.env.dev 2>/dev/null || true
-          cp env-artifacts/.env.staging ./.env.staging 2>/dev/null || true
-          cp env-artifacts/.env ./.env 2>/dev/null || true
+          set -euo pipefail
+          curl -fsSL -o /tmp/sops "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
+          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
+          curl -fsSL -o /tmp/age.tgz "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
+          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
+          mkdir -p /tmp/age-extract
+          tar -xzf /tmp/age.tgz -C /tmp/age-extract
+          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
+          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
+          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
+
+      - name: Decrypt production environment locally
+        env:
+          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.config/sops/age"
+          printf '%s\n' "${SOPS_AGE_KEY_PRODUCTION}" > "${HOME}/.config/sops/age/keys.txt"
+          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
+          bun run scripts/sops-decrypt.ts --env=production
 
       - name: Lint, typecheck, test, build
         env:
@@ -98,6 +107,12 @@ jobs:
           # this pin the same tests pass on a JST laptop and fail on CI.
           TZ: Asia/Tokyo
         run: bun run check:release
+
+      - name: Remove plaintext environment and age key
+        if: always()
+        run: |
+          rm -f .env .env.development .env.production .env.staging .env.dev .env.product
+          rm -f "${HOME}/.config/sops/age/keys.txt"
 
       - name: Package standalone build
         # Mirrors `verify-web-artifact.ts` which rejects any `.env*` path

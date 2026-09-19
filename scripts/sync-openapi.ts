@@ -100,6 +100,21 @@ function writePublicYamlCopy(yamlText: string): void {
 	);
 }
 
+function readSpecVersion(): string {
+	let raw: string;
+	try {
+		raw = readFileSync(OUTPUT_JSON, "utf-8");
+	} catch {
+		fail(`Spec JSON not found: ${OUTPUT_JSON}`);
+	}
+	const version = (JSON.parse(raw) as { info?: { version?: unknown } }).info
+		?.version;
+	if (typeof version !== "string" || version.length === 0) {
+		fail(`Spec JSON has no info.version: ${OUTPUT_JSON}`);
+	}
+	return version;
+}
+
 function generateTypes(): void {
 	console.log(
 		"[openapi] Generating TypeScript types via openapi-typescript ...",
@@ -118,8 +133,8 @@ function generateTypes(): void {
 		"// Run `bun run sync:openapi` to refresh.",
 		"// DO NOT EDIT MANUALLY.",
 		"//",
-		`// Generated at: ${new Date().toISOString()}`,
-		`// Submodule source: ${SUBMODULE_YAML}`,
+		"// Source: ../openapi/openapi.yaml (workspace-shell submodule).",
+		`// Spec version: ${readSpecVersion()}`,
 		"",
 	].join("\n");
 

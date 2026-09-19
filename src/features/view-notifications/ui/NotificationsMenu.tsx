@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  EXECUTION_PROMPT_PREFIX,
   type NotificationItem,
   isExecutionPromptNotification,
   useNotifications,
@@ -36,25 +35,18 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
   const { t, locale } = useTranslation();
   const { notifications, loading, error } = useNotifications();
 
-  // Deep-link to /app/prompt for execution notifications carrying a
-  // pending-decision id (`prompt:<pending_prompt_id>`). Other notifications
-  // route to /app/prompt without a focus param — DecisionPromptSheet on the
-  // page renders the full list and the user picks.
+  // Core PromptView IDs are not decision-session IDs. Until a PromptView
+  // detail/resolution surface exists, prompt notifications stay visible but
+  // deliberately non-actionable rather than deep-linking into /app/prompt.
   //
-  // `window.location.assign()` is used in place of `useRouter()` because the
-  // call site must work whether or not the component is rendered inside an
-  // App Router context (the existing NotificationsMenu test mounts it
-  // without one — `useRouter()` throws "invariant expected app router to be
-  // mounted"). Using the function form (rather than assignment to `.href`)
-  // also keeps `react-hooks/immutability` happy. The reload cost on `/app/*`
-  // navigation is acceptable for the once-per-click deep-link.
+  // `window.location.assign()` is used for the remaining notification
+  // navigation because this component is also tested outside an App Router
+  // context, where `useRouter()` is unavailable.
   function handleNotificationClick(item: NotificationItem) {
-    onOpenChange(false);
     if (item.source === "execution" && isExecutionPromptNotification(item.id)) {
-      const sessionId = item.id.slice(EXECUTION_PROMPT_PREFIX.length);
-      window.location.assign(`/app/prompt?focus=${encodeURIComponent(sessionId)}`);
       return;
     }
+    onOpenChange(false);
     window.location.assign("/app/prompt");
   }
 
@@ -81,8 +73,9 @@ export function NotificationsMenu({ open, onOpenChange, anchorRef }: Notificatio
                 type="button"
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
+                disabled={n.source === "execution" && isExecutionPromptNotification(n.id)}
                 data-testid={`notification-${n.id}`}
-                className="block w-full cursor-pointer px-4 py-3 text-left hover:bg-surface-1"
+                className="block w-full cursor-pointer px-4 py-3 text-left hover:bg-surface-1 disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <div className="text-xs text-foreground">{n.message}</div>
                 <div className="mt-1 font-mono text-caption text-foreground-subtle">

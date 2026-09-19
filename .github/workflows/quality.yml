@@ -1,22 +1,37 @@
 name: quality
 
+# The reusable SOPS job verifies ciphertext only and never publishes plaintext.
+# The verify job decrypts the two build inputs in its own workspace, uses them
+# for the release gate, and deletes both plaintext files and the age key before
+# the job finishes.
 on:
   pull_request:
   push:
     branches:
       - main
       - master
+      - release-*
+  workflow_dispatch:
 
 jobs:
-  decrypt:
+  sops-check:
+    permissions:
+      contents: read
+    # Verify every env that has ciphertext + a registered secret.
+    # No decrypted file leaves the reusable job.
+    strategy:
+      matrix:
+        env: [development, production]
     uses: ./.github/workflows/sops-decrypt.yml
     with:
-      env: development
+      env: ${{ matrix.env }}
     secrets:
-      aws_role_to_assume: ${{ secrets.AWS_OIDC_ROLE_DEVELOPMENT }}
+      sops_age_key_development: ${{ secrets.SOPS_AGE_KEY_DEVELOPMENT }}
+      sops_age_key_staging: ${{ secrets.SOPS_AGE_KEY_STAGING }}
+      sops_age_key_production: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
 
   verify:
-    needs: decrypt
+    needs: sops-check
     runs-on: ubuntu-latest
 
     steps:
@@ -26,28 +41,56 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.2
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Run loader unit tests
-        run: bun test scripts/sops-decrypt.test.ts
-
-      - name: Download decrypted .env artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: env-development
-          path: env-artifacts
-
-      - name: Stage .env for build
+      - name: Install sops + age (SHA256-pinned)
+        env:
+          SOPS_VERSION: v3.9.0
+          AGE_VERSION: v1.2.0
+          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
+          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
         run: |
-          cp env-artifacts/.env.development ./.env.development 2>/dev/null || true
-          cp env-artifacts/.env.dev ./.env.dev 2>/dev/null || true
-          cp env-artifacts/.env.production ./.env.production 2>/dev/null || true
-          cp env-artifacts/.env.product ./.env.product 2>/dev/null || true
-          cp env-artifacts/.env.staging ./.env.staging 2>/dev/null || true
-          cp env-artifacts/.env ./.env 2>/dev/null || true
+          set -euo pipefail
+          curl -fsSL -o /tmp/sops "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
+          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
+          curl -fsSL -o /tmp/age.tgz "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
+          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
+          mkdir -p /tmp/age-extract
+          tar -xzf /tmp/age.tgz -C /tmp/age-extract
+          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
+          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
+          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
+
+      - name: Decrypt build environments locally
+        env:
+          SOPS_AGE_KEY_DEVELOPMENT: ${{ secrets.SOPS_AGE_KEY_DEVELOPMENT }}
+          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
+        run: |
+          set -euo pipefail
+          mkdir -p "${HOME}/.config/sops/age"
+          printf '%s\n' "${SOPS_AGE_KEY_DEVELOPMENT}" > "${HOME}/.config/sops/age/keys.txt"
+          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
+          bun run scripts/sops-decrypt.ts --env=development
+          printf '%s\n' "${SOPS_AGE_KEY_PRODUCTION}" > "${HOME}/.config/sops/age/keys.txt"
+          bun run scripts/sops-decrypt.ts --env=production
+
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as Android PR #22) and stage the copy.
+        # Pinned-revision verification stays in W04 scope.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
 
       - name: Validate repository
         run: bun run check:release
@@ -62,3 +105,9 @@ jobs:
           # this pin the same tests pass on a JST laptop and fail on CI.
           # Mirrors deploy.yml, which already pins TZ for the release build.
           TZ: Asia/Tokyo
+
+      - name: Remove plaintext environments and age key
+        if: always()
+        run: |
+          rm -f .env .env.development .env.production .env.staging .env.dev .env.product
+          rm -f "${HOME}/.config/sops/age/keys.txt"

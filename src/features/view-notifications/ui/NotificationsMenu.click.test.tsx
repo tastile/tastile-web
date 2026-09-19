@@ -78,7 +78,7 @@ describe("NotificationsMenu click navigation", () => {
     });
   });
 
-  it("navigates to /app/prompt?focus=<id> when an execution prompt notification is clicked", () => {
+  it("does not route a Core PromptView notification to the decision-session surface", () => {
     const assignSpy = vi.fn();
     const stubLocation = { ...window.location, assign: assignSpy };
     const originalDescriptor = Object.getOwnPropertyDescriptor(window, "location");
@@ -91,8 +91,9 @@ describe("NotificationsMenu click navigation", () => {
     try {
       renderWithMantine(<Layout />);
       const button = screen.getByTestId("notification-prompt:abc-123");
+      expect((button as HTMLButtonElement).disabled).toBe(true);
       fireEvent.click(button);
-      expect(assignSpy).toHaveBeenCalledWith("/app/prompt?focus=abc-123");
+      expect(assignSpy).not.toHaveBeenCalled();
     } finally {
       if (originalDescriptor) {
         Object.defineProperty(window, "location", originalDescriptor);

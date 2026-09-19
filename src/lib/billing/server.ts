@@ -68,13 +68,15 @@ async function fetchSubscriptionFromStripe(userSubject: string): Promise<Subscri
   const sub = active ?? fallback ?? subs.data[0];
   if (!sub) return { status: "free" };
 
-  const priceId = sub.items.data[0]?.price.id ?? "";
+  const subscriptionItem = sub.items.data[0];
+  if (!subscriptionItem) return { status: "free" };
+  const priceId = subscriptionItem.price.id;
   return {
     status: sub.status as SubscriptionState extends { status: infer T } ? T : never,
     interval: intervalForPriceId(priceId),
     priceId,
     customerId: customer.id,
-    currentPeriodEnd: sub.current_period_end,
+    currentPeriodEnd: subscriptionItem.current_period_end,
     cancelAtPeriodEnd: sub.cancel_at_period_end,
   };
 }

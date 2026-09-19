@@ -89,38 +89,39 @@ describe('mantineTheme', () => {
   });
 
   describe('P2 Menu defaultProps', () => {
-    it('Menu.Dropdown has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.Menu?.Dropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
-      expect((mantineTheme.components?.Menu?.Dropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
-      expect((mantineTheme.components?.Menu?.Dropdown?.defaultProps as AnyProps)?.radius).toBe('md');
+    it('Menu omits withBorder and shadow but preserves radius md', () => {
+      expect((mantineTheme.components?.Menu?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
+      expect((mantineTheme.components?.Menu?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.Menu?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
 
   describe('P2 Popover defaultProps', () => {
-    it('Popover.Dropdown has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.Popover?.Dropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
-      expect((mantineTheme.components?.Popover?.Dropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
-      expect((mantineTheme.components?.Popover?.Dropdown?.defaultProps as AnyProps)?.radius).toBe('md');
+    it('Popover omits withBorder and shadow but preserves radius md', () => {
+      expect((mantineTheme.components?.Popover?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
+      expect((mantineTheme.components?.Popover?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.Popover?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
 
   describe('P2 Tooltip defaultProps', () => {
-    it('Tooltip has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('Tooltip omits withBorder and shadow but preserves radius sm', () => {
+      expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
       expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.shadow).toBeUndefined();
       expect((mantineTheme.components?.Tooltip?.defaultProps as AnyProps)?.radius).toBe('sm');
     });
   });
 
   describe('P2 HoverCard defaultProps', () => {
-    it('HoverCard.Dropdown has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.HoverCard?.Dropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
-      expect((mantineTheme.components?.HoverCard?.Dropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+    it('HoverCard omits withBorder and shadow but preserves radius md', () => {
+      expect((mantineTheme.components?.HoverCard?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
+      expect((mantineTheme.components?.HoverCard?.defaultProps as AnyProps)?.shadow).toBeUndefined();
+      expect((mantineTheme.components?.HoverCard?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
 
   describe('P2 Notification defaultProps', () => {
-    it('Notification has withBorder false and shadow undefined', () => {
+    it('Notification keeps withBorder false and shadow undefined (regression guard)', () => {
       expect((mantineTheme.components?.Notification?.defaultProps as AnyProps)?.withBorder).toBe(false);
       expect((mantineTheme.components?.Notification?.defaultProps as AnyProps)?.shadow).toBeUndefined();
       expect((mantineTheme.components?.Notification?.defaultProps as AnyProps)?.radius).toBe('md');
@@ -128,14 +129,15 @@ describe('mantineTheme', () => {
   });
 
   describe('P2 Select defaultProps', () => {
-    it('Select has withBorder false', () => {
-      expect((mantineTheme.components?.Select?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('Select omits withBorder but preserves radius md', () => {
+      expect((mantineTheme.components?.Select?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
+      expect((mantineTheme.components?.Select?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
 
   describe('P2 Combobox defaultProps', () => {
-    it('Combobox has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.Combobox?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('Combobox omits withBorder and shadow', () => {
+      expect((mantineTheme.components?.Combobox?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
       expect((mantineTheme.components?.Combobox?.defaultProps as AnyProps)?.shadow).toBeUndefined();
     });
   });
@@ -147,31 +149,31 @@ describe('mantineTheme', () => {
   });
 
   describe('P2 Chip defaultProps', () => {
-    it('Chip has withBorder false and variant light', () => {
-      expect((mantineTheme.components?.Chip?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('Chip omits withBorder but preserves variant light', () => {
+      expect((mantineTheme.components?.Chip?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
       expect((mantineTheme.components?.Chip?.defaultProps as AnyProps)?.variant).toBe('light');
     });
   });
 
   describe('P2 Ruling 7 MenuDropdown runtime default', () => {
-    it('MenuDropdown has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('MenuDropdown omits withBorder and shadow but preserves radius md', () => {
+      expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
       expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
       expect((mantineTheme.components?.MenuDropdown?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
 
   describe('P2 Ruling 7 PopoverDropdown runtime default', () => {
-    it('PopoverDropdown has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('PopoverDropdown omits withBorder and shadow but preserves radius md', () => {
+      expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
       expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
       expect((mantineTheme.components?.PopoverDropdown?.defaultProps as AnyProps)?.radius).toBe('md');
     });
   });
 
   describe('P2 Ruling 7 HoverCardDropdown runtime default', () => {
-    it('HoverCardDropdown has withBorder false and shadow undefined', () => {
-      expect((mantineTheme.components?.HoverCardDropdown?.defaultProps as AnyProps)?.withBorder).toBe(false);
+    it('HoverCardDropdown omits withBorder and shadow', () => {
+      expect((mantineTheme.components?.HoverCardDropdown?.defaultProps as AnyProps)?.withBorder).toBeUndefined();
       expect((mantineTheme.components?.HoverCardDropdown?.defaultProps as AnyProps)?.shadow).toBeUndefined();
     });
   });

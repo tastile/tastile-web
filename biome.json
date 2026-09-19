@@ -1,58 +1,66 @@
 {
-  "vcs": {
-    "enabled": true,
-    "clientKind": "git",
-    "useIgnoreFile": true
-  },
-  "files": {
-    "ignore": [
-      ".next/**",
-      "**/*.test.*",
-      "**/*.test.ts",
-      "**/*.test.tsx",
-      "**/*.spec.*",
-      "**/*.js",
-      "**/*.jsx",
-      "**/*.mjs",
-      "**/*.cjs",
-      "**/*.sh",
-      "**/*.ps1",
-      "vitest.config.ts",
-      "eslint.config.mts",
-      "eslint.config.test.ts",
-      "scripts/build-product.mts",
-      "scripts/screenshot-calendar.mts",
-      "scripts/sops-decrypt.ts",
-      "scripts/sops-decrypt.test.ts",
-      "knip.json",
-      "tsconfig.json",
-      "tsconfig.tsbuildinfo",
-      "package.json",
-      "bun.lock",
-      "bun.lockb",
-      ".mcp.json",
-      ".codex/**",
-      "docs/archive/**",
-      "e2e/**",
-      "scripts/**",
-      "evidence/**",
-      "public/**",
-      "**/*.md",
-      "**/*.txt",
-      "**/*.lock",
-      "**/*.json"
-    ]
-  },
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"files": {
+		"includes": [
+			"**",
+			"!**/.next/**",
+			"!**/*.test.*",
+			"!**/*.test.ts",
+			"!**/*.test.tsx",
+			"!**/*.spec.*",
+			"!**/*.js",
+			"!**/*.jsx",
+			"!**/*.mjs",
+			"!**/*.cjs",
+			"!**/*.sh",
+			"!**/*.ps1",
+			"!**/vitest.config.ts",
+			"!**/eslint.config.mts",
+			"!**/eslint.config.test.ts",
+			"!**/scripts/build-product.mts",
+			"!**/scripts/screenshot-calendar.mts",
+			"!**/scripts/sops-decrypt.ts",
+			"!**/scripts/sops-decrypt.test.ts",
+			"!**/knip.json",
+			"!**/tsconfig.json",
+			"!**/tsconfig.tsbuildinfo",
+			"!**/package.json",
+			"!**/bun.lock",
+			"!**/bun.lockb",
+			"!**/.mcp.json",
+			"!**/.codex/**",
+			"!**/docs/archive/**",
+			"!**/e2e/**",
+			"!**/scripts/**",
+			"!**/evidence/**",
+			"!**/public/**",
+			"!**/*.md",
+			"!**/*.txt",
+			"!**/*.lock",
+			"!**/*.json"
+		]
+	},
   "formatter": {
     "enabled": false
   },
-  "css": {
-    "parser": {
-      "cssModules": true
-    }
-  },
-  "javascript": {},
-  "linter": {
+  "assist": {
     "enabled": false
-  }
+  },
+	"css": {
+		"parser": {
+			"cssModules": true,
+			"tailwindDirectives": true
+		}
+	},
+	"javascript": {},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"preset": "none"
+		}
+	}
 }

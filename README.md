@@ -39,13 +39,13 @@ e2e/            Playwright coverage
 
 ## Prerequisites
 
-- Node.js 20.11 or newer
-- Bun 1.3 or newer
+- Node.js 24.0.0 or newer
+- Bun 1.4.2 or newer
 
 
 ## Environment
 
-Copy `.env.dev.example` to `.env.dev` (development) or `.env.product.example` to `.env.product` (production) and fill in the required values.
+Copy `.env.development.example` to `.env.development` (development) or `.env.production.example` to `.env.production` (production) and fill in the required values.
 
 Core variables:
 
@@ -62,7 +62,7 @@ TASTILE_DESKTOP_VERSION=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
 
-Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.dev.example` and `.env.product.example`.
+Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.development.example` and `.env.production.example`.
 
 Desktop download and versioning are resolved from the public installer manifest by default
 
@@ -84,6 +84,14 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Pointing dev at the production API
+
+To smoke-test the dev server against the public prod API (`https://api.tastile.app`)
+without a separate deployment, run `bun run dev:prod` or edit the canonical
+`NEXT_PUBLIC_TASTILE_CORE_URL` / `CLOUD_API_BASE` lines in `.env.development`.
+See [`docs/dev-prod-api-switch.md`](./docs/dev-prod-api-switch.md) for the
+variables, auth caveats, and troubleshooting.
 
 ## Quality Gates
 

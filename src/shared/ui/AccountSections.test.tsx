@@ -141,7 +141,8 @@ describe("SubscriptionSection", () => {
     renderSubscriptionSection();
 
     expect(await screen.findByText("account.subscription.error")).toBeTruthy();
-    expect(screen.getByText("account.subscription.currentPlan")).toBeTruthy();
+    expect(screen.queryByText("account.subscription.currentPlan")).toBeNull();
+    expect(screen.queryByText("account.subscription.freeBadge")).toBeNull();
   });
 
   it("shows the translated error and re-enables manage when opening the portal rejects", async () => {

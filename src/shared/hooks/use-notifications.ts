@@ -17,7 +17,7 @@ const BASE_INTERVAL_MS = 15_000;
 const MAX_BACKOFF_MS = 5 * 60_000;
 
 /** Prefix for notification IDs that carry an execution pending_prompt_id. */
-export const EXECUTION_PROMPT_PREFIX = "prompt:";
+const EXECUTION_PROMPT_PREFIX = "prompt:";
 
 /** Returns true if the notification id is an execution pending-prompt id. */
 export function isExecutionPromptNotification(id: string): boolean {
@@ -55,13 +55,18 @@ interface ListResponse<T> {
   items?: T[];
 }
 
-interface ExecutionSnapshot {
-  is_working: boolean;
-  is_on_break: boolean;
-  main_tile: { id: string; title: string } | null;
-  main_tile_started_at: string | null;
-  main_tile_ends_at: string | null;
-  pending_prompt_id: string | null;
+interface ActiveTileSnapshot {
+  tile_id: string;
+  placement_id: string;
+  execution_id: string | null;
+  title: string;
+  span_start: string | null;
+  span_end: string | null;
+}
+
+interface PendingPromptSnapshot {
+  id: string;
+  created_at: string;
 }
 
 export function useNotifications() {
@@ -76,12 +81,12 @@ export function useNotifications() {
   const refresh = useCallback(async () => {
     const requestId = ++requestIdRef.current;
     const client = getCoreClient();
-    const [access, execution] = await Promise.all([
+    const [access, activeTile, pendingPrompts] = await Promise.all([
       fetchAccessNotifications(t),
-      // The endpoint may legitimately return null when no execution is
-      // active.  Type the result loosely so we can runtime-null-check
-      // it here instead of crashing when /v1/active-tile returns null.
-      client.call<ExecutionSnapshot | null>("getExecutionView"),
+      // /read/execution-view is rewritten to the canonical /v1/active-tile
+      // read model. A successful null response means no active execution.
+      client.call<ActiveTileSnapshot | null>("getExecutionView"),
+      client.call<PendingPromptSnapshot[]>("getPendingPrompt"),
     ]);
     if (requestId !== requestIdRef.current) return { failed: false };
 
@@ -106,14 +111,29 @@ export function useNotifications() {
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
 
-    if (execution.ok && execution.data) {
-      const execData = execution.data;
-      const item = toExecutionNotification(execData, t);
+    const prompt = pendingPrompts.ok ? (pendingPrompts.data[0] ?? null) : null;
+    if (prompt) {
+      // Prompt is a higher-priority, independently fetched read model.
+      // Once we have a valid pending prompt, an active-tile failure must not
+      // hide it behind the menu's error state.
+      const item = toPendingPromptNotification(prompt, t);
+      setExecutionItem(item);
+      const kind: NotificationKind = "prompt_pending";
+      emitOnce(seenSystemNotifications.current, item.id, {
+        kind,
+        title: t("notifications.brandTitle"),
+        body: item.message,
+        tag: item.id,
+      });
+    } else if (!pendingPrompts.ok) {
+      failed = true;
+      const msg = pendingPrompts.error.message;
+      setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
+    } else if (activeTile.ok) {
+      const item = activeTile.data ? toActiveTileNotification(activeTile.data, t) : null;
       setExecutionItem(item);
       if (item) {
-        const kind: NotificationKind = execData.pending_prompt_id
-          ? "prompt_pending"
-          : "tile_started";
+        const kind: NotificationKind = "tile_started";
         emitOnce(seenSystemNotifications.current, item.id, {
           kind,
           title: t("notifications.brandTitle"),
@@ -121,14 +141,13 @@ export function useNotifications() {
           tag: item.id,
         });
       }
-    } else if (!execution.ok) {
+    } else {
       failed = true;
-      const msg = execution.error.message;
+      const msg = activeTile.error.message;
       setError((prev) => (prev?.message === msg ? prev : new Error(msg)));
     }
-    // else: execution.ok === true && execution.data === null.  No active
-    // tile, nothing to notify, no error to surface.  Skip both branches.
 
+    if (!failed) setError(null);
     setLoading(false);
     return { failed };
   }, [t]);
@@ -214,28 +233,27 @@ async function fetchAccessNotifications(
   }
 }
 
-function toExecutionNotification(
-  snapshot: ExecutionSnapshot,
+function toPendingPromptNotification(
+  prompt: PendingPromptSnapshot,
   t: (key: string) => string,
-): NotificationItem | null {
-  if (snapshot.pending_prompt_id) {
-    return {
-      id: `${EXECUTION_PROMPT_PREFIX}${snapshot.pending_prompt_id}`,
-      message: t("notifications.promptPending"),
-      timestamp: new Date(),
-      readAt: null,
-      source: "execution",
-    };
-  }
-  if (!snapshot.is_working || !snapshot.main_tile) return null;
+): NotificationItem {
   return {
-    id: `execution:${snapshot.main_tile.id}`,
-    message: snapshot.is_on_break
-      ? t("notifications.onBreak")
-      : `${t("notifications.running")}: ${snapshot.main_tile.title}`,
-    timestamp: snapshot.main_tile_started_at
-      ? parseDate(snapshot.main_tile_started_at)
-      : new Date(),
+    id: `${EXECUTION_PROMPT_PREFIX}${prompt.id}`,
+    message: t("notifications.promptPending"),
+    timestamp: parseDate(prompt.created_at),
+    readAt: null,
+    source: "execution",
+  };
+}
+
+function toActiveTileNotification(
+  snapshot: ActiveTileSnapshot,
+  t: (key: string) => string,
+): NotificationItem {
+  return {
+    id: `execution:${snapshot.tile_id}`,
+    message: `${t("notifications.running")}: ${snapshot.title}`,
+    timestamp: snapshot.span_start ? parseDate(snapshot.span_start) : new Date(),
     readAt: null,
     source: "execution",
   };

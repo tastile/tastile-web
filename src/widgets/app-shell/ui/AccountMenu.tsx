@@ -113,11 +113,20 @@ export function AccountMenu({
             {t("account.menu.accountSettings")}
           </Link>
         </FloatingMenuItem>
-        <FloatingMenuItem asChild>
-          <Link href={plan === "pro" ? "/dashboard/billing" : "/pricing"} className="w-full">
-            {plan === "pro" ? t("account.menu.billing") : t("account.menu.upgradeToPro")}
-          </Link>
-        </FloatingMenuItem>
+        {/* W06 (2026-09-19 free launch): the previous "Upgrade to Pro" /
+            "Billing" menu entry is removed. New paid checkouts are
+            disabled (POST /api/stripe/checkout → 410 checkout_disabled),
+            so free users have no upgrade path. Existing paid users
+            reach the billing portal via /dashboard/preferences/account
+            ?tab=subscription — see AccountMenu.billingLink below for
+            legacy compatibility. */}
+        {plan === "pro" && (
+          <FloatingMenuItem asChild>
+            <Link href="/dashboard/preferences/account?tab=subscription" className="w-full">
+              {t("account.menu.billing")}
+            </Link>
+          </FloatingMenuItem>
+        )}
         <FloatingMenuSeparator />
         <FloatingMenuItem onSelect={handleSignOut} className="text-danger">
           {t("account.menu.signOut")}

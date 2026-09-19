@@ -1,11 +1,23 @@
+# SOPS encryption rules for tastile-web.
+#
+# One age recipient per environment (development / staging / production) so
+# that a single leaked identity can only decrypt the env it is supposed to
+# serve. The AWS KMS path is out of scope for this iteration (operator
+# directive, Daily Scrum 2026-09-07); per-env keys are the interim posture.
+#
+# The matching private halves live in three GitHub Secrets:
+#   - SOPS_AGE_KEY_DEVELOPMENT
+#   - SOPS_AGE_KEY_STAGING
+#   - SOPS_AGE_KEY_PRODUCTION
+# Each secret value is materialized to ~/.config/sops/age/keys.txt by
+# .github/workflows/sops-decrypt.yml before any `sops --decrypt` runs.
+# Local developers keep the same envelopes in ~/.config/sops/age/<env>.key.
+#
+# To rotate one env: generate a new age-keypair, replace the matching
+# `age:` value below, then `sops updatekeys -y` against the affected
+# .env.<env>.sops file. Never reuse a key across envs.
 creation_rules:
   - path_regex: \.env\.development\.sops$
-    kms: 'arn:aws:kms:ap-northeast-1:<account>:key/<dev-key-id>'
-  - path_regex: \.env\.dev\.sops$
-    kms: 'arn:aws:kms:ap-northeast-1:<account>:key/<dev-key-id>'
-  - path_regex: \.env\.staging\.sops$
-    kms: 'arn:aws:kms:ap-northeast-1:<account>:key/<staging-key-id>'
+    age: 'age1q0rp9dflllkxy62fd6dwqfeqt9pl6ekyz2dff3sjwsy8xqrlcplsww8q5z'
   - path_regex: \.env\.production\.sops$
-    kms: 'arn:aws:kms:ap-northeast-1:<account>:key/<production-key-id>'
-  - path_regex: \.env\.product\.sops$
-    kms: 'arn:aws:kms:ap-northeast-1:<account>:key/<production-key-id>'
+    age: 'age1dm4t40x7v95thpr426ay8tggz5jfw0f42dkwxucqum3509yv4gwqwhzl5k'
