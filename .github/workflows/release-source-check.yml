@@ -37,12 +37,18 @@ jobs:
         env:
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           set -euo pipefail
           if [[ "${BASE_REF}" != "main" ]]; then
             echo "::notice::base is ${BASE_REF}, not main — skipping release-source check"
             exit 0
+          fi
+          if [[ "${HEAD_REPO}" != "${GITHUB_REPOSITORY}" ]]; then
+            echo "::error::PR to main must originate from the canonical repository"
+            echo "::error::actual head_repo=${HEAD_REPO} expected=${GITHUB_REPOSITORY}"
+            exit 1
           fi
           if [[ ! "${HEAD_REF}" =~ ^release-[0-9]+-[0-9]+-[0-9]+$ ]]; then
             echo "::error::PR to main requires head_ref matching ^release-[0-9]+-[0-9]+-[0-9]+\$"
