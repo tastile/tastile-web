@@ -43,101 +43,14 @@ jobs:
               ;;
           esac
 
-  decrypt:
-    needs: validate-env
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install sops + age (SHA256-pinned)
-        env:
-          SOPS_VERSION: v3.9.0
-          AGE_VERSION: v1.2.0
-          # SHA256 of age-v1.2.0-linux-amd64.tar.gz. FiloSottile/age does
-          # not publish SHA256 sums alongside releases, so pin the value
-          # here. Update both `AGE_VERSION` and `AGE_SHA256` together.
-          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
-          # SHA256 of sops-v3.9.0.linux.amd64. getsops/sops does not
-          # publish a checksum file for this asset (verified 2026-09-09:
-          # only .spdx.sbom.json exists), so pin the value here.
-          # Update both `SOPS_VERSION` and `SOPS_SHA256` together.
-          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/sops \
-            "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
-          echo "${AGE_SHA256}  /tmp/age.tgz.expected" > /tmp/age.sha256
-          curl -fsSL -o /tmp/age.tgz \
-            "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
-          # Pin verification: assert the downloaded tarball matches the
-          # version-pinned SHA256 above. A release-tampering or MITM
-          # attack that swaps the binary will fail this check before
-          # private key material is touched.
-          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
-          mkdir -p /tmp/age-extract
-          tar -xzf /tmp/age.tgz -C /tmp/age-extract
-          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
-          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
-          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
-          sops --version
-          age --version
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: 1.4.0
-
-      - name: Materialize age private key (env-scoped)
-        env:
-          SOPS_AGE_KEY_DEVELOPMENT: ${{ secrets.sops_age_key_development }}
-          SOPS_AGE_KEY_STAGING: ${{ secrets.sops_age_key_staging }}
-          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.sops_age_key_production }}
-          TASTILE_ENV: ${{ inputs.env }}
-        run: |
-          set -euo pipefail
-          case "${TASTILE_ENV}" in
-            development) KEY="${SOPS_AGE_KEY_DEVELOPMENT}" ;;
-            staging)     KEY="${SOPS_AGE_KEY_STAGING}"     ;;
-            production)  KEY="${SOPS_AGE_KEY_PRODUCTION}"  ;;
-            *)
-              echo "::error::unreachable: validate-env already gated this"
-              exit 2
-              ;;
-          esac
-          if [[ -z "${KEY}" ]]; then
-            echo "::error::SOPS_AGE_KEY_${TASTILE_ENV^^} secret is not registered for this repo"
-            exit 3
-          fi
-          mkdir -p "${HOME}/.config/sops/age"
-          printf '%s\n' "${KEY}" > "${HOME}/.config/sops/age/keys.txt"
-          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
-
-      - name: Run loader
-        env:
-          TASTILE_ENV: ${{ inputs.env }}
-        run: bun run scripts/sops-decrypt.ts --env=${{ inputs.env }}
-
-      - name: Upload decrypted .env
-        uses: actions/upload-artifact@v4
-        with:
-          name: env-${{ inputs.env }}
-          path: |
-            .env
-            .env.development
-            .env.production
-          retention-days: 1
-          if-no-files-found: error
-          # Decrypted targets are all dotfiles (.env*). upload-artifact
-          # v4 excludes hidden files by default, so opt in explicitly.
-          include-hidden-files: true
-
   check:
     needs: validate-env
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install sops + age (SHA256-pinned)
         env:
@@ -167,7 +80,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.2
 
       - name: Materialize age private key (env-scoped)
         env:
@@ -198,3 +111,7 @@ jobs:
         env:
           TASTILE_ENV: ${{ inputs.env }}
         run: bun run scripts/sops-decrypt.ts --env=${{ inputs.env }} --check
+
+      - name: Remove age private key
+        if: always()
+        run: rm -f "${HOME}/.config/sops/age/keys.txt"
