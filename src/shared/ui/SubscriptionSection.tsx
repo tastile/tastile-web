@@ -123,6 +123,16 @@ export function SubscriptionSection() {
 		);
 	}
 
+	if (subscriptionQuery.isError || state == null) {
+		return (
+			<div className="border border-border bg-surface-0 rounded-md p-6">
+				<p className="text-sm text-danger">
+					{error ?? t("account.subscription.error")}
+				</p>
+			</div>
+		);
+	}
+
 	// W06 (2026-09-19 free launch):
 	// - free / no subscription  → show the Free plan only, no upgrade CTA.
 	// - existing paid subscriber → keep status, manage/portal so the user
@@ -237,10 +247,7 @@ export function SubscriptionSection() {
 							</span>
 						</div>
 						<p className="text-sm text-foreground-muted mb-3">
-							{subDict.monthly}
-							{proInterval === "yearly"
-								? ` · ${subDict.yearly}`
-								: ""}
+							{proInterval === "monthly" ? subDict.monthly : subDict.yearly}
 						</p>
 						<p className="text-2xl font-bold text-foreground mb-4">
 							{proInterval === "monthly"

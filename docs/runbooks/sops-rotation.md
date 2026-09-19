@@ -76,8 +76,10 @@
    Reviewer confirms the `ENC[...]` block changed and not unrelated keys.
 
 6. **Open PR**. The `sops-decrypt --check` job verifies decryptability
-   without emitting plaintext. After merge, the next CI run on `develop`
-   regenerates the artifact.
+   without emitting plaintext. After merge, the next CI run on `main`
+   verifies the ciphertext again. CI must not persist decrypted `.env*` files
+   as artifacts; jobs that need plaintext decrypt it locally and delete it
+   before the job finishes.
 
 7. **Cross-repo secret drift check**
 

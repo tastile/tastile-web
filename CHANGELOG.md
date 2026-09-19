@@ -1,8 +1,11 @@
 # Changelog — tastile-web
 
-Canonical release artifact. Per ADR-0007, release tags are cut by
-`scripts/release/tag-release.sh` after the release PR (release-x-y-z → main)
-is merged. Entries below are auto-curated from the GitHub Release notes
+Canonical release artifact. Per ADR-0007, create the annotated release tag
+locally with `scripts/release/tag-release.sh` while `release-X-Y-Z` still
+points at the exact release commit. Merge that release commit into `main`,
+then run the same command with `--push`; the script verifies that the tagged
+commit is reachable from `origin/main` before publishing the tag. Entries
+below are auto-curated from the GitHub Release notes
 that `deploy.yml` produces; do not edit by hand unless reconciling drift.
 
 ## Unreleased

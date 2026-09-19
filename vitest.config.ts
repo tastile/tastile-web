@@ -36,6 +36,7 @@ export default defineConfig({
     environment: "jsdom",
     include: [
       "src/**/*.{test,spec}.{ts,tsx}",
+      "scripts/**/*.{test,spec}.{ts,tsx}",
       "eslint-local-rules/__tests__/*.test.mjs",
     ],
     exclude: [

@@ -73,7 +73,7 @@ body:
     attributes:
       label: Execution Generation (ADR-0008)
       description: recovery 時に increment する。default 1。
-      default: '1'
+      value: '1'
     validations:
       required: false
 

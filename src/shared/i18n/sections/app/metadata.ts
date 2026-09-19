@@ -47,51 +47,51 @@ export const metadata = {
 	"zh-CN": {
 		metadata: {
 			download: {
-				title: "Get Tastile — Free at the 9/19 launch",
+				title: "获取 Tastile — 9/19 上线时免费",
 				description:
-					"Tastile ships for Web and Android only at the 9/19 launch. No Windows or Desktop client is included.",
+					"Tastile 在 9/19 上线时仅提供 Web 和 Android 版本，不包含 Windows 或桌面客户端。",
 			},
 			pricing: {
-				title: "Pricing — Tastile",
-				description: "Free at the 9/19 launch. Web and Android only; no paid plan.",
+				title: "价格 — Tastile",
+				description: "9/19 上线时免费。仅支持 Web 和 Android；暂无付费方案。",
 			},
 			floatingSchedule: {
-				requiredMinutes: "Required time: {minutes} min",
-				availableWindow: "Available window: {title}",
+				requiredMinutes: "所需时间：{minutes} 分钟",
+				availableWindow: "可用时间段：{title}",
 			},
 		},
 	},
 	ko: {
 		metadata: {
 			download: {
-				title: "Get Tastile — Free at the 9/19 launch",
+				title: "Tastile 받기 — 9/19 출시 시 무료",
 				description:
-					"Tastile ships for Web and Android only at the 9/19 launch. No Windows or Desktop client is included.",
+					"Tastile은 9/19 출시 시 Web과 Android만 제공됩니다. Windows 또는 데스크톱 클라이언트는 포함되지 않습니다.",
 			},
 			pricing: {
-				title: "Pricing — Tastile",
-				description: "Free at the 9/19 launch. Web and Android only; no paid plan.",
+				title: "요금 — Tastile",
+				description: "9/19 출시 시 무료입니다. Web 및 Android만 제공되며 유료 요금제는 없습니다.",
 			},
 			floatingSchedule: {
-				requiredMinutes: "Required time: {minutes} min",
-				availableWindow: "Available window: {title}",
+				requiredMinutes: "필요 시간: {minutes}분",
+				availableWindow: "사용 가능한 시간대: {title}",
 			},
 		},
 	},
 	es: {
 		metadata: {
 			download: {
-				title: "Get Tastile — Free at the 9/19 launch",
+				title: "Obtener Tastile — Gratis en el lanzamiento del 19/9",
 				description:
-					"Tastile launches for Web and Android only on 9/19. No Windows or Desktop client is included.",
+					"Tastile se lanza el 19/9 solo para Web y Android. No incluye cliente para Windows ni escritorio.",
 			},
 			pricing: {
-				title: "Pricing — Tastile",
-				description: "Free at the 9/19 launch. Web and Android only; no paid plan.",
+				title: "Precios — Tastile",
+				description: "Gratis en el lanzamiento del 19/9. Solo Web y Android; sin plan de pago.",
 			},
 			floatingSchedule: {
-				requiredMinutes: "Required time: {minutes} min",
-				availableWindow: "Available window: {title}",
+				requiredMinutes: "Tiempo necesario: {minutes} min",
+				availableWindow: "Franja disponible: {title}",
 			},
 		},
 	},

@@ -65,7 +65,7 @@ body:
     id: execution_generation
     attributes:
       label: Execution Generation (ADR-0008)
-      default: '1'
+      value: '1'
     validations:
       required: false
 

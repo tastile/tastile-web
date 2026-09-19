@@ -2,8 +2,9 @@
 #
 # Reference: https://docs.github.com/en/code-security/dependabot/dependabot-security-updates/configuring-dependabot-security-updates
 #
-# Weekly cadence, grouped by ecosystem, with a target branch pinned to
-# `main` and the active release branch. Update `target-branch` when the
+# Weekly cadence, grouped by ecosystem. Each ecosystem has separate jobs
+# for `main` and the active release branch because Dependabot accepts only one
+# scalar `target-branch` per update entry. Update the release-target entries when the
 # active release branch changes (`.agents/skills/release-branch-workflow/SKILL.md`,
 # `docs/adr/0007-release-branch-and-ticket-workflow.md`).
 #
@@ -30,9 +31,56 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Tokyo"
-    target-branch:
-      - main
-      - "release-0-6-0"
+    target-branch: main
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "deps/npm"
+    groups:
+      mantine:
+        patterns:
+          - "@mantine/*"
+      react-stack:
+        patterns:
+          - "react"
+          - "react-dom"
+          - "@types/react"
+          - "@types/react-dom"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      testing:
+        patterns:
+          - "vitest"
+          - "@vitest/*"
+      build-tooling:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "eslint"
+          - "@eslint/*"
+          - "eslint-*"
+          - "@biomejs/biome"
+          - "knip"
+          - "fast-check"
+    ignore:
+      # Pin per ADR-0001; bump requires coordinated Next.js / React 19 upgrade.
+      - dependency-name: "next"
+        versions:
+          - ">= 17.0.0"
+      - dependency-name: "@types/node"
+        versions:
+          - ">= 23.0.0"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    target-branch: "release-0-6-0"
     commit-message:
       prefix: "deps"
       include: "scope"
@@ -81,9 +129,33 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Tokyo"
-    target-branch:
-      - main
-      - "release-0-6-0"
+    target-branch: main
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "deps/actions"
+    groups:
+      actions-major-bump:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+      actions-minor-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    target-branch: "release-0-6-0"
     commit-message:
       prefix: "ci"
       include: "scope"
@@ -109,9 +181,21 @@ updates:
       day: "monday"
       time: "09:00"
       timezone: "Asia/Tokyo"
-    target-branch:
-      - main
-      - "release-0-6-0"
+    target-branch: main
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "deps/docker"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "Asia/Tokyo"
+    target-branch: "release-0-6-0"
     commit-message:
       prefix: "deps"
       include: "scope"

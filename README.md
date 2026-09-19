@@ -39,13 +39,13 @@ e2e/            Playwright coverage
 
 ## Prerequisites
 
-- Node.js 20.11 or newer
-- Bun 1.3 or newer
+- Node.js 24.0.0 or newer
+- Bun 1.4.2 or newer
 
 
 ## Environment
 
-Copy `.env.dev.example` to `.env.dev` (development) or `.env.product.example` to `.env.product` (production) and fill in the required values.
+Copy `.env.development.example` to `.env.development` (development) or `.env.production.example` to `.env.production` (production) and fill in the required values.
 
 Core variables:
 
@@ -62,7 +62,7 @@ TASTILE_DESKTOP_VERSION=
 NEXT_PUBLIC_GA_MEASUREMENT_ID=
 ```
 
-Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.dev.example` and `.env.product.example`.
+Additional variables (including AWS Cognito / `tastile-core` API keys added by the AWS integration) are documented in `.env.development.example` and `.env.production.example`.
 
 Desktop download and versioning are resolved from the public installer manifest by default
 

@@ -18,9 +18,9 @@ client-side fix against real prod data.
 
 | Variable | Default in `.env.development` | What it controls |
 | --- | --- | --- |
-| `NEXT_PUBLIC_TASTILE_CORE_URL` | `http://127.0.0.1:31400` | Browser-side canonical API base URL. First preference in `src/shared/api/endpoints.ts → resolveCoreBaseUrl()`. |
+| `NEXT_PUBLIC_TASTILE_CORE_URL` | `http://localhost:31400` | Browser-side canonical API base URL. First preference in `src/shared/api/endpoints.ts → resolveCoreBaseUrl()`. |
 | `NEXT_PUBLIC_DAEMON_BASE_URL` | `http://localhost:31400` | Legacy alias. Kept for backward compatibility; the canonical var above takes priority. |
-| `CLOUD_API_BASE` | `http://127.0.0.1:31400` | Server-side target for `/api/proxy` (`src/app/api/proxy/[...path]/route.ts` and `src/lib/upstream/cloud-api-base.ts`). Required at runtime. |
+| `CLOUD_API_BASE` | `<required>` | Server-side target for `/api/proxy` (`src/app/api/proxy/[...path]/route.ts` and `src/lib/upstream/cloud-api-base.ts`). Required at runtime. |
 | `NEXT_PUBLIC_CORE_DIRECT_MODE` | `0` | When `1`, the browser calls `CLOUD_API_BASE` directly and skips the proxy. Requires CORS + a valid bearer token. |
 | `NEXT_PUBLIC_E2E_BYPASS_AUTH` | unset | When `1`, the browser uses the E2E default `http://127.0.0.1:31400` regardless of the vars above. Leave `0` for prod smoke tests. |
 
@@ -40,8 +40,8 @@ CLOUD_API_BASE=https://api.tastile.app
 ```
 
 The dev server reads `.env.development` on startup, so restart `bun dev` after
-editing. To revert, restore the two lines to their `http://127.0.0.1:31400`
-defaults.
+editing. To revert, restore the values from `.env.development.example` and
+restart the dev server.
 
 ### Option B — `bun run dev:prod` (no edit)
 
