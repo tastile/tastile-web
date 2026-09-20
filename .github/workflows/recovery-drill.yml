@@ -58,8 +58,11 @@ jobs:
         run: |
           set -euo pipefail
           set +e
+          # Always exercise the current SoT (package.json#version) so the
+          # smoke test stays in sync with whatever the repo is releasing.
+          PKG_VERSION="$(node -p "require('./package.json').version")"
           # Refuses non-release branch — exit code must be 3
-          ./scripts/release/tag-release.sh 0.6.0
+          ./scripts/release/tag-release.sh "${PKG_VERSION}"
           exit_code=$?
           set -e
           if [[ "${exit_code}" -ne 3 ]]; then
