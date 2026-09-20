@@ -24,7 +24,7 @@ COPY . .
 RUN bun run build
 
 # ----- run stage -----
-FROM node:20-bookworm-slim AS run
+FROM node:25-bookworm-slim AS run
 WORKDIR /app
 
 # Re-declare ARG so it can be referenced by the LABEL below.
