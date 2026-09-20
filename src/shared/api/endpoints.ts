@@ -861,12 +861,14 @@ export class CoreClient {
     }
     const requestPath = this.useProxyBridge ? path : toV1Path(path);
     const rawUrl = this.baseUrl + requestPath;
-    // Relative baseUrl ("/api/proxy") must resolve against the page origin:
-    // fetch honors the full URL, so a port-less loopback dummy sends the
-    // request to :80 instead of the app server. Server-side (no window)
-    // keeps the previous dummy origin for searchParams handling.
-    const url = rawUrl.startsWith("/")
-      ? new URL(rawUrl, typeof window !== "undefined" ? window.location.origin : "http://localhost")
+    const isSameOriginRelative = rawUrl.startsWith("/");
+    // Keep the web proxy URL relative all the way into fetch(). Resolving it
+    // against a synthetic localhost origin can leak that loopback host into a
+    // production browser bundle/runtime path and send requests to the user's
+    // own machine. A dummy origin is used only to manipulate path/query data;
+    // it is stripped before fetch for same-origin requests.
+    const url = isSameOriginRelative
+      ? new URL(rawUrl, "https://tastile.invalid")
       : new URL(rawUrl);
     if (options.query) {
       for (const [k, v] of Object.entries(options.query)) {
@@ -874,6 +876,7 @@ export class CoreClient {
         url.searchParams.set(k, String(v));
       }
     }
+    const requestUrl = isSameOriginRelative ? `${url.pathname}${url.search}` : url.toString();
     const headers: Record<string, string> = {
       accept: "application/json",
     };
@@ -897,7 +900,7 @@ export class CoreClient {
 
     let response: Response;
     try {
-      response = await this.fetchImpl(url.toString(), fetchInit);
+      response = await this.fetchImpl(requestUrl, fetchInit);
     } catch (err) {
       const fallback = await this.retryThroughProxy<T>(meta, path, url, fetchInit, started);
       if (fallback) return fallback;
@@ -915,7 +918,7 @@ export class CoreClient {
     if (response.status === 401 && this.onUnauthorized) {
       const refreshed = await this.onUnauthorized();
       if (refreshed) {
-        response = await this.fetchImpl(url.toString(), {
+        response = await this.fetchImpl(requestUrl, {
           ...fetchInit,
           headers: { ...headers, authorization: `Bearer ${refreshed}` },
         });
