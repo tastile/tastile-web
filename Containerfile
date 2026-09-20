@@ -4,7 +4,7 @@
 # the standalone bundle, .next/static, and public/.
 
 # ----- build stage -----
-FROM oven/bun:1.3.14 AS build
+FROM oven/bun:1.4.2 AS build
 WORKDIR /app
 ARG NEXT_PUBLIC_E2E_BYPASS_AUTH=0
 # APP_VERSION is the canonical web app version (sourced from
