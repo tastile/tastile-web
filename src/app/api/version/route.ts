@@ -1,3 +1,4 @@
+import { getWebAppVersion } from "@/lib/app-version";
 import { fetchDesktopReleaseInfo } from "@/lib/desktop-release";
 import { NextResponse } from "next/server";
 
@@ -8,6 +9,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
+    web: getWebAppVersion(),
     latest: release.latestVersion,
     download_url: release.downloadUrl,
     required: false,

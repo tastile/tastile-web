@@ -8,8 +8,8 @@
 #   - .github/workflows/deploy.yml (tag-triggered deploy path)
 #
 # Usage:
-#   ./scripts/release/tag-release.sh 0.6.0 [--push]
-#   DRY_RUN=1 ./scripts/release/tag-release.sh 0.6.0   # verify without writing
+#   ./scripts/release/tag-release.sh 1.0.1 [--push]
+#   DRY_RUN=1 ./scripts/release/tag-release.sh 1.0.1   # verify without writing
 
 set -euo pipefail
 
@@ -23,8 +23,8 @@ done
 
 if [[ -z "${VERSION}" ]]; then
   echo "usage: $0 <version> [--push]" >&2
-  echo "  e.g. $0 0.6.0" >&2
-  echo "       $0 0.6.0 --push  # also push tag to origin" >&2
+  echo "  e.g. $0 1.0.1" >&2
+  echo "       $0 1.0.1 --push  # also push tag to origin" >&2
   exit 2
 fi
 
