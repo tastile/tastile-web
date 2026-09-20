@@ -117,6 +117,7 @@ jobs:
       - name: Sync minimum runtime auth env to EC2
         env:
           WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
+          TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
         run: |
           set -euo pipefail
           test -s .env.production
@@ -127,7 +128,6 @@ jobs:
 
           BETTER_AUTH_SECRET="$(get_env BETTER_AUTH_SECRET)"
           TASTILE_AUTH_DATABASE_URL="$(get_env TASTILE_AUTH_DATABASE_URL)"
-          TASTILE_WEB_BRIDGE_SECRET="$(get_env TASTILE_WEB_BRIDGE_SECRET)"
 
           test -n "$BETTER_AUTH_SECRET"
           test -n "$TASTILE_AUTH_DATABASE_URL"
