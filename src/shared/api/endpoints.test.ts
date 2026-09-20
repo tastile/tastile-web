@@ -40,7 +40,7 @@ describe("CoreClient", () => {
     ]);
   });
 
-  it("keeps legacy paths when the proxy bridge is used", async () => {
+  it("keeps proxy bridge requests relative to the deployed web origin", async () => {
     const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ status: "ok" })));
     const client = new CoreClient({
       baseUrl: "/api/proxy",
@@ -51,9 +51,22 @@ describe("CoreClient", () => {
 
     await client.call("getRuntimePaths");
 
-    // Relative proxy base resolves against the page origin (vitest serves
-    // http://localhost:3000), never a port-less dummy that would hit :80.
-    expect(calledUrls(fetchImpl)[0]).toBe("http://localhost:3000/api/proxy/read/runtime-paths");
+    expect(calledUrls(fetchImpl)[0]).toBe("/api/proxy/read/runtime-paths");
+    expect(calledUrls(fetchImpl)[0]).not.toContain("localhost");
+  });
+
+  it("preserves existing and additional query parameters on relative proxy requests", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ status: "ok" })));
+    const client = new CoreClient({
+      baseUrl: "/api/proxy",
+      tokenProvider: async () => null,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: true,
+    });
+
+    await client.call("listMyWorkspaces", { query: { limit: 20 } });
+
+    expect(calledUrls(fetchImpl)[0]).toBe("/api/proxy/access/subjects?kind=1&limit=20");
   });
 
   it("does not send an Authorization header when tokenProvider is null and bridge is off", async () => {
