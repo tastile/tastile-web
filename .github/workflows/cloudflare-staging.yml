@@ -1,0 +1,95 @@
+name: Cloudflare staging
+
+on:
+  push:
+    branches:
+      - "release-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      TASTILE_ENV: staging
+      CLOUD_API_BASE: https://api.staging.app.tastile.app
+      TASTILE_RUST_API_URL: https://api.staging.app.tastile.app
+      TASTILE_USE_RUST_CORE: "1"
+      NEXT_PUBLIC_CORE_DIRECT_MODE: "0"
+      E2E_BYPASS_AUTH: "0"
+      NEXT_PUBLIC_E2E_BYPASS_AUTH: "0"
+      NEXT_PUBLIC_APP_URL: https://staging.app.tastile.app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Quality gate
+        run: bun run check
+
+      - name: Materialize staging Wrangler config
+        env:
+          HYPERDRIVE_ID: ${{ secrets.CLOUDFLARE_HYPERDRIVE_STAGING_ID }}
+        run: |
+          set -euo pipefail
+          test -n "$HYPERDRIVE_ID"
+          bun scripts/materialize-cloudflare-config.mts \
+            --env staging \
+            --hyperdrive-id "$HYPERDRIVE_ID" \
+            --app-url "$NEXT_PUBLIC_APP_URL" \
+            --output .tmp/wrangler.staging.json
+          bun run verify:cloudflare -- .tmp/wrangler.staging.json --env staging
+
+      - name: Preflight staging Worker secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          secrets="$(bunx wrangler secret list --name tastile-web-staging --format json)"
+          jq -e 'map(.name) | (index("BETTER_AUTH_SECRET") != null and index("TASTILE_WEB_BRIDGE_SECRET") != null)' <<<"$secrets" >/dev/null
+
+      - name: Build OpenNext worker
+        run: bun run cf:build -- --env staging --config .tmp/wrangler.staging.json
+
+      - name: Deploy staging worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler deploy --config .tmp/wrangler.staging.json --env staging
+
+      - name: Smoke-test staging Core and BetterAuth
+        env:
+          STAGING_APP_URL: https://staging.app.tastile.app
+          STAGING_API_URL: https://api.staging.app.tastile.app
+        run: |
+          set -euo pipefail
+          curl -fsS "$STAGING_API_URL/v1/ready" | jq -e '.status == "ready" and .database == "reachable"' >/dev/null
+          root_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/")
+          status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/auth/session")
+          bridge_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/auth/bridge?next=/dashboard")
+          proxy_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/proxy/v1/timeline")
+          test "$root_status" = "200"
+          test "$status" = "401"
+          test "$bridge_status" = "307"
+          test "$proxy_status" = "401"
+          {
+            echo "### Cloudflare staging"
+            echo "- URL: $STAGING_APP_URL"
+            echo "- Core readiness: ready / database reachable"
+            echo "- Authentication smoke: 401 for anonymous session"
+            echo "- Protected bridge/proxy smoke: 401 without a session"
+          } >> "$GITHUB_STEP_SUMMARY"

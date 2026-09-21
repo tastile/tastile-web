@@ -1,0 +1,94 @@
+name: Cloudflare preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-preview
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: preview
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      TASTILE_ENV: preview
+      CLOUD_API_BASE: https://api.staging.app.tastile.app
+      TASTILE_RUST_API_URL: https://api.staging.app.tastile.app
+      TASTILE_USE_RUST_CORE: "1"
+      NEXT_PUBLIC_CORE_DIRECT_MODE: "0"
+      NEXT_PUBLIC_APP_URL: https://tastile-web-preview.rebuild-up-up.workers.dev
+      E2E_BYPASS_AUTH: "0"
+      NEXT_PUBLIC_E2E_BYPASS_AUTH: "0"
+      PREVIEW_WORKER_NAME: tastile-web-preview
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      - name: Quality gate
+        run: bun run check
+
+      - name: Materialize preview Wrangler config
+        env:
+          HYPERDRIVE_ID: ${{ secrets.CLOUDFLARE_HYPERDRIVE_PREVIEW_ID }}
+          PREVIEW_WORKER_NAME: ${{ env.PREVIEW_WORKER_NAME }}
+        run: |
+          set -euo pipefail
+          PREVIEW_APP_URL="https://tastile-web-preview.rebuild-up-up.workers.dev"
+          echo "PREVIEW_APP_URL=$PREVIEW_APP_URL" >> "$GITHUB_ENV"
+          test "$NEXT_PUBLIC_APP_URL" = "$PREVIEW_APP_URL"
+          test -n "$HYPERDRIVE_ID"
+          test "$PREVIEW_WORKER_NAME" = "tastile-web-preview"
+          bun scripts/materialize-cloudflare-config.mts \
+            --env preview \
+            --hyperdrive-id "$HYPERDRIVE_ID" \
+            --app-url "$PREVIEW_APP_URL" \
+            --worker-name "$PREVIEW_WORKER_NAME" \
+            --output .tmp/wrangler.preview.json
+          bun run verify:cloudflare -- .tmp/wrangler.preview.json --env preview
+
+      - name: Preflight preview Worker secrets
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          secrets="$(bunx wrangler secret list --name "$PREVIEW_WORKER_NAME" --format json)"
+          jq -e 'map(.name) | (index("BETTER_AUTH_SECRET") != null and index("TASTILE_WEB_BRIDGE_SECRET") != null)' <<<"$secrets" >/dev/null
+
+      - name: Build OpenNext worker
+        run: bun run cf:build -- --env preview --config .tmp/wrangler.preview.json
+
+      - name: Deploy preview worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bunx wrangler deploy --config .tmp/wrangler.preview.json --env preview
+
+      - name: Smoke-test preview runtime
+        run: |
+          set -euo pipefail
+          test "$PREVIEW_APP_URL" = "https://tastile-web-preview.rebuild-up-up.workers.dev"
+          root_status=$(curl -sS -o /dev/null -w '%{http_code}' "$PREVIEW_APP_URL/")
+          session_status=$(curl -sS -o /dev/null -w '%{http_code}' "$PREVIEW_APP_URL/api/auth/session")
+          test "$root_status" = "200"
+          test "$session_status" = "401"
+          {
+            echo "### Cloudflare preview"
+            echo "- URL: $PREVIEW_APP_URL"
+            echo "- TASTILE_ENV: preview"
+            echo "- Core: https://api.staging.app.tastile.app"
+            echo "- Authentication smoke: 401 for anonymous session"
+          } >> "$GITHUB_STEP_SUMMARY"

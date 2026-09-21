@@ -13,11 +13,12 @@ import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
 import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import { NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 // Resolved at call time so tests mutating process.env after module load still see the bypass branch.
 function isE2EBypass(): boolean {
-  return process.env.E2E_BYPASS_AUTH === "1";
+  return isE2EBypassEnabled();
 }
 
 function rustBase(): string {

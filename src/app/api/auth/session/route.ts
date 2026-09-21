@@ -1,5 +1,6 @@
 import { getAccountOwnerId } from "@/shared/auth/account-session";
 import { resolveAuthenticatedSession } from "@/shared/auth/authenticated-session";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 // Returns session metadata only after server-side BetterAuth verification.
 // The response intentionally excludes every credential-bearing token.
@@ -53,7 +54,7 @@ const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 
 export async function GET() {
   // Local-dev / CI bypass: skip BetterAuth entirely.
-  if (process.env.E2E_BYPASS_AUTH === "1") {
+  if (isE2EBypassEnabled()) {
     return Response.json(
       buildSessionJson({
         sub: "dev-bypass",
@@ -67,7 +68,7 @@ export async function GET() {
   if (!session) {
     return Response.json({ error: "not authenticated" }, { status: 401 });
   }
-  const ownerId = await getAccountOwnerId();
+  const ownerId = await getAccountOwnerId({ session });
   return Response.json(
     buildSessionJson({
       sub: session.id,

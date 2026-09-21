@@ -50,17 +50,24 @@ describe("decryptOne", () => {
     // Windows-compatible shim (no-extension shebangs aren't honored)
     writeFileSync(join(dir, "sops.bat"), `@echo off\necho KEY=value`);
     const PATH_BACKUP = process.env.PATH;
+    const SOPS_COMMAND_BACKUP = process.env.SOPS_COMMAND;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
+    process.env.SOPS_COMMAND = join(dir, "sops.bat");
     const cfg = loadConfig("development");
-    const result = await decryptOne(src, dst, cfg, false, "development");
-    expect(existsSync(dst)).toBe(true);
-    // Unix file modes aren't honored on Windows (ACL-based); check owner r/w bit
-    expect((statSync(dst).mode & 0o600)).toBe(0o600);
-    expect(readFileSync(dst, "utf8")).toContain("KEY=value");
-    expect(result.size).toBeGreaterThan(0);
-    expect(result.age_recipient).toBe(cfg.ageRecipient);
-    expect(result.env).toBe("development");
-    process.env.PATH = PATH_BACKUP;
+    try {
+      const result = await decryptOne(src, dst, cfg, false, "development");
+      expect(existsSync(dst)).toBe(true);
+      // Unix file modes aren't honored on Windows (ACL-based); check owner r/w bit
+      expect((statSync(dst).mode & 0o600)).toBe(0o600);
+      expect(readFileSync(dst, "utf8")).toContain("KEY=value");
+      expect(result.size).toBeGreaterThan(0);
+      expect(result.age_recipient).toBe(cfg.ageRecipient);
+      expect(result.env).toBe("development");
+    } finally {
+      process.env.PATH = PATH_BACKUP;
+      if (SOPS_COMMAND_BACKUP === undefined) delete process.env.SOPS_COMMAND;
+      else process.env.SOPS_COMMAND = SOPS_COMMAND_BACKUP;
+    }
   });
   it("rejects when sops exits non-zero", async () => {
     const src = join(dir, "bad.sops");
@@ -72,10 +79,17 @@ describe("decryptOne", () => {
     // Windows-compatible shim: echo to stderr and exit 4
     writeFileSync(join(dir, "sops.bat"), `@echo off\necho boom 1>&2\nexit /b 4`);
     const PATH_BACKUP = process.env.PATH;
+    const SOPS_COMMAND_BACKUP = process.env.SOPS_COMMAND;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
+    process.env.SOPS_COMMAND = join(dir, "sops.bat");
     const cfg = loadConfig("development");
-    await expect(decryptOne(src, dst, cfg, false, "development")).rejects.toThrow();
-    process.env.PATH = PATH_BACKUP;
+    try {
+      await expect(decryptOne(src, dst, cfg, false, "development")).rejects.toThrow();
+    } finally {
+      process.env.PATH = PATH_BACKUP;
+      if (SOPS_COMMAND_BACKUP === undefined) delete process.env.SOPS_COMMAND;
+      else process.env.SOPS_COMMAND = SOPS_COMMAND_BACKUP;
+    }
   });
 });
 

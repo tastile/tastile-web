@@ -11,7 +11,7 @@ import { getPublicOrigin } from "@/shared/auth/public-origin";
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const response = NextResponse.redirect(new URL("/", getPublicOrigin()));
   try {
-    const result = await getAuth().api.signOut({ headers: request.headers });
+    const result = await (await getAuth()).api.signOut({ headers: request.headers });
     const betterAuthHeaders = (result as { headers?: Headers }).headers;
     if (betterAuthHeaders && typeof betterAuthHeaders.getSetCookie === "function") {
       for (const cookie of betterAuthHeaders.getSetCookie()) {

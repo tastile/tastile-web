@@ -10,6 +10,8 @@
  *   - By default, throws when `CLOUD_API_BASE` is unset.
  */
 
+import { isLoopbackUrl, isProtectedWebRuntime } from "@/shared/config/runtime-env";
+
 export class MissingRequiredEnvError extends Error {
   constructor(public readonly variable: string) {
     super(
@@ -23,6 +25,13 @@ export class MissingCloudApiBaseError extends MissingRequiredEnvError {
   constructor() {
     super("CLOUD_API_BASE");
     this.name = "MissingCloudApiBaseError";
+  }
+}
+
+class InvalidCloudApiBaseError extends Error {
+  constructor(value: string) {
+    super(`CLOUD_API_BASE must not point to a loopback address in a protected runtime: ${value}`);
+    this.name = "InvalidCloudApiBaseError";
   }
 }
 
@@ -49,9 +58,14 @@ export function getCloudApiBase(options: GetCloudApiBaseOptions = {}): string {
   const value =
     process.env.CLOUD_API_BASE?.trim() ?? process.env.TASTILE_RUST_API_URL?.trim() ?? "";
 
-  if (value) return value.replace(/\/$/, "");
+  if (value) {
+    if (isProtectedWebRuntime() && isLoopbackUrl(value)) {
+      throw new InvalidCloudApiBaseError(value);
+    }
+    return value.replace(/\/$/, "");
+  }
 
-  if (options.assert) throw new MissingCloudApiBaseError();
+  if (options.assert || isProtectedWebRuntime()) throw new MissingCloudApiBaseError();
 
   return "";
 }

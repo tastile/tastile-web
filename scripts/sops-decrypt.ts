@@ -107,7 +107,9 @@ export function decryptOne(
   env: EnvName,
 ): Promise<DecryptResult> {
   return new Promise<DecryptResult>((resolvePromise, reject) => {
-    const child = spawn("sops", ["--decrypt", source], {
+    const command = process.env.SOPS_COMMAND?.trim() || "sops";
+    const child = spawn(command, ["--decrypt", source], {
+      shell: process.platform === "win32" && /\.(?:cmd|bat)$/i.test(command),
       stdio: ["ignore", "pipe", "pipe"],
     });
     const out: Buffer[] = [];
@@ -115,13 +117,13 @@ export function decryptOne(
     child.stdout.on("data", (c: Buffer) => out.push(c));
     child.stderr.on("data", (c: Buffer) => err.push(c));
     child.on("error", (e) => {
-      const msg = `failed to spawn sops: ${e.message}`;
+      const msg = `failed to spawn ${command}: ${e.message}`;
       process.stderr.write(`[sops-decrypt] ${msg}\n`);
       reject(new SopsError(4, msg));
     });
     child.on("exit", async (code) => {
       if (code !== 0) {
-        const msg = `sops --decrypt ${source} exited ${code}; stderr=${Buffer.concat(err).toString()}`;
+        const msg = `${command} --decrypt ${source} exited ${code}; stderr=${Buffer.concat(err).toString()}`;
         process.stderr.write(`[sops-decrypt] ${msg}\n`);
         return reject(new SopsError(4, msg));
       }

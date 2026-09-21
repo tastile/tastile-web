@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 // Mock at module level: the route resolves the caller via the BetterAuth
 // session (bearer() plugin accepts `Authorization: Bearer <sessionToken>`).
@@ -20,6 +20,13 @@ process.env.TASTILE_WEB_BRIDGE_SECRET = "server-only-secret"
 
 beforeEach(() => {
   mockGetSession.mockReset()
+})
+
+const originalEnvironment = process.env.TASTILE_ENV
+
+afterEach(() => {
+  if (originalEnvironment === undefined) delete process.env.TASTILE_ENV
+  else process.env.TASTILE_ENV = originalEnvironment
 })
 
 describe("POST /api/mobile/api-token", () => {
@@ -50,6 +57,16 @@ describe("POST /api/mobile/api-token", () => {
 
     expect(response.status).toBe(401)
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it("surfaces BetterAuth store failures in protected runtimes", async () => {
+    process.env.TASTILE_ENV = "staging"
+    mockGetSession.mockRejectedValueOnce(new Error("database unavailable"))
+    const { POST } = await import("./route")
+
+    await expect(
+      POST(new Request("https://app.test/api/mobile/api-token", { method: "POST" })),
+    ).rejects.toThrow("database unavailable")
   })
 
   it("mints for the verified user using only the server-side bridge secret", async () => {
