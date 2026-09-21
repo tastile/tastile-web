@@ -99,15 +99,23 @@ jobs:
           STAGING_API_URL: https://api.staging.app.tastile.app
         run: |
           set -euo pipefail
-          curl -fsS "$STAGING_API_URL/v1/ready" | jq -e '.status == "ready" and .database == "reachable"' >/dev/null
-          root_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/")
-          status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/auth/session")
-          bridge_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/auth/bridge?next=/dashboard")
-          proxy_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/proxy/v1/timeline")
-          test "$root_status" = "200"
-          test "$status" = "401"
-          test "$bridge_status" = "307"
-          test "$proxy_status" = "401"
+          for attempt in $(seq 1 12); do
+            ready_body=$(curl -sS "$STAGING_API_URL/v1/ready" || true)
+            root_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/" || true)
+            status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/auth/session" || true)
+            bridge_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/auth/bridge?next=/dashboard" || true)
+            proxy_status=$(curl -sS -o /dev/null -w '%{http_code}' "$STAGING_APP_URL/api/proxy/v1/timeline" || true)
+            ready_ok=$(jq -r '(.status == "ready" and .database == "reachable")' <<<"$ready_body" 2>/dev/null || true)
+            echo "staging smoke attempt=$attempt ready=$ready_ok root=$root_status session=$status bridge=$bridge_status proxy=$proxy_status"
+            if test "$ready_ok" = "true" && test "$root_status" = "200" && test "$status" = "401" && test "$bridge_status" = "307" && test "$proxy_status" = "401"; then
+              break
+            fi
+            if test "$attempt" = "12"; then
+              echo "staging Core/Worker did not converge to the expected contract" >&2
+              exit 1
+            fi
+            sleep 5
+          done
           {
             echo "### Cloudflare staging"
             echo "- URL: $STAGING_APP_URL"

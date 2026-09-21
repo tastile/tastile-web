@@ -103,10 +103,19 @@ jobs:
         run: |
           set -euo pipefail
           test "$PREVIEW_APP_URL" = "https://tastile-web-preview.rebuild-up-up.workers.dev"
-          root_status=$(curl -sS -o /dev/null -w '%{http_code}' "$PREVIEW_APP_URL/")
-          session_status=$(curl -sS -o /dev/null -w '%{http_code}' "$PREVIEW_APP_URL/api/auth/session")
-          test "$root_status" = "200"
-          test "$session_status" = "401"
+          for attempt in $(seq 1 12); do
+            root_status=$(curl -sS -o /dev/null -w '%{http_code}' "$PREVIEW_APP_URL/" || true)
+            session_status=$(curl -sS -o /dev/null -w '%{http_code}' "$PREVIEW_APP_URL/api/auth/session" || true)
+            echo "preview smoke attempt=$attempt root=$root_status session=$session_status"
+            if test "$root_status" = "200" && test "$session_status" = "401"; then
+              break
+            fi
+            if test "$attempt" = "12"; then
+              echo "preview Worker did not converge to the expected contract" >&2
+              exit 1
+            fi
+            sleep 5
+          done
           {
             echo "### Cloudflare preview"
             echo "- URL: $PREVIEW_APP_URL"
