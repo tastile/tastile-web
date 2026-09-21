@@ -37,6 +37,16 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
+      - name: Checkout canonical OpenAPI spec
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
+
       - name: Runtime and auth contract gate
         env:
           # Run repository tests in their local-development contract. Protected
