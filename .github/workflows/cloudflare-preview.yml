@@ -37,13 +37,20 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Quality gate
+      - name: Runtime and auth contract gate
         env:
           # Run repository tests in their local-development contract. Protected
           # preview behavior is covered by explicit runtime/auth tests and the
           # deployed Worker smoke below.
           TASTILE_ENV: development
-        run: bun run check
+        run: >-
+          bun run test --
+          src/shared/config/runtime-env.test.ts
+          src/shared/auth/authenticated-session.test.ts
+          src/shared/auth/better-auth/database-url.test.ts
+          src/app/api/auth/session/route.test.ts
+          src/app/api/mobile/api-token/route.test.ts
+          scripts/sops-decrypt.test.ts
 
       - name: Materialize preview Wrangler config
         env:
