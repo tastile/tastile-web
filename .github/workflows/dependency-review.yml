@@ -43,10 +43,10 @@ jobs:
       DEPENDENCY_REVIEW_SEVERITY: ${{ vars.DEPENDENCY_REVIEW_SEVERITY || 'high' }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Dependency review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: ${{ env.DEPENDENCY_REVIEW_SEVERITY }}
           comment-summary-in-pr: always
