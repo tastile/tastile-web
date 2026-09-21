@@ -129,8 +129,9 @@ function isSafeResponseHeader(name: string): boolean {
     "set-cookie",
   ]).has(name.toLowerCase());
 }
-
-
+// This GET handler intentionally performs an upstream fetch: it is the server-side
+// Core API proxy, not a React render path or a local state mutation.
+// react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
