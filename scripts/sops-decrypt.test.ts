@@ -52,7 +52,10 @@ describe("decryptOne", () => {
     const PATH_BACKUP = process.env.PATH;
     const SOPS_COMMAND_BACKUP = process.env.SOPS_COMMAND;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
-    process.env.SOPS_COMMAND = join(dir, "sops.bat");
+    process.env.SOPS_COMMAND = join(
+      dir,
+      process.platform === "win32" ? "sops.bat" : "sops",
+    );
     const cfg = loadConfig("development");
     try {
       const result = await decryptOne(src, dst, cfg, false, "development");
@@ -81,7 +84,10 @@ describe("decryptOne", () => {
     const PATH_BACKUP = process.env.PATH;
     const SOPS_COMMAND_BACKUP = process.env.SOPS_COMMAND;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
-    process.env.SOPS_COMMAND = join(dir, "sops.bat");
+    process.env.SOPS_COMMAND = join(
+      dir,
+      process.platform === "win32" ? "sops.bat" : "sops",
+    );
     const cfg = loadConfig("development");
     try {
       await expect(decryptOne(src, dst, cfg, false, "development")).rejects.toThrow();
