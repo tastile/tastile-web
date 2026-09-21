@@ -38,6 +38,11 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Quality gate
+        env:
+          # Run repository tests in their local-development contract. Protected
+          # staging behavior is covered by explicit runtime/auth tests and the
+          # deployed Worker smoke below.
+          TASTILE_ENV: development
         run: bun run check
 
       - name: Materialize staging Wrangler config
