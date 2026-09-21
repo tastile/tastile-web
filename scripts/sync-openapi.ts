@@ -39,6 +39,7 @@ const ROOT = resolve(import.meta.dir, "..");
 // `tastile-root/openapi/openapi.yaml` — the submodule at the
 // workspace-shell level.
 const SUBMODULE_YAML = resolve(ROOT, "../openapi/openapi.yaml");
+const CI_YAML = resolve(ROOT, "openapi-spec/openapi.yaml");
 
 const OUTPUT_TYPES = resolve(ROOT, "src/lib/api/v1/openapi-generated.d.ts");
 const OUTPUT_JSON = resolve(ROOT, "openapi.json");
@@ -51,19 +52,24 @@ function fail(message: string, code = 1): never {
 	process.exit(code);
 }
 
-function assertSubmodulePresent(): void {
-	if (!existsSync(SUBMODULE_YAML)) {
+function canonicalSpecPath(): string {
+	const path = [SUBMODULE_YAML, CI_YAML].find((candidate) =>
+		existsSync(candidate),
+	);
+	if (!path) {
 		fail(
-			`Submodule spec not found: ${SUBMODULE_YAML}\n` +
-				`Run \`git submodule update --init\` at the workspace root.\n` +
-				`If the submodule is intentionally absent for this checkout, this script cannot run.`,
+			`Canonical OpenAPI spec not found. Checked:\n` +
+				`- ${SUBMODULE_YAML}\n` +
+				`- ${CI_YAML}\n` +
+				`Run \`git submodule update --init\` at the workspace root or stage the CI checkout.`,
 			2,
 		);
 	}
+	return path;
 }
 
 function readCanonicalYaml(): string {
-	return readFileSync(SUBMODULE_YAML, "utf-8");
+	return readFileSync(canonicalSpecPath(), "utf-8");
 }
 
 function parseSpec(yamlText: string): unknown {
@@ -74,7 +80,7 @@ function parseSpec(yamlText: string): unknown {
 		return Bun.YAML.parse(yamlText) as unknown;
 	} catch (err) {
 		fail(
-			`Failed to parse ${SUBMODULE_YAML} as YAML:\n  ${(err as Error).message}`,
+			`Failed to parse ${canonicalSpecPath()} as YAML:\n  ${(err as Error).message}`,
 			3,
 		);
 	}
@@ -147,11 +153,9 @@ function generateTypes(): void {
 // --------------- main ---------------
 
 async function main(): Promise<void> {
-	assertSubmodulePresent();
-
 	const yamlText = readCanonicalYaml();
 	if (!yamlText.trim()) {
-		fail(`Submodule spec is empty: ${SUBMODULE_YAML}`, 5);
+		fail(`Canonical OpenAPI spec is empty: ${canonicalSpecPath()}`, 5);
 	}
 
 	const spec = parseSpec(yamlText);
