@@ -44,6 +44,9 @@ for (const environment of environments) {
   if (vars.E2E_BYPASS_AUTH !== "0" || vars.NEXT_PUBLIC_E2E_BYPASS_AUTH !== "0") {
     throw new Error(`${environment} must disable E2E auth bypass`);
   }
+  if (!vars.NEXT_PUBLIC_APEX_HOST || !vars.NEXT_PUBLIC_APP_HOST) {
+    throw new Error(`${environment} canonical host variables are required`);
+  }
   if (!vars.NEXT_PUBLIC_APP_URL || vars.NEXT_PUBLIC_APP_URL.includes("localhost")) {
     throw new Error(`${environment} NEXT_PUBLIC_APP_URL must be public`);
   }
@@ -52,12 +55,24 @@ for (const environment of environments) {
     if (vars.NEXT_PUBLIC_APP_URL !== "https://tastile-web-preview.rebuild-up-up.workers.dev") {
       throw new Error("preview public origin is incorrect");
     }
+    if (vars.NEXT_PUBLIC_APEX_HOST !== "preview.tastile.app") {
+      throw new Error("preview apex host is incorrect");
+    }
+    if (vars.NEXT_PUBLIC_APP_HOST !== "tastile-web-preview.rebuild-up-up.workers.dev") {
+      throw new Error("preview app host is incorrect");
+    }
     if (target.routes?.length) throw new Error("preview must not own a production/custom-domain route");
   }
   if (environment === "staging") {
     if (target.name !== "tastile-web-staging") throw new Error("staging Worker name is incorrect");
     if (vars.NEXT_PUBLIC_APP_URL !== "https://staging.app.tastile.app") {
       throw new Error("staging public origin is incorrect");
+    }
+    if (vars.NEXT_PUBLIC_APEX_HOST !== "staging.tastile.app") {
+      throw new Error("staging apex host is incorrect");
+    }
+    if (vars.NEXT_PUBLIC_APP_HOST !== "staging.app.tastile.app") {
+      throw new Error("staging app host is incorrect");
     }
     if (!target.routes?.some((route) => route.pattern === "staging.app.tastile.app" && route.custom_domain)) {
       throw new Error("staging custom domain is missing");

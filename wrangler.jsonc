@@ -20,7 +20,9 @@
         "TASTILE_RUST_API_URL": "https://api.staging.app.tastile.app",
         "TASTILE_USE_RUST_CORE": "1",
         "E2E_BYPASS_AUTH": "0",
-        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0"
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_APEX_HOST": "preview.tastile.app",
+        "NEXT_PUBLIC_APP_HOST": "tastile-web-preview.rebuild-up-up.workers.dev"
       },
       "hyperdrive": [
         {
@@ -37,7 +39,9 @@
         "TASTILE_RUST_API_URL": "https://api.staging.app.tastile.app",
         "TASTILE_USE_RUST_CORE": "1",
         "E2E_BYPASS_AUTH": "0",
-        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0"
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_APEX_HOST": "staging.tastile.app",
+        "NEXT_PUBLIC_APP_HOST": "staging.app.tastile.app"
       },
       "routes": [
         {
