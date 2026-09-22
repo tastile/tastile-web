@@ -27,9 +27,6 @@
     "dev:prod": "NEXT_PUBLIC_TASTILE_CORE_URL=https://api.tastile.app CLOUD_API_BASE=https://api.tastile.app NEXT_PUBLIC_E2E_BYPASS_AUTH=0 bun dev",
     "build": "next build",
     "build:prod": "node scripts/build-product.mts",
-    "cf:build": "opennextjs-cloudflare build",
-    "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare deploy",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
     "lint": "eslint",
@@ -46,7 +43,6 @@
     "sync:openapi": "bun run scripts/sync-openapi.ts",
     "generate-types": "bun run scripts/generate-openapi-types.ts",
     "generate-types:offline": "bun run scripts/generate-openapi-types.ts --offline",
-    "verify:cloudflare": "bun run scripts/verify-cloudflare-config.mts",
     "doctor": "bunx react-doctor@latest"
   },
   "dependencies": {

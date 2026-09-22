@@ -35,6 +35,14 @@ function throwError(code: ErrorCode, msg: string): never {
   throw new SopsError(code, msg);
 }
 
+function configuredSopsCommand(): string {
+  return process.env.SOPS_COMMAND?.trim() || "sops";
+}
+
+function needsWindowsShell(command: string): boolean {
+  return process.platform === "win32" && /\.(?:cmd|bat)$/i.test(command);
+}
+
 // @internal — exported for tests only
 export function parseArgs(argv: string[]): { env: string; check: boolean } {
   let env = process.env.TASTILE_ENV ?? "";
@@ -65,20 +73,24 @@ export function loadConfig(env: string): SopsEnvConfig {
 
 // @internal — exported for tests only
 export async function assertSopsInstalled(): Promise<void> {
-  const probe = spawn("sh", ["-c", "command -v sops"], { stdio: "pipe" });
+  const command = configuredSopsCommand();
+  const probe = spawn(command, ["--version"], {
+    shell: needsWindowsShell(command),
+    stdio: "pipe",
+  });
   await new Promise<void>((resolve, reject) => {
-    probe.on("error", () =>
+    probe.on("error", (error) =>
       reject(
         new SopsError(
           2,
-          "sops CLI not installed; see docs/runbooks/sops-install.md",
+          `failed to start ${command}: ${error.message}; see docs/runbooks/sops-install.md`,
         ),
       ),
     );
     probe.on("exit", (code) =>
       code === 0
         ? resolve()
-        : reject(new SopsError(2, `command -v sops exited ${code}`)),
+        : reject(new SopsError(2, `${command} --version exited ${code}`)),
     );
   });
 }
@@ -107,9 +119,9 @@ export function decryptOne(
   env: EnvName,
 ): Promise<DecryptResult> {
   return new Promise<DecryptResult>((resolvePromise, reject) => {
-    const command = process.env.SOPS_COMMAND?.trim() || "sops";
+    const command = configuredSopsCommand();
     const child = spawn(command, ["--decrypt", source], {
-      shell: process.platform === "win32" && /\.(?:cmd|bat)$/i.test(command),
+      shell: needsWindowsShell(command),
       stdio: ["ignore", "pipe", "pipe"],
     });
     const out: Buffer[] = [];

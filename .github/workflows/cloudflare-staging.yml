@@ -28,6 +28,16 @@ jobs:
       NEXT_PUBLIC_E2E_BYPASS_AUTH: "0"
       NEXT_PUBLIC_APP_URL: https://staging.app.tastile.app
     steps:
+      - name: Validate canonical release branch
+        env:
+          DEPLOY_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$DEPLOY_REF" =~ ^release-[0-9]+-[0-9]+-[0-9]+$ ]]; then
+            echo "::error::Cloudflare staging deploys require a canonical release-X-Y-Z branch; got '$DEPLOY_REF'."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: oven-sh/setup-bun@v2
@@ -73,7 +83,7 @@ jobs:
             --hyperdrive-id "$HYPERDRIVE_ID" \
             --app-url "$NEXT_PUBLIC_APP_URL" \
             --output .tmp/wrangler.staging.json
-          bun run verify:cloudflare -- .tmp/wrangler.staging.json --env staging
+          bun scripts/verify-cloudflare-config.mts .tmp/wrangler.staging.json --env staging
 
       - name: Preflight staging Worker secrets
         env:
@@ -85,7 +95,7 @@ jobs:
           jq -e 'map(.name) | (index("BETTER_AUTH_SECRET") != null and index("TASTILE_WEB_BRIDGE_SECRET") != null)' <<<"$secrets" >/dev/null
 
       - name: Build OpenNext worker
-        run: bun run cf:build -- --env staging --config .tmp/wrangler.staging.json
+        run: bunx --no-install opennextjs-cloudflare build --env staging --config .tmp/wrangler.staging.json
 
       - name: Deploy staging worker
         env:

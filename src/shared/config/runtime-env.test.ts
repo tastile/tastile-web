@@ -39,4 +39,12 @@ describe("runtime environment guards", () => {
     expect(isProtectedWebRuntime()).toBe(true);
     expect(isE2EBypassEnabled()).toBe(false);
   });
+
+  it("fails closed when the runtime environment is unset", () => {
+    delete process.env.TASTILE_ENV;
+    process.env.E2E_BYPASS_AUTH = "1";
+
+    expect(isProtectedWebRuntime()).toBe(true);
+    expect(isE2EBypassEnabled()).toBe(false);
+  });
 });

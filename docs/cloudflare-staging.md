@@ -26,9 +26,11 @@ BetterAuth は browser や Worker から直接 PostgreSQL を開かず、
 `staging` に `CLOUDFLARE_API_TOKEN`、`CLOUDFLARE_ACCOUNT_ID`、
 `CLOUDFLARE_HYPERDRIVE_STAGING_ID` を登録する。
 
-`release-*` branch の push は staging workflow を起動し、pull request または手動実行は
-固定 preview Worker を更新する。preview は PR ごとには分離せず、最後に検証した revision
-を共有する。両方とも `CLOUD_API_BASE=https://api.staging.app.tastile.app` と
+`release-X-Y-Z` 形式（例: `release-1-0-2`）の push は staging と固定 preview の両 workflow を
+起動する。両 workflow は secrets を使う前に branch 名を同じ形式で検証する。staging は
+canonical release branch から手動起動もできるが、preview は release push のみで更新する。
+pull request ごとの preview は作らず、preview は最新の release revision を共有する。
+両方とも `CLOUD_API_BASE=https://api.staging.app.tastile.app` と
 `E2E_BYPASS_AUTH=0` を明示する。
 
 preview と staging の Worker secret (`BETTER_AUTH_SECRET`、
@@ -52,7 +54,7 @@ bun scripts/materialize-cloudflare-config.mts `
   --hyperdrive-id $env:CLOUDFLARE_HYPERDRIVE_STAGING_ID `
   --app-url https://staging.app.tastile.app `
   --output .tmp/wrangler.staging.json
-bun run verify:cloudflare -- .tmp/wrangler.staging.json --env staging
+bun scripts/verify-cloudflare-config.mts .tmp/wrangler.staging.json --env staging
 ```
 
 CI の smoke test は未認証の `/api/auth/session` と `/api/proxy/v1/timeline` が

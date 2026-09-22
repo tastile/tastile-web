@@ -1,4 +1,4 @@
-const LOCAL_ENVIRONMENTS = new Set(["", "development", "dev", "test", "ci", "local"]);
+const LOCAL_ENVIRONMENTS = new Set(["development", "dev", "test", "ci", "local"]);
 
 export function isProtectedWebRuntime(): boolean {
   const environment = (process.env.TASTILE_ENV ?? "").trim().toLowerCase();

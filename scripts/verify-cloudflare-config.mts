@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 
-const configArgument = process.argv
-  .slice(2)
+const args = process.argv.slice(2);
+const configArgument = args
   .find((argument) => /\.jsonc?$/.test(argument) && !argument.startsWith("--"));
 const path = resolve(configArgument ?? "wrangler.jsonc");
 const config = JSON.parse(await readFile(path, "utf8")) as {
@@ -25,7 +25,12 @@ if (!config.compatibility_flags?.includes("nodejs_compat")) {
   throw new Error("Wrangler must enable nodejs_compat for Next.js and pg");
 }
 
-const requestedEnvironment = process.argv[process.argv.indexOf("--env") + 1];
+const environmentArgumentIndex = args.indexOf("--env");
+const requestedEnvironment =
+  environmentArgumentIndex === -1 ? undefined : args[environmentArgumentIndex + 1];
+if (environmentArgumentIndex !== -1 && !requestedEnvironment) {
+  throw new Error("--env requires an environment name");
+}
 const environments = requestedEnvironment ? [requestedEnvironment] : ["preview", "staging"];
 
 for (const environment of environments) {

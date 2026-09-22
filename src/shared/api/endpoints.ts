@@ -18,6 +18,7 @@
  */
 
 import { MissingCloudApiBaseError } from "@/lib/upstream/cloud-api-base";
+import { resolvePublicCloudApiBaseUrl } from "@/shared/config/cloud-api-base-url";
 import { getCoreToken, refreshCoreToken } from "@/shared/api/core-token";
 import { toV1Path } from "@/shared/api/v1/path-map";
 import { COOKIE_DIRECT_DAEMON } from "@/shared/auth/cookie-names";
@@ -1038,10 +1039,7 @@ export function isCloudDirectEnabled(): boolean {
  * hit. Returns the proxy bridge path when no direct target is configured.
  */
 export function resolveCoreBaseUrl(): string {
-  const rawBaseUrl =
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL?.trim() ??
-    "";
+  const rawBaseUrl = resolvePublicCloudApiBaseUrl();
   const baseUrl =
     rawBaseUrl ||
     (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1" ? "http://127.0.0.1:31400" : "");
@@ -1053,10 +1051,7 @@ export function resolveCoreBaseUrl(): string {
 
 export function getCoreClient(): CoreClient {
   if (_client) return _client;
-  const rawBaseUrl =
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL?.trim() ??
-    "";
+  const rawBaseUrl = resolvePublicCloudApiBaseUrl();
   const baseUrl =
     rawBaseUrl ||
     // E2E bypass intentionally retains a local-default sentinel for tests; never reachable in OSS build.
