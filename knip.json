@@ -11,5 +11,8 @@
   },
   "ignoreBinaries": [
     "wslc"
+  ],
+  "ignoreDependencies": [
+    "pg-cloudflare"
   ]
 }

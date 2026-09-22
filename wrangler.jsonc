@@ -1,0 +1,60 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tastile-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "env": {
+    "preview": {
+      "name": "tastile-web-preview",
+      "vars": {
+        "TASTILE_ENV": "preview",
+        "CLOUD_API_BASE": "https://api.staging.app.tastile.app",
+        "TASTILE_RUST_API_URL": "https://api.staging.app.tastile.app",
+        "TASTILE_USE_RUST_CORE": "1",
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_APEX_HOST": "preview.tastile.app",
+        "NEXT_PUBLIC_APP_HOST": "tastile-web-preview.rebuild-up-up.workers.dev"
+      },
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "__CLOUDFLARE_HYPERDRIVE_PREVIEW_ID__"
+        }
+      ]
+    },
+    "staging": {
+      "name": "tastile-web-staging",
+      "vars": {
+        "TASTILE_ENV": "staging",
+        "CLOUD_API_BASE": "https://api.staging.app.tastile.app",
+        "TASTILE_RUST_API_URL": "https://api.staging.app.tastile.app",
+        "TASTILE_USE_RUST_CORE": "1",
+        "E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_E2E_BYPASS_AUTH": "0",
+        "NEXT_PUBLIC_APEX_HOST": "staging.tastile.app",
+        "NEXT_PUBLIC_APP_HOST": "staging.app.tastile.app"
+      },
+      "routes": [
+        {
+          "pattern": "staging.app.tastile.app",
+          "custom_domain": true
+        }
+      ],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "__CLOUDFLARE_HYPERDRIVE_STAGING_ID__"
+        }
+      ]
+    }
+  }
+}

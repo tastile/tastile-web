@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getCoreClient } from "@/shared/api/endpoints";
 import { getAccountOwnerId } from "@/shared/auth/account-session";
 import { resolveAuthenticatedSession } from "@/shared/auth/authenticated-session";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +21,7 @@ export async function GET(): Promise<Response> {
   // for a freshly-signed-up owner (all profile fields null, revision 0) so
   // the dashboard header renders without a round-trip through the local
   // daemon.  Mirrors `getAccountOwnerId`'s E2E shortcut.
-  if (process.env.E2E_BYPASS_AUTH === "1") {
+  if (isE2EBypassEnabled()) {
     const ownerId = await getAccountOwnerId();
     if (!ownerId) {
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });

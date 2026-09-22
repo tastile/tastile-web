@@ -2,7 +2,13 @@
 // expectations replaced by age-recipient assertions. See sops-decrypt.ts for
 // the rationale.
 import { beforeEach, describe, expect, it } from "vitest";
-import { parseArgs, loadConfig, decryptOne, processSourceFiles } from "./sops-decrypt";
+import {
+  parseArgs,
+  loadConfig,
+  decryptOne,
+  processSourceFiles,
+  assertSopsInstalled,
+} from "./sops-decrypt";
 import type { SopsEnvConfig } from "./sops.config";
 import { chmodSync, mkdtempSync, writeFileSync, existsSync, statSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -36,6 +42,79 @@ describe("loadConfig", () => {
   });
 });
 
+describe("assertSopsInstalled", () => {
+  it("accepts the configured SOPS_COMMAND when --version succeeds", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sops-version-test-"));
+    const configuredCommand = join(
+      dir,
+      process.platform === "win32" ? "custom-sops.bat" : "custom-sops",
+    );
+    const pathCommand = join(dir, process.platform === "win32" ? "sops.bat" : "sops");
+    writeFileSync(
+      configuredCommand,
+      process.platform === "win32"
+        ? "@echo off\r\necho SOPS v3.9.0\r\nexit /b 0\r\n"
+        : "#!/bin/sh\necho 'SOPS v3.9.0'\nexit 0\n",
+    );
+    writeFileSync(
+      pathCommand,
+      process.platform === "win32" ? "@echo off\r\nexit /b 13\r\n" : "#!/bin/sh\nexit 13\n",
+    );
+    if (process.platform !== "win32") {
+      chmodSync(configuredCommand, 0o755);
+      chmodSync(pathCommand, 0o755);
+    }
+
+    const originalPath = process.env.PATH;
+    const originalCommand = process.env.SOPS_COMMAND;
+    process.env.PATH = `${dir}${delimiter}${originalPath ?? ""}`;
+    process.env.SOPS_COMMAND = configuredCommand;
+    try {
+      await expect(assertSopsInstalled()).resolves.toBeUndefined();
+    } finally {
+      if (originalPath === undefined) delete process.env.PATH;
+      else process.env.PATH = originalPath;
+      if (originalCommand === undefined) delete process.env.SOPS_COMMAND;
+      else process.env.SOPS_COMMAND = originalCommand;
+    }
+  });
+
+  it("probes the configured SOPS_COMMAND", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "sops-probe-test-"));
+    const configuredCommand = join(
+      dir,
+      process.platform === "win32" ? "custom-sops.bat" : "custom-sops",
+    );
+    const pathCommand = join(
+      dir,
+      process.platform === "win32" ? "sops.bat" : "sops",
+    );
+    const commandBody =
+      process.platform === "win32" ? "@echo off\r\nexit /b 13\r\n" : "#!/bin/sh\nexit 13\n";
+    const pathBody =
+      process.platform === "win32" ? "@echo off\r\nexit /b 0\r\n" : "#!/bin/sh\nexit 0\n";
+    writeFileSync(configuredCommand, commandBody);
+    writeFileSync(pathCommand, pathBody);
+    if (process.platform !== "win32") {
+      chmodSync(configuredCommand, 0o755);
+      chmodSync(pathCommand, 0o755);
+    }
+
+    const originalPath = process.env.PATH;
+    const originalCommand = process.env.SOPS_COMMAND;
+    process.env.PATH = `${dir}${delimiter}${originalPath ?? ""}`;
+    process.env.SOPS_COMMAND = configuredCommand;
+    try {
+      await expect(assertSopsInstalled()).rejects.toThrow(/exited 13/);
+    } finally {
+      if (originalPath === undefined) delete process.env.PATH;
+      else process.env.PATH = originalPath;
+      if (originalCommand === undefined) delete process.env.SOPS_COMMAND;
+      else process.env.SOPS_COMMAND = originalCommand;
+    }
+  });
+});
+
 describe("decryptOne", () => {
   let dir: string;
   beforeEach(() => { dir = mkdtempSync(join(tmpdir(), "sops-test-")); });
@@ -50,17 +129,27 @@ describe("decryptOne", () => {
     // Windows-compatible shim (no-extension shebangs aren't honored)
     writeFileSync(join(dir, "sops.bat"), `@echo off\necho KEY=value`);
     const PATH_BACKUP = process.env.PATH;
+    const SOPS_COMMAND_BACKUP = process.env.SOPS_COMMAND;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
+    process.env.SOPS_COMMAND = join(
+      dir,
+      process.platform === "win32" ? "sops.bat" : "sops",
+    );
     const cfg = loadConfig("development");
-    const result = await decryptOne(src, dst, cfg, false, "development");
-    expect(existsSync(dst)).toBe(true);
-    // Unix file modes aren't honored on Windows (ACL-based); check owner r/w bit
-    expect((statSync(dst).mode & 0o600)).toBe(0o600);
-    expect(readFileSync(dst, "utf8")).toContain("KEY=value");
-    expect(result.size).toBeGreaterThan(0);
-    expect(result.age_recipient).toBe(cfg.ageRecipient);
-    expect(result.env).toBe("development");
-    process.env.PATH = PATH_BACKUP;
+    try {
+      const result = await decryptOne(src, dst, cfg, false, "development");
+      expect(existsSync(dst)).toBe(true);
+      // Unix file modes aren't honored on Windows (ACL-based); check owner r/w bit
+      expect((statSync(dst).mode & 0o600)).toBe(0o600);
+      expect(readFileSync(dst, "utf8")).toContain("KEY=value");
+      expect(result.size).toBeGreaterThan(0);
+      expect(result.age_recipient).toBe(cfg.ageRecipient);
+      expect(result.env).toBe("development");
+    } finally {
+      process.env.PATH = PATH_BACKUP;
+      if (SOPS_COMMAND_BACKUP === undefined) delete process.env.SOPS_COMMAND;
+      else process.env.SOPS_COMMAND = SOPS_COMMAND_BACKUP;
+    }
   });
   it("rejects when sops exits non-zero", async () => {
     const src = join(dir, "bad.sops");
@@ -72,10 +161,20 @@ describe("decryptOne", () => {
     // Windows-compatible shim: echo to stderr and exit 4
     writeFileSync(join(dir, "sops.bat"), `@echo off\necho boom 1>&2\nexit /b 4`);
     const PATH_BACKUP = process.env.PATH;
+    const SOPS_COMMAND_BACKUP = process.env.SOPS_COMMAND;
     process.env.PATH = `${dir}${delimiter}${PATH_BACKUP}`;
+    process.env.SOPS_COMMAND = join(
+      dir,
+      process.platform === "win32" ? "sops.bat" : "sops",
+    );
     const cfg = loadConfig("development");
-    await expect(decryptOne(src, dst, cfg, false, "development")).rejects.toThrow();
-    process.env.PATH = PATH_BACKUP;
+    try {
+      await expect(decryptOne(src, dst, cfg, false, "development")).rejects.toThrow();
+    } finally {
+      process.env.PATH = PATH_BACKUP;
+      if (SOPS_COMMAND_BACKUP === undefined) delete process.env.SOPS_COMMAND;
+      else process.env.SOPS_COMMAND = SOPS_COMMAND_BACKUP;
+    }
   });
 });
 

@@ -3,6 +3,7 @@ import { v5 as uuidv5 } from "uuid";
 import { headers } from "next/headers";
 
 import { getAuth } from "./better-auth/server";
+import { isE2EBypassEnabled, isProtectedWebRuntime } from "@/shared/config/runtime-env";
 
 // Local-dev / CI bypass: when E2E_BYPASS_AUTH=1, return a synthetic
 // BetterAuth-compatible session so the dashboard subscription UI
@@ -43,10 +44,10 @@ export interface AuthenticatedSessionUser {
 export async function resolveAuthenticatedSession(
   args?: { requestHeaders?: Headers },
 ): Promise<AuthenticatedSessionUser | null> {
-  if (process.env.E2E_BYPASS_AUTH === "1") return e2eBypassSession();
+  if (isE2EBypassEnabled()) return e2eBypassSession();
   const requestHeaders = args?.requestHeaders ?? (await headers());
   try {
-    const session = await getAuth().api.getSession({ headers: requestHeaders });
+    const session = await (await getAuth()).api.getSession({ headers: requestHeaders });
     if (!session?.user) return null;
     const expiresAt = session.session?.expiresAt;
     return {
@@ -61,7 +62,12 @@ export async function resolveAuthenticatedSession(
           : null,
     };
   } catch (error) {
-    // Fail closed: any resolver error means "no authenticated session".
+    // Protected runtimes surface auth-store failures as 5xx. Returning 401
+    // here would make a broken staging DB look like a valid logged-out page
+    // and could hide a production-shaped deployment failure.
+    if (isProtectedWebRuntime()) throw error;
+    // Local development fails closed without turning a missing local DB into
+    // a framework error.
     console.warn("[auth] getSession failed:", error);
     return null;
   }
@@ -70,6 +76,6 @@ export async function resolveAuthenticatedSession(
 export async function resolveAuthenticatedUserSub(
   args?: { requestHeaders?: Headers },
 ): Promise<string | null> {
-  if (process.env.E2E_BYPASS_AUTH === "1") return E2E_BYPASS_USER_SUB;
+  if (isE2EBypassEnabled()) return E2E_BYPASS_USER_SUB;
   return (await resolveAuthenticatedSession(args))?.id ?? null;
 }

@@ -5,6 +5,7 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 
 import { getPublicOrigin } from "@/shared/auth/public-origin";
+import { resolveAuthDatabaseUrl } from "./database-url";
 import {
   passwordResetEmailHtml,
   sendAuthEmail,
@@ -24,15 +25,21 @@ import {
 
 let cachedPool: Pool | null = null;
 
-function authDatabase(): Pool {
+async function authDatabase(): Promise<Pool> {
   if (!cachedPool) {
-    const connectionString = process.env.TASTILE_AUTH_DATABASE_URL?.trim();
-    if (!connectionString) {
-      throw new Error(
-        "[auth] TASTILE_AUTH_DATABASE_URL is required for the BetterAuth store",
-      );
+    const connectionString = process.env.TASTILE_AUTH_DATABASE_URL;
+    let hyperdriveConnectionString: string | undefined;
+    if (!connectionString?.trim()) {
+      const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+      const cloudflare = getCloudflareContext();
+      const hyperdrive = (cloudflare.env as { HYPERDRIVE?: { connectionString?: string } }).HYPERDRIVE;
+      hyperdriveConnectionString = hyperdrive?.connectionString;
     }
-    cachedPool = new Pool({ connectionString, max: 5 });
+    const resolvedConnectionString = resolveAuthDatabaseUrl(connectionString, hyperdriveConnectionString);
+    if (!resolvedConnectionString) {
+      throw new Error("[auth] TASTILE_AUTH_DATABASE_URL or HYPERDRIVE is required for the BetterAuth store");
+    }
+    cachedPool = new Pool({ connectionString: resolvedConnectionString, max: 5 });
   }
   return cachedPool;
 }
@@ -58,10 +65,10 @@ function socialProviders() {
   return providers;
 }
 
-function createAuth() {
+async function createAuth() {
   return betterAuth({
     basePath: "/api/auth",
-    database: authDatabase(),
+    database: await authDatabase(),
     trustedOrigins: [getPublicOrigin()],
     emailAndPassword: {
       enabled: true,
@@ -92,19 +99,30 @@ function createAuth() {
     session: {
       expiresIn: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
+      // Hyperdrive-backed pg.Pool connections are shared across Worker
+      // isolates. Cache the signed session payload briefly so every
+      // authenticated request does not reserve another RDS connection.
+      // This is an HMAC-signed cache, not an auth bypass; callers that need
+      // an authoritative database read can pass disableCookieCache=true to
+      // BetterAuth's getSession API.
+      cookieCache: {
+        enabled: true,
+        maxAge: 5 * 60,
+        strategy: "compact",
+        refreshCache: false,
+      },
     },
     plugins: [bearer(), twoFactor(), nextCookies()],
   });
 }
 
-export type AuthInstance = ReturnType<typeof createAuth>;
+export type AuthInstance = Awaited<ReturnType<typeof createAuth>>;
 
-let cachedAuth: AuthInstance | null = null;
+let cachedAuth: Promise<AuthInstance> | null = null;
 
-export function getAuth(): AuthInstance {
+export function getAuth(): Promise<AuthInstance> {
   if (!cachedAuth) {
     cachedAuth = createAuth();
   }
   return cachedAuth;
 }
-

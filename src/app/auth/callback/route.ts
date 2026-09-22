@@ -7,6 +7,7 @@ import {
   clearLegacyAuthCookies,
   setBridgeIdentityCookie,
 } from "@/shared/auth/cookies";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 // Mobile-app OAuth callback hand-off (Android / iOS / desktop).
 //
@@ -61,7 +62,7 @@ function buildAppCallbackUri(params: {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (process.env.E2E_BYPASS_AUTH === "1") {
+  if (isE2EBypassEnabled()) {
     return NextResponse.redirect(new URL("/dashboard", request.nextUrl.origin));
   }
 

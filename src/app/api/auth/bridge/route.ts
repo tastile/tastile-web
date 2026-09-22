@@ -8,6 +8,7 @@ import {
 } from "@/shared/auth/cookies";
 import { getPublicOrigin } from "@/shared/auth/public-origin";
 import { safeNextPath } from "@/shared/auth/safe-next-path";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 // Post-login hand-off between the BetterAuth session and the tastile-core
 // API-token world (ADR 2026-08-22).
@@ -35,7 +36,7 @@ function loginRedirect(): NextResponse {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  if (process.env.E2E_BYPASS_AUTH === "1") {
+  if (isE2EBypassEnabled()) {
     return NextResponse.redirect(new URL("/dashboard", getPublicOrigin()));
   }
 

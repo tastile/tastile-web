@@ -2,7 +2,9 @@ import {
   injectTimelineTodayDefaults,
   toV1Path as toV1PathAbsolute,
 } from "@/shared/api/v1/path-map";
+import { getCloudApiBase as getConfiguredCloudApiBase } from "@/lib/upstream/cloud-api-base";
 import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/shared/auth/cookies";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 import { type NextRequest, NextResponse } from "next/server";
 
 export { injectTimelineTodayDefaults };
@@ -14,14 +16,12 @@ export function toV1Path(path: string): string {
 }
 
 function getCloudApiBase(): string {
-  const value = process.env.CLOUD_API_BASE;
-  if (value) return value;
-  if (process.env.E2E_BYPASS_AUTH === "1") return "http://localhost:31400";
-  throw new Error("CLOUD_API_BASE is not set");
+  if (isE2EBypassEnabled()) return "http://localhost:31400";
+  return getConfiguredCloudApiBase({ assert: true });
 }
 
 function getIsE2EBypass(): boolean {
-  return process.env.E2E_BYPASS_AUTH === "1";
+  return isE2EBypassEnabled();
 }
 
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
@@ -129,8 +129,9 @@ function isSafeResponseHeader(name: string): boolean {
     "set-cookie",
   ]).has(name.toLowerCase());
 }
-
-
+// This GET handler intentionally performs an upstream fetch: it is the server-side
+// Core API proxy, not a React render path or a local state mutation.
+// react-doctor-disable-next-line react-doctor/nextjs-no-side-effect-in-get-handler
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> },
