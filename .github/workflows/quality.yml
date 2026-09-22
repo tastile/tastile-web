@@ -36,7 +36,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -83,7 +83,7 @@ jobs:
         # lack the workspace-shell submodule, so fetch the canonical
         # spec repo (same pattern as Android PR #22) and stage the copy.
         # Pinned-revision verification stays in W04 scope.
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: tastile/tastile-openapi
           path: openapi-spec
