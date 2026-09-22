@@ -95,6 +95,20 @@ jobs:
           chmod 0600 "${HOME}/.config/sops/age/keys.txt"
           bun run scripts/sops-decrypt.ts --env=production
 
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as quality.yml) and stage the copy.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
+
       - name: Lint, typecheck, test, build
         env:
           NEXT_TELEMETRY_DISABLED: 1
@@ -114,7 +128,7 @@ jobs:
           role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Sync minimum runtime auth env to EC2
+      - name: Validate and sync production auth env to EC2
         env:
           WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
           TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
@@ -126,31 +140,72 @@ jobs:
             sed -n "s/^$1=//p" .env.production | tail -n 1
           }
 
-          BETTER_AUTH_SECRET="$(get_env BETTER_AUTH_SECRET)"
-          TASTILE_AUTH_DATABASE_URL="$(get_env TASTILE_AUTH_DATABASE_URL)"
+          required_auth_keys=(
+            BETTER_AUTH_SECRET
+            TASTILE_AUTH_DATABASE_URL
+            GOOGLE_CLIENT_ID
+            GOOGLE_CLIENT_SECRET
+            TASTILE_SES_FROM_ADDRESS
+          )
 
-          test -n "$BETTER_AUTH_SECRET"
-          test -n "$TASTILE_AUTH_DATABASE_URL"
-          test -n "$TASTILE_WEB_BRIDGE_SECRET"
+          missing=0
+          for key in "${required_auth_keys[@]}"; do
+            value="$(get_env "$key")"
+            if [ -z "$value" ]; then
+              echo "::error::$key is required in decrypted .env.production for production auth"
+              missing=1
+            fi
+          done
+          if [ -z "${TASTILE_WEB_BRIDGE_SECRET}" ]; then
+            echo "::error::TASTILE_WEB_BRIDGE_SECRET GitHub secret is empty"
+            missing=1
+          fi
+          if [ "$missing" = "1" ]; then
+            echo "::error::Refusing to deploy with an incomplete production authentication contract"
+            exit 1
+          fi
+
+          SES_REGION="$(get_env TASTILE_SES_REGION)"
+          if [ -z "$SES_REGION" ]; then
+            SES_REGION="ap-northeast-1"
+          fi
 
           AUTH_ENV_B64="$(
-            printf 'BETTER_AUTH_SECRET=%s\nTASTILE_AUTH_DATABASE_URL=%s\nTASTILE_WEB_BRIDGE_SECRET=%s\n'               "$BETTER_AUTH_SECRET"               "$TASTILE_AUTH_DATABASE_URL"               "$TASTILE_WEB_BRIDGE_SECRET"               | base64 -w0
+            {
+              for key in BETTER_AUTH_SECRET TASTILE_AUTH_DATABASE_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_ANDROID_CLIENT_ID APPLE_CLIENT_ID APPLE_CLIENT_SECRET TASTILE_SES_FROM_ADDRESS TASTILE_SES_CONFIGURATION_SET; do
+                value="$(get_env "$key")"
+                if [ -n "$value" ]; then
+                  printf '%s=%s\n' "$key" "$value"
+                fi
+              done
+              printf 'TASTILE_SES_REGION=%s\n' "$SES_REGION"
+              printf 'TASTILE_WEB_BRIDGE_SECRET=%s\n' "$TASTILE_WEB_BRIDGE_SECRET"
+            } | base64 -w0
           )"
 
           jq -n --arg payload "$AUTH_ENV_B64" '{commands: [
             "set -euo pipefail",
             "sudo mkdir -p /etc/tastile",
             "sudo touch /etc/tastile/tastile-web.env",
-            "sudo sed -i -e '\''/^BETTER_AUTH_SECRET=/d'\'' -e '\''/^TASTILE_AUTH_DATABASE_URL=/d'\'' -e '\''/^TASTILE_WEB_BRIDGE_SECRET=/d'\'' /etc/tastile/tastile-web.env",
+            "sudo sed -i -e '\''/^BETTER_AUTH_SECRET=/d'\'' -e '\''/^TASTILE_AUTH_DATABASE_URL=/d'\'' -e '\''/^GOOGLE_CLIENT_ID=/d'\'' -e '\''/^GOOGLE_CLIENT_SECRET=/d'\'' -e '\''/^GOOGLE_ANDROID_CLIENT_ID=/d'\'' -e '\''/^APPLE_CLIENT_ID=/d'\'' -e '\''/^APPLE_CLIENT_SECRET=/d'\'' -e '\''/^TASTILE_SES_FROM_ADDRESS=/d'\'' -e '\''/^TASTILE_SES_REGION=/d'\'' -e '\''/^TASTILE_SES_CONFIGURATION_SET=/d'\'' -e '\''/^TASTILE_WEB_BRIDGE_SECRET=/d'\'' /etc/tastile/tastile-web.env",
             ("printf %s " + ($payload | @sh) + " | base64 -d | sudo tee -a /etc/tastile/tastile-web.env >/dev/null"),
             "sudo chmod 600 /etc/tastile/tastile-web.env",
             "sudo systemctl daemon-reload"
           ]}' > runtime-auth-ssm.json
 
-          COMMAND_ID="$(aws ssm send-command             --instance-ids "$WEB_INSTANCE_ID"             --document-name AWS-RunShellScript             --parameters file://runtime-auth-ssm.json             --output text             --query 'Command.CommandId')"
+          COMMAND_ID="$(
+            aws ssm send-command               --instance-ids "$WEB_INSTANCE_ID"               --document-name AWS-RunShellScript               --parameters file://runtime-auth-ssm.json               --output text               --query 'Command.CommandId'
+          )"
 
           aws ssm wait command-executed             --command-id "$COMMAND_ID"             --instance-id "$WEB_INSTANCE_ID"
-          aws ssm get-command-invocation             --command-id "$COMMAND_ID"             --instance-id "$WEB_INSTANCE_ID"             --query '{Status:Status,Error:StandardErrorContent}'             --output json
+          STATUS="$(
+            aws ssm get-command-invocation               --command-id "$COMMAND_ID"               --instance-id "$WEB_INSTANCE_ID"               --query 'Status'               --output text
+          )"
+          if [ "$STATUS" != "Success" ]; then
+            echo "::error::Runtime auth env sync failed with status $STATUS"
+            aws ssm get-command-invocation               --command-id "$COMMAND_ID"               --instance-id "$WEB_INSTANCE_ID"               --query '{Status:Status,Error:StandardErrorContent}'               --output json
+            exit 1
+          fi
 
       - name: Remove plaintext environment and age key
         if: always()
@@ -241,3 +296,70 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --parameters "commands=['set -euo pipefail','RELEASES=/opt/tastile/web/releases','CURRENT_LINK=/opt/tastile/web/current','sudo mkdir -p \"\$RELEASES\"','sudo mkdir -p /etc/tastile','sudo mkdir -p /etc/systemd/system/tastile-web.service.d','sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf > /dev/null <<DROPIN','[Service]','Environment=CLOUD_API_BASE=${CLOUD_API_BASE}','DROPIN','sudo systemctl daemon-reload','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','echo \"${EXPECTED_SHA256}  /tmp/tastile-web-${VERSION}.zip\" | sudo tee /tmp/tastile-web-${VERSION}.zip.sha256.expected >/dev/null','sudo sha256sum -c /tmp/tastile-web-${VERSION}.zip.sha256.expected','sudo rm -rf \"\$RELEASES/tastile-web-${VERSION}\"','sudo mkdir -p \"\$RELEASES/tastile-web-${VERSION}\"','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d \"\$RELEASES/tastile-web-${VERSION}\"','sudo ln -sfn \"\$RELEASES/tastile-web-${VERSION}\" \"\$CURRENT_LINK\"','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
             --output text --query "Command.CommandId"
+
+      - name: Verify production auth runtime
+        env:
+          WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
+        run: |
+          set -euo pipefail
+
+          SMOKE_SCRIPT="$(cat <<'SCRIPT'
+          set -euo pipefail
+          ENV_FILE=/etc/tastile/tastile-web.env
+
+          for key in BETTER_AUTH_SECRET TASTILE_AUTH_DATABASE_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET TASTILE_SES_FROM_ADDRESS TASTILE_WEB_BRIDGE_SECRET; do
+            if ! sudo grep -Eq "^$key=.+$" "$ENV_FILE"; then
+              echo "missing runtime auth key: $key" >&2
+              exit 1
+            fi
+          done
+
+          AUTH_DB="$(sudo sed -n 's/^TASTILE_AUTH_DATABASE_URL=//p' "$ENV_FILE" | tail -n 1)"
+          cd /opt/tastile/web/current
+          AUTH_DB="$AUTH_DB" node <<'NODE'
+          const { Pool } = require("pg");
+          (async () => {
+            const pool = new Pool({
+              connectionString: process.env.AUTH_DB,
+              max: 1,
+              connectionTimeoutMillis: 5000,
+            });
+            try {
+              const result = await pool.query("select 1 as ok");
+              if (result.rows?.[0]?.ok !== 1) throw new Error("unexpected DB probe result");
+            } finally {
+              await pool.end();
+            }
+          })().catch((error) => {
+            console.error("BetterAuth database probe failed:", error?.message ?? error);
+            process.exit(1);
+          });
+          NODE
+
+          SESSION_STATUS="$(curl -sS -o /tmp/tastile-auth-session-smoke.json -w '%{http_code}' -H 'Cookie: better-auth.session_token=deploy-smoke-invalid' http://127.0.0.1:3000/api/auth/get-session)"
+          if [ "$SESSION_STATUS" != "200" ]; then
+            echo "BetterAuth get-session smoke failed: HTTP $SESSION_STATUS" >&2
+            exit 1
+          fi
+
+          SOCIAL_STATUS="$(curl -sS -o /tmp/tastile-auth-social-smoke.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"provider":"google","callbackURL":"https://app.tastile.app/api/auth/bridge"}' http://127.0.0.1:3000/api/auth/sign-in/social)"
+          case "$SOCIAL_STATUS" in
+            2??|3??) ;;
+            *)
+              echo "Google social-start smoke failed: HTTP $SOCIAL_STATUS" >&2
+              exit 1
+              ;;
+          esac
+          SCRIPT
+          )"
+
+          SMOKE_B64="$(printf '%s' "$SMOKE_SCRIPT" | base64 -w0)"
+          jq -n --arg payload "$SMOKE_B64"             '{commands: [("printf %s " + ($payload | @sh) + " | base64 -d | bash")]}'             > auth-smoke-ssm.json
+
+          COMMAND_ID="$(
+            aws ssm send-command               --instance-ids "$WEB_INSTANCE_ID"               --document-name AWS-RunShellScript               --parameters file://auth-smoke-ssm.json               --output text               --query 'Command.CommandId'
+          )"
+
+          aws ssm wait command-executed             --command-id "$COMMAND_ID"             --instance-id "$WEB_INSTANCE_ID"
+          aws ssm get-command-invocation             --command-id "$COMMAND_ID"             --instance-id "$WEB_INSTANCE_ID"             --query '{Status:Status,Error:StandardErrorContent}'             --output json
+
