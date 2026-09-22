@@ -95,6 +95,20 @@ jobs:
           chmod 0600 "${HOME}/.config/sops/age/keys.txt"
           bun run scripts/sops-decrypt.ts --env=production
 
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as quality.yml) and stage the copy.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
+
       - name: Lint, typecheck, test, build
         env:
           NEXT_TELEMETRY_DISABLED: 1
