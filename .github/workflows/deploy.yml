@@ -95,6 +95,20 @@ jobs:
           chmod 0600 "${HOME}/.config/sops/age/keys.txt"
           bun run scripts/sops-decrypt.ts --env=production
 
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as quality.yml) and stage the copy.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
+
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
+
       - name: Lint, typecheck, test, build
         env:
           NEXT_TELEMETRY_DISABLED: 1
@@ -158,8 +172,7 @@ jobs:
 
           AUTH_ENV_B64="$(
             {
-              for key in                 BETTER_AUTH_SECRET                 TASTILE_AUTH_DATABASE_URL                 GOOGLE_CLIENT_ID                 GOOGLE_CLIENT_SECRET                 GOOGLE_ANDROID_CLIENT_ID                 APPLE_CLIENT_ID                 APPLE_CLIENT_SECRET                 TASTILE_SES_FROM_ADDRESS                 TASTILE_SES_CONFIGURATION_SET
-              do
+              for key in BETTER_AUTH_SECRET TASTILE_AUTH_DATABASE_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET GOOGLE_ANDROID_CLIENT_ID APPLE_CLIENT_ID APPLE_CLIENT_SECRET TASTILE_SES_FROM_ADDRESS TASTILE_SES_CONFIGURATION_SET; do
                 value="$(get_env "$key")"
                 if [ -n "$value" ]; then
                   printf '%s=%s\n' "$key" "$value"
@@ -294,8 +307,7 @@ jobs:
           set -euo pipefail
           ENV_FILE=/etc/tastile/tastile-web.env
 
-          for key in             BETTER_AUTH_SECRET             TASTILE_AUTH_DATABASE_URL             GOOGLE_CLIENT_ID             GOOGLE_CLIENT_SECRET             TASTILE_SES_FROM_ADDRESS             TASTILE_WEB_BRIDGE_SECRET
-          do
+          for key in BETTER_AUTH_SECRET TASTILE_AUTH_DATABASE_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET TASTILE_SES_FROM_ADDRESS TASTILE_WEB_BRIDGE_SECRET; do
             if ! sudo grep -Eq "^$key=.+$" "$ENV_FILE"; then
               echo "missing runtime auth key: $key" >&2
               exit 1
@@ -324,17 +336,13 @@ jobs:
           });
           NODE
 
-          SESSION_STATUS="$(
-            curl -sS               -o /tmp/tastile-auth-session-smoke.json               -w '%{http_code}'               -H 'Cookie: better-auth.session_token=deploy-smoke-invalid'               http://127.0.0.1:3000/api/auth/get-session
-          )"
+          SESSION_STATUS="$(curl -sS -o /tmp/tastile-auth-session-smoke.json -w '%{http_code}' -H 'Cookie: better-auth.session_token=deploy-smoke-invalid' http://127.0.0.1:3000/api/auth/get-session)"
           if [ "$SESSION_STATUS" != "200" ]; then
             echo "BetterAuth get-session smoke failed: HTTP $SESSION_STATUS" >&2
             exit 1
           fi
 
-          SOCIAL_STATUS="$(
-            curl -sS               -o /tmp/tastile-auth-social-smoke.json               -w '%{http_code}'               -X POST               -H 'content-type: application/json'               --data '{"provider":"google","callbackURL":"https://app.tastile.app/api/auth/bridge"}'               http://127.0.0.1:3000/api/auth/sign-in/social
-          )"
+          SOCIAL_STATUS="$(curl -sS -o /tmp/tastile-auth-social-smoke.json -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"provider":"google","callbackURL":"https://app.tastile.app/api/auth/bridge"}' http://127.0.0.1:3000/api/auth/sign-in/social)"
           case "$SOCIAL_STATUS" in
             2??|3??) ;;
             *)
