@@ -66,10 +66,12 @@ function socialProviders() {
 }
 
 async function createAuth() {
+  const publicOrigin = getPublicOrigin();
   return betterAuth({
+    baseURL: publicOrigin,
     basePath: "/api/auth",
     database: await authDatabase(),
-    trustedOrigins: [getPublicOrigin()],
+    trustedOrigins: [publicOrigin],
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,
