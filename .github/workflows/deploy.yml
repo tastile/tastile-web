@@ -143,9 +143,27 @@ jobs:
           BETTER_AUTH_SECRET="$(get_env BETTER_AUTH_SECRET)"
           TASTILE_AUTH_DATABASE_URL="$(get_env TASTILE_AUTH_DATABASE_URL)"
 
-          test -n "$BETTER_AUTH_SECRET"
-          test -n "$TASTILE_AUTH_DATABASE_URL"
-          test -n "$TASTILE_WEB_BRIDGE_SECRET"
+          # .env.production.sops may not yet carry BetterAuth keys (1.0.x baseline
+          # expects them, but older production envelopes omit them). Do not block
+          # the release artifact deploy when the source envelope lacks the keys;
+          # EC2 keeps whatever is already in /etc/tastile/tastile-web.env.
+          missing=0
+          if [ -z "$BETTER_AUTH_SECRET" ]; then
+            echo "::warning::Skipping runtime auth sync — BETTER_AUTH_SECRET missing from decrypted .env.production"
+            missing=1
+          fi
+          if [ -z "$TASTILE_AUTH_DATABASE_URL" ]; then
+            echo "::warning::Skipping runtime auth sync — TASTILE_AUTH_DATABASE_URL missing from decrypted .env.production"
+            missing=1
+          fi
+          if [ -z "${TASTILE_WEB_BRIDGE_SECRET}" ]; then
+            echo "::error::TASTILE_WEB_BRIDGE_SECRET GitHub secret is empty"
+            exit 1
+          fi
+          if [ "$missing" = "1" ]; then
+            echo "Runtime auth env sync skipped; continuing deploy with existing EC2 env."
+            exit 0
+          fi
 
           AUTH_ENV_B64="$(
             printf 'BETTER_AUTH_SECRET=%s\nTASTILE_AUTH_DATABASE_URL=%s\nTASTILE_WEB_BRIDGE_SECRET=%s\n'               "$BETTER_AUTH_SECRET"               "$TASTILE_AUTH_DATABASE_URL"               "$TASTILE_WEB_BRIDGE_SECRET"               | base64 -w0
