@@ -191,3 +191,19 @@ This version has breaking changes — APIs, conventions, and file structure may 
 This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
+
+
+## Constitution / operating profile
+
+- [`constitution/CONSTITUTION.md`](constitution/CONSTITUTION.md)
+- [`organization/profiles/release-driven-solo.md`](organization/profiles/release-driven-solo.md)
+
+
+## Agent Skills lifecycle
+
+- install/reconcile: `bunx skills add rebuildup/project-init --skill '*' --agent claude-code opencode codex -y`
+- fresh clone: `bunx skills install`
+- continuous update: `bunx skills update -p -y`
+- project-local only; global install is not canonical
+- commit CLI-generated `skills-lock.json`; do not hand-edit source/hash
+- keep project-specific refinement outside upstream-managed Skill files
