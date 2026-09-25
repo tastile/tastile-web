@@ -23,8 +23,6 @@
 			"!**/eslint.config.test.ts",
 			"!**/scripts/build-product.mts",
 			"!**/scripts/screenshot-calendar.mts",
-			"!**/scripts/sops-decrypt.ts",
-			"!**/scripts/sops-decrypt.test.ts",
 			"!**/knip.json",
 			"!**/tsconfig.json",
 			"!**/tsconfig.tsbuildinfo",

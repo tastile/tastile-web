@@ -15,15 +15,10 @@ permissions:
   contents: read
 
 jobs:
-  sops-check:
-    uses: ./.github/workflows/sops-decrypt.yml
-    with:
-      env: production
-    secrets:
-      sops_age_key_production: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
-
   build-and-deploy:
-    needs: sops-check
+    if: >-
+      startsWith(github.ref, 'refs/tags/v')
+      || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')))
     runs-on: ubuntu-latest
     environment: production
     outputs:
@@ -67,37 +62,22 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Install sops + age (SHA256-pinned)
-        env:
-          SOPS_VERSION: v3.9.0
-          AGE_VERSION: v1.2.0
-          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
-          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/sops "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
-          curl -fsSL -o /tmp/age.tgz "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
-          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
-          mkdir -p /tmp/age-extract
-          tar -xzf /tmp/age.tgz -C /tmp/age-extract
-          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
-          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
-          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
+      - name: Checkout canonical OpenAPI spec
+        # public/openapi.yaml is gitignored and read by
+        # src/app/api/openapi/route.ts at build time. Fresh CI checkouts
+        # lack the workspace-shell submodule, so fetch the canonical
+        # spec repo (same pattern as quality.yml) and stage the copy.
+        uses: actions/checkout@v4
+        with:
+          repository: tastile/tastile-openapi
+          path: openapi-spec
+          ref: main
 
-      - name: Decrypt production environment locally
-        env:
-          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
-        run: |
-          set -euo pipefail
-          mkdir -p "${HOME}/.config/sops/age"
-          printf '%s\n' "${SOPS_AGE_KEY_PRODUCTION}" > "${HOME}/.config/sops/age/keys.txt"
-          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
-          bun run scripts/sops-decrypt.ts --env=production
+      - name: Stage public openapi.yaml for build
+        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
 
-      - name: Lint, typecheck, test, build
+      - name: Lint, typecheck, and test
         env:
-          NEXT_TELEMETRY_DISABLED: 1
           # Pin TZ so vitest workers deterministically match local dev (JST).
           # The schedule wire tests in quick-create-schedule-wire.test.ts
           # exercise LocalDate → Instant conversion through
@@ -106,13 +86,30 @@ jobs:
           # GitHub-hosted ubuntu-latest runners default to UTC; without
           # this pin the same tests pass on a JST laptop and fail on CI.
           TZ: Asia/Tokyo
-        run: bun run check:release
+        run: bun run check
 
-      - name: Remove plaintext environment and age key
+      - name: Audit production dependencies
+        run: bun audit --production --ignore=GHSA-qx2v-qp2m-jg93 --ignore=GHSA-6g55-p6wh-862q --ignore=GHSA-r28c-9q8g-f849 --ignore=GHSA-f88m-g3jw-g9cj
+
+      - name: Fetch release environment from Infisical
+        uses: ./.github/actions/infisical-secrets
+        with:
+          domain: ${{ vars.INFISICAL_DOMAIN }}
+          project-id: ${{ vars.INFISICAL_PROJECT_ID_PROD }}
+          identity-id: ${{ vars.INFISICAL_IDENTITY_ID_PROD }}
+          environment: prod
+          path: /tastile/web
+          export-type: env
+
+      - name: Build production bundle
+        env:
+          NEXT_TELEMETRY_DISABLED: 1
+          TZ: Asia/Tokyo
+        run: bun run build:prod
+
+      - name: Remove generated environment file
         if: always()
-        run: |
-          rm -f .env .env.development .env.production .env.staging .env.dev .env.product
-          rm -f "${HOME}/.config/sops/age/keys.txt"
+        run: rm -f .env .env.development .env.production .env.staging .env.dev .env.product
 
       - name: Package standalone build
         # Mirrors `verify-web-artifact.ts` which rejects any `.env*` path
@@ -120,13 +117,15 @@ jobs:
         # other `.env*` files present at build time) into `.next/standalone/`,
         # which would otherwise leak secrets into the deployed artifact and
         # trip the verifier. Strip them here, before zipping, so production
-        # runtime env vars continue to come from the systemd EnvironmentFile
-        # (per docs/production/v1-core-release.md), not from a bundled file.
+        # runtime env vars are fetched directly from Infisical by systemd,
+        # not from a bundled file or host environment file.
         run: |
           mkdir -p dist
           cp -r .next/standalone/. dist/
           cp -r .next/static        dist/.next/
           cp -r public               dist/
+          mkdir -p dist/ops/systemd
+          cp ops/systemd/tastile-web.service.example dist/ops/systemd/tastile-web.service.example
           find dist -maxdepth 2 -type f -name '.env*' -delete
           (cd dist && zip -r "../tastile-web-${{ steps.version.outputs.version }}.zip" .)
           bun scripts/verify-web-artifact.ts "tastile-web-${{ steps.version.outputs.version }}.zip"
@@ -140,39 +139,13 @@ jobs:
       - name: Assume AWS role via OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.OIDC_ROLE_ARN }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Forward Stripe secrets to runtime env on EC2
-        # Mirrors `patch-stripe-env.yml` so every tag-based deploy keeps
-        # STRIPE_* / NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY aligned with the
-        # systemd EnvironmentFile. Without these, /api/stripe/checkout returns
-        # 500 {"error":"Stripe is not configured"} and the UI appears dead.
-        # Single-line --parameters (matches deploy.yml's existing pattern)
-        # so the runner's bash inlines ${STRIPE_*}; commands are written
-        # so each SSM step is self-contained (no ENV_FILE variable carry).
-        env:
-          WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
-          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
-          STRIPE_PRO_MONTHLY_PRICE_ID: ${{ secrets.STRIPE_PRO_MONTHLY_PRICE_ID }}
-          STRIPE_PRO_YEARLY_PRICE_ID: ${{ secrets.STRIPE_PRO_YEARLY_PRICE_ID }}
-          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
-        run: |
-          CMD_ID=$(aws ssm send-command --instance-ids "$WEB_INSTANCE_ID" --document-name AWS-RunShellScript --parameters "commands=['sudo touch /etc/tastile/tastile-web.env','sudo bash -c \"for n in STRIPE_SECRET_KEY STRIPE_WEBHOOK_SECRET STRIPE_PRO_MONTHLY_PRICE_ID STRIPE_PRO_YEARLY_PRICE_ID NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; do sed -i.bak \\\"/^\\${n}=/d\\\" /etc/tastile/tastile-web.env; done\"','sudo bash -c \"printf \\\"STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}\\\\nSTRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}\\\\nSTRIPE_PRO_MONTHLY_PRICE_ID=${STRIPE_PRO_MONTHLY_PRICE_ID}\\\\nSTRIPE_PRO_YEARLY_PRICE_ID=${STRIPE_PRO_YEARLY_PRICE_ID}\\\\nNEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}\\\\n\\\" >> /etc/tastile/tastile-web.env\"','sudo systemctl daemon-reload']" --output text --query 'Command.CommandId')
-          echo "ForwardStripeEnv CommandId: $CMD_ID"
-          for i in $(seq 1 18); do
-            sleep 5
-            STATUS=$(aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$WEB_INSTANCE_ID" --output text --query 'Status')
-            echo "  [${i}x5s] status=$STATUS"
-            [ "$STATUS" = "Success" ] || [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ] && break
-          done
-          aws ssm get-command-invocation --command-id "$CMD_ID" --instance-id "$WEB_INSTANCE_ID"
+          role-to-assume: ${{ vars.OIDC_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
 
       - name: Upload to transfer bucket
         id: upload
         env:
-          TRANSFER_BUCKET: ${{ secrets.TRANSFER_BUCKET }}
+          TRANSFER_BUCKET: ${{ vars.TRANSFER_BUCKET }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           sha256sum "tastile-web-${VERSION}.zip" | awk '{print $1}' > "tastile-web-${VERSION}.zip.sha256"
@@ -184,16 +157,75 @@ jobs:
           echo "expected_sha256=${EXPECTED_SHA256}" >> "$GITHUB_OUTPUT"
 
       - name: Deploy via SSM
+        id: deploy
         env:
-          WEB_INSTANCE_ID: ${{ secrets.WEB_INSTANCE_ID }}
+          WEB_INSTANCE_ID: ${{ vars.WEB_INSTANCE_ID }}
           VERSION: ${{ steps.version.outputs.version }}
           PRESIGNED: ${{ steps.upload.outputs.presigned }}
           EXPECTED_SHA256: ${{ steps.upload.outputs.expected_sha256 }}
-          TASTILE_WEB_BRIDGE_SECRET: ${{ secrets.TASTILE_WEB_BRIDGE_SECRET }}
           CLOUD_API_BASE: http://127.0.0.1:31400
         run: |
-          aws ssm send-command \
+          COMMANDS="$(jq -cn \
+            --arg version "$VERSION" \
+            --arg presigned "$PRESIGNED" \
+            --arg expected_sha256 "$EXPECTED_SHA256" \
+            --arg cloud_api_base "$CLOUD_API_BASE" \
+            '{commands:[
+              "set -euo pipefail",
+              "RELEASES=/opt/tastile/web/releases",
+              "CURRENT_LINK=/opt/tastile/web/current",
+              "if ! command -v infisical >/dev/null 2>&1; then",
+              "  curl -fsSL https://github.com/Infisical/cli/releases/download/v0.43.136/cli_0.43.136_linux_amd64.tar.gz -o /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz",
+              "  echo '8fa977e6531d73c8a99d05c9255461e1831f7313acf957aa3daae05eccc132d3  /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz' | sha256sum -c -",
+              "  tar -xzf /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz -C /tmp infisical",
+              "  sudo install -o root -g root -m 0755 /tmp/infisical /usr/bin/infisical",
+              "fi",
+              "sudo mkdir -p \"$RELEASES\" /etc/systemd/system/tastile-web.service.d",
+              "curl -fsSL \"" + $presigned + "\" -o /tmp/tastile-web-" + $version + ".zip",
+              "echo \"" + $expected_sha256 + "  /tmp/tastile-web-" + $version + ".zip\" | sudo tee /tmp/tastile-web-" + $version + ".zip.sha256.expected >/dev/null",
+              "sudo sha256sum -c /tmp/tastile-web-" + $version + ".zip.sha256.expected",
+              "sudo rm -rf \"$RELEASES/tastile-web-" + $version + "\"",
+              "sudo mkdir -p \"$RELEASES/tastile-web-" + $version + "\"",
+              "sudo unzip -q /tmp/tastile-web-" + $version + ".zip -d \"$RELEASES/tastile-web-" + $version + "\"",
+              "sudo install -o root -g root -m 0644 \"$RELEASES/tastile-web-" + $version + "/ops/systemd/tastile-web.service.example\" /etc/systemd/system/tastile-web.service",
+              "sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null <<DROPIN\n[Service]\nEnvironment=CLOUD_API_BASE=" + $cloud_api_base + "\nDROPIN",
+              "sudo ln -sfn \"$RELEASES/tastile-web-" + $version + "\" \"$CURRENT_LINK\"",
+              "sudo systemctl daemon-reload",
+              "sudo systemctl restart tastile-web.service",
+              "sudo systemctl is-active tastile-web.service",
+              "sleep 5",
+              "curl -fsS http://127.0.0.1:3000/ >/dev/null"
+            ]}')")
+          COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$WEB_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters "commands=['set -euo pipefail','RELEASES=/opt/tastile/web/releases','CURRENT_LINK=/opt/tastile/web/current','sudo mkdir -p \"\$RELEASES\"','sudo mkdir -p /etc/tastile','sudo mkdir -p /etc/systemd/system/tastile-web.service.d','sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf > /dev/null <<DROPIN','[Service]','Environment=CLOUD_API_BASE=${CLOUD_API_BASE}','DROPIN','sudo systemctl daemon-reload','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','echo \"${EXPECTED_SHA256}  /tmp/tastile-web-${VERSION}.zip\" | sudo tee /tmp/tastile-web-${VERSION}.zip.sha256.expected >/dev/null','sudo sha256sum -c /tmp/tastile-web-${VERSION}.zip.sha256.expected','sudo rm -rf \"\$RELEASES/tastile-web-${VERSION}\"','sudo mkdir -p \"\$RELEASES/tastile-web-${VERSION}\"','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d \"\$RELEASES/tastile-web-${VERSION}\"','sudo ln -sfn \"\$RELEASES/tastile-web-${VERSION}\" \"\$CURRENT_LINK\"','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
-            --output text --query "Command.CommandId"
+            --parameters "$COMMANDS" \
+            --output text --query "Command.CommandId")
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for deployment and verify success
+        env:
+          WEB_INSTANCE_ID: ${{ vars.WEB_INSTANCE_ID }}
+          COMMAND_ID: ${{ steps.deploy.outputs.command_id }}
+        run: |
+          set -euo pipefail
+          for attempt in $(seq 1 60); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$WEB_INSTANCE_ID" \
+              --query Status --output text 2>/dev/null || true)
+            case "$STATUS" in
+              Success) echo "SSM deployment completed successfully."; exit 0 ;;
+              Failed|Cancelled|TimedOut|Cancelling)
+                EXIT_CODE=$(aws ssm get-command-invocation \
+                  --command-id "$COMMAND_ID" \
+                  --instance-id "$WEB_INSTANCE_ID" \
+                  --query ResponseCode --output text 2>/dev/null || true)
+                echo "SSM deployment ended with status=$STATUS response_code=$EXIT_CODE" >&2
+                exit 1
+                ;;
+              *) sleep 5 ;;
+            esac
+          done
+          echo "Timed out waiting for the SSM deployment command." >&2
+          exit 1

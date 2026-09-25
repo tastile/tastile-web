@@ -12,17 +12,9 @@ on:
     # Weekly Sunday 03:00 UTC — outside peak traffic windows.
     - cron: "0 3 * * 0"
   workflow_dispatch:
-  pull_request:
-    paths:
-      - "tastile-web/public/openapi.yaml"
-      - "tastile-web/schemathesis.toml"
-      - "tastile-web/scripts/run-schemathesis.mjs"
-      - "tastile-web/package.json"
-      - ".github/workflows/schemathesis.yml"
 
 permissions:
   contents: read
-  pull-requests: write
 
 concurrency:
   group: schemathesis-${{ github.ref }}
@@ -30,6 +22,9 @@ concurrency:
 
 jobs:
   contract-test:
+    if: >-
+      github.event_name == 'schedule'
+      || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -71,11 +66,3 @@ jobs:
           path: |
             tastile-web/.schemathesis/
           retention-days: 7
-
-      - name: Comment on PR with summary
-        if: github.event_name == 'pull_request' && always()
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: schemathesis contract test
-          message: |
-            ${{ job.status == 'success' && '✅ contract test passed' || '❌ contract test failed — see job log for failure details' }}

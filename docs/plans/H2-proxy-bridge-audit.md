@@ -57,7 +57,7 @@
 | --- | --- | --- | --- |
 | 1.1 | `.env.development` が `E2E_BYPASS_AUTH=1` を含む | **PASS** | `.env.development:29` — `E2E_BYPASS_AUTH=1` |
 | 1.2 | `.env.development` が `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` を含む | **PASS** | `.env.development:30` — `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` |
-| 1.3 | `.env.development` が `TASTILE_WEB_BRIDGE_SECRET=<non-empty>` を含む | **PASS** | `.env.development:26` — `TASTILE_WEB_BRIDGE_SECRET=E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d` (52-char base64url, non-empty) |
+| 1.3 | `.env.development` が `TASTILE_WEB_BRIDGE_SECRET=<non-empty>` を含む | **PASS** | `.env.development:26` — `TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]` (52-char base64url, non-empty) |
 | 1.4 | `.env.development` が `CLOUD_API_BASE=http://127.0.0.1:31400` を含む | **PASS** | `.env.development:16` — `CLOUD_API_BASE=http://127.0.0.1:31400` (matches memory `project_tastile_web_required_env_vars.md`) |
 | 1.5 | `.env.development.example` が `E2E_BYPASS_AUTH` / `TASTILE_WEB_BRIDGE_SECRET` の **少なくとも片方** を宣言 | **FAIL** | `.env.development.example` does not declare either key. Only `NEXT_PUBLIC_DAEMON_BASE_URL` / `CLOUD_API_BASE` (placeholder `<required>`) / `TASTILE_USE_RUST_CORE` are listed. Bridge secret / bypass flag absent from template. |
 
