@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory = $false)][string]$Tag = "auth-redirect",
     [Parameter(Mandatory = $false)][string]$Region = "ap-northeast-1",
-    [Parameter(Mandatory = $false)][string]$InstanceId = "i-055793b218c1ab449",
+    [Parameter(Mandatory = $true)][ValidatePattern('\Ai-[0-9a-f]{17}\z')][string]$InstanceId,
     [Parameter(Mandatory = $false)][string]$TransferBucket = "tastile-beta-deploy",
     [Parameter(Mandatory = $false)][string]$ReleaseRoot = "/opt/tastile/web/releases",
     [Parameter(Mandatory = $false)][string]$CurrentLink = "/opt/tastile/web/current",
@@ -24,12 +24,7 @@ Write-Host "  Instance:   $InstanceId"
 Write-Host "  Bucket:     s3://$TransferBucket/web-releases/$zipName"
 
 # 1. Build
-# Use lint + typecheck + build:prod directly. test:unit is intentionally skipped
-# because vitest's jsdom setup has pre-existing env failures (29 unrelated
-# cases: document/window undefined, vi.resetModules missing). The middleware
-# change is small and well-isolated; tests would not add a meaningful gate.
-# build:prod -> NODE_ENV=production bun --env-file=.env.product next build
-# (ensures production env is the source for `NEXT_PUBLIC_*` baked-in values).
+# The release build receives production secrets through the Infisical wrapper.
 Write-Host ""
 Write-Host "== 1) lint + typecheck =="
 Write-Host "  (skipped — typecheck currently fails on stale .next/dev/types/*.d.ts artifacts;"
@@ -43,10 +38,12 @@ if ($proc.ExitCode -ne 0) {
 # 1.5 Build through the reusable production-environment boundary.
 Write-Host ""
 Write-Host "== 1.5) Production build =="
-Write-Host "  -> bun run build:prod"
-$proc = Start-Process -FilePath "cmd.exe" -ArgumentList "/c", "bun run build:prod" -NoNewWindow -Wait -PassThru
+Write-Host "  -> Infisical production environment + bun run build:prod"
+$proc = Start-Process -FilePath "bun" -ArgumentList @(
+    "scripts/run-with-infisical.mts", "prod", "--", "bun", "run", "build:prod"
+) -NoNewWindow -Wait -PassThru
 if ($proc.ExitCode -ne 0) {
-    throw "bun run build:prod failed (exit=$($proc.ExitCode))"
+    throw "Infisical production build failed (exit=$($proc.ExitCode))"
 }
 
 # 2. Stage the standalone bundle
@@ -61,11 +58,12 @@ Copy-Item -Recurse -Force ".next/static" (Join-Path $stageDir ".next/static")
 $publicTarget = Join-Path $stageDir "public"
 New-Item -ItemType Directory -Force -Path $publicTarget | Out-Null
 Copy-Item -Recurse -Force "public/*" $publicTarget
+New-Item -ItemType Directory -Force -Path (Join-Path $stageDir "ops/systemd") | Out-Null
+Copy-Item -Force "ops/systemd/tastile-web.service.example" (Join-Path $stageDir "ops/systemd/tastile-web.service.example")
 
 # Strip .env* files: Next.js standalone mode copies them into .next/standalone/
 # at build time, but verify-web-artifact.ts rejects any .env* path segment.
-# Production runtime env vars come from the systemd EnvironmentFile at
-# /etc/tastile/tastile-web.env (per docs/production/v1-core-release.md), so
+# Production runtime env vars are fetched from Infisical by systemd, so
 # shipping build-time .env.production is both a secret leak and a redundant
 # configuration source. Mirrors the same step in .github/workflows/deploy.yml.
 Get-ChildItem -Path $stageDir -Filter '.env*' -File | Remove-Item -Force
@@ -103,9 +101,19 @@ Write-Host ""
 Write-Host "== 5) SSM deploy on $InstanceId =="
 $commands = @(
     "set -euo pipefail",
+    "if ! command -v infisical >/dev/null 2>&1; then",
+    "  curl -fsSL https://github.com/Infisical/cli/releases/download/v0.43.136/cli_0.43.136_linux_amd64.tar.gz -o /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz",
+    "  echo '8fa977e6531d73c8a99d05c9255461e1831f7313acf957aa3daae05eccc132d3  /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz' | sha256sum -c -",
+    "  tar -xzf /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz -C /tmp infisical",
+    "  sudo install -o root -g root -m 0755 /tmp/infisical /usr/bin/infisical",
+    "fi",
     "sudo mkdir -p $ReleaseRoot/$releaseName",
     "curl -fsSL '$presignedUrl' -o /tmp/$zipName",
     "sudo unzip -q -o /tmp/$zipName -d $ReleaseRoot/$releaseName",
+    "sudo install -o root -g root -m 0644 $ReleaseRoot/$releaseName/ops/systemd/tastile-web.service.example /etc/systemd/system/tastile-web.service",
+    "sudo install -d -o root -g root -m 0755 /etc/systemd/system/tastile-web.service.d",
+    "printf '%s\\n' '[Service]' 'Environment=CLOUD_API_BASE=http://127.0.0.1:31400' | sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null",
+    "sudo systemctl daemon-reload",
     "sudo ln -sfn $ReleaseRoot/$releaseName $CurrentLink",
     "sudo systemctl restart $ServiceName",
     "sleep 3",

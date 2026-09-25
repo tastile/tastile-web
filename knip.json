@@ -2,14 +2,14 @@
   "$schema": "https://knip.dev/schema.json",
   "project": ["src/**"],
   "ignore": [
-    "src/lib/vendored/**",
-    "scripts/sops-decrypt.ts"
+    "src/lib/vendored/**"
   ],
   "ignoreIssues": {
     "src/shared/hooks/use-media-query.ts": ["exports"],
     "src/features/manage-schedule/ui/useResponsiveBreakpoint.ts": ["exports"]
   },
   "ignoreBinaries": [
-    "wslc"
+    "wslc",
+    "uvx"
   ]
 }

@@ -84,8 +84,8 @@ body:
       placeholder: |
         1. この repo を clone (`tastile-core` 隣接)
         2. `bun install`
-        3. `cp .env.development.example .env.development` (Cognito / Stripe 設定)
-        4. `bun dev`
+        3. `infisical login`
+        4. `bun dev` (Infisical の dev project から秘密を取得)
         5. ...
     validations:
       required: true

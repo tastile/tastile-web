@@ -19,7 +19,7 @@ A `bunx playwright test` run resolves the canonical Playwright config, which boo
 | Daemon | tastile-core v1 API | `tastile-core/scripts/wslc/up-v1.sh:59-70` (`wslc container run tastile-api`) | `127.0.0.1:31400` exposed via host port mapping. Auth resolves in `handlers::common::authenticate`; bridge wins on `Ok(None)`, revoked token returns `Err(_)` (memory `feedback_auth_fall_through.md`). |
 | Worker | tastile-core worker (Step 2a filler) | `tastile-core/scripts/wslc/up-v1.sh:75-82`, `crates/v1/worker/src/main.rs` `drive_fill` | Prefills recurring-source placements for all owners with active recurring (HARNESS §5 "Recurring fill E2E", 2026-07-10). |
 | Postgres | `postgres:16-alpine` | `tastile-core/scripts/wslc/up-v1.sh:33-39`, `tastile-db` container on `tastile-net` | Reachable only from inside the wslc network on `tastile-db:5432`. **NOT** published to host on purpose (README "Container shape", lines 39-42). |
-| Bridge secret | `TASTILE_WEB_BRIDGE_SECRET` | `tastile-core/scripts/wslc/up-v1.sh:17` default `wslc-dev-bridge-secret`; `tastile-web/.env.development:26` = `E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d` | Must align or daemon returns `403` for bridge-authenticated browser requests. |
+| Bridge secret | Infisical `/tastile/web` and `/tastile/core` paths | Injected by the authenticated local launcher for the selected environment |
 
 ### 1.2 What "start it locally" looks like (commands available)
 
@@ -69,24 +69,9 @@ wslc container exec tastile-db psql -U tastile -d tastile_db -c \
 
 These gaps matter when running the suite in any order other than `:alphabetical:default`. A leftover `v1_tile` from a previous spec will pollute `GET /v1/tiles` reads unless individual spec scopes its reads to a single placement/title (`quick-tile-create-e2e.spec.ts:32` `title = "E2E sidebar " + Date.now()` is exactly that mitigation).
 
-### 1.4 Bridge-secret alignment
+### 1.4 Bridge-secret injection (current procedure)
 
-Two values must match exactly or `x-tastile-web-bridge-secret` requests fall into `Err(WrongSecret)` (or silent `403` on production):
-
-| Side | Path | Value |
-| --- | --- | --- |
-| Daemon env (default in `up-v1.sh`) | `tastile-core/scripts/wslc/up-v1.sh:17` | `wslc-dev-bridge-secret` |
-| Web env (`tastile-web/.env.development:26`) | `TASTILE_WEB_BRIDGE_SECRET` | `E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d` |
-
-Currently **misaligned**. Running the dev stack as `bash scripts/wslc/up-v1.sh` while playing against the committed `.env.development` will fail every `/api/proxy/v1/*` call except the `E2E_BYPASS_AUTH=1` path (which only `playwright.config.ts:18-22` sets).
-
-Two acceptable fixes:
-
-1. **Align daemon to web**: export `BRIDGE_SECRET` to the `.env.development` value before invoking `up-v1.sh`. The script already honors `BRIDGE_SECRET` from env via `: "${TASTILE_WEB_BRIDGE_SECRET:=wslc-dev-bridge-secret}"` (`up-v1.sh:17`); `wslc container run` is passed `-e "TASTILE_WEB_BRIDGE_SECRET=$TASTILE_WEB_BRIDGE_SECRET"`. **This is the simpler path.**
-2. **Align web to daemon**: set `TASTILE_WEB_BRIDGE_SECRET=wslc-dev-bridge-secret` in `tastile-web/.env.development`. Optional follow-on: re-export + restart `bun run dev`.
-
-The plan overview (`00-overview.md:17`) requires bridge-auth with `Uuid::new_v5(NAMESPACE_OID, user_sub_bytes)`. That codepath only runs when `E2E_BYPASS_AUTH != "1"`. With Playwright default config (`E2E_BYPASS_AUTH=1`), bridge is **not exercised at all** unless the operator flips the env. Flag for the plan to clarify: is Phase 0 (stack up) the bridge-aligned path, or is it `E2E_BYPASS_AUTH=1` exclusively?
-
+The manual dotenv alignment steps in this historical audit are retired. The selected Infisical environment is the only source for `/tastile/web` and `/tastile/core` secrets. Start the relevant process through its repository's authenticated Infisical launcher. Do not export bridge values from a local file or use a fallback secret.
 ### 1.5 Auth matrix observed in code
 
 | Test mode | Headers used | Source |
@@ -227,13 +212,9 @@ These commands are **read-only** or **idempotent**. Use them as the audit's veri
 
 ## 7. Blockers (with citations)
 
-### 7.1 Bridge-secret mismatch (BLOCKER, prevents any non-`E2E_BYPASS_AUTH` Playwright run)
+### 7.1 Historical bridge-secret mismatch (retired)
 
-- `tastile-core/scripts/wslc/up-v1.sh:17` defaults `TASTILE_WEB_BRIDGE_SECRET=wslc-dev-bridge-secret`
-- `tastile-web/.env.development:26` sets `TASTILE_WEB_BRIDGE_SECRET=E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d`
-- Impact: `up-v1.sh` runs daemon with default secret; web browser sends bridge headers with committed secret → daemon treats bridge header as `Err(WrongSecret)` → 401 / 403.
-- Resolution: pick one of the two `Bridge-secret alignment` paths in §1.4. Tracked under Phase 0 of `00-overview.md:15-16`.
-
+This audit's `.env.development` comparison and manual alignment resolution are obsolete. Runtime secret retrieval now uses authenticated Infisical launchers. Verify the selected `/tastile/web` and `/tastile/core` paths through those launchers before exercising the bridge-auth flow.
 ### 7.2 `docker exec tastile-core-db-1` does not exist on the wslc stack (BLOCKER, every spec's `beforeEach`/setup TRUNCATE fails)
 
 - `e2e/helpers/v1.ts:101, 139-149`, inlined TRUNCATE in 22 spec files listed in §1.3.
@@ -258,7 +239,7 @@ Phase 0 (G + H per `00-overview.md`) needs three operator actions before the exi
 
 1. **W1 — docker→wslc replacement** of TRUNCATE containers. Single `wslc container exec tastile-db` swap in `e2e/helpers/v1.ts:101, 139-149` plus 22 inlined TRUNCATE sites (§1.3). Drop silent `try/catch`. Acceptance: every spec's TRUNCATE shell out visibly fails loud if container missing.
 
-2. **W2 — bridge-secret alignment** via §1.4 option 1 (align daemon to committed `.env.development`). Single doc or `Makefile` target: `BRIDGE_SECRET=$(grep '^TASTILE_WEB_BRIDGE_SECRET=' tastile-web/.env.development | cut -d= -f2-) bash scripts/wslc/up-v1.sh`. Acceptance: `wslc container inspect tastile-api | grep TASTILE_WEB_BRIDGE_SECRET` returns the committed value.
+2. **W2 — verify Infisical bridge-secret injection** through the authenticated launcher for the selected environment and confirm the runtime bridge-auth probe succeeds. Do not use manual dotenv export. Acceptance: the launcher obtains the required values and the probe validates the bridge path without printing secrets.
 
 3. **W3 — DB-side create assertions in `quick-tile-create-e2e.spec.ts`**. Add per-table `count(*)` assertions per §3.3 using `wslc container exec tastile-db psql`. Acceptance: spec fails loud when any count is off-by-one.
 

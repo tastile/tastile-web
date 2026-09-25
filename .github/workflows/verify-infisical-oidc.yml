@@ -1,0 +1,49 @@
+name: Verify Infisical GitHub OIDC
+
+on:
+  push:
+    branches:
+      - release-0-6-0
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - github_environment: development
+            infisical_environment: dev
+            suffix: DEV
+          - github_environment: staging
+            infisical_environment: staging
+            suffix: STAGING
+          - github_environment: production
+            infisical_environment: prod
+            suffix: PROD
+    runs-on: ubuntu-latest
+    environment: ${{ matrix.github_environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Fetch secrets through GitHub OIDC
+        uses: ./.github/actions/infisical-secrets
+        with:
+          domain: ${{ vars.INFISICAL_DOMAIN }}
+          project-id: ${{ vars[format('INFISICAL_PROJECT_ID_{0}', matrix.suffix)] }}
+          identity-id: ${{ vars[format('INFISICAL_IDENTITY_ID_{0}', matrix.suffix)] }}
+          environment: ${{ matrix.infisical_environment }}
+          path: /tastile/web
+          export-type: env
+
+      - name: Verify Infisical returned the bridge secret without printing it
+        shell: bash
+        run: test -n "${TASTILE_WEB_BRIDGE_SECRET:-}"

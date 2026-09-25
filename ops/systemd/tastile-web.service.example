@@ -6,10 +6,15 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=tastile
-WorkingDirectory=/opt/tastile-web
-EnvironmentFile=/opt/tastile-web/.env.production
-ExecStartPre=/opt/tastile-web/scripts/sops-decrypt.sh --env=production
-ExecStart=/usr/bin/bun run start
+Group=tastile
+WorkingDirectory=/opt/tastile/web/current
+Environment=HOME=/home/tastile
+Environment=INFISICAL_DOMAIN=https://secrets.rebuildup.dev
+Environment=INFISICAL_PROJECT_ID=ab532e90-acde-40e6-a206-3976743e5da5
+Environment=INFISICAL_ENV=prod
+Environment=INFISICAL_IDENTITY_ID=835b696a-ab09-4789-a3ce-43202e1c95fa
+ExecStartPre=/usr/bin/infisical login --method=aws-iam --machine-identity-id=${INFISICAL_IDENTITY_ID} --domain=${INFISICAL_DOMAIN} --silent
+ExecStart=/usr/bin/infisical run --domain=${INFISICAL_DOMAIN} --projectId=${INFISICAL_PROJECT_ID} --env=${INFISICAL_ENV} --path=/tastile/web -- /usr/bin/bun run start
 Restart=on-failure
 
 [Install]
