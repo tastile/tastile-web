@@ -38,7 +38,7 @@ jobs:
         uses: ./.github/actions/infisical-secrets
         with:
           domain: ${{ vars.INFISICAL_DOMAIN }}
-          project-id: ${{ vars[format('INFISICAL_PROJECT_ID_{0}', matrix.suffix)] }}
+          project-slug: ${{ vars[format('INFISICAL_PROJECT_SLUG_{0}', matrix.suffix)] }}
           identity-id: ${{ vars[format('INFISICAL_IDENTITY_ID_{0}', matrix.suffix)] }}
           environment: ${{ matrix.infisical_environment }}
           path: /tastile/web
