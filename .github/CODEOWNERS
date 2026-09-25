@@ -32,7 +32,7 @@
 /next.config.ts            @rebuildup
 /Containerfile             @rebuildup
 
-# Auth / billing / security surface (Stripe / Cognito / SOPS).
+# Auth / billing / security surface (Stripe / Cognito / Infisical).
 /src/lib/security/         @rebuildup
 /src/lib/billing/          @rebuildup
 /src/lib/api/v1/           @rebuildup

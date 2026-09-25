@@ -44,14 +44,13 @@ The image is built without baked secrets. `NEXT_PUBLIC_*` env vars are
 inlined into the SSR bundle at build time (Next.js standard), so changing
 them requires a rebuild.
 
-For other env vars, pass them at run time, e.g.:
+The launch scripts authenticate with Infisical's development identity and
+inject `/tastile/web` values at runtime. Do not invoke `wslc run` manually
+with secret values:
 
 ```bash
-wslc run -d --name tastile-web --network tastile-net \
-  -p 3000:3000 \
-  -e CLOUD_API_BASE=http://localhost:31400 \
-  -e TASTILE_WEB_BRIDGE_SECRET=... \
-  tastile-web
+bun scripts/wslc/build.sh
+bun scripts/wslc/up.sh
 ```
 
 `CLOUD_API_BASE` defaults to `http://localhost:31400` (host port mapped

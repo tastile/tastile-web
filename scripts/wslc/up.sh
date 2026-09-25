@@ -5,6 +5,11 @@
 # tastile-core.wslc/scripts/wslc/bootstrap.sh.
 set -euo pipefail
 
+if [[ "${TASTILE_INFISICAL_INJECTED:-}" != "1" ]]; then
+  REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+  exec bun "$REPO_ROOT/scripts/run-with-infisical.mts" dev -- bash "$REPO_ROOT/scripts/wslc/up.sh" "$@"
+fi
+
 command -v wslc >/dev/null 2>&1 || { echo "ERROR: wslc CLI not found in PATH. Install Microsoft June 2026 preview."; exit 1; }
 
 CONTAINER="tastile-web"
@@ -45,7 +50,7 @@ fi
 # here at runtime has no effect on the rendered values.
 : "${CLOUD_API_BASE:=http://tastile-api:31400}"
 : "${TASTILE_RUST_API_URL:=$CLOUD_API_BASE}"
-: "${TASTILE_WEB_BRIDGE_SECRET:=wslc-dev-bridge-secret}"
+: "${TASTILE_WEB_BRIDGE_SECRET:?Infisical dev /tastile/web must provide TASTILE_WEB_BRIDGE_SECRET}"
 : "${TASTILE_USE_RUST_CORE:=1}"
 : "${E2E_BYPASS_AUTH:=1}"
 : "${NEXT_PUBLIC_APEX_HOST:=localhost}"

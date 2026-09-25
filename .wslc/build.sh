@@ -6,8 +6,4 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT"
 
-echo "== wslc build (web) =="
-wslc build --build-arg NEXT_PUBLIC_E2E_BYPASS_AUTH=1 -t tastile-web -f Containerfile .
-
-echo "Build complete. Image: tastile-web (local)."
-wslc images tastile-web
+exec bash scripts/wslc/build.sh "$@"

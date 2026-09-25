@@ -43,7 +43,7 @@ ADR を 1 件も読まずに実装判断した場合、pre-commit reviewer か�
   Biome 1.9（biome linter/formatter off、ESLint 9 が lint） / ripgrep。
 - **Backend**: AWS 上の `tastile-core`（Rust/axum）。PostgreSQL 直接接続禁止。
 - **Auth**: AWS Cognito Hosted UI（Google OAuth + Sign in with Apple）。Bridge secret は
-  `TASTILE_WEB_BRIDGE_SECRET`、`scripts/wslc/up.sh` の既定値と `.env.development` を揃えろ。
+  `TASTILE_WEB_BRIDGE_SECRET`。開発・CI・runtime は Infisical の `/tastile/web` path から取得する。
 - **Sync**: poll + SSE。`active_tile` / `phase` 等の browser-local execution state は cloud に保存しない。
 - **Route structure**: `/` (landing)、`/dashboard/*` (main UI)、`/app/*` → `/dashboard` へ permanent redirect
   (`next.config.ts`)、`/api/*` (Stripe, OpenAPI, proxy 等)。dashboard 機能追加は `/dashboard` へ。
@@ -129,13 +129,16 @@ CI 側の gating:
 
 ## Environment & secrets
 
-- 必要 env schema は `.env.development.example` / `.env.production.example` を source of truth。
-- 実値保持可: `.env`、`.env.development`、`.env.production`（**全部** gitignore）。**`.env.local`、
-  `.env.test` 等は禁止**。
-- secret は example に空欄で、`PUBLIC_VALUE=safe-example` の形で書く。実 token を example に入れない。
-- `.env.local` に書くつもりだった値は、Vitest config のコメントが解説するように component test で
-  auth が short-circuit するため **書かない**。CLOUD_API_BASE / TASTILE_RUST_API_URL を `.env.development`
-  に置く。
+- Secret の唯一の正本は Infisical。development / staging / production project の
+  `/tastile/web` path から取得し、別の永続コピーを作らない。
+- `bun dev`、`bun run dev:staging`、`bun run dev:prod` は `scripts/run-with-infisical.mts` を通す。
+  Infisical 認証・取得に失敗した場合は fail closed とし、dotenv fallback を使わない。
+- `.env.example` は Infisical の key name だけを空値で列挙した生成 schema。値を追記しない。
+  `../scripts/restore-infisical-env.ps1 -Repository web -Environment <development|staging|production>`
+  は復旧が必要な場合だけローカルファイルを生成する。生成したファイルは gitignore 対象であり、
+  使用後に削除する。
+- `.env.local` に書くつもりだった値は component test の auth short-circuit 境界を維持し、
+  Vitest の envDir は無効のままにする。必要なテスト値も Infisical から取得する。
 
 ## Skill list（`.agents/skills/`、`../AGENTS.md` 経由で activate）
 

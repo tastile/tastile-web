@@ -7,8 +7,8 @@ name: Dependency review
 #
 # Runs on PRs to detect newly introduced dependencies that have known
 # vulnerabilities, are abandoned, or are licensed incompatibly with the
-# project (default deny = fail the job). Public-repo handling Stripe /
-# Cognito / OIDC / SOPS secrets — a dependency surface regression must
+# project (default deny = fail the job). Public-repo handling app and auth
+# secrets through Infisical — a dependency surface regression must
 # not silently land on main.
 #
 # Output modes:

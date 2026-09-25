@@ -16,7 +16,7 @@ client-side fix against real prod data.
 
 ## Variables at a glance
 
-| Variable | Default in `.env.development` | What it controls |
+| Variable | Development value source | What it controls |
 | --- | --- | --- |
 | `NEXT_PUBLIC_TASTILE_CORE_URL` | `http://localhost:31400` | Browser-side canonical API base URL. First preference in `src/shared/api/endpoints.ts → resolveCoreBaseUrl()`. |
 | `NEXT_PUBLIC_DAEMON_BASE_URL` | `http://localhost:31400` | Legacy alias. Kept for backward compatibility; the canonical var above takes priority. |
@@ -24,26 +24,11 @@ client-side fix against real prod data.
 | `NEXT_PUBLIC_CORE_DIRECT_MODE` | `0` | When `1`, the browser calls `CLOUD_API_BASE` directly and skips the proxy. Requires CORS + a valid bearer token. |
 | `NEXT_PUBLIC_E2E_BYPASS_AUTH` | unset | When `1`, the browser uses the E2E default `http://127.0.0.1:31400` regardless of the vars above. Leave `0` for prod smoke tests. |
 
-See `.env.development` and `.env.production` for the full surface.
+Values are fetched from the self-hosted Infisical development project at `/tastile/web`.
 
 ## Switching the dev server to the prod API
 
-There are two equivalent ways. Pick whichever is faster for the moment.
-
-### Option A — edit `.env.development`
-
-Change these two lines:
-
-```bash
-NEXT_PUBLIC_TASTILE_CORE_URL=https://api.tastile.app
-CLOUD_API_BASE=https://api.tastile.app
-```
-
-The dev server reads `.env.development` on startup, so restart `bun dev` after
-editing. To revert, restore the values from `.env.development.example` and
-restart the dev server.
-
-### Option B — `bun run dev:prod` (no edit)
+Use `bun run dev:prod` (no file edit):
 
 `package.json` defines a one-shot script that injects the prod base URL into
 the dev process without touching the file on disk:
@@ -52,17 +37,17 @@ the dev process without touching the file on disk:
 bun run dev:prod
 ```
 
-The script is equivalent to:
+The script sets the API endpoint for that process and retrieves secrets from
+Infisical's production project:
 
 ```bash
 NEXT_PUBLIC_TASTILE_CORE_URL=https://api.tastile.app \
 CLOUD_API_BASE=https://api.tastile.app \
 NEXT_PUBLIC_E2E_BYPASS_AUTH=0 \
-bun dev
+bun scripts/run-with-infisical.mts prod -- bun run next dev
 ```
 
-The override only lives for that one `bun dev` process — closing the terminal
-reverts to whatever is in `.env.development`.
+The override only lives for that one process. No dotenv file is created or read.
 
 ## Direct mode caveat
 
@@ -99,9 +84,7 @@ session into a `Bearer` header for the prod API (or `x-tastile-web-bridge-secret
 ## Troubleshooting
 
 - **Browser stuck on "Loading…"** — `CLOUD_API_BASE` is unset on the server.
-  Restart `bun dev` after editing `.env.development`, or confirm the `dev:prod`
-  script actually ran in the current shell (env vars only apply to the spawned
-  process).
+  Confirm `bun run dev:prod` was used and Infisical returned the production values.
 - **401 from the proxy** — sign in via BetterAuth first. The proxy needs either
   `COOKIE_API_TOKEN` or `COOKIE_USER_SUB` to be present. The login redirect
   sets both; a hard reload before login will not.

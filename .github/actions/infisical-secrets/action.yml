@@ -1,0 +1,81 @@
+name: Fetch Infisical secrets
+description: Fetch the selected environment and path using the repository's GitHub OIDC machine identity.
+inputs:
+  domain:
+    description: Self-hosted Infisical domain
+    required: true
+  project-id:
+    description: Selected environment project ID
+    required: true
+  identity-id:
+    description: Selected environment GitHub OIDC machine identity ID
+    required: true
+  environment:
+    description: Infisical environment slug
+    required: true
+  path:
+    description: Infisical secret path
+    required: true
+  export-type:
+    description: Export secrets as environment variables or a dotenv file
+    required: false
+    default: env
+  file-output-path:
+    description: Destination when export-type is file
+    required: false
+    default: .env
+  secret-name:
+    description: Optionally fetch one secret for OIDC verification
+    required: false
+  oidc-audience:
+    description: Audience bound to the GitHub OIDC machine identity
+    required: false
+    default: https://github.com/tastile
+runs:
+  using: composite
+  steps:
+    - name: Validate self-hosted Infisical configuration
+      shell: bash
+      env:
+        INFISICAL_DOMAIN: ${{ inputs.domain }}
+        INFISICAL_PROJECT_ID: ${{ inputs.project-id }}
+        INFISICAL_IDENTITY_ID: ${{ inputs.identity-id }}
+      run: |
+        set -euo pipefail
+        test -n "$INFISICAL_DOMAIN" || { echo "INFISICAL_DOMAIN is required" >&2; exit 2; }
+        test -n "$INFISICAL_PROJECT_ID" || { echo "INFISICAL_PROJECT_ID is required" >&2; exit 2; }
+        test -n "$INFISICAL_IDENTITY_ID" || { echo "INFISICAL_IDENTITY_ID is required" >&2; exit 2; }
+    - name: Prepare private export file
+      if: inputs.export-type == 'file'
+      shell: bash
+      env:
+        OUTPUT_PATH: ${{ inputs.file-output-path }}
+      run: |
+        set -euo pipefail
+        mkdir -p "$(dirname "$OUTPUT_PATH")"
+        umask 077
+        : > "$OUTPUT_PATH"
+        chmod 0600 "$OUTPUT_PATH"
+    - name: Fetch secrets from Infisical
+      uses: Infisical/secrets-action@v1.0.9
+      with:
+        method: oidc
+        identity-id: ${{ inputs.identity-id }}
+        domain: ${{ inputs.domain }}
+        project-id: ${{ inputs.project-id }}
+        env-slug: ${{ inputs.environment }}
+        secret-path: ${{ inputs.path }}
+        export-type: ${{ inputs.export-type }}
+        file-output-path: ${{ inputs.file-output-path }}
+        oidc-audience: ${{ inputs.oidc-audience }}
+        secret-name: ${{ inputs.secret-name }}
+    - name: Mark the Infisical environment as injected
+      if: inputs.export-type == 'env'
+      shell: bash
+      run: echo 'TASTILE_INFISICAL_INJECTED=1' >> "$GITHUB_ENV"
+    - name: Restrict exported file permissions
+      if: inputs.export-type == 'file'
+      shell: bash
+      env:
+        OUTPUT_PATH: ${{ inputs.file-output-path }}
+      run: chmod 0600 "$OUTPUT_PATH"

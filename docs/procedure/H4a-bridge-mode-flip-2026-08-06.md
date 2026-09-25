@@ -25,7 +25,7 @@
 ```text
 $ cd C:/Users/rebui/Desktop/tastile/tastile-web && sed -n '25,35p' .env.development
 NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS=Google,SignInWithApple
-TASTILE_WEB_BRIDGE_SECRET=E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d
+TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]
 TASTILE_USE_RUST_CORE=1
 TASTILE_RUST_API_URL=http://127.0.0.1:31400
 E2E_BYPASS_AUTH=                                                   ← 空文字 (criterion 1 MET)
@@ -64,12 +64,12 @@ const userSub = request.cookies.get(COOKIE_USER_SUB)?.value;
 
 Web (`.env.development:26`):
 ```
-TASTILE_WEB_BRIDGE_SECRET=E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d
+TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]
 ```
 
 Core container (`wslc container exec tastile-dev-api bash -c "env | grep BRIDGE"`):
 ```
-TASTILE_WEB_BRIDGE_SECRET=dev-e2e-secret
+TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]
 ```
 
 **⚠️ MISMATCH DETECTED**: `.env.development` の値は 64-char ランダム secret、container 環境変数は `dev-e2e-secret`。
