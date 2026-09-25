@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   group: schemathesis-${{ github.ref }}
@@ -27,36 +28,27 @@ jobs:
       || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
-      - uses: oven-sh/setup-bun@v2
+      - name: Install uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
-          bun-version: 1.3.10
+          enable-cache: true
 
-      - name: Cache uv toolchain
-        uses: actions/cache@v4
+      - name: Fetch Schemathesis token from Infisical
+        uses: ./.github/actions/infisical-secrets
         with:
-          path: ~/.cache/uv
-          key: uv-${{ runner.os }}-${{ hashFiles('**/uv.lock', '**/pyproject.toml') }}
-          restore-keys: uv-${{ runner.os }}-
-
-      - name: Cache bun install
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('tastile-web/bun.lockb', 'tastile-web/package.json') }}
-          restore-keys: bun-${{ runner.os }}-
-
-      - name: Install bun dependencies
-        working-directory: tastile-web
-        run: bun install --frozen-lockfile
+          domain: ${{ vars.INFISICAL_DOMAIN }}
+          project-id: ${{ vars.INFISICAL_PROJECT_ID_PROD }}
+          identity-id: ${{ vars.INFISICAL_IDENTITY_ID_PROD }}
+          environment: prod
+          path: /tastile/core
+          export-type: env
 
       - name: Run schemathesis contract tests
-        working-directory: tastile-web
-        env:
-          TASTILE_TEST_TOKEN: ${{ secrets.TASTILE_TEST_TOKEN }}
-        run: bun run contract:test --seed=42 --max-examples=5
+        run: node scripts/run-schemathesis.mjs --seed=42 --max-examples=5
 
       - name: Upload schemathesis report on failure
         if: failure()
@@ -64,5 +56,5 @@ jobs:
         with:
           name: schemathesis-report
           path: |
-            tastile-web/.schemathesis/
+            .schemathesis/
           retention-days: 7

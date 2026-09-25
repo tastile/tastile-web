@@ -9,6 +9,7 @@
     "src/features/manage-schedule/ui/useResponsiveBreakpoint.ts": ["exports"]
   },
   "ignoreBinaries": [
-    "wslc"
+    "wslc",
+    "uvx"
   ]
 }
