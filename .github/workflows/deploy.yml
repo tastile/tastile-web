@@ -158,23 +158,23 @@ jobs:
 
       - name: Deploy via SSM
         id: deploy
-        # Single-line AWS CLI shorthand for SSM `--parameters "commands=[...]"`.
-        # Replaces the prior `jq -cn '{commands:[...]}'` pattern which embedded
-        # bash heredoc newlines via jq `"\n"` escapes — those collapsed into a
-        # single command string where `<<DROPIN` opened a heredoc but never
-        # closed (the literal `DROPIN` was nested inside the same command
-        # string, not a heredoc terminator), producing "syntax error near
-        # unexpected token `)'`. The string-array form here keeps each command
-        # on its own element so SSM executes them sequentially; the systemd
-        # drop-in is written via `printf '[Service]\n...\n'` (no heredoc).
+        # Build the SSM `--parameters` value as a JSON object via `jq -n
+        # --arg`, then pass it as a single quoted argument. JSON form is
+        # required because the SSM agent (3.3.x) on the host does NOT
+        # reliably decode the AWS CLI shorthand (`commands=[...]`) that the
+        # aws-cli ShorthandParser parses locally: the host SSM agent flattens
+        # the array into a single shell script and the first non-quoted token
+        # becomes the command name, producing `line 1: -p: command not found`
+        # with response_code=127. The JSON form `{"commands":[...]}` is the
+        # canonical SSM SendCommand API input and is decoded correctly.
         #
-        # CRITICAL: the SSM agent (3.3.x) runs each element of the array in
-        # a SEPARATE shell session, so shell variable assignments do NOT
-        # persist between elements. Every value this command set needs
-        # (RELEASES/CURRENT_LINK paths, CLOUD_API_BASE, PRESIGNED, VERSION,
-        # EXPECTED_SHA256) is substituted at WORKFLOW bash time via ${VAR}
-        # interpolation in this run block, so each element the host receives
-        # is self-contained — no inter-element state required.
+        # All values that the host commands need (PRESIGNED, EXPECTED_SHA256,
+        # VERSION, CLOUD_API_BASE) are still substituted at WORKFLOW bash
+        # time so each element of the array is self-contained and contains
+        # no bash variable references — the SSM agent still runs each
+        # element in a separate shell session, so no inter-element state.
+        # jq `--arg` JSON-escapes the value, so URLs with `&`/`?` and values
+        # containing quotes are safely embedded.
         env:
           WEB_INSTANCE_ID: ${{ vars.WEB_INSTANCE_ID }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -182,10 +182,35 @@ jobs:
           EXPECTED_SHA256: ${{ steps.upload.outputs.expected_sha256 }}
           CLOUD_API_BASE: http://127.0.0.1:31400
         run: |
+          PARAMS_JSON=$(jq -nc \
+            --arg presigned "$PRESIGNED" \
+            --arg version "$VERSION" \
+            --arg sha "$EXPECTED_SHA256" \
+            --arg cloud_api_base "$CLOUD_API_BASE" \
+            '{commands:[
+              "set -euo pipefail",
+              "sudo mkdir -p /opt/tastile/web/releases",
+              "sudo mkdir -p /etc/systemd/system/tastile-web.service.d",
+              ("sudo bash -c 'printf \"%s\\n%s\\n\" \"[Service]\" \"Environment=CLOUD_API_BASE=" + $cloud_api_base + "\" > /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf'"),
+              "sudo systemctl daemon-reload",
+              ("curl -fsSL \"" + $presigned + "\" -o /tmp/tastile-web-" + $version + ".zip"),
+              ("echo \"" + $sha + "  /tmp/tastile-web-" + $version + ".zip\" | sudo tee /tmp/tastile-web-" + $version + ".zip.sha256.expected >/dev/null"),
+              ("sudo sha256sum -c /tmp/tastile-web-" + $version + ".zip.sha256.expected"),
+              ("sudo rm -rf /opt/tastile/web/releases/tastile-web-" + $version),
+              ("sudo mkdir -p /opt/tastile/web/releases/tastile-web-" + $version),
+              ("sudo unzip -q /tmp/tastile-web-" + $version + ".zip -d /opt/tastile/web/releases/tastile-web-" + $version),
+              ("sudo install -m 0644 /opt/tastile/web/releases/tastile-web-" + $version + "/ops/systemd/tastile-web.service.example /etc/systemd/system/tastile-web.service"),
+              ("sudo ln -sfn /opt/tastile/web/releases/tastile-web-" + $version + " /opt/tastile/web/current"),
+              "sudo systemctl daemon-reload",
+              "sudo systemctl restart tastile-web.service",
+              "sudo systemctl is-active tastile-web.service",
+              "sleep 5",
+              "curl -fsS http://127.0.0.1:3000/ >/dev/null"
+            ]}')
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$WEB_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters "commands=['set -euo pipefail','sudo mkdir -p /opt/tastile/web/releases','sudo mkdir -p /etc/systemd/system/tastile-web.service.d','sudo bash -c \"printf \'[Service]\nEnvironment=CLOUD_API_BASE=${CLOUD_API_BASE}\n\' > /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf\"','sudo systemctl daemon-reload','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','echo \"${EXPECTED_SHA256}  /tmp/tastile-web-${VERSION}.zip\" | sudo tee /tmp/tastile-web-${VERSION}.zip.sha256.expected >/dev/null','sudo sha256sum -c /tmp/tastile-web-${VERSION}.zip.sha256.expected','sudo rm -rf /opt/tastile/web/releases/tastile-web-${VERSION}','sudo mkdir -p /opt/tastile/web/releases/tastile-web-${VERSION}','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d /opt/tastile/web/releases/tastile-web-${VERSION}','sudo install -m 0644 /opt/tastile/web/releases/tastile-web-${VERSION}/ops/systemd/tastile-web.service.example /etc/systemd/system/tastile-web.service','sudo ln -sfn /opt/tastile/web/releases/tastile-web-${VERSION} /opt/tastile/web/current','sudo systemctl daemon-reload','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
+            --parameters "$PARAMS_JSON" \
             --output text --query "Command.CommandId")
           echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
 
