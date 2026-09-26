@@ -48,7 +48,7 @@ COPY . .
 RUN test "$TASTILE_INFISICAL_INJECTED" = "1" && bun run build:prod
 
 # ----- run stage -----
-FROM node:20-bookworm-slim AS run
+FROM node:25-bookworm-slim AS run
 WORKDIR /app
 
 ENV NODE_ENV=production \
