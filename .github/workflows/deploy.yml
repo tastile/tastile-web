@@ -176,7 +176,7 @@ jobs:
               "CURRENT_LINK=/opt/tastile/web/current",
               "if ! command -v infisical >/dev/null 2>&1; then",
               "  curl -fsSL https://github.com/Infisical/cli/releases/download/v0.43.136/cli_0.43.136_linux_amd64.tar.gz -o /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz",
-              "  echo '8fa977e6531d73c8a99d05c9255461e1831f7313acf957aa3daae05eccc132d3  /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz' | sha256sum -c -",
+              "  printf \"%s\\n\" \"8fa977e6531d73c8a99d05c9255461e1831f7313acf957aa3daae05eccc132d3  /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz\" | sha256sum -c -",
               "  tar -xzf /tmp/infisical-cli-0.43.136-linux-amd64.tar.gz -C /tmp infisical",
               "  sudo install -o root -g root -m 0755 /tmp/infisical /usr/bin/infisical",
               "fi",
