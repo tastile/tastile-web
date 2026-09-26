@@ -175,6 +175,13 @@ jobs:
         # element in a separate shell session, so no inter-element state.
         # jq `--arg` JSON-escapes the value, so URLs with `&`/`?` and values
         # containing quotes are safely embedded.
+        #
+        # The /home/tastile mkdir step (see element 14) is a runtime-health
+        # prerequisite, not an SSM-shape fix. Without it `infisical run` inside
+        # the systemd unit fails on the missing `$HOME/.infisical` cache dir
+        # and the service enters a restart loop; `systemctl is-active` returns
+        # "active" during the loop so the only reliable end-of-deploy check is
+        # the localhost curl. See the post-mortem in journal 2026-09-27.
         env:
           WEB_INSTANCE_ID: ${{ vars.WEB_INSTANCE_ID }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -201,6 +208,16 @@ jobs:
               ("sudo unzip -q /tmp/tastile-web-" + $version + ".zip -d /opt/tastile/web/releases/tastile-web-" + $version),
               ("sudo install -m 0644 /opt/tastile/web/releases/tastile-web-" + $version + "/ops/systemd/tastile-web.service.example /etc/systemd/system/tastile-web.service"),
               ("sudo ln -sfn /opt/tastile/web/releases/tastile-web-" + $version + " /opt/tastile/web/current"),
+              # The systemd unit pins HOME=/home/tastile and the infisical
+              # CLI writes its session cache to $HOME/.infisical. The host
+              # does not pre-create /home/tastile, so without this mkdir the
+              # service enters a restart loop with
+              # `error: askForDomain: unable to write domains to config
+              # file because [err=mkdir /home/tastile/.infisical: no such
+              # file or directory]`. `systemctl is-active` returns "active"
+              # during the loop so the deploy looks healthy at that boundary
+              # and only the curl smoke test catches it.
+              "sudo mkdir -p /home/tastile && sudo chown -R tastile:tastile /home/tastile",
               "sudo systemctl daemon-reload",
               "sudo systemctl restart tastile-web.service",
               "sudo systemctl is-active tastile-web.service",
