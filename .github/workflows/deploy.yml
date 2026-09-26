@@ -166,9 +166,15 @@ jobs:
         # string, not a heredoc terminator), producing "syntax error near
         # unexpected token `)'`. The string-array form here keeps each command
         # on its own element so SSM executes them sequentially; the systemd
-        # drop-in is written via `printf '[Service]\n...\n'` (no heredoc),
-        # and CLOUD_API_BASE is exported as its own host shell variable so
-        # printf can reference it via shell expansion.
+        # drop-in is written via `printf '[Service]\n...\n'` (no heredoc).
+        #
+        # CRITICAL: the SSM agent (3.3.x) runs each element of the array in
+        # a SEPARATE shell session, so shell variable assignments do NOT
+        # persist between elements. Every value this command set needs
+        # (RELEASES/CURRENT_LINK paths, CLOUD_API_BASE, PRESIGNED, VERSION,
+        # EXPECTED_SHA256) is substituted at WORKFLOW bash time via ${VAR}
+        # interpolation in this run block, so each element the host receives
+        # is self-contained — no inter-element state required.
         env:
           WEB_INSTANCE_ID: ${{ vars.WEB_INSTANCE_ID }}
           VERSION: ${{ steps.version.outputs.version }}
@@ -179,7 +185,7 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids "$WEB_INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --parameters "commands=['set -euo pipefail','RELEASES=/opt/tastile/web/releases','CURRENT_LINK=/opt/tastile/web/current','export CLOUD_API_BASE=${CLOUD_API_BASE}','sudo mkdir -p \"$RELEASES\"','sudo mkdir -p /etc/systemd/system/tastile-web.service.d','sudo bash -c \"printf \'[Service]\nEnvironment=CLOUD_API_BASE=%s\n\' \\\"\$CLOUD_API_BASE\\\"\" | sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null','sudo systemctl daemon-reload','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','echo \"${EXPECTED_SHA256}  /tmp/tastile-web-${VERSION}.zip\" | sudo tee /tmp/tastile-web-${VERSION}.zip.sha256.expected >/dev/null','sudo sha256sum -c /tmp/tastile-web-${VERSION}.zip.sha256.expected','sudo rm -rf \"$RELEASES/tastile-web-${VERSION}\"','sudo mkdir -p \"$RELEASES/tastile-web-${VERSION}\"','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d \"$RELEASES/tastile-web-${VERSION}\"','sudo install -m 0644 \"$RELEASES/tastile-web-${VERSION}/ops/systemd/tastile-web.service.example\" /etc/systemd/system/tastile-web.service','sudo ln -sfn \"$RELEASES/tastile-web-${VERSION}\" \"$CURRENT_LINK\"','sudo systemctl daemon-reload','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
+            --parameters "commands=['set -euo pipefail','sudo mkdir -p /opt/tastile/web/releases','sudo mkdir -p /etc/systemd/system/tastile-web.service.d','sudo bash -c \"printf \'[Service]\nEnvironment=CLOUD_API_BASE=${CLOUD_API_BASE}\n\' > /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf\"','sudo systemctl daemon-reload','curl -fsSL \"${PRESIGNED}\" -o /tmp/tastile-web-${VERSION}.zip','echo \"${EXPECTED_SHA256}  /tmp/tastile-web-${VERSION}.zip\" | sudo tee /tmp/tastile-web-${VERSION}.zip.sha256.expected >/dev/null','sudo sha256sum -c /tmp/tastile-web-${VERSION}.zip.sha256.expected','sudo rm -rf /opt/tastile/web/releases/tastile-web-${VERSION}','sudo mkdir -p /opt/tastile/web/releases/tastile-web-${VERSION}','sudo unzip -q /tmp/tastile-web-${VERSION}.zip -d /opt/tastile/web/releases/tastile-web-${VERSION}','sudo install -m 0644 /opt/tastile/web/releases/tastile-web-${VERSION}/ops/systemd/tastile-web.service.example /etc/systemd/system/tastile-web.service','sudo ln -sfn /opt/tastile/web/releases/tastile-web-${VERSION} /opt/tastile/web/current','sudo systemctl daemon-reload','sudo systemctl restart tastile-web.service','sudo systemctl is-active tastile-web.service','sleep 5','curl -fsS http://127.0.0.1:3000/ >/dev/null']" \
             --output text --query "Command.CommandId")
           echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
 
