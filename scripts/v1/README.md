@@ -35,14 +35,73 @@ downtime window), the script was hardened to **fail closed** between
 contract is tracked in
 [Issue #161](https://github.com/tastile/tastile-web/issues/161).
 
-### Canonical invocation
+## deploy-web-v1.ps1 hardening (v1.0.4)
 
-From the Windows primary host, after `v1.0.3` is on `origin`:
+A second hardening pass was needed because v1.0.3 still shipped two
+latent bugs that would have broken the production deploy:
+
+1. **`tar.exe -c -f` produced an uncompressed tar with a `.tar.gz`
+   suffix.** bsdtar / libarchive (the tar bundled with Windows since
+   1803 and most Linux distros) does **not** auto-detect compression
+   from the `.gz` suffix the way GNU tar ≥1.15 does with `-a`. The
+   archive reached EC2 with no gzip header, so `tar -xzf` on the
+   production host failed with `gzip: stdin: not in gzip format`.
+   v1.0.4 fixes this by passing `-z` explicitly (`tar.exe -czf`) and
+   then verifying the first two bytes of the produced file are the
+   gzip magic `0x1f 0x8b`. If the magic check fails, the deploy aborts
+   before upload.
+2. **`-Tag v1.0.3` did not check out `v1.0.3`.** The script only used
+   `-Tag` to label the locally-built artifact. A workspace whose HEAD
+   was the docs-only `8bc72be4` could ship a release whose contents
+   did not match the tag it claimed to be. v1.0.4 adds a **source-tag
+   pin**: when `-Tag` is a canonical `vX.Y.Z`, the script resolves
+   `${Tag}^{commit}` via `git rev-parse` and refuses to proceed if
+   local HEAD is not that commit. Override with `-SkipSourcePin` for
+   ad-hoc / dry-run builds where the mismatch is intentional.
+
+In addition, v1.0.4 introduces a `Test-ArchiveTarball` post-creation
+check that opens the produced archive with `tar -tzf` and confirms
+every required entry (`server.js`, `.next/standalone`, `.next/static`,
+`public`) is present. This catches file-write corruption, wrong staging
+tree, and nested-prefix regressions at the source rather than at EC2
+extraction time.
+
+### v1.0.4 parameter additions
+
+| Parameter | Default | Purpose |
+| --- | --- | --- |
+| `-SkipSourcePin` | `$false` | Skip the `${Tag}^{commit}` ↔ `HEAD` pin. Use only for ad-hoc / dry-run builds where the tag/HEAD mismatch is intentional. |
+
+The v1.0.3 hardening contract (Phases 0..5, exit codes 10/11/12/13 +
+20/21/22, platform-dispatched staging, ASCII-encoded SSM payload,
+`-DryRun` / `-SkipBuild`) is unchanged.
+
+### Canonical invocation (v1.0.4)
+
+From the Windows primary host, with `v1.0.4` checked out and on
+`origin`:
+
+```powershell
+pwsh scripts/v1/deploy-web-v1.ps1 `
+  -Tag v1.0.4 `
+  -Region ap-northeast-1
+```
+
+The source-tag pin refuses to run if `HEAD` is not `v1.0.4^{commit}`.
+Override with `-SkipSourcePin` only when intentional.
+
+### Canonical invocation (v1.0.3)
+
+For a v1.0.3 release (which predates the source-tag pin), the same
+invocation form applies — v1.0.4 deploy script is backward-compatible
+with v1.0.3 tags because the pin is opt-out (`-SkipSourcePin`) and
+the tar archive format is identical.
 
 ```powershell
 pwsh scripts/v1/deploy-web-v1.ps1 `
   -Tag v1.0.3 `
-  -Region ap-northeast-1
+  -Region ap-northeast-1 `
+  -SkipSourcePin
 ```
 
 The script defaults to `Region ap-northeast-1`, `TransferBucket
