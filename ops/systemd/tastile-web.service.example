@@ -9,12 +9,33 @@ User=tastile
 Group=tastile
 WorkingDirectory=/opt/tastile/web/current
 Environment=HOME=/home/tastile
+Environment=HOSTNAME=0.0.0.0
+Environment=PORT=3000
 Environment=INFISICAL_DOMAIN=https://secrets.rebuildup.dev
 Environment=INFISICAL_PROJECT_ID=ab532e90-acde-40e6-a206-3976743e5da5
 Environment=INFISICAL_ENV=prod
 Environment=INFISICAL_IDENTITY_ID=835b696a-ab09-4789-a3ce-43202e1c95fa
-ExecStartPre=/usr/bin/infisical login --method=aws-iam --machine-identity-id=${INFISICAL_IDENTITY_ID} --domain=${INFISICAL_DOMAIN} --silent
-ExecStart=/usr/bin/infisical run --domain=${INFISICAL_DOMAIN} --projectId=${INFISICAL_PROJECT_ID} --env=${INFISICAL_ENV} --path=/tastile/web -- /usr/bin/bun run start
+# The earlier unit (be132f1e, #147) had two compounding problems:
+#  1. `infisical login --silent` does not persist a usable session to
+#     ~/.infisical/infisical-config.json (the file ends up with
+#     loggedInUserEmail="" and no token), so the subsequent `infisical run`
+#     treats the next CLI invocation as "no session" and triggers an
+#     interactive browser login that fails headlessly ("Login via browser
+#     failed. inappropriate ioctl for device"). Capture the access token
+#     from `infisical login --plain` into a per-boot file under /run/tastile
+#     (systemd-managed, mode 0600, owned by tastile) and feed it to
+#     `infisical run --token` so the child process never re-authenticates.
+#  2. `bun run start` failed with `fork/exec /usr/bin/bun: no such file or
+#     directory` because the deployed artifact is a Next.js standalone build
+#     (`next.config.ts` sets `output: "standalone"`), whose entrypoint is
+#     `/opt/tastile/web/current/server.js` and runtime is `node` — the host
+#     does not install bun at runtime. The standalone server listens on
+#     PORT (default 3000) when HOSTNAME is set; both are exported above.
+RuntimeDirectory=tastile
+RuntimeDirectoryMode=0700
+ExecStartPre=/bin/sh -c '/usr/bin/infisical login --method=aws-iam --machine-identity-id=${INFISICAL_IDENTITY_ID} --domain=${INFISICAL_DOMAIN} --plain > /run/tastile/infisical-token'
+ExecStartPre=/bin/sh -c 'test -s /run/tastile/infisical-token && chmod 0600 /run/tastile/infisical-token'
+ExecStart=/bin/sh -c 'exec /usr/bin/infisical run --domain=${INFISICAL_DOMAIN} --projectId=${INFISICAL_PROJECT_ID} --env=${INFISICAL_ENV} --path=/tastile/web --token="$(cat /run/tastile/infisical-token)" -- /usr/bin/node ./server.js'
 Restart=on-failure
 
 [Install]
