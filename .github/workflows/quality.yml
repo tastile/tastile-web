@@ -33,37 +33,11 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install sops + age (SHA256-pinned)
-        env:
-          SOPS_VERSION: v3.9.0
-          AGE_VERSION: v1.2.0
-          SOPS_SHA256: 0d65660fbe785647ff4f1764d7f69edf598f79d6d79ebbef4a501909b6ff6b82
-          AGE_SHA256: 2ae71cb3ea761118937a944083f057cfd42f0ef11d197ce72fc2b8780d50c4ef
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/sops "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64"
-          printf '%s  /tmp/sops\n' "${SOPS_SHA256}" | sha256sum -c -
-          curl -fsSL -o /tmp/age.tgz "https://github.com/FiloSottile/age/releases/download/${AGE_VERSION}/age-${AGE_VERSION}-linux-amd64.tar.gz"
-          printf '%s  /tmp/age.tgz\n' "${AGE_SHA256}" | sha256sum -c -
-          mkdir -p /tmp/age-extract
-          tar -xzf /tmp/age.tgz -C /tmp/age-extract
-          sudo install -m 0755 /tmp/sops /usr/local/bin/sops
-          sudo install -m 0755 /tmp/age-extract/age/age /usr/local/bin/age
-          sudo install -m 0755 /tmp/age-extract/age/age-keygen /usr/local/bin/age-keygen
-
-      - name: Decrypt build environments locally
-        env:
-          SOPS_AGE_KEY_DEVELOPMENT: ${{ secrets.SOPS_AGE_KEY_DEVELOPMENT }}
-          SOPS_AGE_KEY_PRODUCTION: ${{ secrets.SOPS_AGE_KEY_PRODUCTION }}
-        run: |
-          set -euo pipefail
-          mkdir -p "${HOME}/.config/sops/age"
-          printf '%s\n' "${SOPS_AGE_KEY_DEVELOPMENT}" > "${HOME}/.config/sops/age/keys.txt"
-          chmod 0600 "${HOME}/.config/sops/age/keys.txt"
-          bun run scripts/sops-decrypt.ts --env=development
-          printf '%s\n' "${SOPS_AGE_KEY_PRODUCTION}" > "${HOME}/.config/sops/age/keys.txt"
-          bun run scripts/sops-decrypt.ts --env=production
-
+      # Secrets for the release build are pulled from Infisical via the
+      # dedicated `release-build` job below using GitHub OIDC (no SOPS, no
+      # per-env age keys). The verify job here runs `bun run check` against
+      # the repository's own secrets-free test fixtures and the canonical
+      # OpenAPI spec staged from the vendored submodule below.
       - name: Stage public openapi.yaml for build
         # public/openapi.yaml is gitignored and read by
         # src/app/api/openapi/route.ts at build time. The OpenAPI spec

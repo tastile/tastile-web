@@ -67,7 +67,6 @@ jobs:
           src/shared/auth/better-auth/database-url.test.ts
           src/app/api/auth/session/route.test.ts
           src/app/api/mobile/api-token/route.test.ts
-          scripts/sops-decrypt.test.ts
 
       - name: Materialize preview Wrangler config
         env:
