@@ -50,7 +50,8 @@ Describe "deploy-web-v1.ps1 syntax" {
 
     It "defines all expected functions" {
         $required = @('Resolve-IsLinux', 'Resolve-IsWsl', 'Resolve-WebInstanceId',
-                      'Invoke-Staging', 'Test-StagedLayout', 'New-ArchiveTarball', 'New-SsmScript', 'Invoke-Deploy')
+                      'Invoke-Staging', 'Test-StagedLayout', 'New-ArchiveTarball',
+                      'Test-ArchiveTarball', 'New-SsmScript', 'Invoke-Deploy')
         foreach ($fn in $required) {
             $script:ScriptContent | Should -Match "function $fn\b"
         }
@@ -317,5 +318,81 @@ Describe "Entry-point guard" {
         # This guards against the script accidentally running main() when dot-sourced
         # from a test. The pattern is a known PowerShell idiom.
         $script:ScriptContent | Should -Match '\$MyInvocation\.MyCommand\.Path -eq \$PSCommandPath'
+    }
+}
+
+Describe "Archive integrity (v1.0.4 gzip fix)" {
+    It "invokes tar with -czf so bsdtar/libarchive produces gzip output" {
+        # v1.0.3 used `tar -c -f <tarball>` which on bsdtar / libarchive produces an
+        # uncompressed tar with a `.tar.gz` suffix. EC2 `tar -xzf` then fails with
+        # `gzip: stdin: not in gzip format`. v1.0.4 must use `-czf` (or `-a`).
+        $script:ScriptContent | Should -Match 'tar\.exe -czf'
+    }
+
+    It "verifies gzip magic (0x1f 0x8b) on the produced archive" {
+        # Belt-and-braces: even if some host tar ignores `-z`, refuse to upload the file
+        # unless the first two bytes are 0x1f 0x8b. This catches the silent gzip-skip bug
+        # at the source rather than at EC2 extraction time.
+        $script:ScriptContent | Should -Match '0x1f'
+        $script:ScriptContent | Should -Match '0x8b'
+    }
+
+    It "calls Test-ArchiveTarball in Invoke-Deploy to confirm `tar -tzf` opens cleanly" {
+        # Pre-upload sanity check: open the archive with `tar -tzf` and confirm it parses.
+        $script:ScriptContent | Should -Match 'Test-ArchiveTarball -TarballPath \$tarballPath'
+    }
+
+    It "produces a gzip archive from a real staging dir (end-to-end)" {
+        # We can run this on any host with `tar.exe` in PATH or `$env:SystemRoot\System32\tar.exe`.
+        # Skip if neither is available — the static checks above cover the contract.
+        $tarExe = "$env:SystemRoot\System32\tar.exe"
+        if (-not (Test-Path -LiteralPath $tarExe)) { $tarExe = (Get-Command tar -ErrorAction SilentlyContinue).Source }
+        if (-not $tarExe) {
+            Set-ItResult -Skipped -Because "no tar.exe available in this environment"
+        }
+
+        $src = Join-Path ([System.IO.Path]::GetTempPath()) ("tar-src-" + [guid]::NewGuid().ToString('N'))
+        New-Item -ItemType Directory -Force -Path $src | Out-Null
+        try {
+            New-Item -ItemType Directory -Force -Path (Join-Path $src '.next/standalone') | Out-Null
+            New-Item -ItemType Directory -Force -Path (Join-Path $src '.next/static') | Out-Null
+            New-Item -ItemType Directory -Force -Path (Join-Path $src 'public') | Out-Null
+            Set-Content -LiteralPath (Join-Path $src 'server.js') -Value 'module.exports={}'
+
+            $tarball = Join-Path ([System.IO.Path]::GetTempPath()) ("tar-out-" + [guid]::NewGuid().ToString('N') + '.tar.gz')
+            & $tarExe -czf "$tarball" -C "$src" .
+            if ($LASTEXITCODE -ne 0) { throw "tar -czf failed (exit=$LASTEXITCODE)" }
+
+            # First, gzip magic verification (mirrors New-ArchiveTarball's check).
+            $bytes = [System.IO.File]::ReadAllBytes($tarball)
+            ($bytes.Length -ge 2 -and $bytes[0] -eq 0x1f -and $bytes[1] -eq 0x8b) | Should -BeTrue
+
+            # Second, `tar -tzf` opens it cleanly (mirrors Test-ArchiveTarball).
+            $list = & $tarExe -tzf "$tarball" 2>&1
+            $LASTEXITCODE | Should -Be 0
+            ($list -join "`n") | Should -Match 'server\.js'
+            ($list -join "`n") | Should -Match '\.next/standalone'
+            ($list -join "`n") | Should -Match '\.next/static'
+            ($list -join "`n") | Should -Match 'public'
+        } finally {
+            Remove-Item -LiteralPath $src -Recurse -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
+Describe "Source-tag pinning (v1.0.4 release-integrity gate)" {
+    It "refuses to deploy when -Tag is vX.Y.Z but HEAD != ${Tag}^{commit}" {
+        # Static guard. The pin uses `git rev-parse ${Tag}^{commit}` and refuses to proceed
+        # if the resolved commit SHA differs from local HEAD. Override with -SkipSourcePin.
+        # Use [regex]::Escape so the literal `\d+\.\d+\.\d+` text in the source matches verbatim
+        # without the test author hand-rolling backslash escaping for the .NET regex engine.
+        $pattern = [regex]::Escape("if (`$Tag -match '^v\d+\.\d+\.\d+$'")
+        $script:ScriptContent | Should -Match $pattern
+        $script:ScriptContent | Should -Match 'SOURCE_TAG_MISMATCH'
+        $script:ScriptContent | Should -Match 'git rev-parse "\$\{Tag\}\^\{commit\}"'
+    }
+
+    It "documents -SkipSourcePin as the override for intentional HEAD/tag mismatch" {
+        $script:ScriptContent | Should -Match 'SkipSourcePin'
     }
 }
