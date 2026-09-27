@@ -10,6 +10,9 @@
  *   - By default, throws when `CLOUD_API_BASE` is unset.
  */
 
+import { isProtectedWebRuntime } from "@/shared/config/runtime-env";
+import { validateCloudApiBase } from "@/shared/config/cloud-api-base-url";
+
 export class MissingRequiredEnvError extends Error {
   constructor(public readonly variable: string) {
     super(
@@ -34,6 +37,8 @@ export interface GetCloudApiBaseOptions {
    * `next build` analysis working without committing a default.
    */
   assert?: boolean;
+  /** Validate an alternate configured source through the same policy. */
+  override?: string;
 }
 
 /**
@@ -47,11 +52,17 @@ export interface GetCloudApiBaseOptions {
  */
 export function getCloudApiBase(options: GetCloudApiBaseOptions = {}): string {
   const value =
-    process.env.CLOUD_API_BASE?.trim() ?? process.env.TASTILE_RUST_API_URL?.trim() ?? "";
+    options.override?.trim() ||
+    process.env.CLOUD_API_BASE?.trim() ||
+    process.env.TASTILE_RUST_API_URL?.trim() ||
+    "";
 
-  if (value) return value.replace(/\/$/, "");
+  if (value) {
+    const protectedRuntime = isProtectedWebRuntime();
+    return validateCloudApiBase(value, { allowLoopbackHttp: !protectedRuntime });
+  }
 
-  if (options.assert) throw new MissingCloudApiBaseError();
+  if (options.assert || isProtectedWebRuntime()) throw new MissingCloudApiBaseError();
 
   return "";
 }

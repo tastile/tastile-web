@@ -44,7 +44,7 @@
 | --- | --- | --- | --- |
 | 1.1 | `.env.development` が `E2E_BYPASS_AUTH=1` を含む | **FAIL** | plan 記載は PASS だが、2026-08-06 実機では `.env.development:29` は `E2E_BYPASS_AUTH=` (空)。plan は古い env snapshot を参照したか、`=` 後のスペース/改行差異の可能性。`getIsE2EBypass()` (route.ts:11-13) は `=== "1"` 比較なので falsy 扱い → cookie 経路に必ず入る |
 | 1.2 | `.env.development` が `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` を含む | **FAIL** | `.env.development:30` は `NEXT_PUBLIC_E2E_BYPASS_AUTH=` (空)。現 route.ts は `NEXT_PUBLIC_*` を一切参照しない (line 4-13 で `process.env.E2E_BYPASS_AUTH` のみ) ので、現時点では副作用なし。ただし client bundle の pre-render で使用される可能性が残る |
-| 1.3 | `.env.development` が `TASTILE_WEB_BRIDGE_SECRET=<non-empty>` を含む | **PASS** | `.env.development:26` — `TASTILE_WEB_BRIDGE_SECRET=E5SzuyY3s8Sz0-U_LXKUT5Rwmvx1LGRINak_A_Gg-eroktsiDpjXretr5KKWNg4d` (52-char base64url) |
+| 1.3 | `.env.development` が `TASTILE_WEB_BRIDGE_SECRET=<non-empty>` を含む | **PASS** | `.env.development:26` — `TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]` (52-char base64url) |
 | 1.4 | `.env.development` が `CLOUD_API_BASE=http://127.0.0.1:31400` を含む | **PASS** | `.env.development:16` — `CLOUD_API_BASE=http://127.0.0.1:31400`. core の daemon がこの port で listen する前提 (memory `project_tastile_web_required_env_vars.md`) と整合 |
 | 1.5 | `.env.development.example` が `E2E_BYPASS_AUTH` / `TASTILE_WEB_BRIDGE_SECRET` の **少なくとも片方** を宣言 | **PARTIAL PASS** | `.env.development.example:28` に `TASTILE_WEB_BRIDGE_SECRET=` の空宣言はある (key 自体は存在)。ただし `E2E_BYPASS_AUTH` は完全欠落 + 値のヒント/コメントもない。「片方」基準で厳密には PASS 寄りだが、**新規 developer が埋めるべき値の手がかり無し** で実運用上は FAIL 同等。GAP-2 参照 |
 
@@ -188,7 +188,7 @@
 
 ### Test 2: `E2E_BYPASS_AUTH=1` + bridge secret 不在
 
-- **前提**: `process.env.E2E_BYPASS_AUTH = "1"`, `process.env.TASTILE_WEB_BRIDGE_SECRET = undefined`, cookie 無し
+- **前提**: `process.env.E2E_BYPASS_AUTH = "1"`, `process.env.TASTILE_WEB_BRIDGE_SECRET = [redacted historical value]`, cookie 無し
 - **Input**: `GET /api/proxy/v1/health`
 - **Expected output**: 501 (server misconfiguration) — bridge headers 無しで `x-owner-id` fallback が dev でのみ動く。production では hard-block で 401
 - **Gap 紐付け**: GAP-4 (LOW)

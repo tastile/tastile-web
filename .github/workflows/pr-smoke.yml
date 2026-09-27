@@ -3,7 +3,7 @@ name: pr-smoke
 # Fast pull-request smoke gate. Splits from `quality` so PRs targeting any
 # branch get fast feedback (biome + eslint + typecheck + knip + vitest)
 # WITHOUT the expensive `bun run check:release` path (which includes
-# `bun run build:prod` + SOPS-decrypted env). The release gate remains
+# `bun run build:prod` with Infisical-injected secrets). The release gate remains
 # in `.github/workflows/quality.yml` and is required only on release-*
 # and main.
 #

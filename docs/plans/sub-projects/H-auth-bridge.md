@@ -83,9 +83,9 @@ Picking **A** for now. Structural sync (B/C) deferred until sub-project G also h
 | core response (200) | `v1_subject` auto-provisioned | `ensure_bridge_owner_provisioning` runs on first successful bridge auth | `common.rs:758-766` |
 | core health | `"bridge_secret":"present"` | when `TASTILE_WEB_BRIDGE_SECRET` env var is set on core | `/v1/health` |
 
-Required **container env** to align with `playwright.config.ts` webServer.env (`TASTILE_WEB_BRIDGE_SECRET=dev-e2e-secret`):
+Required **container env** to align with `playwright.config.ts` webServer.env (`TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]`):
 ```
-wslc container run -e TASTILE_WEB_BRIDGE_SECRET=dev-e2e-secret ...
+wslc container run -e TASTILE_WEB_BRIDGE_SECRET=[redacted historical value] ...
 ```
 
 If `TASTILE_WEB_BRIDGE_SECRET` is unset on core, the bridge auth path silently falls through to the 3rd-tier check (x-owner-id/x-actor-id) which fails for browser-driven requests because the proxy never sets those headers in bridge mode.

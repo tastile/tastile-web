@@ -75,11 +75,12 @@ export default defineConfig({
     // other production-shape flags that flip auth/owner-derivation
     // paths and break the negative-path tests (`/api/me` should 401
     // when no id_token cookie is present, not short-circuit on
-    // E2E_BYPASS_AUTH and return 200). CLOUD_API_BASE /
-    // TASTILE_RUST_API_URL are the only env vars the component tests
-    // actually need (via `getCloudApiBase({ assert: true })`); other
-    // keys from .env.local stay unset during tests on purpose.
+    // E2E_BYPASS_AUTH and return 200). Set an explicit local runtime so
+    // intentional bypass tests do not depend on an unset TASTILE_ENV being
+    // treated as local; fail-closed tests delete it explicitly. CLOUD_API_BASE /
+    // TASTILE_RUST_API_URL are the only upstream vars component tests need.
     env: {
+      TASTILE_ENV: "test",
       CLOUD_API_BASE: "http://127.0.0.1:31400",
       TASTILE_RUST_API_URL: "http://127.0.0.1:31400",
       NEXT_PUBLIC_TASTILE_CORE_URL: "http://127.0.0.1:31400",

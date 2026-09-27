@@ -124,10 +124,11 @@ export async function mintBrowserApiToken(
 }
 
 export function coreUrl() {
-  const value =
-    process.env.TASTILE_CORE_URL?.trim() ??
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ??
-    process.env.NEXT_PUBLIC_DAEMON_BASE_URL?.trim() ??
-    getCloudApiBase({ assert: true });
-  return value.replace(/\/$/, "");
+  const override = [
+    process.env.TASTILE_CORE_URL,
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL,
+    process.env.NEXT_PUBLIC_DAEMON_BASE_URL,
+  ].find((value) => value?.trim())?.trim();
+
+  return getCloudApiBase({ assert: true, override });
 }

@@ -30,15 +30,19 @@ async function loadModule() {
 
 describe("W06 #81 authenticated-session E2E bypass fail-closed regression guard", () => {
   let originalBypass: string | undefined;
+  let originalEnvironment: string | undefined;
 
   beforeEach(() => {
     originalBypass = process.env.E2E_BYPASS_AUTH;
+    originalEnvironment = process.env.TASTILE_ENV;
     getSession.mockReset();
   });
 
   afterEach(() => {
     if (originalBypass === undefined) delete process.env.E2E_BYPASS_AUTH;
     else process.env.E2E_BYPASS_AUTH = originalBypass;
+    if (originalEnvironment === undefined) delete process.env.TASTILE_ENV;
+    else process.env.TASTILE_ENV = originalEnvironment;
   });
 
   it("returns the synthetic bypass session when E2E_BYPASS_AUTH === '1'", async () => {
@@ -79,6 +83,15 @@ describe("W06 #81 authenticated-session E2E bypass fail-closed regression guard"
     const mod = await loadModule();
     const session = await mod.resolveAuthenticatedSession();
     expect(session).toBeNull();
+  });
+
+  it("surfaces BetterAuth store failures in protected runtimes", async () => {
+    process.env.TASTILE_ENV = "staging";
+    delete process.env.E2E_BYPASS_AUTH;
+    getSession.mockRejectedValue(new Error("database unavailable"));
+    const mod = await loadModule();
+
+    await expect(mod.resolveAuthenticatedSession()).rejects.toThrow("database unavailable");
   });
 
   it("resolveAuthenticatedUserSub also fail-closes for any non-'1' value", async () => {

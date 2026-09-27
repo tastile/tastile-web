@@ -11,10 +11,10 @@
 // 冪等性が要る運用は `teardown-schedule-use-cases` か `DELETE` で対応。
 //
 // 使い方:
-//   bun run scripts/seed-schedule-use-cases.mts
-//   bun run scripts/seed-schedule-use-cases.mts --user-sub=dev-bypass --base-url=http://127.0.0.1:31400
+//   bun scripts/run-with-infisical.mts dev -- bun scripts/seed-schedule-use-cases.mts
+//   bun scripts/run-with-infisical.mts dev -- bun scripts/seed-schedule-use-cases.mts --user-sub=dev-bypass
 //
-// 必要な環境変数 (.env.local / .env.development のどちらかから自動読み込み):
+// Required environment variables are injected by Infisical at /tastile/web.
 //   TASTILE_WEB_BRIDGE_SECRET  (E2E_BYPASS_AUTH=1 のときは不要)
 //
 // CLI オーバーライド:
@@ -23,49 +23,7 @@
 //   --horizon-days=<n>   placement horizon (default: 14)
 //   --section=<id>       1 つの section だけ実行 (例: "25.1")
 
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-
-const ROOT = resolve(import.meta.dirname, "..");
-
 // ---------------------------------------------------------------- env
-
-function readEnvFile(filename: string): Record<string, string> {
-  const path = resolve(ROOT, filename);
-  let text: string;
-  try {
-    text = readFileSync(path, "utf8");
-  } catch {
-    return {};
-  }
-  const out: Record<string, string> = {};
-  for (const raw of text.split("\n")) {
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) continue;
-    const eq = line.indexOf("=");
-    if (eq < 0) continue;
-    const key = line.slice(0, eq).trim();
-    let value = line.slice(eq + 1).trim();
-    // strip inline comment after whitespace
-    const hashIdx = value.search(/\s#/);
-    if (hashIdx >= 0) value = value.slice(0, hashIdx).trim();
-    if (
-      (value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))
-    ) {
-      value = value.slice(1, -1);
-    }
-    out[key] = value;
-  }
-  return out;
-}
-
-const envLocal = readEnvFile(".env.local");
-const envDev = readEnvFile(".env.development");
-
-function env(key: string): string | undefined {
-  return process.env[key] ?? envLocal[key] ?? envDev[key];
-}
 
 function parseArgs(argv: string[]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -85,13 +43,13 @@ const args = parseArgs(process.argv.slice(2));
 
 const BASE_URL =
   args["base-url"] ??
-  env("TASTILE_DAEMON_URL") ??
-  env("TASTILE_RUST_API_URL") ??
-  env("CLOUD_API_BASE") ??
+  process.env.TASTILE_DAEMON_URL ??
+  process.env.TASTILE_RUST_API_URL ??
+  process.env.CLOUD_API_BASE ??
   "http://127.0.0.1:31400";
 
-const BRIDGE_SECRET = env("TASTILE_WEB_BRIDGE_SECRET");
-const SESSION_USER = args["user-sub"] ?? env("TASTILE_WEB_SESSION_USER") ?? "dev-bypass";
+const BRIDGE_SECRET = process.env.TASTILE_WEB_BRIDGE_SECRET;
+const SESSION_USER = args["user-sub"] ?? process.env.TASTILE_WEB_SESSION_USER ?? "dev-bypass";
 const HORIZON_DAYS = Number(args["horizon-days"] ?? "14");
 const ONLY_SECTION = args["section"];
 
@@ -99,11 +57,16 @@ const ONLY_SECTION = args["section"];
 // `x-owner-id` instead of bridge secret + session user. Match the upstream
 // `isE2EBypass()` so seeds land in the same owner as the dashboard renders.
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
-const IS_E2E_BYPASS = env("E2E_BYPASS_AUTH") === "1";
+const IS_E2E_BYPASS = process.env.E2E_BYPASS_AUTH === "1";
+
+if (process.env.TASTILE_INFISICAL_INJECTED !== "1") {
+  console.error("Run this script through the Infisical dev environment wrapper.");
+  process.exit(2);
+}
 
 if (!BRIDGE_SECRET && !IS_E2E_BYPASS) {
   console.error(
-    "TASTILE_WEB_BRIDGE_SECRET is unset and E2E_BYPASS_AUTH!=1. Set one of them in .env.local or .env.development.",
+    "TASTILE_WEB_BRIDGE_SECRET is unset and E2E_BYPASS_AUTH!=1. Check the Infisical dev project at /tastile/web.",
   );
   process.exit(2);
 }

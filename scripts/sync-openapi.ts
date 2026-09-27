@@ -2,9 +2,10 @@
 /**
  * sync-openapi.ts
  *
- * Reads the canonical OpenAPI 3.1 spec from the cross-repo submodule
- * (`../openapi/openapi.yaml`) and regenerates the local TypeScript
- * types plus the vendored copies that this repo's tooling reads.
+ * Reads the canonical OpenAPI 3.1 spec from this repository's
+ * `openapi/` submodule (pinned via .gitmodules) and regenerates the
+ * local TypeScript types plus the vendored copies that this repo's
+ * tooling reads.
  *
  * Output paths:
  *   src/lib/api/v1/openapi-generated.d.ts — TS types (via openapi-typescript)
@@ -15,18 +16,25 @@
  * Usage:
  *   bun run sync:openapi
  *
- * This is the canonical path for refreshing client types when the
- * canonical spec changes. The submodule pointer bump itself is done by
- * the cross-repo workspace tooling; this script picks up whatever
- * version is checked out at the submodule path.
+ * The submodule pointer bump itself is done with
+ *   git submodule update --remote openapi
+ * from this repository's root. This script picks up whatever version is
+ * checked out at the submodule path.
  *
  * Why a separate script from `generate-openapi-types.ts`:
  *   - `generate-types` fetches the spec from a running tastile-core
  *     instance (dev hot-reload path; useful while iterating on new
  *     endpoints without committing the spec yet).
- *   - `sync:openapi` reads from the cross-repo submodule, which is the
- *     committed source of truth. This is what CI, `prebuild`, and
+ *   - `sync:openapi` reads from this repository's submodule, which is
+ *     the committed source of truth. This is what CI, `prebuild`, and
  *     release builds should run.
+ *
+ * Repository independence:
+ *   `tastile-web` does not depend on `tastile-root` at build time. The
+ *   submodule is owned by this repository; cloning
+ *   https://github.com/tastile/tastile-web with `--recurse-submodules`
+ *   is sufficient for `bun install && bun run sync:openapi && bun run
+ *   build` to succeed without any sibling repo on disk.
  */
 
 import { execSync } from "node:child_process";
@@ -35,10 +43,12 @@ import { resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dir, "..");
 
-// `../openapi/openapi.yaml` from `tastile-web/` resolves to
-// `tastile-root/openapi/openapi.yaml` — the submodule at the
-// workspace-shell level.
-const SUBMODULE_YAML = resolve(ROOT, "../openapi/openapi.yaml");
+// `openapi/openapi.yaml` is owned by this repository (see .gitmodules).
+const SUBMODULE_YAML = resolve(ROOT, "openapi/openapi.yaml");
+// CI / quality workflows historically staged a copy into `openapi-spec/`.
+// Kept as a fallback so legacy CI scripts that pre-date the submodule
+// migration still find a spec when the submodule is not initialised.
+const CI_YAML = resolve(ROOT, "openapi-spec/openapi.yaml");
 
 const OUTPUT_TYPES = resolve(ROOT, "src/lib/api/v1/openapi-generated.d.ts");
 const OUTPUT_JSON = resolve(ROOT, "openapi.json");
@@ -51,19 +61,24 @@ function fail(message: string, code = 1): never {
 	process.exit(code);
 }
 
-function assertSubmodulePresent(): void {
-	if (!existsSync(SUBMODULE_YAML)) {
+function canonicalSpecPath(): string {
+	const path = [SUBMODULE_YAML, CI_YAML].find((candidate) =>
+		existsSync(candidate),
+	);
+	if (!path) {
 		fail(
-			`Submodule spec not found: ${SUBMODULE_YAML}\n` +
-				`Run \`git submodule update --init\` at the workspace root.\n` +
-				`If the submodule is intentionally absent for this checkout, this script cannot run.`,
+			`Canonical OpenAPI spec not found. Checked:\n` +
+				`- ${SUBMODULE_YAML}\n` +
+				`- ${CI_YAML}\n` +
+				`Run \`git submodule update --init\` in this repository or stage the CI checkout.`,
 			2,
 		);
 	}
+	return path;
 }
 
 function readCanonicalYaml(): string {
-	return readFileSync(SUBMODULE_YAML, "utf-8");
+	return readFileSync(canonicalSpecPath(), "utf-8");
 }
 
 function parseSpec(yamlText: string): unknown {
@@ -74,7 +89,7 @@ function parseSpec(yamlText: string): unknown {
 		return Bun.YAML.parse(yamlText) as unknown;
 	} catch (err) {
 		fail(
-			`Failed to parse ${SUBMODULE_YAML} as YAML:\n  ${(err as Error).message}`,
+			`Failed to parse ${canonicalSpecPath()} as YAML:\n  ${(err as Error).message}`,
 			3,
 		);
 	}
@@ -129,11 +144,11 @@ function generateTypes(): void {
 	});
 
 	const header = [
-		"// Auto-generated from the cross-repo OpenAPI submodule.",
+		"// Auto-generated from this repository's OpenAPI submodule.",
 		"// Run `bun run sync:openapi` to refresh.",
 		"// DO NOT EDIT MANUALLY.",
 		"//",
-		"// Source: ../openapi/openapi.yaml (workspace-shell submodule).",
+		"// Source: openapi/openapi.yaml (this repository's submodule).",
 		`// Spec version: ${readSpecVersion()}`,
 		"",
 	].join("\n");
@@ -147,11 +162,9 @@ function generateTypes(): void {
 // --------------- main ---------------
 
 async function main(): Promise<void> {
-	assertSubmodulePresent();
-
 	const yamlText = readCanonicalYaml();
 	if (!yamlText.trim()) {
-		fail(`Submodule spec is empty: ${SUBMODULE_YAML}`, 5);
+		fail(`Canonical OpenAPI spec is empty: ${canonicalSpecPath()}`, 5);
 	}
 
 	const spec = parseSpec(yamlText);

@@ -12,7 +12,7 @@
   (v1 daemon, `tastile-core` build 0.1.0, image tag `tastile-core-dev:latest`)
 - **DB**: Postgres 16 inside the same container (`tastile:tastile@localhost:5432/tastile`)
 - **Auth path used**: dev `x-owner-id` + `x-actor-id` fallback (TASTILE_ENV=development, see `crates-v1/api/src/handlers/common.rs:773-794`)
-- **Bridge secret env in container**: `TASTILE_WEB_BRIDGE_SECRET=dev-e2e-secret` (set but not exercised; `E2E_BYPASS_AUTH=` was empty per H2 audit #71 — the chosen path is the non-production `x-owner-id` fallback)
+- **Bridge secret env in container**: `TASTILE_WEB_BRIDGE_SECRET=[redacted historical value]` (set but not exercised; `E2E_BYPASS_AUTH=` was empty per H2 audit #71 — the chosen path is the non-production `x-owner-id` fallback)
 
 ## 結論 (1 行)
 

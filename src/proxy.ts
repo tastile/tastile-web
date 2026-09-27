@@ -3,6 +3,8 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { resolveCanonicalHostRedirect } from "@/lib/host-routing";
 import { safeNextPath } from "@/shared/auth/safe-next-path";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
+
 
 // Optimistic navigation gate (ADR 2026-08-22: Cognito → BetterAuth).
 //
@@ -34,7 +36,7 @@ export default async function proxy(request: NextRequest) {
   // entirely so the dashboard can talk to a local daemon (which has its own
   // TASTILE_BYPASS_AUTH) without needing a live session. Server-only flag
   // intentionally — the public NEXT_PUBLIC_* variant does not bypass here.
-  if (process.env.E2E_BYPASS_AUTH === "1") {
+  if (isE2EBypassEnabled()) {
     return NextResponse.next({ request });
   }
 

@@ -4,11 +4,10 @@ import {
 } from "@/lib/account/api-token-session";
 import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 import type { NextRequest } from "next/server";
-
-const isE2EBypass = process.env.E2E_BYPASS_AUTH === "1";
+import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 export async function GET(request: NextRequest) {
-  if (isE2EBypass) {
+  if (isE2EBypassEnabled()) {
     const stream = new ReadableStream({
       start(controller) {
         controller.enqueue(
