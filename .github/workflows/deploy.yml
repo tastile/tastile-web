@@ -198,20 +198,7 @@ jobs:
               "set -euo pipefail",
               "sudo mkdir -p /opt/tastile/web/releases",
               "sudo mkdir -p /etc/systemd/system/tastile-web.service.d",
-              # Write the systemd drop-in as two separate `echo | sudo tee`
-              # commands instead of a single `printf '[Service]\nEnv=...'
-              # | sudo tee`. The JSON-encoded `\n` in the printf format
-              # becomes a real newline after SSM agent JSON-decodes the
-              # `--parameters` payload, which splits the single-quoted
-              # format string across lines and makes bash treat
-              # `http://127.0.0.1:31400` as a command at line 6 (exit
-              # 127, deploy 36282287156 step 19). Splitting the literal
-              # `[Service]` and `Environment=...` lines into two commands
-              # keeps every element a single-line, single-quoted string,
-              # so bash parses each one as its own statement and the
-              # SSM agent's per-element concatenation can no longer break
-              # the printf format across lines.
-              ("echo '[Service]' | sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null"),
+              ("echo \"[Service]\" | sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null"),
               ("echo \"Environment=CLOUD_API_BASE=" + $cloud_api_base + "\" | sudo tee -a /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null"),
               "sudo systemctl daemon-reload",
               ("curl -fsSL \"" + $presigned + "\" -o /tmp/tastile-web-" + $version + ".zip"),
