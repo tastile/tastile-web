@@ -198,7 +198,7 @@ jobs:
               "set -euo pipefail",
               "sudo mkdir -p /opt/tastile/web/releases",
               "sudo mkdir -p /etc/systemd/system/tastile-web.service.d",
-              ("sudo bash -c 'printf \"%s\\n%s\\n\" \"[Service]\" \"Environment=CLOUD_API_BASE=" + $cloud_api_base + "\" > /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf'"),
+              ("printf '[Service]\\nEnvironment=CLOUD_API_BASE=%s\\n' \"" + $cloud_api_base + "\" | sudo tee /etc/systemd/system/tastile-web.service.d/cloud-api-base.conf >/dev/null"),
               "sudo systemctl daemon-reload",
               ("curl -fsSL \"" + $presigned + "\" -o /tmp/tastile-web-" + $version + ".zip"),
               ("echo \"" + $sha + "  /tmp/tastile-web-" + $version + ".zip\" | sudo tee /tmp/tastile-web-" + $version + ".zip.sha256.expected >/dev/null"),
