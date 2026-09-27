@@ -125,7 +125,6 @@ the next phase does not run if the previous one failed.
 | --- | --- | --- |
 | 0 | `previous_target=$(readlink -f "$CURRENT_LINK")` captures where to roll back to. | If the symlink does not exist yet (first deploy), `previous_target=""` and Phase 5 reports "no previous target" (exit 22). |
 | 1 | Download the presigned tar archive into `/tmp/$TARBALL` and extract with `sudo tar -xzf "$TARBALL" -C "$RELEASE_ROOT/$RELEASE_NAME"`. | Download failure or extraction failure aborts before any swap. |
-| 1 | Download the presigned tar archive into `/tmp/$TARBALL` and extract with `sudo tar -xzf "$TARBALL" -C "$RELEASE_ROOT/$RELEASE_NAME"`. | Download failure or extraction failure aborts before any swap. |
 | 2 | **Pre-swap validation, hard fail-closed.** Each missing path is a distinct exit code and the bad release dir is `rm -rf`'d before abort (so the symlink has not been swapped yet). | Exit `10` = `server.js` missing, exit `11` = `.next/standalone` missing, exit `12` = `.next/static` missing, exit `13` = `public` missing. |
 | 3 | `sudo ln -sfn "$RELEASE_PATH" "$CURRENT_LINK"`. | If this fails, the script aborts and `/opt/tastile/web/current` is unchanged. |
 | 4 | `sudo systemctl restart "$SERVICE"` + readiness probe (`curl -fsS -o /dev/null "http://127.0.0.1:3000$READY_PATH"`) polled up to `$ReadinessTimeoutSec` seconds. | If readiness is not reached, Phase 5 takes over. |
@@ -138,17 +137,24 @@ but still failing" from "no rollback target".
 ### Why platform-dispatched staging
 
 The script uses platform-dispatched staging so symlinks inside
-`.next/standalone` are followed correctly:
+`.next/standalone` are handled correctly:
 
 - On **Linux / WSL**: `cp -rL --` dereferences symlinks (GNU cp).
-  This is the path that delivered v1.0.2 successfully.
-- On **Windows pwsh.exe**: `robocopy /E /SL` follows symlinks (the
-  `/SL` flag). Robocopy does **not** understand POSIX `--`
-  end-of-options separator, so we omit it.
+  The `-L` flag makes `cp` follow every symlink and copy the target's
+  contents instead of the link itself, so the staging tree is a
+  literal directory hierarchy at the destination. This is the path
+  that delivered v1.0.2 successfully.
+- On **Windows pwsh.exe**: `robocopy /E /SL` preserves symlinks (the
+  `/SL` flag means "copy symbolic links AS symbolic links" rather than
+  following their targets). Because robocopy and `tar -xzf` both
+  preserve symlinks through the archive → extract cycle, the EC2
+  service sees the same symlink topology as the build output.
+  Robocopy does **not** understand POSIX `--` end-of-options
+  separator, so we omit it.
 
-In both cases the staging tree ends up as a literal directory
-hierarchy (no symlinks) at the destination, which is what `tar -xzf`
-needs to extract cleanly.
+In both cases the staging tree at `$StageDir` matches what the build
+output expects, and `tar -xzf` extracts it cleanly into
+`$RELEASE_ROOT/$RELEASE_NAME`.
 
 ### Why ASCII encoding for the SSM payload
 
