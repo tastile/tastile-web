@@ -7,9 +7,12 @@
 #   - In-process pre-archive validation: `server.js`, `.next/standalone`, `.next/static`, `public`
 #     are required to exist in $stageDir before the archive is built. Otherwise abort with a
 #     distinct exit code (10/11/12/13) and a human-readable error pointing at the missing path.
-#   - tar archive uses `tar.exe -c -f <tarball>` (not `-a -f <zip>`) so the EC2 side can extract
-#     unambiguously with `tar -xzf`. Archive root is the staging root (no extra prefix directory),
-#     because the tar invocation uses `-C $stageDir .`.
+#   - tar archive uses `tar.exe -czf <tarball>` (gzip explicitly, since bsdtar / libarchive
+#     does NOT auto-detect compression from the `.gz` suffix). Post-creation integrity check
+#     verifies gzip magic bytes (0x1f 0x8b) and opens the archive with `tar -tzf` to confirm
+#     server.js + .next/standalone + .next/static + public are all present before upload.
+#     Archive root is the staging root (no extra prefix directory), because the tar invocation
+#     uses `-C $stageDir .`.
 #   - SSM command is a single multi-line bash script with 6 explicit phases (0..5). Phase 0
 #     captures the previous symlink target so Phase 5 can roll back. Phase 2 is a hard fail-closed
 #     pre-swap validation that removes the bad release dir on failure. Phase 5 restores the
@@ -31,7 +34,8 @@ param(
     [Parameter(Mandatory=$false)][string]$ServiceName = "tastile-web.service",
     [Parameter(Mandatory=$false)][string]$ReleaseName = "",
     [switch]$SkipBuild,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$SkipSourcePin
 )
 
 Set-StrictMode -Version Latest
@@ -135,18 +139,59 @@ function Test-StagedLayout {
 }
 
 function New-ArchiveTarball {
-    # Use tar.exe (Windows built-in since 1803 / Ubuntu by default) explicitly. The archive
-    # is created with `-C $StageDir .` so the archive root is the staging root, with no
-    # extra prefix directory.
+    # Build a gzip-compressed tar archive (`.tar.gz`) using the platform `tar`. The `-z`
+    # flag is mandatory: bsdtar / libarchive (the tar shipped in Windows 1803+ and most
+    # Linux distros) does NOT auto-detect compression from the `.gz` suffix the way
+    # GNU tar 1.15+ does with `--auto-compress` (-a). Without `-z` the file is a plain
+    # uncompressed tar masquerading as `.tar.gz`, and `tar -xzf` on the EC2 side fails
+    # with `gzip: stdin: not in gzip format`. This was the v1.0.3 latent bug caught
+    # before production deploy.
     param(
         [Parameter(Mandatory=$true)][string]$StageDir,
         [Parameter(Mandatory=$true)][string]$TarballPath
     )
     if (Test-Path -LiteralPath $TarballPath) { Remove-Item -LiteralPath $TarballPath -Force }
-    & "$env:SystemRoot\System32\tar.exe" -c -f "$TarballPath" -C "$StageDir" .
+    & "$env:SystemRoot\System32\tar.exe" -czf "$TarballPath" -C "$StageDir" .
     if ($LASTEXITCODE -ne 0) { throw "tar.exe archive creation failed (exit=$LASTEXITCODE)" }
     if (-not (Test-Path -LiteralPath $TarballPath)) { throw "tarball not produced at $TarballPath" }
+    # Verify gzip magic (0x1f 0x8b) so we don't upload a plain tar with a `.tar.gz`
+    # suffix that EC2 `tar -xzf` cannot extract.
+    $bytes = [System.IO.File]::ReadAllBytes($TarballPath)
+    if ($bytes.Length -lt 2 -or $bytes[0] -ne 0x1f -or $bytes[1] -ne 0x8b) {
+        throw ("tarball at $TarballPath is not gzip-compressed (magic=0x{0:x2}{1:x2}, expected 0x1f8b). " +
+            "EC2 `tar -xzf` would fail. Check that tar.exe is the platform bsdtar/libarchive, " +
+            "not a non-gzip GNU tar that ignored the `-z` flag.") -f $bytes[0], $bytes[1]
+    }
     return (Get-Item -LiteralPath $TarballPath).Length
+}
+
+function Test-ArchiveTarball {
+    # Open the produced tarball with the platform tar in list mode (`tar -tzf`) and assert
+    # that every required entry is present. This is the post-creation integrity check that
+    # catches: (a) corruption during the file write, (b) wrong staging tree (something
+    # other than server.js + .next/standalone + .next/static + public), and (c) nested-
+    # prefix regressions (the tar root must be the staging root, not a sub-directory).
+    param(
+        [Parameter(Mandatory=$true)][string]$TarballPath
+    )
+    if (-not (Test-Path -LiteralPath $TarballPath)) {
+        throw "tarball not found at $TarballPath"
+    }
+    $listOutput = & "$env:SystemRoot\System32\tar.exe" -tzf "$TarballPath" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        throw ("tar -tzf on $TarballPath failed (exit=$LASTEXITCODE). Output: " + ($listOutput -join "`n"))
+    }
+    $requiredEntries = @('server.js', '.next/standalone', '.next/static', 'public')
+    $missing = @()
+    foreach ($entry in $requiredEntries) {
+        $match = $listOutput | Where-Object { $_ -match ('(?:^|/)' + [regex]::Escape($entry) + '(?:/|$)') }
+        if (-not $match) { $missing += $entry }
+    }
+    if ($missing.Count -gt 0) {
+        throw ("tarball is missing required entries: " + ($missing -join ', ') +
+            ". tar contents were: " + ($listOutput -join "`n"))
+    }
+    return $true
 }
 
 function New-SsmScript {
@@ -297,7 +342,8 @@ function Invoke-Deploy {
         [string]$ServiceName,
         [string]$ReleaseName,
         [switch]$SkipBuild,
-        [switch]$DryRun
+        [switch]$DryRun,
+        [switch]$SkipSourcePin
     )
 
     if (-not $InstanceId) {
@@ -313,6 +359,30 @@ function Invoke-Deploy {
         } finally {
             Pop-Location
         }
+    }
+    # Source-tag pinning. If `-Tag` matches the canonical `vX.Y.Z` form, refuse to proceed
+    # unless the source HEAD matches `${Tag}^{commit}`. Without this gate, an operator
+    # running `pwsh deploy-web-v1.ps1 -Tag v1.0.4` against a workspace whose HEAD is
+    # 8bc72be4 would happily build the docs-only HEAD and label the artifact `v1.0.4`,
+    # silently producing a release whose contents do not match the tag. This was the
+    # v1.0.3 latent risk caught before production deploy. Override with `-SkipSourcePin`
+    # for ad-hoc / dry-run builds where the tag/HEAD mismatch is intentional.
+    if ($Tag -match '^v\d+\.\d+\.\d+$' -and -not $SkipSourcePin) {
+        $repoRoot = (Get-Item $PSScriptRoot).Parent.Parent.FullName
+        Push-Location $repoRoot
+        try {
+            $expectedSha = (& git rev-parse "${Tag}^{commit}").Trim()
+            $currentSha = (& git rev-parse HEAD).Trim()
+        } finally {
+            Pop-Location
+        }
+        if ($expectedSha -ne $currentSha) {
+            throw ("SOURCE_TAG_MISMATCH: -Tag is $Tag (resolves to $expectedSha) but local " +
+                "HEAD is $currentSha. The release you are about to ship would not match the " +
+                "tag. Either check out `${Tag}^{commit} and rebuild, or pass -SkipSourcePin " +
+                "if this mismatch is intentional (ad-hoc / dry-run).") -f $Tag, $expectedSha, $currentSha
+        }
+        Write-Host ("  Source pin: HEAD $currentSha == $Tag^{commit} $expectedSha (OK)")
     }
     if (-not $ReleaseName) {
         $ReleaseName = "tastile-web-$timestamp-$Tag"
@@ -360,12 +430,13 @@ function Invoke-Deploy {
         Pop-Location
     }
 
-    # Step 3 -- tar archive (no nested prefix)
+    # Step 3 -- tar archive (no nested prefix, gzip-compressed)
     Write-Host ""
-    Write-Host "== 3 -- Archive (tar.gz, no extra prefix dir) =="
+    Write-Host "== 3 -- Archive (tar.gz, gzip-compressed, no extra prefix dir) =="
     New-Item -ItemType Directory -Force -Path $buildDir | Out-Null
     $tarballSize = New-ArchiveTarball -StageDir $stageDir -TarballPath $tarballPath
-    Write-Host ("  Built: " + $tarballPath + " (" + [math]::Round($tarballSize/1MB, 1) + " MB)")
+    Test-ArchiveTarball -TarballPath $tarballPath | Out-Null
+    Write-Host ("  Built: " + $tarballPath + " (" + [math]::Round($tarballSize/1MB, 1) + " MB, gzip magic verified, layout verified)")
 
     # Step 4 -- render SSM payload (always; DryRun needs it too)
     $ssmScript = New-SsmScript `
@@ -462,5 +533,6 @@ if ($MyInvocation.MyCommand.Path -eq $PSCommandPath) {
         -ServiceName $ServiceName `
         -ReleaseName $ReleaseName `
         -SkipBuild:$SkipBuild `
-        -DryRun:$DryRun
+        -DryRun:$DryRun `
+        -SkipSourcePin:$SkipSourcePin
 }
