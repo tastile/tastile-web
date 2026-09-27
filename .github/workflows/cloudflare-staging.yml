@@ -39,6 +39,8 @@ jobs:
           fi
 
       - uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -47,15 +49,10 @@ jobs:
       - name: Install
         run: bun install --frozen-lockfile
 
-      - name: Checkout canonical OpenAPI spec
-        uses: actions/checkout@v4
-        with:
-          repository: tastile/tastile-openapi
-          path: openapi-spec
-          ref: main
-
       - name: Stage public openapi.yaml for build
-        run: cp openapi-spec/openapi.yaml ./public/openapi.yaml
+        # Vendored from this repository's `openapi/` submodule (see
+        # .gitmodules); the submodule pointer is the pinned revision.
+        run: cp openapi/openapi.yaml ./public/openapi.yaml
 
       - name: Runtime and auth contract gate
         env:
