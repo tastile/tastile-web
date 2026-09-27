@@ -13,13 +13,12 @@ vi.mock("@/shared/auth/cli/pkce", () => ({
 }));
 
 const insertPendingConsentMock = vi.fn();
-const loadPendingConsentMock = vi.fn();
-const markPendingConsumedMock = vi.fn();
+const atomicConsumePendingConsentMock = vi.fn();
 
 vi.mock("@/shared/auth/cli/pending-consent-store", () => ({
   insertPendingConsent: (...args: unknown[]) => insertPendingConsentMock(...args),
-  loadPendingConsent: (...args: unknown[]) => loadPendingConsentMock(...args),
-  markPendingConsumed: (...args: unknown[]) => markPendingConsumedMock(...args),
+  atomicConsumePendingConsent: (...args: unknown[]) =>
+    atomicConsumePendingConsentMock(...args),
 }));
 
 const resolveUserSubMock = vi.fn();
@@ -32,26 +31,38 @@ const ORIGINAL_ENV = process.env;
 
 function postForm(fields: Record<string, string>): NextRequest {
   const body = new URLSearchParams(fields);
-  return new NextRequest("https://app.test/cli/consent", {
+  return new NextRequest("https://app.test/cli/consent/submit", {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
     body: body.toString(),
   });
 }
 
-describe("POST /cli/consent", () => {
+function okConsume(overrides: Partial<{ userSub: string; clientId: string; codeChallenge: string; redirectUri: string; scopesEffective: string; state: string; responseType: string }> = {}) {
+  return {
+    status: "ok" as const,
+    userSub: overrides.userSub ?? "user-1",
+    clientId: overrides.clientId ?? "tastile-cli",
+    codeChallenge: overrides.codeChallenge ?? "challenge-1",
+    redirectUri: overrides.redirectUri ?? "http://127.0.0.1:1234/callback",
+    scopesEffective: overrides.scopesEffective ?? "tastile.read tastile.write",
+    state: overrides.state ?? "csrf-state",
+    responseType: overrides.responseType ?? "code",
+  };
+}
+
+describe("POST /cli/consent/submit", () => {
   beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
     delete process.env.E2E_BYPASS_AUTH;
     insertGrantMock.mockReset();
     generateGrantCodeMock.mockReset();
     insertPendingConsentMock.mockReset();
-    loadPendingConsentMock.mockReset();
-    markPendingConsumedMock.mockReset();
+    atomicConsumePendingConsentMock.mockReset();
     resolveUserSubMock.mockReset();
     generateGrantCodeMock.mockReturnValue("grant-code-plaintext");
     insertGrantMock.mockResolvedValue(undefined);
-    markPendingConsumedMock.mockResolvedValue(true);
+    atomicConsumePendingConsentMock.mockResolvedValue(okConsume());
   });
 
   afterEach(() => {
@@ -60,16 +71,7 @@ describe("POST /cli/consent", () => {
 
   it("allow: redirects to redirect_uri with code + state", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({
-      status: "ok",
-      userSub: "user-1",
-      clientId: "tastile-cli",
-      codeChallenge: "challenge-1",
-      redirectUri: "http://127.0.0.1:1234/callback",
-      scopesEffective: "tastile.read tastile.write",
-      state: "csrf-state",
-      responseType: "code",
-    });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce(okConsume());
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-1", decision: "allow" }));
     expect(response.status).toBe(307);
@@ -84,16 +86,9 @@ describe("POST /cli/consent", () => {
 
   it("deny: redirects with error=access_denied + state", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({
-      status: "ok",
-      userSub: "user-1",
-      clientId: "tastile-cli",
-      codeChallenge: "challenge-1",
-      redirectUri: "http://127.0.0.1:1234/callback",
-      scopesEffective: "tastile.read",
-      state: "csrf-state",
-      responseType: "code",
-    });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce(
+      okConsume({ scopesEffective: "tastile.read" }),
+    );
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-1", decision: "deny" }));
     expect(response.status).toBe(307);
@@ -106,7 +101,7 @@ describe("POST /cli/consent", () => {
 
   it("returns 410 when pending consent is missing", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({ status: "missing" });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce({ status: "missing" });
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-x", decision: "allow" }));
     expect(response.status).toBe(410);
@@ -114,7 +109,7 @@ describe("POST /cli/consent", () => {
 
   it("returns 410 when pending consent is expired", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({ status: "expired" });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce({ status: "expired" });
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-x", decision: "allow" }));
     expect(response.status).toBe(410);
@@ -122,7 +117,7 @@ describe("POST /cli/consent", () => {
 
   it("returns 410 when pending consent is already consumed (replay)", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({ status: "consumed" });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce({ status: "consumed" });
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-x", decision: "allow" }));
     expect(response.status).toBe(410);
@@ -130,38 +125,13 @@ describe("POST /cli/consent", () => {
 
   it("returns 403 when the resolved session does not match the row's user_sub", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({
-      status: "ok",
-      userSub: "user-2", // mismatch
-      clientId: "tastile-cli",
-      codeChallenge: "challenge-1",
-      redirectUri: "http://127.0.0.1:1234/callback",
-      scopesEffective: "tastile.read",
-      state: "csrf-state",
-      responseType: "code",
+    atomicConsumePendingConsentMock.mockResolvedValueOnce({
+      status: "user_mismatch",
+      storedUserSub: "user-2",
     });
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-1", decision: "allow" }));
     expect(response.status).toBe(403);
-    expect(markPendingConsumedMock).not.toHaveBeenCalled();
-  });
-
-  it("returns 410 when markPendingConsumed reports a race (returns false)", async () => {
-    resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({
-      status: "ok",
-      userSub: "user-1",
-      clientId: "tastile-cli",
-      codeChallenge: "challenge-1",
-      redirectUri: "http://127.0.0.1:1234/callback",
-      scopesEffective: "tastile.read",
-      state: "csrf-state",
-      responseType: "code",
-    });
-    markPendingConsumedMock.mockResolvedValueOnce(false);
-    const { POST } = await import("./route");
-    const response = await POST(postForm({ tid: "tid-1", decision: "allow" }));
-    expect(response.status).toBe(410);
     expect(insertGrantMock).not.toHaveBeenCalled();
   });
 
@@ -170,12 +140,12 @@ describe("POST /cli/consent", () => {
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-1", decision: "allow" }));
     expect(response.status).toBe(401);
-    expect(loadPendingConsentMock).not.toHaveBeenCalled();
+    expect(atomicConsumePendingConsentMock).not.toHaveBeenCalled();
   });
 
   it("does not leak code / state / verifier in error response bodies", async () => {
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({ status: "missing" });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce({ status: "missing" });
     const { POST } = await import("./route");
     const response = await POST(postForm({ tid: "tid-with-secret", decision: "allow" }));
     const text = await response.text();
@@ -188,21 +158,35 @@ describe("POST /cli/consent", () => {
   it("does not log the plaintext code or state", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     resolveUserSubMock.mockResolvedValueOnce("user-1");
-    loadPendingConsentMock.mockResolvedValueOnce({
-      status: "ok",
-      userSub: "user-1",
-      clientId: "tastile-cli",
-      codeChallenge: "challenge-1",
-      redirectUri: "http://127.0.0.1:1234/callback",
-      scopesEffective: "tastile.read",
-      state: "secret-csrf-state-do-not-log",
-      responseType: "code",
-    });
+    atomicConsumePendingConsentMock.mockResolvedValueOnce(
+      okConsume({
+        scopesEffective: "tastile.read",
+        state: "secret-csrf-state-do-not-log",
+      }),
+    );
     const { POST } = await import("./route");
     await POST(postForm({ tid: "tid-1", decision: "allow" }));
     const combined = JSON.stringify(warn.mock.calls);
     expect(combined).not.toContain("secret-csrf-state-do-not-log");
     expect(combined).not.toContain("grant-code-plaintext");
     warn.mockRestore();
+  });
+
+  it("rejects when E2E_BYPASS_AUTH=1 (production safety)", async () => {
+    process.env.E2E_BYPASS_AUTH = "1";
+    const { POST } = await import("./route");
+    const response = await POST(postForm({ tid: "tid-1", decision: "allow" }));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "bypass_not_permitted" });
+    expect(atomicConsumePendingConsentMock).not.toHaveBeenCalled();
+    expect(insertGrantMock).not.toHaveBeenCalled();
+  });
+
+  it("calls atomicConsumePendingConsent with the tid and resolved user_sub", async () => {
+    resolveUserSubMock.mockResolvedValueOnce("user-1");
+    atomicConsumePendingConsentMock.mockResolvedValueOnce(okConsume());
+    const { POST } = await import("./route");
+    await POST(postForm({ tid: "tid-1", decision: "allow" }));
+    expect(atomicConsumePendingConsentMock).toHaveBeenCalledWith("tid-1", "user-1");
   });
 });

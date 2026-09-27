@@ -62,6 +62,7 @@ describe("POST /api/cli/token", () => {
     getSessionSpy.mockClear();
     consumeGrantOnceMock.mockResolvedValue(okConsume());
     mintTastileApiTokenForUserMock.mockResolvedValue({
+      id: "core-token-id-1",
       token: "bearer-raw-token",
       expiresAt: "2030-01-01T00:00:00.000Z",
       subject: "user-1",
@@ -247,6 +248,45 @@ describe("POST /api/cli/token", () => {
       postJson({ code: PLAINTEXT_CODE, code_verifier: VERIFIER, redirect_uri: REDIRECT }),
     );
     expect(getSessionSpy).not.toHaveBeenCalled();
+  });
+
+  it("AC #2: does not call BetterAuth even when Authorization + Cookie are present, and response is identical to the no-Cookie case", async () => {
+    const { POST } = await import("./route");
+    const response = await POST(
+      postJson(
+        { code: PLAINTEXT_CODE, code_verifier: VERIFIER, redirect_uri: REDIRECT },
+        {
+          authorization: "Bearer session-jwt-that-should-be-ignored",
+          cookie: "better-auth.session_token=should-be-ignored; other=foo",
+        },
+      ),
+    );
+    expect(response.status).toBe(200);
+    expect(getSessionSpy).not.toHaveBeenCalled();
+    // Happy-path response body is identical to the no-header case.
+    expect(await response.json()).toEqual({
+      token: "bearer-raw-token",
+      expires_at: "2030-01-01T00:00:00.000Z",
+      subject: "user-1",
+    });
+  });
+
+  it("persists the Core-issued token id (NOT a slice of the bearer) as core_token_id", async () => {
+    const { POST } = await import("./route");
+    const response = await POST(
+      postJson({ code: PLAINTEXT_CODE, code_verifier: VERIFIER, redirect_uri: REDIRECT }),
+    );
+    expect(response.status).toBe(200);
+    // markCoreTokenId is called with the Core-issued id …
+    expect(markCoreTokenIdMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^[0-9a-f]{64}$/u),
+      "core-token-id-1",
+    );
+    // … and never with a prefix / slice of the bearer token.
+    expect(markCoreTokenIdMock).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.stringContaining("bearer-raw-token"),
+    );
   });
 
   it("does not leak the plaintext code, verifier, or bearer token in error responses", async () => {

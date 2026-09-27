@@ -22,6 +22,8 @@ export interface MintTastileApiTokenParams {
 }
 
 export interface MintedTastileApiToken {
+  /** Core-issued API-token id (used as `core_token_id` in the grant row). */
+  id: string;
   token: string;
   expiresAt: string;
   subject: string;
@@ -56,8 +58,11 @@ export async function mintTastileApiTokenForUser(
   if (!response.ok) return null;
 
   const created = (await response.json()) as CoreApiTokenResponse;
-  if (!created.token) return null;
+  // Both id and token are required: id is persisted as `core_token_id`
+  // for audit / revocation flows; token is the bearer returned to the CLI.
+  if (!created.id || !created.token) return null;
   return {
+    id: created.id,
     token: created.token,
     expiresAt: created.expires_at ?? params.expiresAtIso,
     subject: params.userSub,

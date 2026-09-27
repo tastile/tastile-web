@@ -164,3 +164,105 @@ export async function markPendingConsumed(tid: string): Promise<boolean> {
     return (result.rowCount ?? 0) === 1;
   });
 }
+
+// Atomic consume used by POST /cli/consent/submit (plan D6.1 + P1-4 fix).
+//
+// Replaces the TOCTOU pair of `loadPendingConsent(tid)` followed by
+// `markPendingConsumed(tid)`. The atomic variant folds the freshness
+// predicate (`consumed_at IS NULL` AND `expires_at > NOW()`) and the
+// user-mismatch check (`user_sub = $2`) into the WHERE clause so the
+// UPDATE itself decides who wins.
+//
+//   UPDATE web_cli_auth_pending_consent
+//      SET consumed_at = NOW()
+//    WHERE id = $1
+//      AND user_sub = $2
+//      AND consumed_at IS NULL
+//      AND expires_at > NOW()
+// RETURNING user_sub, client_id, code_challenge, redirect_uri,
+//           scopes_effective, state, response_type;
+//
+// rowCount === 1 ⇒ status "ok" with the row payload.
+// rowCount === 0 ⇒ classify via a follow-up SELECT (missing / consumed /
+//   expired / user_mismatch). Mirrors the consumeGrantOnce pattern so the
+// failure surface is uniform across the two stores.
+export type AtomicConsumeResult =
+  | {
+      status: "ok";
+      userSub: string;
+      clientId: string;
+      codeChallenge: string;
+      redirectUri: string;
+      scopesEffective: string;
+      state: string;
+      responseType: string;
+    }
+  | { status: "missing" }
+  | { status: "expired" }
+  | { status: "consumed" }
+  | { status: "user_mismatch"; storedUserSub: string };
+
+export async function atomicConsumePendingConsent(
+  tid: string,
+  currentUserSub: string,
+): Promise<AtomicConsumeResult> {
+  return withPool(async (pool) => {
+    const claim = await pool.query<{
+      user_sub: string;
+      client_id: string;
+      code_challenge: string;
+      redirect_uri: string;
+      scopes_effective: string;
+      state: string;
+      response_type: string;
+    }>(
+      `UPDATE web_cli_auth_pending_consent
+          SET consumed_at = NOW()
+        WHERE id = $1
+          AND user_sub = $2
+          AND consumed_at IS NULL
+          AND expires_at > NOW()
+        RETURNING user_sub, client_id, code_challenge, redirect_uri,
+                  scopes_effective, state, response_type`,
+      [tid, currentUserSub],
+    );
+    if ((claim.rowCount ?? 0) === 1) {
+      const row = claim.rows[0]!;
+      return {
+        status: "ok",
+        userSub: row.user_sub,
+        clientId: row.client_id,
+        codeChallenge: row.code_challenge,
+        redirectUri: row.redirect_uri,
+        scopesEffective: row.scopes_effective,
+        state: row.state,
+        responseType: row.response_type,
+      };
+    }
+
+    // rowCount === 0: classify the loss.
+    const followUp = await pool.query<{
+      consumed_at: Date | null;
+      expires_at: Date;
+      user_sub: string;
+    }>(
+      `SELECT consumed_at, expires_at, user_sub
+         FROM web_cli_auth_pending_consent
+        WHERE id = $1`,
+      [tid],
+    );
+    if ((followUp.rowCount ?? 0) === 0) {
+      return { status: "missing" };
+    }
+    const row = followUp.rows[0]!;
+    if (row.consumed_at !== null) {
+      return { status: "consumed" };
+    }
+    if (row.expires_at.getTime() <= Date.now()) {
+      return { status: "expired" };
+    }
+    // Row is fresh and not consumed; only reason the UPDATE failed is the
+    // user_sub mismatch.
+    return { status: "user_mismatch", storedUserSub: row.user_sub };
+  });
+}

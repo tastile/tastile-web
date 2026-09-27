@@ -164,4 +164,141 @@ describe("pending-consent-store (mocked pg.Pool)", () => {
       expect(ok).toBe(false);
     });
   });
+
+  describe("atomicConsumePendingConsent", () => {
+    it("folds user_sub, consumed_at, and expires_at into the WHERE clause", async () => {
+      setupClient();
+      queryMock.mockResolvedValueOnce({
+        rows: [
+          {
+            user_sub: "user-1",
+            client_id: "tastile-cli",
+            code_challenge: "challenge-1",
+            redirect_uri: "http://127.0.0.1:1234/callback",
+            scopes_effective: "tastile.read tastile.write",
+            state: "csrf",
+            response_type: "code",
+          },
+        ],
+        rowCount: 1,
+      });
+      const { atomicConsumePendingConsent } = await import(
+        "./pending-consent-store"
+      );
+      await atomicConsumePendingConsent("tid", "user-1");
+      const updateCall = queryMock.mock.calls.find(
+        (c) =>
+          typeof c[0] === "string" &&
+          c[0].includes("UPDATE web_cli_auth_pending_consent"),
+      );
+      expect(updateCall).toBeDefined();
+      expect(updateCall?.[0]).toContain("AND user_sub = $2");
+      expect(updateCall?.[0]).toContain("AND consumed_at IS NULL");
+      expect(updateCall?.[0]).toContain("AND expires_at > NOW()");
+      expect(updateCall?.[1]).toEqual(["tid", "user-1"]);
+    });
+
+    it("returns ok with the row payload when the UPDATE wins", async () => {
+      setupClient();
+      queryMock.mockResolvedValueOnce({
+        rows: [
+          {
+            user_sub: "user-1",
+            client_id: "tastile-cli",
+            code_challenge: "challenge-1",
+            redirect_uri: "http://127.0.0.1:1234/callback",
+            scopes_effective: "tastile.read",
+            state: "csrf",
+            response_type: "code",
+          },
+        ],
+        rowCount: 1,
+      });
+      const { atomicConsumePendingConsent } = await import(
+        "./pending-consent-store"
+      );
+      const result = await atomicConsumePendingConsent("tid", "user-1");
+      expect(result).toEqual({
+        status: "ok",
+        userSub: "user-1",
+        clientId: "tastile-cli",
+        codeChallenge: "challenge-1",
+        redirectUri: "http://127.0.0.1:1234/callback",
+        scopesEffective: "tastile.read",
+        state: "csrf",
+        responseType: "code",
+      });
+    });
+
+    it("classifies rowCount=0 + no follow-up row as missing", async () => {
+      setupClient();
+      queryMock.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // UPDATE
+      queryMock.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // follow-up
+      const { atomicConsumePendingConsent } = await import(
+        "./pending-consent-store"
+      );
+      const result = await atomicConsumePendingConsent("tid", "user-1");
+      expect(result).toEqual({ status: "missing" });
+    });
+
+    it("classifies consumed as consumed", async () => {
+      setupClient();
+      queryMock.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      queryMock.mockResolvedValueOnce({
+        rows: [
+          {
+            consumed_at: new Date(),
+            expires_at: new Date(Date.now() + 60_000),
+            user_sub: "user-1",
+          },
+        ],
+        rowCount: 1,
+      });
+      const { atomicConsumePendingConsent } = await import(
+        "./pending-consent-store"
+      );
+      const result = await atomicConsumePendingConsent("tid", "user-1");
+      expect(result).toEqual({ status: "consumed" });
+    });
+
+    it("classifies expires_at <= now as expired", async () => {
+      setupClient();
+      queryMock.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      queryMock.mockResolvedValueOnce({
+        rows: [
+          {
+            consumed_at: null,
+            expires_at: new Date(Date.now() - 1_000),
+            user_sub: "user-1",
+          },
+        ],
+        rowCount: 1,
+      });
+      const { atomicConsumePendingConsent } = await import(
+        "./pending-consent-store"
+      );
+      const result = await atomicConsumePendingConsent("tid", "user-1");
+      expect(result).toEqual({ status: "expired" });
+    });
+
+    it("classifies fresh row + wrong user as user_mismatch", async () => {
+      setupClient();
+      queryMock.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      queryMock.mockResolvedValueOnce({
+        rows: [
+          {
+            consumed_at: null,
+            expires_at: new Date(Date.now() + 60_000),
+            user_sub: "user-2",
+          },
+        ],
+        rowCount: 1,
+      });
+      const { atomicConsumePendingConsent } = await import(
+        "./pending-consent-store"
+      );
+      const result = await atomicConsumePendingConsent("tid", "user-1");
+      expect(result).toEqual({ status: "user_mismatch", storedUserSub: "user-2" });
+    });
+  });
 });

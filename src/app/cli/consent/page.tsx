@@ -14,8 +14,11 @@ import type { Locale } from "@/shared/stores/locale-store";
 // which Next handles as a 500; the dedicated 410 lives in the POST
 // handler).
 //
-// The form posts back to /cli/consent (next file) with the `tid` and a
-// `decision` of `allow` or `deny` as hidden fields.
+// The form posts back to /cli/consent/submit (a sibling Route Handler)
+// with the `tid` and a `decision` of `allow` or `deny` as hidden fields.
+// Next.js App Router forbids `page.tsx` and `route.ts` from sharing the
+// same segment, so the POST handler lives at a distinct URL — see
+// src/app/cli/consent/submit/route.ts.
 //
 // DS v2 compliance: no Mantine `Card` / `withBorder` (forbidden by
 // `localRules/no-mantine-border`); no raw `border-*` Tailwind classes
@@ -85,7 +88,7 @@ export default async function ConsentPage({ searchParams }: PageProps) {
         <p className="mt-4 text-xs text-muted-foreground">
           {getTranslation(locale, "cliAuth.scopesNote")}
         </p>
-        <form method="POST" action="/cli/consent" className="mt-6 flex gap-2">
+        <form method="POST" action="/cli/consent/submit" className="mt-6 flex gap-2">
           <input type="hidden" name="tid" value={tid} />
           <button
             type="submit"

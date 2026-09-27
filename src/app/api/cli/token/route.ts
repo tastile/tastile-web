@@ -144,7 +144,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Second UPDATE: persist the core_token_id for audit / revocation flows.
-  await markCoreTokenId(hashGrantCode(body.code), minted.token.slice(0, 32));
+  // Use the Core-issued id, NOT a slice of the bearer token — the column
+  // name is `core_token_id` and the raw bearer is the secret the CLI uses.
+  await markCoreTokenId(hashGrantCode(body.code), minted.id);
 
   return NextResponse.json({
     token: minted.token,

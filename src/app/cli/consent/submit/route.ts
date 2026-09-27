@@ -4,19 +4,24 @@ import { getClient } from "@/shared/auth/cli/clients";
 import { insertGrant } from "@/shared/auth/cli/grant-store";
 import { generateGrantCode } from "@/shared/auth/cli/pkce";
 import {
-  loadPendingConsent,
-  markPendingConsumed,
+  atomicConsumePendingConsent,
 } from "@/shared/auth/cli/pending-consent-store";
 import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session";
 
-// /cli/consent — POST (Issue #153, plan D6).
+// POST /cli/consent/submit — Issue #153, plan D6.
+//
+// The POST handler lives at a distinct URL from GET /cli/consent (the
+// Server Component that renders the consent UI). Next.js App Router forbids
+// `page.tsx` and `route.ts` from sharing the same segment, so the form
+// action points here instead of at `/cli/consent`. UI rendering is
+// unchanged; only the submit URL moved.
 //
 // Re-resolves the BetterAuth session (defense against session swap between
-// GET /cli/authorize and this POST), verifies the row's user_sub matches
-// the session, atomically marks the pending row consumed (replay defense),
-// then either mints a grant (allow) or redirects with `error=access_denied`
-// (deny). The grant code is generated fresh and only its sha256 is stored
-// (D1).
+// GET /cli/authorize and this POST), atomically marks the pending row
+// consumed (replay defense + user_mismatch check in one statement, plan
+// D6.1) and either mints a grant (allow) or redirects with
+// `error=access_denied` (deny). The grant code is generated fresh and only
+// its sha256 is stored (D1).
 //
 // Production-only invariant (plan D8): `E2E_BYPASS_AUTH=1` MUST NOT be
 // treated as a successful authorization. The handler returns 400 the same
@@ -50,36 +55,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
-  const pending = await loadPendingConsent(tid);
-  if (pending.status !== "ok") {
-    // missing / expired / consumed all collapse to 410; the user is told
-    // to re-authorize via the CLI.
-    return NextResponse.json({ error: pending.status }, { status: 410 });
-  }
-  if (pending.userSub !== userSub) {
-    // Session swap / cross-account attempt: refuse with 403.
-    console.warn("[cli-auth] user mismatch on consent POST");
-    return NextResponse.json({ error: "user_mismatch" }, { status: 403 });
-  }
-
-  const consumed = await markPendingConsumed(tid);
-  if (!consumed) {
-    // Another POST (replay) consumed the row first.
-    return NextResponse.json({ error: "already_consumed" }, { status: 410 });
+  // Atomic UPDATE: rowCount === 0 ⇒ classify via follow-up SELECT. The
+  // TOCTOU window between a separate SELECT and a separate UPDATE is gone,
+  // so an expired row consumed mid-handshake cannot win the UPDATE and
+  // emit a grant.
+  const consumed = await atomicConsumePendingConsent(tid, userSub);
+  switch (consumed.status) {
+    case "missing":
+    case "consumed":
+    case "expired":
+      return NextResponse.json({ error: consumed.status }, { status: 410 });
+    case "user_mismatch":
+      console.warn("[cli-auth] user mismatch on consent POST");
+      return NextResponse.json({ error: "user_mismatch" }, { status: 403 });
+    case "ok":
+      break;
   }
 
   // Re-validate the registered client set in case the client was removed
   // between authorize and consent. (Plan D5 — registered set is the
   // authority for which scopes can flow through.)
-  const client = getClient(pending.clientId);
+  const client = getClient(consumed.clientId);
   if (!client) {
     return NextResponse.json({ error: "invalid_client" }, { status: 400 });
   }
 
-  const target = new URL(pending.redirectUri);
+  const target = new URL(consumed.redirectUri);
   if (decision === "deny") {
     target.searchParams.set("error", "access_denied");
-    if (pending.state) target.searchParams.set("state", pending.state);
+    if (consumed.state) target.searchParams.set("state", consumed.state);
     return NextResponse.redirect(target);
   }
 
@@ -87,16 +91,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const code = generateGrantCode();
   await insertGrant({
     code,
-    clientId: pending.clientId,
-    userSub: pending.userSub,
-    codeChallenge: pending.codeChallenge,
-    redirectUri: pending.redirectUri,
-    scopesRequested: pending.scopesEffective,
-    scopesEffective: pending.scopesEffective,
+    clientId: consumed.clientId,
+    userSub: consumed.userSub,
+    codeChallenge: consumed.codeChallenge,
+    redirectUri: consumed.redirectUri,
+    scopesRequested: consumed.scopesEffective,
+    scopesEffective: consumed.scopesEffective,
     ttlSeconds: GRANT_TTL_SECONDS,
   });
 
   target.searchParams.set("code", code);
-  if (pending.state) target.searchParams.set("state", pending.state);
+  if (consumed.state) target.searchParams.set("state", consumed.state);
   return NextResponse.redirect(target);
 }
