@@ -41,6 +41,7 @@ import {
 import { account } from "./sections/system/account";
 import { app } from "./sections/system/app";
 import { auth } from "./sections/system/auth";
+import { cliAuth } from "./sections/system/cliAuth";
 import { execution } from "./sections/system/execution";
 import { legal } from "./sections/system/legal";
 import { notFound } from "./sections/system/notFound";
@@ -77,6 +78,7 @@ const sections = [
   app,
   auth,
   calendar,
+  cliAuth,
   common,
   dashboard,
   demoBanner,
