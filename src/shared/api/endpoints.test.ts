@@ -1,11 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { CORE_V1_ENDPOINTS, CoreClient } from "./endpoints";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CORE_V1_ENDPOINTS, CoreClient, resolveCoreBaseUrl } from "./endpoints";
 
 beforeEach(() => {
   // The singleton resolver throws when neither NEXT_PUBLIC_TASTILE_CORE_URL
   // nor E2E bypass is set; tests exercise the singleton without
   // configuring a real host, so fall through to the loopback daemon.
   vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "1");
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 function calledUrls(fetchImpl: ReturnType<typeof vi.fn>): string[] {
@@ -279,5 +283,30 @@ describe("CORE_V1_ENDPOINTS", () => {
       ]),
     );
     expect(CORE_V1_ENDPOINTS).toHaveLength(149);
+  });
+});
+
+describe("configured browser Core URLs", () => {
+  it.each(["NEXT_PUBLIC_TASTILE_CORE_URL", "NEXT_PUBLIC_DAEMON_BASE_URL"])(
+    "rejects a public HTTP upstream from %s before direct browser requests",
+    (variable) => {
+      vi.stubEnv("TASTILE_ENV", "staging");
+      vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "0");
+      vi.stubEnv("NEXT_PUBLIC_CORE_DIRECT_MODE", "1");
+      vi.stubEnv("NEXT_PUBLIC_TASTILE_CORE_URL", "");
+      vi.stubEnv("NEXT_PUBLIC_DAEMON_BASE_URL", "");
+      vi.stubEnv(variable, "http://api.example.com");
+
+      expect(() => resolveCoreBaseUrl()).toThrow(/HTTPS/);
+    },
+  );
+
+  it("allows a loopback HTTP upstream for local development", () => {
+    vi.stubEnv("TASTILE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "0");
+    vi.stubEnv("NEXT_PUBLIC_CORE_DIRECT_MODE", "1");
+    vi.stubEnv("NEXT_PUBLIC_TASTILE_CORE_URL", "http://127.0.0.1:31400");
+
+    expect(resolveCoreBaseUrl()).toBe("http://127.0.0.1:31400");
   });
 });

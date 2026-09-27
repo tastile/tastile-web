@@ -3,7 +3,7 @@ name: pr-smoke
 # Fast pull-request smoke gate. Splits from `quality` so PRs targeting any
 # branch get fast feedback (biome + eslint + typecheck + knip + vitest)
 # WITHOUT the expensive `bun run check:release` path (which includes
-# `bun run build:prod` + SOPS-decrypted env). The release gate remains
+# `bun run build:prod` with Infisical-injected secrets). The release gate remains
 # in `.github/workflows/quality.yml` and is required only on release-*
 # and main.
 #
@@ -47,3 +47,37 @@ jobs:
           # Pin TZ so vitest workers deterministically match local dev (JST).
           # Mirrors quality.yml; keep both in sync if you change this.
           TZ: Asia/Tokyo
+
+  # Real-Postgres concurrency test for the /api/cli/token grant store
+  # (Issue #153, plan D10).  Only the grant-store.integration.test.ts
+  # suite runs here so the per-PR feedback stays fast.
+  cli-auth-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: cli_auth_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U test -d cli_auth_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      TASTILE_AUTH_DATABASE_URL: postgres://test:test@localhost:5432/cli_auth_test
+      NEXT_PUBLIC_DAEMON_BASE_URL: http://127.0.0.1:31400
+      TZ: Asia/Tokyo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.2
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Run grant-store concurrency integration test
+        run: bun test src/shared/auth/cli/grant-store.integration.test.ts

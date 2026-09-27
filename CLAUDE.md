@@ -59,7 +59,7 @@ Next.js 16 has breaking changes — conventions, APIs, and file structure may di
 
 ## Environment
 
-Copy `.env.development.example` to `.env.development` (dev) or `.env.production.example` to `.env.production` (prod) and fill required values. Only `.env`, `.env.development`, and `.env.production` may carry real values; all other `.env*` files are gitignored.
+Secret values are stored only in the self-hosted Infisical project. Run `infisical login` once, then use `bun dev`, `bun run dev:staging`, or `bun run dev:prod`; each command retrieves `/tastile/web` secrets for that environment and fails closed if retrieval fails. Do not create a local `.env` file. `.env.example` lists blank variable names only. For recovery tools that require a file, run `../scripts/restore-infisical-env.ps1 -Repository web -Environment <development|staging|production>` from this repository and remove the generated file after use.
 
 Key variable groups:
 
@@ -69,7 +69,7 @@ Key variable groups:
 - `tastile-core` API (`CLOUD_API_BASE`, `NEXT_PUBLIC_DAEMON_BASE_URL`, `TASTILE_RUST_API_URL`, `TASTILE_USE_RUST_CORE`)
 - Analytics + hosts (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_APEX_HOST`, `NEXT_PUBLIC_APP_HOST`)
 
-`.env.local` is reserved for local-only overrides and is **not** loaded by the Vitest config on purpose — see the comment block in `vitest.config.ts` for why.
+`.env.local` and other dotenv files are not used as fallback. The Vitest config keeps `envDir: false` and its explicit empty test override; retrieve required test values through Infisical.
 
 ## Containerization
 

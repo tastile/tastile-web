@@ -12,19 +12,19 @@ import { getAuth } from "@/shared/auth/better-auth/server";
 
 type AuthRouteHandlers = ReturnType<typeof toNextJsHandler>;
 
-let handlers: AuthRouteHandlers | null = null;
+let handlers: Promise<AuthRouteHandlers> | null = null;
 
-function authHandlers(): AuthRouteHandlers {
+function authHandlers(): Promise<AuthRouteHandlers> {
   if (!handlers) {
-    handlers = toNextJsHandler(getAuth().handler);
+    handlers = getAuth().then((auth) => toNextJsHandler(auth.handler));
   }
   return handlers;
 }
 
 export async function GET(request: Request): Promise<Response> {
-  return authHandlers().GET(request);
+  return (await authHandlers()).GET(request);
 }
 
 export async function POST(request: Request): Promise<Response> {
-  return authHandlers().POST(request);
+  return (await authHandlers()).POST(request);
 }

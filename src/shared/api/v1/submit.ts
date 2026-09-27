@@ -1,6 +1,7 @@
 import { recordTileCreateAttempt } from "@/shared/analytics/tile-create";
 import { getCoreToken } from "@/shared/api/core-token";
 import { isCloudDirectEnabled } from "@/shared/api/endpoints";
+import { resolvePublicCloudApiBaseUrl } from "@/shared/config/cloud-api-base-url";
 import { ApiErrorKind } from "@/shared/model/v1/constants";
 import type { ApiError } from "@/shared/model/v1/envelope";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
@@ -33,17 +34,16 @@ export interface SubmitOptions {
  */
 export function makeClient(): ApiClient {
   const e2eBypass = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";
-  const explicitCoreUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_V1_URL;
+  const explicitCoreUrl = process.env.NEXT_PUBLIC_TASTILE_CORE_V1_URL?.trim();
   if (explicitCoreUrl) {
+    const baseUrl = resolvePublicCloudApiBaseUrl(explicitCoreUrl);
     return {
-      baseUrl: explicitCoreUrl,
+      baseUrl,
       useProxyBridge: false,
       getIdToken: async () => (e2eBypass ? E2E_DEV_TOKEN : null),
     };
   }
-  const cloudDirectBase = isCloudDirectEnabled()
-    ? (process.env.NEXT_PUBLIC_TASTILE_CORE_URL?.trim() ?? "")
-    : "";
+  const cloudDirectBase = isCloudDirectEnabled() ? resolvePublicCloudApiBaseUrl() : "";
   if (cloudDirectBase) {
     return {
       baseUrl: cloudDirectBase,

@@ -19,6 +19,7 @@ const { COOKIE_API_TOKEN } = await import("@/shared/auth/cookies");
 const {
 	ensureDefaultApiTokenForUser,
 	getApiTokenFromCookies,
+  coreUrl,
 } = await import("./api-token-session");
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -32,8 +33,9 @@ describe("api-token-session bootstrap", () => {
 	beforeEach(() => {
 		for (const k of Object.keys(cookieStore)) delete cookieStore[k];
 		mockUserSub = "user-sub-1";
+		process.env.TASTILE_ENV = "test";
 		process.env.TASTILE_WEB_BRIDGE_SECRET = "test-bridge-secret";
-		process.env.TASTILE_CORE_URL = "http://core.local:3140";
+		process.env.TASTILE_CORE_URL = "http://127.0.0.1:3140";
 		delete process.env.NEXT_PUBLIC_TASTILE_CORE_URL;
 		delete process.env.NEXT_PUBLIC_DAEMON_BASE_URL;
 	});
@@ -73,7 +75,7 @@ describe("api-token-session bootstrap", () => {
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		expect(url).toBe("http://core.local:3140/v1/api-tokens");
+		expect(url).toBe("http://127.0.0.1:3140/v1/api-tokens");
 		expect(init.method).toBe("POST");
 		expect(init.headers).toMatchObject({
 			"x-tastile-web-bridge-secret": "test-bridge-secret",
@@ -128,7 +130,7 @@ describe("api-token-session bootstrap", () => {
 
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 		const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-		expect(url).toBe("http://core.local:3140/v1/api-tokens");
+		expect(url).toBe("http://127.0.0.1:3140/v1/api-tokens");
 		expect(init.method).toBe("POST");
 	});
 
@@ -152,5 +154,36 @@ describe("api-token-session bootstrap", () => {
 
 		expect(token).toBeNull();
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		"TASTILE_CORE_URL",
+		"NEXT_PUBLIC_TASTILE_CORE_URL",
+		"NEXT_PUBLIC_DAEMON_BASE_URL",
+	])("rejects a public HTTP upstream from %s in a protected runtime", (variable) => {
+		const originalEnvironment = process.env.TASTILE_ENV;
+		const originalCloudApiBase = process.env.CLOUD_API_BASE;
+		const originalAliases = [
+			"TASTILE_CORE_URL",
+			"NEXT_PUBLIC_TASTILE_CORE_URL",
+			"NEXT_PUBLIC_DAEMON_BASE_URL",
+		].map((key) => [key, process.env[key]] as const);
+		process.env.TASTILE_ENV = "staging";
+		process.env.CLOUD_API_BASE = "https://api.staging.app.tastile.app";
+		for (const key of originalAliases.map(([key]) => key)) delete process.env[key];
+		process.env[variable] = "http://core.example.com";
+
+		try {
+			expect(() => coreUrl()).toThrow(/HTTPS/);
+		} finally {
+			if (originalEnvironment === undefined) delete process.env.TASTILE_ENV;
+			else process.env.TASTILE_ENV = originalEnvironment;
+			if (originalCloudApiBase === undefined) delete process.env.CLOUD_API_BASE;
+			else process.env.CLOUD_API_BASE = originalCloudApiBase;
+			for (const [key, value] of originalAliases) {
+				if (value === undefined) delete process.env[key];
+				else process.env[key] = value;
+			}
+		}
 	});
 });

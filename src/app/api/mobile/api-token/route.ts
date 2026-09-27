@@ -1,5 +1,6 @@
 import { coreUrl } from "@/lib/account/api-token-session";
 import { getAuth } from "@/shared/auth/better-auth/server";
+import { isProtectedWebRuntime } from "@/shared/config/runtime-env";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -8,9 +9,10 @@ export async function POST(request: Request) {
   // clients (Android / desktop) authenticate against this route.
   let userSub: string | null = null;
   try {
-    const session = await getAuth().api.getSession({ headers: request.headers });
+    const session = await (await getAuth()).api.getSession({ headers: request.headers });
     userSub = session?.user?.id ?? null;
   } catch (error) {
+    if (isProtectedWebRuntime()) throw error;
     console.warn("[mobile-api-token] session resolution failed:", error);
   }
   if (!userSub) {

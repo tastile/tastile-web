@@ -11,6 +11,7 @@ describe("makeClient (api/v1/submit.ts)", () => {
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     Object.assign(process.env, { ...ORIGINAL_ENV });
   });
 
@@ -31,6 +32,23 @@ describe("makeClient (api/v1/submit.ts)", () => {
     // When the proxy bridge is in use, auth is added server-side; this
     // hook is intentionally a no-op for direct local calls.
     await expect(client.getIdToken()).resolves.toBeNull();
+  });
+
+  it.each([
+    "NEXT_PUBLIC_TASTILE_CORE_URL",
+    "NEXT_PUBLIC_DAEMON_BASE_URL",
+    "NEXT_PUBLIC_TASTILE_CORE_V1_URL",
+  ])("rejects a public HTTP upstream from %s before direct submit requests", async (variable) => {
+    vi.stubEnv("TASTILE_ENV", "staging");
+    vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "0");
+    vi.stubEnv("NEXT_PUBLIC_CORE_DIRECT_MODE", "1");
+    vi.stubEnv("NEXT_PUBLIC_TASTILE_CORE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_DAEMON_BASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_TASTILE_CORE_V1_URL", "");
+    vi.stubEnv(variable, "http://api.example.com");
+    const { makeClient } = await import("./submit");
+
+    expect(() => makeClient()).toThrow(/HTTPS/);
   });
 });
 
