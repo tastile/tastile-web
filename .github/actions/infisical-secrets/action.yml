@@ -57,7 +57,12 @@ runs:
         : > "$OUTPUT_PATH"
         chmod 0600 "$OUTPUT_PATH"
     - name: Fetch secrets from Infisical
-      uses: Infisical/secrets-action@v1.0.9
+      # v1.0.9 dropped `project-id` support in favor of `project-slug`;
+      # v1.0.18 reintroduced `project-id` alongside `project-slug`
+      # (commit a3f95ad on Infisical/secrets-action). Pin to v1.0.18 so the
+      # composite can keep passing `project-id` (the project's UUID, not
+      # the human-readable slug) which is what GitHub repo vars hold.
+      uses: Infisical/secrets-action@v1.0.18
       with:
         method: oidc
         identity-id: ${{ inputs.identity-id }}
