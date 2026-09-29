@@ -16,7 +16,7 @@ This repository is a thin frontend client for the Tastile execution-control syst
 - Next.js 16 App Router
 - React 19
 - TypeScript
-- AWS (Cognito Hosted UI + tastile-core API)
+- Better Auth (account auth) + tastile-core API (root `architecture/` が platform の正本)
 - Vitest
 - Playwright
 - Tailwind CSS v4
