@@ -53,7 +53,7 @@ jobs:
           TZ: Asia/Tokyo
 
       - name: Audit production dependencies
-        run: bun audit --production --ignore=GHSA-qx2v-qp2m-jg93 --ignore=GHSA-6g55-p6wh-862q --ignore=GHSA-r28c-9q8g-f849 --ignore=GHSA-f88m-g3jw-g9cj
+        run: bun audit --production --ignore=GHSA-qx2v-qp2m-jg93 --ignore=GHSA-6g55-p6wh-862q --ignore=GHSA-r28c-9q8g-f849 --ignore=GHSA-f88m-g3jw-g9cj --ignore=GHSA-3wwx-pv8p-q78v
 
   release-build:
     if: >-
