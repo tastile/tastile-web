@@ -31,9 +31,9 @@
 | [ADR-0007](../docs/adr/0007-release-branch-and-ticket-workflow.md) | weekly sprint の `release-x-y-z` branch + Issue 番号 ticket branch |
 | [ADR-0008](../docs/adr/0008-structured-recovery-checkpoint.md) | soft / hard checkpoint、execution generation、fencing token |
 | [ADR-0009](../docs/adr/0009-github-projects-work-state.md) | GitHub Projects Kanban を durable work state に pin |
-| [ADR-0011](../docs/adr/0011-tastile-precommit-review-canonical-precedence.md) | 同名 Skill (web vs workspace) の cwd-based precedence rule |
+| [ADR-0012](../docs/adr/0012-deprecate-tastile-precommit-review.md) | `.agent-loop/` + `tastile-precommit-review` 廃止、project-init `quality-gate` へ移行 (2026-09-29) |
 
-ADR を 1 件も読まずに実装判断した場合、pre-commit reviewer から差し戻し。
+ADR を 1 件も読まずに実装判断した場合、`verify-tastile-change` から差し戻し。
 
 ## Repository facts（repo-local のみ）
 
@@ -146,8 +146,7 @@ CI 側の gating:
 ## Skill list（`.agents/skills/`、`../AGENTS.md` 経由で activate）
 
 - `react-doctor` — UI 規約違反検出。
-- `tastile-precommit-review` — agent-initiated commit 直前の独立 review（self-approve 禁止、
-  Codex ↔ Claude 別 agent で実行）。
+- `verify-tastile-change` — PR 直前 binding verification（self-approve 禁止、Codex ↔ Claude 別 agent で実行）。旧 `tastile-precommit-review` は 2026-09-29 廃止 (ADR-0012)。
 - `i18n-literal-guard` — policy §11 の hardcoded literal 検出、JSX / doc-comment / identifier の
   監査と i18n bundle への移送手順を提供。
 - workspace 共通: `cross-repo-contract-check`（複数 child に跨る contract 変更）、
