@@ -74,7 +74,8 @@ async function createAuth() {
     trustedOrigins: [publicOrigin],
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      autoSignIn: true,
+      requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
         await sendAuthEmail({
           to: user.email,
@@ -85,9 +86,9 @@ async function createAuth() {
       },
     },
     emailVerification: {
-      // Send the confirmation mail immediately at sign-up so the flow has
-      // no dead end (dev: link is logged when SES is not configured).
-      sendOnSignUp: true,
+      // Email ownership confirmation is optional for the minimal release.
+      // Keep the sender hook available for explicit verification flows.
+      sendOnSignUp: false,
       sendVerificationEmail: async ({ user, url }) => {
         await sendAuthEmail({
           to: user.email,

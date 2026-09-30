@@ -6,31 +6,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Read [`AGENTS.md`](./AGENTS.md) first.** It is the canonical contract for this repository (v1 domain routing, sync model, prohibitions, implementation status, env vars, current constraints). Do not duplicate its content here — this file is only a Claude Code adapter.
 
-The workspace-level contract that binds this child repository to `tastile-core`, `tastile-desktop`, `tastile-android`, and `tastile-brands` lives in `../AGENTS.md` and `../tastile-root/docs/HARNESS.md`.
+The workspace-level contract that binds this child repository to `tastile-core`, `tastile-desktop`, `tastile-android`, and `tastile-brands` lives in `../AGENTS.md` and `../docs/HARNESS.md`.
 
 ## Claude Code Configuration Layout
 
 - Claude Code settings/hooks: `.claude/settings.json` / `.claude/hooks/` (both intentionally
-  absent — see [ADR-0005](../adr/0005-skills-and-mcp-extensions.md) for the rationale)
+  absent — see [ADR-0005](../docs/adr/0005-skills-and-mcp-extensions.md) for the rationale)
 - Agent Skills (Codex-style, canonical): `.agents/skills/` — `react-doctor`,
-  `tastile-precommit-review`, `i18n-literal-guard`
+  `i18n-literal-guard`
 - Claude Code Skills (thin adapters): `.claude/skills/` (mirrors canonical, NOT a
   duplicate). Currently present:
   - `.claude/skills/i18n-literal-guard/SKILL.md` → `tastile-web/.agents/skills/i18n-literal-guard/`
-  - `.claude/skills/tastile-precommit-review/SKILL.md` → `tastile-web/.agents/skills/tastile-precommit-review/`
-    (precedence per [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md))
 
 The Skill adapter pattern is a thin wrapper under `.claude/skills/` that delegates to
 `.agents/skills/`. Do not author new Skills in `.claude/skills/` without a corresponding
-canonical entry in `.agents/skills/`. See [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md)
-for the precedence rule when canonicals exist in multiple repositories.
+canonical entry in `.agents/skills/`. 旧 per-commit reviewer loop は廃止済み (root ADR-0021)。
+durable checkpoint は root ADR-0008 を維持し、commit / merge 前は
+`../.agents/skills/verify-tastile-change/SKILL.md` による binding verification を行う。
 
 ## Commands, Architecture, Quality Gate, Subagent Rules
 
 Architecture / Commands / Quality Gate / Subagent Rules are the canonical contract of
 [`AGENTS.md`](./AGENTS.md). This adapter does NOT duplicate those sections — read
-AGENTS.md and reference [ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md)
-for the canonical-location precedence rule.
+AGENTS.md for the canonical contract.
 
 The Claude Code-specific notes that DO live here (and not in AGENTS.md):
 
@@ -50,8 +48,8 @@ The Claude Code-specific notes that DO live here (and not in AGENTS.md):
 - Design system source of truth: `docs/DESIGN-SYSTEM.md`
 - Linear-derived visual baseline: `docs/awesome-design-md/design-md/linear.app/DESIGN.md` (per `docs/decisions.md`)
 - Architectural decisions log: `docs/decisions.md`
-- Bridge auth contract for E2E: see `.agents/skills/tastile-precommit-review` SKILL.md for the security boundary list (Cognito, cookies, server-only secrets, Stripe, proxy)
-- **E2E stack prerequisites**: `scripts/e2e/up-stack.sh` requires the `tastile-v1-api:latest` wslc image to already exist. Build it once with `bash ../tastile-core/scripts/wslc/build.sh` (or `.wslc/wslc-build.ps1`); on hosts where Defender blocks `cc1.exe` use CI `ubuntu-latest`. The troubleshooting table in `../tastile-core/scripts/wslc/README.md` is canonical.
+- BFF→core auth contract for E2E: see root ADR-0016 and `../.agents/skills/verify-tastile-change/SKILL.md` for binding verification (Better Auth session / cookies, server-only secrets, Stripe, proxy).
+- **E2E stack prerequisites**: `scripts/e2e/up-stack.sh` requires the `tastile-v1-api:latest` wslc image to already exist. Build it from a local `tastile-core` checkout (`crates-v1` release build) or use CI `ubuntu-latest`. The workspace must not be a build dependency: this repository stays buildable from a standalone clone (root ADR-0019).
 
 ## Next.js 16 Caveat
 
@@ -65,7 +63,7 @@ Key variable groups:
 
 - Stripe billing (`STRIPE_*`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`)
 - Desktop download/version (`TASTILE_DESKTOP_MANIFEST_URL`, `NEXT_PUBLIC_TASTILE_DESKTOP_VERSION`, `TASTILE_DESKTOP_VERSION`)
-- AWS Cognito Hosted UI (`NEXT_PUBLIC_COGNITO_*`, `TASTILE_WEB_BRIDGE_SECRET`)
+- Better Auth (`BETTER_AUTH_*`, `BETTER_AUTH_SECRET`, `TASTILE_AUTH_DATABASE_URL`, `TASTILE_WEB_BRIDGE_SECRET` (→ JWT, root ADR-0016))
 - `tastile-core` API (`CLOUD_API_BASE`, `NEXT_PUBLIC_DAEMON_BASE_URL`, `TASTILE_RUST_API_URL`, `TASTILE_USE_RUST_CORE`)
 - Analytics + hosts (`NEXT_PUBLIC_GA_MEASUREMENT_ID`, `NEXT_PUBLIC_APEX_HOST`, `NEXT_PUBLIC_APP_HOST`)
 
@@ -90,8 +88,5 @@ These are non-negotiable for any change that touches this repository:
 ## Subagent / Parallelization Rules
 
 See [`AGENTS.md`](./AGENTS.md) "Repository invariants" and the workspace canonical
-[ADR-0007](../adr/0007-release-branch-and-ticket-workflow.md) + [ADR-0008](../adr/0008-structured-recovery-checkpoint.md).
-Claude Code-specific addition: pre-commit reviewer MUST be Codex (or a sibling Claude
-Code session with fresh context), not the same session that produced the diff. See
-[ADR-0011](../adr/0011-tastile-precommit-review-canonical-precedence.md) for the
-canonical-resolution precedence between the workspace generic and web-specific overlay.
+[ADR-0007](../docs/adr/0007-release-branch-and-ticket-workflow.md) + [ADR-0008](../docs/adr/0008-structured-recovery-checkpoint.md).
+Claude Code-specific addition: commit / merge 前は root `../.agents/skills/verify-tastile-change/SKILL.md` を使う。旧 per-commit reviewer loop は廃止済み (root ADR-0021)。

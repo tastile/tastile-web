@@ -151,4 +151,4 @@ Web side stores the intersection and forwards it to Core.
   handler inventory).
 - CLI sibling: `tastile/tastile-cli#3` (`auth login` switches to
   `HttpServerBridge::fetch_token`).
-- Bridge auth contract: `.agents/skills/tastile-precommit-review` SKILL.md.
+- Bridge auth contract: `.agents/skills/verify-tastile-change` SKILL.md (旧 `.agents/skills/tastile-precommit-review` は 2026-09-29 廃止、ADR-0012).

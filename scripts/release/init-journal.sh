@@ -3,7 +3,7 @@
 # writable. Used by release-checkpoint.sh on first invocation per env.
 # canonical references:
 #   - ../../docs/agent-orchestration.md §6 (external side-effect journal)
-#   - .agent-loop/checkpoint.schema.json
+#   - ../../docs/adr/0008-structured-recovery-checkpoint.md (canonical checkpoint shape)
 #
 # Usage:
 #   ./scripts/release/init-journal.sh development
