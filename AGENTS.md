@@ -31,7 +31,8 @@
 | [ADR-0007](../docs/adr/0007-release-branch-and-ticket-workflow.md) | weekly sprint の `release-x-y-z` branch + Issue 番号 ticket branch |
 | [ADR-0008](../docs/adr/0008-structured-recovery-checkpoint.md) | soft / hard checkpoint、execution generation、fencing token |
 | [ADR-0009](../docs/adr/0009-github-projects-work-state.md) | GitHub Projects Kanban を durable work state に pin |
-| [ADR-0012](../docs/adr/0012-deprecate-tastile-precommit-review.md) | `.agent-loop/` + `tastile-precommit-review` 廃止、project-init `quality-gate` へ移行 (2026-09-29) |
+| [ADR-0012](../docs/adr/0012-infisical-secrets-source-of-truth.md) / [ADR-0015](../docs/adr/0015-secret-store-and-workload-identity.md) | current / target secret SoT は Infisical。GitHub OIDC / GCP-native workload identity を使う |
+| [ADR-0021](../docs/adr/0021-retire-per-commit-review.md) | 旧 per-commit reviewer loop 廃止。commit / merge 前は `verify-tastile-change` による binding verification |
 
 ADR を 1 件も読まずに実装判断した場合、`verify-tastile-change` から差し戻し。
 
@@ -46,7 +47,7 @@ ADR を 1 件も読まずに実装判断した場合、`verify-tastile-change` �
 - **Auth**: Better Auth（email+password / Google / Apple / email OTP / TOTP）を本 app の route handler で運用する
   (`src/shared/auth/better-auth/`)。BFF → core の credential は現在 `TASTILE_WEB_BRIDGE_SECRET` (shared secret) で、
   root ADR-0016 で Better Auth JWT (JWKS 検証) に置き換わる予定。secret は Infisical の `/tastile/web` path から取得する
-  (target は ADR-0015 の Secret Manager)。
+  (current / target とも ADR-0012 / ADR-0015 の Infisical)。
 - **Sync**: poll + SSE。`active_tile` / `phase` 等の browser-local execution state は cloud に保存しない。
 - **Route structure**: `/` (landing)、`/dashboard/*` (main UI)、`/app/*` → `/dashboard` へ permanent redirect
   (`next.config.ts`)、`/api/*` (Stripe, OpenAPI, proxy 等)。dashboard 機能追加は `/dashboard` へ。
@@ -146,7 +147,7 @@ CI 側の gating:
 ## Skill list（`.agents/skills/`、`../AGENTS.md` 経由で activate）
 
 - `react-doctor` — UI 規約違反検出。
-- `verify-tastile-change` — PR 直前 binding verification（self-approve 禁止、Codex ↔ Claude 別 agent で実行）。旧 `tastile-precommit-review` は 2026-09-29 廃止 (ADR-0012)。
+- `../.agents/skills/verify-tastile-change/SKILL.md` — commit / merge 前の binding verification。旧 per-commit reviewer loop は廃止済み (ADR-0021)。
 - `i18n-literal-guard` — policy §11 の hardcoded literal 検出、JSX / doc-comment / identifier の
   監査と i18n bundle への移送手順を提供。
 - workspace 共通: `cross-repo-contract-check`（複数 child に跨る contract 変更）、
