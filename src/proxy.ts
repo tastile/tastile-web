@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { resolveCanonicalHostRedirect } from "@/lib/host-routing";
 import { safeNextPath } from "@/shared/auth/safe-next-path";
+import { EDGE_ASSERTION_HEADER, hasValidEdgeAssertion } from "@/shared/config/edge-assertion";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 
@@ -20,6 +21,12 @@ const PROTECTED_PREFIXES = ["/dashboard", "/app"];
 const AUTH_PAGE_PATHS = new Set<string>(["/login", "/auth/signup"]);
 
 export default async function proxy(request: NextRequest) {
+  // Behind the edge router, a request without the edge assertion reached the
+  // run.app origin directly. Reject it before any routing or session logic.
+  if (!hasValidEdgeAssertion(request.headers.get(EDGE_ASSERTION_HEADER))) {
+    return new NextResponse(null, { status: 403 });
+  }
+
   const redirectHost = resolveCanonicalHostRedirect(
     request.headers.get("host") ?? "",
     request.nextUrl.pathname,
