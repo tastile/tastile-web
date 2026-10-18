@@ -71,7 +71,20 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       if (!bridgeSecret) {
         console.warn("[proxy] TASTILE_WEB_BRIDGE_SECRET is unset; cannot forward bridge headers");
       } else {
-        const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+        let bridgeHeaders: Record<string, string> | null;
+        try {
+          bridgeHeaders = await buildCoreBridgeHeaders({
+            bridgeSecret,
+            userSub,
+            requestHeaders: request.headers,
+          });
+        } catch (error) {
+          console.error(`[proxy] core assertion mint failed for ${path}:`, error);
+          return NextResponse.json({ error: "Core assertion unavailable", path }, { status: 503 });
+        }
+        if (!bridgeHeaders) {
+          return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
+        }
         for (const [name, value] of Object.entries(bridgeHeaders)) headers.set(name, value);
       }
     }

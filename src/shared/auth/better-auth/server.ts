@@ -1,12 +1,11 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
-import { jwt } from "better-auth/plugins";
 import { bearer } from "better-auth/plugins/bearer";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 
 import { getPublicOrigin } from "@/shared/auth/public-origin";
-import { coreAssertionJwtOptions } from "./core-assertion-config";
+import { coreAssertionAuthOptions } from "./core-assertion-config";
 import { resolveAuthDatabaseUrl } from "./database-url";
 import {
   passwordResetEmailHtml,
@@ -69,9 +68,11 @@ function socialProviders() {
 
 async function createAuth() {
   const publicOrigin = getPublicOrigin();
+  const coreAssertion = coreAssertionAuthOptions(publicOrigin);
   return betterAuth({
     baseURL: publicOrigin,
     basePath: "/api/auth",
+    disabledPaths: coreAssertion.disabledPaths,
     database: await authDatabase(),
     trustedOrigins: [publicOrigin],
     emailAndPassword: {
@@ -117,7 +118,7 @@ async function createAuth() {
         refreshCache: false,
       },
     },
-    plugins: [bearer(), twoFactor(), nextCookies(), jwt(coreAssertionJwtOptions(publicOrigin))],
+    plugins: [bearer(), twoFactor(), nextCookies(), ...coreAssertion.plugins],
   });
 }
 

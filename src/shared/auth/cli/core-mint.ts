@@ -42,10 +42,12 @@ export async function mintTastileApiTokenForUser(
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!bridgeSecret) return null;
 
+  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub: params.userSub });
+  if (!bridgeHeaders) return null;
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
-      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub: params.userSub })),
+      ...bridgeHeaders,
       "content-type": "application/json",
     },
     body: JSON.stringify({

@@ -59,6 +59,7 @@ async function createDefaultApiTokenForUser(
   if (!bridgeSecret) return null;
 
   const headers = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  if (!headers) return null;
   const createResponse = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
@@ -105,10 +106,12 @@ export async function mintBrowserApiToken(
   if (!bridgeSecret) return null;
 
   const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
+  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  if (!bridgeHeaders) return null;
   const createResponse = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
-      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub })),
+      ...bridgeHeaders,
       "content-type": "application/json",
     },
     body: JSON.stringify({ label: BROWSER_TOKEN_NAME, expires_at: expiresAt }),

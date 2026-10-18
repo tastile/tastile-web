@@ -1,4 +1,4 @@
-import type { JwtOptions } from "better-auth/plugins";
+import { jwt, type JwtOptions } from "better-auth/plugins";
 
 // Better Auth jwt plugin configuration for the BFF -> tastile-core assertion
 // (root ADR-0016). Kept free of runtime imports so the contract can be unit
@@ -14,6 +14,13 @@ import type { JwtOptions } from "better-auth/plugins";
 export const CORE_ASSERTION_AUDIENCE = "tastile-core";
 export const CORE_ASSERTION_TTL_SECONDS = 300;
 
+// The jwt plugin's `getToken` endpoint (GET /api/auth/token) returns a JWT
+// with the same aud / iss / lifetime as the Core assertion, to any session
+// holder. Only the server-side mint path may create one, so the HTTP route is
+// disabled. `disabledPaths` is matched against the path relative to basePath
+// (`/api/auth`), so the entry is "/token". `/jwks` stays served.
+const CORE_ASSERTION_DISABLED_PATHS: readonly string[] = ["/token"];
+
 export function coreAssertionJwtOptions(issuer: string): JwtOptions {
   return {
     // The default jwt plugin behavior attaches a signed JWT header to every
@@ -27,5 +34,13 @@ export function coreAssertionJwtOptions(issuer: string): JwtOptions {
       audience: CORE_ASSERTION_AUDIENCE,
       expirationTime: `${CORE_ASSERTION_TTL_SECONDS} seconds`,
     },
+  };
+}
+
+/** BetterAuth options fragment that installs the assertion signer. */
+export function coreAssertionAuthOptions(issuer: string) {
+  return {
+    disabledPaths: [...CORE_ASSERTION_DISABLED_PATHS],
+    plugins: [jwt(coreAssertionJwtOptions(issuer))],
   };
 }

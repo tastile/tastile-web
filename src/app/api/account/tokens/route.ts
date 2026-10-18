@@ -18,10 +18,15 @@ async function proxyTokens(init?: { method?: string; body?: string }) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
+  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  if (!bridgeHeaders) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
+
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: init?.method ?? "GET",
     headers: {
-      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub })),
+      ...bridgeHeaders,
       ...(init?.body ? { "content-type": "application/json" } : {}),
     },
     body: init?.body ? normalizeRequestBody(init.body) : undefined,

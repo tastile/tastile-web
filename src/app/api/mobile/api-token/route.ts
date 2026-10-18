@@ -25,11 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bridge_not_configured" }, { status: 503 });
   }
 
+  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  if (!bridgeHeaders) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
+
   const upstream = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub })),
+      ...bridgeHeaders,
     },
     body: JSON.stringify({ label: "android-client" }),
     cache: "no-store",
