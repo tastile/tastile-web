@@ -29,6 +29,7 @@
     "dev:prod": "NEXT_PUBLIC_TASTILE_CORE_URL=https://api.tastile.app CLOUD_API_BASE=https://api.tastile.app NEXT_PUBLIC_E2E_BYPASS_AUTH=0 bun scripts/run-with-infisical.mts prod -- bun run next dev",
     "build": "next build",
     "build:prod": "node scripts/build-product.mts",
+    "auth:migrate": "bun scripts/auth-migrate.mts",
     "build:infisical": "bun scripts/run-with-infisical.mts prod -- bun run build:prod",
     "start": "next start",
     "start:standalone": "node .next/standalone/server.js",
