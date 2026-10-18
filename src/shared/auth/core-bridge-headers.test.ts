@@ -10,6 +10,8 @@ vi.mock("./core-assertion", () => ({
 vi.mock("./authenticated-session", () => ({
   resolveAuthenticatedUserSub,
 }));
+const coreIamHeaders = vi.hoisted(() => vi.fn());
+vi.mock("./core-iam-token", () => ({ coreIamHeaders }));
 
 import { buildCoreBridgeHeaders, isCoreAssertionEnabled } from "./core-bridge-headers";
 
@@ -22,6 +24,10 @@ describe("buildCoreBridgeHeaders", () => {
     mintCoreAssertion.mockImplementation(async (sub: string) => `assertion-for-${sub}`);
     resolveAuthenticatedUserSub.mockReset();
     resolveAuthenticatedUserSub.mockResolvedValue("user-sub-1");
+    coreIamHeaders.mockReset();
+    coreIamHeaders.mockImplementation(async (env: Record<string, string | undefined> = {}) =>
+      env.TASTILE_CORE_IAM_AUDIENCE ? { "x-serverless-authorization": "Bearer id-token" } : {},
+    );
   });
 
   it("emits only the bridge headers, in order, when the flag is unset", async () => {
@@ -168,5 +174,29 @@ describe("buildCoreBridgeHeaders", () => {
       if (original === undefined) delete process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED;
       else process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED = original;
     }
+  });
+  it("appends the Cloud Run IAM header after the identity headers when an audience is configured", async () => {
+    const env = { TASTILE_CORE_IAM_AUDIENCE: "https://core-api.example.run.app" };
+    const headers = await buildCoreBridgeHeaders({ ...BASE, env });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "user-sub-1",
+      "x-serverless-authorization": "Bearer id-token",
+    });
+    expect(coreIamHeaders).toHaveBeenCalledWith(env);
+  });
+
+  it("fetches no IAM token for an unauthorized result", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const env = { ...ON, TASTILE_CORE_IAM_AUDIENCE: "https://core-api.example.run.app" };
+
+    await expect(buildCoreBridgeHeaders({ ...BASE, env })).resolves.toBeNull();
+    expect(coreIamHeaders).not.toHaveBeenCalled();
+  });
+
+  it("propagates an IAM token failure instead of sending an unauthenticated request", async () => {
+    coreIamHeaders.mockRejectedValue(new Error("metadata identity request failed: HTTP 403"));
+    await expect(buildCoreBridgeHeaders({ ...BASE, env: {} })).rejects.toThrow("HTTP 403");
   });
 });

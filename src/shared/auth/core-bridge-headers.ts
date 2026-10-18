@@ -1,5 +1,6 @@
 import { resolveAuthenticatedUserSub } from "./authenticated-session";
 import { CORE_ASSERTION_HEADER, mintCoreAssertion } from "./core-assertion";
+import { coreIamHeaders } from "./core-iam-token";
 
 // Single place that builds the BFF -> tastile-core auth headers.
 //
@@ -26,7 +27,7 @@ export function isCoreAssertionEnabled(env: EnvLike = process.env): boolean {
   return env[CORE_ASSERTION_FLAG] === "true";
 }
 
-export async function buildCoreBridgeHeaders(params: {
+type CoreHeaderParams = {
   bridgeSecret: string;
   userSub: string;
   /** Request headers used to verify the session (defaults to next/headers). */
@@ -36,7 +37,19 @@ export async function buildCoreBridgeHeaders(params: {
   /** Subject from a grant consumed in this request (CLI exchange only). Skips the session lookup. */
   trustedSub?: string;
   env?: EnvLike;
-}): Promise<Record<string, string> | null> {
+};
+
+// Cloud Run IAM (`x-serverless-authorization`) is appended only to an
+// authorized result; a null result never reaches Core, so no ID token is fetched.
+export async function buildCoreBridgeHeaders(
+  params: CoreHeaderParams,
+): Promise<Record<string, string> | null> {
+  const identity = await buildIdentityHeaders(params);
+  if (!identity) return null;
+  return { ...identity, ...(await coreIamHeaders(params.env)) };
+}
+
+async function buildIdentityHeaders(params: CoreHeaderParams): Promise<Record<string, string> | null> {
   const bridgeHeaders: Record<string, string> = {
     "x-tastile-web-bridge-secret": params.bridgeSecret,
     "x-tastile-web-session-user": params.userSub,

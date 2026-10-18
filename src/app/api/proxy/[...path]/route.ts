@@ -7,6 +7,7 @@ import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/shared/auth/cookies";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 import { type NextRequest, NextResponse } from "next/server";
 import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
+import { coreIamHeaders } from "@/shared/auth/core-iam-token";
 
 export { injectTimelineTodayDefaults };
 
@@ -88,6 +89,16 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
         for (const [name, value] of Object.entries(bridgeHeaders)) headers.set(name, value);
       }
     }
+  }
+
+  // API-token requests skip the bridge builder; they still need Cloud Run IAM.
+  try {
+    for (const [name, value] of Object.entries(await coreIamHeaders())) {
+      if (!headers.has(name)) headers.set(name, value);
+    }
+  } catch (error) {
+    console.error(`[proxy] Core IAM identity unavailable for ${path}:`, error);
+    return NextResponse.json({ error: "Core identity unavailable", path }, { status: 503 });
   }
 
   const contentType = request.headers.get("content-type");
