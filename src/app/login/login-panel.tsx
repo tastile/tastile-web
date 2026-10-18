@@ -172,7 +172,7 @@ export function LoginPanel(props: {
 					</div>
 					<hr className="mx-1 opacity-20" />
 
-					<form onSubmit={handleEmailSignIn} className="my-2 space-y-2">
+					<form method="post" onSubmit={handleEmailSignIn} className="my-2 space-y-2">
 						<TextInput
 							name="email"
 							type="email"
