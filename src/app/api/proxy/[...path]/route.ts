@@ -6,6 +6,7 @@ import { getCloudApiBase as getConfiguredCloudApiBase } from "@/lib/upstream/clo
 import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/shared/auth/cookies";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 import { type NextRequest, NextResponse } from "next/server";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 export { injectTimelineTodayDefaults };
 
@@ -70,8 +71,8 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       if (!bridgeSecret) {
         console.warn("[proxy] TASTILE_WEB_BRIDGE_SECRET is unset; cannot forward bridge headers");
       } else {
-        headers.set("x-tastile-web-bridge-secret", bridgeSecret);
-        headers.set("x-tastile-web-session-user", userSub);
+        const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+        for (const [name, value] of Object.entries(bridgeHeaders)) headers.set(name, value);
       }
     }
   }

@@ -1,6 +1,7 @@
 import { coreUrl } from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/shared/auth/account-session";
 import { NextResponse } from "next/server";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 export async function GET() {
   return proxyTokens();
@@ -20,8 +21,7 @@ async function proxyTokens(init?: { method?: string; body?: string }) {
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: init?.method ?? "GET",
     headers: {
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": userSub,
+      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub })),
       ...(init?.body ? { "content-type": "application/json" } : {}),
     },
     body: init?.body ? normalizeRequestBody(init.body) : undefined,

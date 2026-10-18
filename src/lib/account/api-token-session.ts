@@ -2,6 +2,7 @@ import { getCloudApiBase } from "@/lib/upstream/cloud-api-base";
 import { COOKIE_API_TOKEN } from "@/shared/auth/cookies";
 import { cookies } from "next/headers";
 import type { NextRequest, NextResponse } from "next/server";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 // Name used when registering the per-login session token. The plaintext
 // `access_token` is only ever returned at this POST — afterwards the server
@@ -57,10 +58,7 @@ async function createDefaultApiTokenForUser(
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!bridgeSecret) return null;
 
-  const headers = {
-    "x-tastile-web-bridge-secret": bridgeSecret,
-    "x-tastile-web-session-user": userSub,
-  };
+  const headers = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
   const createResponse = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
@@ -110,8 +108,7 @@ export async function mintBrowserApiToken(
   const createResponse = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": userSub,
+      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub })),
       "content-type": "application/json",
     },
     body: JSON.stringify({ label: BROWSER_TOKEN_NAME, expires_at: expiresAt }),

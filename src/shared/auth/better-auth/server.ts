@@ -1,10 +1,12 @@
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
+import { jwt } from "better-auth/plugins";
 import { bearer } from "better-auth/plugins/bearer";
 import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 
 import { getPublicOrigin } from "@/shared/auth/public-origin";
+import { coreAssertionJwtOptions } from "./core-assertion-config";
 import { resolveAuthDatabaseUrl } from "./database-url";
 import {
   passwordResetEmailHtml,
@@ -25,7 +27,7 @@ import {
 
 let cachedPool: Pool | null = null;
 
-async function authDatabase(): Promise<Pool> {
+export async function authDatabase(): Promise<Pool> {
   if (!cachedPool) {
     const connectionString = process.env.TASTILE_AUTH_DATABASE_URL;
     let hyperdriveConnectionString: string | undefined;
@@ -115,7 +117,7 @@ async function createAuth() {
         refreshCache: false,
       },
     },
-    plugins: [bearer(), twoFactor(), nextCookies()],
+    plugins: [bearer(), twoFactor(), nextCookies(), jwt(coreAssertionJwtOptions(publicOrigin))],
   });
 }
 

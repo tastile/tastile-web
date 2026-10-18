@@ -14,6 +14,7 @@ import { resolveAuthenticatedUserSub } from "@/shared/auth/authenticated-session
 import { NextResponse } from "next/server";
 import { v5 as uuidv5 } from "uuid";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 const DEV_ACTOR_SUBJECT_ID = "00000000-0000-0000-0000-000000000001";
 // Resolved at call time so tests mutating process.env after module load still see the bypass branch.
@@ -129,8 +130,7 @@ async function bridgeHeaders(extra?: Record<string, string>): Promise<{
   return {
     headers: {
       ...(extra ?? {}),
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": userSub,
+      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub })),
     },
   };
 }

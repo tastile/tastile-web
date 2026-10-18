@@ -1,4 +1,5 @@
 import { coreUrl } from "@/lib/account/api-token-session";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 // CLI token minting (Issue #153, plan D7).
 //
@@ -44,8 +45,7 @@ export async function mintTastileApiTokenForUser(
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": params.userSub,
+      ...(await buildCoreBridgeHeaders({ bridgeSecret, userSub: params.userSub })),
       "content-type": "application/json",
     },
     body: JSON.stringify({
