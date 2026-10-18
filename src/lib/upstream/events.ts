@@ -127,7 +127,11 @@ async function bridgeHeaders(extra?: Record<string, string>): Promise<{
     return null;
   }
 
-  const bridge = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  const bridge = await buildCoreBridgeHeaders({
+    bridgeSecret,
+    userSub,
+    verifiedSessionSub: userSub,
+  });
   if (!bridge) return null;
   return {
     headers: {

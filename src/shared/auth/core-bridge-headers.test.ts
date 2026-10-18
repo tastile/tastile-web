@@ -97,6 +97,61 @@ describe("buildCoreBridgeHeaders", () => {
     expect(mintCoreAssertion).not.toHaveBeenCalled();
   });
 
+  it("flag on + CLI exchange (trustedSub, no session): mints with sub === consumed.userSub", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "grant-user-7",
+      trustedSub: "grant-user-7",
+      env: ON,
+    });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "grant-user-7",
+      "x-tastile-web-assertion": "assertion-for-grant-user-7",
+    });
+    expect(resolveAuthenticatedUserSub).not.toHaveBeenCalled();
+    expect(mintCoreAssertion).toHaveBeenCalledWith("grant-user-7");
+  });
+
+  it("flag on + trustedSub that disagrees with userSub: returns null and mints nothing", async () => {
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "user-a",
+      trustedSub: "user-b",
+      env: ON,
+    });
+
+    expect(headers).toBeNull();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("flag on + browser path without session, even with trustedSub absent: returns null, no trust fallback", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "cookie-user",
+      env: ON,
+    });
+
+    expect(headers).toBeNull();
+    expect(resolveAuthenticatedUserSub).toHaveBeenCalledOnce();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("flag on + verifiedSessionSub: uses it without a second session lookup", async () => {
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "user-sub-1",
+      verifiedSessionSub: "user-sub-1",
+      env: ON,
+    });
+
+    expect(headers).toMatchObject({ "x-tastile-web-assertion": "assertion-for-user-sub-1" });
+    expect(resolveAuthenticatedUserSub).not.toHaveBeenCalled();
+  });
+
   it("flag on + mint failure: the error propagates to the caller", async () => {
     mintCoreAssertion.mockRejectedValue(new Error("jwks unavailable"));
     await expect(buildCoreBridgeHeaders({ ...BASE, env: ON })).rejects.toThrow("jwks unavailable");

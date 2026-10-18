@@ -42,7 +42,14 @@ export async function mintTastileApiTokenForUser(
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!bridgeSecret) return null;
 
-  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub: params.userSub });
+  // CLI grant exchange only: `userSub` comes from the grant consumed in this
+  // request, not from a cookie or session, so it is passed as the trusted
+  // subject. Do not reuse this function for cookie- or session-derived users.
+  const bridgeHeaders = await buildCoreBridgeHeaders({
+    bridgeSecret,
+    userSub: params.userSub,
+    trustedSub: params.userSub,
+  });
   if (!bridgeHeaders) return null;
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",

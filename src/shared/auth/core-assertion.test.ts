@@ -123,7 +123,7 @@ describe("BetterAuth HTTP surface for the assertion signer", () => {
     // Without a session the protected route answers 401, not 404.
     const auth = await instance();
     const response = await auth.handler(new Request(`${ISSUER}/api/auth/token`));
-    expect(response.status).not.toBe(404);
+    expect(response.status).toBe(401);
   });
 
   it("still serves GET /api/auth/jwks with the OKP / Ed25519 key set", async () => {
