@@ -18,6 +18,7 @@ import { DetailsAffordanceButton } from "./sections/DetailsAffordanceButton";
 import { MemoSection } from "./sections/MemoSection";
 import { ProjectColorRow } from "./sections/ProjectColorRow";
 import { SubtasksSection } from "./sections/SubtasksSection";
+import { localDateToIso } from "../model/local-date";
 
 /** Preset minute counts offered by the duration Select. */
 const DURATION_PRESETS_MIN = [15, 30, 60, 90, 120] as const;
@@ -41,11 +42,6 @@ function isoToDate(iso: string): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function dateToIso(date: Date | null): string {
-  if (!date) return "";
-  const d = new Date(date);
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
-}
 
 function isoToTime(iso: string): string {
   if (!iso) return "";
@@ -199,12 +195,12 @@ export function QuickCreateTask() {
   );
   const updateDueDate = useCallback(
     (value: string | null) => {
-      const iso = value ? dateToIso(new Date(value)) : "";
+      const iso = value ? localDateToIso(value, spanStart) : "";
       setField("time.span.start", iso);
       if (!spanEnd && iso) setField("time.span.end", iso);
       setField("time.whenMode", iso ? "day" : "none");
     },
-    [setField, spanEnd],
+    [setField, spanEnd, spanStart],
   );
 
   const updateDueTime = useCallback(
