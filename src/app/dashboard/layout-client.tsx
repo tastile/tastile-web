@@ -1,5 +1,6 @@
 "use client";
 
+import { PromptCenter } from "@/features/resolve-prompts/ui/PromptCenter";
 import { NotificationsMenu } from "@/features/view-notifications/ui/NotificationsMenu";
 import { AuthProvider, useAuth } from "@/shared/context/auth-context";
 import {
@@ -143,6 +144,9 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
       />
       {/* QuickCreatePanel: desktop = right slide, mobile = bottom slide-up. */}
       <QuickCreatePanel />
+
+      {/* Drift prompts awaiting the user's decision (web#192). */}
+      <PromptCenter />
 
       {/* Mobile side-panel floating action button (only when below md and content exists) */}
       <MobileSidePanelFab onClick={openMobileSidePanel} />
