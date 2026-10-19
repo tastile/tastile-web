@@ -20,6 +20,8 @@ import {
 const PROMPTS_KEY = ["v1", "prompts", "pending"] as const;
 /** Core raises drift prompts from the worker pass; poll at a similar cadence. */
 const POLL_MS = 60_000;
+/** Cards shown at once; the rest wait behind a count so the schedule stays visible. */
+const VISIBLE = 3;
 
 async function loadPrompts() {
   const client = makeClient();
@@ -38,7 +40,7 @@ async function loadPrompts() {
  * running past its span. Each card offers the Core commands that resolve it.
  */
 export function PromptCenter() {
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const queryClient = useQueryClient();
   const query = useQuery({
     queryKey: PROMPTS_KEY,
@@ -70,25 +72,42 @@ export function PromptCenter() {
       className="fixed right-4 bottom-12 z-40 w-[min(22rem,calc(100vw-2rem))]"
     >
       <Stack gap="xs">
-        {items.map((item) => (
+        {items.slice(0, VISIBLE).map((item) => (
           <PromptCard
             key={item.prompt.id}
             prompt={item.prompt}
             title={item.subject.title ?? t("promptCenter.untitled")}
+            when={plannedAt(item.subject.spanStart, locale)}
             actions={actionsFor(item.prompt, item.subject)}
             busy={busy === item.prompt.id}
             failed={failed === item.prompt.id}
             onAction={(action) => void act(item, action)}
           />
         ))}
+        {items.length > VISIBLE && (
+          <Text size="xs" c="dimmed" ta="right">
+            {t("promptCenter.more", { count: items.length - VISIBLE })}
+          </Text>
+        )}
       </Stack>
     </section>
   );
 }
 
+function plannedAt(spanStart: string | null, locale: string): string | null {
+  if (!spanStart) return null;
+  return new Intl.DateTimeFormat(locale, {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(spanStart));
+}
+
 function PromptCard(props: {
   prompt: PromptView;
   title: string;
+  when: string | null;
   actions: PromptActionId[];
   busy: boolean;
   failed: boolean;
@@ -99,6 +118,7 @@ function PromptCard(props: {
     <Paper p="sm" radius="md" className="bg-surface-3" data-testid="prompt-card">
       <Text size="xs" c="dimmed">
         {t(kindKey(props.prompt.kind))}
+        {props.when && ` · ${props.when}`}
       </Text>
       <Text fw={600} truncate>
         {props.title}

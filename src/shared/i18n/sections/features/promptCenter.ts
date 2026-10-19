@@ -7,6 +7,7 @@ export const promptCenter = {
       title: "Needs your decision",
       untitled: "Untitled",
       failed: "Couldn't complete that. Please try again.",
+      more: "+{count} more",
       kind: {
         missedStart: "Not started at the planned time",
         staleActive: "Still running after its planned end",
@@ -28,6 +29,7 @@ export const promptCenter = {
       title: "確認が必要な予定",
       untitled: "(無題)",
       failed: "操作を完了できませんでした。もう一度お試しください。",
+      more: "ほか {count} 件",
       kind: {
         missedStart: "予定の時刻に開始されていません",
         staleActive: "予定の終了を過ぎても実行中です",
@@ -49,6 +51,7 @@ export const promptCenter = {
       title: "需要你确认",
       untitled: "(无标题)",
       failed: "操作未能完成，请重试。",
+      more: "另有 {count} 项",
       kind: {
         missedStart: "未在计划时间开始",
         staleActive: "已超过计划结束时间仍在进行",
@@ -70,6 +73,7 @@ export const promptCenter = {
       title: "확인이 필요한 일정",
       untitled: "(제목 없음)",
       failed: "작업을 완료하지 못했습니다. 다시 시도해 주세요.",
+      more: "외 {count}건",
       kind: {
         missedStart: "예정된 시간에 시작되지 않았습니다",
         staleActive: "예정 종료 시간이 지났지만 진행 중입니다",
@@ -91,6 +95,7 @@ export const promptCenter = {
       title: "Requiere tu decisión",
       untitled: "Sin título",
       failed: "No se pudo completar. Inténtalo de nuevo.",
+      more: "{count} más",
       kind: {
         missedStart: "No se inició a la hora prevista",
         staleActive: "Sigue en curso tras su fin previsto",
