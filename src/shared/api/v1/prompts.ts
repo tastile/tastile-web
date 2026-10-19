@@ -51,11 +51,19 @@ interface TileRead {
   title: string;
 }
 
+interface SourceRead {
+  source: { schedule: { generation: { kind: number } } };
+}
+
+/** Core re-places a missed occurrence on reflow only for one-time and recurring sources. */
+const RESCHEDULABLE_GENERATION_KINDS: readonly number[] = [0, 1];
+
 /** What a prompt is about, resolved from its subject for display and actions. */
 export interface PromptSubject {
   title: string | null;
   placementId: string | null;
   executionId: string | null;
+  /** Set only when Core can re-place the occurrence from its source. */
   sourceTileId: string | null;
   spanStart: string | null;
   spanEnd: string | null;
@@ -70,6 +78,15 @@ async function tileTitle(client: ApiClient, tileId: string): Promise<string | nu
   return tile.ok ? tile.data.title : null;
 }
 
+async function reschedulableSource(client: ApiClient, sourceTileId: string | null): Promise<string | null> {
+  if (!sourceTileId) return null;
+  const source = await getRead<SourceRead>(client, `/v1/source-tiles/${sourceTileId}`);
+  if (!source.ok) return null;
+  return RESCHEDULABLE_GENERATION_KINDS.includes(source.data.source.schedule.generation.kind)
+    ? sourceTileId
+    : null;
+}
+
 async function placementSubject(client: ApiClient, placementId: string): Promise<PromptSubject> {
   const placement = await getRead<PlacementRead>(client, `/v1/placements/${placementId}`);
   if (!placement.ok) {
@@ -80,7 +97,7 @@ async function placementSubject(client: ApiClient, placementId: string): Promise
     title: await tileTitle(client, p.tile_id),
     placementId: p.id,
     executionId: null,
-    sourceTileId: p.source_tile_id,
+    sourceTileId: await reschedulableSource(client, p.source_tile_id),
     spanStart: p.span_start,
     spanEnd: p.span_end,
   };
