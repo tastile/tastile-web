@@ -7,6 +7,21 @@ import { Button, PasswordInput, TextInput } from "@mantine/core";
 import Link from "next/link";
 import { useState } from "react";
 
+const BRIDGE_PATH = "/api/auth/bridge";
+const CONTINUE_PATH = "/dashboard";
+
+function safeNextParam(raw: string | null | undefined): string | null {
+	if (!raw) return null;
+	if (!raw.startsWith("/") || raw.startsWith("//")) return null;
+	return raw;
+}
+
+function bridgeCallbackUrl(rawNext: string | null | undefined): string {
+	const next = safeNextParam(rawNext);
+	if (!next) return BRIDGE_PATH;
+	return `${BRIDGE_PATH}?next=${encodeURIComponent(next)}`;
+}
+
 export function SignUpPanel() {
 	const { t } = useTranslation();
 	const [pending, setPending] = useState(false);
@@ -21,18 +36,22 @@ export function SignUpPanel() {
 		const name = String(form.get("name") ?? "");
 		const email = String(form.get("email") ?? "");
 		const password = String(form.get("password") ?? "");
+		const callbackURL = bridgeCallbackUrl(CONTINUE_PATH);
 		try {
-			const result = await authClient.signUp.email({ name, email, password });
+			const result = await authClient.signUp.email({ name, email, password, callbackURL });
 			if (result.error) {
 				setError(
-					result.error.code === "USER_ALREADY_EXISTS"
+					result.error.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL"
 						? t("auth.signup.errorEmailExists")
 						: (result.error.message ?? t("auth.signup.errorFallback")),
 				);
 				return;
 			}
-			// Email verification is required before sign-in; show the notice.
+			// BetterAuth creates a session immediately for a new account.
+			// Hand control to the bridge route so /api/proxy gets the
+			// COOKIE_USER_SUB + COOKIE_API_TOKEN it needs.
 			setSubmitted(true);
+			window.location.assign(callbackURL);
 		} finally {
 			setPending(false);
 		}
@@ -108,12 +127,12 @@ export function SignUpPanel() {
 
 					<Button
 						component={Link}
-						href="/login"
+						href={submitted ? "/api/auth/bridge?next=/dashboard" : "/login"}
 						fullWidth
 						className="my-2"
 						variant="subtle"
 					>
-						{t("auth.signup.backToSignin")}
+						{t(submitted ? "auth.signup.continueToApp" : "auth.signup.backToSignin")}
 					</Button>
 					<section className="mx-4 text-center text-sm leading-5 text-foreground-subtle">
 						<p className="text-center text-caption leading-4 text-foreground-subtle">

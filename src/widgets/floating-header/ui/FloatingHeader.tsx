@@ -1,6 +1,7 @@
 "use client";
 
-import { useActiveTile } from "@/shared/hooks/use-active-tile";
+import { useV1ActiveTile } from "@/shared/hooks/use-v1-active-tile";
+import { ExecutionState } from "@/shared/model/v1/constants";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { cn } from "@/shared/lib/cn";
 import { BottomSheet } from "@/shared/ui/BottomSheet";
@@ -61,16 +62,16 @@ export function FloatingHeader({
   const pathname = usePathname();
   const { t } = useTranslation();
   const [menuOpen, { open: openMenu, close: closeMenu }] = useDisclosure(false);
-  const { snapshot } = useActiveTile();
+  const { snapshot } = useV1ActiveTile();
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   // Only tick once per second while the countdown is actually visible
   // (working state with an end time). Without this guard the header
   // re-renders every second on every page, producing sustained CPU load.
-  const ends = snapshot?.main_tile_ends_at
-    ? new Date(snapshot.main_tile_ends_at)
-    : null;
-  const ticking = Boolean(snapshot?.is_working && ends);
+  const isWorking = snapshot?.execution_state === ExecutionState.ACTIVE;
+  const isPaused = snapshot?.execution_state === ExecutionState.PAUSED;
+  const ends = snapshot ? new Date(snapshot.span_end) : null;
+  const ticking = Boolean(isWorking && ends);
   // `start` and `stop` are stable callbacks in @mantine/hooks' useInterval
   // (empty useCallback deps). Depending only on `ticking` keeps the effect
   // idempotent — using the returned `interval` object as a dep would loop,
@@ -81,7 +82,7 @@ export function FloatingHeader({
     else stop();
   }, [ticking, start, stop]);
 
-  const main = snapshot?.main_tile;
+  const main = snapshot ? { title: snapshot.title } : null;
   const remainingSec = ends
     ? Math.max(0, Math.round((ends.getTime() - nowMs) / 1000))
     : 0;
@@ -90,10 +91,11 @@ export function FloatingHeader({
     .padStart(2, "0");
   const ss = (remainingSec % 60).toString().padStart(2, "0");
 
-  const isWorking = snapshot?.is_working ?? false;
   const status = isWorking
     ? t("shell.floatingHeader.executing")
-    : t("shell.floatingHeader.idle");
+    : isPaused
+      ? t("shell.floatingHeader.paused")
+      : t("shell.floatingHeader.idle");
 
   return (
     <>
@@ -192,7 +194,9 @@ export function FloatingHeader({
                     {t("shell.floatingHeader.statusLabel")}:{" "}
                     {isWorking
                       ? t("shell.floatingHeader.statusExecuting")
-                      : t("shell.floatingHeader.statusIdle")}
+                      : isPaused
+                        ? t("shell.floatingHeader.statusPaused")
+                        : t("shell.floatingHeader.statusIdle")}
                   </p>
                 </div>
               </FloatingMenuLabel>
