@@ -16,6 +16,7 @@ import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 // stay cheap; full verification happens at the data boundary.
 
 const PROTECTED_PREFIXES = ["/dashboard", "/app"];
+const JWKS_PATH = "/api/auth/jwks";
 // Pages that should bounce an already-authenticated user to /dashboard. The
 // matching set is exact so login/signup pages render when no session exists.
 const AUTH_PAGE_PATHS = new Set<string>(["/login", "/auth/signup"]);
@@ -23,7 +24,12 @@ const AUTH_PAGE_PATHS = new Set<string>(["/login", "/auth/signup"]);
 export default async function proxy(request: NextRequest) {
   // Behind the edge router, a request without the edge assertion reached the
   // run.app origin directly. Reject it before any routing or session logic.
-  if (!hasValidEdgeAssertion(request.headers.get(EDGE_ASSERTION_HEADER))) {
+  // The JWKS is public key material that tastile-core fetches server-side to
+  // verify Web assertions, so it stays reachable on the origin.
+  if (
+    request.nextUrl.pathname !== JWKS_PATH &&
+    !hasValidEdgeAssertion(request.headers.get(EDGE_ASSERTION_HEADER))
+  ) {
     return new NextResponse(null, { status: 403 });
   }
 

@@ -31,6 +31,14 @@ describe("proxy edge assertion gate", () => {
     expect(response.status).toBe(200);
   });
 
+  it("keeps only the public JWKS reachable without the edge assertion", async () => {
+    vi.stubEnv("TASTILE_EDGE_ASSERTION", "edge-secret");
+    expect((await proxy(request("/api/auth/jwks"))).status).not.toBe(403);
+    expect((await proxy(request("/api/auth/jwks/extra"))).status).toBe(403);
+    expect((await proxy(request("/api/auth/get-session"))).status).toBe(403);
+    expect((await proxy(request("/api/auth/token"))).status).toBe(403);
+  });
+
   it("does not gate requests when no edge assertion is configured", async () => {
     vi.stubEnv("TASTILE_EDGE_ASSERTION", "");
     const response = await proxy(request("/login"));
