@@ -40,10 +40,28 @@ function tokenExpiry(token: string): number {
   return claims.exp;
 }
 
+// cred.edge-assertion: when Core gates its origin, Web's direct run.app calls
+// carry the same value the edge router adds (root ADR-0014, core#226).
+const CORE_EDGE_HEADER = "x-tastile-edge-assertion";
+
+function coreEdgeHeaders(env: EnvLike): Record<string, string> {
+  const value = env.TASTILE_EDGE_ASSERTION?.trim();
+  return value ? { [CORE_EDGE_HEADER]: value } : {};
+}
+
+/** Transport headers for every BFF -> Core call: Cloud Run IAM and the edge assertion. */
 export async function coreIamHeaders(
   env: EnvLike = process.env,
   fetchImpl: FetchLike = fetch,
   nowSeconds: number = Math.floor(Date.now() / 1000),
+): Promise<Record<string, string>> {
+  return { ...(await iamHeaders(env, fetchImpl, nowSeconds)), ...coreEdgeHeaders(env) };
+}
+
+async function iamHeaders(
+  env: EnvLike,
+  fetchImpl: FetchLike,
+  nowSeconds: number,
 ): Promise<Record<string, string>> {
   const audience = coreIamAudience(env);
   if (!audience) return {};

@@ -75,3 +75,31 @@ describe("coreIamAudience", () => {
     expect(() => coreIamAudience({ TASTILE_CORE_IAM_AUDIENCE: `${AUDIENCE}?x=1` })).toThrow();
   });
 });
+
+describe("coreIamHeaders edge assertion", () => {
+  beforeEach(() => resetCoreIamTokenCacheForTest());
+
+  it("adds the edge assertion when configured, with or without IAM", async () => {
+    const fetchImpl = metadataReturning(idToken(5_000));
+    await expect(
+      coreIamHeaders({ TASTILE_EDGE_ASSERTION: "edge-1" }, fetchImpl, 1_000),
+    ).resolves.toEqual({ "x-tastile-edge-assertion": "edge-1" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+
+    const both = await coreIamHeaders(
+      { ...ENV, TASTILE_EDGE_ASSERTION: " edge-2 " },
+      metadataReturning(idToken(5_000)),
+      1_000,
+    );
+    expect(both).toEqual({
+      [CORE_IAM_HEADER]: `Bearer ${idToken(5_000)}`,
+      "x-tastile-edge-assertion": "edge-2",
+    });
+  });
+
+  it("adds nothing for an empty edge assertion", async () => {
+    await expect(
+      coreIamHeaders({ TASTILE_EDGE_ASSERTION: "  " }, metadataReturning(), 1_000),
+    ).resolves.toEqual({});
+  });
+});
