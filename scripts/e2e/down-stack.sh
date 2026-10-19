@@ -10,7 +10,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RUN_ID="${1:-2026-08-09-usecase-e2e-30}"
-EVIDENCE_DIR="$WEB_ROOT/docs/plans/evidence/$RUN_ID"
+EVIDENCE_DIR="$WEB_ROOT/docs/evidence/$RUN_ID"
 
 cd "$WEB_ROOT"
 

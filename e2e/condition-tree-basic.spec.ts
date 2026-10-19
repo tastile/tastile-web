@@ -2,7 +2,7 @@
  * [E5a] Condition tree basic e2e spec
  *
  * Issue: tastile/tastile-web#60
- * Plan:  tastile-web/docs/plans/E5a-condition-basic-e2e.md
+ * Plan:  tastile-web/docs/archive/plans/2026-08-quickcreate-e2e-campaign/plans/E5a-condition-basic-e2e.md
  *
  * End-to-end prove that the ConditionEditor surfaces in QuickCreate
  * round-trips into core's `v1_plan.plan.completion.root` column without

@@ -302,7 +302,7 @@ export interface QuickCreateState {
    * `loadFromRecurringTile` when `/v1/tiles/{id}` returns a non-OK
    * response, because we may be looking at a stale or phantom tile
    * and Submit must not silently PATCH a record that does not exist
-   * (see plan docs/plans/2026-07-04-tile-panel-create-flow.md §B
+   * (see plan docs/archive/2026-07-08-doc-cleanup/2026-07-04-tile-panel-create-flow.md §B
    * refinement). Cleared on the next successful load or by `reset`.
    */
   submitBlocked: boolean;
@@ -473,7 +473,8 @@ export function selectIsDirty(state: QuickCreateState): boolean {
  * ones (`frameRules`, `recurring.condition`, `source.relations`,
  * `source.flowSequences`, `plan.planning.flows`, `plan.metrics`,
  * `plan.decisions`, `advanced.changeSets`, `advanced.rules`) — see
- * `docs/plans/2026-08-15-quickcreate-edit-gate.md` for the rationale.
+ * `docs/plans/2026-08-15-quickcreate-edit-gate.md` (archived in git history; see
+ * `git log --follow -- docs/plans/2026-08-15-quickcreate-edit-gate.md`) for the rationale.
  * Excludes only transient UI flags (mode, isOpen, panel state, etc.).
  */
 function normalizeForCompare(state: QuickCreateState): Record<string, unknown> {
