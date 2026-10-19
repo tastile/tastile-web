@@ -288,6 +288,7 @@ function AccountPageInner() {
                 </h3>
               </div>
               <form
+                method="post"
                 onSubmit={handleEmailStart}
                 className="grid gap-3 sm:grid-cols-[1fr_auto]"
               >
@@ -321,6 +322,7 @@ function AccountPageInner() {
               </form>
 
               <form
+                method="post"
                 onSubmit={handleEmailVerify}
                 className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]"
               >

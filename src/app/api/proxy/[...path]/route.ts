@@ -6,6 +6,8 @@ import { getCloudApiBase as getConfiguredCloudApiBase } from "@/lib/upstream/clo
 import { COOKIE_API_TOKEN, COOKIE_USER_SUB } from "@/shared/auth/cookies";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 import { type NextRequest, NextResponse } from "next/server";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
+import { coreIamHeaders } from "@/shared/auth/core-iam-token";
 
 export { injectTimelineTodayDefaults };
 
@@ -70,10 +72,33 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]): Promi
       if (!bridgeSecret) {
         console.warn("[proxy] TASTILE_WEB_BRIDGE_SECRET is unset; cannot forward bridge headers");
       } else {
-        headers.set("x-tastile-web-bridge-secret", bridgeSecret);
-        headers.set("x-tastile-web-session-user", userSub);
+        let bridgeHeaders: Record<string, string> | null;
+        try {
+          bridgeHeaders = await buildCoreBridgeHeaders({
+            bridgeSecret,
+            userSub,
+            requestHeaders: request.headers,
+          });
+        } catch (error) {
+          console.error(`[proxy] core assertion mint failed for ${path}:`, error);
+          return NextResponse.json({ error: "Core assertion unavailable", path }, { status: 503 });
+        }
+        if (!bridgeHeaders) {
+          return NextResponse.json({ error: "no authenticated session for proxy" }, { status: 401 });
+        }
+        for (const [name, value] of Object.entries(bridgeHeaders)) headers.set(name, value);
       }
     }
+  }
+
+  // API-token requests skip the bridge builder; they still need Cloud Run IAM.
+  try {
+    for (const [name, value] of Object.entries(await coreIamHeaders())) {
+      if (!headers.has(name)) headers.set(name, value);
+    }
+  } catch (error) {
+    console.error(`[proxy] Core IAM identity unavailable for ${path}:`, error);
+    return NextResponse.json({ error: "Core identity unavailable", path }, { status: 503 });
   }
 
   const contentType = request.headers.get("content-type");

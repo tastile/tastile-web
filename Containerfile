@@ -26,6 +26,7 @@ ARG NEXT_PUBLIC_COGNITO_LOGOUT_URL
 ARG NEXT_PUBLIC_COGNITO_REGION
 ARG NEXT_PUBLIC_COGNITO_USER_POOL_ID
 ARG NEXT_PUBLIC_DAEMON_BASE_URL
+ARG NEXT_PUBLIC_TASTILE_CORE_URL
 ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_E2E_BYPASS_AUTH=$NEXT_PUBLIC_E2E_BYPASS_AUTH \
     NEXT_PUBLIC_APP_VERSION=$APP_VERSION
@@ -43,6 +44,7 @@ ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL \
     NEXT_PUBLIC_COGNITO_REGION=$NEXT_PUBLIC_COGNITO_REGION \
     NEXT_PUBLIC_COGNITO_USER_POOL_ID=$NEXT_PUBLIC_COGNITO_USER_POOL_ID \
     NEXT_PUBLIC_DAEMON_BASE_URL=$NEXT_PUBLIC_DAEMON_BASE_URL \
+    NEXT_PUBLIC_TASTILE_CORE_URL=$NEXT_PUBLIC_TASTILE_CORE_URL \
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=$NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 
 # Install deps first for better layer caching
@@ -52,6 +54,22 @@ RUN bun install --frozen-lockfile
 # Build standalone output
 COPY . .
 RUN test "$TASTILE_INFISICAL_INJECTED" = "1" && bun run build:prod
+
+# ----- Infisical CLI (Cloud Run runtime secret bootstrap) -----
+# Same pinned CLI as tastile-core. The bootstrap authenticates with the
+# service account's metadata ID token; no token or secret is baked in.
+FROM debian:bookworm-slim AS infisical
+ARG INFISICAL_VERSION=0.43.143
+ARG INFISICAL_SHA256=ce02c84be4164d8386c7534f93ce5b5467cf48b31b15e35e372f9979f3086308
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates curl \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl --fail --silent --show-error --location \
+      "https://github.com/Infisical/cli/releases/download/v${INFISICAL_VERSION}/cli_${INFISICAL_VERSION}_linux_amd64.tar.gz" \
+      --output /tmp/infisical.tar.gz \
+ && echo "${INFISICAL_SHA256}  /tmp/infisical.tar.gz" | sha256sum --check --status \
+ && tar -xzf /tmp/infisical.tar.gz -C /tmp infisical \
+ && install -m 0755 /tmp/infisical /usr/local/bin/infisical
 
 # ----- run stage -----
 FROM node:26-bookworm-slim AS run
@@ -70,6 +88,16 @@ ENV NODE_ENV=production \
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
+
+# Cloud Run starts `/app/infisical-bootstrap.sh node server.js`; the default
+# command stays the plain server for local and legacy runtimes. The CLI needs
+# CA roots to reach Infisical over TLS.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+COPY --from=infisical /usr/local/bin/infisical /usr/local/bin/infisical
+COPY ops/cloud-run/infisical-bootstrap.sh /app/infisical-bootstrap.sh
+RUN chmod 0755 /app/infisical-bootstrap.sh
 
 EXPOSE 3000
 CMD ["node", "server.js"]

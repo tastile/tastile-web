@@ -1,4 +1,5 @@
 import { coreUrl } from "@/lib/account/api-token-session";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 // CLI token minting (Issue #153, plan D7).
 //
@@ -41,11 +42,19 @@ export async function mintTastileApiTokenForUser(
   const bridgeSecret = process.env.TASTILE_WEB_BRIDGE_SECRET;
   if (!bridgeSecret) return null;
 
+  // CLI grant exchange only: `userSub` comes from the grant consumed in this
+  // request, not from a cookie or session, so it is passed as the trusted
+  // subject. Do not reuse this function for cookie- or session-derived users.
+  const bridgeHeaders = await buildCoreBridgeHeaders({
+    bridgeSecret,
+    userSub: params.userSub,
+    trustedSub: params.userSub,
+  });
+  if (!bridgeHeaders) return null;
   const response = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": params.userSub,
+      ...bridgeHeaders,
       "content-type": "application/json",
     },
     body: JSON.stringify({

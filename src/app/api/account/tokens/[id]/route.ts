@@ -1,6 +1,7 @@
 import { coreUrl } from "@/lib/account/api-token-session";
 import { getAccountUserSub } from "@/shared/auth/account-session";
 import { NextResponse } from "next/server";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 type Context = {
   params: Promise<{ id: string }>;
@@ -23,11 +24,15 @@ async function proxyToken(id: string, init: { method: string; body?: string }) {
     return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
   }
 
+  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  if (!bridgeHeaders) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
+
   const response = await fetch(`${coreUrl()}/v1/api-tokens/${encodeURIComponent(id)}`, {
     method: init.method,
     headers: {
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": userSub,
+      ...bridgeHeaders,
       ...(init.body ? { "content-type": "application/json" } : {}),
     },
     body: init.body ? normalizeRequestBody(init.body) : undefined,

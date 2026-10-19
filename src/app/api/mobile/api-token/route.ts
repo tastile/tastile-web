@@ -2,6 +2,7 @@ import { coreUrl } from "@/lib/account/api-token-session";
 import { getAuth } from "@/shared/auth/better-auth/server";
 import { isProtectedWebRuntime } from "@/shared/config/runtime-env";
 import { NextResponse } from "next/server";
+import { buildCoreBridgeHeaders } from "@/shared/auth/core-bridge-headers";
 
 export async function POST(request: Request) {
   // The bearer() plugin lets BetterAuth resolve a session from an
@@ -24,12 +25,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bridge_not_configured" }, { status: 503 });
   }
 
+  const bridgeHeaders = await buildCoreBridgeHeaders({ bridgeSecret, userSub });
+  if (!bridgeHeaders) {
+    return NextResponse.json({ error: "not_authenticated" }, { status: 401 });
+  }
+
   const upstream = await fetch(`${coreUrl()}/v1/api-tokens`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-tastile-web-bridge-secret": bridgeSecret,
-      "x-tastile-web-session-user": userSub,
+      ...bridgeHeaders,
     },
     body: JSON.stringify({ label: "android-client" }),
     cache: "no-store",

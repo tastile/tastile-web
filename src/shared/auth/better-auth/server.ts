@@ -5,6 +5,7 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 
 import { getPublicOrigin } from "@/shared/auth/public-origin";
+import { coreAssertionAuthOptions } from "./core-assertion-config";
 import { resolveAuthDatabaseUrl } from "./database-url";
 import {
   passwordResetEmailHtml,
@@ -25,7 +26,7 @@ import {
 
 let cachedPool: Pool | null = null;
 
-async function authDatabase(): Promise<Pool> {
+export async function authDatabase(): Promise<Pool> {
   if (!cachedPool) {
     const connectionString = process.env.TASTILE_AUTH_DATABASE_URL;
     let hyperdriveConnectionString: string | undefined;
@@ -67,9 +68,11 @@ function socialProviders() {
 
 async function createAuth() {
   const publicOrigin = getPublicOrigin();
+  const coreAssertion = coreAssertionAuthOptions(publicOrigin);
   return betterAuth({
     baseURL: publicOrigin,
     basePath: "/api/auth",
+    disabledPaths: coreAssertion.disabledPaths,
     database: await authDatabase(),
     trustedOrigins: [publicOrigin],
     emailAndPassword: {
@@ -115,7 +118,7 @@ async function createAuth() {
         refreshCache: false,
       },
     },
-    plugins: [bearer(), twoFactor(), nextCookies()],
+    plugins: [bearer(), twoFactor(), nextCookies(), ...coreAssertion.plugins],
   });
 }
 

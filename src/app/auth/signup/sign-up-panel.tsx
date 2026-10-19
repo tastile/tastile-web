@@ -93,7 +93,7 @@ export function SignUpPanel() {
 					) : null}
 
 					{!submitted ? (
-						<form onSubmit={handleSignUp} className="my-2 space-y-2">
+						<form method="post" onSubmit={handleSignUp} className="my-2 space-y-2">
 							<TextInput
 								name="name"
 								label={t("auth.signup.nameLabel")}

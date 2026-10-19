@@ -1,0 +1,202 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const mintCoreAssertion = vi.hoisted(() => vi.fn());
+const resolveAuthenticatedUserSub = vi.hoisted(() => vi.fn());
+
+vi.mock("./core-assertion", () => ({
+  CORE_ASSERTION_HEADER: "x-tastile-web-assertion",
+  mintCoreAssertion,
+}));
+vi.mock("./authenticated-session", () => ({
+  resolveAuthenticatedUserSub,
+}));
+const coreIamHeaders = vi.hoisted(() => vi.fn());
+vi.mock("./core-iam-token", () => ({ coreIamHeaders }));
+
+import { buildCoreBridgeHeaders, isCoreAssertionEnabled } from "./core-bridge-headers";
+
+const BASE = { bridgeSecret: "test-bridge-secret", userSub: "user-sub-1" };
+const ON = { TASTILE_WEB_CORE_ASSERTION_ENABLED: "true" };
+
+describe("buildCoreBridgeHeaders", () => {
+  beforeEach(() => {
+    mintCoreAssertion.mockReset();
+    mintCoreAssertion.mockImplementation(async (sub: string) => `assertion-for-${sub}`);
+    resolveAuthenticatedUserSub.mockReset();
+    resolveAuthenticatedUserSub.mockResolvedValue("user-sub-1");
+    coreIamHeaders.mockReset();
+    coreIamHeaders.mockImplementation(async (env: Record<string, string | undefined> = {}) =>
+      env.TASTILE_CORE_IAM_AUDIENCE ? { "x-serverless-authorization": "Bearer id-token" } : {},
+    );
+  });
+
+  it("emits only the bridge headers, in order, when the flag is unset", async () => {
+    const headers = await buildCoreBridgeHeaders({ ...BASE, env: {} });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "user-sub-1",
+    });
+    expect(Object.keys(headers ?? {})).toEqual([
+      "x-tastile-web-bridge-secret",
+      "x-tastile-web-session-user",
+    ]);
+    expect(resolveAuthenticatedUserSub).not.toHaveBeenCalled();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("keeps unchanged headers even without a session when the flag is unset", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const headers = await buildCoreBridgeHeaders({ ...BASE, env: {} });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "user-sub-1",
+    });
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it.each(["", "1", "TRUE", "True", " true", "false", "yes"])(
+    "does not mint an assertion for flag value %j",
+    async (value) => {
+      const headers = await buildCoreBridgeHeaders({
+        ...BASE,
+        env: { TASTILE_WEB_CORE_ASSERTION_ENABLED: value },
+      });
+
+      expect(headers).not.toHaveProperty("x-tastile-web-assertion");
+      expect(mintCoreAssertion).not.toHaveBeenCalled();
+    },
+  );
+
+  it("flag on + matching session: mints with sub = session user id and keeps bridge headers", async () => {
+    const requestHeaders = new Headers({ cookie: "x=1" });
+    const headers = await buildCoreBridgeHeaders({
+      ...BASE,
+      env: ON,
+      requestHeaders,
+    });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "user-sub-1",
+      "x-tastile-web-assertion": "assertion-for-user-sub-1",
+    });
+    expect(resolveAuthenticatedUserSub).toHaveBeenCalledWith({ requestHeaders });
+    expect(mintCoreAssertion).toHaveBeenCalledOnce();
+    expect(mintCoreAssertion).toHaveBeenCalledWith("user-sub-1");
+  });
+
+  it("flag on + cookie/session mismatch: returns null and mints nothing", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue("someone-else");
+    const headers = await buildCoreBridgeHeaders({ ...BASE, env: ON });
+
+    expect(headers).toBeNull();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("flag on + no session: returns null and mints nothing, no bridge-only fallback", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const headers = await buildCoreBridgeHeaders({ ...BASE, env: ON });
+
+    expect(headers).toBeNull();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("flag on + CLI exchange (trustedSub, no session): mints with sub === consumed.userSub", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "grant-user-7",
+      trustedSub: "grant-user-7",
+      env: ON,
+    });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "grant-user-7",
+      "x-tastile-web-assertion": "assertion-for-grant-user-7",
+    });
+    expect(resolveAuthenticatedUserSub).not.toHaveBeenCalled();
+    expect(mintCoreAssertion).toHaveBeenCalledWith("grant-user-7");
+  });
+
+  it("flag on + trustedSub that disagrees with userSub: returns null and mints nothing", async () => {
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "user-a",
+      trustedSub: "user-b",
+      env: ON,
+    });
+
+    expect(headers).toBeNull();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("flag on + browser path without session, even with trustedSub absent: returns null, no trust fallback", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "cookie-user",
+      env: ON,
+    });
+
+    expect(headers).toBeNull();
+    expect(resolveAuthenticatedUserSub).toHaveBeenCalledOnce();
+    expect(mintCoreAssertion).not.toHaveBeenCalled();
+  });
+
+  it("flag on + verifiedSessionSub: uses it without a second session lookup", async () => {
+    const headers = await buildCoreBridgeHeaders({
+      bridgeSecret: "test-bridge-secret",
+      userSub: "user-sub-1",
+      verifiedSessionSub: "user-sub-1",
+      env: ON,
+    });
+
+    expect(headers).toMatchObject({ "x-tastile-web-assertion": "assertion-for-user-sub-1" });
+    expect(resolveAuthenticatedUserSub).not.toHaveBeenCalled();
+  });
+
+  it("flag on + mint failure: the error propagates to the caller", async () => {
+    mintCoreAssertion.mockRejectedValue(new Error("jwks unavailable"));
+    await expect(buildCoreBridgeHeaders({ ...BASE, env: ON })).rejects.toThrow("jwks unavailable");
+  });
+
+  it("reads process.env when no env is passed", () => {
+    const original = process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED;
+    try {
+      process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED = "true";
+      expect(isCoreAssertionEnabled()).toBe(true);
+      process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED = "false";
+      expect(isCoreAssertionEnabled()).toBe(false);
+    } finally {
+      if (original === undefined) delete process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED;
+      else process.env.TASTILE_WEB_CORE_ASSERTION_ENABLED = original;
+    }
+  });
+  it("appends the Cloud Run IAM header after the identity headers when an audience is configured", async () => {
+    const env = { TASTILE_CORE_IAM_AUDIENCE: "https://core-api.example.run.app" };
+    const headers = await buildCoreBridgeHeaders({ ...BASE, env });
+
+    expect(headers).toEqual({
+      "x-tastile-web-bridge-secret": "test-bridge-secret",
+      "x-tastile-web-session-user": "user-sub-1",
+      "x-serverless-authorization": "Bearer id-token",
+    });
+    expect(coreIamHeaders).toHaveBeenCalledWith(env);
+  });
+
+  it("fetches no IAM token for an unauthorized result", async () => {
+    resolveAuthenticatedUserSub.mockResolvedValue(null);
+    const env = { ...ON, TASTILE_CORE_IAM_AUDIENCE: "https://core-api.example.run.app" };
+
+    await expect(buildCoreBridgeHeaders({ ...BASE, env })).resolves.toBeNull();
+    expect(coreIamHeaders).not.toHaveBeenCalled();
+  });
+
+  it("propagates an IAM token failure instead of sending an unauthenticated request", async () => {
+    coreIamHeaders.mockRejectedValue(new Error("metadata identity request failed: HTTP 403"));
+    await expect(buildCoreBridgeHeaders({ ...BASE, env: {} })).rejects.toThrow("HTTP 403");
+  });
+});
