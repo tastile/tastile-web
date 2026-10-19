@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 
-import { getCoreClient } from "@/shared/api/endpoints";
+import { upstreamGetOwnerProfile } from "@/lib/upstream/events";
 import { getAccountOwnerId } from "@/shared/auth/account-session";
 import { resolveAuthenticatedSession } from "@/shared/auth/authenticated-session";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// OwnerKind.USER (v1/15): a signed-in user's own profile.
+const USER_OWNER_KIND = 0;
 
 interface OwnerProfileView {
   display_name: string | null;
@@ -45,12 +48,13 @@ export async function GET(): Promise<Response> {
 
   const [sessionUser, profileRes] = await Promise.all([
     resolveAuthenticatedSession(),
-    getCoreClient().call<OwnerProfileView>("getOwnerProfile", {
-      pathParams: { kind: "0", id: ownerId },
-    }),
+    upstreamGetOwnerProfile(USER_OWNER_KIND, ownerId),
   ]);
-  if (!profileRes.ok) {
-    const upstreamStatus = profileRes.error.status;
+  if (!profileRes) {
+    return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+  }
+  if (profileRes.status < 200 || profileRes.status >= 300) {
+    const upstreamStatus = profileRes.status;
     // Upstream auth failure → our session is bad; force re-login
     if (upstreamStatus === 401 || upstreamStatus === 403) {
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
@@ -72,15 +76,16 @@ export async function GET(): Promise<Response> {
     // 5xx or anything else from the source of truth
     return NextResponse.json({ error: "UPSTREAM_FAILURE" }, { status: 502 });
   }
+  const profile = profileRes.body as OwnerProfileView;
 
   return NextResponse.json({
     owner_id: ownerId,
     email: sessionUser?.email ?? null,
     email_verified: sessionUser?.emailVerified ?? false,
-    display_name: profileRes.data.display_name,
-    avatar_url: profileRes.data.avatar_url,
-    bio: profileRes.data.bio,
-    accent_color: profileRes.data.accent_color,
-    revision: profileRes.data.revision,
+    display_name: profile.display_name,
+    avatar_url: profile.avatar_url,
+    bio: profile.bio,
+    accent_color: profile.accent_color,
+    revision: profile.revision,
   });
 }
