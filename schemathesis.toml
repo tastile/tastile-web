@@ -1,6 +1,6 @@
 # schemathesis config for Tastile Core API
 # Auto-loaded when `uvx schemathesis run` is invoked from this directory.
-# See docs/plans/2026-08-06-schemathesis-contract-testing.md.
+# See docs/archive/2026-08-06/2026-08-06-schemathesis-contract-testing.md.
 
 # The spec is served from the web app at app.tastile.app/api/openapi, but
 # the actual Core API lives at api.tastile.app (per OpenAPI `servers[0]`).
@@ -51,7 +51,7 @@ not_a_server_error.enabled = false
 # silenced because every one of those ops needs either an authenticated
 # request that resolves a real existing resource, OR a stateful
 # create-then-get chain that the `uvx run` CLI does not support. See
-# docs/plans/2026-08-06b-schemathesis-auth-and-state.md.
+# docs/archive/2026-08-06/2026-08-06b-schemathesis-auth-and-state.md.
 [warnings]
 display = ["missing_auth", "validation_mismatch"]
 fail-on = ["validation_mismatch"]

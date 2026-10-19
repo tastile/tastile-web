@@ -10,8 +10,8 @@
 //   node scripts/run-schemathesis.mjs http://localhost:3000/api/openapi
 //   node scripts/run-schemathesis.mjs URL --checks=not_a_server_error --max-examples=2
 //
-// See docs/plans/2026-08-06-schemathesis-contract-testing.md (L1) and
-// docs/plans/2026-08-06b-schemathesis-auth-and-state.md (L2).
+// See docs/archive/2026-08-06/2026-08-06-schemathesis-contract-testing.md (L1) and
+// docs/archive/2026-08-06/2026-08-06b-schemathesis-auth-and-state.md (L2).
 
 import { spawn } from "node:child_process";
 

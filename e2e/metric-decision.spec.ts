@@ -2,7 +2,7 @@
  * [E5b] Metric + Decision e2e spec
  *
  * Issue: tastile/tastile-web#61
- * Plan:  tastile-web/docs/plans/E5b-metric-decision-e2e.md
+ * Plan:  tastile-web/docs/archive/plans/2026-08-quickcreate-e2e-campaign/plans/E5b-metric-decision-e2e.md
  *
  * End-to-end prove that Metric (output=READ) and Decision (2 candidates,
  * 1 criteria) submitted via QuickCreate persist into v1_plan and are
