@@ -513,3 +513,22 @@ export async function upstreamClosePlacement(placementId: string): Promise<NextR
   const response = new NextResponse(null, { status: 204 });
   return response;
 }
+
+/**
+ * Read an owner profile server-side. Route handlers run in Node, where the
+ * browser client's relative `/api/proxy` base cannot be fetched, so this
+ * calls Core directly with the bridge headers. Returns null when the
+ * request has no authenticated session.
+ */
+export async function upstreamGetOwnerProfile(
+  ownerKind: number,
+  ownerId: string,
+): Promise<{ status: number; body: unknown } | null> {
+  const auth = await bridgeHeaders();
+  if (!auth) return null;
+  const res = await fetch(
+    `${rustBase()}/v1/owners/${ownerKind}/${encodeURIComponent(ownerId)}/profile`,
+    { cache: "no-store", headers: auth.headers },
+  );
+  return { status: res.status, body: await readJsonOrText(res) };
+}

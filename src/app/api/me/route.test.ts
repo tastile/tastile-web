@@ -11,8 +11,8 @@ vi.mock("@/shared/auth/account-session", () => ({
 }));
 
 const mockCall = vi.fn();
-vi.mock("@/shared/api/endpoints", () => ({
-  getCoreClient: () => ({ call: mockCall }),
+vi.mock("@/lib/upstream/events", () => ({
+  upstreamGetOwnerProfile: (...args: unknown[]) => mockCall(...args),
 }));
 
 import { GET } from "./route";
@@ -41,16 +41,14 @@ describe("GET /api/me", () => {
     });
     mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
     mockCall.mockResolvedValue({
-      ok: true,
-      data: {
+      status: 200,
+      body: {
         display_name: "Alice",
         avatar_url: "https://cdn.tastile.app/committed/0/abc/r1/source.webp",
         bio: "hello",
         accent_color: "#ff0066",
         revision: 1,
       },
-      status: 200,
-      latencyMs: 1,
     });
 
     const res = await GET();
@@ -66,9 +64,7 @@ describe("GET /api/me", () => {
     expect(body.revision).toBe(1);
 
     expect(mockCall).toHaveBeenCalledTimes(1);
-    expect(mockCall).toHaveBeenCalledWith("getOwnerProfile", {
-      pathParams: expect.objectContaining({ kind: "0" }),
-    });
+    expect(mockCall).toHaveBeenCalledWith(0, "00000000-0000-4000-8000-000000000001");
   });
 
   it("returns 401 when upstream returns 401", async () => {
@@ -80,10 +76,7 @@ describe("GET /api/me", () => {
       expiresAtEpochSeconds: null,
     });
     mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
-    mockCall.mockResolvedValue({
-      ok: false,
-      error: { kind: "auth", status: 401, message: "invalid token", body: null },
-    });
+    mockCall.mockResolvedValue({ status: 401, body: null });
 
     const res = await GET();
     expect(res.status).toBe(401);
@@ -99,10 +92,7 @@ describe("GET /api/me", () => {
       expiresAtEpochSeconds: null,
     });
     mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
-    mockCall.mockResolvedValue({
-      ok: false,
-      error: { kind: "auth", status: 403, message: "forbidden", body: null },
-    });
+    mockCall.mockResolvedValue({ status: 403, body: null });
 
     const res = await GET();
     expect(res.status).toBe(401);
@@ -118,10 +108,7 @@ describe("GET /api/me", () => {
       expiresAtEpochSeconds: null,
     });
     mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
-    mockCall.mockResolvedValue({
-      ok: false,
-      error: { kind: "not-found", status: 404, message: "profile not found", body: null },
-    });
+    mockCall.mockResolvedValue({ status: 404, body: null });
 
     const res = await GET();
     expect(res.status).toBe(200);
@@ -137,6 +124,15 @@ describe("GET /api/me", () => {
     expect(mockCall).toHaveBeenCalledTimes(1);
   });
 
+  it("returns 401 when the upstream helper has no authenticated session", async () => {
+    mockSession.mockResolvedValue(null);
+    mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
+    mockCall.mockResolvedValue(null);
+
+    const res = await GET();
+    expect(res.status).toBe(401);
+  });
+
   it("returns 502 for upstream 5xx errors", async () => {
     mockSession.mockResolvedValue({
       id: "u1",
@@ -146,10 +142,7 @@ describe("GET /api/me", () => {
       expiresAtEpochSeconds: null,
     });
     mockOwnerId.mockResolvedValue("00000000-0000-4000-8000-000000000001");
-    mockCall.mockResolvedValue({
-      ok: false,
-      error: { kind: "server", status: 502, message: "upstream failure", body: null },
-    });
+    mockCall.mockResolvedValue({ status: 502, body: null });
 
     const res = await GET();
     expect(res.status).toBe(502);
