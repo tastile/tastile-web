@@ -103,4 +103,29 @@ describe("POST /api/mobile/api-token", () => {
       }),
     )
   })
+
+  it("asks Core for a token with an explicit 90-day expiry", async () => {
+    mockGetSession.mockResolvedValueOnce({
+      user: { id: "verified-user-id", email: "a@b.c" },
+      session: { expiresAt: new Date(Date.now() + 60_000) },
+    })
+    const { POST } = await import("./route")
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+    fetchMock.mockResolvedValueOnce(Response.json({ id: "token-id", token: "raw-token" }))
+    const before = Date.now()
+
+    await POST(
+      new Request("https://app.test/api/mobile/api-token", {
+        method: "POST",
+        headers: { authorization: "Bearer verified-session-token" },
+      }),
+    )
+
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit
+    const body = JSON.parse(String(init.body)) as { label: string; expires_at: string }
+    expect(body.label).toBe("android-client")
+    const ttl = Date.parse(body.expires_at) - before
+    expect(ttl).toBeGreaterThanOrEqual(90 * 24 * 60 * 60 * 1000)
+    expect(ttl).toBeLessThan(90 * 24 * 60 * 60 * 1000 + 60_000)
+  })
 })
