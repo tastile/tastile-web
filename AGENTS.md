@@ -1,7 +1,7 @@
 # AGENTS.md
 
 > **薄い dispatcher**。Repository-local contract。正本は `../AGENTS.md`（workspace 全体）、
-> `../docs/HARNESS.md`（方針）、`../tastile-core/v1/`（domain & API）。この file は web
+> `../architecture/README.md`（システム構造・infra・運用の正本）、`../tastile-core/v1/`（domain & API）。この file は web
 > layer 固有の command / directory / 進行中事実にだけ責任を持つ。
 >
 > `CLAUDE.md` は同等の thin adapter（Claude Code 用）。Codex / Cursor 等はここを読む。
@@ -11,11 +11,11 @@
 | 内容 | 場所 |
 | --- | --- |
 | workspace 全体契約（cross-repo / 並列化 / commit / Python 禁止 / Bun 固定） | `../AGENTS.md` |
-| 全体方針・認証・インフラ | `../docs/HARNESS.md`、`../docs/decisions.md` |
-| domain・schema・不変条件・API | `../tastile-core/v1/02-core-entities.md`、`.../v1/10-invariants.md`、`.../v1/14-read-model-and-endpoint.md` |
-| v1 仕様正本（旧 pomodoroom/CORE_POLICY.md、tastile_docs_bundle/ は廃止） | `../tastile-core/v1/` 配下 15 ファイル |
+| 全体方針・認証・インフラ | `../architecture/README.md`、`../architecture/model/sot-registry.yaml` |
+| domain・schema・不変条件・API | `../tastile-core/v1/` (00 = 語彙, 02 = entities, 10 = invariants, 14 = endpoints) |
+| v1 仕様正本 | `../tastile-core/v1/` 配下 16 章 (00..15) |
 | Claude Code 設定・skills 関係 | `CLAUDE.md`（Claude Code 用 thin adapter — 重複解消済み、ADR pointer 経由で参照） |
-| **architectural decisions（ADR catalog）** | `../docs/adr/` 配下 11 件（Accepted）。実装判断で迷う場合は必ず catalog を確認し、なければ新 ADR を起こす |
+| **architectural decisions（ADR catalog）** | `../architecture/generated/adrs.md` (生成索引) と `../docs/adr/`。実装判断で迷う場合は必ず catalog を確認し、なければ新 ADR を起こす |
 
 これら 6 系列を読み終えるまで実装判断しない。
 
@@ -31,9 +31,10 @@
 | [ADR-0007](../docs/adr/0007-release-branch-and-ticket-workflow.md) | weekly sprint の `release-x-y-z` branch + Issue 番号 ticket branch |
 | [ADR-0008](../docs/adr/0008-structured-recovery-checkpoint.md) | soft / hard checkpoint、execution generation、fencing token |
 | [ADR-0009](../docs/adr/0009-github-projects-work-state.md) | GitHub Projects Kanban を durable work state に pin |
-| [ADR-0011](../docs/adr/0011-tastile-precommit-review-canonical-precedence.md) | 同名 Skill (web vs workspace) の cwd-based precedence rule |
+| [ADR-0012](../docs/adr/0012-infisical-secrets-source-of-truth.md) / [ADR-0015](../docs/adr/0015-secret-store-and-workload-identity.md) | current / target secret SoT は Infisical。GitHub OIDC / GCP-native workload identity を使う |
+| [ADR-0021](../docs/adr/0021-retire-per-commit-review.md) | 旧 per-commit reviewer loop 廃止。commit / merge 前は `verify-tastile-change` による binding verification |
 
-ADR を 1 件も読まずに実装判断した場合、pre-commit reviewer から差し戻し。
+ADR を 1 件も読まずに実装判断した場合、`verify-tastile-change` から差し戻し。
 
 ## Repository facts（repo-local のみ）
 
@@ -41,9 +42,12 @@ ADR を 1 件も読まずに実装判断した場合、pre-commit reviewer か�
 - **Stack**: Bun 1.3.x / Next.js 16 (App Router) / React 19 / TypeScript 5 / Tailwind v4 /
   Mantine v9 / Zod / Zustand / TanStack Query / Vitest 4 / Playwright 1.62 / Knip 6 /
   Biome 1.9（biome linter/formatter off、ESLint 9 が lint） / ripgrep。
-- **Backend**: AWS 上の `tastile-core`（Rust/axum）。PostgreSQL 直接接続禁止。
-- **Auth**: AWS Cognito Hosted UI（Google OAuth + Sign in with Apple）。Bridge secret は
-  `TASTILE_WEB_BRIDGE_SECRET`。開発・CI・runtime は Infisical の `/tastile/web` path から取得する。
+- **Backend**: `tastile-core`（Rust/axum）。PostgreSQL への直接接続は auth schema のみ許可 (root ADR-0016 / 2026-08-22 決定)。
+  runtime の platform は root `architecture/` が正本 (target: Cloud Run、ADR-0014)。
+- **Auth**: Better Auth（email+password / Google / Apple / email OTP / TOTP）を本 app の route handler で運用する
+  (`src/shared/auth/better-auth/`)。BFF → core の credential は現在 `TASTILE_WEB_BRIDGE_SECRET` (shared secret) で、
+  root ADR-0016 で Better Auth JWT (JWKS 検証) に置き換わる予定。secret は Infisical の `/tastile/web` path から取得する
+  (current / target とも ADR-0012 / ADR-0015 の Infisical)。
 - **Sync**: poll + SSE。`active_tile` / `phase` 等の browser-local execution state は cloud に保存しない。
 - **Route structure**: `/` (landing)、`/dashboard/*` (main UI)、`/app/*` → `/dashboard` へ permanent redirect
   (`next.config.ts`)、`/api/*` (Stripe, OpenAPI, proxy 等)。dashboard 機能追加は `/dashboard` へ。
@@ -143,8 +147,7 @@ CI 側の gating:
 ## Skill list（`.agents/skills/`、`../AGENTS.md` 経由で activate）
 
 - `react-doctor` — UI 規約違反検出。
-- `tastile-precommit-review` — agent-initiated commit 直前の独立 review（self-approve 禁止、
-  Codex ↔ Claude 別 agent で実行）。
+- `../.agents/skills/verify-tastile-change/SKILL.md` — commit / merge 前の binding verification。旧 per-commit reviewer loop は廃止済み (ADR-0021)。
 - `i18n-literal-guard` — policy §11 の hardcoded literal 検出、JSX / doc-comment / identifier の
   監査と i18n bundle への移送手順を提供。
 - workspace 共通: `cross-repo-contract-check`（複数 child に跨る contract 変更）、

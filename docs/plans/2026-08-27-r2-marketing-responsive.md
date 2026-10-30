@@ -22,7 +22,7 @@ These constraints bind every task; they are copied verbatim from the spec.
 - Per-file commit pattern with structured briefs/reports
 - i18n hardcoded literals MUST NOT be added (i18n-literal-guard skill active)
 - `src/lib/vendored/mantine-schedule` MUST NOT be touched
-- Pre-commit review of agent-initiated commits must go through `.agents/skills/tastile-precommit-review`
+- PR-prep binding verification of agent-initiated commits must go through `.agents/skills/verify-tastile-change` (旧 `.agents/skills/tastile-precommit-review` は 2026-09-29 廃止、ADR-0012)
 - Tablet tier (768–1023px) is OUT OF SCOPE for R2 — only mobile fixes
 - Touch ONLY the files in your task's ownership list — no other file
 
