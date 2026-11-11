@@ -82,7 +82,16 @@ describe("api-token-session bootstrap", () => {
 			"x-tastile-web-session-user": "user-sub-1",
 			"content-type": "application/json",
 		});
-		expect(JSON.parse(String(init.body))).toEqual({ label: "Web session" });
+		const body = JSON.parse(String(init.body)) as {
+			label: string;
+			expires_at?: string;
+		};
+		expect(body.label).toBe("Web session");
+		expect(body.expires_at).toBeDefined();
+		// Core requires `expires_at` (ADR-0010 D-1.1); it must be in the future.
+		const expiresAt = Date.parse(String(body.expires_at));
+		expect(Number.isFinite(expiresAt)).toBe(true);
+		expect(expiresAt).toBeGreaterThan(Date.now());
 	});
 
 	it("registers a new token even when the server already has an active session token (recovery)", async () => {
