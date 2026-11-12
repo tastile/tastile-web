@@ -1,0 +1,13 @@
+{
+  "token": "<REDACTED>",
+  "user": {
+    "name": "T09 Verify",
+    "email": "t09-1794497239@t09.test",
+    "emailVerified": false,
+    "image": null,
+    "createdAt": "2026-11-12T15:27:23.857Z",
+    "updatedAt": "2026-11-12T15:27:23.857Z",
+    "twoFactorEnabled": false,
+    "id": "YymxXXX5hN3n4knMwUTYRGhG4HcQPKxS"
+  }
+}
