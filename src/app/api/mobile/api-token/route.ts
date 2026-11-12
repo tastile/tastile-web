@@ -3,6 +3,11 @@ import { getAuth } from "@/shared/auth/better-auth/server";
 import { isProtectedWebRuntime } from "@/shared/config/runtime-env";
 import { NextResponse } from "next/server";
 
+// Core requires an explicit expiry on every API token (root ADR-0010 D-1.1).
+// Android keeps the token until sign-in/sign-out and does not re-mint on 401,
+// so it must outlive a normal mobile session.
+const MOBILE_TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000;
+
 export async function POST(request: Request) {
   // The bearer() plugin lets BetterAuth resolve a session from an
   // `Authorization: Bearer <sessionToken>` header, which is how native
@@ -31,7 +36,10 @@ export async function POST(request: Request) {
       "x-tastile-web-bridge-secret": bridgeSecret,
       "x-tastile-web-session-user": userSub,
     },
-    body: JSON.stringify({ label: "android-client" }),
+    body: JSON.stringify({
+      label: "android-client",
+      expires_at: new Date(Date.now() + MOBILE_TOKEN_TTL_MS).toISOString(),
+    }),
     cache: "no-store",
   });
   if (!upstream.ok) {
