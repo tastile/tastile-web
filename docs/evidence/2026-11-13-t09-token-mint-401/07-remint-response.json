@@ -1,0 +1,10 @@
+{
+  "id": "01a1d061-ad52-7a03-8825-ebb3d16e5f7b",
+  "label": "android-client",
+  "prefix": "tastile_",
+  "scopes": "all",
+  "token": "<REDACTED>",
+  "expires_at": "2027-02-10T15:30:24.685Z",
+  "created_at": "2026-11-12T15:30:24.722400979Z",
+  "token_id": "01a1d061-ad52-7a03-8825-ebb3d16e5f7b"
+}

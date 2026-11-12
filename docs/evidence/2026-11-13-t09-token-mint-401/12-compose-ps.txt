@@ -1,0 +1,4 @@
+NAME                        IMAGE                              COMMAND                  SERVICE   CREATED          STATUS                    PORTS
+tastile-verify-t09-api      tastile-core-verify:t09-db2ab718   "/app/api"               api       11 minutes ago   Up 9 minutes              127.0.0.1:31409->31400/tcp
+tastile-verify-t09-db       postgres:16-alpine                 "docker-entrypoint.s…"   db        11 minutes ago   Up 11 minutes (healthy)   127.0.0.1:55439->5432/tcp
+tastile-verify-t09-worker   tastile-core-verify:t09-db2ab718   "/app/worker"            worker    11 minutes ago   Up 9 minutes              
