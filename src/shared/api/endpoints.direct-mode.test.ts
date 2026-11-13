@@ -5,6 +5,7 @@ import { COOKIE_DIRECT_DAEMON } from "@/shared/auth/cookie-names";
 afterEach(() => {
   vi.restoreAllMocks();
   vi.resetModules();
+  vi.unstubAllEnvs();
   // Wipe cookie between tests
   Object.defineProperty(document, "cookie", {
     writable: true,
@@ -59,9 +60,9 @@ describe("getCoreClient mode detection", () => {
       writable: true,
       value: "",
     });
-    process.env.NEXT_PUBLIC_TASTILE_CORE_URL = "http://localhost:31411";
-    process.env.NEXT_PUBLIC_CORE_DIRECT_MODE = "0";
-    process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH = "0";
+    vi.stubEnv("NEXT_PUBLIC_TASTILE_CORE_URL", "http://localhost:31411");
+    vi.stubEnv("NEXT_PUBLIC_CORE_DIRECT_MODE", "0");
+    vi.stubEnv("NEXT_PUBLIC_E2E_BYPASS_AUTH", "0");
 
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
       new Response("[]", { status: 200 }),
