@@ -54,6 +54,28 @@ describe("getCoreClient mode detection", () => {
     expect(headers.authorization).toBeUndefined();
   });
 
+  it("routes implicit localhost HTTP sessions through the proxy bridge", async () => {
+    Object.defineProperty(document, "cookie", {
+      writable: true,
+      value: "",
+    });
+    process.env.NEXT_PUBLIC_TASTILE_CORE_URL = "http://localhost:31411";
+    process.env.NEXT_PUBLIC_CORE_DIRECT_MODE = "0";
+    process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH = "0";
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response("[]", { status: 200 }),
+    );
+    const { getCoreClient, ENDPOINTS } = await import("./endpoints");
+    const client = getCoreClient();
+
+    await client.call("getHealth" as keyof typeof ENDPOINTS);
+
+    const url = fetchMock.mock.calls[0][0] as string;
+    expect(url.includes("/api/proxy/")).toBe(true);
+    expect(url).not.toContain("localhost:31411");
+  });
+
   it("falls back to proxy-mode when NEXT_PUBLIC_TASTILE_CORE_URL is unset", async () => {
     Object.defineProperty(document, "cookie", {
       writable: true,
