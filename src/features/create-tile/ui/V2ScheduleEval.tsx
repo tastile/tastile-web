@@ -192,7 +192,9 @@ function V2SupportNotice({
       ? "quickCreate.v2EvalMissingDuration"
       : reason === "expired_recurrence"
         ? "quickCreate.v2EvalExpired"
-        : "quickCreate.v2EvalUnsupportedRepeat";
+        : reason === "unsupported_monthly"
+          ? "quickCreate.v2EvalMonthlyUnsupported"
+          : "quickCreate.v2EvalUnsupportedRepeat";
   return <p className="text-xs text-foreground-muted">{t(key)}</p>;
 }
 

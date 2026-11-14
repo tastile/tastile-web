@@ -56,11 +56,9 @@ describe("deriveV2SchedulerInput", () => {
     expect(result.input.step_ms).toBe(30 * 60_000);
   });
 
-  it("approximates monthly like the v1 wire (daily step)", () => {
+  it("rejects monthly: daily-step approximation would mislead (core#292)", () => {
     const result = deriveV2SchedulerInput(baseState({ repeatMode: "monthly" }));
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.input.step_ms).toBe(DAY);
+    expect(result).toEqual({ ok: false, reason: "unsupported_monthly" });
   });
 
   it.each(["once", "condition", "unknown"])(

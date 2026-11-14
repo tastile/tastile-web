@@ -236,16 +236,13 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     };
   }
   if (state.recurring.repeatMode === "monthly") {
-    // monthly has no first-class domain support in SourceGenerationKind
-    // (valid: 0 OneTime / 1 Recurring / 2 DemandDriven per v1/02). Map
-    // monthly to Recurring with DAY_MS so the wire stays valid; the
-    // server will expand daily and the date_range_* bounds cap the run.
-    // A future CalendarGenerator unit=monthly wire is the proper fix.
+    // core#292: first-class Monthly generation (kind=3). Requires
+    // starts_at + generation.monthly_rule; interval_ms / at are forbidden.
     return {
-      kind: 1 as const,
+      kind: 3 as const,
       starts_at: start ?? now.toISOString(),
-      interval_ms: DAY_MS,
       ends_at: end,
+      monthly_rule: monthlyRuleWire(state),
       ...common,
     };
   }
@@ -338,25 +335,32 @@ function schedulableWindowWire(state: QuickCreateScheduleState):
   return { start, end };
 }
 
-function monthlyRuleWire(state: QuickCreateScheduleState):
-  | null
-  | { by_day: { day_of_month: number } }
-  | { by_weekday: { week: number | "last"; weekday: number } } {
+// QuickCreate stores monthlyWeekday as a JS getDay index (0=Sun..6=Sat),
+// matching the weekdayLabels order in the UI. Core's monthly_rule.weekday
+// is ISO 1=Mon..7=Sun — convert here at the wire boundary, the single
+// place the two conventions meet.
+function jsWeekdayToIso(jsWeekday: number): number {
+  return jsWeekday === 0 ? 7 : jsWeekday;
+}
+
+function monthlyRuleWire(
+  state: QuickCreateScheduleState,
+):
+  | { kind: 0; day_of_month: number | null }
+  | { kind: 1; week_of_month: number | null; weekday: number | null }
+  | null {
   if (state.recurring.repeatMode !== "monthly") return null;
   if (state.recurring.monthlyKind === "by_day") {
-    const dayOfMonth = state.recurring.monthlyDayOfMonth;
-    if (dayOfMonth === null) return null;
-    return { by_day: { day_of_month: dayOfMonth } };
+    return { kind: 0, day_of_month: state.recurring.monthlyDayOfMonth };
   }
   if (state.recurring.monthlyKind === "by_weekday") {
-    const week = state.recurring.monthlyWeekOfMonth;
     const weekday = state.recurring.monthlyWeekday;
-    if (week === null || weekday === null) return null;
     return {
-      by_weekday: {
-        week: week === 5 ? "last" : week,
-        weekday,
-      },
+      kind: 1,
+      // week_of_month uses the same numbering as the UI: 1..=4 nth match,
+      // 5 = last match.
+      week_of_month: state.recurring.monthlyWeekOfMonth,
+      weekday: weekday === null ? null : jsWeekdayToIso(weekday),
     };
   }
   return null;
@@ -619,7 +623,6 @@ export function buildQuickCreateSchedulePayload(
       priority: state.source.priority,
       schedule_kind: scheduleKindWire(state),
       schedulable_window: schedulableWindowWire(state),
-      monthly_rule: monthlyRuleWire(state),
     },
     source_horizon: { start: horizonStart, end: horizonEnd },
     tile: {

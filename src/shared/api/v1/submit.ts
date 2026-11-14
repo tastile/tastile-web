@@ -160,9 +160,12 @@ export async function submitTile(options: SubmitTileOptions): Promise<SubmitResu
 
   try {
     const state = useQuickCreateStore.getState();
-    // tastile-core#292: the v1 wire has no monthly_rule field, so a monthly
-    // selection would silently materialize as a daily schedule. Refuse the
-    // submit rather than persist semantics the user did not author.
+    // tastile-core#292 / web#221: the wire now emits the first-class
+    // Monthly generation (kind=3 + generation.monthly_rule), but the
+    // end-to-end acceptance gate (Core API -> real PostgreSQL ->
+    // materialization -> read-back -> real browser) has not fully passed
+    // yet. Keep refusing monthly submits until it does — removing this
+    // guard earlier would persist semantics the user did not author.
     if (state.recurring.repeatMode === "monthly") {
       throw new SubmitValidationError({
         kind: ApiErrorKind.VALIDATION,

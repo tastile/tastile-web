@@ -20,6 +20,7 @@ const EVAL_HORIZON_MS = 14 * DAY_MS;
 
 type V2EvalUnsupportedReason =
   | "unsupported_repeat"
+  | "unsupported_monthly"
   | "missing_duration"
   | "expired_recurrence";
 
@@ -62,10 +63,10 @@ function stepMsFor(state: V2ScheduleEvalState): number | null {
     case "interval":
       return intervalAuthoredMs(state.intervalValue, state.intervalUnit);
     case "monthly":
-      // v1 has no first-class monthly generator; the wire approximates it
-      // as daily recurrence bounded by date_range_*. The v2 preview uses
-      // the same effective step.
-      return DAY_MS;
+      // Unreachable: deriveV2SchedulerInput rejects monthly before calling
+      // stepMsFor. Kept for exhaustiveness — a monthly step_ms cannot
+      // represent calendar-month semantics.
+      return null;
     default:
       // "once" / "condition" are not recurring schedules; v2 occurrence
       // evaluation does not apply.
@@ -111,6 +112,14 @@ function boundsFor(
 export function deriveV2SchedulerInput(
   state: V2ScheduleEvalState,
 ): V2EvalDerivation {
+  // Monthly recurrence has no faithful step_ms representation: the v1
+  // wire now emits a first-class Monthly generation (core#292), and a
+  // daily-step approximation would surface misleading candidates that
+  // do not match real monthly behavior. Block evaluation until the v2
+  // port models calendar months.
+  if (state.repeatMode === "monthly") {
+    return { ok: false, reason: "unsupported_monthly" };
+  }
   const step = stepMsFor(state);
   if (step === null) return { ok: false, reason: "unsupported_repeat" };
   const span = spanMsFor(state);

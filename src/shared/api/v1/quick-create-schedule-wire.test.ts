@@ -138,7 +138,6 @@ describe("buildQuickCreateSchedulePayload", () => {
       // collapse to the legacy behaviour for this fixture.
       schedule_kind: "duration_only",
       schedulable_window: null,
-      monthly_rule: null,
     });
     expect(payload.windows[0].rules[0]).toMatchObject({
       weekday_mask: 0b0101010,
@@ -749,14 +748,14 @@ describe("buildQuickCreateSchedulePayload", () => {
   });
 
   // ── C1a: Recurring.kind enum round-trip ──────────────────────────────
-  // SourceGenerationKind has only 3 valid values (0/1/2). weekly must map
-  // to Recurring (1), monthly falls back to Recurring (1) with DAY_MS
-  // since the v1/02 domain has no first-class monthly generator.
+  // SourceGenerationKind: 0 OneTime / 1 Recurring / 2 DemandDriven /
+  // 3 Monthly (core#292). weekly maps to Recurring (1); monthly maps to
+  // the first-class Monthly kind (3) with generation.monthly_rule.
   it.each([
     ["once", 0, "NONE"],
     ["daily", 1, "DAILY"],
     ["weekly", 1, "WEEKLY"],
-    ["monthly", 1, "MONTHLY"],
+    ["monthly", 3, "MONTHLY"],
   ])(
     "maps repeatMode=%s to generation.kind=%d (%s)",
     (repeatMode: string, expectedKind: number) => {
@@ -1664,13 +1663,13 @@ describe("buildQuickCreateSchedulePayload", () => {
 
   // The Recurring form was extended with a three-pattern time model
   // (duration_only / fixed_window / window_with_duration) and a Monthly
-  // tagged union (by_day / by_weekday). These tests cover the wire-side
-  // round-trip of the three new source_schedule fields:
+  // rule (by_day / by_weekday). These tests cover the wire-side
+  // round-trip of the source_schedule fields:
   //   - schedule_kind mirrors state.time.timeModel
   //   - schedulable_window is the {start,end} HH:MM pair when
   //     timeModel === "window_with_duration", else null
-  //   - monthly_rule is the tagged union when repeatMode === "monthly",
-  //     else null
+  //   - generation.monthly_rule carries the core#292 Monthly selector
+  //     (kind=3 generation only)
   describe("Recurring extensions — schedule_kind / schedulable_window / monthly_rule", () => {
     it("emits schedule_kind='duration_only' when timeModel is duration_only", () => {
       const state = buildDefaultQuickCreateState();
@@ -1732,7 +1731,7 @@ describe("buildQuickCreateSchedulePayload", () => {
       expect(payload.source_schedule?.schedulable_window).toBeNull();
     });
 
-    it("emits monthly_rule.by_day when repeatMode=monthly and monthlyKind=by_day", () => {
+    it("emits generation.kind=3 + monthly_rule by_day (kind=0) when repeatMode=monthly and monthlyKind=by_day", () => {
       const state = buildDefaultQuickCreateState();
       state.identity = { ...state.identity, title: "Monthly 15th" };
       state.recurring = {
@@ -1741,15 +1740,29 @@ describe("buildQuickCreateSchedulePayload", () => {
         monthlyKind: "by_day",
         monthlyDayOfMonth: 15,
       };
+      state.time = {
+        ...state.time,
+        span: { start: "2026-08-01", end: "" },
+      };
 
-      const payload = buildQuickCreateSchedulePayload(state);
+      const payload = buildQuickCreateSchedulePayload(
+        state,
+        new Date("2026-08-01T00:00:00.000Z"),
+      );
+      const generation = payload.source_schedule?.generation;
 
-      expect(payload.source_schedule?.monthly_rule).toEqual({
-        by_day: { day_of_month: 15 },
+      expect(generation?.kind).toBe(3);
+      expect(generation?.monthly_rule).toEqual({
+        kind: 0,
+        day_of_month: 15,
       });
+      // kind=3 forbids interval_ms / at on the core contract.
+      expect(generation?.interval_ms).toBeUndefined();
+      expect(generation?.at).toBeUndefined();
+      expect(generation?.starts_at).toBeTruthy();
     });
 
-    it("emits monthly_rule.by_weekday when repeatMode=monthly and monthlyKind=by_weekday", () => {
+    it("emits generation.monthly_rule by_weekday (kind=1) with ISO weekday when repeatMode=monthly and monthlyKind=by_weekday", () => {
       const state = buildDefaultQuickCreateState();
       state.identity = { ...state.identity, title: "2nd Tuesday" };
       state.recurring = {
@@ -1757,35 +1770,41 @@ describe("buildQuickCreateSchedulePayload", () => {
         repeatMode: "monthly",
         monthlyKind: "by_weekday",
         monthlyWeekOfMonth: 2,
+        // UI stores JS getDay index: 2 = Tuesday -> ISO weekday 2.
         monthlyWeekday: 2,
       };
 
       const payload = buildQuickCreateSchedulePayload(state);
 
-      expect(payload.source_schedule?.monthly_rule).toEqual({
-        by_weekday: { week: 2, weekday: 2 },
+      expect(payload.source_schedule?.generation.monthly_rule).toEqual({
+        kind: 1,
+        week_of_month: 2,
+        weekday: 2,
       });
     });
 
-    it("emits monthly_rule.by_weekday.week='last' when monthlyWeekOfMonth is 5", () => {
+    it("converts the UI Sunday index (0) to ISO weekday 7 and week=5 stays last", () => {
       const state = buildDefaultQuickCreateState();
-      state.identity = { ...state.identity, title: "Last Friday" };
+      state.identity = { ...state.identity, title: "Last Sunday" };
       state.recurring = {
         ...state.recurring,
         repeatMode: "monthly",
         monthlyKind: "by_weekday",
         monthlyWeekOfMonth: 5,
-        monthlyWeekday: 5,
+        // UI stores JS getDay index: 0 = Sunday -> ISO weekday 7.
+        monthlyWeekday: 0,
       };
 
       const payload = buildQuickCreateSchedulePayload(state);
 
-      expect(payload.source_schedule?.monthly_rule).toEqual({
-        by_weekday: { week: "last", weekday: 5 },
+      expect(payload.source_schedule?.generation.monthly_rule).toEqual({
+        kind: 1,
+        week_of_month: 5,
+        weekday: 7,
       });
     });
 
-    it("emits monthly_rule=null for repeatMode != 'monthly'", () => {
+    it("omits generation.monthly_rule for repeatMode != 'monthly'", () => {
       const state = buildDefaultQuickCreateState();
       state.identity = { ...state.identity, title: "Daily" };
       state.recurring = {
@@ -1797,7 +1816,9 @@ describe("buildQuickCreateSchedulePayload", () => {
 
       const payload = buildQuickCreateSchedulePayload(state);
 
-      expect(payload.source_schedule?.monthly_rule).toBeNull();
+      expect(
+        payload.source_schedule?.generation.monthly_rule,
+      ).toBeUndefined();
     });
 
     it("emits source_window using schedulable window minute bounds (not duration width) for window_with_duration", () => {

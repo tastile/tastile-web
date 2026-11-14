@@ -84,6 +84,20 @@ export interface PublishScheduleDefinitionPayload {
       date_range_end: string | null;
       excluded_dates: string[];
       offset_min: number | null;
+      /**
+       * Monthly selector (core#292, v1/02 SourceGeneration.monthly_rule).
+       * Required iff `kind === 3` (Monthly); must be absent for every
+       * other kind. `kind`: 0 = by_day, 1 = by_weekday. For by_weekday,
+       * `week_of_month` is 1..=4 for the nth match and 5 for the last;
+       * `weekday` is ISO 1=Mon..7=Sun. For kind=3, `interval_ms` and `at`
+       * are forbidden and `starts_at` is required.
+       */
+      monthly_rule?: {
+        kind: 0 | 1;
+        day_of_month?: number | null;
+        week_of_month?: number | null;
+        weekday?: number | null;
+      } | null;
     };
     window: { start_offset_ms: number; end_offset_ms: number };
     source_window_include: SourceWindowIncludeCode;
@@ -110,18 +124,6 @@ export interface PublishScheduleDefinitionPayload {
      * shapes (the legacy wire does not need a window the user did not set).
      */
     schedulable_window?: { start: string; end: string } | null;
-    /**
-     * Optional. Tagged-union describing the Monthly pattern the user
-     * picked. `null` when the rule is not Monthly.
-     *  - by_day:     { by_day: { day_of_month: 1..31 } }
-     *  - by_weekday: { by_weekday: { week: 1..4 | "last", weekday: 0..6 } }
-     * Until the v1 daemon adopts `monthly_rule`, the existing
-     * `generation.interval_ms: DAY_MS` fallback is sent alongside.
-     */
-    monthly_rule?:
-      | null
-      | { by_day: { day_of_month: number } }
-      | { by_weekday: { week: number | "last"; weekday: number } };
   } | null;
   source_horizon?: { start: string; end: string } | null;
   tile: {
