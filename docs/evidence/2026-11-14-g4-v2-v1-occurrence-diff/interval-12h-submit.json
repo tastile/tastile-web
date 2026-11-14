@@ -1,0 +1,174 @@
+{
+  "request": {
+    "expected_revision": null,
+    "idempotency_key": "cff3ca51-64de-4ee5-8565-b544d7550af0",
+    "occurred_at": "2026-11-14T14:45:05.086Z",
+    "payload": {
+      "source_client_local_id": "01a1da84-e5ea-7589-8c5d-339e31d164c9",
+      "source_schedule": {
+        "required_duration_ms": 3600000,
+        "generation": {
+          "kind": 1,
+          "starts_at": "2026-11-14T20:45:05.086Z",
+          "interval_ms": 43200000,
+          "ends_at": "2026-11-28T14:45:05.086Z",
+          "weekday_mask": null,
+          "date_range_start": null,
+          "date_range_end": "2026-11-28",
+          "excluded_dates": [],
+          "offset_min": 540
+        },
+        "window": {
+          "start_offset_ms": 0,
+          "end_offset_ms": 3600000
+        },
+        "source_window_include": 1,
+        "anchor_mode": 0,
+        "split_policy": {
+          "kind": 0,
+          "min_segment_ms": null,
+          "max_segment_ms": null,
+          "max_segments": null
+        },
+        "priority": 0,
+        "schedule_kind": "duration_only",
+        "schedulable_window": null,
+        "monthly_rule": null
+      },
+      "source_horizon": {
+        "start": "2026-11-14T20:45:05.086Z",
+        "end": "2026-11-28T14:45:05.086Z"
+      },
+      "tile": {
+        "title": "diff-interval",
+        "description": null,
+        "color": "#3b82f6",
+        "icon": "check-circle",
+        "external_id": null
+      },
+      "plan": {
+        "role": 0,
+        "references": [],
+        "completion": {
+          "root": {
+            "Term": {
+              "Requirement": {
+                "time_requirement": "01a1da84-e5e9-7eab-93d5-992e4ef9cac5",
+                "state": "Met"
+              }
+            }
+          },
+          "time_requirements": [
+            {
+              "id": "01a1da84-e5e9-7eab-93d5-992e4ef9cac5",
+              "observation": {
+                "scope": 1,
+                "source": 0,
+                "aggregate": 0,
+                "quantifier": 0,
+                "reference": null
+              },
+              "required": {
+                "min": 3600000,
+                "max": null
+              },
+              "preferred": null
+            }
+          ],
+          "tasks": []
+        },
+        "planning": {
+          "placement_rules": [],
+          "nesting_rules": []
+        },
+        "metrics": [],
+        "decisions": []
+      },
+      "reference_targets": [],
+      "windows": [],
+      "frame_rules": [],
+      "recurrence": null,
+      "flows": [],
+      "relations": []
+    }
+  },
+  "response": {
+    "command_id": "01a1da84-e5eb-7e72-a85c-2ecab6bafc7c",
+    "accepted_at": "2026-11-14T14:45:05.131122918Z",
+    "aggregate": {
+      "kind": 4,
+      "id": "01a1da84-e5ec-71d3-be15-cffe1498d2ff"
+    },
+    "revision": 1,
+    "result": 2,
+    "pending": [],
+    "aggregate_meta": {
+      "tile_id": "01a1da84-e5ec-71d3-be15-cffe1498d2ff",
+      "plan_id": "01a1da84-e5ec-71d3-be15-d00697990d0f",
+      "recurring_id": null,
+      "frame_rule_id": null,
+      "changeset_id": null,
+      "change_ids": [],
+      "window_ids": [],
+      "flow_ids": [],
+      "source_tile_id": "01a1da84-e5ec-71d3-be15-cffe1498d2ff",
+      "occurrence_ids": [
+        "01a1da84-e5ef-7463-ab4c-d6ae695902ff",
+        "01a1da84-e5ef-7463-ab4c-d6be0252ad6e",
+        "01a1da84-e5ef-7463-ab4c-d6c352f00900",
+        "01a1da84-e5f0-7ba0-8993-bc9e0e63905c",
+        "01a1da84-e5f0-7ba0-8993-bcadc5af02e0",
+        "01a1da84-e5f0-7ba0-8993-bcbac1399820",
+        "01a1da84-e5f0-7ba0-8993-bcc574103511",
+        "01a1da84-e5f0-7ba0-8993-bcd64cb6c8ff",
+        "01a1da84-e5f1-7bb1-826d-9781cae1e818",
+        "01a1da84-e5f1-7bb1-826d-979caf747b5b",
+        "01a1da84-e5f1-7bb1-826d-97aea118b9f6",
+        "01a1da84-e5f1-7bb1-826d-97b158aec89f",
+        "01a1da84-e5f1-7bb1-826d-97c19d1939c1",
+        "01a1da84-e5f2-76d1-997a-d6d86d092075",
+        "01a1da84-e5f2-76d1-997a-d6e2f5e6c58b",
+        "01a1da84-e5f2-76d1-997a-d6f7afec1e97",
+        "01a1da84-e5f2-76d1-997a-d704713acdab",
+        "01a1da84-e5f2-76d1-997a-d715c97d0e6f",
+        "01a1da84-e5f3-7063-8e67-7e6850bc2082",
+        "01a1da84-e5f3-7063-8e67-7e75c059ba3a",
+        "01a1da84-e5f3-7063-8e67-7e81217014ea",
+        "01a1da84-e5f3-7063-8e67-7e912e01225f",
+        "01a1da84-e5f3-7063-8e67-7ea15b4d4152",
+        "01a1da84-e5f4-7de3-8f7e-5a51a77dbc44",
+        "01a1da84-e5f4-7de3-8f7e-5a6c9fa56b06",
+        "01a1da84-e5f4-7de3-8f7e-5a7e8c9d80d8"
+      ],
+      "placement_ids": [
+        "01a1da84-e625-76f0-8519-187626e613f9",
+        "01a1da84-e626-7410-b95a-8907dec8b0af",
+        "01a1da84-e627-71e2-b82f-1980ce38f6f5",
+        "01a1da84-e627-71e2-b82f-19d0bf18abdd",
+        "01a1da84-e628-7f30-b157-c05f4481357e",
+        "01a1da84-e628-7f30-b157-c0ad4a09e954",
+        "01a1da84-e629-7972-8ae0-461531a0e12c",
+        "01a1da84-e629-7972-8ae0-466524287416",
+        "01a1da84-e62a-7220-a4ad-321806888b03",
+        "01a1da84-e62a-7220-a4ad-3263a846dd83",
+        "01a1da84-e62b-7d30-837e-c64d150bbc92",
+        "01a1da84-e62b-7d30-837e-c69fb3c49d4a",
+        "01a1da84-e62c-76c0-8b6b-2be7d2727165",
+        "01a1da84-e62c-76c0-8b6b-2c3a7c80c97f",
+        "01a1da84-e62d-7981-8097-400995f9d388",
+        "01a1da84-e62d-7981-8097-40526d757138",
+        "01a1da84-e62e-7503-a76d-ca4d41308b9b",
+        "01a1da84-e62e-7503-a76d-ca9e62ce8be0",
+        "01a1da84-e62f-7652-bf91-202d7b7ead28",
+        "01a1da84-e630-7c32-ba16-e5f4f71f60d8",
+        "01a1da84-e630-7c32-ba16-e6419a6cd0e2",
+        "01a1da84-e631-7fe1-a75e-3a70792e1edc",
+        "01a1da84-e631-7fe1-a75e-3ac13b92dadc",
+        "01a1da84-e632-7523-b51b-db9764f419b0",
+        "01a1da84-e632-7523-b51b-dbe124f835ab",
+        "01a1da84-e633-7a33-802f-67b8f1871da9"
+      ],
+      "prompt_id": null
+    }
+  }
+}
