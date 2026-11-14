@@ -27,3 +27,9 @@ Daily `interval_ms` source, 30 min required, 14d horizon → 33 occurrences → 
 - `completion-split-after-finish.json`: segment `split_index:0` `met:true`, `completed_segments 1/3`, occurrence `met:false` (remaining segments correctly unmet)
 
 Picker candidate counts observed live: recurring 19–28, split 57 (global `GET /v1/placements` caps at 500 `ORDER BY span_start DESC`; candidates were inside the window).
+
+## Native dialog a11y check (`cb3c375f`, 2026-11-14 rerun)
+
+- Live DOM: `<dialog open aria-label="複数の予定 occurrence があります">` — tag `DIALOG`, `open` attribute present, implicit `dialog` role (Playwright `getByRole('dialog')` resolves), localized accessible name.
+- `dialog-outer-dom.txt` is the captured `outerHTML` of the picker on the recurring source (19 candidates).
+- Execution lineage re-confirmed on the same run: explicit candidate → `startExecutionCommand` → `active-tile`/`execution-basis` placement match.
