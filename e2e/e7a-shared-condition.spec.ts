@@ -2,7 +2,7 @@
  * [E7a] ConditionEditor shared refactor e2e spec
  *
  * Issue: tastile/tastile-web#64
- * Plan:  tastile-web/docs/plans/E7a-condition-ast-component-shared-refactor.md
+ * Plan:  tastile-web/docs/archive/plans/2026-08-quickcreate-e2e-campaign/plans/E7a-condition-ast-component-shared-refactor.md
  *
  * Verifies that the shared ConditionEditor component:
  * 1. Accepts a `slot` prop ("completion.root" | "recurring.condition")

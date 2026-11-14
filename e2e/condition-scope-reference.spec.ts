@@ -2,7 +2,7 @@
  * [E6b] Reference condition scope e2e spec
  *
  * Issue: tastile/tastile-web#63
- * Plan:  tastile-web/docs/plans/E6b-condition-scope-e2e.md
+ * Plan:  tastile-web/docs/archive/plans/2026-08-quickcreate-e2e-campaign/plans/E6b-condition-scope-e2e.md
  *
  * End-to-end prove that a `recurring.condition = Reference(tile)` condition
  * persists into `v1_recurring_frame_rule.condition` without silent drop.
