@@ -154,12 +154,26 @@ describe("deriveV2SchedulerInput", () => {
 
   it("clamps a past authored start to now", () => {
     const result = deriveV2SchedulerInput(
-      baseState({ spanStart: "2026-01-01", spanEnd: "2026-01-02" }),
+      baseState({ spanStart: "2026-01-01", spanEnd: "2026-12-01" }),
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.input.range_start_ms).toBe(NOW);
-    expect(result.input.range_end_ms).toBe(NOW + 14 * DAY);
+    expect(result.input.range_end_ms).toBe(Date.parse("2026-12-01T00:00:00"));
+  });
+
+  it("rejects when the authored span end is not after the range start", () => {
+    const result = deriveV2SchedulerInput(
+      baseState({ spanStart: "2026-01-01", spanEnd: "2026-01-02" }),
+    );
+    expect(result).toEqual({ ok: false, reason: "expired_recurrence" });
+  });
+
+  it("rejects when the recurring end is not after the range start", () => {
+    const result = deriveV2SchedulerInput(
+      baseState({ recurringEnd: "2026-01-02" }),
+    );
+    expect(result).toEqual({ ok: false, reason: "expired_recurrence" });
   });
 
   it("caps the horizon at the recurring end date", () => {

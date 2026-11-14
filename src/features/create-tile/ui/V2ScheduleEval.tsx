@@ -16,7 +16,7 @@
 
 import { Button, Switch } from "@mantine/core";
 import { Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { deriveV2SchedulerInput } from "@/lib/v2-adapter/schedule-eval-input";
 import type { V2SchedulerResult } from "@/lib/v2-adapter/scheduler-eval";
@@ -29,7 +29,7 @@ const PREVIEW_LIMIT = 8;
 type EvalState =
   | { phase: "idle" }
   | { phase: "running" }
-  | { phase: "done"; result: V2SchedulerResult }
+  | { phase: "done"; result: V2SchedulerResult; inputKey: string }
   | { phase: "request-error"; message: string };
 
 function isV2Result(value: unknown): value is V2SchedulerResult {
@@ -183,7 +183,9 @@ function V2EvalResultView({
 interface V2EvalPanelProps {
   supportReason: string | null;
   state: EvalState;
+  stale: boolean;
   adopted: boolean;
+  adoptBlocked: boolean;
   onRun: () => void;
   onAdopt: () => void;
   onDiscard: () => void;
@@ -193,20 +195,24 @@ interface V2EvalPanelProps {
 function V2EvalPanel({
   supportReason,
   state,
+  stale,
   adopted,
+  adoptBlocked,
   onRun,
   onAdopt,
   onDiscard,
   t,
 }: V2EvalPanelProps) {
-  const result = state.phase === "done" ? state.result : null;
+  const result = state.phase === "done" && !stale ? state.result : null;
   return (
     <div className="space-y-2" data-testid="v2-eval-panel">
       {supportReason !== null ? (
         <p className="text-xs text-foreground-muted">
           {supportReason === "missing_duration"
             ? t("quickCreate.v2EvalMissingDuration")
-            : t("quickCreate.v2EvalUnsupportedRepeat")}
+            : supportReason === "expired_recurrence"
+              ? t("quickCreate.v2EvalExpired")
+              : t("quickCreate.v2EvalUnsupportedRepeat")}
         </p>
       ) : (
         <Button
@@ -240,6 +246,21 @@ function V2EvalPanel({
         />
       ) : null}
 
+      {stale && state.phase === "done" ? (
+        <p className="text-xs text-foreground-muted" data-testid="v2-eval-stale">
+          {t("quickCreate.v2EvalStale")}
+        </p>
+      ) : null}
+
+      {adoptBlocked ? (
+        <p
+          className="text-xs text-foreground-muted"
+          data-testid="v2-eval-adopt-unavailable"
+        >
+          {t("quickCreate.v2EvalAdoptUnavailable")}
+        </p>
+      ) : null}
+
       {adopted ? (
         <p
           className="text-xs text-foreground-muted"
@@ -257,6 +278,10 @@ export function V2ScheduleEval() {
   const [optIn, setOptIn] = useState(false);
   const [state, setState] = useState<EvalState>({ phase: "idle" });
   const [adopted, setAdopted] = useState(false);
+  const [adoptBlocked, setAdoptBlocked] = useState(false);
+  // Generation counter: opt-in toggles and new runs invalidate in-flight
+  // requests so a stale response cannot overwrite a newer evaluation.
+  const genRef = useRef(0);
 
   const repeatMode = useQuickCreateStore((s) => s.recurring.repeatMode);
   const intervalValue = useQuickCreateStore((s) => s.recurring.intervalValue);
@@ -319,6 +344,19 @@ export function V2ScheduleEval() {
   if (!recurringCapable) return null;
 
   const supportReason = supportCheck.ok ? null : supportCheck.reason;
+  // Snapshot of the authored inputs a completed result was computed from.
+  // nowMs is excluded on purpose: the horizon moves every render, but the
+  // user-visible inputs are what must match for adoption to stay valid.
+  const inputKey = JSON.stringify(evalState);
+  const stale =
+    state.phase === "done" && state.inputKey !== inputKey;
+
+  function resetEvaluation() {
+    genRef.current += 1;
+    setAdopted(false);
+    setAdoptBlocked(false);
+    setState({ phase: "idle" });
+  }
 
   async function runEvaluation() {
     const derivation = deriveV2SchedulerInput({
@@ -326,7 +364,9 @@ export function V2ScheduleEval() {
       nowMs: Date.now(),
     });
     if (!derivation.ok) return;
+    const gen = (genRef.current += 1);
     setAdopted(false);
+    setAdoptBlocked(false);
     setState({ phase: "running" });
     try {
       const res = await fetch("/api/v2/scheduler/evaluate", {
@@ -334,6 +374,7 @@ export function V2ScheduleEval() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ opt_in: true, input: derivation.input }),
       });
+      if (gen !== genRef.current) return;
       if (!res.ok) {
         setState({
           phase: "request-error",
@@ -342,21 +383,31 @@ export function V2ScheduleEval() {
         return;
       }
       const body: unknown = await res.json();
+      if (gen !== genRef.current) return;
       if (!isV2Result(body)) {
         setState({ phase: "request-error", message: "invalid_result" });
         return;
       }
-      setState({ phase: "done", result: body });
+      setState({ phase: "done", result: body, inputKey });
     } catch {
-      setState({ phase: "request-error", message: "network" });
+      if (gen === genRef.current) {
+        setState({ phase: "request-error", message: "network" });
+      }
     }
   }
 
   function adoptFirstOccurrence() {
     if (state.phase !== "done" || state.result.engine !== "v2") return;
     if (!state.result.ok) return;
+    if (state.inputKey !== inputKey) return;
     const first = state.result.occurrences[0];
     if (!first || first.length < 2) return;
+    // v1 schedulable windows are same-day time-of-day ranges; a candidate
+    // crossing local midnight cannot be expressed and must not be adopted.
+    if (localTimeOfDay(first[1]) <= localTimeOfDay(first[0])) {
+      setAdoptBlocked(true);
+      return;
+    }
     applyV2Adoption(
       { setField, timeModel, whenMode, spanStart: spanStart || null },
       first,
@@ -366,8 +417,7 @@ export function V2ScheduleEval() {
   }
 
   function discardResult() {
-    setAdopted(false);
-    setState({ phase: "idle" });
+    resetEvaluation();
   }
 
   return (
@@ -387,8 +437,7 @@ export function V2ScheduleEval() {
           checked={optIn}
           onChange={(e) => {
             setOptIn(e.currentTarget.checked);
-            setAdopted(false);
-            setState({ phase: "idle" });
+            resetEvaluation();
           }}
           size="md"
           data-testid="v2-eval-optin"
@@ -399,7 +448,9 @@ export function V2ScheduleEval() {
         <V2EvalPanel
           supportReason={supportReason}
           state={state}
+          stale={stale}
           adopted={adopted}
+          adoptBlocked={adoptBlocked}
           onRun={runEvaluation}
           onAdopt={adoptFirstOccurrence}
           onDiscard={discardResult}

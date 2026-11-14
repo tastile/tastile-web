@@ -54,8 +54,12 @@ function primeRecurringSchedule() {
   }));
 }
 
-async function enableOptIn() {
+function clickOptIn() {
   fireEvent.click(screen.getByTestId("v2-eval-optin"));
+}
+
+async function enableOptIn() {
+  clickOptIn();
   await screen.findByTestId("v2-eval-run");
 }
 
@@ -83,7 +87,7 @@ describe("V2ScheduleEval", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("shows the missing-duration hint instead of a run button", () => {
+  it("shows the missing-duration hint instead of a run button", async () => {
     useQuickCreateStore.setState((prev) => ({
       time: {
         ...prev.time,
@@ -101,9 +105,9 @@ describe("V2ScheduleEval", () => {
       },
     }));
     renderWithMantine(<V2ScheduleEval />);
-    enableOptIn();
+    clickOptIn();
     expect(
-      screen.getByText(/Set a duration to use v2 evaluation/),
+      await screen.findByText(/Set a duration to use v2 evaluation/),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("v2-eval-run")).not.toBeInTheDocument();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -251,5 +255,62 @@ describe("V2ScheduleEval", () => {
 
     await screen.findByTestId("v2-eval-error");
     expect(screen.getByText(/HTTP 401/)).toBeInTheDocument();
+  });
+
+  it("invalidates the preview when schedule inputs change", async () => {
+    const start = Date.now() + 86_400_000;
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        engine: "v2",
+        ok: true,
+        occurrences: [[start, start + 1_800_000]],
+        count: 1,
+        diagnostics: {},
+      }),
+    );
+    renderWithMantine(<V2ScheduleEval />);
+    await enableOptIn();
+    fireEvent.click(screen.getByTestId("v2-eval-run"));
+    await screen.findByTestId("v2-eval-result");
+
+    useQuickCreateStore.setState((prev) => ({
+      time: {
+        ...prev.time,
+        durationMinMax: { minMs: 3_600_000, maxMs: 3_600_000 },
+      },
+    }));
+
+    expect(await screen.findByTestId("v2-eval-stale")).toBeInTheDocument();
+    expect(screen.queryByTestId("v2-eval-result")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("v2-eval-adopt")).not.toBeInTheDocument();
+  });
+
+  it("refuses to adopt a candidate that crosses local midnight", async () => {
+    const base = new Date();
+    base.setHours(23, 0, 0, 0);
+    const start = base.getTime();
+    const end = start + 90 * 60_000;
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(200, {
+        engine: "v2",
+        ok: true,
+        occurrences: [[start, end]],
+        count: 1,
+        diagnostics: {},
+      }),
+    );
+    renderWithMantine(<V2ScheduleEval />);
+    const windowBefore = { ...useQuickCreateStore.getState().time.schedulableWindow };
+    await enableOptIn();
+    fireEvent.click(screen.getByTestId("v2-eval-run"));
+    await screen.findByTestId("v2-eval-adopt");
+    fireEvent.click(screen.getByTestId("v2-eval-adopt"));
+
+    expect(
+      await screen.findByTestId("v2-eval-adopt-unavailable"),
+    ).toBeInTheDocument();
+    const time = useQuickCreateStore.getState().time;
+    expect(time.timeOfDayMode).toBe("unspecified");
+    expect(time.schedulableWindow).toEqual(windowBefore);
   });
 });

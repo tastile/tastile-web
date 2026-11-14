@@ -790,6 +790,10 @@ conditionMoveDown: "下へ移動",
   v2EvalAdopt: "先頭候補の時間帯を採用",
   v2EvalDiscard: "破棄",
   v2EvalAdopted: "v2 候補の時間帯を予定に反映しました",
+  v2EvalExpired: "繰り返し終了日を過ぎているため v2 評価を利用できません",
+  v2EvalAdoptUnavailable:
+    "この候補は日付をまたぐため v1 の予定項目に反映できません",
+  v2EvalStale: "予定の条件が変更されました。もう一度評価してください",
   v2EvalFallback:
     "v2 エンジンを利用できません（{reason}）。v1 の予定作成はそのまま利用できます。",
   v2EvalDisabled: "v2 エンジンは現在無効です",
@@ -1598,6 +1602,9 @@ export const quickCreateZhCn = {
   v2EvalAdopt: "采用首个候选的时段",
   v2EvalDiscard: "放弃",
   v2EvalAdopted: "已将 v2 候选时段应用到日程",
+  v2EvalExpired: "重复结束日期已过，无法使用 v2 评估",
+  v2EvalAdoptUnavailable: "该候选跨越午夜，无法映射到 v1 日程字段",
+  v2EvalStale: "日程条件已更改，请重新评估",
   v2EvalFallback: "无法使用 v2 引擎（{reason}）。v1 日程创建不受影响。",
   v2EvalDisabled: "v2 引擎当前已禁用",
   v2EvalError: "v2 评估错误：{message}",
@@ -2402,6 +2409,10 @@ export const quickCreateKo = {
   v2EvalAdopt: "첫 후보의 시간대 채택",
   v2EvalDiscard: "버리기",
   v2EvalAdopted: "v2 후보 시간대를 일정에 반영했습니다",
+  v2EvalExpired: "반복 종료일이 지났으므로 v2 평가를 사용할 수 없습니다",
+  v2EvalAdoptUnavailable:
+    "이 후보는 자정을 넘어서 v1 일정 필드로 반영할 수 없습니다",
+  v2EvalStale: "일정 조건이 변경되었습니다. 다시 평가하세요",
   v2EvalFallback: "v2 엔진을 사용할 수 없습니다({reason}). v1 일정 생성은 그대로 사용할 수 있습니다.",
   v2EvalDisabled: "v2 엔진이 현재 비활성화되어 있습니다",
   v2EvalError: "v2 평가 오류: {message}",
@@ -3208,6 +3219,11 @@ export const quickCreateEs = {
   v2EvalAdopt: "Adoptar la franja del primer candidato",
   v2EvalDiscard: "Descartar",
   v2EvalAdopted: "Se aplicó la franja del candidato v2 al horario",
+  v2EvalExpired:
+    "La fecha de fin de repetición ya pasó; no se puede usar la evaluación v2",
+  v2EvalAdoptUnavailable:
+    "Este candidato cruza la medianoche y no puede reflejarse en los campos v1",
+  v2EvalStale: "Las condiciones del horario cambiaron; vuelva a evaluar",
   v2EvalFallback: "El motor v2 no está disponible ({reason}). La creación de horarios v1 sigue funcionando.",
   v2EvalDisabled: "El motor v2 está deshabilitado actualmente",
   v2EvalError: "Error de evaluación v2: {message}",
@@ -4021,6 +4037,11 @@ conditionMoveDown: "Move down",
   v2EvalAdopt: "Adopt first candidate's time window",
   v2EvalDiscard: "Discard",
   v2EvalAdopted: "Applied the v2 candidate's time window to the schedule",
+  v2EvalExpired:
+    "The recurrence end date has passed, so v2 evaluation is unavailable",
+  v2EvalAdoptUnavailable:
+    "This candidate crosses midnight and cannot be mapped to v1 schedule fields",
+  v2EvalStale: "Schedule inputs changed — run the evaluation again",
   v2EvalFallback:
     "The v2 engine is unavailable ({reason}). v1 schedule creation is unaffected.",
   v2EvalDisabled: "The v2 engine is currently disabled",

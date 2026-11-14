@@ -18,7 +18,10 @@ const DAY_MS = 86_400_000;
 const DEFAULT_INTERVAL_MS = 30 * MIN_MS;
 const EVAL_HORIZON_MS = 14 * DAY_MS;
 
-type V2EvalUnsupportedReason = "unsupported_repeat" | "missing_duration";
+type V2EvalUnsupportedReason =
+  | "unsupported_repeat"
+  | "missing_duration"
+  | "expired_recurrence";
 
 export interface V2ScheduleEvalState {
   repeatMode: string;
@@ -126,12 +129,19 @@ export function deriveV2SchedulerInput(
     authoredStart !== null ? Math.max(authoredStart, state.nowMs) : state.nowMs;
   const authoredEnd = instantMs(state.spanEnd);
   const recurringEnd = instantMs(state.recurringEnd);
-  let rangeEnd = authoredEnd ?? rangeStart + EVAL_HORIZON_MS;
-  if (recurringEnd !== null && recurringEnd > rangeStart) {
-    rangeEnd = Math.min(rangeEnd, recurringEnd);
+  // An authored end at or before the range start means the recurrence
+  // window has already closed. Extending the horizon past it would
+  // propose occurrences the v1 wire would never emit, so report the
+  // schedule as unsupported instead of fabricating input.
+  if (
+    (authoredEnd !== null && authoredEnd <= rangeStart) ||
+    (recurringEnd !== null && recurringEnd <= rangeStart)
+  ) {
+    return { ok: false, reason: "expired_recurrence" };
   }
-  if (rangeEnd <= rangeStart) {
-    rangeEnd = rangeStart + EVAL_HORIZON_MS;
+  let rangeEnd = authoredEnd ?? rangeStart + EVAL_HORIZON_MS;
+  if (recurringEnd !== null) {
+    rangeEnd = Math.min(rangeEnd, recurringEnd);
   }
 
   return {
