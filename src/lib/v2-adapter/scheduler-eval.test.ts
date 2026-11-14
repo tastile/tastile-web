@@ -157,6 +157,17 @@ describe("evaluateSchedulerV2", () => {
     });
   }, 15_000);
 
+  it("returns fallback when stdout JSON is not an object", async () => {
+    const dir = tmpDir();
+    const cli = fakeCli(dir, "null", 0);
+    const res = await evaluateSchedulerV2(config(cli), INPUT);
+    expect(res).toEqual({
+      engine: "fallback",
+      ok: false,
+      fallback_reason: "v2_output_shape_mismatch",
+    });
+  });
+
   it("returns fallback when provides shape mismatches", async () => {
     const dir = tmpDir();
     const cli = fakeCli(

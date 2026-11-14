@@ -41,20 +41,24 @@ const DEFAULT_INPUT: EvalInput = {
   range_end_ms: "1767236400000",
 };
 
-function toPayload(fields: EvalInput) {
-  const num = (v: string) => (v.trim() === "" ? null : Number(v));
-  return {
-    opt_in: true,
-    input: {
-      step_ms: Number(fields.step_ms),
-      span_ms: Number(fields.span_ms),
-      origin: num(fields.origin),
-      bounds_start: num(fields.bounds_start),
-      bounds_end: num(fields.bounds_end),
-      range_start_ms: Number(fields.range_start_ms),
-      range_end_ms: Number(fields.range_end_ms),
-    },
-  };
+function parseIntField(raw: string, optional: boolean): number | null | "invalid" {
+  const v = raw.trim();
+  if (v === "") return optional ? null : "invalid";
+  if (!/^[+-]?\d+$/.test(v)) return "invalid";
+  const n = Number(v);
+  return Number.isSafeInteger(n) ? n : "invalid";
+}
+
+function toPayload(fields: EvalInput): { ok: true; body: unknown } | { ok: false; error: string } {
+  const input: Record<string, number | null> = {};
+  for (const { key, optional } of FIELD_LABELS) {
+    const value = parseIntField(fields[key], optional);
+    if (value === "invalid") {
+      return { ok: false, error: `${key} must be an integer` };
+    }
+    input[key] = value;
+  }
+  return { ok: true, body: { opt_in: true, input } };
 }
 
 export default function V2SchedulerPage() {
@@ -62,17 +66,34 @@ export default function V2SchedulerPage() {
   const [result, setResult] = useState<EvalResponse | null>(null);
   const [httpStatus, setHttpStatus] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   const submit = async () => {
+    const payload = toPayload(fields);
+    if (!payload.ok) {
+      setFieldError(payload.error);
+      setResult(null);
+      setHttpStatus(null);
+      return;
+    }
+    setFieldError(null);
     setPending(true);
     setResult(null);
     try {
       const res = await fetch("/api/v2/scheduler/evaluate", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(toPayload(fields)),
+        body: JSON.stringify(payload.body),
       });
       setHttpStatus(res.status);
+      if (!res.ok) {
+        setResult({
+          engine: "fallback",
+          ok: false,
+          fallback_reason: `http_${res.status}`,
+        });
+        return;
+      }
       setResult((await res.json()) as EvalResponse);
     } catch (e) {
       setResult({ engine: "fallback", ok: false, fallback_reason: "request_failed" });
@@ -107,6 +128,10 @@ export default function V2SchedulerPage() {
           </label>
         ))}
       </div>
+
+      {fieldError && (
+        <div className="mt-4 text-sm text-red-600">{fieldError}</div>
+      )}
 
       <button
         type="button"

@@ -14,8 +14,9 @@ const envelopeSchema = z.object({ opt_in: z.boolean().optional() });
 
 const nullableInt = z.number().int().nullable();
 
-const requestSchema = z.object({
-  input: z.object({
+const requestSchema = z.strictObject({
+  opt_in: z.boolean().optional(),
+  input: z.strictObject({
     step_ms: z.number().int().positive(),
     span_ms: z.number().int().positive(),
     origin: nullableInt,
@@ -47,17 +48,17 @@ export async function POST(req: Request): Promise<Response> {
   if (!envelope.success || envelope.data.opt_in !== true) {
     return NextResponse.json({ engine: "disabled" });
   }
+  const enabled = process.env.TASTILE_V2_ENABLED === "true";
+  if (!enabled) {
+    return NextResponse.json({ engine: "disabled" });
+  }
+
   const parsed = requestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid request", issues: parsed.error.issues },
       { status: 400 },
     );
-  }
-
-  const enabled = process.env.TASTILE_V2_ENABLED === "true";
-  if (!enabled) {
-    return NextResponse.json({ engine: "disabled" });
   }
 
   const config = v2AdapterConfigFromEnv();

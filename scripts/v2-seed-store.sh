@@ -46,10 +46,17 @@ SMOKE_OUT="$("$CLI" --store "$STORE" run "$LOCK" \
 echo "$SMOKE_OUT" | grep -q '"status": "success"' || {
   echo "v2 smoke run failed:" >&2; echo "$SMOKE_OUT" >&2; exit 1;
 }
-echo "$SMOKE_OUT" | grep -q '"count": 2' || {
+# Compare root.count numerically; a substring grep would also match 20/200.
+COUNT_OK="$(printf '%s' "$SMOKE_OUT" | bun -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const r=JSON.parse(s);process.stdout.write(String(r&&r.root&&r.root.count===2))}catch{process.stdout.write("false")}})')"
+[[ "$COUNT_OK" == "true" ]] || {
   echo "v2 smoke run returned unexpected count" >&2; exit 1;
 }
 
 CORE_SHA="$(git -C "$CORE_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
 echo "$CORE_SHA" > "${LOCK}.core-sha"
+if command -v shasum >/dev/null 2>&1; then
+  shasum -a 256 "$CLI" | awk '{print $1}' > "${LOCK}.cli-sha256"
+elif command -v sha256sum >/dev/null 2>&1; then
+  sha256sum "$CLI" | awk '{print $1}' > "${LOCK}.cli-sha256"
+fi
 echo "seeded store=$STORE lock=$LOCK core_sha=$CORE_SHA"

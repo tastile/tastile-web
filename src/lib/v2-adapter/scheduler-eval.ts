@@ -15,7 +15,7 @@ import { spawn } from "node:child_process";
 //   exit code 0 on success, 1..8 typed ErrorKind otherwise; stdout is one
 //   pretty JSON document with `status` and `root` provides values.
 
-export const SCHEDULER_OPTION_PORTS = [
+const SCHEDULER_OPTION_PORTS = [
   "step_ms",
   "span_ms",
   "origin",
@@ -25,7 +25,7 @@ export const SCHEDULER_OPTION_PORTS = [
   "range_end_ms",
 ] as const;
 
-export type SchedulerOptionPort = (typeof SCHEDULER_OPTION_PORTS)[number];
+type SchedulerOptionPort = (typeof SCHEDULER_OPTION_PORTS)[number];
 
 const INT_PORTS = new Set<SchedulerOptionPort>([
   "step_ms",
@@ -247,9 +247,9 @@ export async function evaluateSchedulerV2(
     if (code === null) {
       return { engine: "fallback", ok: false, fallback_reason: "v2_spawn_failed" };
     }
-    let payload: V2RunPayload;
+    let payload: unknown;
     try {
-      payload = JSON.parse(stdout) as V2RunPayload;
+      payload = JSON.parse(stdout);
     } catch {
       return {
         engine: "fallback",
@@ -257,7 +257,14 @@ export async function evaluateSchedulerV2(
         fallback_reason: "v2_output_unparseable",
       };
     }
-    const result = normalizePayload(payload);
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+      return {
+        engine: "fallback",
+        ok: false,
+        fallback_reason: "v2_output_shape_mismatch",
+      };
+    }
+    const result = normalizePayload(payload as V2RunPayload);
     if (result.engine === "v2" && result.ok === false) {
       // Non-zero exit with a typed CLI error payload is still a v2 failure,
       // not an adapter fallback.
