@@ -61,6 +61,43 @@ function formatOccurrence(row: number[]): string {
   return `${date} ${localTimeOfDay(startMs)} → ${localTimeOfDay(endMs)}`;
 }
 
+interface AdoptionContext {
+  setField: (path: string, value: unknown) => void;
+  timeModel: string;
+  whenMode: string;
+  spanStart: string | null;
+}
+
+/**
+ * Mirrors the first v2 candidate into every v1 field that can express a
+ * time-of-day constraint: the schedulable window (window_with_duration,
+ * the recurring default), the legacy time-of-day range (fixed_window /
+ * daily pickers), and — when the user authored "duration only" — flips
+ * the time model so the adopted window is actually honored by the wire.
+ * Advisory only: submit still flows through the normal v1 command path.
+ */
+function applyV2Adoption(ctx: AdoptionContext, first: number[]): void {
+  const [startMs, endMs] = first;
+  const startTod = localTimeOfDay(startMs);
+  const endTod = localTimeOfDay(endMs);
+  ctx.setField("time.schedulableWindow.start", startTod);
+  ctx.setField("time.schedulableWindow.end", endTod);
+  ctx.setField("time.timeOfDayMode", "range");
+  ctx.setField("time.timeOfDayStart", startTod);
+  ctx.setField("time.timeOfDayEnd", endTod);
+  if (ctx.timeModel === "duration_only") {
+    ctx.setField("time.timeModel", "window_with_duration");
+  }
+  if (ctx.whenMode === "none") {
+    ctx.setField("time.whenMode", "day");
+    ctx.setField("time.span.end", "");
+  }
+  if (!ctx.spanStart) {
+    ctx.setField("time.span.start", localDate(startMs));
+    ctx.setField("time.span.end", "");
+  }
+}
+
 interface V2EvalResultViewProps {
   result: V2SchedulerResult;
   onAdopt: () => void;
@@ -143,6 +180,78 @@ function V2EvalResultView({
   );
 }
 
+interface V2EvalPanelProps {
+  supportReason: string | null;
+  state: EvalState;
+  adopted: boolean;
+  onRun: () => void;
+  onAdopt: () => void;
+  onDiscard: () => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}
+
+function V2EvalPanel({
+  supportReason,
+  state,
+  adopted,
+  onRun,
+  onAdopt,
+  onDiscard,
+  t,
+}: V2EvalPanelProps) {
+  const result = state.phase === "done" ? state.result : null;
+  return (
+    <div className="space-y-2" data-testid="v2-eval-panel">
+      {supportReason !== null ? (
+        <p className="text-xs text-foreground-muted">
+          {supportReason === "missing_duration"
+            ? t("quickCreate.v2EvalMissingDuration")
+            : t("quickCreate.v2EvalUnsupportedRepeat")}
+        </p>
+      ) : (
+        <Button
+          type="button"
+          size="xs"
+          variant="light"
+          onClick={onRun}
+          disabled={state.phase === "running"}
+          data-testid="v2-eval-run"
+        >
+          {state.phase === "running"
+            ? t("quickCreate.v2EvalRunning")
+            : t("quickCreate.v2EvalRun")}
+        </Button>
+      )}
+
+      {state.phase === "request-error" ? (
+        <p className="text-xs text-danger" data-testid="v2-eval-error">
+          {t("quickCreate.v2EvalRequestFailed", {
+            message: state.message,
+          })}
+        </p>
+      ) : null}
+
+      {result ? (
+        <V2EvalResultView
+          result={result}
+          onAdopt={onAdopt}
+          onDiscard={onDiscard}
+          t={t}
+        />
+      ) : null}
+
+      {adopted ? (
+        <p
+          className="text-xs text-foreground-muted"
+          data-testid="v2-eval-adopted"
+        >
+          {t("quickCreate.v2EvalAdopted")}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function V2ScheduleEval() {
   const { t } = useTranslation();
   const [optIn, setOptIn] = useState(false);
@@ -209,6 +318,8 @@ export function V2ScheduleEval() {
 
   if (!recurringCapable) return null;
 
+  const supportReason = supportCheck.ok ? null : supportCheck.reason;
+
   async function runEvaluation() {
     const derivation = deriveV2SchedulerInput({
       ...evalState,
@@ -246,30 +357,10 @@ export function V2ScheduleEval() {
     if (!state.result.ok) return;
     const first = state.result.occurrences[0];
     if (!first || first.length < 2) return;
-    const [startMs, endMs] = first;
-    const startTod = localTimeOfDay(startMs);
-    const endTod = localTimeOfDay(endMs);
-    // Mirror the candidate window into every v1 field that can express a
-    // time-of-day constraint: the schedulable window (window_with_duration,
-    // the recurring default), the legacy time-of-day range (fixed_window /
-    // daily pickers), and — when the user authored "duration only" — flip
-    // the time model so the adopted window is actually honored by the wire.
-    setField("time.schedulableWindow.start", startTod);
-    setField("time.schedulableWindow.end", endTod);
-    setField("time.timeOfDayMode", "range");
-    setField("time.timeOfDayStart", startTod);
-    setField("time.timeOfDayEnd", endTod);
-    if (timeModel === "duration_only") {
-      setField("time.timeModel", "window_with_duration");
-    }
-    if (whenMode === "none") {
-      setField("time.whenMode", "day");
-      setField("time.span.end", "");
-    }
-    if (!spanStart) {
-      setField("time.span.start", localDate(startMs));
-      setField("time.span.end", "");
-    }
+    applyV2Adoption(
+      { setField, timeModel, whenMode, spanStart: spanStart || null },
+      first,
+    );
     setAdopted(true);
     setState({ phase: "idle" });
   }
@@ -278,8 +369,6 @@ export function V2ScheduleEval() {
     setAdopted(false);
     setState({ phase: "idle" });
   }
-
-  const result = state.phase === "done" ? state.result : null;
 
   return (
     <>
@@ -307,51 +396,15 @@ export function V2ScheduleEval() {
       </div>
 
       {optIn ? (
-        <div className="space-y-2" data-testid="v2-eval-panel">
-          {!supportCheck.ok ? (
-            <p className="text-xs text-foreground-muted">
-              {supportCheck.reason === "missing_duration"
-                ? t("quickCreate.v2EvalMissingDuration")
-                : t("quickCreate.v2EvalUnsupportedRepeat")}
-            </p>
-          ) : (
-            <Button
-              type="button"
-              size="xs"
-              variant="light"
-              onClick={runEvaluation}
-              disabled={state.phase === "running"}
-              data-testid="v2-eval-run"
-            >
-              {state.phase === "running"
-                ? t("quickCreate.v2EvalRunning")
-                : t("quickCreate.v2EvalRun")}
-            </Button>
-          )}
-
-          {state.phase === "request-error" ? (
-            <p className="text-xs text-danger" data-testid="v2-eval-error">
-              {t("quickCreate.v2EvalRequestFailed", {
-                message: state.message,
-              })}
-            </p>
-          ) : null}
-
-          {result ? (
-            <V2EvalResultView
-              result={result}
-              onAdopt={adoptFirstOccurrence}
-              onDiscard={discardResult}
-              t={t}
-            />
-          ) : null}
-
-          {adopted ? (
-            <p className="text-xs text-foreground-muted" data-testid="v2-eval-adopted">
-              {t("quickCreate.v2EvalAdopted")}
-            </p>
-          ) : null}
-        </div>
+        <V2EvalPanel
+          supportReason={supportReason}
+          state={state}
+          adopted={adopted}
+          onRun={runEvaluation}
+          onAdopt={adoptFirstOccurrence}
+          onDiscard={discardResult}
+          t={t}
+        />
       ) : null}
     </>
   );
