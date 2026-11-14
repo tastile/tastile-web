@@ -185,10 +185,10 @@ export function TasksMain() {
         </div>
       ) : null}
       {occurrencePicker ? (
-        <div
-          role="dialog"
+        <dialog
+          open
           aria-label={t("panels.tasks.occurrencePickerTitle")}
-          className="mt-3 rounded border border-border bg-surface-1 p-3"
+          className="static mx-0 mb-0 mt-3 w-auto max-h-none max-w-none rounded border border-border bg-surface-1 p-3"
         >
           <p className="text-sm font-medium text-foreground">
             {t("panels.tasks.occurrencePickerTitle")}
@@ -223,7 +223,7 @@ export function TasksMain() {
           >
             {t("panels.tasks.occurrenceCancel")}
           </button>
-        </div>
+        </dialog>
       ) : null}
 
       <div className="mt-4">
