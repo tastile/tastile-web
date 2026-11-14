@@ -1,10 +1,16 @@
 "use client";
 
 import { makeClient } from "@/shared/api/v1/submit";
-import { startTileExecutionCommand } from "@/shared/api/v1/tile-commands";
+import {
+  listPlacements,
+  selectStartableOccurrences,
+  type StartableOccurrenceCandidate,
+} from "@/shared/api/v1/placements";
+import { startExecutionCommand, startTileExecutionCommand } from "@/shared/api/v1/tile-commands";
 import { useTileList } from "@/shared/hooks/use-tile-list";
 import { useTranslation } from "@/shared/i18n/use-translation";
 import { mapListView } from "@/shared/lib/map-list-view-to-tile";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
 import type { TileId } from "@/shared/model/ids";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { PageContainer, PageHeader } from "@/shared/ui/page-header/PageHeader";
@@ -22,6 +28,10 @@ export function TasksMain() {
   const openEdit = useQuickCreateStore((s) => s.loadFromRecurringTile);
   const [startingTileId, setStartingTileId] = useState<string | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
+  const [occurrencePicker, setOccurrencePicker] = useState<{
+    tileId: string;
+    candidates: StartableOccurrenceCandidate[];
+  } | null>(null);
 
   const { tiles, loading, refresh } = useTileList({
     viewMode: "by_state",
@@ -95,6 +105,26 @@ export function TasksMain() {
 
       setStartingTileId(null);
       if (!result.ok) {
+        // core#277 / web#212: StartTile on a scheduled source with multiple
+        // unfinished live segments fails closed with CONFLICT. Offer the
+        // explicit-placement path instead of surfacing a raw error.
+        if (
+          result.error.kind === ApiErrorKind.CONFLICT &&
+          result.error.message.includes("unfinished live segment")
+        ) {
+          const client = makeClient();
+          const list = await listPlacements(client);
+          if (list.ok) {
+            const candidates = selectStartableOccurrences(list.data, {
+              tileId: id,
+              planId: item.plan_id,
+            });
+            if (candidates.length > 0) {
+              setOccurrencePicker({ tileId: id, candidates });
+              return;
+            }
+          }
+        }
         setStartError(result.error.message);
         return;
       }
@@ -104,6 +134,27 @@ export function TasksMain() {
       await refresh();
     },
     [tiles, refresh],
+  );
+
+  const handleOccurrenceSelect = useCallback(
+    async (placementId: string) => {
+      setStartingTileId(occurrencePicker?.tileId ?? null);
+      setStartError(null);
+      const result = await startExecutionCommand({
+        client: makeClient(),
+        placementId,
+      });
+      setStartingTileId(null);
+      setOccurrencePicker(null);
+      if (!result.ok) {
+        setStartError(result.error.message);
+        return;
+      }
+      window.dispatchEvent(new CustomEvent("tastile:tiles-changed"));
+      window.dispatchEvent(new CustomEvent("tastile:execution-changed"));
+      await refresh();
+    },
+    [occurrencePicker, refresh],
   );
 
   return (
@@ -131,6 +182,47 @@ export function TasksMain() {
           className="mt-3 rounded bg-danger/10 px-3 py-2 text-xs text-danger"
         >
           {startError}
+        </div>
+      ) : null}
+      {occurrencePicker ? (
+        <div
+          role="dialog"
+          aria-label={t("panels.tasks.occurrencePickerTitle")}
+          className="mt-3 rounded border border-border bg-surface-1 p-3"
+        >
+          <p className="text-sm font-medium text-foreground">
+            {t("panels.tasks.occurrencePickerTitle")}
+          </p>
+          <p className="mt-1 text-xs text-foreground-subtle">
+            {t("panels.tasks.occurrencePickerHint")}
+          </p>
+          <ul className="mt-2 flex flex-col gap-1">
+            {occurrencePicker.candidates.map((c) => (
+              <li key={c.placementId}>
+                <button
+                  type="button"
+                  disabled={startingTileId === occurrencePicker.tileId}
+                  onClick={() => void handleOccurrenceSelect(c.placementId)}
+                  className="flex w-full items-center justify-between rounded border border-border px-3 py-2 text-left text-sm hover:bg-surface-2 disabled:opacity-50"
+                >
+                  <span className="font-mono text-xs">
+                    {c.spanStart ?? "—"} → {c.spanEnd ?? "—"}
+                    {c.splitIndex !== null ? ` · #${c.splitIndex}` : ""}
+                  </span>
+                  <span className="text-xs text-foreground-subtle">
+                    {t("panels.tasks.occurrenceStart")}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button
+            type="button"
+            onClick={() => setOccurrencePicker(null)}
+            className="mt-2 text-xs text-foreground-subtle hover:text-foreground"
+          >
+            {t("panels.tasks.occurrenceCancel")}
+          </button>
         </div>
       ) : null}
 
