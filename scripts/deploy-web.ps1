@@ -65,7 +65,8 @@ Copy-Item -Force "ops/systemd/tastile-web.service.example" (Join-Path $stageDir 
 # at build time, but verify-web-artifact.ts rejects any .env* path segment.
 # Production runtime env vars are fetched from Infisical by systemd, so
 # shipping build-time .env.production is both a secret leak and a redundant
-# configuration source. Mirrors the same step in .github/workflows/deploy.yml.
+# configuration source. (The former .github/workflows/deploy.yml CI path was
+# retired when cloud deploy operations were suspended.)
 Get-ChildItem -Path $stageDir -Filter '.env*' -File | Remove-Item -Force
 
 # 3. Zip it
