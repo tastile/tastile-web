@@ -18,7 +18,7 @@
 | daily-basic | 14 | 14 | 14 | 0 | 0 | **完全一致** |
 | weekly-mask-30m | 667 | 100 | 100 | 567 | 0 | weekday_mask 未反映 |
 | monthly-by-day-15 | 14 | 14 | 14 | 0 | 0 | v1 が monthly_rule を無視し daily 配置 |
-| interval-12h | 28 | 26 | 26 | 2 | 0 | ほぼ一致 (range 端の materialization horizon 差) |
+| interval-12h | 28 | 26 | 26 | 2 | 0 | **不一致あり**: v2-only 2 件は v1 materialization horizon 外 (Nov 27-28)。exact とは報告しない |
 | daily-excluded | 14 | 12 | 12 | 2 | 0 | excluded_dates 未反映 |
 
 ## 確認された乖離 (v2 preview が v1 より多く/違う候補を出す)
@@ -32,10 +32,16 @@
    に materialize される (by_day=15 を指定しても連日 placement、59/59 件確認)。
    v2 preview (daily step) は v1 の実挙動とは一致するが、**ユーザーの
    monthly 意図とは一致しない** — これは v1 側の未実装であり v2 の責任ではない。
-4. **materialization cap/horizon**: weekly 30min interval は v2=667 候補に対し
-   v1 occurrence が 100 件で頭打ち (materialization 上限)。interval-12h でも
-   v1 は v2 range 末尾 2 件を materialize しない。v2 候補数は「作られる予定数」
-   の上限ではない。
+4. **materialization cap/horizon (v1 側の制限、v2 の責任ではない)**:
+   weekly 30min interval は v2=667 候補に対し v1 occurrence が 100 件で頭打ち
+   (materialization 上限)。interval-12h では v1 が v2 range 末尾 2 件
+   (2026-11-27/28) を materialize せず、v2-only として残る — これは完全一致
+   ではなく horizon 差。v2 候補数は「作られる予定数」の上限ではない。
+
+   原因別の整理: (a) weekday_mask / excluded_dates = **v2 input の表現不足**
+   (b) materialization cap/horizon = **v1 側の生成上限** (c) monthly =
+   **Core 未実装** (d) 未完了 worker 処理は poll の stable 判定で排除済み
+   (occurrence/placement/in-range count が連続不変まで待機)
 
 ## 一致が確認されたもの
 

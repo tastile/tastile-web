@@ -415,11 +415,16 @@ for (const c of cases) {
     log("  underivable:", derivation.reason);
     continue;
   }
-  const v2 = await evaluateSchedulerV2(
-    v2AdapterConfigFromEnv(),
-    derivation.input,
-  );
-  if (!v2.ok || v2.engine !== "v2") {
+  const v2Config = v2AdapterConfigFromEnv();
+  if (!v2Config) {
+    results[c.name] = {
+      skipped: "v2 adapter not configured (TASTILE_V2_CLI/STORE/LOCK)",
+    };
+    log("  v2 adapter not configured");
+    continue;
+  }
+  const v2 = await evaluateSchedulerV2(v2Config, derivation.input);
+  if (v2.engine !== "v2" || !v2.ok) {
     results[c.name] = { skipped: `v2 eval failed: ${JSON.stringify(v2)}` };
     log("  v2 eval failed:", JSON.stringify(v2).slice(0, 200));
     continue;
