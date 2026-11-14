@@ -5,7 +5,9 @@
 # canonical references:
 #   - docs/adr/0007-release-branch-and-ticket-workflow.md
 #   - AGENTS.md "Canonical commands"
-#   - .github/workflows/deploy.yml (tag-triggered deploy path)
+#
+# Note: cloud deploy workflows were retired (deploy ops suspended). A pushed
+# tag is a release attestation only; it triggers no deployment.
 #
 # Usage:
 #   ./scripts/release/tag-release.sh 1.0.1 [--push]
@@ -96,7 +98,7 @@ if [[ "${PUSH}" == "1" ]]; then
     exit 7
   fi
   git push origin "${TAG}"
-  echo "[tag-release] tag ${TAG} pushed after main reachability verification → triggers .github/workflows/deploy.yml"
+  echo "[tag-release] tag ${TAG} pushed after main reachability verification (release attestation; no deploy trigger)"
 else
   echo "[tag-release] tag ${TAG} is local only. Merge the release PR, then rerun from this release branch with --push."
 fi
