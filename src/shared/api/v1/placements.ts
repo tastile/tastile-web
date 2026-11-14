@@ -32,11 +32,14 @@ const isOpen = (p: PlacementListItem) => p.close_kind === 0 && p.detach_kind ===
 
 /**
  * Candidates for explicit-placement start after StartTile reports the
- * "exactly one unfinished live segment" conflict (core placement_repo).
- * Mirrors the server-side filter: occurrence-linked, open placements whose
- * tile_id or source_tile_id matches the requested tile/plan pair.
- * Executions state is not exposed by the list endpoint; a stale candidate
- * surfaces as a normal command error on start, which the caller displays.
+ * "exactly one unfinished live segment" conflict (core placement_repo
+ * `start_tile`). Mirrors the server-side candidate predicate:
+ *   (p.tile_id = :tile AND p.plan_id = :plan)
+ *   OR (p.source_tile_id = :tile AND source.plan_id = :plan)
+ * Split segments carry their own plan_id, so placements reached through
+ * `source_tile_id` must not be re-filtered on `p.plan_id`. Executions state
+ * is not exposed by the list endpoint; a stale candidate surfaces as a
+ * normal command error on start, which the caller displays.
  */
 export function selectStartableOccurrences(
   placements: PlacementListItem[],
@@ -47,8 +50,8 @@ export function selectStartableOccurrences(
       (p) =>
         isOpen(p) &&
         p.occurrence_id !== null &&
-        p.plan_id === target.planId &&
-        (p.tile_id === target.tileId || p.source_tile_id === target.tileId),
+        ((p.tile_id === target.tileId && p.plan_id === target.planId) ||
+          p.source_tile_id === target.tileId),
     )
     .sort((a, b) => (a.span_start ?? "").localeCompare(b.span_start ?? ""))
     .map((p) => ({

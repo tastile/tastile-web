@@ -38,6 +38,23 @@ describe("selectStartableOccurrences", () => {
     expect(out.map((c) => c.placementId)).toEqual(["b", "a"]);
   });
 
+  it("keeps source-linked placements regardless of their segment plan_id", () => {
+    const out = selectStartableOccurrences(
+      [
+        // Split segments get their own plan_id; the server matches them via
+        // source_tile_id without re-checking p.plan_id.
+        item({
+          placement_id: "seg-a",
+          tile_id: "seg-tile-a",
+          plan_id: "seg-plan-a",
+          source_tile_id: "tile-1",
+        }),
+      ],
+      target,
+    );
+    expect(out.map((c) => c.placementId)).toEqual(["seg-a"]);
+  });
+
   it("drops closed, detached, non-occurrence, and foreign placements", () => {
     const out = selectStartableOccurrences(
       [
