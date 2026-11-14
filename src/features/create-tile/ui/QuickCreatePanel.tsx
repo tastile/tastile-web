@@ -152,6 +152,7 @@ export function QuickCreatePanel() {
   // the button stays disabled in edit mode until something actually
   // diverges from the loaded baseline.
   const title = useQuickCreateStore((s) => s.identity.title);
+  const recurringMode = useQuickCreateStore((s) => s.recurring.repeatMode);
   const titleOk = title.trim().length > 0;
   useEffect(() => {
     setCanSubmit(titleOk && !submitBlocked);
@@ -170,6 +171,17 @@ export function QuickCreatePanel() {
         kind: "error",
         reason: "validation",
         message: t("quickCreate.titleRequired"),
+      });
+      return;
+    }
+    // tastile-core#292: monthly has no v1 wire representation; submitting
+    // would silently persist a daily schedule. Create mode only — edit
+    // reuses submitUpdateTile and never rebuilds the schedule.
+    if (mode !== "edit" && recurringMode === "monthly") {
+      setSubmitState({
+        kind: "error",
+        reason: "validation",
+        message: t("quickCreate.monthlyDailyMaterializationNotice"),
       });
       return;
     }
@@ -224,7 +236,7 @@ export function QuickCreatePanel() {
               ),
       });
     }
-  }, [titleOk, mode, reset, close, setSubmitState, t]);
+  }, [titleOk, recurringMode, mode, reset, close, setSubmitState, t]);
 
   const submitting = submitState.kind === "submitting";
   const serverError =

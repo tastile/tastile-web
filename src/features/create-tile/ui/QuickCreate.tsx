@@ -495,6 +495,18 @@ export function QuickCreate() {
       });
       return;
     }
+    // tastile-core#292: monthly has no v1 wire representation; submitting
+    // would silently persist a daily schedule. Block with an honest notice.
+    // Edit mode reuses submitUpdateTile and never rebuilds the schedule, so
+    // the guard applies to create only.
+    if (mode !== "edit" && recurring.repeatMode === "monthly") {
+      setSubmitState({
+        kind: "error",
+        reason: "validation",
+        message: t("quickCreate.monthlyDailyMaterializationNotice"),
+      });
+      return;
+    }
     if (!canSubmit) return;
 
     const client = makeClient();

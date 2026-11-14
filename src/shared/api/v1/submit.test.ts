@@ -107,4 +107,26 @@ describe("submitCreateTile — atomic schedule definition publish", () => {
     });
     expect(request.payload.recurrence).toBeNull();
   });
+
+  it("refuses to submit a monthly recurrence (tastile-core#292)", async () => {
+    useQuickCreateStore.getState().setField("identity.title", "Monthly task");
+    useQuickCreateStore.setState((s) => ({
+      recurring: { ...s.recurring, repeatMode: "monthly" },
+    }));
+
+    const result = await submitCreateTile({
+      client: {
+        baseUrl: "https://api.example.com",
+        getIdToken: async () => "tok",
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.kind).toBe(0); // ApiErrorKind.VALIDATION
+    }
+    // No schedule-definition request may leave the client: persisting a
+    // monthly selection today would silently materialize as daily.
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
 });

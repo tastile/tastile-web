@@ -159,9 +159,21 @@ export async function submitTile(options: SubmitTileOptions): Promise<SubmitResu
     : setTimeout(() => controller.abort(new Error("submit timeout")), DEFAULT_TIMEOUT_MS);
 
   try {
+    const state = useQuickCreateStore.getState();
+    // tastile-core#292: the v1 wire has no monthly_rule field, so a monthly
+    // selection would silently materialize as a daily schedule. Refuse the
+    // submit rather than persist semantics the user did not author.
+    if (state.recurring.repeatMode === "monthly") {
+      throw new SubmitValidationError({
+        kind: ApiErrorKind.VALIDATION,
+        message: "monthly recurrence is not supported by the v1 scheduler",
+        currentRevision: null,
+        violations: [],
+      });
+    }
     const result = await publishScheduleDefinition({
       client: options.client,
-      payload: buildQuickCreateSchedulePayload(useQuickCreateStore.getState()),
+      payload: buildQuickCreateSchedulePayload(state),
       idempotencyKey,
       signal: linked.signal,
     });
