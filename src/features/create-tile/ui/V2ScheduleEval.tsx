@@ -180,6 +180,60 @@ function V2EvalResultView({
   );
 }
 
+function V2SupportNotice({
+  reason,
+  t,
+}: {
+  reason: string;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}) {
+  const key =
+    reason === "missing_duration"
+      ? "quickCreate.v2EvalMissingDuration"
+      : reason === "expired_recurrence"
+        ? "quickCreate.v2EvalExpired"
+        : "quickCreate.v2EvalUnsupportedRepeat";
+  return <p className="text-xs text-foreground-muted">{t(key)}</p>;
+}
+
+function V2EvalNotices({
+  showStale,
+  adoptBlocked,
+  adopted,
+  t,
+}: {
+  showStale: boolean;
+  adoptBlocked: boolean;
+  adopted: boolean;
+  t: (key: string, params?: Record<string, string | number>) => string;
+}) {
+  return (
+    <>
+      {showStale ? (
+        <p className="text-xs text-foreground-muted" data-testid="v2-eval-stale">
+          {t("quickCreate.v2EvalStale")}
+        </p>
+      ) : null}
+      {adoptBlocked ? (
+        <p
+          className="text-xs text-foreground-muted"
+          data-testid="v2-eval-adopt-unavailable"
+        >
+          {t("quickCreate.v2EvalAdoptUnavailable")}
+        </p>
+      ) : null}
+      {adopted ? (
+        <p
+          className="text-xs text-foreground-muted"
+          data-testid="v2-eval-adopted"
+        >
+          {t("quickCreate.v2EvalAdopted")}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 interface V2EvalPanelProps {
   supportReason: string | null;
   state: EvalState;
@@ -207,13 +261,7 @@ function V2EvalPanel({
   return (
     <div className="space-y-2" data-testid="v2-eval-panel">
       {supportReason !== null ? (
-        <p className="text-xs text-foreground-muted">
-          {supportReason === "missing_duration"
-            ? t("quickCreate.v2EvalMissingDuration")
-            : supportReason === "expired_recurrence"
-              ? t("quickCreate.v2EvalExpired")
-              : t("quickCreate.v2EvalUnsupportedRepeat")}
-        </p>
+        <V2SupportNotice reason={supportReason} t={t} />
       ) : (
         <Button
           type="button"
@@ -246,29 +294,12 @@ function V2EvalPanel({
         />
       ) : null}
 
-      {stale && state.phase === "done" ? (
-        <p className="text-xs text-foreground-muted" data-testid="v2-eval-stale">
-          {t("quickCreate.v2EvalStale")}
-        </p>
-      ) : null}
-
-      {adoptBlocked ? (
-        <p
-          className="text-xs text-foreground-muted"
-          data-testid="v2-eval-adopt-unavailable"
-        >
-          {t("quickCreate.v2EvalAdoptUnavailable")}
-        </p>
-      ) : null}
-
-      {adopted ? (
-        <p
-          className="text-xs text-foreground-muted"
-          data-testid="v2-eval-adopted"
-        >
-          {t("quickCreate.v2EvalAdopted")}
-        </p>
-      ) : null}
+      <V2EvalNotices
+        showStale={stale && state.phase === "done"}
+        adoptBlocked={adoptBlocked}
+        adopted={adopted}
+        t={t}
+      />
     </div>
   );
 }
