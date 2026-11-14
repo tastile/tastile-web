@@ -397,6 +397,30 @@ describe("QuickCreateRecurring", () => {
     expect(screen.queryByTestId("recurring-daily-end-time")).toBeNull();
   });
 
+  it("shows the daily-materialization notice in monthly mode", () => {
+    act(() => {
+      useQuickCreateStore.setState((s) => ({
+        recurring: {
+          ...s.recurring,
+          repeatMode: "monthly",
+          monthlyKind: "by_day",
+        },
+      }));
+    });
+
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(
+      screen.getByTestId("recurring-monthly-daily-notice"),
+    ).toHaveTextContent(/monthly recurrence is not yet supported/i);
+  });
+
+  it("hides the daily-materialization notice outside monthly mode", () => {
+    renderWithMantine(<QuickCreateRecurring />);
+    expect(
+      screen.queryByTestId("recurring-monthly-daily-notice"),
+    ).toBeNull();
+  });
+
   // ---- Shared SubtasksSection (2026-08-15) ----
 
   it("renders the shared SubtasksSection in the main body", () => {

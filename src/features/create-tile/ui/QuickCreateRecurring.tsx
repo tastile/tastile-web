@@ -756,6 +756,12 @@ export function QuickCreateRecurring() {
                     />
                   </Group>
                 ) : null}
+                <p
+                  className="text-xs text-foreground-muted"
+                  data-testid="recurring-monthly-daily-notice"
+                >
+                  {t("quickCreate.monthlyDailyMaterializationNotice")}
+                </p>
               </Stack>
             </FormRow>
           </div>
