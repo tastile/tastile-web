@@ -1,0 +1,28 @@
+{
+  "title": "verify215-mwgc8rzh",
+  "sub": "xv76fRZZmQhfogPK1UnPK2zHLNxPYQJy",
+  "sourceId": "01a1d9e0-a358-79b1-b52c-abce3558e66c",
+  "adoptedWindow": [
+    "00:00",
+    "00:30"
+  ],
+  "schedule": {
+    "required_duration_ms": 1800000,
+    "generation": {
+      "kind": 1,
+      "starts_at": "2026-11-13T15:00:00Z",
+      "interval_ms": 86400000,
+      "weekday_mask": null,
+      "excluded_dates": [],
+      "offset_min": 540
+    },
+    "window": {
+      "start_offset_ms": 0,
+      "end_offset_ms": 1800000
+    },
+    "split_policy": {
+      "kind": 0
+    },
+    "priority": 0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "email": "verify215-mwgc1t4h@example.com",
+  "sub": "e3lnshc4LOrt6VArhQKcmeQi7rusTwvz",
+  "hasAdopt": 1,
+  "resultText": "候補 15 件11/14 00:00 → 00:3011/15 00:00 → 00:3011/16 00:00 → 00:3011/17 00:00 → 00:3011/18 00:00 → 00:3011/19 00:00 → 00:3011/20 00:00 → 00:3011/21 00:00 → 00:30ほか 7 件先頭候補の時間帯を採用破棄",
+  "v2Requests": [
+    "POST http://localhost:3124/api/v2/scheduler/evaluate",
+    "POST http://localhost:3124/api/v2/scheduler/evaluate"
+  ],
+  "adopted": {
+    "schedulableWindow": [
+      "00:00",
+      "00:30"
+    ],
+    "timeOfDay": [
+      null,
+      null
+    ]
+  },
+  "discardCleared": true
+}

@@ -28,6 +28,7 @@ import { FormDivider, FormRow, RowSegmented } from "@/shared/ui/form";
 import { QuickCreateHeader } from "./QuickCreateHeader";
 import { RecurringDetailsSubPanel } from "./RecurringDetailsSubPanel";
 import { TimeSuggestionInput } from "./TimeSuggestionInput";
+import { V2ScheduleEval } from "./V2ScheduleEval";
 import { WorkflowBatch } from "./WorkflowBatch";
 import { weekdayLabelsFor } from "./quick-create-utils";
 import { DetailsAffordanceButton } from "./sections/DetailsAffordanceButton";
@@ -988,6 +989,10 @@ export function QuickCreateRecurring() {
             </div>
           </FormRow>
         </div>
+
+        {/* Opt-in v2 scheduler evaluation — advisory preview only; the
+            v1 recurring definition remains the source of truth (web#215). */}
+        <V2ScheduleEval />
 
         {/* "Recurring details" affordance — opens the recurring-details sub-panel */}
         <DetailsAffordanceButton
