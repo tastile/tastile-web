@@ -7,8 +7,7 @@
 # canonical references:
 #   - docs/adr/0007-release-branch-and-ticket-workflow.md (release branch / Issue 番号)
 #   - docs/adr/0008-structured-recovery-checkpoint.md (soft / hard / fencing)
-#   - docs/adr/0011-tastile-precommit-review-canonical-precedence.md (web canonical)
-#   - ../../.agent-loop/checkpoint.schema.json (canonical checkpoint shape)
+#   - ../../docs/adr/0012-deprecate-tastile-precommit-review.md (per-commit reviewer 廃止 2026-09-29、ADR-0012)
 #   - ../../docs/agent-orchestration.md §6 (external side-effect journal)
 
 set -euo pipefail
@@ -79,7 +78,7 @@ const entry = {
   leaseToken: process.env.LEASE_TOKEN ?? "",
   gate: "bun run check:release",
   gateExit: Number(process.env.GATE_EXIT),
-  checkpointSchema: ".agent-loop/checkpoint.schema.json",
+  checkpointSchema: "../docs/adr/0008-structured-recovery-checkpoint.md",
 };
 process.stdout.write(JSON.stringify(entry));
 NODE

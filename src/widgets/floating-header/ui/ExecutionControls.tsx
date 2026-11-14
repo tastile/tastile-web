@@ -21,6 +21,7 @@ import {
   useV1Execution,
 } from "@/shared/hooks/use-v1-execution";
 import { useTranslation } from "@/shared/i18n/use-translation";
+import { ExecutionState } from "@/shared/model/v1/constants";
 import { Button } from "@mantine/core";
 import { Pause, Play, Square } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -84,6 +85,7 @@ export function ExecutionControls() {
   const spanEnd = new Date(tileSnapshot.span_end);
   const remaining = formatRemaining(spanEnd, nowMs);
   const hasExecution = Boolean(tileSnapshot.execution_id);
+  const isPaused = snapshot?.execution_state === ExecutionState.PAUSED;
 
   const onClick = (action: "pause" | "resume" | "finish") => () => {
     void run(action).then(() => {
@@ -124,6 +126,7 @@ export function ExecutionControls() {
       )}
       {hasExecution && (
         <>
+          {isPaused ? null : (
           <Button
             type="button"
             onClick={onClick("pause")}
@@ -135,6 +138,8 @@ export function ExecutionControls() {
           >
             <Pause className="size-3" /> {t("execution.controls.pause")}
           </Button>
+          )}
+          {isPaused ? (
           <Button
             type="button"
             onClick={onClick("resume")}
@@ -146,6 +151,7 @@ export function ExecutionControls() {
           >
             <Play className="size-3" /> {t("execution.controls.resume")}
           </Button>
+          ) : null}
           <Button
             type="button"
             onClick={onClick("finish")}

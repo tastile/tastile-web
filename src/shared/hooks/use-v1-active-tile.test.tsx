@@ -46,6 +46,7 @@ const validSnapshot: V1ActiveTileSnapshot = {
   title: "Plan the launch",
   span_start: "2026-07-23T09:00:00.000Z",
   span_end: "2026-07-23T10:00:00.000Z",
+  execution_state: 0,
 };
 
 const ok = (data: V1ActiveTileSnapshot | null): Result<V1ActiveTileSnapshot | null> => ({

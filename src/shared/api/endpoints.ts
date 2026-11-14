@@ -999,23 +999,19 @@ function classifyStatus(status: number): ApiErrorKind {
 
 let _client: CoreClient | null = null;
 
-function shouldUseProxyBridge(url: string): boolean {
+function shouldUseProxyBridge(_url: string): boolean {
   if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") {
     return true;
   }
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     return true;
   }
-  try {
-    const parsed = new URL(url);
-    return !(
-      parsed.hostname === "127.0.0.1" ||
-      parsed.hostname === "localhost" ||
-      parsed.hostname === "10.0.2.2"
-    );
-  } catch {
-    return false;
-  }
+  // Direct browser→core calls are opt-in only: the direct-daemon cookie and
+  // NEXT_PUBLIC_CORE_DIRECT_MODE are handled by getCoreClient before this
+  // check runs.  Implicit direct mode sends no bearer token and depends on
+  // core CORS, which left authenticated pages empty on localhost
+  // (tastile-web#209).  Default every remaining deployment to the BFF proxy.
+  return true;
 }
 
 function readDirectDaemonCookie(): boolean {
