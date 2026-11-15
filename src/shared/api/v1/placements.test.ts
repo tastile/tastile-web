@@ -1,9 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import {
-  selectStartableOccurrences,
-  type PlacementListItem,
-} from "./placements";
+import { listPlacements, selectStartableOccurrences, type PlacementListItem } from "./placements";
 
 function item(overrides: Partial<PlacementListItem>): PlacementListItem {
   return {
@@ -79,5 +76,31 @@ describe("selectStartableOccurrences", () => {
       target,
     );
     expect(out.map((c) => c.placementId)).toEqual(["earlier", "later"]);
+  });
+});
+
+describe("listPlacements", () => {
+  const client = {
+    baseUrl: "https://core.example",
+    getIdToken: vi.fn().mockResolvedValue("token"),
+  };
+
+  it("unwraps the paged envelope and follows next_cursor", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      const body =
+        url === "https://core.example/v1/placements"
+          ? { items: [item({ placement_id: "p1" })], count: 1, next_cursor: "c2" }
+          : url === "https://core.example/v1/placements?cursor=c2"
+            ? { items: [item({ placement_id: "p2" })], count: 1, next_cursor: null }
+            : null;
+      if (!body) throw new Error(`unexpected url: ${url}`);
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+
+    const res = await listPlacements(client);
+    expect(res.ok && res.data.map((p) => p.placement_id)).toEqual(["p1", "p2"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.restoreAllMocks();
   });
 });

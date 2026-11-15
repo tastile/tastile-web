@@ -1,24 +1,19 @@
-import { type ApiClient, type Result, getRead } from "./endpoints";
+import { type ApiClient, type Result, getAllPages } from "./endpoints";
+import type { components } from "./openapi-generated";
 
-/** Wire shape of GET /v1/placements items (snake_case, core read.rs). */
-export interface PlacementListItem {
-  placement_id: string;
-  tile_id: string;
-  plan_id: string | null;
-  title: string;
-  close_kind: number;
-  detach_kind: number;
-  span_start: string | null;
-  span_end: string | null;
-  source_tile_id: string | null;
-  occurrence_id: string | null;
-  split_index: number | null;
-  split_count: number | null;
-  split_group_id: string | null;
-}
+/**
+ * Wire shape of `GET /v1/placements` items (snake_case), aliased from the
+ * pinned OpenAPI spec (contract v2.0.0).
+ */
+export type PlacementListItem = components["schemas"]["PlacementListItem"];
 
+/**
+ * All placements of the caller. The endpoint is keyset-paginated
+ * (`{items, count, next_cursor}`); every page is followed so callers
+ * never see a truncated list.
+ */
 export function listPlacements(client: ApiClient): Promise<Result<PlacementListItem[]>> {
-  return getRead<PlacementListItem[]>(client, "/v1/placements");
+  return getAllPages(client, "/v1/placements");
 }
 
 export interface StartableOccurrenceCandidate {
@@ -49,15 +44,15 @@ export function selectStartableOccurrences(
     .filter(
       (p) =>
         isOpen(p) &&
-        p.occurrence_id !== null &&
+        p.occurrence_id != null &&
         ((p.tile_id === target.tileId && p.plan_id === target.planId) ||
           p.source_tile_id === target.tileId),
     )
     .sort((a, b) => (a.span_start ?? "").localeCompare(b.span_start ?? ""))
     .map((p) => ({
       placementId: p.placement_id,
-      spanStart: p.span_start,
-      spanEnd: p.span_end,
-      splitIndex: p.split_index,
+      spanStart: p.span_start ?? null,
+      spanEnd: p.span_end ?? null,
+      splitIndex: p.split_index ?? null,
     }));
 }
