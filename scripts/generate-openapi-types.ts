@@ -23,6 +23,9 @@ import { resolve } from "node:path";
 const ROOT = resolve(import.meta.dir, "..");
 const CACHE_PATH = resolve(ROOT, ".openapi-cache.json");
 const OUTPUT_PATH = resolve(ROOT, "src/lib/api/v1/openapi-generated.d.ts");
+// Mirror of the generated types consumed by `openapi-contract.ts`.
+// Keep in sync with `scripts/sync-openapi.ts`.
+const OUTPUT_PATH_SHARED = resolve(ROOT, "src/shared/api/v1/openapi-generated.d.ts");
 
 // --------------- fetch spec ---------------
 
@@ -112,10 +115,12 @@ async function main() {
     "",
   ].join("\n");
 
-  const content = readFileSync(OUTPUT_PATH, "utf-8");
-  writeFileSync(OUTPUT_PATH, header + content, "utf-8");
+  const content = header + readFileSync(OUTPUT_PATH, "utf-8");
+  writeFileSync(OUTPUT_PATH, content, "utf-8");
+  writeFileSync(OUTPUT_PATH_SHARED, content, "utf-8");
 
   console.log(`[openapi] Done → ${OUTPUT_PATH}`);
+  console.log(`[openapi] Done → ${OUTPUT_PATH_SHARED}`);
 }
 
 main().catch((err) => {
