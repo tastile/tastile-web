@@ -194,18 +194,22 @@ export function ScheduleMain() {
                         <div className="min-w-0">
                           <div className="font-mono text-xs text-foreground-subtle">
                             {t("panels.schedule.workLabel")}{" "}
-                            {p.work_tile_id.slice(0, 8)}
+                            {p.title || p.work_tile_id.slice(0, 8)}
                           </div>
                           <div className="font-mono text-xs text-foreground-subtle">
                             {t("panels.schedule.blockLabel")}{" "}
-                            {p.time_tile_id.slice(0, 8)}
+                            {p.span_start
+                              ? p.span_start.slice(0, 16).replace("T", " ")
+                              : p.id.slice(0, 8)}
                           </div>
                         </div>
-                        <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
-                          {t("panels.schedule.placedMinutes", {
-                            minutes: p.planned_minutes,
-                          })}
-                        </span>
+                        {p.planned_minutes !== null && (
+                          <span className="rounded bg-surface-3/50 border border-border px-1.5 py-0.5 text-caption font-semibold uppercase tracking-wide text-foreground-subtle shrink-0">
+                            {t("panels.schedule.placedMinutes", {
+                              minutes: p.planned_minutes,
+                            })}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -219,11 +223,11 @@ export function ScheduleMain() {
                   <div className="border border-border bg-surface-1 rounded-lg overflow-hidden divide-y divide-border/40 shadow-xs">
                     {candidatesState.candidates.map((c) => (
                       <div
-                        key={c.work_tile_id}
+                        key={c.placement_id}
                         className="px-4 py-3 font-mono text-xs text-foreground-subtle"
                       >
                         {t("panels.schedule.workLabel")}{" "}
-                        {c.work_tile_id.slice(0, 8)}
+                        {c.title || c.tile_id.slice(0, 8)}
                       </div>
                     ))}
                   </div>

@@ -11,7 +11,7 @@
 import { ApiErrorKind } from "@/shared/model/v1/constants";
 import type { ApiError } from "@/shared/model/v1/envelope";
 import type { ApiClient } from "./endpoints";
-import { type Result, getRead } from "./endpoints";
+import { type Result, getAllPages } from "./endpoints";
 
 interface SessionPrompt {
   title: string;
@@ -31,8 +31,13 @@ export interface SessionView {
   baseRevision: number;
 }
 
+/**
+ * `GET /v1/sessions` is keyset-paginated (`SessionListResponse` envelope,
+ * OpenAPI v3.0.0) and already scoped to open sessions — the spec declares
+ * no `status` filter, so none is sent. Follow every `next_cursor` page.
+ */
 export async function listPendingSessions(client: ApiClient): Promise<Result<SessionView[]>> {
-  return getRead<SessionView[]>(client, "/v1/sessions?status=open");
+  return getAllPages<SessionView>(client, "/v1/sessions");
 }
 
 export interface FeedbackPayload {
