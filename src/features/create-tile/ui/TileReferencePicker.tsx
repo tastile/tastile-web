@@ -19,7 +19,7 @@ import { Button, Modal, ScrollArea, TextInput } from "@mantine/core";
 import { Search } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { getCoreClient } from "@/shared/api/endpoints";
+import { type PagedList, getCoreClient } from "@/shared/api/endpoints";
 import type { TileListView } from "@/shared/hooks/use-tile-list";
 import { useTranslation } from "@/shared/i18n/use-translation";
 
@@ -40,17 +40,22 @@ export interface TileReferencePickerProps {
 const PAGE_SIZE = 40;
 const DEBOUNCE_MS = 220;
 
-interface SearchResponse {
-  tiles: TileListView[];
-  next_actionable_tile_id?: string | null;
-  next_actionable_start_at?: string | null;
-}
-
-function isSearchResponse(value: unknown): value is SearchResponse {
-  if (Array.isArray(value)) return true;
-  return Boolean(
-    value && typeof value === "object" && Array.isArray((value as { tiles?: unknown }).tiles),
-  );
+/**
+ * OpenAPI v3.0.0 `GET /v1/tiles` returns `{items, count, next_cursor}`.
+ * This picker intentionally renders only the first page (`limit=PAGE_SIZE`);
+ * `next_cursor` is ignored because the modal is a bounded search box, not a
+ * full-list view. Bare arrays are still accepted for pre-v3 daemons.
+ */
+function pageItems(value: unknown): TileListView[] | null {
+  if (Array.isArray(value)) return value as TileListView[];
+  if (
+    value &&
+    typeof value === "object" &&
+    Array.isArray((value as PagedList<TileListView>).items)
+  ) {
+    return (value as PagedList<TileListView>).items;
+  }
+  return null;
 }
 
 export function TileReferencePicker({
@@ -99,7 +104,7 @@ export function TileReferencePicker({
           ? tileKindFilter.join(",")
           : String(tileKindFilter);
     void getCoreClient()
-      .call<SearchResponse | TileListView[]>("getTiles", {
+      .call<PagedList<TileListView> | TileListView[]>("getTiles", {
         query: {
           search: debounced || undefined,
           limit: PAGE_SIZE,
@@ -113,12 +118,12 @@ export function TileReferencePicker({
           setResults([]);
           return;
         }
-        if (!isSearchResponse(res.data)) {
+        const flat = pageItems(res.data);
+        if (!flat) {
           setError(t("quickCreate.tilePickerUnexpectedResponse"));
           setResults([]);
           return;
         }
-        const flat = Array.isArray(res.data) ? res.data : res.data.tiles;
         const filtered = filterPlanOnly ? flat.filter((t) => t.plan_id) : flat;
         setResults(filtered);
         setActiveIndex(0);
