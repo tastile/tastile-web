@@ -5,7 +5,16 @@ import {
   nowIso,
   uuidv7,
 } from "@/shared/model/v1/envelope";
-import { type ApiClient, type Result, getRead, sendCommand } from "./endpoints";
+import {
+  type ApiClient,
+  type PagedRead,
+  type Result,
+  followPages,
+  getAllPages,
+  getRead,
+  sendCommand,
+} from "./endpoints";
+import type { components } from "./openapi-generated";
 
 export interface UtcSpan {
   start: string;
@@ -405,76 +414,41 @@ export interface SourceTileCreatePayload {
 /** `PUT /v1/source-tiles/{id}` body; the source ID belongs only in the path. */
 export type SourceTileUpdatePayload = SourceTileCreatePayload;
 
-interface SourceScheduleRead {
-  required_duration_ms: number;
-  generation: {
-    kind: number;
-    at: string | null;
-    starts_at: string | null;
-    interval_ms: number | null;
-    ends_at: string | null;
-    weekday_mask: number | null;
-    date_range_start: string | null;
-    date_range_end: string | null;
-    excluded_dates: string[];
-  };
-  // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
-  window: { start_offset_ms: number; end_offset_ms: number };
-  split_policy: {
-    kind: number;
-    min_segment_ms: number | null;
-    max_segment_ms: number | null;
-    max_segments: number | null;
-  };
-  priority: number;
-}
+// ---------------------------------------------------------------
+// Read-side wire types
+//
+// Aliased from the pinned OpenAPI spec (contract v2.0.0) so the read
+// shapes cannot drift from `tastile-core`. List endpoints return the
+// `{items, count, next_cursor}` page envelope; the helpers below
+// traverse every page before resolving.
+// ---------------------------------------------------------------
 
-export interface SourceTileRead {
-  source_tile_id: string;
-  plan_id: string;
-  owner_id: string;
-  revision: number;
-  title: string;
-  description: string | null;
-  color: string | null;
-  icon: string | null;
-  external_id: string | null;
-  plan_role: number;
-  schedule: SourceScheduleRead;
-  created_at: string;
-  updated_at: string;
-}
+type Schemas = components["schemas"];
 
-interface OccurrenceRead {
-  occurrence_id: string;
-  source_tile_id: string;
-  sequence_no: number;
-  nominal_at: string;
-  window_start: string;
-  window_end: string;
-  required_duration_ms: number;
-  state: number;
-  revision: number;
-}
+/** Wire shape of `SourceTileRead` (GET /v1/source-tiles items). */
+export type SourceTileRead = Schemas["SourceTileRead"];
 
-export interface PlacementRead {
-  placement_id: string;
-  source_tile_id: string;
-  occurrence_id: string;
-  split_index: number;
-  split_count: number;
-  split_group_id: string;
-  start: string;
-  end: string;
-  closed: boolean;
-  closed_at: string | null;
-  revision: number;
-}
+/** Wire shape of `SourceOccurrenceRead`. */
+type SourceOccurrenceRead = Schemas["SourceOccurrenceRead"];
 
+/** Wire shape of `PlacementTileRead` (source-tile placement rows). */
+export type PlacementTileRead = Schemas["PlacementTileRead"];
+
+/** Wire shape of `RelationDefinitionRead` (detail `relations` array). */
+type RelationDefinitionRead = Schemas["RelationDefinitionRead"];
+
+type SourceTileDetailReadWire = Schemas["SourceTileDetailRead"];
+
+/**
+ * Flattened view of `GET /v1/source-tiles/{id}`. The wire response pages
+ * `occurrences` and `placements` independently; `getSourceTile` follows
+ * both cursors so callers always receive complete collections.
+ */
 export interface SourceTileDetail {
   source: SourceTileRead;
-  occurrences: OccurrenceRead[];
-  placements: PlacementRead[];
+  relations: RelationDefinitionRead[];
+  occurrences: SourceOccurrenceRead[];
+  placements: PlacementTileRead[];
 }
 
 /**
@@ -551,20 +525,83 @@ export function reflowSourceTile(options: {
   );
 }
 
-export function getSourceTile(
+/**
+ * Follow one paged sub-collection (`occurrences` or `placements`) of the
+ * detail endpoint. Each follow-up request returns the full detail body;
+ * only the requested collection's page is consumed.
+ */
+async function collectDetailPages<T>(
+  client: ApiClient,
+  path: string,
+  first: PagedRead<T>,
+  firstStatus: number,
+  cursorParam: "occurrence_cursor" | "placement_cursor",
+  pick: (detail: SourceTileDetailReadWire) => PagedRead<T>,
+): Promise<Result<T[]>> {
+  return followPages(first, firstStatus, async (cursor) => {
+    const res = await getRead<SourceTileDetailReadWire>(
+      client,
+      `${path}?${cursorParam}=${encodeURIComponent(cursor)}`,
+    );
+    if (!res.ok) return { ok: false, error: res.error };
+    return { ok: true, data: pick(res.data), status: res.status };
+  });
+}
+
+export async function getSourceTile(
   client: ApiClient,
   sourceTileId: string,
 ): Promise<Result<SourceTileDetail>> {
-  return getRead(client, `/v1/source-tiles/${sourceTileId}`);
+  const path = `/v1/source-tiles/${sourceTileId}`;
+  const res = await getRead<SourceTileDetailReadWire>(client, path);
+  if (!res.ok) return { ok: false, error: res.error };
+  const detail = res.data;
+
+  const occurrences = await collectDetailPages(
+    client,
+    path,
+    detail.occurrences,
+    res.status,
+    "occurrence_cursor",
+    (d) => d.occurrences,
+  );
+  if (!occurrences.ok) return { ok: false, error: occurrences.error };
+
+  const placements = await collectDetailPages(
+    client,
+    path,
+    detail.placements,
+    res.status,
+    "placement_cursor",
+    (d) => d.placements,
+  );
+  if (!placements.ok) return { ok: false, error: placements.error };
+
+  return {
+    ok: true,
+    status: res.status,
+    data: {
+      source: detail.source,
+      relations: detail.relations,
+      occurrences: occurrences.data,
+      placements: placements.data,
+    },
+  };
 }
 
+/**
+ * All SourceTiles owned by the caller. The endpoint is keyset-paginated
+ * (contract v2.0.0); every page is followed so callers never see a
+ * truncated list.
+ */
 export function listSourceTiles(client: ApiClient): Promise<Result<SourceTileRead[]>> {
-  return getRead(client, "/v1/source-tiles");
+  return getAllPages(client, "/v1/source-tiles");
 }
 
+/** All canonical Placement rows for a SourceTile (all pages). */
 export function listSourceTilePlacements(
   client: ApiClient,
   sourceTileId: string,
-): Promise<Result<PlacementRead[]>> {
-  return getRead(client, `/v1/source-tiles/${sourceTileId}/placements`);
+): Promise<Result<PlacementTileRead[]>> {
+  return getAllPages(client, `/v1/source-tiles/${sourceTileId}/placements`);
 }

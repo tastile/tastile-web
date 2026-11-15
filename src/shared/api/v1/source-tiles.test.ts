@@ -3,6 +3,7 @@ import {
   createSourceTile,
   getSourceTile,
   listSourceTilePlacements,
+  listSourceTiles,
   reflowSourceTile,
   type SourceTileCreatePayload,
   updateSourceTile,
@@ -137,9 +138,19 @@ describe("SourceTile client", () => {
   });
 
   it("uses source-specific read, reflow, and placement endpoints", async () => {
-    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
-      source: { source_tile_id: "source-1" }, occurrences: [], placements: [],
-    }), { status: 200 }));
+    const emptyPage = { items: [], count: 0, next_cursor: null };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      const body = url.endsWith("/placements")
+        ? emptyPage
+        : {
+            source: { source_tile_id: "source-1" },
+            relations: [],
+            occurrences: emptyPage,
+            placements: emptyPage,
+          };
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
 
     await getSourceTile(client, "source-1");
     await reflowSourceTile({ client, sourceTileId: "source-1", expectedRevision: 2, range });
@@ -151,5 +162,39 @@ describe("SourceTile client", () => {
       "https://core.example/v1/source-tiles/source-1/placements",
     ]);
     expect(fetchMock.mock.calls.slice(1).map(([, init]) => (init as RequestInit).method)).toEqual(["POST", "GET"]);
+  });
+
+  it("follows next_cursor across list and detail pages", async () => {
+    const page = (items: unknown[], next: string | null) =>
+      new Response(JSON.stringify({ items, count: items.length, next_cursor: next }), { status: 200 });
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+      const url = String(input);
+      if (url === "https://core.example/v1/source-tiles") return page([{ source_tile_id: "s1" }], "c2");
+      if (url === "https://core.example/v1/source-tiles?cursor=c2") return page([{ source_tile_id: "s2" }], null);
+      if (url === "https://core.example/v1/source-tiles/source-1") {
+        return new Response(JSON.stringify({
+          source: { source_tile_id: "source-1" },
+          relations: [],
+          occurrences: { items: [{ occurrence_id: "o1" }], count: 1, next_cursor: "oc2" },
+          placements: { items: [], count: 0, next_cursor: null },
+        }), { status: 200 });
+      }
+      if (url === "https://core.example/v1/source-tiles/source-1?occurrence_cursor=oc2") {
+        return new Response(JSON.stringify({
+          source: { source_tile_id: "source-1" },
+          relations: [],
+          occurrences: { items: [{ occurrence_id: "o2" }], count: 1, next_cursor: null },
+          placements: { items: [], count: 0, next_cursor: null },
+        }), { status: 200 });
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const list = await listSourceTiles(client);
+    expect(list.ok && list.data.map((s) => s.source_tile_id)).toEqual(["s1", "s2"]);
+
+    const detail = await getSourceTile(client, "source-1");
+    expect(detail.ok && detail.data.occurrences.map((o) => o.occurrence_id)).toEqual(["o1", "o2"]);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });
