@@ -26,6 +26,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open placements without an active execution (candidates). */
+        get: operations["list_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/executions/{id}/finish": {
         parameters: {
             query?: never;
@@ -68,6 +85,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["resume_execution"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/labels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Distinct TIME_WINDOW annotation labels of the caller. */
+        get: operations["list_labels"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -226,6 +260,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Open decision sessions of the caller, newest first. */
+        get: operations["list_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/source-tiles": {
         parameters: {
             query?: never;
@@ -297,7 +348,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Derive per-segment and whole-occurrence completion for a SourceTile. */
+        /**
+         * Derive per-segment and whole-occurrence completion for a SourceTile.
+         *     Complete-set read (v1/14 §15-4): returns every live split
+         *     occurrence of the source — no LIMIT, no paging.  Paging
+         *     parameters (`limit` / `cursor` / `offset` / `occurrence_*` /
+         *     `placement_*`) are rejected with VALIDATION.
+         */
         get: operations["get_source_tile_completion"];
         put?: never;
         post?: never;
@@ -497,6 +554,26 @@ export interface components {
             kind: number;
             proposal?: null | components["schemas"]["PlacementProposalDraftSchema"];
             request?: null | components["schemas"]["RequestDraftSchema"];
+        };
+        /** @description Mirror of `handlers::paging::ListResponse<CandidatePlacement>`. */
+        CandidateListResponse: {
+            count: number;
+            items: components["schemas"]["CandidatePlacementSchema"][];
+            next_cursor?: string | null;
+        };
+        /** @description Mirror of `handlers::read::CandidatePlacement`. */
+        CandidatePlacementSchema: {
+            /** Format: uuid */
+            placement_id: string;
+            /** Format: int64 */
+            priority: number;
+            /** Format: date-time */
+            span_end?: string | null;
+            /** Format: date-time */
+            span_start?: string | null;
+            /** Format: uuid */
+            tile_id: string;
+            title: string;
         };
         ChangeKeySchema: {
             /**
@@ -807,6 +884,12 @@ export interface components {
         InteractionViewSchema: {
             body?: string | null;
             title: string;
+        };
+        /** @description Mirror of `handlers::paging::ListResponse<String>` for `GET /v1/labels`. */
+        LabelListResponse: {
+            count: number;
+            items: string[];
+            next_cursor?: string | null;
         };
         /** @enum {string} */
         LifeStateSchema: "Active" | "Paused" | "Closed" | "Voided";
@@ -1433,6 +1516,33 @@ export interface components {
             /** Format: int32 */
             primary: number;
         };
+        /** @description Mirror of `storage::session_repo::OpenSessionRow`. */
+        SessionListItemSchema: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            owner_id: string;
+            /** Format: int32 */
+            revision: number;
+            /**
+             * Format: int32
+             * @description Numeric session state registry value (0 = OPEN).
+             */
+            state: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * @description Mirror of `handlers::paging::ListResponse<OpenSessionRow>` for
+         *     `GET /v1/sessions`.
+         */
+        SessionListResponse: {
+            count: number;
+            items: components["schemas"]["SessionListItemSchema"][];
+            next_cursor?: string | null;
+        };
         SourceGenerationSchema: {
             /** Format: date-time */
             at?: string | null;
@@ -1782,6 +1892,16 @@ export interface components {
         } | {
             Life: components["schemas"]["LifeTermSchema"];
         };
+        /**
+         * @description Mirror of `handlers::paging::ListResponse<TileListView>` for
+         *     `GET /v1/tiles` (v1/14 §15-1).  `count` is the page size, not the
+         *     total; `next_cursor` is null on the last page.
+         */
+        TileListResponse: {
+            count: number;
+            items: components["schemas"]["TileListView"][];
+            next_cursor?: string | null;
+        };
         /** @description Rich tile-list view-model (mirror of `domain::read::TileListView`). */
         TileListView: {
             /** Format: int64 */
@@ -1907,6 +2027,47 @@ export interface operations {
         responses: {
             /** @description Credential revoked (or no credential present; idempotent) */
             204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_candidates: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Candidate placements of the caller */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CandidateListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2044,6 +2205,49 @@ export interface operations {
             };
             /** @description Execution is not in a resumable state */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_labels: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated owner ids; defaults to the caller */
+                owner_ids?: string;
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Distinct labels ordered by label ASC */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LabelListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2412,6 +2616,47 @@ export interface operations {
             };
         };
     };
+    list_sessions: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Open decision sessions (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_source_tiles: {
         parameters: {
             query?: {
@@ -2653,7 +2898,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Derived split completion */
+            /** @description Derived split completion for every live split occurrence (complete set, ordered by occurrence_id/split_group_id) */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2664,6 +2909,13 @@ export interface operations {
             };
             /** @description Not found or not accessible */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Paging parameters are not supported on this complete-set read */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2765,7 +3017,18 @@ export interface operations {
                  *     owner (= Personal scope) when omitted.
                  */
                 owner_ids?: string;
+                /**
+                 * @description Page size 1..=1000 (default 100); out of range is rejected
+                 *     (v1/14 §15-2).  Follow `next_cursor` to reach every row.
+                 */
                 limit?: number;
+                /** @description Opaque keyset cursor of the previous page (v1/14 §15). */
+                cursor?: string;
+                /**
+                 * @description Retired parameter.  Present only so offset requests are rejected
+                 *     instead of silently returning the first page.
+                 */
+                offset?: number;
                 /**
                  * @description View bucketing.  `"by_state"` groups tiles by lifecycle.
                  *     Defaults to `"flat"` (no bucketing) for backwards compat with the
@@ -2802,13 +3065,13 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Tile list view-model */
+            /** @description Tile list view-model page (v1/14 §15) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TileListView"][];
+                    "application/json": components["schemas"]["TileListResponse"];
                 };
             };
             /** @description Unauthenticated */
@@ -2820,6 +3083,13 @@ export interface operations {
             };
             /** @description Forbidden */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
