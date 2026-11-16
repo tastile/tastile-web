@@ -144,15 +144,27 @@ CI 側の gating:
 - `.env.local` に書くつもりだった値は component test の auth short-circuit 境界を維持し、
   Vitest の envDir は無効のままにする。必要なテスト値も Infisical から取得する。
 
+## Working agreements（house rules）
+
+- source code（identifier / comment / log）と commit message は英語。Issue / PR / review /
+  内部文書は日本語。localization resource は例外。
+- commit message は `<type>: <short title>`（例: `fix(create-tile): ...`）。
+- package manager は Bun。text search は `rg` / `rg --files`。新規 script を `.py` で作らない
+  （shell か TypeScript）。新規 container definition は `Containerfile`。
+- project 固有 rule は repository に残す。global 設定や agent の私的 memory だけに置かない。
+
 ## Skill list（`.agents/skills/`、`../AGENTS.md` 経由で activate）
 
-- `react-doctor` — UI 規約違反検出。
-- `../.agents/skills/verify-tastile-change/SKILL.md` — commit / merge 前の binding verification。旧 per-commit reviewer loop は廃止済み (ADR-0021)。
-- `i18n-literal-guard` — policy §11 の hardcoded literal 検出、JSX / doc-comment / identifier の
-  監査と i18n bundle への移送手順を提供。
-- workspace 共通: `cross-repo-contract-check`（複数 child に跨る contract 変更）、
-  `verify-tastile-change`（commit / merge / ship の直前に実行）、
-  `plugin-version-audit`（pinned 依存 drift の監査）。
+- project-init Skills（`rebuildup/project-init`、floating source）は `.agents/skills/` に
+  materialize 済みで `skills-lock.json` が source / hash の正本。`.claude/skills/` は symlink adapter。
+  bootstrap / update は `mise run skills-bootstrap` / `mise run skills-update`（= `bunx skills`）。
+  導入済み skill の trigger と使い分けは各 `SKILL.md` frontmatter が正本。
+- project-local Skill: `i18n-literal-guard` — policy §11 の hardcoded literal 検出、
+  JSX / doc-comment / identifier の監査と i18n bundle への移送手順を提供。
+- `react-doctor` — UI 規約違反検出（`bun run doctor`）。
+- workspace 共通（root repo 側、`../.agents/skills/`）: `cross-repo-contract-check`、
+  `verify-tastile-change`（commit / merge / ship の直前に実行。旧 per-commit reviewer loop は
+  廃止済み ADR-0021）、`plugin-version-audit`（pinned 依存 drift の監査）。
 
 ## Pitfalls（実測ベースの罠）
 
