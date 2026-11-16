@@ -1,0 +1,132 @@
+[
+  {
+    "title": "monthly-e2e-day31-2027-1794829348669",
+    "status": 200,
+    "request": {
+      "generation": {
+        "kind": 3,
+        "starts_at": "2027-01-01T00:00:00.000Z",
+        "ends_at": "2027-04-05T00:00:00.000Z",
+        "monthly_rule": {
+          "kind": 0,
+          "day_of_month": 31
+        },
+        "weekday_mask": null,
+        "date_range_start": null,
+        "date_range_end": "2027-04-05",
+        "excluded_dates": [],
+        "offset_min": 540
+      },
+      "source_horizon": {
+        "start": "2027-01-01T00:00:00.000Z",
+        "end": "2027-04-05T00:00:00.000Z"
+      },
+      "source_schedule_has_top_level_monthly_rule": false
+    },
+    "response": {
+      "source_tile_id": "01a1e42a-ff08-7b11-8c6a-239017047dda",
+      "placement_dates_jst": [
+        "2027-01-31",
+        "2027-03-31"
+      ]
+    }
+  },
+  {
+    "title": "monthly-e2e-day31-2027-1794829348669",
+    "reload_readback_placement_dates_jst": [
+      "2027-01-31",
+      "2027-03-31"
+    ]
+  },
+  {
+    "title": "monthly-e2e-leap-2028-1794829394086",
+    "status": 200,
+    "request": {
+      "generation": {
+        "kind": 3,
+        "starts_at": "2028-01-01T00:00:00.000Z",
+        "ends_at": "2028-04-05T00:00:00.000Z",
+        "monthly_rule": {
+          "kind": 0,
+          "day_of_month": 29
+        },
+        "weekday_mask": null,
+        "date_range_start": null,
+        "date_range_end": "2028-04-05",
+        "excluded_dates": [],
+        "offset_min": 540
+      },
+      "source_horizon": {
+        "start": "2028-01-01T00:00:00.000Z",
+        "end": "2028-04-05T00:00:00.000Z"
+      },
+      "source_schedule_has_top_level_monthly_rule": false
+    },
+    "response": {
+      "source_tile_id": "01a1e42b-7446-7910-9f6e-b731cd79333b",
+      "placement_dates_jst": [
+        "2028-01-29",
+        "2028-02-29",
+        "2028-03-29"
+      ]
+    }
+  },
+  {
+    "title": "monthly-e2e-last-sunday-2027-1794829418030",
+    "status": 200,
+    "request": {
+      "generation": {
+        "kind": 3,
+        "starts_at": "2027-01-01T00:00:00.000Z",
+        "ends_at": "2027-04-05T00:00:00.000Z",
+        "monthly_rule": {
+          "kind": 1,
+          "week_of_month": 5,
+          "weekday": 7
+        },
+        "weekday_mask": null,
+        "date_range_start": null,
+        "date_range_end": "2027-04-05",
+        "excluded_dates": [],
+        "offset_min": 540
+      },
+      "source_horizon": {
+        "start": "2027-01-01T00:00:00.000Z",
+        "end": "2027-04-05T00:00:00.000Z"
+      },
+      "source_schedule_has_top_level_monthly_rule": false
+    },
+    "response": {
+      "source_tile_id": "01a1e42b-caf1-74a2-9d1f-d33dbab73af8",
+      "placement_dates_jst": [
+        "2027-01-31",
+        "2027-02-28",
+        "2027-03-28"
+      ]
+    }
+  },
+  {
+    "title": "monthly-e2e-invalid-1794829438468",
+    "status": 422,
+    "request": {
+      "generation": {
+        "kind": 3,
+        "starts_at": "2027-01-01T00:00:00.000Z",
+        "ends_at": null,
+        "monthly_rule": {
+          "kind": 0,
+          "day_of_month": 32
+        },
+        "weekday_mask": null,
+        "date_range_start": null,
+        "date_range_end": null,
+        "excluded_dates": [],
+        "offset_min": 540
+      }
+    },
+    "response": {
+      "error_banner_visible": true,
+      "error_text": "タイル作成に失敗しました\n\nrecurrence interval must be positive"
+    }
+  }
+]

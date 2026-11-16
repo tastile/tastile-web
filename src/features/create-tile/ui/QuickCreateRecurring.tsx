@@ -7,6 +7,7 @@ import {
   Select,
   Stack,
   Switch,
+  Text,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import {
@@ -395,13 +396,8 @@ export function QuickCreateRecurring() {
       const n = Number(next);
       if (!Number.isFinite(n)) return;
       setField("recurring.monthlyWeekday", n);
-      // Mirror to weekdayMask so the wire builder's monthly→weekdayMask
-      // shortcut can fall back on the same single-bit convention.
-      if (repeatMode === "monthly") {
-        setField("recurring.weekdayMask", 1 << n);
-      }
     },
-    [setField, repeatMode],
+    [setField],
   );
 
   // ---------- repeat until ----------
@@ -564,7 +560,7 @@ export function QuickCreateRecurring() {
   );
 
   return (
-    <Stack gap={0} className="h-full">
+    <Stack gap={0} className="min-h-0 flex-1">
       <Stack gap={0} className="flex-1 overflow-y-auto">
         <QuickCreateHeader
           value={title}
@@ -685,15 +681,20 @@ export function QuickCreateRecurring() {
                   data-testid="recurring-monthly-kind"
                 />
                 {monthlyKind === "by_day" ? (
-                  <NumberInput
-                    label={t("quickCreate.monthlyDayOfMonthLabel")}
-                    value={monthlyDayOfMonth ?? 1}
-                    onChange={updateMonthlyDayOfMonth}
-                    min={1}
-                    max={31}
-                    size="sm"
-                    data-testid="recurring-monthly-day-of-month"
-                  />
+                  <Stack gap={4}>
+                    <NumberInput
+                      label={t("quickCreate.monthlyDayOfMonthLabel")}
+                      value={monthlyDayOfMonth ?? 1}
+                      onChange={updateMonthlyDayOfMonth}
+                      min={1}
+                      max={31}
+                      size="sm"
+                      data-testid="recurring-monthly-day-of-month"
+                    />
+                    <Text size="xs" c="dimmed">
+                      {t("quickCreate.monthlyDayOfMonthHint")}
+                    </Text>
+                  </Stack>
                 ) : null}
                 {monthlyKind === "by_weekday" ? (
                   <Group

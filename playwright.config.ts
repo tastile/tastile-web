@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 const webServerCommand = process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ?? "bun run dev";
+const coreUrl = process.env.PLAYWRIGHT_CORE_URL ?? "http://localhost:31400";
+const e2eAuthBypass = process.env.PLAYWRIGHT_E2E_BYPASS_AUTH === "1" ? "1" : "0";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -16,13 +18,14 @@ export default defineConfig({
   webServer: {
     command: webServerCommand,
     env: {
-      E2E_BYPASS_AUTH: "0",
-      NEXT_PUBLIC_E2E_BYPASS_AUTH: "0",
-      NEXT_PUBLIC_DAEMON_BASE_URL: "http://localhost:31400",
+      E2E_BYPASS_AUTH: e2eAuthBypass,
+      NEXT_PUBLIC_E2E_BYPASS_AUTH: e2eAuthBypass,
+      CLOUD_API_BASE: coreUrl,
+      NEXT_PUBLIC_DAEMON_BASE_URL: coreUrl,
+      NEXT_PUBLIC_TASTILE_CORE_URL: coreUrl,
       TASTILE_USE_RUST_CORE: "1",
-      TASTILE_RUST_API_URL: "http://127.0.0.1:31400",
+      TASTILE_RUST_API_URL: coreUrl,
       COOKIE_USER_SUB: "e2e-bridge-test-user",
-      TASTILE_WEB_BRIDGE_SECRET: "dev-e2e-secret",
     },
     url: baseURL,
     reuseExistingServer: true,
