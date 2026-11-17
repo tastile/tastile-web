@@ -987,6 +987,28 @@ export interface components {
             point: number;
             target: components["schemas"]["MomentTargetSchema"];
         };
+        MonthlyRuleSchema: {
+            /**
+             * Format: int32
+             * @description by_day: day of month 1..=31.  Months without the day are skipped.
+             */
+            day_of_month?: number | null;
+            /**
+             * Format: int32
+             * @description 0 = by_day, 1 = by_weekday.
+             */
+            kind: number;
+            /**
+             * Format: int32
+             * @description by_weekday: 1..=4 = nth weekday, 5 = last weekday of the month.
+             */
+            week_of_month?: number | null;
+            /**
+             * Format: int32
+             * @description by_weekday: ISO weekday 1 = Monday .. 7 = Sunday.
+             */
+            weekday?: number | null;
+        };
         NestingRuleSchema: {
             /**
              * Format: int32
@@ -1561,9 +1583,10 @@ export interface components {
             interval_ms?: number | null;
             /**
              * Format: int32
-             * @description 0 = one-time, 1 = recurring.
+             * @description 0 = one-time, 1 = recurring, 2 = demand-driven, 3 = monthly.
              */
             kind: number;
+            monthly_rule?: null | components["schemas"]["MonthlyRuleSchema"];
             /**
              * Format: int32
              * @description Explicit local calendar offset in minutes east of UTC (e.g. 540
