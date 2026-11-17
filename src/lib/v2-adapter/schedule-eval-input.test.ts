@@ -56,7 +56,7 @@ describe("deriveV2SchedulerInput", () => {
     expect(result.input.step_ms).toBe(30 * 60_000);
   });
 
-  it("approximates monthly like the v1 wire (daily step)", () => {
+  it("approximates monthly as a daily step (v2 port has no monthly selector)", () => {
     const result = deriveV2SchedulerInput(baseState({ repeatMode: "monthly" }));
     expect(result.ok).toBe(true);
     if (!result.ok) return;

@@ -2,18 +2,39 @@
 /**
  * web#219 item E — v2 scheduler candidate vs Core v1 materialization diff.
  *
+ * Contract baseline: tastile-openapi v3.2.0 (submodule 9ae5874). Core
+ * release-1-1-0 owns monthly recurrence as SourceGenerationKind::Monthly
+ * (kind=3 + monthly_rule), weekday_mask and excluded_dates on
+ * generation; the SourceTile detail read returns them under
+ * `source.schedule.generation` for read-back verification.
+ *
  * For each synthetic schedule case this script:
  *   1. derives the v2 SchedulerEvalInput exactly like V2ScheduleEval does,
- *   2. runs the real tastile-v2 binary through evaluateSchedulerV2,
+ *   2. runs the real tastile-v2 binary through evaluateSchedulerV2 twice
+ *      (determinism check),
  *   3. submits the SAME QuickCreate state through the real v1 path
  *      (buildQuickCreateSchedulePayload -> POST /v1/schedule-definitions),
  *   4. polls GET /v1/source-tiles/{id} until occurrences/placements
  *      materialize (async worker) or a timeout distinguishes "pending"
- *      from "mismatch",
- *   5. compares occurrence start instants and, for matched occurrences,
- *      placement spans vs the v2 candidate [start,end] pairs.
+ *      from "mismatch", and reads back `source.schedule.generation` to
+ *      confirm which semantics Core actually stored,
+ *   5. compares v2 CANDIDATE [start,end] pairs against v1 PLACEMENT
+ *      [start,end] spans in the same range, then classifies the diff on
+ *      two axes (see `classifyCase`):
+ *        - cause: none / v2_input_gap / v1_period_boundary /
+ *          suspected_regression / nondeterminism / pending
+ *          (the issue's ① intended safety fix is reserved for cases
+ *          where Core deliberately deviates, e.g. past-anchor clamps)
+ *        - semantics: monthly_rule / weekday_mask / excluded_dates /
+ *          period_boundary tags explaining WHICH authored rule shapes
+ *          the divergence.
  *
- * All times are absolute UTC instants; offset_min is only used for display.
+ * IMPORTANT: v2 occurrences are advisory evaluation candidates produced
+ * by the opt-in evaluator. They are NOT the placements Core will
+ * materialize. Only the v1 submit -> worker path creates placements.
+ *
+ * All times are absolute UTC instants; offset_min is only used for display
+ * and for mapping instants back to the authored local calendar dates.
  *
  * Usage:
  *   source /tmp/t13-web-env.sh
@@ -301,8 +322,32 @@ interface V1Placement {
   end: string;
   closed: boolean;
 }
+// Read-back of what Core actually stored (OpenAPI v3.2.0:
+// SourceTileRead.schedule -> SourceScheduleDefinitionSchema.generation).
+// Used to distinguish "Core dropped authored semantics" (regression) from
+// "the v2 eval port cannot express them" (input information loss).
+interface V1Generation {
+  kind?: number;
+  interval_ms?: number | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  monthly_rule?: {
+    kind?: number;
+    day_of_month?: number | null;
+    week_of_month?: number | null;
+    weekday?: number | null;
+  } | null;
+  weekday_mask?: number | null;
+  excluded_dates?: string[];
+  date_range_start?: string | null;
+  date_range_end?: string | null;
+  offset_min?: number | null;
+}
 interface SourceDetail {
-  source: { source_tile_id: string };
+  source: {
+    source_tile_id: string;
+    schedule?: { generation?: V1Generation | null } | null;
+  };
   occurrences: V1Occurrence[];
   placements: V1Placement[];
 }
@@ -313,16 +358,187 @@ function ms(iso: string | null | undefined): number | null {
   return Number.isFinite(v) ? v : null;
 }
 
+// ---------- schedule-semantics model ----------
+// Which authored recurrence semantics the case exercises, derived from
+// the same QuickCreate state that feeds BOTH the v2 derivation and the
+// v1 wire. The v2 SchedulerEvalInput port is a fixed-step model
+// (step_ms/span_ms/origin/bounds/range); it has no selector for
+// weekday_mask, monthly_rule or excluded_dates, so candidates for those
+// rules are "information loss" on the v2 side, not Core regressions.
+type ScheduleSemantic =
+  | "monthly_rule"
+  | "weekday_mask"
+  | "excluded_dates"
+  | "period_boundary";
+
+interface CaseSemantics {
+  repeatMode: string;
+  /** Wire-level generation.kind the v1 submit should produce. */
+  expectedGenerationKind: number;
+  weekdayMask: number | null;
+  excludedDates: string[];
+  monthlyKind: string | null;
+  monthlyDayOfMonth: number | null;
+  monthlyWeekOfMonth: number | null;
+  monthlyWeekday: number | null;
+  offsetMin: number;
+  /** v2 eval step actually sent (DAY_MS for monthly = known approximation). */
+  v2StepMs: number | null;
+}
+
+function semanticsOf(state: StoreState, stepMs: number | null): CaseSemantics {
+  const r = state.recurring;
+  const expectedKind =
+    r.repeatMode === "once"
+      ? 0
+      : r.repeatMode === "condition"
+        ? 2
+        : r.repeatMode === "monthly"
+          ? 3
+          : 1;
+  return {
+    repeatMode: r.repeatMode,
+    expectedGenerationKind: expectedKind,
+    weekdayMask:
+      r.repeatMode === "weekly" ? (r.weekdayMask & 0b1111111) : null,
+    excludedDates: [...state.source.excludedDates],
+    monthlyKind: r.repeatMode === "monthly" ? (r.monthlyKind ?? null) : null,
+    monthlyDayOfMonth:
+      r.repeatMode === "monthly" ? (r.monthlyDayOfMonth ?? null) : null,
+    monthlyWeekOfMonth:
+      r.repeatMode === "monthly" ? (r.monthlyWeekOfMonth ?? null) : null,
+    monthlyWeekday:
+      r.repeatMode === "monthly" ? (r.monthlyWeekday ?? null) : null,
+    offsetMin: state.source.offsetMin,
+    v2StepMs: stepMs,
+  };
+}
+
+// Local wall-clock fields for an instant under the source offset.
+// offset_min is minutes east of UTC (540 = JST).
+function localParts(epochMs: number, offsetMin: number) {
+  const d = new Date(epochMs + offsetMin * 60_000);
+  return {
+    date: d.toISOString().slice(0, 10),
+    dayOfMonth: d.getUTCDate(),
+    // JS getUTCDay: 0=Sun..6=Sat -> ISO weekday 1=Mon..7=Sun
+    isoWeekday: ((d.getUTCDay() + 6) % 7) + 1,
+  };
+}
+
+// Does `epochMs` fall on a date the authored monthly_rule selects?
+function matchesMonthlyRule(
+  epochMs: number,
+  sem: CaseSemantics,
+): boolean | null {
+  if (sem.monthlyKind === "by_day") {
+    if (sem.monthlyDayOfMonth === null) return null;
+    return (
+      localParts(epochMs, sem.offsetMin).dayOfMonth === sem.monthlyDayOfMonth
+    );
+  }
+  if (sem.monthlyKind === "by_weekday") {
+    const { isoWeekday } = localParts(epochMs, sem.offsetMin);
+    // Store weekday is JS Sunday-first (0=Sun); wire converts to ISO.
+    const authoredIso =
+      sem.monthlyWeekday === 0 ? 7 : (sem.monthlyWeekday ?? -1);
+    if (isoWeekday !== authoredIso) return false;
+    const week = sem.monthlyWeekOfMonth;
+    if (week === null) return null;
+    if (week === 5) {
+      // "last": the next same-weekday date falls in the next month.
+      const { date } = localParts(epochMs, sem.offsetMin);
+      const base = Date.parse(`${date}T00:00:00Z`);
+      const next = new Date(base + 7 * 86_400_000);
+      return next.getUTCMonth() !== new Date(base).getUTCMonth();
+    }
+    return (
+      Math.ceil(localParts(epochMs, sem.offsetMin).dayOfMonth / 7) === week
+    );
+  }
+  return null;
+}
+
+// Tags explaining why a v2-only candidate has no v1 placement, derived
+// from the authored semantics the v2 eval port cannot express.
+// `materializedEndMs` is the end of the last occurrence Core generated:
+// v1 occurrence/placement generation is finite (horizon + cap), so v2
+// candidates beyond that frontier are period-boundary artifacts, not
+// regressions.
+function explainV2Only(
+  startMs: number,
+  sem: CaseSemantics,
+  rangeEndMs: number,
+  materializedEndMs: number | null,
+): ScheduleSemantic[] {
+  const tags: ScheduleSemantic[] = [];
+  const local = localParts(startMs, sem.offsetMin);
+  if (sem.excludedDates.includes(local.date)) tags.push("excluded_dates");
+  if (sem.weekdayMask !== null) {
+    // bit0=Mon..bit6=Sun (core v1/05); isoWeekday 1=Mon..7=Sun -> bit iso-1
+    const bit = 1 << (local.isoWeekday - 1);
+    if ((sem.weekdayMask & bit) === 0) tags.push("weekday_mask");
+  }
+  if (sem.repeatMode === "monthly") {
+    const onRuleDay = matchesMonthlyRule(startMs, sem);
+    // v2 approximates monthly as a daily step: every candidate NOT on
+    // the authored rule day is a v2-input information-loss artifact.
+    if (onRuleDay === false) tags.push("monthly_rule");
+  }
+  // Horizon edge: candidates within one v2 step of the range end, or
+  // beyond the last occurrence Core actually generated (materialization
+  // cap / horizon truncation), may have no placement for boundary
+  // reasons even when the schedule semantics agree.
+  const nearRangeEnd =
+    sem.v2StepMs !== null && rangeEndMs - startMs <= sem.v2StepMs;
+  const beyondMaterialized =
+    materializedEndMs !== null && startMs >= materializedEndMs;
+  if ((nearRangeEnd || beyondMaterialized) && tags.length === 0) {
+    tags.push("period_boundary");
+  }
+  return tags;
+}
+
+// ---------- diff + classification ----------
+interface V2Row {
+  v2Start: number;
+  v2End: number;
+  status: "exact" | "start_only" | "v2_only";
+  nearest: { deltaMs: number; pStart: number } | null;
+  explainedBy: ScheduleSemantic[];
+}
+
+type DiffCause =
+  | "none"
+  | "v2_input_gap"
+  | "v1_period_boundary"
+  | "suspected_regression"
+  | "nondeterminism"
+  | "pending";
+
+interface CaseClassification {
+  cause: DiffCause;
+  semantics: ScheduleSemantic[];
+  /** Reserved for Core-side deliberate deviations (issue category ①). */
+  intendedSafetyFix: boolean;
+  /** True when every divergent row is explained by a known input gap
+   *  or a period boundary; false means unexplained divergence remains. */
+  fullyExplained: boolean;
+  basis: string;
+}
+
 function diffCase(
   v2Occurrences: number[][],
   detail: SourceDetail,
   rangeStartMs: number,
   rangeEndMs: number,
+  sem: CaseSemantics,
 ): Record<string, unknown> {
   // The user-facing schedule is the set of PLACEMENTS Core materialized.
   // Occurrence rows are nominal slots (some stay pending/skipped); only
-  // placements represent what will actually happen. Compare v2 candidate
-  // [start,end] pairs against placement [start,end] spans.
+  // placements represent what will actually happen. Compare v2 CANDIDATE
+  // [start,end] pairs against placement [start,end] spans — never
+  // against occurrences, and never present candidates as placements.
   const placements = detail.placements
     .map((p) => ({
       id: p.placement_id,
@@ -344,7 +560,22 @@ function diffCase(
     .sort((a, b) => a.start - b.start);
   const placementStartSet = new Set(placements.map((p) => p.start));
 
-  const v2Rows = v2Occurrences.map(([s, e]) => {
+  // Generation frontier: the latest instant Core's occurrence generator
+  // reached. v2 candidates beyond it cannot have placements regardless
+  // of schedule semantics (horizon end or generation cap).
+  let materializedEndMs: number | null = null;
+  for (const o of detail.occurrences) {
+    const end =
+      ms(o.window_end) ??
+      (ms(o.window_start) !== null
+        ? (ms(o.window_start) as number) + (o.required_duration_ms ?? 0)
+        : ms(o.nominal_at));
+    if (end !== null && (materializedEndMs === null || end > materializedEndMs)) {
+      materializedEndMs = end;
+    }
+  }
+
+  const v2Rows: V2Row[] = v2Occurrences.map(([s, e]) => {
     const exactStart = placementStartSet.has(s);
     // Nearest placement start for diagnostics.
     let nearest: { deltaMs: number; pStart: number } | null = null;
@@ -355,11 +586,20 @@ function diffCase(
       }
     }
     const exactSpan = placements.some((p) => p.start === s && p.end === e);
+    const status = exactStart
+      ? exactSpan
+        ? "exact"
+        : "start_only"
+      : "v2_only";
     return {
       v2Start: s,
       v2End: e,
-      status: exactStart ? (exactSpan ? "exact" : "start_only") : "v2_only",
+      status,
       nearest,
+      explainedBy:
+        status === "v2_only"
+          ? explainV2Only(s, sem, rangeEndMs, materializedEndMs)
+          : [],
     };
   });
 
@@ -378,6 +618,68 @@ function diffCase(
     {},
   );
 
+  const semantics = new Set<ScheduleSemantic>();
+  for (const row of v2Rows) {
+    for (const tag of row.explainedBy) semantics.add(tag);
+  }
+  // v1-only placements have no v2-side explanation axis; if any exist
+  // they are unexplained divergence (candidate regression) unless they
+  // sit at the materialization boundary.
+  const boundaryOnlyV1 =
+    v1OnlyPlacements.length > 0 &&
+    v1OnlyPlacements.every(
+      (p) =>
+        sem.v2StepMs !== null && rangeEndMs - (p.start as number) <= sem.v2StepMs,
+    );
+  if (boundaryOnlyV1) semantics.add("period_boundary");
+
+  // start_only rows (same start, different span) are unexplained
+  // divergence too: nothing in the semantics model accounts for a span
+  // mismatch on an agreed start.
+  const unexplainedStartOnly = v2Rows.filter(
+    (r) => r.status === "start_only",
+  ).length;
+  const unexplainedV2Only = v2Rows.filter(
+    (r) => r.status === "v2_only" && r.explainedBy.length === 0,
+  ).length;
+  const unexplainedV1Only = boundaryOnlyV1 ? 0 : v1OnlyPlacements.length;
+
+  const inputGapSemantics = new Set<ScheduleSemantic>([
+    "monthly_rule",
+    "weekday_mask",
+    "excluded_dates",
+  ]);
+  const hasInputGap = [...semantics].some((s) => inputGapSemantics.has(s));
+  const hasBoundary = semantics.has("period_boundary");
+
+  let cause: DiffCause;
+  let basis: string;
+  if (
+    unexplainedV2Only === 0 &&
+    unexplainedStartOnly === 0 &&
+    unexplainedV1Only === 0
+  ) {
+    if (
+      v2Rows.every((r) => r.status === "exact") &&
+      v1OnlyPlacements.length === 0
+    ) {
+      cause = "none";
+      basis = "every v2 candidate matches a v1 placement span exactly";
+    } else if (hasInputGap) {
+      cause = "v2_input_gap";
+      basis = `all divergent rows explained by v2 input gaps: ${[...semantics].join(",")}`;
+    } else if (hasBoundary) {
+      cause = "v1_period_boundary";
+      basis = `divergence confined to the materialization horizon edge: ${[...semantics].join(",")}`;
+    } else {
+      cause = "none";
+      basis = "only boundary-tagged v2-only rows remain";
+    }
+  } else {
+    cause = "suspected_regression";
+    basis = `${unexplainedV2Only} unexplained v2-only + ${unexplainedStartOnly} start_only span mismatches + ${unexplainedV1Only} unexplained v1-only placements`;
+  }
+
   return {
     v2Count: v2Occurrences.length,
     v1PlacementCountInRange: placements.length,
@@ -386,7 +688,16 @@ function diffCase(
     exactSpan: v2Rows.filter((r) => r.status === "exact").length,
     startOnly: v2Rows.filter((r) => r.status === "start_only").length,
     v2Only: v2Rows.filter((r) => r.status === "v2_only").length,
+    unexplainedV2Only,
     v1OnlyPlacementCount: v1OnlyPlacements.length,
+    unexplainedV1OnlyPlacementCount: unexplainedV1Only,
+    classification: {
+      cause,
+      semantics: [...semantics],
+      intendedSafetyFix: false,
+      fullyExplained: unexplainedV2Only === 0 && unexplainedV1Only === 0,
+      basis,
+    } satisfies CaseClassification,
     v2Rows: v2Rows.slice(0, 60),
     v1OnlyPlacements: v1OnlyPlacements.slice(0, 60).map((p) => ({
       start: p.start,
@@ -398,6 +709,12 @@ function diffCase(
 }
 
 // ---------- run ----------
+// v2 occurrences are advisory evaluation candidates, NOT the placements
+// Core will materialize. Every summary repeats this so the evidence can
+// never be misread as "the v2 preview IS the final schedule".
+const CANDIDATE_NOTE =
+  "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements";
+
 const results: Record<string, unknown> = {};
 for (const c of cases) {
   if (CASE_FILTER && !CASE_FILTER.includes(c.name)) continue;
@@ -429,7 +746,19 @@ for (const c of cases) {
     log("  v2 eval failed:", JSON.stringify(v2).slice(0, 200));
     continue;
   }
-  log(`  v2 occurrences=${v2.count} range=[${derivation.input.range_start_ms},${derivation.input.range_end_ms}]`);
+  // Determinism probe (issue category ④): same input through the same
+  // lock must reproduce identical candidates. Cheap because the eval is
+  // a local subprocess; any drift here is adapter nondeterminism, not a
+  // Core materialization difference.
+  const v2Repeat = await evaluateSchedulerV2(v2Config, derivation.input);
+  const v2Deterministic =
+    v2Repeat.engine === "v2" &&
+    v2Repeat.ok &&
+    JSON.stringify(v2Repeat.occurrences) === JSON.stringify(v2.occurrences);
+  const sem = semanticsOf(state, derivation.input.step_ms);
+  log(
+    `  v2 occurrences=${v2.count} deterministic=${v2Deterministic} range=[${derivation.input.range_start_ms},${derivation.input.range_end_ms}]`,
+  );
 
   // v1 submit through the real publish path.
   const payload = buildQuickCreateSchedulePayload(state, now);
@@ -528,7 +857,15 @@ for (const c of cases) {
   if (!detail || detail.occurrences.length === 0) {
     results[c.name] = {
       pending: true,
+      classification: {
+        cause: "pending",
+        semantics: [],
+        intendedSafetyFix: false,
+        fullyExplained: false,
+        basis: "no occurrences materialized within timeout; not a mismatch verdict",
+      } satisfies CaseClassification,
       note: "no occurrences materialized within timeout; not a mismatch verdict",
+      candidateNote: CANDIDATE_NOTE,
       sourceTileId,
       detail,
     };
@@ -543,21 +880,83 @@ for (const c of cases) {
     JSON.stringify(detail, null, 2),
   );
 
+  // Read-back: which generation semantics did Core actually persist?
+  // A kind/monthly_rule/weekday_mask/excluded_dates mismatch vs the
+  // authored state is a Core-side contract regression, independent of
+  // the v2 candidate diff.
+  const gen = detail.source?.schedule?.generation ?? null;
+  const generationReadBack = {
+    persisted: gen !== null,
+    kind: gen?.kind ?? null,
+    expectedKind: sem.expectedGenerationKind,
+    kindMatches: gen?.kind === sem.expectedGenerationKind,
+    monthlyRule: gen?.monthly_rule ?? null,
+    weekdayMask: gen?.weekday_mask ?? null,
+    excludedDates: gen?.excluded_dates ?? null,
+    dateRangeStart: gen?.date_range_start ?? null,
+    dateRangeEnd: gen?.date_range_end ?? null,
+    offsetMin: gen?.offset_min ?? null,
+  };
+
   const diff = diffCase(
     v2.occurrences,
     detail,
     derivation.input.range_start_ms,
     derivation.input.range_end_ms,
+    sem,
   );
+  // Nondeterminism (issue category ④) overrides the diff verdict: if the
+  // same v2 input produced different candidates, the diff cannot be
+  // attributed to schedule semantics at all.
+  const classification =
+    !v2Deterministic &&
+    (diff.classification as CaseClassification).cause !== "none"
+      ? ({
+          cause: "nondeterminism",
+          semantics: (diff.classification as CaseClassification).semantics,
+          intendedSafetyFix: false,
+          fullyExplained: false,
+          basis:
+            "v2 repeat eval produced different occurrences for identical input",
+        } satisfies CaseClassification)
+      : (diff.classification as CaseClassification);
+  // Core dropped authored generation semantics -> contract regression,
+  // not a v2 preview artifact.
+  const coreRegression =
+    generationReadBack.persisted && !generationReadBack.kindMatches;
+
   results[c.name] = {
     sourceTileId,
+    candidateNote: CANDIDATE_NOTE,
+    scheduleSemantics: sem,
+    v2Deterministic,
+    generationReadBack,
+    ...(coreRegression
+      ? {
+          coreRegression: `stored generation.kind=${gen?.kind} but authored repeatMode=${sem.repeatMode} expects kind=${sem.expectedGenerationKind}`,
+        }
+      : {}),
     v2Input: derivation.input,
     ...diff,
+    classification,
   };
   log(
-    `  diff: exact=${diff.exactSpan} startOnly=${diff.startOnly} v2Only=${diff.v2Only} v1OnlyPlc=${diff.v1OnlyPlacementCount} (v2=${diff.v2Count} v1plc=${diff.v1PlacementCountInRange})`,
+    `  diff: exact=${diff.exactSpan} startOnly=${diff.startOnly} v2Only=${diff.v2Only} v1OnlyPlc=${diff.v1OnlyPlacementCount} cause=${classification.cause} semantics=${classification.semantics.join("+") || "-"}`,
   );
 }
 
-writeFileSync(`${OUT}/summary.json`, JSON.stringify(results, null, 2));
+writeFileSync(
+  `${OUT}/summary.json`,
+  JSON.stringify(
+    {
+      _contract: "tastile-openapi v3.2.0 (submodule 9ae5874); Core release-1-1-0",
+      _candidateNote: CANDIDATE_NOTE,
+      _classification:
+        "cause: none | v2_input_gap (v2 port cannot express authored semantics) | v1_period_boundary | suspected_regression | nondeterminism | pending; semantics: monthly_rule | weekday_mask | excluded_dates | period_boundary",
+      cases: results,
+    },
+    null,
+    2,
+  ),
+);
 log("wrote", `${OUT}/summary.json`);

@@ -62,9 +62,13 @@ function stepMsFor(state: V2ScheduleEvalState): number | null {
     case "interval":
       return intervalAuthoredMs(state.intervalValue, state.intervalUnit);
     case "monthly":
-      // v1 has no first-class monthly generator; the wire approximates it
-      // as daily recurrence bounded by date_range_*. The v2 preview uses
-      // the same effective step.
+      // Core owns monthly calendar semantics (SourceGenerationKind
+      // kind=3 + monthly_rule, v1/02). The v2 SchedulerEvalInput port is
+      // a fixed-step model with no monthly selector, so the preview
+      // approximates monthly as a daily step — the same approximation
+      // the pre-kind=3 v1 wire used. web#219's diff harness measures
+      // this known divergence; it is v2 input information loss, not a
+      // Core defect.
       return DAY_MS;
     default:
       // "once" / "condition" are not recurring schedules; v2 occurrence
