@@ -1,0 +1,174 @@
+{
+  "request": {
+    "expected_revision": null,
+    "idempotency_key": "32e65b2b-f773-4c24-bee9-dd8996c6e777",
+    "occurred_at": "2026-11-17T16:09:01.997Z",
+    "payload": {
+      "source_client_local_id": "01a1ea44-d535-7589-b314-9fefaf99eae1",
+      "source_schedule": {
+        "required_duration_ms": 3600000,
+        "generation": {
+          "kind": 1,
+          "starts_at": "2026-11-17T22:09:01.997Z",
+          "interval_ms": 43200000,
+          "ends_at": "2026-12-01T16:09:01.997Z",
+          "weekday_mask": null,
+          "date_range_start": null,
+          "date_range_end": "2026-12-01",
+          "excluded_dates": [],
+          "offset_min": 540
+        },
+        "window": {
+          "start_offset_ms": 0,
+          "end_offset_ms": 3600000
+        },
+        "source_window_include": 1,
+        "anchor_mode": 0,
+        "split_policy": {
+          "kind": 0,
+          "min_segment_ms": null,
+          "max_segment_ms": null,
+          "max_segments": null
+        },
+        "priority": 0,
+        "schedule_kind": "duration_only",
+        "schedulable_window": null
+      },
+      "source_horizon": {
+        "start": "2026-11-17T22:09:01.997Z",
+        "end": "2026-12-01T16:09:01.997Z"
+      },
+      "tile": {
+        "title": "diff-interval",
+        "description": null,
+        "color": "#3b82f6",
+        "icon": "check-circle",
+        "external_id": null
+      },
+      "plan": {
+        "role": 0,
+        "references": [],
+        "completion": {
+          "root": {
+            "Term": {
+              "Requirement": {
+                "time_requirement": "01a1ea44-d535-7588-b1fa-2c2d5fef796a",
+                "state": "Met"
+              }
+            }
+          },
+          "time_requirements": [
+            {
+              "id": "01a1ea44-d535-7588-b1fa-2c2d5fef796a",
+              "observation": {
+                "scope": 1,
+                "source": 0,
+                "aggregate": 0,
+                "quantifier": 0,
+                "reference": null
+              },
+              "required": {
+                "min": 3600000,
+                "max": null
+              },
+              "preferred": null
+            }
+          ],
+          "tasks": []
+        },
+        "planning": {
+          "placement_rules": [],
+          "nesting_rules": []
+        },
+        "metrics": [],
+        "decisions": []
+      },
+      "reference_targets": [],
+      "windows": [],
+      "frame_rules": [],
+      "recurrence": null,
+      "flows": [],
+      "relations": []
+    }
+  },
+  "response": {
+    "command_id": "01a1ea44-d534-7540-a13d-cee05e241ec2",
+    "accepted_at": "2026-11-17T16:09:02.004094547Z",
+    "aggregate": {
+      "kind": 4,
+      "id": "01a1ea44-d535-7870-88d5-e9b51ff1e9c1"
+    },
+    "revision": 1,
+    "result": 2,
+    "pending": [],
+    "aggregate_meta": {
+      "tile_id": "01a1ea44-d535-7870-88d5-e9b51ff1e9c1",
+      "plan_id": "01a1ea44-d535-7870-88d5-e9ca2704d2ba",
+      "recurring_id": null,
+      "frame_rule_id": null,
+      "changeset_id": null,
+      "change_ids": [],
+      "window_ids": [],
+      "flow_ids": [],
+      "source_tile_id": "01a1ea44-d535-7870-88d5-e9b51ff1e9c1",
+      "occurrence_ids": [
+        "01a1ea44-d537-7280-b587-b3bf6863b10c",
+        "01a1ea44-d537-7280-b587-b3cc44ea7ed9",
+        "01a1ea44-d537-7280-b587-b3deb6bb0863",
+        "01a1ea44-d538-71c1-9667-0679dab03354",
+        "01a1ea44-d538-71c1-9667-06883fb9cfec",
+        "01a1ea44-d538-71c1-9667-069e312acaa2",
+        "01a1ea44-d538-71c1-9667-06a54ec35e0a",
+        "01a1ea44-d538-71c1-9667-06bed01275fa",
+        "01a1ea44-d538-71c1-9667-06ce6fbe38eb",
+        "01a1ea44-d538-71c1-9667-06de1df04f26",
+        "01a1ea44-d539-7133-9d83-f5bd44b9a015",
+        "01a1ea44-d539-7133-9d83-f5cf52a3c809",
+        "01a1ea44-d539-7133-9d83-f5dd2ad0c175",
+        "01a1ea44-d539-7133-9d83-f5efab50f3db",
+        "01a1ea44-d539-7133-9d83-f5fb63dc5db1",
+        "01a1ea44-d539-7133-9d83-f604d61464e7",
+        "01a1ea44-d539-7133-9d83-f61d9eddb0f5",
+        "01a1ea44-d53a-7131-b268-2959a15c0fc4",
+        "01a1ea44-d53a-7131-b268-296f40dcc1bd",
+        "01a1ea44-d53a-7131-b268-297e23b7612e",
+        "01a1ea44-d53a-7131-b268-29844cbf4669",
+        "01a1ea44-d53a-7131-b268-299a605fc854",
+        "01a1ea44-d53a-7131-b268-29ae6c9220a5",
+        "01a1ea44-d53a-7131-b268-29bca68b88be",
+        "01a1ea44-d53a-7131-b268-29c03e9a5aab",
+        "01a1ea44-d53b-7122-b54e-c2d348579040"
+      ],
+      "placement_ids": [
+        "01a1ea44-d556-7441-aa62-94adb1bb92cd",
+        "01a1ea44-d557-7591-a452-47e4322c215c",
+        "01a1ea44-d558-7eb3-b41c-2a1373a73a4a",
+        "01a1ea44-d558-7eb3-b41c-2a61eafeb7a2",
+        "01a1ea44-d558-7eb3-b41c-2abde5cecad0",
+        "01a1ea44-d559-7613-831c-53a123e33560",
+        "01a1ea44-d559-7613-831c-53f880ceb300",
+        "01a1ea44-d55a-7461-96f8-b16764528836",
+        "01a1ea44-d55a-7461-96f8-b1b63416e7d4",
+        "01a1ea44-d55a-7461-96f8-b20574ae2eba",
+        "01a1ea44-d55b-73d1-a697-a8b69fc0fef2",
+        "01a1ea44-d55b-73d1-a697-a90636c7db3b",
+        "01a1ea44-d55c-70f3-b6bd-52ead6c34247",
+        "01a1ea44-d55c-70f3-b6bd-5337c31a047c",
+        "01a1ea44-d55d-7473-b77a-d321c463e242",
+        "01a1ea44-d55d-7473-b77a-d379e9de3acc",
+        "01a1ea44-d55e-7fb3-98a6-84195600e292",
+        "01a1ea44-d55e-7fb3-98a6-846abfbb5b5e",
+        "01a1ea44-d55f-7b32-922a-0623cf6f380d",
+        "01a1ea44-d55f-7b32-922a-067de7c00c7b",
+        "01a1ea44-d55f-7b32-922a-06cd35c3388b",
+        "01a1ea44-d560-7260-9f21-1ebce152a132",
+        "01a1ea44-d560-7260-9f21-1f02ecaeaf10",
+        "01a1ea44-d561-78e0-9c50-fda7e38145be",
+        "01a1ea44-d561-78e0-9c50-fdf934d4d41f",
+        "01a1ea44-d562-7ee3-bbe8-6bb1c8bf9e8a"
+      ],
+      "prompt_id": null,
+      "unplaced_occurrences": []
+    }
+  }
+}

@@ -149,7 +149,12 @@ describe("V2ScheduleEval", () => {
   });
 
   it("adopt mirrors the first candidate time-of-day into v1 fields", async () => {
-    const start = Date.now() + 86_400_000;
+    // Pin the candidate to local noon: adoption is refused for candidates
+    // crossing local midnight (v1 same-day windows cannot represent them),
+    // so a now-relative fixture flakes near midnight.
+    const startDate = new Date(Date.now() + 86_400_000);
+    startDate.setHours(12, 0, 0, 0);
+    const start = startDate.getTime();
     const end = start + 1_800_000;
     fetchMock.mockResolvedValueOnce(
       jsonResponse(200, {
