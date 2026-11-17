@@ -2,7 +2,7 @@
 /**
  * web#219 item E — v2 scheduler candidate vs Core v1 materialization diff.
  *
- * Contract baseline: tastile-openapi v3.2.0 (submodule 9ae5874). Core
+ * Contract baseline: tastile-openapi v3.5.0 (submodule 8a61003). Core
  * release-1-1-0 owns monthly recurrence as SourceGenerationKind::Monthly
  * (kind=3 + monthly_rule), weekday_mask and excluded_dates on
  * generation; the SourceTile detail read returns them under
@@ -322,7 +322,7 @@ interface V1Placement {
   end: string;
   closed: boolean;
 }
-// Read-back of what Core actually stored (OpenAPI v3.2.0:
+// Read-back of what Core actually stored (OpenAPI v3.5.0:
 // SourceTileRead.schedule -> SourceScheduleDefinitionSchema.generation).
 // Used to distinguish "Core dropped authored semantics" (regression) from
 // "the v2 eval port cannot express them" (input information loss).
@@ -343,13 +343,65 @@ interface V1Generation {
   date_range_end?: string | null;
   offset_min?: number | null;
 }
-interface SourceDetail {
+// v1/14 §15 list contract: detail reads return { items, count,
+// next_cursor } envelopes (OpenAPI v3.3.0+), not bare arrays.
+type ListEnvelope<T> = {
+  items?: T[];
+  count?: number;
+  next_cursor?: string | null;
+};
+interface SourceDetailRaw {
   source: {
     source_tile_id: string;
     schedule?: { generation?: V1Generation | null } | null;
   };
+  occurrences?: ListEnvelope<V1Occurrence> | V1Occurrence[];
+  placements?: ListEnvelope<V1Placement> | V1Placement[];
+}
+interface SourceDetail {
+  source: SourceDetailRaw["source"];
   occurrences: V1Occurrence[];
   placements: V1Placement[];
+}
+
+function listItems<T>(v: ListEnvelope<T> | T[] | undefined): T[] {
+  if (Array.isArray(v)) return v;
+  return v?.items ?? [];
+}
+
+// Fetch the source-tile detail with both collections fully materialized.
+// The §15 envelopes page independently (occurrence_cursor /
+// placement_cursor); advance each cursor until both are exhausted.
+async function fetchDetailFull(
+  sourceTileId: string,
+  headers: Record<string, string>,
+): Promise<SourceDetail | null> {
+  const occurrences: V1Occurrence[] = [];
+  const placements: V1Placement[] = [];
+  let occCursor: string | null = null;
+  let plcCursor: string | null = null;
+  let source: SourceDetailRaw["source"] | null = null;
+  for (let page = 0; page < 50; page++) {
+    const u = new URL(`${CORE}/v1/source-tiles/${sourceTileId}`);
+    u.searchParams.set("occurrence_limit", "1000");
+    u.searchParams.set("placement_limit", "1000");
+    if (occCursor) u.searchParams.set("occurrence_cursor", occCursor);
+    if (plcCursor) u.searchParams.set("placement_cursor", plcCursor);
+    const r = await fetch(u.toString(), { headers });
+    const d = (await r.json().catch(() => null)) as SourceDetailRaw | null;
+    if (!d) return null;
+    source = d.source;
+    occurrences.push(...listItems(d.occurrences));
+    placements.push(...listItems(d.placements));
+    const occEnv = Array.isArray(d.occurrences) ? null : d.occurrences;
+    const plcEnv = Array.isArray(d.placements) ? null : d.placements;
+    occCursor = occEnv?.next_cursor ?? null;
+    plcCursor = plcEnv?.next_cursor ?? null;
+    const occDone = !occCursor || occurrences.length >= (occEnv?.count ?? Infinity);
+    const plcDone = !plcCursor || placements.length >= (plcEnv?.count ?? Infinity);
+    if (occDone && plcDone) break;
+  }
+  return source ? { source, occurrences, placements } : null;
 }
 
 function ms(iso: string | null | undefined): number | null {
@@ -825,11 +877,17 @@ for (const c of cases) {
   let stablePolls = 0;
   const deadline = Date.now() + POLL_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const r = await fetch(`${CORE}/v1/source-tiles/${sourceTileId}`, {
-      headers: coreHeaders,
-    });
-    const d = (await r.json().catch(() => null)) as SourceDetail | null;
-    if (d && Array.isArray(d.occurrences)) {
+    const r = await fetch(
+      `${CORE}/v1/source-tiles/${sourceTileId}?occurrence_limit=1000&placement_limit=1000`,
+      { headers: coreHeaders },
+    );
+    const raw = (await r.json().catch(() => null)) as SourceDetailRaw | null;
+    if (raw?.source) {
+      const d: SourceDetail = {
+        source: raw.source,
+        occurrences: listItems(raw.occurrences),
+        placements: listItems(raw.placements),
+      };
       detail = d;
       const rs = derivation.input.range_start_ms;
       const re = derivation.input.range_end_ms;
@@ -872,6 +930,9 @@ for (const c of cases) {
     log("  PENDING: no occurrences materialized in", POLL_TIMEOUT_MS / 1000, "s");
     continue;
   }
+  // The poll snapshot only holds the first page of each §15 envelope;
+  // refetch with cursor pagination so the diff sees every row.
+  detail = (await fetchDetailFull(sourceTileId, coreHeaders)) ?? detail;
   log(
     `  materialized occurrences=${detail.occurrences.length} placements=${detail.placements.length}`,
   );
@@ -949,7 +1010,7 @@ writeFileSync(
   `${OUT}/summary.json`,
   JSON.stringify(
     {
-      _contract: "tastile-openapi v3.2.0 (submodule 9ae5874); Core release-1-1-0",
+      _contract: "tastile-openapi v3.5.0 (submodule 8a61003); Core release-1-1-0 @ d148241d",
       _candidateNote: CANDIDATE_NOTE,
       _classification:
         "cause: none | v2_input_gap (v2 port cannot express authored semantics) | v1_period_boundary | suspected_regression | nondeterminism | pending; semantics: monthly_rule | weekday_mask | excluded_dates | period_boundary",
