@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { type PromptView, describePromptSubject } from "./prompts";
+import { type PromptView, describePromptSubject, listPendingPrompts } from "./prompts";
 
 const client = { baseUrl: "/api/proxy", useProxyBridge: true, getIdToken: async () => null };
 
@@ -37,6 +37,28 @@ const placement = (sourceTileId: string | null) => ({
 const source = (kind: number) => ({ source: { schedule: { generation: { kind } } } });
 
 afterEach(() => vi.unstubAllGlobals());
+
+describe("listPendingPrompts", () => {
+  it("unwraps the §15 list envelope and follows next_cursor", async () => {
+    serve({
+      "/v1/prompts/pending": {
+        items: [missedStart("pl1")],
+        count: 1,
+        next_cursor: "c2",
+      },
+      "/v1/prompts/pending?cursor=c2": {
+        items: [{ ...missedStart("pl2"), id: "p2" }],
+        count: 1,
+        next_cursor: null,
+      },
+    });
+    const res = await listPendingPrompts(client);
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.map((prompt) => prompt.id)).toEqual(["p1", "p2"]);
+    }
+  });
+});
 
 describe("describePromptSubject", () => {
   it("offers the source for a one-time or recurring occurrence", async () => {

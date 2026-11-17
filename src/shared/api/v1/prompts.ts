@@ -3,7 +3,7 @@
 // running past its span, a decision to make. Numeric codes mirror the Core
 // registry (`domain::prompt`); no string enums are invented here.
 import { nowIso, uuidv7 } from "@/shared/model/v1/envelope";
-import { type ApiClient, type Result, getRead, postCommand } from "./endpoints";
+import { type ApiClient, type Result, getAllPages, getRead, postCommand } from "./endpoints";
 
 export const PromptKind = {
   STARTUP_RECOVERY: 0,
@@ -69,8 +69,13 @@ export interface PromptSubject {
   spanEnd: string | null;
 }
 
+/**
+ * `GET /v1/prompts/pending` follows the §15 list contract
+ * (`{items, count, next_cursor}`, ordered `created_at ASC, id ASC`);
+ * every page is followed so callers receive the complete inbox.
+ */
 export function listPendingPrompts(client: ApiClient): Promise<Result<PromptView[]>> {
-  return getRead(client, "/v1/prompts/pending");
+  return getAllPages<PromptView>(client, "/v1/prompts/pending");
 }
 
 async function tileTitle(client: ApiClient, tileId: string): Promise<string | null> {

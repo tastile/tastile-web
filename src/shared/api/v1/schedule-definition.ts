@@ -1,4 +1,9 @@
-import { type ApiClient, type Result, getRead, sendCommand } from "@/shared/api/v1/endpoints";
+import {
+  type ApiClient,
+  type Result,
+  getAllPages,
+  sendCommand,
+} from "@/shared/api/v1/endpoints";
 import { type CommandRequest, nowIso, uuidv7 } from "@/shared/model/v1/envelope";
 
 export const ScheduleReferenceUsage = {
@@ -323,10 +328,17 @@ export interface ReferenceCatalogItem {
   role: number;
 }
 
+/**
+ * `GET /v1/schedule-reference-catalog` follows the §15 list contract
+ * (`{items, count, next_cursor}`); every page is followed so callers
+ * receive the complete catalog.
+ */
 export function listReferenceCatalog(
   client: ApiClient,
   _ownerSubjectId: string,
   usage: ScheduleReferenceUsageCode,
 ): Promise<Result<ReferenceCatalogItem[]>> {
-  return getRead<ReferenceCatalogItem[]>(client, `/v1/schedule-reference-catalog?usage=${usage}`);
+  return getAllPages<ReferenceCatalogItem>(client, "/v1/schedule-reference-catalog", {
+    params: { usage },
+  });
 }

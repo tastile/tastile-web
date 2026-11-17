@@ -100,11 +100,50 @@ describe("schedule definition API", () => {
   });
 
   it("loads the authenticated label-span catalog from the core route with usage=1 only", async () => {
-    fetchMock.mockResolvedValueOnce({ ok: true, status: 200, json: async () => [] });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ items: [], count: 0, next_cursor: null }),
+    });
     const result = await listReferenceCatalog(client, "owner", ScheduleReferenceUsage.LABEL_SPAN);
     expect(result).toEqual({ ok: true, data: [], status: 200 });
     expect(fetchMock.mock.calls[0][0]).toBe(
       "https://api.example.com/v1/schedule-reference-catalog?usage=1",
+    );
+  });
+
+  it("follows next_cursor across schedule-reference-catalog pages", async () => {
+    const item = {
+      placement_id: "p1",
+      tile_id: "t1",
+      plan_id: "plan1",
+      title: "Span",
+      span_start: "2026-07-01T00:00:00Z",
+      span_end: "2026-07-01T01:00:00Z",
+      role: 0,
+    };
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ items: [item], count: 1, next_cursor: "c2" }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          items: [{ ...item, placement_id: "p2" }],
+          count: 1,
+          next_cursor: null,
+        }),
+      });
+    const result = await listReferenceCatalog(client, "owner", ScheduleReferenceUsage.LABEL_SPAN);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.data.map((row) => row.placement_id)).toEqual(["p1", "p2"]);
+    }
+    expect(fetchMock.mock.calls[1][0]).toBe(
+      "https://api.example.com/v1/schedule-reference-catalog?usage=1&cursor=c2",
     );
   });
 

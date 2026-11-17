@@ -43,6 +43,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/endpoints/{id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Deliveries routed to one endpoint, most-recent first. */
+        get: operations["list_endpoint_deliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/executions/{id}/finish": {
         parameters: {
             query?: never;
@@ -244,6 +261,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/recurring/{id}/instances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Frame instances generated for one Recurring definition. */
+        get: operations["list_recurring_instances"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/schedule-definitions": {
         parameters: {
             query?: never;
@@ -269,6 +303,23 @@ export interface paths {
         };
         /** Open decision sessions of the caller, newest first. */
         get: operations["list_sessions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sessions/{id}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Deliveries of one decision session, most-recent first. */
+        get: operations["list_session_deliveries"];
         put?: never;
         post?: never;
         delete?: never;
@@ -416,6 +467,30 @@ export interface paths {
          *     reachable through the API surface (v1/14 §9).
          */
         get: operations["list_tiles"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Placements intersecting a required time range (v1/14 §4).
+         * @description Returns a bare JSON array of timeline items ordered by
+         *     `span.start ASC, placement_id ASC`.  `include_labels=true` adds
+         *     the non-blocking LABEL (`role = 1`) placements; every other
+         *     `include_*` flag follows the same opt-in rule.  The window may
+         *     span at most 31 days.
+         */
+        get: operations["get_timeline"];
         put?: never;
         post?: never;
         delete?: never;
@@ -741,6 +816,43 @@ export interface components {
             observe: number;
             reuse: components["schemas"]["FeedbackReuseRuleSchema"][];
             when?: null | components["schemas"]["ConditionRefSchema"];
+        };
+        /**
+         * @description Mirror of `handlers::notifications::DeliveryView` — the public
+         *     projection of a `v1_delivery` row.  `channel` / `state` are the
+         *     numeric registry values (`state`: 0=PENDING / 1=DELIVERED / 2=FAILED).
+         */
+        DeliveryListItemSchema: {
+            /** Format: int32 */
+            attempts: number;
+            /** Format: int32 */
+            channel: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            delivered_at?: string | null;
+            /** Format: uuid */
+            endpoint_id: string;
+            /** Format: uuid */
+            id: string;
+            last_error?: string | null;
+            /** Format: uuid */
+            session_id: string;
+            /** Format: int32 */
+            state: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /**
+         * @description Mirror of `handlers::paging::ListResponse<DeliveryView>` for
+         *     `GET /v1/sessions/{id}/deliveries` and
+         *     `GET /v1/endpoints/{id}/deliveries` (v1/14 §15-1).  `count` is the
+         *     page size, not the total; `next_cursor` is null on the last page.
+         */
+        DeliveryListResponse: {
+            count: number;
+            items: components["schemas"]["DeliveryListItemSchema"][];
+            next_cursor?: string | null;
         };
         /** @description Placeholder for a command whose payload carries no fields. */
         EmptyPayloadSchema: Record<string, never>;
@@ -1176,6 +1288,15 @@ export interface components {
             /** Format: date-time */
             start: string;
         };
+        /**
+         * @description Mirror of `handlers::paging::ListResponse<PromptView>` for
+         *     `GET /v1/prompts/pending` (v1/14 §15).
+         */
+        PromptListResponse: {
+            count: number;
+            items: components["schemas"]["PromptView"][];
+            next_cursor?: string | null;
+        };
         PromptSubjectSchema: {
             /** Format: uuid */
             id: string;
@@ -1272,6 +1393,31 @@ export interface components {
             window_end_min: number;
             /** Format: int32 */
             window_start_min: number;
+        };
+        /**
+         * @description Mirror of `handlers::paging::ListResponse<RecurringInstance>` for
+         *     `GET /v1/recurring/{id}/instances`.
+         */
+        RecurringInstanceListResponse: {
+            count: number;
+            items: components["schemas"]["RecurringInstanceSchema"][];
+            next_cursor?: string | null;
+        };
+        /**
+         * @description Mirror of `handlers::commands::RecurringInstance` for
+         *     `GET /v1/recurring/{id}/instances`.
+         */
+        RecurringInstanceSchema: {
+            /** Format: uuid */
+            frame_id: string;
+            /** Format: uuid */
+            frame_rule_id: string;
+            /** Format: date-time */
+            range_end: string;
+            /** Format: date-time */
+            range_start: string;
+            /** Format: int64 */
+            source_revision: number;
         };
         ReferenceDefSchema: {
             /** Format: uuid */
@@ -1666,7 +1812,12 @@ export interface components {
             /** @description May reference the operation-local source or a same-owner existing source. */
             referenced_source_ref: components["schemas"]["SourceRelationEndpointRefSchema"];
             split_policy: components["schemas"]["RelationSplitPolicySchema"];
-            /** @description Must be a local endpoint matching the source alias in this operation. */
+            /**
+             * @description Must be a local endpoint matching the source alias in this operation.
+             *     Read-back (`definition.relations[]`, v1/14 §17-2) always emits
+             *     `Existing`; clients rebuilding a PUT payload must rewrite the
+             *     subject ref to `Local` bound to a fresh `source_client_local_id`.
+             */
             subject_source_ref: components["schemas"]["SourceRelationEndpointRefSchema"];
             /** Format: int32 */
             summary_priority: number;
@@ -1701,7 +1852,23 @@ export interface components {
             split_policy: components["schemas"]["SplitPolicySchema"];
             window: components["schemas"]["SourceWindowSchema"];
         };
+        /**
+         * @description Mirror of `domain::SourceTileDefinition` (v1/14 §17): the
+         *     write-shaped definition returned inside the SourceTile detail read
+         *     for merge-or-replace editing.  `schedule` stays on
+         *     `SourceTileRead.schedule`, `horizon` is never persisted, and
+         *     `source_client_local_id` is always null on read-back.
+         */
+        SourceTileDefinitionSchema: {
+            flows: components["schemas"]["FlowDefinitionSchema"][];
+            plan: components["schemas"]["SchedulePlanDefinitionSchema"];
+            relations: components["schemas"]["SourceRelationDefinitionPayloadSchema"][];
+            /** Format: uuid */
+            source_client_local_id?: string | null;
+            tile: components["schemas"]["ScheduleTileDefinitionSchema"];
+        };
         SourceTileDetailRead: {
+            definition: components["schemas"]["SourceTileDefinitionSchema"];
             occurrences: components["schemas"]["SourceOccurrenceListResponse"];
             placements: components["schemas"]["PlacementTileListResponse"];
             relations: components["schemas"]["RelationDefinitionRead"][];
@@ -1989,6 +2156,142 @@ export interface components {
             required: components["schemas"]["RangeI64Schema"];
         };
         /**
+         * @description Mirror of `domain::change_set::ChangeKey` inside a resolution
+         *     violation.  `group` is the numeric `ChangeGroup` constant.
+         */
+        TimelineChangeKeySchema: {
+            /** Format: int32 */
+            group: number;
+            /** Format: uuid */
+            item?: string | null;
+            /** Format: int32 */
+            part: number;
+        };
+        /** @description Mirror of `domain::read::TileContentView`. */
+        TimelineContentSchema: {
+            description?: string | null;
+            title: string;
+        };
+        /**
+         * @description Mirror of `domain::read::InsideView`.  `scope` is the numeric
+         *     `ScopeKind` constant (0 ROOT / 1 HOST / 2 GAP).
+         */
+        TimelineInsideSchema: {
+            /** Format: uuid */
+            parent: string;
+            /** Format: int32 */
+            scope: number;
+        };
+        /**
+         * @description Mirror of `handlers::timeline::TimelineItemRead`: the flattened
+         *     `domain::read::TimelineItem` plus the source-tile lineage fields.
+         *
+         *     `role` is the numeric `PlanRole` constant.  `role = 1` (LABEL)
+         *     placements are the non-blocking label periods of v1/14 §4: they are
+         *     excluded unless `include_labels=true` and must be rendered in a
+         *     separate lane — they never count as busy time for placement or
+         *     conflict purposes.
+         */
+        TimelineItemSchema: {
+            content: components["schemas"]["TimelineContentSchema"];
+            inside?: null | components["schemas"]["TimelineInsideSchema"];
+            /** Format: uuid */
+            occurrence_id?: string | null;
+            owner?: null | components["schemas"]["TimelineOwnerEmbedSchema"];
+            /** Format: uuid */
+            placement_id: string;
+            resolution: components["schemas"]["TimelineResolutionSchema"];
+            /** Format: int64 */
+            revision: number;
+            /**
+             * Format: int32
+             * @description Numeric `PlanRole` constant (0 EXECUTABLE / 1 LABEL).
+             */
+            role: number;
+            source: components["schemas"]["TimelineSourceSchema"];
+            /** Format: uuid */
+            source_tile_id?: string | null;
+            span: components["schemas"]["TimelineSpanSchema"];
+            /** Format: int32 */
+            split_count?: number | null;
+            /** Format: uuid */
+            split_group_id?: string | null;
+            /** Format: int32 */
+            split_index?: number | null;
+            /** Format: uuid */
+            tile_id: string;
+            visual: components["schemas"]["TimelineVisualSchema"];
+        };
+        /**
+         * @description Mirror of `domain::read::TimelineOwnerEmbed` (v1/15 §4).  The wire
+         *     field is literally `ref_` because the domain struct uses that
+         *     identifier; clients must read `ref_`, not `ref`.
+         */
+        TimelineOwnerEmbedSchema: {
+            profile: components["schemas"]["TimelineOwnerProfileSchema"];
+            ref_: components["schemas"]["TimelineOwnerRefSchema"];
+        };
+        /** @description Mirror of `domain::read::OwnerProfileView`. */
+        TimelineOwnerProfileSchema: {
+            avatar_url?: string | null;
+            display_name: string;
+        };
+        /** @description Mirror of `domain::read::OwnerRef` inside the owner embed. */
+        TimelineOwnerRefSchema: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            kind: number;
+        };
+        /**
+         * @description Mirror of `domain::read::ResolutionInfo`.  `state` is the numeric
+         *     `ResolutionState` constant (0 OPEN / 1 CLOSED / 2 BLOCKED).
+         */
+        TimelineResolutionSchema: {
+            /** Format: uuid */
+            resolution_hash: string;
+            /** Format: date-time */
+            resolved_at: string;
+            /** Format: int32 */
+            state: number;
+            violations: components["schemas"]["TimelineViolationSchema"][];
+        };
+        /**
+         * @description Mirror of `domain::read::PlacementSourceView`.  `kind` is the numeric
+         *     `PlacementSource` constant (0 MANUAL / 1 RECURRING / 2 FLOW / 3 IMPORT /
+         *     4 SOURCE); `detail` is an opaque diagnostic string.
+         */
+        TimelineSourceSchema: {
+            detail: string;
+            /** Format: int32 */
+            kind: number;
+        };
+        /** @description Mirror of `domain::read::Span` inside a timeline item. */
+        TimelineSpanSchema: {
+            /** Format: date-time */
+            end: string;
+            /** Format: date-time */
+            start: string;
+        };
+        /** @description Mirror of `domain::resolver::ResolutionViolation`. */
+        TimelineViolationSchema: {
+            /** Format: uuid */
+            id: string;
+            key?: null | components["schemas"]["TimelineChangeKeySchema"];
+            /**
+             * Format: int32
+             * @description Numeric `ViolationKind` constant.
+             */
+            kind: number;
+            /** Format: uuid */
+            related_id?: string | null;
+        };
+        /** @description Mirror of `domain::read::TileVisualView`. */
+        TimelineVisualSchema: {
+            color?: string | null;
+            icon?: string | null;
+        };
+        /**
          * @description One Source occurrence the placement algorithm could not place.
          *     `reason`: 0 = INSUFFICIENT_CAPACITY, 1 = LIMIT_CONFLICT,
          *     2 = PRIORITY_TIE_CONFLICT (v1/10 §2 — numeric constants only).
@@ -2084,6 +2387,59 @@ export interface operations {
             };
             /** @description Missing or invalid auth */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_endpoint_deliveries: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+                /** @description Optional delivery state filter (0=PENDING / 1=DELIVERED / 2=FAILED) */
+                state?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Endpoint id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deliveries of the endpoint (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Endpoint not found or not owned by the caller */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2483,24 +2839,38 @@ export interface operations {
     };
     list_pending_prompts: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description Unresolved, unexpired prompts oldest first */
+            /** @description Unresolved, unexpired prompts oldest first (created_at ASC, id ASC) */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PromptView"][];
+                    "application/json": components["schemas"]["PromptListResponse"];
                 };
             };
             /** @description Missing or invalid auth */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2601,6 +2971,57 @@ export interface operations {
             };
         };
     };
+    list_recurring_instances: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Recurring id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Frame instances of the recurring (range_start ASC, id ASC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringInstanceListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Recurring not found or not accessible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     publish_schedule_definition: {
         parameters: {
             query?: never;
@@ -2666,6 +3087,59 @@ export interface operations {
             };
             /** @description Missing or invalid auth */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_session_deliveries: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+                /** @description Optional delivery state filter (0=PENDING / 1=DELIVERED / 2=FAILED) */
+                state?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Decision session id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deliveries of the session (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeliveryListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Session not found or not owned by the caller */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3113,6 +3587,76 @@ export interface operations {
             };
             /** @description Invalid cursor, limit, or offset */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_timeline: {
+        parameters: {
+            query: {
+                /** @description Range start (RFC 3339); required, must be before `end` */
+                start: string;
+                /** @description Range end (RFC 3339); required; window at most 31 days */
+                end: string;
+                /** @description Restrict to placements nested under this parent; returns an empty array unless `include_nested=true` is also set */
+                parent_placement_id?: string;
+                /** @description Include LABEL (role = 1) non-blocking periods; default false */
+                include_labels?: boolean;
+                /** @description Include CLOSED placements; default false */
+                include_closed?: boolean;
+                /** @description Include BLOCKED placements; default false */
+                include_blocked?: boolean;
+                /** @description Include placements with a non-null parent; default false */
+                include_nested?: boolean;
+                /** @description Comma-separated owner ids; defaults to the caller */
+                owner_ids?: string;
+                /** @description Page size; omitted returns the complete in-range set */
+                limit?: number;
+                /** @description Row offset applied independently of `limit`; omitted means offset 0 */
+                offset?: number;
+                /** @description `month` collapses overlapping relation-derived items into one representative per relation component */
+                summary?: string;
+                /** @description Hide placements shorter than this effective span */
+                min_duration_ms?: number;
+                /** @description Hide recurring placements whose cadence is at or below this step */
+                min_recurring_step_ms?: number;
+                /** @description Comma-separated numeric PlacementSource values to exclude */
+                exclude_source_kinds?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Timeline items in range (span.start ASC, placement_id ASC); bare JSON array */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineItemSchema"][];
+                };
+            };
+            /** @description Malformed or missing query parameter, `start` not before `end`, or window over 31 days */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing `tastile.read` scope, or `owner_ids` names a subject the caller cannot read */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
