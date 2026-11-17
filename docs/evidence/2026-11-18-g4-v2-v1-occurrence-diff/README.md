@@ -88,6 +88,20 @@ bun scripts/v2-v1-occurrence-diff.ts --out <dir>
 (isolated Core + それを向く Next.js dev server + 実 PostgreSQL)。
 v2 toolchain が無い環境では全 case `skipped` で v1 submit は走らない。
 
+## 既知の制限 (独立レビュー指摘)
+
+- `diffCase` は v2-only candidate を occurrence の `state`/`blocked` と
+  相関させない。fresh single-owner 計測では blocked occurrence は発生
+  しないが、break/他 source 由来の blocked occurrence がある環境では
+  `suspected_regression` の false positive になり得る。
+- `beyondMaterialized` の frontier 判定は Core 自身の occurrence 出力を
+  参照するため、Core が早期に generation を打ち切る regression がある
+  場合に `v1_period_boundary` へ分類され得る (cause は `none` になら
+  ないが `fullyExplained` になり得る)。
+- これらは本計測 (fresh owner、blocked 無し、horizon 内で安定) の結果を
+  無効化するものではないが、一般化する際は occurrence state 相関と
+  authored `ends_at` 到達確認の追加が必要。
+
 ## item D への示唆 (再計測後)
 
 - weekly mask / excluded_dates / monthly の乖離はすべて **v2 preview

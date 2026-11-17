@@ -371,13 +371,16 @@ function listItems<T>(v: ListEnvelope<T> | T[] | undefined): T[] {
 
 // Fetch the source-tile detail with both collections fully materialized.
 // The §15 envelopes page independently (occurrence_cursor /
-// placement_cursor); advance each cursor until both are exhausted.
+// placement_cursor); `count` is the page item count, NOT a total, so
+// termination is driven by next_cursor alone. When one collection is
+// exhausted we stop sending its cursor, which makes the API return its
+// first page again — dedupe by id absorbs those repeats.
 async function fetchDetailFull(
   sourceTileId: string,
   headers: Record<string, string>,
 ): Promise<SourceDetail | null> {
-  const occurrences: V1Occurrence[] = [];
-  const placements: V1Placement[] = [];
+  const occurrences = new Map<string, V1Occurrence>();
+  const placements = new Map<string, V1Placement>();
   let occCursor: string | null = null;
   let plcCursor: string | null = null;
   let source: SourceDetailRaw["source"] | null = null;
@@ -389,19 +392,19 @@ async function fetchDetailFull(
     if (plcCursor) u.searchParams.set("placement_cursor", plcCursor);
     const r = await fetch(u.toString(), { headers });
     const d = (await r.json().catch(() => null)) as SourceDetailRaw | null;
-    if (!d) return null;
+    if (!r.ok || !d?.source) return null;
     source = d.source;
-    occurrences.push(...listItems(d.occurrences));
-    placements.push(...listItems(d.placements));
+    for (const o of listItems(d.occurrences)) occurrences.set(o.occurrence_id, o);
+    for (const p of listItems(d.placements)) placements.set(p.placement_id, p);
     const occEnv = Array.isArray(d.occurrences) ? null : d.occurrences;
     const plcEnv = Array.isArray(d.placements) ? null : d.placements;
     occCursor = occEnv?.next_cursor ?? null;
     plcCursor = plcEnv?.next_cursor ?? null;
-    const occDone = !occCursor || occurrences.length >= (occEnv?.count ?? Infinity);
-    const plcDone = !plcCursor || placements.length >= (plcEnv?.count ?? Infinity);
-    if (occDone && plcDone) break;
+    if (!occCursor && !plcCursor) break;
   }
-  return source ? { source, occurrences, placements } : null;
+  return source
+    ? { source, occurrences: [...occurrences.values()], placements: [...placements.values()] }
+    : null;
 }
 
 function ms(iso: string | null | undefined): number | null {
@@ -933,6 +936,7 @@ for (const c of cases) {
   // The poll snapshot only holds the first page of each §15 envelope;
   // refetch with cursor pagination so the diff sees every row.
   detail = (await fetchDetailFull(sourceTileId, coreHeaders)) ?? detail;
+  const pollTimedOut = stablePolls < 5;
   log(
     `  materialized occurrences=${detail.occurrences.length} placements=${detail.placements.length}`,
   );
@@ -998,6 +1002,7 @@ for (const c of cases) {
         }
       : {}),
     v2Input: derivation.input,
+    poll: { polls: pollCount, stablePolls, timedOut: pollTimedOut },
     ...diff,
     classification,
   };
