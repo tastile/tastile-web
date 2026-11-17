@@ -51,10 +51,6 @@ interface AccessNotificationWire {
   read_at: string | null;
 }
 
-interface ListResponse<T> {
-  items?: T[];
-}
-
 interface ActiveTileSnapshot {
   tile_id: string;
   placement_id: string;
@@ -86,7 +82,9 @@ export function useNotifications() {
       // /read/execution-view is rewritten to the canonical /v1/active-tile
       // read model. A successful null response means no active execution.
       client.call<ActiveTileSnapshot | null>("getExecutionView"),
-      client.call<PendingPromptSnapshot[]>("getPendingPrompt"),
+      // /v1/prompts/pending follows the §15 list contract; callAllPages
+      // unwraps `{items, count, next_cursor}` (oldest pending first).
+      client.callAllPages<PendingPromptSnapshot>("getPendingPrompt"),
     ]);
     if (requestId !== requestIdRef.current) return { failed: false };
 
@@ -207,17 +205,17 @@ async function fetchAccessNotifications(
   t: (key: string) => string,
 ): Promise<{ ok: true; items: NotificationItem[] } | { ok: false; error: Error }> {
   try {
-    const res = await getCoreClient().call<
-      ListResponse<AccessNotificationWire> | AccessNotificationWire[]
-    >("listAccessNotifications", { query: { limit: 20 } });
+    // §15 list contract: follow every `next_cursor` page so the inbox is
+    // not silently limited to the first page.
+    const res = await getCoreClient().callAllPages<AccessNotificationWire>(
+      "listAccessNotifications",
+    );
     if (!res.ok) {
       return { ok: false, error: new Error(`notifications API returned ${res.error.status}`) };
     }
-    const body = res.data;
-    const rows = Array.isArray(body) ? body : (body.items ?? []);
     return {
       ok: true,
-      items: rows.map((row) => ({
+      items: res.data.map((row) => ({
         id: `access:${row.id}`,
         message: row.message ?? accessNotificationMessage(row.kind, t),
         timestamp: parseDate(row.created_at),
