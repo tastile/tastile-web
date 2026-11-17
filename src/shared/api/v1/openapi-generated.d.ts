@@ -10,6 +10,94 @@
  */
 
 export interface paths {
+    "/v1/access/grants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Grants visible to the actor (as owner or grantee), newest first. */
+        get: operations["list_access_grants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/access/grants/pending-for-me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** PENDING grants where the actor is the recipient, newest first. */
+        get: operations["list_pending_access_grants"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/access/grants/{id}/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Audit history of one grant, most recent first. */
+        get: operations["list_access_grant_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/access/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Notification inbox of the actor, newest first.  `unread_only`
+         *     filters in SQL before pagination.
+         */
+        get: operations["list_access_notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/api-tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** API tokens of the caller, newest first.  OwnerAdmin only. */
+        get: operations["list_api_tokens"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/signout": {
         parameters: {
             query?: never;
@@ -35,6 +123,26 @@ export interface paths {
         };
         /** Open placements without an active execution (candidates). */
         get: operations["list_candidates"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/endpoints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Delivery destinations (push / web-push / email endpoints) of the
+         *     caller, newest first.
+         */
+        get: operations["list_endpoints"];
         put?: never;
         post?: never;
         delete?: never;
@@ -294,6 +402,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/schedule-reference-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Schedule reference catalog for one `usage`, ordered by
+         *     `span_start ASC, placement_id ASC`.  Always scoped to the
+         *     authenticated owner; there is no owner_id query parameter.
+         */
+        get: operations["list_schedule_reference_catalog"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/sessions": {
         parameters: {
             query?: never;
@@ -503,6 +632,105 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Mirror of `storage::access_repo::AuditEventRow`. */
+        AccessAuditEventSchema: {
+            /**
+             * Format: int32
+             * @description Numeric audit action registry value.
+             */
+            action: number;
+            /** Format: uuid */
+            actor_subject_id?: string | null;
+            /** Format: uuid */
+            detail_subject_id?: string | null;
+            /** Format: uuid */
+            grant_id?: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: int32 */
+            target_kind: number;
+            /** Format: uuid */
+            target_resource_id?: string | null;
+            /** Format: int32 */
+            target_resource_kind?: number | null;
+            /** Format: uuid */
+            target_subject_id?: string | null;
+        };
+        /** @description Mirror of `handlers::access::ListResponse<AuditEventRow>`. */
+        AccessAuditListResponse: {
+            count: number;
+            items: components["schemas"]["AccessAuditEventSchema"][];
+            next_cursor?: string | null;
+        };
+        /** @description Mirror of `handlers::access::ListResponse<GrantRow>`. */
+        AccessGrantListResponse: {
+            count: number;
+            items: components["schemas"]["AccessGrantSchema"][];
+            next_cursor?: string | null;
+        };
+        /**
+         * @description Mirror of `storage::access_repo::GrantRow` for the access grant
+         *     lists.  `resource_kind` / `status` / `initiated_by` are numeric
+         *     registry constants.
+         */
+        AccessGrantSchema: {
+            capability_codes: string[];
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: uuid */
+            grantee_subject_id: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            initiated_by: number;
+            message?: string | null;
+            /** Format: date-time */
+            resolved_at?: string | null;
+            /** Format: uuid */
+            resource_id: string;
+            /** Format: int32 */
+            resource_kind: number;
+            /** Format: uuid */
+            resource_subject_id: string;
+            revoked_reason?: string | null;
+            /** Format: int32 */
+            status: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Mirror of `handlers::access::ListResponse<NotificationRow>`. */
+        AccessNotificationListResponse: {
+            count: number;
+            items: components["schemas"]["AccessNotificationSchema"][];
+            next_cursor?: string | null;
+        };
+        /** @description Mirror of `storage::access_repo::NotificationRow`. */
+        AccessNotificationSchema: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            grant_id?: string | null;
+            /** Format: uuid */
+            id: string;
+            /**
+             * Format: int32
+             * @description Numeric notification kind registry value.
+             */
+            kind: number;
+            message?: string | null;
+            /** Format: date-time */
+            read_at?: string | null;
+            /** Format: uuid */
+            recipient_subject_id: string;
+            /** Format: uuid */
+            resource_id?: string | null;
+            /** Format: int32 */
+            resource_kind?: number | null;
+        };
         AggregateExprSchema: {
             /**
              * Format: int32
@@ -582,6 +810,31 @@ export interface components {
              *     `scopes_required`.
              */
             scopes?: string | null;
+        };
+        /** @description Mirror of `handlers::paging::ListResponse<ApiTokenView>`. */
+        ApiTokenListResponse: {
+            count: number;
+            items: components["schemas"]["ApiTokenViewSchema"][];
+            next_cursor?: string | null;
+        };
+        /**
+         * @description Mirror of `handlers::auth::ApiTokenView` for `GET /v1/api-tokens`.
+         *     `scopes` is the space-separated scope list stored on the token.
+         */
+        ApiTokenViewSchema: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: uuid */
+            id: string;
+            label: string;
+            /** Format: date-time */
+            last_used_at?: string | null;
+            prefix: string;
+            /** Format: date-time */
+            revoked_at?: string | null;
+            scopes: string;
         };
         CalendarTermSchema: {
             date_range?: null | components["schemas"]["DateRangeSchema"];
@@ -856,6 +1109,34 @@ export interface components {
         };
         /** @description Placeholder for a command whose payload carries no fields. */
         EmptyPayloadSchema: Record<string, never>;
+        EndpointCapabilitySchema: {
+            supports_action_reply: boolean;
+            supports_interaction: boolean;
+        };
+        /** @description Mirror of `handlers::paging::ListResponse<EndpointView>`. */
+        EndpointListResponse: {
+            count: number;
+            items: components["schemas"]["EndpointViewSchema"][];
+            next_cursor?: string | null;
+        };
+        /**
+         * @description Mirror of `handlers::endpoints::EndpointView` for `GET /v1/endpoints`.
+         *     `channel` is the numeric `EndpointChannel` constant (0 PUSH /
+         *     1 WEB_PUSH / 2 EMAIL); the token is never retrievable (v1/14 §9-10).
+         */
+        EndpointViewSchema: {
+            capability: components["schemas"]["EndpointCapabilitySchema"];
+            /** Format: int32 */
+            channel: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            owner_id: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
         /**
          * @description `PAUSE_EXECUTION` / `RESUME_EXECUTION` take no payload of their own —
          *     the execution id comes from the path, so the wire value of `payload`
@@ -1659,6 +1940,32 @@ export interface components {
             nesting_rules: components["schemas"]["NestingRuleSchema"][];
             placement_rules: components["schemas"]["PlacementRuleSchema"][];
         };
+        /**
+         * @description Mirror of `domain::read::ScheduleReferenceCatalogItemView` for
+         *     `GET /v1/schedule-reference-catalog`.  `role` is the numeric
+         *     `PlanRole` constant.
+         */
+        ScheduleReferenceCatalogItemSchema: {
+            /** Format: uuid */
+            placement_id: string;
+            /** Format: uuid */
+            plan_id: string;
+            /** Format: int32 */
+            role: number;
+            /** Format: date-time */
+            span_end: string;
+            /** Format: date-time */
+            span_start: string;
+            /** Format: uuid */
+            tile_id: string;
+            title: string;
+        };
+        /** @description Mirror of `handlers::paging::ListResponse<ScheduleReferenceCatalogItemView>`. */
+        ScheduleReferenceCatalogListResponse: {
+            count: number;
+            items: components["schemas"]["ScheduleReferenceCatalogItemSchema"][];
+            next_cursor?: string | null;
+        };
         ScheduleTileDefinitionSchema: {
             color?: string | null;
             description?: string | null;
@@ -2342,6 +2649,230 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_access_grants: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Grants visible to the actor (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGrantListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_pending_access_grants: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Pending grants for the actor (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessGrantListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_access_grant_audit: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Grant id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Audit events of the grant (occurred_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessAuditListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Grant not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_access_notifications: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+                /** @description When true, only unread notifications are returned */
+                unread_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notifications of the actor (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccessNotificationListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_api_tokens: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description API tokens of the caller (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiTokenListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing OwnerAdmin permission */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     signout: {
         parameters: {
             query?: never;
@@ -2387,6 +2918,54 @@ export interface operations {
             };
             /** @description Missing or invalid auth */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, or offset */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_endpoints: {
+        parameters: {
+            query?: {
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Endpoints of the caller (created_at DESC, id DESC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing `tastile.read` scope */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3053,6 +3632,56 @@ export interface operations {
             };
             /** @description Missing or invalid auth */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_schedule_reference_catalog: {
+        parameters: {
+            query: {
+                /** @description Required numeric schedule reference usage (1|2|3) */
+                usage: string;
+                /** @description Page size 1..1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Opaque keyset cursor of the previous page */
+                cursor?: string;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Catalog items for the usage (span_start ASC, placement_id ASC) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleReferenceCatalogListResponse"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing `tastile.read` scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing/invalid usage, or invalid cursor, limit, or offset */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
