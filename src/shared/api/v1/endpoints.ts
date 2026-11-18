@@ -60,6 +60,12 @@ export async function followPages<T>(
   firstStatus: number,
   fetchNext: (cursor: string) => Promise<Result<PagedRead<T>>>,
 ): Promise<Result<T[]>> {
+  if (!Array.isArray(first?.items)) {
+    return {
+      ok: false,
+      error: networkError("list response is missing an items array"),
+    };
+  }
   const items = [...first.items];
   const seenCursors = new Set<string>();
   let status = firstStatus;
@@ -80,6 +86,12 @@ export async function followPages<T>(
     seenCursors.add(cursor);
     const res = await fetchNext(cursor);
     if (!res.ok) return { ok: false, error: res.error };
+    if (!Array.isArray(res.data?.items)) {
+      return {
+        ok: false,
+        error: networkError("list page is missing an items array"),
+      };
+    }
     status = res.status;
     items.push(...res.data.items);
     cursor = res.data.next_cursor ?? null;

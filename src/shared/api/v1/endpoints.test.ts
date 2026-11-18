@@ -304,3 +304,27 @@ describe("getRead", () => {
     }
   });
 });
+
+describe("followPages", () => {
+  it("returns RETRYABLE error when the first page lacks an items array", async () => {
+    const { followPages } = await import("./endpoints");
+    const res = await followPages(
+      { items: undefined, count: 0, next_cursor: null } as never,
+      200,
+      async () => ({ ok: true, data: { items: [], count: 0, next_cursor: null }, status: 200 }),
+    );
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
+  });
+
+  it("returns RETRYABLE error when a follow-up page lacks an items array", async () => {
+    const { followPages } = await import("./endpoints");
+    const res = await followPages(
+      { items: [1], count: 1, next_cursor: "c1" },
+      200,
+      async () => ({ ok: true, data: { count: 0, next_cursor: null } as never, status: 200 }),
+    );
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.kind).toBe(ApiErrorKind.RETRYABLE);
+  });
+});
