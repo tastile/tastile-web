@@ -91,7 +91,12 @@ export interface paths {
         /** API tokens of the caller, newest first.  OwnerAdmin only. */
         get: operations["list_api_tokens"];
         put?: never;
-        post?: never;
+        /**
+         * Mint an API token.  OwnerAdmin only; `expires_at` is required at
+         *     the wire level (omitted/null is a 400 Validation error).  The raw
+         *     `token` is returned exactly once.
+         */
+        post: operations["create_api_token"];
         delete?: never;
         options?: never;
         head?: never;
@@ -144,7 +149,11 @@ export interface paths {
          */
         get: operations["list_endpoints"];
         put?: never;
-        post?: never;
+        /**
+         * Register a delivery endpoint (push / web-push / email).  The token
+         *     is stored encrypted and never returned (v1/14 §9-10).
+         */
+        post: operations["create_endpoint"];
         delete?: never;
         options?: never;
         head?: never;
@@ -273,6 +282,35 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/owners/{kind}/{id}/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Read one owner profile (v1/15 §3).
+         * @description The response is a credential-dependent projection: without a
+         *     valid credential only `kind`/`id`/`display_name`/`avatar_url`
+         *     are returned; `bio`, `accent_color`, and `revision` are added
+         *     for authenticated callers.
+         */
+        get: operations["get_owner_profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * PATCH one owner profile (v1/14 §9-1, v1/15 §3).
+         * @description `Idempotency-Key` is mandatory: the same key with the same body
+         *     replays the original `revision`, and the same key with a
+         *     different body is `IDEMPOTENCY_KEY_REUSED` (v1/10 §4-2).
+         */
+        patch: operations["patch_owner_profile"];
+        trace?: never;
+    };
     "/v1/placements": {
         parameters: {
             query?: never;
@@ -282,7 +320,8 @@ export interface paths {
         };
         get: operations["list_placements"];
         put?: never;
-        post?: never;
+        /** Create a Placement for an existing tile/plan. */
+        post: operations["create_placement"];
         delete?: never;
         options?: never;
         head?: never;
@@ -386,6 +425,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runtime/paths": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List all runtime path entries for the caller's owner. */
+        get: operations["list_runtime_paths"];
+        put?: never;
+        /** Upsert one runtime path entry for the caller's owner. */
+        post: operations["upsert_runtime_path"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/schedule-definitions": {
         parameters: {
             query?: never;
@@ -433,7 +490,11 @@ export interface paths {
         /** Open decision sessions of the caller, newest first. */
         get: operations["list_sessions"];
         put?: never;
-        post?: never;
+        /**
+         * Create a Decision Session from evaluated decision runs and an
+         *     interaction tree (v1/06).
+         */
+        post: operations["create_session"];
         delete?: never;
         options?: never;
         head?: never;
@@ -450,7 +511,11 @@ export interface paths {
         /** Deliveries of one decision session, most-recent first. */
         get: operations["list_session_deliveries"];
         put?: never;
-        post?: never;
+        /**
+         * Enqueue a delivery of a session to an endpoint.  The payload
+         *     `session_id` must equal the `{id}` path parameter.
+         */
+        post: operations["enqueue_delivery"];
         delete?: never;
         options?: never;
         head?: never;
@@ -597,7 +662,12 @@ export interface paths {
          */
         get: operations["list_tiles"];
         put?: never;
-        post?: never;
+        /**
+         * Create a Tile.  `kind = 0` (RECURRING) is rejected with 410 —
+         *     recurring creation goes through `/v1/source-tiles`; `frame_rule`
+         *     must be absent for accepted kinds.
+         */
+        post: operations["create_tile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -810,6 +880,22 @@ export interface components {
              *     `scopes_required`.
              */
             scopes?: string | null;
+        };
+        /**
+         * @description `POST /v1/api-tokens` response (`handlers::auth::ApiTokenCreatedView`).
+         *     `token` is the raw credential — returned exactly once at creation.
+         */
+        ApiTokenCreatedSchema: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: uuid */
+            id: string;
+            label: string;
+            prefix: string;
+            scopes: string;
+            token: string;
         };
         /** @description Mirror of `handlers::paging::ListResponse<ApiTokenView>`. */
         ApiTokenListResponse: {
@@ -1024,6 +1110,79 @@ export interface components {
         } | {
             Term: components["schemas"]["TermSchema"];
         };
+        /**
+         * @description `POST /v1/endpoints` body (`handlers::endpoints::EndpointInput`).
+         *     The token is stored encrypted and is never retrievable afterwards
+         *     (v1/14 §9-10).
+         */
+        CreateEndpointRequest: {
+            capability: components["schemas"]["EndpointCapabilitySchema"];
+            /**
+             * Format: int32
+             * @description Numeric `EndpointChannel` registry value (0 PUSH / 1 WEB_PUSH /
+             *     2 EMAIL).
+             */
+            channel: number;
+            token: string;
+        };
+        /**
+         * @description `payload` of `CREATE_PLACEMENT`
+         *     (`domain::command::CreatePlacementPayload`).
+         */
+        CreatePlacementPayloadSchema: {
+            baseline: components["schemas"]["PlacementBaselineSchema"];
+            /** Format: uuid */
+            plan_id: string;
+            /**
+             * Format: int32
+             * @description Numeric `PlacementSource` registry value (0 MANUAL / 1 RECURRING /
+             *     2 FLOW / 3 IMPORT / 4 SOURCE).
+             */
+            source: number;
+            source_ref: components["schemas"]["PlacementSourceRefSchema"];
+            /** Format: uuid */
+            tile_id: string;
+        };
+        /** @description `POST /v1/placements` body: `OwnerCommandRequest<CreatePlacementPayload>`. */
+        CreatePlacementRequest: {
+            /** Format: int64 */
+            expected_revision?: number | null;
+            /** Format: uuid */
+            idempotency_key: string;
+            /** Format: date-time */
+            occurred_at?: string | null;
+            /**
+             * Format: uuid
+             * @description Optional WORKSPACE owner override; must be owned by the actor.
+             */
+            owner_id?: string | null;
+            payload: components["schemas"]["CreatePlacementPayloadSchema"];
+        };
+        /**
+         * @description `payload` of `CREATE_SESSION`
+         *     (`domain::command::CreateSessionPayload`).  `decisions` and `tree`
+         *     carry the v1/06 SessionDecisionRun / InteractionTree structures; their
+         *     full nested shape is owned by v1/06 and is transported as JSON.
+         */
+        CreateSessionPayloadSchema: {
+            decisions: unknown[];
+            /**
+             * Format: uuid
+             * @description Server-assigned when absent.
+             */
+            session_id?: string | null;
+            tree: unknown;
+        };
+        /** @description `POST /v1/sessions` body: `CommandRequest<CreateSessionPayload>`. */
+        CreateSessionRequest: {
+            /** Format: int64 */
+            expected_revision?: number | null;
+            /** Format: uuid */
+            idempotency_key: string;
+            /** Format: date-time */
+            occurred_at?: string | null;
+            payload: components["schemas"]["CreateSessionPayloadSchema"];
+        };
         CreateSourceTilePayloadSchema: {
             flows: components["schemas"]["FlowDefinitionSchema"][];
             horizon: components["schemas"]["SpanSchema"];
@@ -1042,6 +1201,44 @@ export interface components {
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["CreateSourceTilePayloadSchema"];
+        };
+        /**
+         * @description `payload` of `CREATE_TILE` (`domain::command::CreateTilePayload`).
+         *     `kind` is the numeric `TileKind` registry value (0 RECURRING /
+         *     1 PLACEMENT / 2 EXECUTION / 3 SOURCE); `plan_role` is the numeric
+         *     `PlanRole` value (0 EXECUTABLE / 1 LABEL).  `kind = 0` (RECURRING) is
+         *     rejected with 410 — recurring creation goes through `/v1/source-tiles`;
+         *     `frame_rule` must be absent for every accepted kind.  Its `FrameRuleDef`
+         *     JSON shape is owned by v1/04 (generator / active /
+         *     placement_duration_ms / rank).
+         */
+        CreateTilePayloadSchema: {
+            color?: string | null;
+            description?: string | null;
+            external_id?: string | null;
+            frame_rule?: unknown;
+            icon?: string | null;
+            /** Format: int32 */
+            kind: number;
+            meta_min?: null | components["schemas"]["TileMetaMinSchema"];
+            /** Format: int32 */
+            plan_role: number;
+            title: string;
+        };
+        /** @description `POST /v1/tiles` body: `OwnerCommandRequest<CreateTilePayload>`. */
+        CreateTileRequest: {
+            /** Format: int64 */
+            expected_revision?: number | null;
+            /** Format: uuid */
+            idempotency_key: string;
+            /** Format: date-time */
+            occurred_at?: string | null;
+            /**
+             * Format: uuid
+             * @description Optional WORKSPACE owner override; must be owned by the actor.
+             */
+            owner_id?: string | null;
+            payload: components["schemas"]["CreateTilePayloadSchema"];
         };
         DateRangeSchema: {
             /** Format: date */
@@ -1136,6 +1333,38 @@ export interface components {
             owner_id: string;
             /** Format: date-time */
             updated_at: string;
+        };
+        /**
+         * @description `payload` of `ENQUEUE_DELIVERY`
+         *     (`domain::command::EnqueueDeliveryPayload`).
+         */
+        EnqueueDeliveryPayloadSchema: {
+            /**
+             * Format: int32
+             * @description Numeric `DeliveryChannel` registry value (0 WEB / 1 DESKTOP /
+             *     2 MOBILE / 3 EMAIL).
+             */
+            channel: number;
+            /** Format: uuid */
+            endpoint_id: string;
+            /**
+             * Format: uuid
+             * @description Must equal the `{id}` path parameter.
+             */
+            session_id: string;
+        };
+        /**
+         * @description `POST /v1/sessions/{id}/deliveries` body:
+         *     `CommandRequest<EnqueueDeliveryPayload>`.
+         */
+        EnqueueDeliveryRequest: {
+            /** Format: int64 */
+            expected_revision?: number | null;
+            /** Format: uuid */
+            idempotency_key: string;
+            /** Format: date-time */
+            occurred_at?: string | null;
+            payload: components["schemas"]["EnqueueDeliveryPayloadSchema"];
         };
         /**
          * @description `PAUSE_EXECUTION` / `RESUME_EXECUTION` take no payload of their own —
@@ -1451,6 +1680,46 @@ export interface components {
             /** Format: date-time */
             retention_until: string;
         };
+        /**
+         * @description Response body for `GET /v1/owners/{kind}/{id}/profile` (v1/15 §3).
+         *     Unauthenticated callers receive only the public projection
+         *     (`kind`/`id`/`display_name`/`avatar_url`); `bio`, `accent_color`,
+         *     and `revision` are present only when a valid credential is supplied.
+         */
+        OwnerProfileReadResponse: {
+            accent_color?: string | null;
+            avatar_url?: string | null;
+            bio?: string | null;
+            display_name: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            kind: number;
+            /** Format: int64 */
+            revision?: number | null;
+        };
+        /** @description Response body for `PATCH /v1/owners/{kind}/{id}/profile`. */
+        OwnerProfileWriteResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            kind: number;
+            /** Format: int64 */
+            revision: number;
+        };
+        /**
+         * @description Request body for `PATCH /v1/owners/{kind}/{id}/profile` (v1/14 §9-1).
+         *     Partial update: every field is optional and only the supplied fields
+         *     move.  `expected_revision` is the optimistic-locking precondition.
+         */
+        PatchOwnerProfileRequest: {
+            accent_color?: string | null;
+            avatar_url?: string | null;
+            bio?: string | null;
+            display_name?: string | null;
+            /** Format: int64 */
+            expected_revision?: number | null;
+        };
         PendingWorkSchema: {
             /** Format: date-time */
             expected_at?: string | null;
@@ -1539,6 +1808,22 @@ export interface components {
             /** Format: int32 */
             rank: number;
             when?: null | components["schemas"]["ConditionRefSchema"];
+        };
+        /** @description `domain::aggregate::PlacementSourceRef` — provenance of a Placement. */
+        PlacementSourceRefSchema: {
+            created?: null | components["schemas"]["StampSchema"];
+            external_id?: string | null;
+            /** Format: uuid */
+            flow?: string | null;
+            /** Format: uuid */
+            frame?: string | null;
+            proposal?: null | components["schemas"]["ProposalKeySchema"];
+            /**
+             * Format: uuid
+             * @description `VersionRef` of the owning recurring / flow / frame.
+             */
+            recurring?: string | null;
+            source_text?: string | null;
         };
         /** @description Mirror of `handlers::paging::ListResponse<PlacementTileRead>`. */
         PlacementTileListResponse: {
@@ -1884,6 +2169,18 @@ export interface components {
             /** Format: uuid */
             owner_id?: string | null;
             payload: components["schemas"]["ResolvePromptPayloadSchema"];
+        };
+        /** @description One row of `GET /v1/runtime/paths`. */
+        RuntimePathRowSchema: {
+            id: string;
+            path: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        /** @description Request body for `POST /v1/runtime/paths` (upsert). */
+        RuntimePathUpsertSchema: {
+            id: string;
+            path: string;
         };
         ScalarExpressionRefSchema: components["schemas"]["ScalarExpressionSchema"];
         ScalarExpressionSchema: {
@@ -2265,6 +2562,21 @@ export interface components {
             /** Format: int64 */
             min_segment_ms?: number | null;
         };
+        /** @description `domain::common::Stamp` — who/when/which-command produced a value. */
+        StampSchema: {
+            /** Format: uuid */
+            actor: string;
+            /**
+             * Format: int32
+             * @description Numeric `ActorKind` registry value (0 USER / 1 WORKER / 2 IMPORT /
+             *     3 SYSTEM).
+             */
+            actor_kind: number;
+            /** Format: date-time */
+            at: string;
+            /** Format: uuid */
+            command_id: string;
+        };
         /**
          * @description `payload` of `START_EXECUTION`.  The placement id also appears in the
          *     path; a mismatch is rejected with VALIDATION.
@@ -2429,6 +2741,13 @@ export interface components {
             title: string;
             /** Format: int64 */
             worked_minutes: number;
+        };
+        /** @description `domain::aggregate::TileMetaMin` — meta-min subset of tile metadata. */
+        TileMetaMinSchema: {
+            notes?: string | null;
+            /** Format: uuid */
+            project_id?: string | null;
+            tags: string[];
         };
         TimeObservationSchema: {
             /** Format: int32 */
@@ -2873,6 +3192,52 @@ export interface operations {
             };
         };
     };
+    create_api_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CreateApiTokenRequest */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiTokenCreateRequestSchema"];
+            };
+        };
+        responses: {
+            /** @description Created token (raw token returned once) */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiTokenCreatedSchema"];
+                };
+            };
+            /** @description Validation error (missing expires_at, invalid scopes) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing OwnerAdmin */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     signout: {
         parameters: {
             query?: never;
@@ -2973,6 +3338,52 @@ export interface operations {
             };
             /** @description Invalid cursor, limit, or offset */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_endpoint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description EndpointInput */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEndpointRequest"];
+            };
+        };
+        responses: {
+            /** @description Created endpoint */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointViewSchema"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Token encryption failure */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3291,6 +3702,113 @@ export interface operations {
             };
         };
     };
+    get_owner_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Owner kind: 0 (USER) only; 1..4 returns 501 */
+                kind: number;
+                /** @description Owner id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Owner profile projection (public or authenticated) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnerProfileReadResponse"];
+                };
+            };
+            /** @description Owner not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unsupported owner kind */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    patch_owner_profile: {
+        parameters: {
+            query?: never;
+            header: {
+                /** @description UUIDv7 idempotency key (required, v1/14 §9-1) */
+                "Idempotency-Key": string;
+            };
+            path: {
+                /** @description Owner kind: 0 (USER) only; 1..4 returns 501 */
+                kind: number;
+                /** @description Owner id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description Partial profile update */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchOwnerProfileRequest"];
+            };
+        };
+        responses: {
+            /** @description Updated (or replayed) profile revision */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OwnerProfileWriteResponse"];
+                };
+            };
+            /** @description Missing or malformed Idempotency-Key */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Authenticated actor is not the owner */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale revision or reused idempotency key */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unsupported owner kind */
+            501: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_placements: {
         parameters: {
             query?: {
@@ -3323,6 +3841,59 @@ export interface operations {
             };
             /** @description Invalid cursor or page limit */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_placement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description OwnerCommandRequest<CreatePlacementPayload> */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePlacementRequest"];
+            };
+        };
+        responses: {
+            /** @description Command response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommandResponse"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Tile or plan not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale revision or reused idempotency key */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3601,6 +4172,63 @@ export interface operations {
             };
         };
     };
+    list_runtime_paths: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description All runtime path entries for the owner */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuntimePathRowSchema"][];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upsert_runtime_path: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Path entry to upsert */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RuntimePathUpsertSchema"];
+            };
+        };
+        responses: {
+            /** @description Entry upserted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     publish_schedule_definition: {
         parameters: {
             query?: never;
@@ -3730,6 +4358,52 @@ export interface operations {
             };
         };
     };
+    create_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description CommandRequest<CreateSessionPayload> */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSessionRequest"];
+            };
+        };
+        responses: {
+            /** @description Command response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommandResponse"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale revision or reused idempotency key */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_session_deliveries: {
         parameters: {
             query?: {
@@ -3776,6 +4450,62 @@ export interface operations {
             };
             /** @description Invalid cursor, limit, or offset */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    enqueue_delivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Session id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description CommandRequest<EnqueueDeliveryPayload> */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnqueueDeliveryRequest"];
+            };
+        };
+        responses: {
+            /** @description Command response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommandResponse"];
+                };
+            };
+            /** @description Validation error (incl. path/payload id mismatch) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Session or endpoint not found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale revision or reused idempotency key */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4216,6 +4946,59 @@ export interface operations {
             };
             /** @description Invalid cursor, limit, or offset */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_tile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description OwnerCommandRequest<CreateTilePayload> */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTileRequest"];
+            };
+        };
+        responses: {
+            /** @description Command response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommandResponse"];
+                };
+            };
+            /** @description Validation error */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale revision or reused idempotency key */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description kind=RECURRING rejected; use /v1/source-tiles */
+            410: {
                 headers: {
                     [name: string]: unknown;
                 };
