@@ -5,6 +5,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { renderWithMantine } from "@/test/render-with-mantine";
+import type { Window } from "@/shared/model/v1/window";
 import { useLocaleStore } from "@/shared/stores/locale-store";
 import { useQuickCreateStore } from "@/shared/stores/quick-create-store";
 import { V2ScheduleEval } from "./V2ScheduleEval";
@@ -41,6 +42,7 @@ function primeRecurringSchedule() {
       timeOfDayEnd: "",
     },
     windows: [],
+    source: { ...prev.source, excludedDates: [] },
     plan: {
       ...prev.plan,
       completion: {
@@ -317,5 +319,54 @@ describe("V2ScheduleEval", () => {
     const time = useQuickCreateStore.getState().time;
     expect(time.timeOfDayMode).toBe("unspecified");
     expect(time.schedulableWindow).toEqual(windowBefore);
+  });
+
+  it("blocks monthly recurrence with an explicit unsupported notice", async () => {
+    useQuickCreateStore.setState((prev) => ({
+      recurring: { ...prev.recurring, repeatMode: "monthly" },
+    }));
+    renderWithMantine(<V2ScheduleEval />);
+    clickOptIn();
+    expect(
+      await screen.findByText(/cannot express/),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("v2-eval-run")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("v2-eval-adopt")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks authored excluded dates with an explicit unsupported notice", async () => {
+    useQuickCreateStore.setState((prev) => ({
+      source: { ...prev.source, excludedDates: ["2026-12-25"] },
+    }));
+    renderWithMantine(<V2ScheduleEval />);
+    clickOptIn();
+    expect(
+      await screen.findByText(/cannot express/),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("v2-eval-run")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks fully-bound window conditions with an explicit unsupported notice", async () => {
+    const window = {
+      id: "w1",
+      owner: "self",
+      kind: 0,
+      bounds: {
+        start: new Date(Date.now() + 86_400_000).toISOString(),
+        end: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+      },
+      rules: [],
+      referenceId: null,
+    } as Window;
+    useQuickCreateStore.setState((prev) => ({ windows: [window] }));
+    renderWithMantine(<V2ScheduleEval />);
+    clickOptIn();
+    expect(
+      await screen.findByText(/cannot be expressed by v2/),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("v2-eval-run")).not.toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
