@@ -140,6 +140,14 @@ function V2EvalResultView({
           <p className="text-xs text-foreground-muted">
             {t("quickCreate.v2EvalCount", { count: result.count })}
           </p>
+          {result.status !== undefined ? (
+            <p
+              className="font-mono text-xs text-foreground-muted"
+              data-testid="v2-eval-status"
+            >
+              status: {result.status}
+            </p>
+          ) : null}
           <ul className="space-y-1">
             {result.occurrences.slice(0, PREVIEW_LIMIT).map((row, i) => (
               <li key={i} className="font-mono text-xs text-foreground">
@@ -155,15 +163,17 @@ function V2EvalResultView({
             </p>
           ) : null}
           <div className="flex gap-2">
-            <Button
-              type="button"
-              size="xs"
-              variant="default"
-              onClick={onAdopt}
-              data-testid="v2-eval-adopt"
-            >
-              {t("quickCreate.v2EvalAdopt")}
-            </Button>
+            {result.occurrences.length > 0 ? (
+              <Button
+                type="button"
+                size="xs"
+                variant="default"
+                onClick={onAdopt}
+                data-testid="v2-eval-adopt"
+              >
+                {t("quickCreate.v2EvalAdopt")}
+              </Button>
+            ) : null}
             <Button
               type="button"
               size="xs"

@@ -56,6 +56,19 @@ const SUCCESS_PAYLOAD = JSON.stringify({
   nodes: { evaluated: 1 },
 });
 
+// v1-expand artifact shape: typed domain `status` port, no `count` port.
+const V1_EXPAND_PAYLOAD = JSON.stringify({
+  status: "success",
+  root: { status: "ok", occurrences: [[10, 20], [30, 40]] },
+  nodes: { evaluated: 1 },
+});
+
+const V1_EXPAND_UNSUPPORTED_PAYLOAD = JSON.stringify({
+  status: "success",
+  root: { status: "unsupported", occurrences: [] },
+  nodes: { evaluated: 1 },
+});
+
 afterEach(() => {
   while (dirs.length > 0) {
     const dir = dirs.pop();
@@ -91,12 +104,72 @@ describe("evaluateSchedulerV2", () => {
     const dir = tmpDir();
     const cli = fakeCli(dir, SUCCESS_PAYLOAD);
     const res = await evaluateSchedulerV2(config(cli), INPUT);
-    expect(res).toEqual({
+    expect(res).toMatchObject({
       engine: "v2",
       ok: true,
       occurrences: [[1, 2]],
       count: 1,
       diagnostics: { evaluated: 1 },
+    });
+    expect((res as { elapsed_ms?: number }).elapsed_ms).toEqual(
+      expect.any(Number),
+    );
+  });
+
+  it("passes through the v1-expand typed status and derives count", async () => {
+    const dir = tmpDir();
+    const cli = fakeCli(dir, V1_EXPAND_PAYLOAD);
+    const res = await evaluateSchedulerV2(config(cli), INPUT);
+    expect(res).toMatchObject({
+      engine: "v2",
+      ok: true,
+      status: "ok",
+      occurrences: [
+        [10, 20],
+        [30, 40],
+      ],
+      count: 2,
+    });
+  });
+
+  it("keeps a typed unsupported status as a v2 result, not a fallback", async () => {
+    const dir = tmpDir();
+    const cli = fakeCli(dir, V1_EXPAND_UNSUPPORTED_PAYLOAD);
+    const res = await evaluateSchedulerV2(config(cli), INPUT);
+    expect(res).toMatchObject({
+      engine: "v2",
+      ok: true,
+      status: "unsupported",
+      occurrences: [],
+      count: 0,
+    });
+  });
+
+  it("returns fallback when the status shape lacks occurrences", async () => {
+    const dir = tmpDir();
+    const cli = fakeCli(
+      dir,
+      JSON.stringify({
+        status: "success",
+        root: { status: "ok", occurrences: "bad" },
+      }),
+    );
+    const res = await evaluateSchedulerV2(config(cli), INPUT);
+    expect(res).toEqual({
+      engine: "fallback",
+      ok: false,
+      fallback_reason: "v2_output_shape_mismatch",
+    });
+  });
+
+  it("returns fallback for success payload on a nonzero exit", async () => {
+    const dir = tmpDir();
+    const cli = fakeCli(dir, SUCCESS_PAYLOAD, 3);
+    const res = await evaluateSchedulerV2(config(cli), INPUT);
+    expect(res).toEqual({
+      engine: "fallback",
+      ok: false,
+      fallback_reason: "v2_exit_nonzero",
     });
   });
 
@@ -111,11 +184,14 @@ describe("evaluateSchedulerV2", () => {
       4,
     );
     const res = await evaluateSchedulerV2(config(cli), INPUT);
-    expect(res).toEqual({
+    expect(res).toMatchObject({
       engine: "v2",
       ok: false,
       error: { code: "ResourceLimit", message: "fuel exhausted" },
     });
+    expect((res as { elapsed_ms?: number }).elapsed_ms).toEqual(
+      expect.any(Number),
+    );
   });
 
   it("returns fallback when stdout is not JSON", async () => {

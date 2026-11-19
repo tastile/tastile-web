@@ -17,8 +17,11 @@ const nullableInt = z.number().int().nullable();
 const requestSchema = z.strictObject({
   opt_in: z.boolean().optional(),
   input: z.strictObject({
-    step_ms: z.number().int().positive(),
-    span_ms: z.number().int().positive(),
+    // Integers only — domain validity (positivity, ordering) is owned by the
+    // v2 artifact, which reports typed statuses (invalid_window /
+    // invalid_generation) instead of the route rejecting the shape.
+    step_ms: z.number().int(),
+    span_ms: z.number().int(),
     origin: nullableInt,
     bounds_start: nullableInt,
     bounds_end: nullableInt,

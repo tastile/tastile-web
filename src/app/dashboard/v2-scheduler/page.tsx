@@ -5,8 +5,10 @@ import { useState } from "react";
 interface EvalResponse {
   engine?: string;
   ok?: boolean;
+  status?: string;
   occurrences?: number[][];
   count?: number;
+  elapsed_ms?: number;
   error?: { code?: string; message?: string };
   fallback_reason?: string;
 }
@@ -148,6 +150,10 @@ export default function V2SchedulerPage() {
             engine: <code>{result.engine ?? "unknown"}</code>
             {httpStatus !== null ? ` · http ${httpStatus}` : ""}
             {result.ok !== undefined ? ` · ok=${String(result.ok)}` : ""}
+            {result.status !== undefined ? ` · status=${result.status}` : ""}
+            {result.elapsed_ms !== undefined
+              ? ` · elapsed=${result.elapsed_ms}ms`
+              : ""}
           </div>
           {result.error && (
             <div className="mt-2 text-sm text-red-600">
