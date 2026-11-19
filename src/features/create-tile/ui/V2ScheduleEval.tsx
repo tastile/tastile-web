@@ -140,6 +140,14 @@ function V2EvalResultView({
           <p className="text-xs text-foreground-muted">
             {t("quickCreate.v2EvalCount", { count: result.count })}
           </p>
+          {result.status !== undefined ? (
+            <p
+              className="font-mono text-xs text-foreground-muted"
+              data-testid="v2-eval-status"
+            >
+              status: {result.status}
+            </p>
+          ) : null}
           <ul className="space-y-1">
             {result.occurrences.slice(0, PREVIEW_LIMIT).map((row, i) => (
               <li key={i} className="font-mono text-xs text-foreground">
@@ -155,15 +163,17 @@ function V2EvalResultView({
             </p>
           ) : null}
           <div className="flex gap-2">
-            <Button
-              type="button"
-              size="xs"
-              variant="default"
-              onClick={onAdopt}
-              data-testid="v2-eval-adopt"
-            >
-              {t("quickCreate.v2EvalAdopt")}
-            </Button>
+            {result.occurrences.length > 0 ? (
+              <Button
+                type="button"
+                size="xs"
+                variant="default"
+                onClick={onAdopt}
+                data-testid="v2-eval-adopt"
+              >
+                {t("quickCreate.v2EvalAdopt")}
+              </Button>
+            ) : null}
             <Button
               type="button"
               size="xs"
@@ -192,7 +202,11 @@ function V2SupportNotice({
       ? "quickCreate.v2EvalMissingDuration"
       : reason === "expired_recurrence"
         ? "quickCreate.v2EvalExpired"
-        : "quickCreate.v2EvalUnsupportedRepeat";
+        : reason === "unsupported_semantics"
+          ? "quickCreate.v2EvalUnsupportedSemantics"
+          : reason === "unsupported_window"
+            ? "quickCreate.v2EvalUnsupportedWindow"
+            : "quickCreate.v2EvalUnsupportedRepeat";
   return <p className="text-xs text-foreground-muted">{t(key)}</p>;
 }
 
@@ -336,6 +350,9 @@ export function V2ScheduleEval() {
     (s) => s.plan.completion.timeRequirements[0]?.required ?? null,
   );
   const windows = useQuickCreateStore((s) => s.windows);
+  const weekdayMask = useQuickCreateStore((s) => s.recurring.weekdayMask);
+  const excludedDates = useQuickCreateStore((s) => s.source.excludedDates);
+  const monthlyKind = useQuickCreateStore((s) => s.recurring.monthlyKind);
   const whenMode = useQuickCreateStore((s) => s.time.whenMode);
   const timeModel = useQuickCreateStore((s) => s.time.timeModel);
   const setField = useQuickCreateStore((s) => s.setField);
@@ -359,6 +376,9 @@ export function V2ScheduleEval() {
       start: w.bounds.start,
       end: w.bounds.end,
     })),
+    weekdayMask,
+    excludedDates,
+    monthlyKind,
   };
 
   // Support gating only depends on step/span derivation, never on the

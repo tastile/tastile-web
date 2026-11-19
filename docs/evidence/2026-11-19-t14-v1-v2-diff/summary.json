@@ -1,0 +1,1669 @@
+{
+  "_verify": {
+    "core": "http://127.0.0.1:31410",
+    "web": "http://127.0.0.1:3124",
+    "health": {
+      "status": "ok",
+      "database": "reachable",
+      "bridge_secret": "present",
+      "version": "1.1.0",
+      "build_identity": {
+        "commit_sha": null,
+        "dirty": null,
+        "build_mode": "release",
+        "build_timestamp": null
+      }
+    },
+    "isolation": "loopback-only endpoints; operational ports 31400/31401/5432/5433 rejected; delivery provider asserted fake by deploy/verify-stack compose (preflight.sh)"
+  },
+  "_contract": "tastile-openapi v3.5.0 (submodule 8a61003); Core release-1-1-0 @ d148241d",
+  "_candidateNote": "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements",
+  "_classification": "HEURISTIC cause classification: none | v2_input_gap (v2 port cannot express authored semantics) | v1_period_boundary | suspected_regression | nondeterminism | pending; semantics: monthly_rule | weekday_mask | excluded_dates | period_boundary. fullyExplained is a heuristic over in-range rows only; it does NOT prove absence of regression — pagination truncation of the source detail read, incomplete generation (occurrences still materializing), state differences (pending/skipped placements), and unverified boundary conditions can all hide divergence. Treat cause=none as bounded evidence, not a guarantee.",
+  "cases": {
+    "daily-basic": {
+      "sourceTileId": "01a1f278-30cf-7c60-980b-651315d4514b",
+      "candidateNote": "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements",
+      "scheduleSemantics": {
+        "repeatMode": "daily",
+        "expectedGenerationKind": 1,
+        "weekdayMask": null,
+        "excludedDates": [],
+        "monthlyKind": null,
+        "monthlyDayOfMonth": null,
+        "monthlyWeekOfMonth": null,
+        "monthlyWeekday": null,
+        "offsetMin": 540,
+        "v2StepMs": 86400000
+      },
+      "v2Deterministic": true,
+      "generationReadBack": {
+        "persisted": true,
+        "kind": 1,
+        "expectedKind": 1,
+        "kindMatches": true,
+        "monthlyRule": null,
+        "weekdayMask": null,
+        "excludedDates": [],
+        "dateRangeStart": null,
+        "dateRangeEnd": null,
+        "offsetMin": 540
+      },
+      "v2Input": {
+        "step_ms": 86400000,
+        "span_ms": 3600000,
+        "origin": 1795069325523,
+        "bounds_start": null,
+        "bounds_end": null,
+        "range_start_ms": 1795069325523,
+        "range_end_ms": 1796278925523
+      },
+      "poll": {
+        "polls": 5,
+        "stablePolls": 5,
+        "timedOut": false
+      },
+      "v2Count": 14,
+      "v1OccurrenceTotal": 90,
+      "v1PlacementTotal": 90,
+      "v1PlacementCountInRange": 14,
+      "v1OccurrenceCountInRange": 14,
+      "v1StateCounts": {
+        "0": 90
+      },
+      "exactSpan": 14,
+      "startOnly": 0,
+      "v2Only": 0,
+      "unexplainedV2Only": 0,
+      "v1OnlyPlacementCount": 0,
+      "unexplainedV1OnlyPlacementCount": 0,
+      "classification": {
+        "cause": "none",
+        "semantics": [],
+        "intendedSafetyFix": false,
+        "fullyExplained": true,
+        "basis": "every v2 candidate matches a v1 placement span exactly"
+      },
+      "v2Rows": [
+        {
+          "v2Start": 1795069325523,
+          "v2End": 1795072925523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795069325523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795155725523,
+          "v2End": 1795159325523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795155725523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795242125523,
+          "v2End": 1795245725523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795242125523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795328525523,
+          "v2End": 1795332125523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795328525523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795414925523,
+          "v2End": 1795418525523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795414925523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795501325523,
+          "v2End": 1795504925523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795501325523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795587725523,
+          "v2End": 1795591325523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795587725523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795674125523,
+          "v2End": 1795677725523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795674125523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795760525523,
+          "v2End": 1795764125523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795760525523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795846925523,
+          "v2End": 1795850525523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795846925523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795933325523,
+          "v2End": 1795936925523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795933325523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796019725523,
+          "v2End": 1796023325523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796019725523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796106125523,
+          "v2End": 1796109725523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796106125523
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796192525523,
+          "v2End": 1796196125523,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796192525523
+          },
+          "explainedBy": []
+        }
+      ],
+      "v1OnlyPlacements": []
+    },
+    "weekly-mask-30m": {
+      "sourceTileId": "01a1f278-6e50-7252-bab8-6f6a9464d527",
+      "candidateNote": "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements",
+      "scheduleSemantics": {
+        "repeatMode": "weekly",
+        "expectedGenerationKind": 1,
+        "weekdayMask": 31,
+        "excludedDates": [],
+        "monthlyKind": null,
+        "monthlyDayOfMonth": null,
+        "monthlyWeekOfMonth": null,
+        "monthlyWeekday": null,
+        "offsetMin": 540,
+        "v2StepMs": 1800000
+      },
+      "v2Deterministic": true,
+      "generationReadBack": {
+        "persisted": true,
+        "kind": 1,
+        "expectedKind": 1,
+        "kindMatches": true,
+        "monthlyRule": null,
+        "weekdayMask": 31,
+        "excludedDates": [],
+        "dateRangeStart": null,
+        "dateRangeEnd": "2026-12-03",
+        "offsetMin": 540
+      },
+      "v2Input": {
+        "step_ms": 1800000,
+        "span_ms": 1800000,
+        "origin": 1795076541292,
+        "bounds_start": null,
+        "bounds_end": null,
+        "range_start_ms": 1795076541292,
+        "range_end_ms": 1796278941292
+      },
+      "poll": {
+        "polls": 5,
+        "stablePolls": 5,
+        "timedOut": false
+      },
+      "v2Count": 668,
+      "v1OccurrenceTotal": 446,
+      "v1PlacementTotal": 446,
+      "v1PlacementCountInRange": 446,
+      "v1OccurrenceCountInRange": 446,
+      "v1StateCounts": {
+        "0": 446
+      },
+      "exactSpan": 446,
+      "startOnly": 0,
+      "v2Only": 222,
+      "unexplainedV2Only": 0,
+      "v1OnlyPlacementCount": 0,
+      "unexplainedV1OnlyPlacementCount": 0,
+      "classification": {
+        "cause": "v2_input_gap",
+        "semantics": [
+          "weekday_mask",
+          "period_boundary"
+        ],
+        "intendedSafetyFix": false,
+        "fullyExplained": true,
+        "basis": "all divergent rows explained by v2 input gaps: weekday_mask,period_boundary"
+      },
+      "v2Rows": [
+        {
+          "v2Start": 1795076541292,
+          "v2End": 1795078341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795076541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795078341292,
+          "v2End": 1795080141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795078341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795080141292,
+          "v2End": 1795081941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795080141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795081941292,
+          "v2End": 1795083741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795081941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795083741292,
+          "v2End": 1795085541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795083741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795085541292,
+          "v2End": 1795087341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795085541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795087341292,
+          "v2End": 1795089141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795087341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795089141292,
+          "v2End": 1795090941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795089141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795090941292,
+          "v2End": 1795092741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795090941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795092741292,
+          "v2End": 1795094541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795092741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795094541292,
+          "v2End": 1795096341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795094541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795096341292,
+          "v2End": 1795098141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795096341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795098141292,
+          "v2End": 1795099941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795098141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795099941292,
+          "v2End": 1795101741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795099941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795101741292,
+          "v2End": 1795103541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795101741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795103541292,
+          "v2End": 1795105341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795103541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795105341292,
+          "v2End": 1795107141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795105341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795107141292,
+          "v2End": 1795108941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795107141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795108941292,
+          "v2End": 1795110741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795108941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795110741292,
+          "v2End": 1795112541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795110741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795112541292,
+          "v2End": 1795114341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795112541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795114341292,
+          "v2End": 1795116141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795114341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795116141292,
+          "v2End": 1795117941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795116141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795117941292,
+          "v2End": 1795119741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795117941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795119741292,
+          "v2End": 1795121541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795119741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795121541292,
+          "v2End": 1795123341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795121541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795123341292,
+          "v2End": 1795125141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795123341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795125141292,
+          "v2End": 1795126941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795125141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795126941292,
+          "v2End": 1795128741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795126941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795128741292,
+          "v2End": 1795130541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795128741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795130541292,
+          "v2End": 1795132341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795130541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795132341292,
+          "v2End": 1795134141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795132341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795134141292,
+          "v2End": 1795135941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795134141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795135941292,
+          "v2End": 1795137741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795135941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795137741292,
+          "v2End": 1795139541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795137741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795139541292,
+          "v2End": 1795141341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795139541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795141341292,
+          "v2End": 1795143141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795141341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795143141292,
+          "v2End": 1795144941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795143141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795144941292,
+          "v2End": 1795146741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795144941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795146741292,
+          "v2End": 1795148541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795146741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795148541292,
+          "v2End": 1795150341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795148541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795150341292,
+          "v2End": 1795152141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795150341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795152141292,
+          "v2End": 1795153941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795152141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795153941292,
+          "v2End": 1795155741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795153941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795155741292,
+          "v2End": 1795157541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795155741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795157541292,
+          "v2End": 1795159341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795157541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795159341292,
+          "v2End": 1795161141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795159341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795161141292,
+          "v2End": 1795162941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795161141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795162941292,
+          "v2End": 1795164741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795162941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795164741292,
+          "v2End": 1795166541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795164741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795166541292,
+          "v2End": 1795168341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795166541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795168341292,
+          "v2End": 1795170141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795168341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795170141292,
+          "v2End": 1795171941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795170141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795171941292,
+          "v2End": 1795173741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795171941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795173741292,
+          "v2End": 1795175541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795173741292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795175541292,
+          "v2End": 1795177341292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795175541292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795177341292,
+          "v2End": 1795179141292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795177341292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795179141292,
+          "v2End": 1795180941292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795179141292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795180941292,
+          "v2End": 1795182741292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795180941292
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795182741292,
+          "v2End": 1795184541292,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795182741292
+          },
+          "explainedBy": []
+        }
+      ],
+      "v1OnlyPlacements": []
+    },
+    "monthly-by-day-15": {
+      "sourceTileId": "01a1f278-b1e0-7fe0-9858-51a8776e3c09",
+      "candidateNote": "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements",
+      "scheduleSemantics": {
+        "repeatMode": "monthly",
+        "expectedGenerationKind": 3,
+        "weekdayMask": null,
+        "excludedDates": [],
+        "monthlyKind": "by_day",
+        "monthlyDayOfMonth": 15,
+        "monthlyWeekOfMonth": 1,
+        "monthlyWeekday": 0,
+        "offsetMin": 540,
+        "v2StepMs": 86400000
+      },
+      "v2Deterministic": true,
+      "generationReadBack": {
+        "persisted": true,
+        "kind": 3,
+        "expectedKind": 3,
+        "kindMatches": true,
+        "monthlyRule": {
+          "kind": 0,
+          "day_of_month": 15
+        },
+        "weekdayMask": null,
+        "excludedDates": [],
+        "dateRangeStart": null,
+        "dateRangeEnd": "2027-01-18",
+        "offsetMin": 540
+      },
+      "v2Input": {
+        "step_ms": 86400000,
+        "span_ms": 3600000,
+        "origin": 1795083758589,
+        "bounds_start": null,
+        "bounds_end": null,
+        "range_start_ms": 1795083758589,
+        "range_end_ms": 1796293358589
+      },
+      "poll": {
+        "polls": 5,
+        "stablePolls": 5,
+        "timedOut": false
+      },
+      "v2Count": 14,
+      "v1OccurrenceTotal": 2,
+      "v1PlacementTotal": 2,
+      "v1PlacementCountInRange": 0,
+      "v1OccurrenceCountInRange": 0,
+      "v1StateCounts": {
+        "0": 2
+      },
+      "exactSpan": 0,
+      "startOnly": 0,
+      "v2Only": 14,
+      "unexplainedV2Only": 0,
+      "v1OnlyPlacementCount": 0,
+      "unexplainedV1OnlyPlacementCount": 0,
+      "classification": {
+        "cause": "v2_input_gap",
+        "semantics": [
+          "monthly_rule"
+        ],
+        "intendedSafetyFix": false,
+        "fullyExplained": true,
+        "basis": "all divergent rows explained by v2 input gaps: monthly_rule"
+      },
+      "v2Rows": [
+        {
+          "v2Start": 1795083758589,
+          "v2End": 1795087358589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795170158589,
+          "v2End": 1795173758589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795256558589,
+          "v2End": 1795260158589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795342958589,
+          "v2End": 1795346558589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795429358589,
+          "v2End": 1795432958589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795515758589,
+          "v2End": 1795519358589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795602158589,
+          "v2End": 1795605758589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795688558589,
+          "v2End": 1795692158589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795774958589,
+          "v2End": 1795778558589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795861358589,
+          "v2End": 1795864958589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1795947758589,
+          "v2End": 1795951358589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1796034158589,
+          "v2End": 1796037758589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1796120558589,
+          "v2End": 1796124158589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        },
+        {
+          "v2Start": 1796206958589,
+          "v2End": 1796210558589,
+          "status": "v2_only",
+          "nearest": null,
+          "explainedBy": [
+            "monthly_rule"
+          ]
+        }
+      ],
+      "v1OnlyPlacements": []
+    },
+    "interval-12h": {
+      "sourceTileId": "01a1f278-edc1-7d21-af93-0a1e64d1b819",
+      "candidateNote": "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements",
+      "scheduleSemantics": {
+        "repeatMode": "interval",
+        "expectedGenerationKind": 1,
+        "weekdayMask": null,
+        "excludedDates": [],
+        "monthlyKind": null,
+        "monthlyDayOfMonth": null,
+        "monthlyWeekOfMonth": null,
+        "monthlyWeekday": null,
+        "offsetMin": 540,
+        "v2StepMs": 43200000
+      },
+      "v2Deterministic": true,
+      "generationReadBack": {
+        "persisted": true,
+        "kind": 1,
+        "expectedKind": 1,
+        "kindMatches": true,
+        "monthlyRule": null,
+        "weekdayMask": null,
+        "excludedDates": [],
+        "dateRangeStart": null,
+        "dateRangeEnd": "2026-12-03",
+        "offsetMin": 540
+      },
+      "v2Input": {
+        "step_ms": 43200000,
+        "span_ms": 3600000,
+        "origin": 1795090973917,
+        "bounds_start": null,
+        "bounds_end": null,
+        "range_start_ms": 1795090973917,
+        "range_end_ms": 1796278973917
+      },
+      "poll": {
+        "polls": 5,
+        "stablePolls": 5,
+        "timedOut": false
+      },
+      "v2Count": 28,
+      "v1OccurrenceTotal": 27,
+      "v1PlacementTotal": 27,
+      "v1PlacementCountInRange": 27,
+      "v1OccurrenceCountInRange": 27,
+      "v1StateCounts": {
+        "0": 27
+      },
+      "exactSpan": 27,
+      "startOnly": 0,
+      "v2Only": 1,
+      "unexplainedV2Only": 0,
+      "v1OnlyPlacementCount": 0,
+      "unexplainedV1OnlyPlacementCount": 0,
+      "classification": {
+        "cause": "v1_period_boundary",
+        "semantics": [
+          "period_boundary"
+        ],
+        "intendedSafetyFix": false,
+        "fullyExplained": true,
+        "basis": "divergence confined to the materialization horizon edge: period_boundary"
+      },
+      "v2Rows": [
+        {
+          "v2Start": 1795090973917,
+          "v2End": 1795094573917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795090973917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795134173917,
+          "v2End": 1795137773917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795134173917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795177373917,
+          "v2End": 1795180973917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795177373917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795220573917,
+          "v2End": 1795224173917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795220573917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795263773917,
+          "v2End": 1795267373917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795263773917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795306973917,
+          "v2End": 1795310573917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795306973917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795350173917,
+          "v2End": 1795353773917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795350173917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795393373917,
+          "v2End": 1795396973917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795393373917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795436573917,
+          "v2End": 1795440173917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795436573917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795479773917,
+          "v2End": 1795483373917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795479773917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795522973917,
+          "v2End": 1795526573917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795522973917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795566173917,
+          "v2End": 1795569773917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795566173917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795609373917,
+          "v2End": 1795612973917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795609373917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795652573917,
+          "v2End": 1795656173917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795652573917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795695773917,
+          "v2End": 1795699373917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795695773917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795738973917,
+          "v2End": 1795742573917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795738973917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795782173917,
+          "v2End": 1795785773917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795782173917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795825373917,
+          "v2End": 1795828973917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795825373917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795868573917,
+          "v2End": 1795872173917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795868573917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795911773917,
+          "v2End": 1795915373917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795911773917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795954973917,
+          "v2End": 1795958573917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795954973917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795998173917,
+          "v2End": 1796001773917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795998173917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796041373917,
+          "v2End": 1796044973917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796041373917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796084573917,
+          "v2End": 1796088173917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796084573917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796127773917,
+          "v2End": 1796131373917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796127773917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796170973917,
+          "v2End": 1796174573917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796170973917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796214173917,
+          "v2End": 1796217773917,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796214173917
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796257373917,
+          "v2End": 1796260973917,
+          "status": "v2_only",
+          "nearest": {
+            "deltaMs": 43200000,
+            "pStart": 1796214173917
+          },
+          "explainedBy": [
+            "period_boundary"
+          ]
+        }
+      ],
+      "v1OnlyPlacements": []
+    },
+    "daily-excluded": {
+      "sourceTileId": "01a1f279-2a00-7ee0-bc24-803ec1bc7569",
+      "candidateNote": "v2 occurrences are advisory opt-in eval candidates, not materialized placements; only the v1 submit -> worker path creates placements",
+      "scheduleSemantics": {
+        "repeatMode": "daily",
+        "expectedGenerationKind": 1,
+        "weekdayMask": null,
+        "excludedDates": [
+          "2026-11-21",
+          "2026-11-23"
+        ],
+        "monthlyKind": null,
+        "monthlyDayOfMonth": null,
+        "monthlyWeekOfMonth": null,
+        "monthlyWeekday": null,
+        "offsetMin": 540,
+        "v2StepMs": 86400000
+      },
+      "v2Deterministic": true,
+      "generationReadBack": {
+        "persisted": true,
+        "kind": 1,
+        "expectedKind": 1,
+        "kindMatches": true,
+        "monthlyRule": null,
+        "weekdayMask": null,
+        "excludedDates": [
+          "2026-11-21",
+          "2026-11-23"
+        ],
+        "dateRangeStart": null,
+        "dateRangeEnd": null,
+        "offsetMin": 540
+      },
+      "v2Input": {
+        "step_ms": 86400000,
+        "span_ms": 3600000,
+        "origin": 1795098189327,
+        "bounds_start": null,
+        "bounds_end": null,
+        "range_start_ms": 1795098189327,
+        "range_end_ms": 1796307789327
+      },
+      "poll": {
+        "polls": 5,
+        "stablePolls": 5,
+        "timedOut": false
+      },
+      "v2Count": 14,
+      "v1OccurrenceTotal": 88,
+      "v1PlacementTotal": 88,
+      "v1PlacementCountInRange": 12,
+      "v1OccurrenceCountInRange": 12,
+      "v1StateCounts": {
+        "0": 88
+      },
+      "exactSpan": 12,
+      "startOnly": 0,
+      "v2Only": 2,
+      "unexplainedV2Only": 0,
+      "v1OnlyPlacementCount": 0,
+      "unexplainedV1OnlyPlacementCount": 0,
+      "classification": {
+        "cause": "v2_input_gap",
+        "semantics": [
+          "excluded_dates"
+        ],
+        "intendedSafetyFix": false,
+        "fullyExplained": true,
+        "basis": "all divergent rows explained by v2 input gaps: excluded_dates"
+      },
+      "v2Rows": [
+        {
+          "v2Start": 1795098189327,
+          "v2End": 1795101789327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795098189327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795184589327,
+          "v2End": 1795188189327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795184589327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795270989327,
+          "v2End": 1795274589327,
+          "status": "v2_only",
+          "nearest": {
+            "deltaMs": 86400000,
+            "pStart": 1795184589327
+          },
+          "explainedBy": [
+            "excluded_dates"
+          ]
+        },
+        {
+          "v2Start": 1795357389327,
+          "v2End": 1795360989327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795357389327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795443789327,
+          "v2End": 1795447389327,
+          "status": "v2_only",
+          "nearest": {
+            "deltaMs": 86400000,
+            "pStart": 1795357389327
+          },
+          "explainedBy": [
+            "excluded_dates"
+          ]
+        },
+        {
+          "v2Start": 1795530189327,
+          "v2End": 1795533789327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795530189327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795616589327,
+          "v2End": 1795620189327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795616589327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795702989327,
+          "v2End": 1795706589327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795702989327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795789389327,
+          "v2End": 1795792989327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795789389327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795875789327,
+          "v2End": 1795879389327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795875789327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1795962189327,
+          "v2End": 1795965789327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1795962189327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796048589327,
+          "v2End": 1796052189327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796048589327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796134989327,
+          "v2End": 1796138589327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796134989327
+          },
+          "explainedBy": []
+        },
+        {
+          "v2Start": 1796221389327,
+          "v2End": 1796224989327,
+          "status": "exact",
+          "nearest": {
+            "deltaMs": 0,
+            "pStart": 1796221389327
+          },
+          "explainedBy": []
+        }
+      ],
+      "v1OnlyPlacements": []
+    }
+  }
+}

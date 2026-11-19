@@ -53,11 +53,22 @@ export type V2SchedulerResult =
   | {
       engine: "v2";
       ok: true;
+      /** Typed domain outcome from the v1-expand artifact
+       * (`ok` / `invalid_window` / `invalid_generation` / `unsupported`).
+       * Absent for the legacy scheduler-option profile. */
+      status?: string;
       occurrences: number[][];
       count: number;
+      /** Adapter-measured subprocess wall time in ms (T14 evidence). */
+      elapsed_ms?: number;
       diagnostics: Record<string, unknown>;
     }
-  | { engine: "v2"; ok: false; error: { code: string; message: string } }
+  | {
+      engine: "v2";
+      ok: false;
+      error: { code: string; message: string };
+      elapsed_ms?: number;
+    }
   | { engine: "fallback"; ok: false; fallback_reason: string }
   | { engine: "disabled" };
 
@@ -169,6 +180,32 @@ function normalizePayload(payload: V2RunPayload): V2SchedulerResult {
     return { engine: "v2", ok: false, error: { code, message } };
   }
   const root = (payload.root ?? {}) as Record<string, unknown>;
+  const diagnostics =
+    typeof payload.nodes === "object" && payload.nodes !== null
+      ? (payload.nodes as Record<string, unknown>)
+      : {};
+  // v1-expand artifact: typed domain `status` port alongside `occurrences`.
+  // A non-"ok" status is still a successful v2 evaluation — the artifact
+  // answered with a typed domain outcome, not an adapter failure.
+  if (typeof root.status === "string") {
+    if (!isIntMatrix(root.occurrences)) {
+      return {
+        engine: "fallback",
+        ok: false,
+        fallback_reason: "v2_output_shape_mismatch",
+      };
+    }
+    const occurrences = root.occurrences;
+    return {
+      engine: "v2",
+      ok: true,
+      status: root.status,
+      occurrences,
+      count: occurrences.length,
+      diagnostics,
+    };
+  }
+  // Legacy scheduler-option artifact: `occurrences` + integer `count`.
   if (!isIntMatrix(root.occurrences) || !Number.isInteger(root.count)) {
     return {
       engine: "fallback",
@@ -181,10 +218,7 @@ function normalizePayload(payload: V2RunPayload): V2SchedulerResult {
     ok: true,
     occurrences: root.occurrences,
     count: root.count as number,
-    diagnostics:
-      typeof payload.nodes === "object" && payload.nodes !== null
-        ? (payload.nodes as Record<string, unknown>)
-        : {},
+    diagnostics,
   };
 }
 
@@ -236,11 +270,13 @@ export async function evaluateSchedulerV2(
   input: SchedulerEvalInput,
 ): Promise<V2SchedulerResult> {
   const releaseSlot = await acquireSlot();
+  const started = Date.now();
   try {
     const { code, stdout, timedOut } = await runOnce(
       config,
       buildArgs(config, input),
     );
+    const elapsed_ms = Date.now() - started;
     if (timedOut) {
       return { engine: "fallback", ok: false, fallback_reason: "v2_timeout" };
     }
@@ -265,12 +301,21 @@ export async function evaluateSchedulerV2(
       };
     }
     const result = normalizePayload(payload as V2RunPayload);
-    if (result.engine === "v2" && result.ok === false) {
+    if (result.engine === "v2") {
       // Non-zero exit with a typed CLI error payload is still a v2 failure,
-      // not an adapter fallback.
+      // not an adapter fallback. A success payload on a non-zero exit is
+      // contradictory and must not be trusted.
+      if (code !== 0 && result.ok) {
+        return {
+          engine: "fallback",
+          ok: false,
+          fallback_reason: "v2_exit_nonzero",
+        };
+      }
+      result.elapsed_ms = elapsed_ms;
       return result;
     }
-    if (code !== 0 && !(result.engine === "v2" && !result.ok)) {
+    if (code !== 0) {
       return { engine: "fallback", ok: false, fallback_reason: "v2_exit_nonzero" };
     }
     return result;

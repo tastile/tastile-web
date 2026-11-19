@@ -24,6 +24,9 @@ function baseState(
     requirementMinMs: null,
     requirementMaxMs: null,
     windowBounds: [],
+    weekdayMask: 0b0011111,
+    excludedDates: [],
+    monthlyKind: null,
     nowMs: NOW,
     ...overrides,
   };
@@ -56,11 +59,25 @@ describe("deriveV2SchedulerInput", () => {
     expect(result.input.step_ms).toBe(30 * 60_000);
   });
 
-  it("approximates monthly as a daily step (v2 port has no monthly selector)", () => {
-    const result = deriveV2SchedulerInput(baseState({ repeatMode: "monthly" }));
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.input.step_ms).toBe(DAY);
+  it("rejects monthly recurrence as unsupported_semantics (no v2 port)", () => {
+    const result = deriveV2SchedulerInput(
+      baseState({ repeatMode: "monthly", monthlyKind: "by_day" }),
+    );
+    expect(result).toEqual({ ok: false, reason: "unsupported_semantics" });
+  });
+
+  it("rejects weekly recurrence as unsupported_semantics (weekday mask inexpressible)", () => {
+    const result = deriveV2SchedulerInput(
+      baseState({ repeatMode: "weekly" }),
+    );
+    expect(result).toEqual({ ok: false, reason: "unsupported_semantics" });
+  });
+
+  it("rejects authored excluded dates as unsupported_semantics", () => {
+    const result = deriveV2SchedulerInput(
+      baseState({ excludedDates: ["2026-11-20"] }),
+    );
+    expect(result).toEqual({ ok: false, reason: "unsupported_semantics" });
   });
 
   it.each(["once", "condition", "unknown"])(
@@ -97,7 +114,7 @@ describe("deriveV2SchedulerInput", () => {
     expect(result.input.span_ms).toBe(3_600_000);
   });
 
-  it("uses the first fully-bound window as bounds", () => {
+  it("rejects fully-bound windows as unsupported_window (no v1-expand analog)", () => {
     const result = deriveV2SchedulerInput(
       baseState({
         windowBounds: [
@@ -109,12 +126,7 @@ describe("deriveV2SchedulerInput", () => {
         ],
       }),
     );
-    expect(result.ok).toBe(true);
-    if (!result.ok) return;
-    expect(result.input.bounds_start).toBe(
-      Date.parse("2026-11-15T09:00:00"),
-    );
-    expect(result.input.bounds_end).toBe(Date.parse("2026-11-15T18:00:00"));
+    expect(result).toEqual({ ok: false, reason: "unsupported_window" });
   });
 
   it("defaults bounds to null when no window is fully bound", () => {

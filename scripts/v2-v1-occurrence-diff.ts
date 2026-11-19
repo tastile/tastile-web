@@ -49,8 +49,43 @@ import {
   v2AdapterConfigFromEnv,
 } from "../src/lib/v2-adapter/scheduler-eval";
 
-const WEB = process.env.VERIFY_WEB ?? "http://localhost:3124";
-const CORE = process.env.VERIFY_CORE ?? "http://127.0.0.1:31400";
+// Verification endpoints are REQUIRED and fail-closed: this harness writes
+// schedule-definitions and polls materialization, so it must never default
+// to (or accept) the operational API port 31400 / PostgreSQL 5432-5433.
+// Run deploy/verify-stack/preflight.sh first; the stack attests
+// delivery=fake and loopback-only publishing.
+function requiredVerifyUrl(name: string, reservedPorts: number[]): string {
+  const raw = process.env[name];
+  if (!raw) {
+    console.error(`${name} is required (no default; refusing to guess a target)`);
+    process.exit(2);
+  }
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    console.error(`${name} is not a valid URL: ${raw}`);
+    process.exit(2);
+  }
+  const host = url.hostname.toLowerCase();
+  const loopback = host === "127.0.0.1" || host === "localhost" || host === "::1";
+  if (!loopback) {
+    console.error(`${name} must be a loopback URL, got ${raw}`);
+    process.exit(2);
+  }
+  const port = url.port ? Number(url.port) : url.protocol === "https:" ? 443 : 80;
+  if (reservedPorts.includes(port)) {
+    console.error(
+      `${name} port ${port} is reserved for the operational stack; refusing`,
+    );
+    process.exit(2);
+  }
+  return raw.replace(/\/+$/, "");
+}
+
+const WEB = requiredVerifyUrl("VERIFY_WEB", [31400, 31401]);
+const CORE = requiredVerifyUrl("VERIFY_CORE", [31400, 31401, 5432, 5433]);
+
 const BRIDGE = process.env.TASTILE_WEB_BRIDGE_SECRET;
 const OUT =
   process.argv.includes("--out")
@@ -69,6 +104,29 @@ if (!BRIDGE) {
 mkdirSync(OUT, { recursive: true });
 const log = (...a: unknown[]) =>
   console.log(`[${new Date().toISOString().slice(11, 19)}]`, ...a);
+// Preflight: confirm the target is a live verify Core before any writes.
+// /v1/health exposes database reachability and bridge-secret presence; the
+// delivery=fake guarantee comes from the verify-stack compose contract
+// (deploy/verify-stack/preflight.sh attestation), not from this endpoint.
+const healthRes = await fetch(`${CORE}/v1/health`);
+if (!healthRes.ok) {
+  console.error(`verify core health check failed: HTTP ${healthRes.status} at ${CORE}`);
+  process.exit(2);
+}
+const VERIFY_HEALTH = (await healthRes.json()) as Record<string, unknown>;
+if (VERIFY_HEALTH.status !== "ok" || VERIFY_HEALTH.database !== "reachable") {
+  console.error(`verify core unhealthy: ${JSON.stringify(VERIFY_HEALTH)}`);
+  process.exit(2);
+}
+const VERIFY_ATTESTATION = {
+  core: CORE,
+  web: WEB,
+  health: VERIFY_HEALTH,
+  isolation:
+    "loopback-only endpoints; operational ports 31400/31401/5432/5433 rejected; delivery provider asserted fake by deploy/verify-stack compose (preflight.sh)",
+};
+log(`verify target core=${CORE} web=${WEB} health=${JSON.stringify(VERIFY_HEALTH)}`);
+
 
 // ---------- auth (normal session, same as verify-215) ----------
 // One fresh user per case: sources from different cases must not share
@@ -159,6 +217,9 @@ function evalStateOf(state: StoreState, nowMs: number) {
       start: w.bounds.start,
       end: w.bounds.end,
     })),
+    weekdayMask: state.recurring.weekdayMask,
+    excludedDates: state.source.excludedDates,
+    monthlyKind: state.recurring.monthlyKind,
     nowMs,
   };
 }
@@ -737,6 +798,8 @@ function diffCase(
 
   return {
     v2Count: v2Occurrences.length,
+    v1OccurrenceTotal: detail.occurrences.length,
+    v1PlacementTotal: detail.placements.length,
     v1PlacementCountInRange: placements.length,
     v1OccurrenceCountInRange: occStarts.length,
     v1StateCounts: occStateCounts,
@@ -1015,10 +1078,11 @@ writeFileSync(
   `${OUT}/summary.json`,
   JSON.stringify(
     {
+      _verify: VERIFY_ATTESTATION,
       _contract: "tastile-openapi v3.5.0 (submodule 8a61003); Core release-1-1-0 @ d148241d",
       _candidateNote: CANDIDATE_NOTE,
       _classification:
-        "cause: none | v2_input_gap (v2 port cannot express authored semantics) | v1_period_boundary | suspected_regression | nondeterminism | pending; semantics: monthly_rule | weekday_mask | excluded_dates | period_boundary",
+        "HEURISTIC cause classification: none | v2_input_gap (v2 port cannot express authored semantics) | v1_period_boundary | suspected_regression | nondeterminism | pending; semantics: monthly_rule | weekday_mask | excluded_dates | period_boundary. fullyExplained is a heuristic over in-range rows only; it does NOT prove absence of regression — pagination truncation of the source detail read, incomplete generation (occurrences still materializing), state differences (pending/skipped placements), and unverified boundary conditions can all hide divergence. Treat cause=none as bounded evidence, not a guarantee.",
       cases: results,
     },
     null,
