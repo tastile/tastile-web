@@ -217,6 +217,9 @@ function evalStateOf(state: StoreState, nowMs: number) {
       start: w.bounds.start,
       end: w.bounds.end,
     })),
+    weekdayMask: state.recurring.weekdayMask,
+    excludedDates: state.source.excludedDates,
+    monthlyKind: state.recurring.monthlyKind,
     nowMs,
   };
 }

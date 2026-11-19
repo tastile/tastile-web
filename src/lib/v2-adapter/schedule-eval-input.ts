@@ -21,7 +21,9 @@ const EVAL_HORIZON_MS = 14 * DAY_MS;
 type V2EvalUnsupportedReason =
   | "unsupported_repeat"
   | "missing_duration"
-  | "expired_recurrence";
+  | "expired_recurrence"
+  | "unsupported_semantics"
+  | "unsupported_window";
 
 export interface V2ScheduleEvalState {
   repeatMode: string;
@@ -36,6 +38,12 @@ export interface V2ScheduleEvalState {
   requirementMinMs: number | null;
   requirementMaxMs: number | null;
   windowBounds: ReadonlyArray<{ start: string; end: string }>;
+  // Semantics the v2 fixed-step ports cannot express. When any are
+  // authored the derivation must report unsupported instead of
+  // silently approximating (web#219 semantic-preservation contract).
+  weekdayMask: number;
+  excludedDates: readonly string[];
+  monthlyKind: string | null;
   nowMs: number;
 }
 
@@ -58,18 +66,8 @@ function stepMsFor(state: V2ScheduleEvalState): number | null {
     case "daily":
       // The v1 wire emits DAY_MS for plain daily recurrence.
       return DAY_MS;
-    case "weekly":
     case "interval":
       return intervalAuthoredMs(state.intervalValue, state.intervalUnit);
-    case "monthly":
-      // Core owns monthly calendar semantics (SourceGenerationKind
-      // kind=3 + monthly_rule, v1/02). The v2 SchedulerEvalInput port is
-      // a fixed-step model with no monthly selector, so the preview
-      // approximates monthly as a daily step — the same approximation
-      // the pre-kind=3 v1 wire used. web#219's diff harness measures
-      // this known divergence; it is v2 input information loss, not a
-      // Core defect.
-      return DAY_MS;
     default:
       // "once" / "condition" are not recurring schedules; v2 occurrence
       // evaluation does not apply.
@@ -115,12 +113,31 @@ function boundsFor(
 export function deriveV2SchedulerInput(
   state: V2ScheduleEvalState,
 ): V2EvalDerivation {
+  // Semantic-preservation gate (web#219): the v2 ports are a fixed-step
+  // model. Weekly weekday selection, monthly calendar rules and
+  // excluded dates have no port representation, so deriving input for
+  // them would silently drop authored semantics and produce candidates
+  // that look adoptable but are not equivalent. Report unsupported
+  // instead of approximating.
+  if (
+    state.repeatMode === "weekly" ||
+    state.repeatMode === "monthly" ||
+    state.excludedDates.length > 0
+  ) {
+    return { ok: false, reason: "unsupported_semantics" };
+  }
   const step = stepMsFor(state);
   if (step === null) return { ok: false, reason: "unsupported_repeat" };
   const span = spanMsFor(state);
   if (span === null) return { ok: false, reason: "missing_duration" };
 
   const { bounds_start, bounds_end } = boundsFor(state);
+  // Absolute window bounds have no v1-expand analog either; the
+  // artifact would answer status=unsupported, so gate it here with a
+  // clearer reason and skip the subprocess entirely.
+  if (bounds_start !== null || bounds_end !== null) {
+    return { ok: false, reason: "unsupported_window" };
+  }
 
   const originIso = validInstant(state.recurringStart);
   const origin = originIso ? Math.floor(Date.parse(originIso)) : null;

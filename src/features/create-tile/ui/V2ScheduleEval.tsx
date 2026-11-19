@@ -202,7 +202,11 @@ function V2SupportNotice({
       ? "quickCreate.v2EvalMissingDuration"
       : reason === "expired_recurrence"
         ? "quickCreate.v2EvalExpired"
-        : "quickCreate.v2EvalUnsupportedRepeat";
+        : reason === "unsupported_semantics"
+          ? "quickCreate.v2EvalUnsupportedSemantics"
+          : reason === "unsupported_window"
+            ? "quickCreate.v2EvalUnsupportedWindow"
+            : "quickCreate.v2EvalUnsupportedRepeat";
   return <p className="text-xs text-foreground-muted">{t(key)}</p>;
 }
 
@@ -346,6 +350,9 @@ export function V2ScheduleEval() {
     (s) => s.plan.completion.timeRequirements[0]?.required ?? null,
   );
   const windows = useQuickCreateStore((s) => s.windows);
+  const weekdayMask = useQuickCreateStore((s) => s.recurring.weekdayMask);
+  const excludedDates = useQuickCreateStore((s) => s.source.excludedDates);
+  const monthlyKind = useQuickCreateStore((s) => s.recurring.monthlyKind);
   const whenMode = useQuickCreateStore((s) => s.time.whenMode);
   const timeModel = useQuickCreateStore((s) => s.time.timeModel);
   const setField = useQuickCreateStore((s) => s.setField);
@@ -369,6 +376,9 @@ export function V2ScheduleEval() {
       start: w.bounds.start,
       end: w.bounds.end,
     })),
+    weekdayMask,
+    excludedDates,
+    monthlyKind,
   };
 
   // Support gating only depends on step/span derivation, never on the
