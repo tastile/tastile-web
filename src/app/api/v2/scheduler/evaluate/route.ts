@@ -12,23 +12,36 @@ export const runtime = "nodejs";
 
 const envelopeSchema = z.object({ opt_in: z.boolean().optional() });
 
-const nullableInt = z.number().int().nullable();
+// `z.number().int()` accepts unsafe integers (e.g. 1e21); bound to the
+// IEEE-754 safe range so JSON.stringify cannot emit a rounded value.
+const safeInt = z
+  .number()
+  .int()
+  .min(Number.MIN_SAFE_INTEGER)
+  .max(Number.MAX_SAFE_INTEGER);
 
-const requestSchema = z.strictObject({
-  opt_in: z.boolean().optional(),
-  input: z.strictObject({
-    // Integers only — domain validity (positivity, ordering) is owned by the
-    // v2 artifact, which reports typed statuses (invalid_window /
-    // invalid_generation) instead of the route rejecting the shape.
-    step_ms: z.number().int(),
-    span_ms: z.number().int(),
-    origin: nullableInt,
-    bounds_start: nullableInt,
-    bounds_end: nullableInt,
-    range_start_ms: z.number().int(),
-    range_end_ms: z.number().int(),
-  }),
-});
+const nullableInt = safeInt.nullable();
+
+const requestSchema = z
+  .strictObject({
+    opt_in: z.boolean().optional(),
+    input: z.strictObject({
+      // Integers only — domain validity (positivity, ordering) is owned by the
+      // v2 artifact, which reports typed statuses (invalid_window /
+      // invalid_generation) instead of the route rejecting the shape.
+      step_ms: safeInt,
+      span_ms: safeInt,
+      origin: nullableInt,
+      bounds_start: nullableInt,
+      bounds_end: nullableInt,
+      range_start_ms: safeInt,
+      range_end_ms: safeInt,
+    }),
+  })
+  .refine((body) => body.input.range_end_ms >= body.input.range_start_ms, {
+    message: "range_end_ms must be >= range_start_ms",
+    path: ["input", "range_end_ms"],
+  });
 
 /** POST /api/v2/scheduler/evaluate -- opt-in v2 scheduler evaluation.
  *  Returns a typed result; on any v2 failure returns a typed fallback
@@ -74,6 +87,16 @@ export async function POST(req: Request): Promise<Response> {
   }
 
   const input: SchedulerEvalInput = parsed.data.input;
-  const result = await evaluateSchedulerV2(config, input);
-  return NextResponse.json(result);
+  try {
+    const result = await evaluateSchedulerV2(config, input);
+    return NextResponse.json(result);
+  } catch {
+    // Unexpected adapter failure must still surface as a typed fallback,
+    // never as an unhandled 500 that looks like a v1 result.
+    return NextResponse.json({
+      engine: "fallback",
+      ok: false,
+      fallback_reason: "v2_adapter_error",
+    });
+  }
 }
