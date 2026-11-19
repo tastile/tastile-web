@@ -1,6 +1,5 @@
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 
-import { getCoreClient } from "@/shared/api/endpoints";
 import { getAccountOwnerId } from "@/shared/auth/account-session";
 import { resolveAuthenticatedSession } from "@/shared/auth/authenticated-session";
 import { isE2EBypassEnabled } from "@/shared/config/runtime-env";
@@ -16,7 +15,7 @@ interface OwnerProfileView {
   revision: number;
 }
 
-export async function GET(): Promise<Response> {
+export async function GET(request: NextRequest): Promise<Response> {
   // Local-dev / CI bypass: synthesize the same shape the real handler returns
   // for a freshly-signed-up owner (all profile fields null, revision 0) so
   // the dashboard header renders without a round-trip through the local
@@ -43,14 +42,34 @@ export async function GET(): Promise<Response> {
     return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });
   }
 
-  const [sessionUser, profileRes] = await Promise.all([
-    resolveAuthenticatedSession(),
-    getCoreClient().call<OwnerProfileView>("getOwnerProfile", {
-      pathParams: { kind: "0", id: ownerId },
-    }),
-  ]);
+  const sessionUser = await resolveAuthenticatedSession();
+  // Route handlers cannot use the browser CoreClient: its proxy base URL is
+  // relative and its direct mode carries no server-side credentials.  Go
+  // through this app's own /api/proxy so the session cookies authenticate
+  // the upstream call exactly like a browser request would (web#209).
+  let profileStatus: number;
+  let profileData: OwnerProfileView | null = null;
+  try {
+    const upstream = await fetch(
+      `${request.nextUrl.origin}/api/proxy/v1/owners/0/${ownerId}/profile`,
+      {
+        headers: { cookie: request.headers.get("cookie") ?? "" },
+        cache: "no-store",
+      },
+    );
+    profileStatus = upstream.status;
+    if (upstream.ok) {
+      profileData = (await upstream.json()) as OwnerProfileView;
+    }
+  } catch {
+    return NextResponse.json({ error: "UPSTREAM_FAILURE" }, { status: 502 });
+  }
+  const profileRes =
+    profileData !== null
+      ? { ok: true as const, data: profileData }
+      : { ok: false as const, status: profileStatus };
   if (!profileRes.ok) {
-    const upstreamStatus = profileRes.error.status;
+    const upstreamStatus = profileRes.status;
     // Upstream auth failure → our session is bad; force re-login
     if (upstreamStatus === 401 || upstreamStatus === 403) {
       return NextResponse.json({ error: "UNAUTHENTICATED" }, { status: 401 });

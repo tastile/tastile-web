@@ -1,0 +1,43 @@
+{
+  "schema": "tastile.artifact/v0",
+  "logical_id": "tastile-web/scheduler-option-eval",
+  "kind": "composition",
+  "semantics_version": "eval/v0",
+  "interface": {
+    "requires": [
+      {"name":"step_ms","type":"int"},
+      {"name":"span_ms","type":"int"},
+      {"name":"origin","type":"option<int>"},
+      {"name":"bounds_start","type":"option<int>"},
+      {"name":"bounds_end","type":"option<int>"},
+      {"name":"range_start_ms","type":"int"},
+      {"name":"range_end_ms","type":"int"}
+    ],
+    "provides": [
+      {"name": "occurrences", "type": "list<list<int>>"},
+      {"name": "count", "type": "int"}
+    ]
+  },
+  "capabilities": [],
+  "payload": {
+    "manifest": {
+      "nodes": [
+        {"name": "sched", "artifact": "examples/scheduler-option"}
+      ],
+      "wires": [
+        {"from": "input.step_ms", "to": "sched.step_ms"},
+        {"from": "input.span_ms", "to": "sched.span_ms"},
+        {"from": "input.origin", "to": "sched.origin"},
+        {"from": "input.bounds_start", "to": "sched.bounds_start"},
+        {"from": "input.bounds_end", "to": "sched.bounds_end"},
+        {"from": "input.range_start_ms", "to": "sched.range_start_ms"},
+        {"from": "input.range_end_ms", "to": "sched.range_end_ms"}
+      ],
+      "ops": [],
+      "root": {
+        "occurrences": "sched.occurrences",
+        "count": "sched.count"
+      }
+    }
+  }
+}

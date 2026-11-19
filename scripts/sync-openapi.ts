@@ -8,10 +8,12 @@
  * tooling reads.
  *
  * Output paths:
- *   src/lib/api/v1/openapi-generated.d.ts — TS types (via openapi-typescript)
- *   openapi.json                           — JSON copy (legacy tooling)
- *   public/openapi.yaml                    — YAML copy served by Next.js
- *                                            at /openapi.yaml
+ *   src/lib/api/v1/openapi-generated.d.ts    — TS types (via openapi-typescript)
+ *   src/shared/api/v1/openapi-generated.d.ts — same TS types; consumed by
+ *                                              openapi-contract.ts (v1 wire aliases)
+ *   openapi.json                             — JSON copy (legacy tooling)
+ *   public/openapi.yaml                      — YAML copy served by Next.js
+ *                                              at /openapi.yaml
  *
  * Usage:
  *   bun run sync:openapi
@@ -51,6 +53,10 @@ const SUBMODULE_YAML = resolve(ROOT, "openapi/openapi.yaml");
 const CI_YAML = resolve(ROOT, "openapi-spec/openapi.yaml");
 
 const OUTPUT_TYPES = resolve(ROOT, "src/lib/api/v1/openapi-generated.d.ts");
+// `openapi-contract.ts` imports `./openapi-generated` from this directory.
+// Both copies must be regenerated together or the shared aliases silently
+// drift against the canonical submodule spec.
+const OUTPUT_TYPES_SHARED = resolve(ROOT, "src/shared/api/v1/openapi-generated.d.ts");
 const OUTPUT_JSON = resolve(ROOT, "openapi.json");
 const OUTPUT_PUBLIC_YAML = resolve(ROOT, "public/openapi.yaml");
 
@@ -153,10 +159,12 @@ function generateTypes(): void {
 		"",
 	].join("\n");
 
-	const content = readFileSync(OUTPUT_TYPES, "utf-8");
-	writeFileSync(OUTPUT_TYPES, header + content, "utf-8");
+	const content = header + readFileSync(OUTPUT_TYPES, "utf-8");
+	writeFileSync(OUTPUT_TYPES, content, "utf-8");
+	writeFileSync(OUTPUT_TYPES_SHARED, content, "utf-8");
 
 	console.log(`[openapi] Done → ${OUTPUT_TYPES}`);
+	console.log(`[openapi] Done → ${OUTPUT_TYPES_SHARED}`);
 }
 
 // --------------- main ---------------

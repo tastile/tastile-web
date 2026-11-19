@@ -1,0 +1,25 @@
+{
+  "command_id": "01a1d962-2a43-7961-955b-b0d299e07832",
+  "accepted_at": "2026-11-14T09:27:31.651838835Z",
+  "aggregate": {
+    "kind": 4,
+    "id": "01a1d962-2a44-7003-91b4-fff05a819df2"
+  },
+  "revision": 1,
+  "result": 2,
+  "pending": [],
+  "aggregate_meta": {
+    "tile_id": "01a1d962-2a44-7003-91b4-fff05a819df2",
+    "plan_id": "01a1d962-2a44-7003-91b5-000c5f3fb308",
+    "recurring_id": null,
+    "frame_rule_id": null,
+    "changeset_id": null,
+    "change_ids": [],
+    "window_ids": [],
+    "flow_ids": [],
+    "source_tile_id": "01a1d962-2a44-7003-91b4-fff05a819df2",
+    "occurrence_ids": [],
+    "placement_ids": [],
+    "prompt_id": null
+  }
+}

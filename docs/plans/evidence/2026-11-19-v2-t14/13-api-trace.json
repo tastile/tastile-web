@@ -1,0 +1,34 @@
+{
+  "api": [
+    {
+      "url": "http://127.0.0.1:3124/api/v2/scheduler/evaluate",
+      "status": 200
+    }
+  ],
+  "inpage": {
+    "status": 200,
+    "body": {
+      "engine": "v2",
+      "ok": true,
+      "status": "ok",
+      "occurrences": [
+        [
+          1767232800000,
+          1767234600000
+        ]
+      ],
+      "count": 1,
+      "diagnostics": {
+        "absent": 0,
+        "cache_hits": 1,
+        "evaluated": 0,
+        "failed": 0,
+        "iterations": 0,
+        "reachable": 1,
+        "reevaluations": 0,
+        "skipped": 0
+      },
+      "elapsed_ms": 52
+    }
+  }
+}

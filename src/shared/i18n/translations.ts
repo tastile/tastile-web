@@ -15,6 +15,7 @@ import { calendar } from "./sections/features/calendar";
 import { createTile } from "./sections/features/createTile";
 import { dashboard } from "./sections/features/dashboard";
 import { projects } from "./sections/features/projects";
+import { promptCenter } from "./sections/features/promptCenter";
 import {
   quickCreateEn,
   quickCreateEs,
@@ -106,6 +107,7 @@ const sections = [
   tasks,
   tiles,
   timeline,
+  promptCenter,
 ] as const;
 
 const localeList = ["en", "ja", "zh-CN", "ko", "es"] as Locale[];

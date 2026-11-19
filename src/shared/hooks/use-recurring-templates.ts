@@ -59,13 +59,12 @@ const recurringTemplatesQueryOptions = {
   queryFn: async (): Promise<RecurringTemplateListItem[]> => {
     // /v1/tiles returns the unified tile list (legacy v1_tile UNION v1_source_tile
     // per HARNESS.md §5 "list_tiles UNION with v1_source_tile — 2026-07-23").
-    // Filter to recurring SourceTiles in the mapper; passing no params keeps
-    // the response identical to `useTileList` so the two hooks could share a
-    // cache key in a follow-up.
-    const res = await getCoreClient().call<TileListView[]>("getTiles");
+    // OpenAPI v3.0.0 pages the list ({items, count, next_cursor}); the
+    // recurring-templates view needs the complete set, so follow every page.
+    // Filter to recurring SourceTiles in the mapper.
+    const res = await getCoreClient().callAllPages<TileListView>("getTiles");
     if (!res.ok) throw new Error(res.error.message);
-    const tiles = Array.isArray(res.data) ? res.data : [];
-    return tiles
+    return res.data
       .map(projectRecurringTemplate)
       .filter((template): template is RecurringTemplateListItem => template !== null);
   },

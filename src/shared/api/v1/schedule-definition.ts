@@ -1,4 +1,9 @@
-import { type ApiClient, type Result, getRead, sendCommand } from "@/shared/api/v1/endpoints";
+import {
+  type ApiClient,
+  type Result,
+  getAllPages,
+  sendCommand,
+} from "@/shared/api/v1/endpoints";
 import { type CommandRequest, nowIso, uuidv7 } from "@/shared/model/v1/envelope";
 
 export const ScheduleReferenceUsage = {
@@ -16,6 +21,10 @@ const WindowKind = {
   GAP: 3,
 } as const;
 type WindowKindCode = (typeof WindowKind)[keyof typeof WindowKind];
+
+type MonthlyRuleWire =
+  | { kind: 0; day_of_month: number }
+  | { kind: 1; week_of_month: number; weekday: number };
 
 /** v1 SourceWindowInclude — included (1) / excluded (0) per wire spec. */
 export const SourceWindowInclude = {
@@ -79,6 +88,8 @@ export interface PublishScheduleDefinitionPayload {
       starts_at?: string | null;
       interval_ms?: number | null;
       ends_at?: string | null;
+      /** Required only for kind=3. Core applies skip-on-missing-date semantics. */
+      monthly_rule?: MonthlyRuleWire | null;
       weekday_mask: number | null;
       date_range_start: string | null;
       date_range_end: string | null;
@@ -110,18 +121,6 @@ export interface PublishScheduleDefinitionPayload {
      * shapes (the legacy wire does not need a window the user did not set).
      */
     schedulable_window?: { start: string; end: string } | null;
-    /**
-     * Optional. Tagged-union describing the Monthly pattern the user
-     * picked. `null` when the rule is not Monthly.
-     *  - by_day:     { by_day: { day_of_month: 1..31 } }
-     *  - by_weekday: { by_weekday: { week: 1..4 | "last", weekday: 0..6 } }
-     * Until the v1 daemon adopts `monthly_rule`, the existing
-     * `generation.interval_ms: DAY_MS` fallback is sent alongside.
-     */
-    monthly_rule?:
-      | null
-      | { by_day: { day_of_month: number } }
-      | { by_weekday: { week: number | "last"; weekday: number } };
   } | null;
   source_horizon?: { start: string; end: string } | null;
   tile: {
@@ -329,10 +328,17 @@ export interface ReferenceCatalogItem {
   role: number;
 }
 
+/**
+ * `GET /v1/schedule-reference-catalog` follows the §15 list contract
+ * (`{items, count, next_cursor}`); every page is followed so callers
+ * receive the complete catalog.
+ */
 export function listReferenceCatalog(
   client: ApiClient,
   _ownerSubjectId: string,
   usage: ScheduleReferenceUsageCode,
 ): Promise<Result<ReferenceCatalogItem[]>> {
-  return getRead<ReferenceCatalogItem[]>(client, `/v1/schedule-reference-catalog?usage=${usage}`);
+  return getAllPages<ReferenceCatalogItem>(client, "/v1/schedule-reference-catalog", {
+    params: { usage },
+  });
 }

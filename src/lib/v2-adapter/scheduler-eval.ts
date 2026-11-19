@@ -1,0 +1,375 @@
+import { spawn } from "node:child_process";
+
+// T13 v2 adapter: invokes the local `tastile-v2` CLI as a subprocess and
+// normalizes its typed JSON contract into a web-facing result. The adapter
+// never recomputes scheduler logic itself and never reports a v1-derived
+// value as a v2 success.
+//
+// Contract (core origin/main 39919003, `tastile-v2 run --help`):
+//   tastile-v2 run [OPTIONS] <LOCK>
+//     --store <DIR>            store directory
+//     --input <PORT=VALUE>     repeatable; str ports take raw text, others JSON
+//     --fuel <N>               per-node fuel budget
+//     --memory-mb <N>          per-node memory limit (MiB)
+//     --timeout-ms <N>         per-node wall-clock limit (ms)
+//   exit code 0 on success, 1..8 typed ErrorKind otherwise; stdout is one
+//   pretty JSON document with `status` and `root` provides values.
+
+const SCHEDULER_OPTION_PORTS = [
+  "step_ms",
+  "span_ms",
+  "origin",
+  "bounds_start",
+  "bounds_end",
+  "range_start_ms",
+  "range_end_ms",
+] as const;
+
+type SchedulerOptionPort = (typeof SCHEDULER_OPTION_PORTS)[number];
+
+const INT_PORTS = new Set<SchedulerOptionPort>([
+  "step_ms",
+  "span_ms",
+  "range_start_ms",
+  "range_end_ms",
+]);
+const OPTION_INT_PORTS = new Set<SchedulerOptionPort>([
+  "origin",
+  "bounds_start",
+  "bounds_end",
+]);
+
+export interface SchedulerEvalInput {
+  step_ms: number;
+  span_ms: number;
+  origin: number | null;
+  bounds_start: number | null;
+  bounds_end: number | null;
+  range_start_ms: number;
+  range_end_ms: number;
+}
+
+export type V2SchedulerResult =
+  | {
+      engine: "v2";
+      ok: true;
+      /** Typed domain outcome from the v1-expand artifact
+       * (`ok` / `invalid_window` / `invalid_generation` / `unsupported`).
+       * Absent for the legacy scheduler-option profile. */
+      status?: string;
+      occurrences: number[][];
+      count: number;
+      /** Adapter-measured subprocess wall time in ms (T14 evidence). */
+      elapsed_ms?: number;
+      diagnostics: Record<string, unknown>;
+    }
+  | {
+      engine: "v2";
+      ok: false;
+      error: { code: string; message: string };
+      elapsed_ms?: number;
+    }
+  | { engine: "fallback"; ok: false; fallback_reason: string }
+  | { engine: "disabled" };
+
+export interface V2AdapterConfig {
+  cliPath: string;
+  storeDir: string;
+  lockPath: string;
+  /** Whole-subprocess wall-clock cap. Default 10s. */
+  subprocessTimeoutMs: number;
+}
+
+// Fixed resource envelope. Request input cannot raise these values.
+const V2_FUEL = "5000000";
+const V2_MEMORY_MB = "128";
+const V2_TIMEOUT_MS = "3000";
+const DEFAULT_SUBPROCESS_TIMEOUT_MS = 10_000;
+const MAX_SUBPROCESS_TIMEOUT_MS = 60_000;
+const MIN_SUBPROCESS_TIMEOUT_MS = 100;
+const MAX_CONCURRENT_EVALUATIONS = 2;
+// Bound the waiter queue so a request flood cannot accumulate unbounded
+// pending promises; excess evaluations fail fast as `v2_busy`.
+const MAX_QUEUED_EVALUATIONS = 8;
+// After SIGKILL, force-resolve if `close` never arrives (orphaned
+// grandchildren can hold the stdio pipes open).
+const KILL_GRACE_MS = 2_000;
+const MAX_STDOUT_BYTES = 1_048_576;
+
+// The v2 CLI is a local Rust binary; it needs no application secrets.
+// Inheriting `process.env` would leak BETTER_AUTH_SECRET,
+// TASTILE_WEB_BRIDGE_SECRET, DATABASE_URL, STRIPE_* and every other
+// server credential into the subprocess (web#235).
+const SUBPROCESS_ENV_KEYS = [
+  "PATH",
+  "HOME",
+  "TMPDIR",
+  "TEMP",
+  "TMP",
+  "LANG",
+  "LC_ALL",
+  "NODE_ENV",
+] as const;
+
+function subprocessEnv(
+  env: Record<string, string | undefined>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const key of SUBPROCESS_ENV_KEYS) {
+    const value = env[key];
+    if (value !== undefined) out[key] = value;
+  }
+  return out;
+}
+
+export function v2AdapterConfigFromEnv(
+  env: Record<string, string | undefined> = process.env,
+): V2AdapterConfig | null {
+  const cliPath = env.TASTILE_V2_CLI;
+  const storeDir = env.TASTILE_V2_STORE;
+  const lockPath = env.TASTILE_V2_LOCK;
+  if (!cliPath || !storeDir || !lockPath) return null;
+  const timeout = Number(env.TASTILE_V2_TIMEOUT_MS);
+  const clamped =
+    Number.isFinite(timeout) && timeout > 0
+      ? Math.floor(timeout)
+      : DEFAULT_SUBPROCESS_TIMEOUT_MS;
+  return {
+    cliPath,
+    storeDir,
+    lockPath,
+    subprocessTimeoutMs: Math.min(
+      MAX_SUBPROCESS_TIMEOUT_MS,
+      Math.max(MIN_SUBPROCESS_TIMEOUT_MS, clamped),
+    ),
+  };
+}
+
+let inFlight = 0;
+const waiters: Array<() => void> = [];
+
+/** Returns a release function, or null when the waiter queue is full. */
+async function acquireSlot(): Promise<(() => void) | null> {
+  if (inFlight < MAX_CONCURRENT_EVALUATIONS) {
+    inFlight += 1;
+    return release;
+  }
+  if (waiters.length >= MAX_QUEUED_EVALUATIONS) return null;
+  await new Promise<void>((resolve) => waiters.push(resolve));
+  inFlight += 1;
+  return release;
+}
+
+function release(): void {
+  inFlight -= 1;
+  const next = waiters.shift();
+  next?.();
+}
+
+function buildArgs(config: V2AdapterConfig, input: SchedulerEvalInput): string[] {
+  const args = [
+    "run",
+    "--store",
+    config.storeDir,
+    "--fuel",
+    V2_FUEL,
+    "--memory-mb",
+    V2_MEMORY_MB,
+    "--timeout-ms",
+    V2_TIMEOUT_MS,
+  ];
+  for (const port of SCHEDULER_OPTION_PORTS) {
+    const value = input[port];
+    if (value === null) {
+      if (OPTION_INT_PORTS.has(port)) args.push("--input", `${port}=null`);
+      continue;
+    }
+    args.push("--input", `${port}=${JSON.stringify(value)}`);
+  }
+  args.push(config.lockPath);
+  return args;
+}
+
+interface V2RunPayload {
+  status?: unknown;
+  root?: unknown;
+  nodes?: unknown;
+  error?: unknown;
+}
+
+function isIntMatrix(value: unknown): value is number[][] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (row) =>
+        Array.isArray(row) && row.every((cell) => Number.isInteger(cell)),
+    )
+  );
+}
+
+function normalizePayload(payload: V2RunPayload): V2SchedulerResult {
+  if (payload.status !== "success") {
+    const err = (payload.error ?? {}) as { code?: unknown; kind?: unknown; message?: unknown };
+    const code =
+      typeof err.code === "string"
+        ? err.code
+        : typeof err.kind === "string"
+          ? err.kind
+          : "v2_failure";
+    const message = typeof err.message === "string" ? err.message : code;
+    return { engine: "v2", ok: false, error: { code, message } };
+  }
+  const root = (payload.root ?? {}) as Record<string, unknown>;
+  const diagnostics =
+    typeof payload.nodes === "object" && payload.nodes !== null
+      ? (payload.nodes as Record<string, unknown>)
+      : {};
+  // v1-expand artifact: typed domain `status` port alongside `occurrences`.
+  // A non-"ok" status is still a successful v2 evaluation — the artifact
+  // answered with a typed domain outcome, not an adapter failure.
+  if (typeof root.status === "string") {
+    if (!isIntMatrix(root.occurrences)) {
+      return {
+        engine: "fallback",
+        ok: false,
+        fallback_reason: "v2_output_shape_mismatch",
+      };
+    }
+    const occurrences = root.occurrences;
+    return {
+      engine: "v2",
+      ok: true,
+      status: root.status,
+      occurrences,
+      count: occurrences.length,
+      diagnostics,
+    };
+  }
+  // Legacy scheduler-option artifact: `occurrences` + integer `count`.
+  if (!isIntMatrix(root.occurrences) || !Number.isInteger(root.count)) {
+    return {
+      engine: "fallback",
+      ok: false,
+      fallback_reason: "v2_output_shape_mismatch",
+    };
+  }
+  return {
+    engine: "v2",
+    ok: true,
+    occurrences: root.occurrences,
+    count: root.count as number,
+    diagnostics,
+  };
+}
+
+function runOnce(
+  config: V2AdapterConfig,
+  args: string[],
+): Promise<{ code: number | null; stdout: string; timedOut: boolean }> {
+  return new Promise((resolve) => {
+    const child = spawn(config.cliPath, args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: subprocessEnv(process.env) as NodeJS.ProcessEnv,
+    });
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+    let settled = false;
+    let killTimer: ReturnType<typeof setTimeout> | undefined;
+    const finish = (code: number | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearTimeout(killTimer);
+      resolve({ code, stdout, timedOut });
+    };
+    const timer = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+      // Grandchildren may inherit the stdio pipes; destroy them so `close`
+      // can fire instead of waiting for the orphaned process to exit.
+      child.stdout.destroy();
+      child.stderr.destroy();
+      // If `close` still never arrives, force-resolve so the concurrency
+      // slot is not leaked forever.
+      killTimer = setTimeout(() => finish(null), KILL_GRACE_MS);
+      killTimer.unref();
+    }, config.subprocessTimeoutMs);
+    timer.unref?.();
+    child.stdout.on("data", (chunk: Buffer) => {
+      if (stdout.length < MAX_STDOUT_BYTES) stdout += chunk.toString("utf8");
+    });
+    child.stderr.on("data", (chunk: Buffer) => {
+      if (stderr.length < 65_536) stderr += chunk.toString("utf8");
+    });
+    child.on("error", () => finish(null));
+    child.on("close", (code) => {
+      if (stderr.trim().length > 0 && stdout.trim().length === 0) {
+        stdout = stderr;
+      }
+      finish(code);
+    });
+  });
+}
+
+export async function evaluateSchedulerV2(
+  config: V2AdapterConfig,
+  input: SchedulerEvalInput,
+): Promise<V2SchedulerResult> {
+  const releaseSlot = await acquireSlot();
+  if (releaseSlot === null) {
+    return { engine: "fallback", ok: false, fallback_reason: "v2_busy" };
+  }
+  const started = Date.now();
+  try {
+    const { code, stdout, timedOut } = await runOnce(
+      config,
+      buildArgs(config, input),
+    );
+    const elapsed_ms = Date.now() - started;
+    if (timedOut) {
+      return { engine: "fallback", ok: false, fallback_reason: "v2_timeout" };
+    }
+    if (code === null) {
+      return { engine: "fallback", ok: false, fallback_reason: "v2_spawn_failed" };
+    }
+    let payload: unknown;
+    try {
+      payload = JSON.parse(stdout);
+    } catch {
+      return {
+        engine: "fallback",
+        ok: false,
+        fallback_reason: "v2_output_unparseable",
+      };
+    }
+    if (typeof payload !== "object" || payload === null || Array.isArray(payload)) {
+      return {
+        engine: "fallback",
+        ok: false,
+        fallback_reason: "v2_output_shape_mismatch",
+      };
+    }
+    const result = normalizePayload(payload as V2RunPayload);
+    if (result.engine === "v2") {
+      // Non-zero exit with a typed CLI error payload is still a v2 failure,
+      // not an adapter fallback. A success payload on a non-zero exit is
+      // contradictory and must not be trusted.
+      if (code !== 0 && result.ok) {
+        return {
+          engine: "fallback",
+          ok: false,
+          fallback_reason: "v2_exit_nonzero",
+        };
+      }
+      result.elapsed_ms = elapsed_ms;
+      return result;
+    }
+    if (code !== 0) {
+      return { engine: "fallback", ok: false, fallback_reason: "v2_exit_nonzero" };
+    }
+    return result;
+  } finally {
+    releaseSlot();
+  }
+}

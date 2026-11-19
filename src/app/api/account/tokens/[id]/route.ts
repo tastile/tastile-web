@@ -44,7 +44,11 @@ async function proxyToken(id: string, init: { method: string; body?: string }) {
     });
   }
   const text = await response.text();
-  return new NextResponse(normalizeResponseText(text), {
+  const body =
+    response.status === 204 || response.status === 304 || text.length === 0
+      ? null
+      : normalizeResponseText(text);
+  return new NextResponse(body, {
     status: response.status,
     headers: { "content-type": response.headers.get("content-type") ?? "application/json" },
   });

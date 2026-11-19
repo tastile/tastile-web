@@ -7,6 +7,7 @@ import type { NextRequest, NextResponse } from "next/server";
 // `access_token` is only ever returned at this POST — afterwards the server
 // only retains its hash, so the client must keep the cookie or re-login.
 const SESSION_TOKEN_NAME = "Web session";
+const SESSION_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
 const TOKEN_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 const bootstrapLocks = new Map<string, Promise<string | null>>();
 
@@ -67,7 +68,10 @@ async function createDefaultApiTokenForUser(
       ...headers,
       "content-type": "application/json",
     },
-    body: JSON.stringify({ label: SESSION_TOKEN_NAME }),
+    body: JSON.stringify({
+      label: SESSION_TOKEN_NAME,
+      expires_at: new Date(Date.now() + SESSION_TOKEN_TTL_SECONDS * 1000).toISOString(),
+    }),
     cache: "no-store",
   });
   if (!createResponse.ok) return null;

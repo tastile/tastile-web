@@ -42,6 +42,20 @@ export type Result<T> =
   | { ok: true; data: T; status: number; latencyMs: number }
   | { ok: false; error: ApiError };
 
+/**
+ * Envelope shared by every keyset-paginated v1 list endpoint
+ * (`{items, count, next_cursor}`; OpenAPI contract v2.0.0+). `next_cursor`
+ * is absent or null on the last page.
+ */
+export interface PagedList<T> {
+  items: T[];
+  count?: number;
+  next_cursor?: string | null;
+}
+
+/** Upper bound on followed pages; guards against a non-terminating cursor. */
+const MAX_LIST_PAGES = 1000;
+
 export type ApiTag = "Public" | "Auth" | "Commands" | "Read" | "Views" | "Prompts" | "Debug";
 
 export interface EndpointMeta {
@@ -659,6 +673,7 @@ GET /v1/flows/{id}
 POST /v1/flows
 GET /v1/decisions/{id}
 POST /v1/decisions
+GET /v1/sessions
 GET /v1/sessions/{id}
 POST /v1/sessions
 POST /v1/sessions/{id}/feedback
@@ -929,6 +944,95 @@ export class CoreClient {
     return toResult<T>(response, started);
   }
 
+  /**
+   * GET a keyset-paginated list endpoint and return ALL items across pages.
+   *
+   * `options.maxItems` reproduces the legacy "first N rows" cap: pagination
+   * stops once that many items are collected and the result is sliced to
+   * exactly `maxItems` (pages are fetched whole). Without `maxItems` the
+   * complete set is returned — never silently truncated; a repeated cursor
+   * or the page cap surfaces as a `server` error instead.
+   *
+   * Bare-array bodies (pre-v2 daemons during a rolling deploy) are accepted
+   * as a single final page.
+   */
+  async callAllPages<TItem>(
+    key: EndpointKey,
+    options: {
+      pathParams?: Record<string, string>;
+      query?: Record<string, string | number | boolean | undefined>;
+      maxItems?: number;
+    } = {},
+  ): Promise<Result<TItem[]>> {
+    const items: TItem[] = [];
+    const seenCursors = new Set<string>();
+    let cursor: string | undefined;
+    let lastStatus = 0;
+
+    const finish = (status: number, latencyMs: number): Result<TItem[]> => ({
+      ok: true,
+      data:
+        options.maxItems === undefined ? items : items.slice(0, options.maxItems),
+      status,
+      latencyMs,
+    });
+
+    for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
+      const res = await this.call<PagedList<TItem> | TItem[]>(key, {
+        pathParams: options.pathParams,
+        query: { ...options.query, cursor },
+      });
+      if (!res.ok) return { ok: false, error: res.error };
+      lastStatus = res.status;
+      const body = res.data;
+      if (Array.isArray(body)) {
+        items.push(...body);
+        return finish(res.status, res.latencyMs);
+      }
+      if (!body || typeof body !== "object" || !Array.isArray(body.items)) {
+        return {
+          ok: false,
+          error: {
+            kind: "server",
+            status: res.status,
+            message: "Unexpected paged list response: missing items array",
+            body,
+          },
+        };
+      }
+      items.push(...body.items);
+      const next = body.next_cursor ?? null;
+      if (next === null) {
+        return finish(res.status, res.latencyMs);
+      }
+      if (seenCursors.has(next)) {
+        return {
+          ok: false,
+          error: {
+            kind: "server",
+            status: res.status,
+            message: "pagination cursor did not advance",
+            body: null,
+          },
+        };
+      }
+      seenCursors.add(next);
+      if (options.maxItems !== undefined && items.length >= options.maxItems) {
+        return finish(res.status, res.latencyMs);
+      }
+      cursor = next;
+    }
+    return {
+      ok: false,
+      error: {
+        kind: "server",
+        status: lastStatus,
+        message: `pagination exceeded ${MAX_LIST_PAGES} pages`,
+        body: null,
+      },
+    };
+  }
+
   private async retryThroughProxy<T>(
     meta: EndpointMeta,
     path: string,
@@ -999,23 +1103,19 @@ function classifyStatus(status: number): ApiErrorKind {
 
 let _client: CoreClient | null = null;
 
-function shouldUseProxyBridge(url: string): boolean {
+function shouldUseProxyBridge(_url: string): boolean {
   if (process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1") {
     return true;
   }
   if (typeof window !== "undefined" && window.location.protocol === "https:") {
     return true;
   }
-  try {
-    const parsed = new URL(url);
-    return !(
-      parsed.hostname === "127.0.0.1" ||
-      parsed.hostname === "localhost" ||
-      parsed.hostname === "10.0.2.2"
-    );
-  } catch {
-    return false;
-  }
+  // Direct browser→core calls are opt-in only: the direct-daemon cookie and
+  // NEXT_PUBLIC_CORE_DIRECT_MODE are handled by getCoreClient before this
+  // check runs.  Implicit direct mode sends no bearer token and depends on
+  // core CORS, which left authenticated pages empty on localhost
+  // (tastile-web#209).  Default every remaining deployment to the BFF proxy.
+  return true;
 }
 
 function readDirectDaemonCookie(): boolean {

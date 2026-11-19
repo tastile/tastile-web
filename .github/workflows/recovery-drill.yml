@@ -9,8 +9,7 @@ name: Recovery drill
 # canonical references:
 #   - docs/adr/0007-release-branch-and-ticket-workflow.md
 #   - docs/adr/0008-structured-recovery-checkpoint.md
-#   - docs/adr/0011-tastile-precommit-review-canonical-precedence.md
-#   - ../../.agent-loop/checkpoint.schema.json
+#   - docs/adr/0012-deprecate-tastile-precommit-review.md (per-commit reviewer 廃止 2026-09-29、ADR-0012)
 
 on:
   schedule:
@@ -32,7 +31,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.0
+          bun-version: 1.4.2
 
       - name: Install dependencies
         run: bun install --frozen-lockfile

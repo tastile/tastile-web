@@ -225,13 +225,11 @@ character-set confusion on the Windows runner.
 
 ### Operator handoff policy
 
-The scripts/v1 path is the **canonical execution surface** for
-production deploys. GitHub Actions (`.github/workflows/deploy.yml`)
-is an optional automation path that calls into the same script;
-Actions may fail (e.g., budget exhaustion, workflow bugs) without
-blocking deploy because the operator can always re-run the script
-directly from the Windows primary host. See
-`docs/releases/2026-09-27-local-execution-handoff.md` §3 for the
+Cloud deploy operations are suspended and the GitHub Actions deploy
+workflows (`deploy.yml`, `cloudflare-*.yml`) have been retired; pushed
+tags are release attestations only. The scripts/v1 path remains the
+recorded manual execution surface should deploy operations ever resume;
+see `docs/releases/2026-09-27-local-execution-handoff.md` §3 for the
 2026-09-27 pivot that established this convention.
 
 ## Open-source plan

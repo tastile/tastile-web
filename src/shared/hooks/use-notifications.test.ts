@@ -13,7 +13,18 @@ vi.mock("@/shared/api/endpoints", async () => {
   );
   return {
     ...actual,
-    getCoreClient: () => ({ call: callMock }),
+    getCoreClient: () => {
+      // Bind the real callAllPages pagination walk to a client whose `call`
+      // is the mock, so §15 `{items, count, next_cursor}` envelopes are
+      // exercised end to end.
+      const inner = { call: callMock };
+      return {
+        call: callMock,
+        callAllPages: actual.CoreClient.prototype.callAllPages.bind(
+          inner as unknown as InstanceType<typeof actual.CoreClient>,
+        ),
+      };
+    },
   };
 });
 
@@ -93,8 +104,13 @@ function failed(message = "execution view unavailable") {
 
 function okNotifications(
   items: Array<{ id: string; message: string; created_at: string; read_at: string | null; kind: number }>,
-): CallOk<{ items: typeof items }> {
-  return ok({ items });
+  nextCursor: string | null = null,
+): CallOk<{ items: typeof items; count: number; next_cursor: string | null }> {
+  return ok({ items, count: items.length, next_cursor: nextCursor });
+}
+
+function okPromptPage(items: PendingPromptFixture[]) {
+  return ok({ items, count: items.length, next_cursor: null });
 }
 
 function defaultMockImpl(method: string) {
@@ -105,7 +121,7 @@ function defaultMockImpl(method: string) {
     return Promise.resolve(ok(activeTile));
   }
   if (method === "getPendingPrompt") {
-    return Promise.resolve(ok<PendingPromptFixture[]>([]));
+    return Promise.resolve(okPromptPage([]));
   }
   throw new Error(`unexpected endpoint: ${method}`);
 }
@@ -145,7 +161,7 @@ describe("useNotifications", () => {
         return Promise.resolve(ok(activeTile));
       }
       if (method === "getPendingPrompt") {
-        return Promise.resolve(ok([pendingPrompt]));
+        return Promise.resolve(okPromptPage([pendingPrompt]));
       }
       throw new Error(`unexpected endpoint: ${method}`);
     });
@@ -171,7 +187,7 @@ describe("useNotifications", () => {
         return Promise.resolve(failed("active tile unavailable"));
       }
       if (method === "getPendingPrompt") {
-        return Promise.resolve(ok([pendingPrompt]));
+        return Promise.resolve(okPromptPage([pendingPrompt]));
       }
       throw new Error(`unexpected endpoint: ${method}`);
     });
@@ -200,7 +216,7 @@ describe("useNotifications", () => {
         return Promise.resolve(ok<ActiveTileFixture | null>(null));
       }
       if (method === "getPendingPrompt") {
-        return Promise.resolve(ok<PendingPromptFixture[]>([]));
+        return Promise.resolve(okPromptPage([]));
       }
       throw new Error(`unexpected endpoint: ${method}`);
     });
@@ -224,7 +240,7 @@ describe("useNotifications", () => {
         return Promise.resolve(failed());
       }
       if (method === "getPendingPrompt") {
-        return Promise.resolve(ok<PendingPromptFixture[]>([]));
+        return Promise.resolve(okPromptPage([]));
       }
       throw new Error(`unexpected endpoint: ${method}`);
     });
@@ -343,6 +359,55 @@ describe("useNotifications", () => {
     await waitFor(() => {
       expect(result.current.notifications.some((item) => item.id === "access:n1")).toBe(true);
     });
+    unmount();
+  });
+
+  it("follows next_cursor so later access-notification pages are not dropped", async () => {
+    const seenCursors: Array<string | undefined> = [];
+    callMock.mockImplementation(
+      (method: string, options?: { query?: Record<string, string | number | boolean | undefined> }) => {
+        if (method === "listAccessNotifications") {
+          const cursor = options?.query?.cursor;
+          seenCursors.push(typeof cursor === "string" ? cursor : undefined);
+          if (cursor === "c2") {
+            return Promise.resolve(
+              okNotifications([
+                {
+                  id: "n2",
+                  message: "Second page",
+                  created_at: "2026-07-23T10:00:00.000Z",
+                  read_at: null,
+                  kind: 1,
+                },
+              ]),
+            );
+          }
+          return Promise.resolve(
+            okNotifications(
+              [
+                {
+                  id: "n1",
+                  message: "First page",
+                  created_at: "2026-07-23T09:00:00.000Z",
+                  read_at: null,
+                  kind: 1,
+                },
+              ],
+              "c2",
+            ),
+          );
+        }
+        return defaultMockImpl(method);
+      },
+    );
+
+    const { result, unmount } = renderHook(() => useNotifications());
+
+    await waitFor(() => {
+      expect(result.current.notifications.some((item) => item.id === "access:n2")).toBe(true);
+    });
+    expect(result.current.notifications.some((item) => item.id === "access:n1")).toBe(true);
+    expect(seenCursors).toEqual([undefined, "c2"]);
     unmount();
   });
 });

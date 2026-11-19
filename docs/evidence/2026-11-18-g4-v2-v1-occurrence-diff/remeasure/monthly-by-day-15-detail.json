@@ -1,0 +1,95 @@
+{
+  "source": {
+    "source_tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+    "plan_id": "01a1ea44-9932-7602-8675-46373fcddf13",
+    "owner_id": "f0165d80-f7af-5157-9f6f-77f8c13b3625",
+    "revision": 1,
+    "source_state": 0,
+    "title": "diff-monthly",
+    "description": null,
+    "color": "#3b82f6",
+    "icon": "check-circle",
+    "external_id": null,
+    "plan_role": 0,
+    "schedule": {
+      "required_duration_ms": 3600000,
+      "generation": {
+        "kind": 3,
+        "starts_at": "2026-11-17T20:08:46.630Z",
+        "ends_at": "2027-01-16T16:08:46.630Z",
+        "weekday_mask": null,
+        "date_range_end": "2027-01-16",
+        "excluded_dates": [],
+        "offset_min": 540,
+        "monthly_rule": {
+          "kind": 0,
+          "day_of_month": 15
+        }
+      },
+      "window": {
+        "start_offset_ms": 0,
+        "end_offset_ms": 3600000
+      },
+      "split_policy": {
+        "kind": 0
+      },
+      "priority": 0
+    },
+    "created_at": "2026-11-17T16:08:46.641584Z",
+    "updated_at": "2026-11-17T16:08:46.641584Z"
+  },
+  "occurrences": [
+    {
+      "occurrence_id": "01a1ea44-9935-71b2-b503-d3b96de9aa96",
+      "source_tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+      "sequence_no": 1,
+      "nominal_at": "2026-12-14T20:08:46.630Z",
+      "window_start": "2026-12-14T20:08:46.630Z",
+      "window_end": "2026-12-14T21:08:46.630Z",
+      "required_duration_ms": 3600000,
+      "state": 0,
+      "revision": 1,
+      "blocked": null
+    },
+    {
+      "occurrence_id": "01a1ea44-9935-71b2-b503-d3c86849af26",
+      "source_tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+      "sequence_no": 2,
+      "nominal_at": "2027-01-14T20:08:46.630Z",
+      "window_start": "2027-01-14T20:08:46.630Z",
+      "window_end": "2027-01-14T21:08:46.630Z",
+      "required_duration_ms": 3600000,
+      "state": 0,
+      "revision": 1,
+      "blocked": null
+    }
+  ],
+  "placements": [
+    {
+      "placement_id": "01a1ea44-993a-7951-999b-ed9a99e1367c",
+      "source_tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+      "occurrence_id": "01a1ea44-9935-71b2-b503-d3b96de9aa96",
+      "split_index": 0,
+      "split_count": 1,
+      "split_group_id": "01a1ea44-9935-71b2-b503-d3b96de9aa96",
+      "start": "2026-12-14T20:08:46.630Z",
+      "end": "2026-12-14T21:08:46.630Z",
+      "closed": false,
+      "closed_at": null,
+      "revision": 1
+    },
+    {
+      "placement_id": "01a1ea44-993b-73b3-bc3b-b71fa1cf6707",
+      "source_tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+      "occurrence_id": "01a1ea44-9935-71b2-b503-d3c86849af26",
+      "split_index": 0,
+      "split_count": 1,
+      "split_group_id": "01a1ea44-9935-71b2-b503-d3c86849af26",
+      "start": "2027-01-14T20:08:46.630Z",
+      "end": "2027-01-14T21:08:46.630Z",
+      "closed": false,
+      "closed_at": null,
+      "revision": 1
+    }
+  ]
+}

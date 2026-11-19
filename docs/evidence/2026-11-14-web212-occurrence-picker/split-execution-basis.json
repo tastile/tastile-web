@@ -1,0 +1,26 @@
+{
+  "execId": "01a1d96a-0339-7950-a729-2f9e08bd733e",
+  "basis": {
+    "captured_actor_id": "6b0efe39-c93b-5e29-8250-721d863eab8f",
+    "captured_actor_kind": 0,
+    "captured_at": "2026-11-14T09:36:05.944529Z",
+    "captured_command_id": "01a1d96a-0338-71c2-b68e-fe12f2404e12",
+    "effective_placement_id": "01a1d968-fa3b-7943-ae5f-6f4f6fc9da1d",
+    "effective_resolution_hash": "01a1d96a-033b-7ef2-bf0b-536b7af339b2",
+    "execution_id": "01a1d96a-0339-7950-a729-2f9e08bd733e",
+    "placement_id": "01a1d968-fa3b-7943-ae5f-6f4f6fc9da1d",
+    "placement_revision": 1,
+    "resolution_hash": "01a1d96a-033b-7ef2-bf0b-536b7af339b2"
+  },
+  "execView": {
+    "execution_id": "01a1d96a-0339-7950-a729-2f9e08bd733e",
+    "state": 0,
+    "placement_id": "01a1d968-fa3b-7943-ae5f-6f4f6fc9da1d",
+    "tile_id": "01a1d968-fa3b-7943-ae5f-6f50607c39ab",
+    "title": "verify212split-mwg7m7se",
+    "span_start": "2026-11-28T05:00:00Z",
+    "span_end": "2026-11-28T06:00:00Z",
+    "segments": 1,
+    "facts": 0
+  }
+}
