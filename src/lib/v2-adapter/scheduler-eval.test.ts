@@ -1,4 +1,10 @@
-import { mkdtempSync, rmSync, writeFileSync, chmodSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+  chmodSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -244,6 +250,26 @@ describe("evaluateSchedulerV2", () => {
     });
   });
 
+  it("clamps TASTILE_V2_TIMEOUT_MS into a sane range", () => {
+    const base = {
+      TASTILE_V2_CLI: "/bin/true",
+      TASTILE_V2_STORE: "/s",
+      TASTILE_V2_LOCK: "/l",
+    };
+    expect(
+      v2AdapterConfigFromEnv({ ...base, TASTILE_V2_TIMEOUT_MS: "999999999" })
+        ?.subprocessTimeoutMs,
+    ).toBe(60_000);
+    expect(
+      v2AdapterConfigFromEnv({ ...base, TASTILE_V2_TIMEOUT_MS: "5" })
+        ?.subprocessTimeoutMs,
+    ).toBe(100);
+    expect(
+      v2AdapterConfigFromEnv({ ...base, TASTILE_V2_TIMEOUT_MS: "garbage" })
+        ?.subprocessTimeoutMs,
+    ).toBe(10_000);
+  });
+
   it("returns fallback when provides shape mismatches", async () => {
     const dir = tmpDir();
     const cli = fakeCli(
@@ -257,4 +283,46 @@ describe("evaluateSchedulerV2", () => {
       fallback_reason: "v2_output_shape_mismatch",
     });
   });
+
+  it("does not leak server secrets into the subprocess environment", async () => {
+    const dir = tmpDir();
+    const envOut = join(dir, "child-env.txt");
+    const payloadOut = join(dir, "payload.json");
+    writeFileSync(payloadOut, SUCCESS_PAYLOAD);
+    const script = join(dir, "env-dump-v2.sh");
+    writeFileSync(
+      script,
+      `#!/bin/sh\nenv > "${envOut}"\ncat "${payloadOut}"\n`,
+    );
+    chmodSync(script, 0o755);
+    const prev = process.env.BETTER_AUTH_SECRET;
+    process.env.BETTER_AUTH_SECRET = "super-secret-value";
+    try {
+      const res = await evaluateSchedulerV2(config(script), INPUT);
+      expect(res).toMatchObject({ engine: "v2", ok: true });
+      const childEnv = readFileSync(envOut, "utf8");
+      expect(childEnv).not.toContain("super-secret-value");
+      expect(childEnv).not.toContain("BETTER_AUTH_SECRET");
+    } finally {
+      if (prev === undefined) delete process.env.BETTER_AUTH_SECRET;
+      else process.env.BETTER_AUTH_SECRET = prev;
+    }
+  });
+
+  it("fails fast with v2_busy when the waiter queue is saturated", async () => {
+    const dir = tmpDir();
+    const script = join(dir, "slow-v2.sh");
+    writeFileSync(script, "#!/bin/sh\nsleep 1\ncat /dev/null\nexit 1\n");
+    chmodSync(script, 0o755);
+    // 2 slots + 8 queued = 10 in system; the 11th must be rejected
+    // immediately rather than queued unboundedly.
+    const pending = Array.from({ length: 11 }, () =>
+      evaluateSchedulerV2(config(script), INPUT),
+    );
+    const results = await Promise.all(pending);
+    const busy = results.filter(
+      (r) => r.engine === "fallback" && r.fallback_reason === "v2_busy",
+    );
+    expect(busy.length).toBeGreaterThanOrEqual(1);
+  }, 20_000);
 });

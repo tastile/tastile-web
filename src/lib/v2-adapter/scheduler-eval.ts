@@ -85,8 +85,42 @@ const V2_FUEL = "5000000";
 const V2_MEMORY_MB = "128";
 const V2_TIMEOUT_MS = "3000";
 const DEFAULT_SUBPROCESS_TIMEOUT_MS = 10_000;
+const MAX_SUBPROCESS_TIMEOUT_MS = 60_000;
+const MIN_SUBPROCESS_TIMEOUT_MS = 100;
 const MAX_CONCURRENT_EVALUATIONS = 2;
+// Bound the waiter queue so a request flood cannot accumulate unbounded
+// pending promises; excess evaluations fail fast as `v2_busy`.
+const MAX_QUEUED_EVALUATIONS = 8;
+// After SIGKILL, force-resolve if `close` never arrives (orphaned
+// grandchildren can hold the stdio pipes open).
+const KILL_GRACE_MS = 2_000;
 const MAX_STDOUT_BYTES = 1_048_576;
+
+// The v2 CLI is a local Rust binary; it needs no application secrets.
+// Inheriting `process.env` would leak BETTER_AUTH_SECRET,
+// TASTILE_WEB_BRIDGE_SECRET, DATABASE_URL, STRIPE_* and every other
+// server credential into the subprocess (web#235).
+const SUBPROCESS_ENV_KEYS = [
+  "PATH",
+  "HOME",
+  "TMPDIR",
+  "TEMP",
+  "TMP",
+  "LANG",
+  "LC_ALL",
+  "NODE_ENV",
+] as const;
+
+function subprocessEnv(
+  env: Record<string, string | undefined>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const key of SUBPROCESS_ENV_KEYS) {
+    const value = env[key];
+    if (value !== undefined) out[key] = value;
+  }
+  return out;
+}
 
 export function v2AdapterConfigFromEnv(
   env: Record<string, string | undefined> = process.env,
@@ -96,25 +130,31 @@ export function v2AdapterConfigFromEnv(
   const lockPath = env.TASTILE_V2_LOCK;
   if (!cliPath || !storeDir || !lockPath) return null;
   const timeout = Number(env.TASTILE_V2_TIMEOUT_MS);
+  const clamped =
+    Number.isFinite(timeout) && timeout > 0
+      ? Math.floor(timeout)
+      : DEFAULT_SUBPROCESS_TIMEOUT_MS;
   return {
     cliPath,
     storeDir,
     lockPath,
-    subprocessTimeoutMs:
-      Number.isFinite(timeout) && timeout > 0
-        ? Math.floor(timeout)
-        : DEFAULT_SUBPROCESS_TIMEOUT_MS,
+    subprocessTimeoutMs: Math.min(
+      MAX_SUBPROCESS_TIMEOUT_MS,
+      Math.max(MIN_SUBPROCESS_TIMEOUT_MS, clamped),
+    ),
   };
 }
 
 let inFlight = 0;
 const waiters: Array<() => void> = [];
 
-async function acquireSlot(): Promise<() => void> {
+/** Returns a release function, or null when the waiter queue is full. */
+async function acquireSlot(): Promise<(() => void) | null> {
   if (inFlight < MAX_CONCURRENT_EVALUATIONS) {
     inFlight += 1;
     return release;
   }
+  if (waiters.length >= MAX_QUEUED_EVALUATIONS) return null;
   await new Promise<void>((resolve) => waiters.push(resolve));
   inFlight += 1;
   return release;
@@ -229,16 +269,18 @@ function runOnce(
   return new Promise((resolve) => {
     const child = spawn(config.cliPath, args, {
       stdio: ["ignore", "pipe", "pipe"],
-      env: { ...process.env },
+      env: subprocessEnv(process.env) as NodeJS.ProcessEnv,
     });
     let stdout = "";
     let stderr = "";
     let timedOut = false;
     let settled = false;
+    let killTimer: ReturnType<typeof setTimeout> | undefined;
     const finish = (code: number | null) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      clearTimeout(killTimer);
       resolve({ code, stdout, timedOut });
     };
     const timer = setTimeout(() => {
@@ -248,7 +290,12 @@ function runOnce(
       // can fire instead of waiting for the orphaned process to exit.
       child.stdout.destroy();
       child.stderr.destroy();
+      // If `close` still never arrives, force-resolve so the concurrency
+      // slot is not leaked forever.
+      killTimer = setTimeout(() => finish(null), KILL_GRACE_MS);
+      killTimer.unref();
     }, config.subprocessTimeoutMs);
+    timer.unref?.();
     child.stdout.on("data", (chunk: Buffer) => {
       if (stdout.length < MAX_STDOUT_BYTES) stdout += chunk.toString("utf8");
     });
@@ -270,6 +317,9 @@ export async function evaluateSchedulerV2(
   input: SchedulerEvalInput,
 ): Promise<V2SchedulerResult> {
   const releaseSlot = await acquireSlot();
+  if (releaseSlot === null) {
+    return { engine: "fallback", ok: false, fallback_reason: "v2_busy" };
+  }
   const started = Date.now();
   try {
     const { code, stdout, timedOut } = await runOnce(
