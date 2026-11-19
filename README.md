@@ -33,7 +33,6 @@ src/
     hooks/      Execution engine integration
     storage/    tastile-core API persistence
 scripts/        Repository automation
-docs/plans/     Implementation and hardening plans
 e2e/            Playwright coverage
 ```
 
@@ -120,7 +119,7 @@ bun run test:e2e
 
 ## Current Constraints
 
-- Some architecture alignment work is still in progress; see `docs/plans/` for active hardening plans
+- Some architecture alignment work is still in progress; active hardening items are tracked as GitHub Issues (durable work state, ADR-0009)
 - The web app uses tastile-core API for execution
 
 ## Deployment

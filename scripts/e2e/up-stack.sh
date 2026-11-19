@@ -1,6 +1,6 @@
 #!/bin/bash
 # Boot the e2e stack: wslc v1 stack (postgres + api + worker) + Next.js dev server.
-# Records readiness state to docs/plans/evidence/<run-id>/boot.md.
+# Records readiness state to docs/evidence/<run-id>/boot.md.
 #
 # Dependency: requires `tastile-v1-api:latest` wslc image to exist locally
 # (built once via `bash tastile-core/scripts/wslc/build.sh`).
@@ -21,7 +21,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CORE_ROOT="$(cd "$WEB_ROOT/../tastile-core" && pwd)"
 RUN_ID="${1:-2026-08-09-usecase-e2e-30}"
-EVIDENCE_DIR="$WEB_ROOT/docs/plans/evidence/$RUN_ID"
+EVIDENCE_DIR="$WEB_ROOT/docs/evidence/$RUN_ID"
 IMAGE_NAME="${TASTILE_IMAGE_NAME:-tastile-v1-api}"
 IMAGE_TAG="${TASTILE_IMAGE_TAG:-latest}"
 

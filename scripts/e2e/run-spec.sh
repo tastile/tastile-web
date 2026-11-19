@@ -11,7 +11,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WEB_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 NN="$1"
 RUN_ID="${2:-2026-08-09-usecase-e2e-30}"
-EVIDENCE_DIR="$WEB_ROOT/docs/plans/evidence/$RUN_ID"
+EVIDENCE_DIR="$WEB_ROOT/docs/evidence/$RUN_ID"
 
 if [ -z "$NN" ]; then
   echo "usage: $0 <NN> [run-id]" >&2
