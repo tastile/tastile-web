@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-19",
+  "branch": "219-v2-v1-expand",
+  "core_sha": "fe858e1f698247f0276e384351ad164a43db9ecd",
+  "lock_digest": "sha256:2f1000c9e562c6c3f64218059be4d082a85d93243993913b4e75112dda0267c7",
+  "cases": [
+    {"name": "golden", "engine": "v2", "ok": true, "status": "ok", "occurrences": [[1767232800000, 1767234600000]], "count": 1, "elapsed_ms": 51},
+    {"name": "golden-rerun", "engine": "v2", "ok": true, "status": "ok", "occurrences": [[1767232800000, 1767234600000]], "count": 1, "elapsed_ms": 7, "cache_hits": 1},
+    {"name": "invalid_window", "engine": "v2", "ok": true, "status": "invalid_window", "occurrences": [], "count": 0, "elapsed_ms": 15},
+    {"name": "unsupported_bounds", "engine": "v2", "ok": true, "status": "unsupported", "occurrences": [], "count": 0, "elapsed_ms": 8},
+    {"name": "opt_out", "engine": "disabled"}
+  ],
+  "browser": {"engine": "chromium-playwright", "inpage_fetch_status": 200, "elapsed_ms": 52}
+}
