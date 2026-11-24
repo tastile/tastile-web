@@ -1,7 +1,10 @@
-// Registry of CLI clients known to /cli/authorize + /api/cli/token
-// (Issue #153, plan D5).  The set is intentionally tiny and read-only —
-// every entry MUST be reviewed at registration time because the registered
-// scopes determine what the Web mints on the user's behalf.
+// Registry of native clients known to /cli/authorize + /api/cli/token
+// (Issue #153 for `tastile-cli`; Issue #253 / NF04-W02 for
+// `tastile-desktop`, which reuses the same wire contract per ADR-0025
+// "Authorization Code + PKCE").  The set is intentionally tiny and
+// read-only — every entry MUST be reviewed at registration time because
+// the registered scopes determine what the Web mints on the user's
+// behalf.
 //
 // Unknown client → 400 invalid_client (no leakage of registered names).
 
@@ -15,6 +18,14 @@ export interface RegisteredClient {
 const CLIENTS: Readonly<Record<string, RegisteredClient>> = {
   "tastile-cli": {
     id: "tastile-cli",
+    scopes: ["tastile.read", "tastile.write"],
+  },
+  // Desktop (NF04-D01 / web#254) signs in via the system browser and a
+  // loopback redirect (http://127.0.0.1:<port>/callback), so it shares the
+  // CLI redirect-uri policy unchanged. `all` / OwnerAdmin is never
+  // registered for public clients (v1/14 §14.5).
+  "tastile-desktop": {
+    id: "tastile-desktop",
     scopes: ["tastile.read", "tastile.write"],
   },
 } as const;

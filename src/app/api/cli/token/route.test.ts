@@ -101,6 +101,18 @@ describe("POST /api/cli/token", () => {
     });
   });
 
+  it("labels the minted token with the grant's client_id (tastile-desktop, web#253)", async () => {
+    consumeGrantOnceMock.mockResolvedValueOnce(okConsume({ clientId: "tastile-desktop" }));
+    const { POST } = await import("./route");
+    const response = await POST(
+      postJson({ code: PLAINTEXT_CODE, code_verifier: VERIFIER, redirect_uri: REDIRECT }),
+    );
+    expect(response.status).toBe(200);
+    expect(mintTastileApiTokenForUserMock).toHaveBeenCalledWith(
+      expect.objectContaining({ label: "tastile-desktop" }),
+    );
+  });
+
   it("rejects extras (client_id, client_secret, etc.) as 400 invalid_body", async () => {
     const { POST } = await import("./route");
     const response = await POST(
