@@ -126,3 +126,6 @@ docs/trace/
 # commit. External side-effect journals (development / staging / production)
 # remain tracked under docs/journal/<env>/.
 /docs/journal/local/
+
+# Static site build intermediate (NF04-W05)
+site/.build/
