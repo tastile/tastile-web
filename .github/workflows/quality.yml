@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     permissions:
       contents: read
     steps:
@@ -60,7 +60,7 @@ jobs:
       (github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')))
       || (github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-')))
     needs: verify
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     environment: production
     permissions:
       contents: read
@@ -107,7 +107,7 @@ jobs:
   # release-grade gate proves the grant atomicity before a release-*
   # branch is cut.
   cli-auth-postgres:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     services:
       postgres:
         image: postgres:16
