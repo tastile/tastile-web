@@ -658,6 +658,89 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/source-tiles/{id}/reflow/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Faithful dry-run of the reflow command (core#413).  Runs the same
+         *     `reflow` code path inside a transaction that is always rolled
+         *     back, so the returned `CommandResponse` meta classifies the
+         *     outcome exactly like `apply`.  Writes nothing: no idempotency
+         *     record, outbox event, or domain event.  `expected_revision` is
+         *     enforced identically — a stale preview returns 409.
+         */
+        post: operations["preview_source_tile_reflow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List sync entity changes after `cursor`. */
+        get: operations["get_sync"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sync/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Snapshot of the current read-model projection for offline sync. */
+        get: operations["get_sync_snapshot"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/sync/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * SSE change-notification stream (v1/14 §6-6, core#559).
+         * @description Notification-only doorbell: `change` events carry
+         *     `{entityKind, entityId, changeKind}` and the sync cursor as the
+         *     SSE `id` — never entity state.  Clients pull `GET /v1/sync` for
+         *     state.  `Last-Event-ID` resumes from a sync cursor; an expired
+         *     cursor yields one `cursor-expired` event then close.  Delivery
+         *     is best-effort.
+         */
+        get: operations["get_sync_stream"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/tiles": {
         parameters: {
             query?: never;
@@ -871,6 +954,24 @@ export interface components {
             when: components["schemas"]["ConditionRefSchema"];
         };
         /**
+         * @description Mirror of `domain::command::ApiError` — the standard error envelope
+         *     returned by every non-2xx response (v1/14 §1-4).  `kind` is the
+         *     numeric `ApiErrorKind` registry value (0=VALIDATION …
+         *     8=CURSOR_EXPIRED); `violations` mirrors
+         *     `domain::resolver::ResolutionViolation`.
+         */
+        ApiErrorSchema: {
+            /** Format: int64 */
+            current_revision?: number | null;
+            /**
+             * Format: int32
+             * @description Numeric `ApiErrorKind` constant.
+             */
+            kind: number;
+            message: string;
+            violations: components["schemas"]["TimelineViolationSchema"][];
+        };
+        /**
          * @description `POST /v1/api-tokens` request body (ADR-0010 §D-1.1 + Issue #153 §A.1/A.2).
          *     `expires_at` is required at the wire level — server-side validation
          *     rejects `null` / omitted with `ApiErrorKind::VALIDATION`.  `scopes`
@@ -964,6 +1065,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["CancelSourceTilePayloadSchema"];
@@ -1082,13 +1189,21 @@ export interface components {
             default?: null | components["schemas"]["ScalarExpressionRefSchema"];
         };
         CommandResponse: {
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description Commit-confirmed time (v1/14 §1-1 "Committed at").
+             */
             accepted_at: string;
             aggregate?: null | components["schemas"]["AggregateRefSchema"];
             aggregate_meta?: null | components["schemas"]["AggregateMetaSchema"];
             /** Format: uuid */
             command_id: string;
             pending: components["schemas"]["PendingWorkSchema"][];
+            /**
+             * Format: date-time
+             * @description Server receipt time (v1/14 §1-1 "Received at").
+             */
+            received_at: string;
             /**
              * Format: int32
              * @description 0 = applied, 1 = already applied, 2 = accepted.
@@ -1160,6 +1275,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /**
@@ -1190,6 +1311,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["CreateSessionPayloadSchema"];
@@ -1209,6 +1336,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["CreateSourceTilePayloadSchema"];
@@ -1242,6 +1375,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /**
@@ -1373,6 +1512,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["EnqueueDeliveryPayloadSchema"];
@@ -1387,6 +1532,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload?: null | components["schemas"]["EmptyPayloadSchema"];
@@ -1457,6 +1608,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["FinishExecutionPayloadSchema"];
@@ -1922,6 +2079,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /** Format: uuid */
@@ -2029,6 +2192,12 @@ export interface components {
             expected_revision: number;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["ReflowSourceTilePayloadSchema"];
@@ -2149,6 +2318,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /** Format: uuid */
@@ -2175,6 +2350,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /** Format: uuid */
@@ -2601,6 +2782,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /**
@@ -2629,11 +2816,67 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             /** Format: uuid */
             owner_id?: string | null;
             payload: components["schemas"]["StartupRecoveryPayloadSchema"];
+        };
+        /**
+         * @description Mirror of `domain::read::SyncChange` for `GET /v1/sync` (v1/14 §6-2
+         *     v2, core#558).  `change_kind` is the numeric `SyncChangeKind`
+         *     registry value (0=UPSERT / 1=TOMBSTONE); `entity_kind` is the
+         *     numeric `SyncEntityKind` registry value (0=TILE / 1=SOURCE_TILE /
+         *     2=PLACEMENT / 3=EXECUTION / 4=SESSION).  `state` is the same JSON
+         *     document the entity kind's Read endpoint returns; `null` marks a
+         *     tombstone.
+         */
+        SyncChangeSchema: {
+            /** Format: int32 */
+            change_kind: number;
+            /** Format: uuid */
+            entity_id: string;
+            /** Format: int32 */
+            entity_kind: number;
+            /** Format: date-time */
+            occurred_at: string;
+            state?: unknown;
+        };
+        /** @description Mirror of `domain::read::SyncEntity` for `GET /v1/sync/snapshot`. */
+        SyncEntitySchema: {
+            /** Format: uuid */
+            entity_id: string;
+            /** Format: int32 */
+            entity_kind: number;
+            state?: unknown;
+        };
+        /**
+         * @description Mirror of `domain::read::SyncResponse` for `GET /v1/sync`.
+         *     `next_cursor` is the opaque forward-only cursor for the next page; it
+         *     is an empty string when no events remain.  Clients page until
+         *     `next_cursor` is empty — `changes` may be empty on a non-final page
+         *     when every event resolved to no sync entity.
+         */
+        SyncResponseSchema: {
+            changes: components["schemas"]["SyncChangeSchema"][];
+            next_cursor: string;
+        };
+        /**
+         * @description Mirror of `domain::read::SyncSnapshotResponse` for
+         *     `GET /v1/sync/snapshot` (v1/14 §6-1).  `snapshot_cursor` is identical
+         *     on every page of one snapshot walk and is the delta sync starting
+         *     point; `next_cursor` is `null` on the last page.
+         */
+        SyncSnapshotResponseSchema: {
+            entities: components["schemas"]["SyncEntitySchema"][];
+            next_cursor?: string | null;
+            snapshot_cursor: string;
         };
         TargetRefSchema: {
             /** Format: uuid */
@@ -2966,6 +3209,12 @@ export interface components {
             expected_revision?: number | null;
             /** Format: uuid */
             idempotency_key: string;
+            /**
+             * Format: date-time
+             * @description Client-declared observed time (v1/14 §1-1 `observedAt`, core#560).
+             *     `occurred_at` is the deprecated wire alias; the server ignores it.
+             */
+            observed_at?: string | null;
             /** Format: date-time */
             occurred_at?: string | null;
             payload: components["schemas"]["UpdateSourceTilePayloadSchema"];
@@ -4873,6 +5122,213 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    preview_source_tile_reflow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SourceTile id */
+                id: string;
+            };
+            cookie?: never;
+        };
+        /** @description SourceTile reflow command envelope */
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReflowSourceTileRequest"];
+            };
+        };
+        responses: {
+            /** @description Command response identical in shape to apply; nothing was written */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommandResponse"];
+                };
+            };
+            /** @description Not found or not accessible */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Stale expected_revision */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Detached / execution / override protects a placement */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_sync: {
+        parameters: {
+            query?: {
+                /** @description Opaque forward-only cursor from a previous `next_cursor`; omit for the full retention-window resync */
+                cursor?: string;
+                /** @description Page size 1..=1000 (default 100); out of range is rejected */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Sync changes in (occurred_at, id) order; `next_cursor` is empty when no events remain — page until `next_cursor` is empty (`changes` may be empty on a non-final page) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResponseSchema"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing `tastile.read` scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cursor predates the owner's retention frontier (`ApiErrorKind` 8 = CURSOR_EXPIRED). Discard the cursor and resync via `GET /v1/sync/snapshot` per v1/14 §6-1 */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorSchema"];
+                };
+            };
+            /** @description Invalid cursor or limit */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_sync_snapshot: {
+        parameters: {
+            query?: {
+                /** @description Optional RFC3339 lower bound for time-series entities (PLACEMENT / EXECUTION / SESSION) */
+                from?: string;
+                /** @description Optional RFC3339 exclusive upper bound for time-series entities */
+                to?: string;
+                /** @description Opaque snapshot-scoped page cursor from a previous `next_cursor`; delta cursors are rejected */
+                cursor?: string;
+                /** @description Page size 1..=1000 (default 100); out of range is rejected */
+                limit?: number;
+                /** @description Retired; any value is rejected */
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Snapshot page in (entity_kind, entity_id) order; `snapshot_cursor` is identical on every page and seeds `GET /v1/sync` */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncSnapshotResponseSchema"];
+                };
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing `tastile.read` scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid cursor, limit, offset, or time range */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_sync_stream: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description Sync cursor of the last received `change` event; resumes replay after that position */
+                "Last-Event-ID"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description `text/event-stream` of `change` notifications (`{entityKind, entityId, changeKind}` + cursor `id`), `: ping` heartbeats with `retry:` hints, and terminal `cursor-expired` / `overflow` / `rejected` events */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or invalid auth */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing `tastile.read` scope */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid `Last-Event-ID` cursor */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Per-owner (4) or global connection cap reached */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiErrorSchema"];
+                };
             };
         };
     };
