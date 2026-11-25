@@ -58,7 +58,6 @@
     "doctor": "bunx react-doctor@latest"
   },
   "dependencies": {
-    "@aws-sdk/client-sesv2": "^3.1127.0",
     "@mantine/core": "^9.6.0",
     "@mantine/dates": "^9.6.0",
     "@mantine/form": "^9.6.0",

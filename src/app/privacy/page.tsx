@@ -34,7 +34,7 @@ export default function PrivacyPage() {
             <ul className="list-disc space-y-2 pl-6 text-foreground-muted">
               <li>
                 <strong>Account Information:</strong> Email address and authentication data from
-                Amazon Cognito and any configured federated identity provider.
+                our authentication provider and any configured federated identity provider.
               </li>
               <li>
                 <strong>Tile Data:</strong> Titles, descriptions, and execution status of your
@@ -52,18 +52,20 @@ export default function PrivacyPage() {
 
             <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">{storeHeading}</h2>
             <p className="text-foreground-muted">
-              Your cloud data is stored securely on Tastile-managed AWS infrastructure. Local tiles
-              are stored on your device only. Cloud tiles and events are encrypted in transit and at
-              rest.
+              Your cloud data is stored securely on infrastructure managed by Tastile. Local
+              tiles are stored on your device only. Cloud tiles and events are encrypted in
+              transit and at rest.
             </p>
 
             <h2 className="mt-8 mb-4 text-xl font-[590] text-foreground">{thirdPartyHeading}</h2>
             <ul className="list-disc space-y-2 pl-6 text-foreground-muted">
               <li>
-                <strong>Amazon Cognito:</strong> Account registration and authentication.
+                <strong>Authentication:</strong> Account registration, sign-in, and session
+                management (Better Auth, with optional Google and Apple sign-in).
               </li>
               <li>
-                <strong>AWS:</strong> Application hosting, storage, and database infrastructure.
+                <strong>Transactional email:</strong> Delivery of verification and password-reset
+                emails.
               </li>
               <li>
                 <strong>Stripe:</strong> Payment processing for Pro subscriptions.

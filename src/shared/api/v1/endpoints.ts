@@ -8,8 +8,10 @@
  * failure states (validation / forbidden / stale revision / etc.) without
  * try/catch noise.
  *
- * Auth: the Cognito id_token is fetched via `client.getIdToken` on every
- * call so silent renewals are honored.
+ * Auth: callers supply `getIdToken`, which returns the current core API
+ * token (Better Auth session → bridge-issued `tastile_api_token` cookie,
+ * or a minted API token). It is resolved per call so token rotation is
+ * honored.
  */
 
 import { ApiErrorKind } from "@/shared/model/v1/constants";

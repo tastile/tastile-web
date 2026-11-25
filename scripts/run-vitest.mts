@@ -25,9 +25,6 @@ const testEnv = { ...process.env };
 for (const key of [
   "E2E_BYPASS_AUTH",
   "NEXT_PUBLIC_E2E_BYPASS_AUTH",
-  "COGNITO_SUPPORTED_IDENTITY_PROVIDERS",
-  "NEXT_PUBLIC_COGNITO_ENABLED_PROVIDERS",
-  "NEXT_PUBLIC_COGNITO_SUPPORTED_IDENTITY_PROVIDERS",
 ]) {
   delete testEnv[key];
 }
