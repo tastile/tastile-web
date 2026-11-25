@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { bearer } from "better-auth/plugins/bearer";
 import { twoFactor } from "better-auth/plugins/two-factor";
@@ -42,6 +43,21 @@ async function authDatabase(): Promise<Pool> {
     cachedPool = new Pool({ connectionString: resolvedConnectionString, max: 5 });
   }
   return cachedPool;
+}
+
+// web#258: when TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS is set, self-service
+// sign-up is restricted to the listed email domains (comma-separated,
+// case-insensitive). Unset/empty keeps the current open behavior; the
+// acceptance deployment sets it to `tastile-acceptance.invalid` so only
+// fixture accounts can be created while the env is public.
+function signupAllowedDomains(): string[] | null {
+  const raw = process.env.TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS?.trim();
+  if (!raw) return null;
+  const domains = raw
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+  return domains.length > 0 ? domains : null;
 }
 
 function socialProviders() {
@@ -114,6 +130,21 @@ async function createAuth() {
         strategy: "compact",
         refreshCache: false,
       },
+    },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-up/email") return;
+        const allowed = signupAllowedDomains();
+        if (!allowed) return;
+        const body = ctx.body as { email?: unknown } | undefined;
+        const email = typeof body?.email === "string" ? body.email : "";
+        const domain = email.split("@")[1]?.trim().toLowerCase() ?? "";
+        if (!domain || !allowed.includes(domain)) {
+          throw new APIError("FORBIDDEN", {
+            message: "Sign-up is not available for this email address.",
+          });
+        }
+      }),
     },
     plugins: [bearer(), twoFactor(), nextCookies()],
   });

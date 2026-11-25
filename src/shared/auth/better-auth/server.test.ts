@@ -46,3 +46,21 @@ describe("better-auth minimal-release signup config (#134)", () => {
 		expect(matches).toBeNull();
 	});
 });
+
+// web#258: public deployments must be able to restrict self-service sign-up
+// to approved email domains. The hook is env-gated so unset keeps the
+// open behavior; acceptance envs set TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS.
+describe("better-auth signup domain allowlist (web#258)", () => {
+	const source = readServerSource();
+
+	it("gates /sign-up/email behind TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS", () => {
+		expect(source).toContain("TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS");
+		expect(source).toMatch(/ctx\.path !== "\/sign-up\/email"/);
+		expect(source).toMatch(/APIError\("FORBIDDEN"/);
+	});
+
+	it("compares the email domain case-insensitively against the allowlist", () => {
+		expect(source).toMatch(/toLowerCase\(\)/);
+		expect(source).toMatch(/allowed\.includes\(domain\)/);
+	});
+});
