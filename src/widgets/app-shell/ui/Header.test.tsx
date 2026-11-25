@@ -64,7 +64,7 @@ describe("Header identity fetch", () => {
     expect(calledUrl).toContain("/api/auth/session");
   });
 
-  it("does not attach Cognito token material on the session fetch", async () => {
+  it("does not attach upstream token material on the session fetch", async () => {
     const fetchMock = buildFetchMock();
     globalThis.fetch = fetchMock as typeof globalThis.fetch;
 

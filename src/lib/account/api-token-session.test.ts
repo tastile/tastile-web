@@ -2,17 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextResponse } from "next/server";
 
 const cookieStore: Record<string, { value: string }> = {};
-let mockUserSub: string | null = "user-sub-1";
 const originalFetch = globalThis.fetch;
 
 vi.mock("next/headers", () => ({
 	cookies: vi.fn(async () => ({
 		get: (n: string) => cookieStore[n],
 	})),
-}));
-
-vi.mock("@/lib/cognito/account-session", () => ({
-	getAccountUserSub: vi.fn(async () => mockUserSub),
 }));
 
 const { COOKIE_API_TOKEN } = await import("@/shared/auth/cookies");
@@ -32,7 +27,6 @@ function jsonResponse(body: unknown, status = 200): Response {
 describe("api-token-session bootstrap", () => {
 	beforeEach(() => {
 		for (const k of Object.keys(cookieStore)) delete cookieStore[k];
-		mockUserSub = "user-sub-1";
 		process.env.TASTILE_ENV = "test";
 		process.env.TASTILE_WEB_BRIDGE_SECRET = "test-bridge-secret";
 		process.env.TASTILE_CORE_URL = "http://127.0.0.1:3140";
@@ -144,7 +138,6 @@ describe("api-token-session bootstrap", () => {
 	});
 
 	it("returns null and skips fetch when there is no user sub", async () => {
-		mockUserSub = null;
 		const fetchMock = vi.fn();
 		globalThis.fetch = fetchMock as unknown as typeof fetch;
 

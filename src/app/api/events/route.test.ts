@@ -18,7 +18,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const fetchMock = vi.fn();
 const resolveAuthenticatedUserSub = vi.fn();
 
-vi.mock("@/lib/cognito/authenticated-session", () => ({
+vi.mock("@/shared/auth/authenticated-session", () => ({
   resolveAuthenticatedUserSub,
 }));
 vi.mock("next/headers", () => ({

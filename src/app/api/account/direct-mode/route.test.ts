@@ -10,7 +10,7 @@ describe("api account direct-mode", () => {
 
     const request = new NextRequest(`${APP_BASE_URL}/api/account/direct-mode`, {
       method: "POST",
-      headers: { cookie: "tastile_uid=cognito-sub-abc" },
+      headers: { cookie: "tastile_uid=user-sub-abc" },
     });
 
     const response = await route.POST(request);
@@ -40,7 +40,7 @@ describe("api account direct-mode", () => {
 
     const request = new NextRequest(`${APP_BASE_URL}/api/account/direct-mode`, {
       method: "DELETE",
-      headers: { cookie: "tastile_api_token=any; tastile_uid=cognito-sub-abc" },
+      headers: { cookie: "tastile_api_token=any; tastile_uid=user-sub-abc" },
     });
 
     const response = await route.DELETE(request);
