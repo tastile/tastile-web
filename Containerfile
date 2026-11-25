@@ -72,4 +72,11 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 
 EXPOSE 3000
+
+# Liveness probe against the standalone server's /api/health endpoint
+# (NF04-W01 / tastile-web#252). Uses plain liveness — not the `?deep=1`
+# Core readiness probe — so a Core API outage never restart-loops web.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+
 CMD ["node", "server.js"]
