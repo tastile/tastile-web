@@ -6,8 +6,8 @@
  * `Result<T, ApiError>` rather than throwing, so the UI can render
  * structured failure states (conflict, not found, unauthenticated).
  *
- * Auth: browser code must NEVER receive or depend on Cognito
- * id_token / refresh_token. When `useProxyBridge` is true, all calls
+ * Auth: browser code must NEVER receive or depend on raw
+ * authentication tokens. When `useProxyBridge` is true, all calls
  * go through `/api/proxy` which attaches the v1 bearer token (or the
  * web-bridge headers) server-side from the httpOnly cookie. When the
  * client targets the local v1 daemon directly (e.g. E2E bypass mode)
@@ -1187,7 +1187,7 @@ export function getCoreClient(): CoreClient {
   _client = new CoreClient({
     baseUrl: clientBaseUrl,
     useProxyBridge: usesCloudProxy,
-    // Browser code never holds Cognito tokens. The proxy bridge adds the
+    // Browser code never holds auth tokens. The proxy bridge adds the
     // v1 bearer token server-side; the local v1 daemon is reached only
     // when `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` and trusts the dev actor.
     tokenProvider: async () => null,
