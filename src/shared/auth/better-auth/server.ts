@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { nextCookies } from "better-auth/next-js";
 import { bearer } from "better-auth/plugins/bearer";
 import { twoFactor } from "better-auth/plugins/two-factor";
@@ -44,6 +45,21 @@ async function authDatabase(): Promise<Pool> {
   return cachedPool;
 }
 
+// web#258: when TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS is set, self-service
+// sign-up is restricted to the listed email domains (comma-separated,
+// case-insensitive). Unset/empty keeps the current open behavior; the
+// acceptance deployment sets it to `tastile-acceptance.invalid` so only
+// fixture accounts can be created while the env is public.
+function signupAllowedDomains(): string[] | null {
+  const raw = process.env.TASTILE_SIGNUP_ALLOWED_EMAIL_DOMAINS?.trim();
+  if (!raw) return null;
+  const domains = raw
+    .split(",")
+    .map((d) => d.trim().toLowerCase())
+    .filter(Boolean);
+  return domains.length > 0 ? domains : null;
+}
+
 function socialProviders() {
   const providers: Record<string, unknown> = {};
   const googleClientId = process.env.GOOGLE_CLIENT_ID?.trim();
@@ -74,7 +90,8 @@ async function createAuth() {
     trustedOrigins: [publicOrigin],
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      autoSignIn: true,
+      requireEmailVerification: false,
       sendResetPassword: async ({ user, url }) => {
         await sendAuthEmail({
           to: user.email,
@@ -85,9 +102,9 @@ async function createAuth() {
       },
     },
     emailVerification: {
-      // Send the confirmation mail immediately at sign-up so the flow has
-      // no dead end (dev: link is logged when SES is not configured).
-      sendOnSignUp: true,
+      // Email ownership confirmation is optional for the minimal release.
+      // Keep the sender hook available for explicit verification flows.
+      sendOnSignUp: false,
       sendVerificationEmail: async ({ user, url }) => {
         await sendAuthEmail({
           to: user.email,
@@ -113,6 +130,21 @@ async function createAuth() {
         strategy: "compact",
         refreshCache: false,
       },
+    },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (ctx.path !== "/sign-up/email") return;
+        const allowed = signupAllowedDomains();
+        if (!allowed) return;
+        const body = ctx.body as { email?: unknown } | undefined;
+        const email = typeof body?.email === "string" ? body.email : "";
+        const domain = email.split("@")[1]?.trim().toLowerCase() ?? "";
+        if (!domain || !allowed.includes(domain)) {
+          throw new APIError("FORBIDDEN", {
+            message: "Sign-up is not available for this email address.",
+          });
+        }
+      }),
     },
     plugins: [bearer(), twoFactor(), nextCookies()],
   });

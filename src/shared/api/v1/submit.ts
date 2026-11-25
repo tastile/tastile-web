@@ -29,8 +29,8 @@ export interface SubmitOptions {
  * Construct a ApiClient for the web app.
  *
  * Honors `NEXT_PUBLIC_E2E_BYPASS_AUTH=1` for local development: when set,
- * `getIdToken` returns the dev token instead of calling Cognito. The v1
- * daemon must be configured to accept the token (out of scope here).
+ * `getIdToken` returns the dev token instead of the session API token.
+ * The v1 daemon must be configured to accept the token (out of scope here).
  */
 export function makeClient(): ApiClient {
   const e2eBypass = process.env.NEXT_PUBLIC_E2E_BYPASS_AUTH === "1";

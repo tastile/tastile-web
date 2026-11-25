@@ -1,0 +1,96 @@
+{
+  "note": "QuickCreate real-browser E2E on verify stack 127.0.0.1:3124 / core 127.0.0.1:31410; real Better Auth signup; Chromium via Playwright; run 2026-11-19T09:26Z",
+  "steps": [
+    {
+      "name": "signup",
+      "data": {
+        "status": 200
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "dashboard-url",
+      "data": {
+        "url": "http://127.0.0.1:3124/dashboard/timeline/month"
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "bridge-early",
+      "data": {
+        "status": 200
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "after-optin",
+      "data": {
+        "runVisible": true,
+        "panelText": "v2 で評価"
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "v2-result",
+      "data": {
+        "text": "候補 14 件 / status: ok / 11/20 00:00 → 00:30 … 11/27 / ほか 6 件"
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "adopted",
+      "data": {},
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "schedule-definition",
+      "data": {
+        "status": 200,
+        "source_tile_id": "01a1f320-ab85-7171-87b9-d0716d11f914",
+        "occurrence_ids": 90,
+        "placement_ids": 90
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "after-submit",
+      "data": {
+        "panelStillOpen": false
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "source-detail",
+      "data": {
+        "status": 200,
+        "keys": [
+          "source",
+          "definition",
+          "relations",
+          "occurrences",
+          "placements"
+        ]
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "materialized",
+      "data": {
+        "occurrences": 90,
+        "placements": 90,
+        "span": "15:00-15:30Z daily (=00:00-00:30 JST)",
+        "range": "2026-11-18T15:00Z..2027-02-15T15:30Z"
+      },
+      "at": "2026-11-19T09:26Z"
+    },
+    {
+      "name": "weekly-unsupported",
+      "data": {
+        "runVisible": false,
+        "adoptVisible": false,
+        "text": "曜日指定・月次ルール・除外日など v2 が表現できない条件が含まれるため評価できません"
+      },
+      "at": "2026-11-19T09:26Z"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+{"error":"Invalid request","issues":[{"expected":"object","code":"invalid_type","path":["input"],"message":"Invalid input: expected object, received undefined"}]}
+HTTP 400

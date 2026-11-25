@@ -26,7 +26,7 @@ permissions:
 
 jobs:
   pr-smoke:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -52,7 +52,7 @@ jobs:
   # (Issue #153, plan D10).  Only the grant-store.integration.test.ts
   # suite runs here so the per-PR feedback stays fast.
   cli-auth-postgres:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     services:
       postgres:
         image: postgres:16
@@ -60,7 +60,7 @@ jobs:
           POSTGRES_DB: cli_auth_test
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
-        ports: ["5432:5432"]
+        ports: ["5432"]
         options: >-
           --health-cmd "pg_isready -U test -d cli_auth_test"
           --health-interval 5s --health-timeout 5s --health-retries 10
@@ -79,5 +79,11 @@ jobs:
           bun-version: 1.4.2
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Resolve postgres host port
+        # Ephemeral host port avoids 5432 collisions between concurrent
+        # self-hosted jobs sharing one docker daemon.
+        run: |
+          port="${{ job.services.postgres.ports['5432'] }}"
+          echo "TASTILE_AUTH_DATABASE_URL=postgres://test:test@localhost:${port}/cli_auth_test" >> "$GITHUB_ENV"
       - name: Run grant-store concurrency integration test
         run: bun test src/shared/auth/cli/grant-store.integration.test.ts

@@ -55,6 +55,21 @@ describe("v1ActiveTileSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  it("defaults execution_state to ACTIVE when an older Core omits it", () => {
+    const parsed = v1ActiveTileSchema.parse(validSnapshot);
+    expect(parsed.execution_state).toBe(0);
+  });
+
+  it("parses a PAUSED execution_state", () => {
+    const parsed = v1ActiveTileSchema.parse({ ...validSnapshot, execution_state: 1 });
+    expect(parsed.execution_state).toBe(1);
+  });
+
+  it("rejects a finished execution_state", () => {
+    const result = v1ActiveTileSchema.safeParse({ ...validSnapshot, execution_state: 2 });
+    expect(result.success).toBe(false);
+  });
+
   it("ignores unknown fields for forward compatibility", () => {
     const parsed = v1ActiveTileSchema.parse({ ...validSnapshot, extra_future_field: "ok" });
     expect(parsed.tile_id).toBe(validSnapshot.tile_id);
@@ -70,7 +85,7 @@ describe("fetchV1ActiveTile", () => {
     const res = (await fetchV1ActiveTile()) as Result<Awaited<ReturnType<typeof fetchV1ActiveTile>> extends infer R ? R extends { ok: true; data: infer D } ? D : never : never>;
     expect(res.ok).toBe(true);
     if (res.ok) {
-      expect(res.data).toEqual(validSnapshot);
+      expect(res.data).toEqual({ ...validSnapshot, execution_state: 0 });
     }
   });
 

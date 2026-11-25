@@ -1,0 +1,176 @@
+{
+  "request": {
+    "expected_revision": null,
+    "idempotency_key": "3fa9a136-018e-4803-af03-f2aea982773e",
+    "occurred_at": "2026-11-19T06:22:53.917Z",
+    "payload": {
+      "source_client_local_id": "01a1f278-ede6-71bb-8f0b-ea80ad5fce40",
+      "source_schedule": {
+        "required_duration_ms": 3600000,
+        "generation": {
+          "kind": 1,
+          "starts_at": "2026-11-19T12:22:53.917Z",
+          "interval_ms": 43200000,
+          "ends_at": "2026-12-03T06:22:53.917Z",
+          "weekday_mask": null,
+          "date_range_start": null,
+          "date_range_end": "2026-12-03",
+          "excluded_dates": [],
+          "offset_min": 540
+        },
+        "window": {
+          "start_offset_ms": 0,
+          "end_offset_ms": 3600000
+        },
+        "source_window_include": 1,
+        "anchor_mode": 0,
+        "split_policy": {
+          "kind": 0,
+          "min_segment_ms": null,
+          "max_segment_ms": null,
+          "max_segments": null
+        },
+        "priority": 0,
+        "schedule_kind": "duration_only",
+        "schedulable_window": null
+      },
+      "source_horizon": {
+        "start": "2026-11-19T12:22:53.917Z",
+        "end": "2026-12-03T06:22:53.917Z"
+      },
+      "tile": {
+        "title": "diff-interval",
+        "description": null,
+        "color": "#3b82f6",
+        "icon": "check-circle",
+        "external_id": null
+      },
+      "plan": {
+        "role": 0,
+        "references": [],
+        "completion": {
+          "root": {
+            "Term": {
+              "Requirement": {
+                "time_requirement": "01a1f278-ede5-7f0f-bd1b-dd4ab116c172",
+                "state": "Met"
+              }
+            }
+          },
+          "time_requirements": [
+            {
+              "id": "01a1f278-ede5-7f0f-bd1b-dd4ab116c172",
+              "observation": {
+                "scope": 1,
+                "source": 0,
+                "aggregate": 0,
+                "quantifier": 0,
+                "reference": null
+              },
+              "required": {
+                "min": 3600000,
+                "max": null
+              },
+              "preferred": null
+            }
+          ],
+          "tasks": []
+        },
+        "planning": {
+          "placement_rules": [],
+          "nesting_rules": []
+        },
+        "metrics": [],
+        "decisions": []
+      },
+      "reference_targets": [],
+      "windows": [],
+      "frame_rules": [],
+      "recurrence": null,
+      "flows": [],
+      "relations": []
+    }
+  },
+  "response": {
+    "command_id": "01a1f278-edbf-7342-ae58-8cb658dce2a0",
+    "accepted_at": "2026-11-19T06:22:53.887792737Z",
+    "aggregate": {
+      "kind": 4,
+      "id": "01a1f278-edc1-7d21-af93-0a1e64d1b819"
+    },
+    "revision": 1,
+    "result": 2,
+    "pending": [],
+    "aggregate_meta": {
+      "tile_id": "01a1f278-edc1-7d21-af93-0a1e64d1b819",
+      "plan_id": "01a1f278-edc1-7d21-af93-0a2ecbf834a3",
+      "recurring_id": null,
+      "frame_rule_id": null,
+      "changeset_id": null,
+      "change_ids": [],
+      "window_ids": [],
+      "flow_ids": [],
+      "source_tile_id": "01a1f278-edc1-7d21-af93-0a1e64d1b819",
+      "occurrence_ids": [
+        "01a1f278-edc4-7d10-9f8e-1002c62bc42d",
+        "01a1f278-edc4-7d10-9f8e-101999e9b3d4",
+        "01a1f278-edc4-7d10-9f8e-1028cb37df93",
+        "01a1f278-edc4-7d10-9f8e-103cedae063a",
+        "01a1f278-edc4-7d10-9f8e-104415c2f8e3",
+        "01a1f278-edc5-7780-98da-2bc55f0d962e",
+        "01a1f278-edc5-7780-98da-2bda62657741",
+        "01a1f278-edc5-7780-98da-2beaf24dfa6b",
+        "01a1f278-edc5-7780-98da-2bfe8f5ecd70",
+        "01a1f278-edc5-7780-98da-2c0aa0f6deb7",
+        "01a1f278-edc5-7780-98da-2c1406a2e785",
+        "01a1f278-edc5-7780-98da-2c218a164309",
+        "01a1f278-edc5-7780-98da-2c3129bfc73a",
+        "01a1f278-edc6-7293-b019-ebfa7539c140",
+        "01a1f278-edc6-7293-b019-ec09ade1a416",
+        "01a1f278-edc6-7293-b019-ec12e8b2e925",
+        "01a1f278-edc6-7293-b019-ec25a0d51db4",
+        "01a1f278-edc6-7293-b019-ec3102c4fc03",
+        "01a1f278-edc6-7293-b019-ec491caae5c7",
+        "01a1f278-edc7-70a2-8b96-8970f2e2de1a",
+        "01a1f278-edc7-70a2-8b96-8981e6a587e1",
+        "01a1f278-edc7-70a2-8b96-8998e4d6263c",
+        "01a1f278-edc7-70a2-8b96-89ae8a3bf6e0",
+        "01a1f278-edc7-70a2-8b96-89be61f0efd9",
+        "01a1f278-edc7-70a2-8b96-89c0f6e0299e",
+        "01a1f278-edc8-7a63-972e-8948624875ac",
+        "01a1f278-edc8-7a63-972e-89582f804bc2"
+      ],
+      "placement_ids": [
+        "01a1f278-ee3b-7340-b881-de6eef55119a",
+        "01a1f278-ee3b-7340-b881-deb610981c22",
+        "01a1f278-ee3c-7693-b255-571c54192e78",
+        "01a1f278-ee3d-7141-8bab-1be68229daac",
+        "01a1f278-ee3d-7141-8bab-1c3478b33c97",
+        "01a1f278-ee3e-7d11-b3ab-87f57fdfe115",
+        "01a1f278-ee3e-7d11-b3ab-8843a7442886",
+        "01a1f278-ee3f-73b1-a919-c96b7c77a1af",
+        "01a1f278-ee3f-73b1-a919-c9baf02aaa70",
+        "01a1f278-ee40-7713-99b1-3a4e29f7e32d",
+        "01a1f278-ee40-7713-99b1-3a9f7b59dd29",
+        "01a1f278-ee41-7e10-bfce-673d7dd2dec2",
+        "01a1f278-ee41-7e10-bfce-6784d05adea2",
+        "01a1f278-ee41-7e10-bfce-67d4e72f1433",
+        "01a1f278-ee42-7b81-b5e4-d6c61dd979bb",
+        "01a1f278-ee42-7b81-b5e4-d711d0cd780c",
+        "01a1f278-ee43-7df3-b450-4a8414fcffe3",
+        "01a1f278-ee43-7df3-b450-4ad3b24fcf25",
+        "01a1f278-ee44-7c01-b3d5-fdb477b497c4",
+        "01a1f278-ee45-7c43-b5f9-5843f0e1eb96",
+        "01a1f278-ee45-7c43-b5f9-58946acff805",
+        "01a1f278-ee46-7c42-bbef-dc59d8897f83",
+        "01a1f278-ee46-7c42-bbef-dca1c7525b13",
+        "01a1f278-ee47-7fc3-a691-f07a2daaa292",
+        "01a1f278-ee47-7fc3-a691-f0c661bc045c",
+        "01a1f278-ee47-7fc3-a691-f11c3ae1cc91",
+        "01a1f278-ee48-7a41-ae60-6b0fec78ac6e"
+      ],
+      "prompt_id": null,
+      "unplaced_occurrences": []
+    }
+  }
+}

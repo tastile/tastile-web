@@ -1,0 +1,129 @@
+{
+  "request": {
+    "expected_revision": null,
+    "idempotency_key": "b4b6ef3a-769b-4506-81df-803e0c4b6cff",
+    "occurred_at": "2026-11-17T16:08:46.630Z",
+    "payload": {
+      "source_client_local_id": "01a1ea44-9932-76da-bc27-4ede70796113",
+      "source_schedule": {
+        "required_duration_ms": 3600000,
+        "generation": {
+          "kind": 3,
+          "starts_at": "2026-11-17T20:08:46.630Z",
+          "ends_at": "2027-01-16T16:08:46.630Z",
+          "monthly_rule": {
+            "kind": 0,
+            "day_of_month": 15
+          },
+          "weekday_mask": null,
+          "date_range_start": null,
+          "date_range_end": "2027-01-16",
+          "excluded_dates": [],
+          "offset_min": 540
+        },
+        "window": {
+          "start_offset_ms": 0,
+          "end_offset_ms": 3600000
+        },
+        "source_window_include": 1,
+        "anchor_mode": 0,
+        "split_policy": {
+          "kind": 0,
+          "min_segment_ms": null,
+          "max_segment_ms": null,
+          "max_segments": null
+        },
+        "priority": 0,
+        "schedule_kind": "duration_only",
+        "schedulable_window": null
+      },
+      "source_horizon": {
+        "start": "2026-11-17T20:08:46.630Z",
+        "end": "2027-01-16T16:08:46.630Z"
+      },
+      "tile": {
+        "title": "diff-monthly",
+        "description": null,
+        "color": "#3b82f6",
+        "icon": "check-circle",
+        "external_id": null
+      },
+      "plan": {
+        "role": 0,
+        "references": [],
+        "completion": {
+          "root": {
+            "Term": {
+              "Requirement": {
+                "time_requirement": "01a1ea44-9931-7051-8641-7307a7478500",
+                "state": "Met"
+              }
+            }
+          },
+          "time_requirements": [
+            {
+              "id": "01a1ea44-9931-7051-8641-7307a7478500",
+              "observation": {
+                "scope": 1,
+                "source": 0,
+                "aggregate": 0,
+                "quantifier": 0,
+                "reference": null
+              },
+              "required": {
+                "min": 3600000,
+                "max": null
+              },
+              "preferred": null
+            }
+          ],
+          "tasks": []
+        },
+        "planning": {
+          "placement_rules": [],
+          "nesting_rules": []
+        },
+        "metrics": [],
+        "decisions": []
+      },
+      "reference_targets": [],
+      "windows": [],
+      "frame_rules": [],
+      "recurrence": null,
+      "flows": [],
+      "relations": []
+    }
+  },
+  "response": {
+    "command_id": "01a1ea44-9931-7041-90ef-fcf5ad6ea98d",
+    "accepted_at": "2026-11-17T16:08:46.641584242Z",
+    "aggregate": {
+      "kind": 4,
+      "id": "01a1ea44-9932-7602-8675-462e3f7f725b"
+    },
+    "revision": 1,
+    "result": 2,
+    "pending": [],
+    "aggregate_meta": {
+      "tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+      "plan_id": "01a1ea44-9932-7602-8675-46373fcddf13",
+      "recurring_id": null,
+      "frame_rule_id": null,
+      "changeset_id": null,
+      "change_ids": [],
+      "window_ids": [],
+      "flow_ids": [],
+      "source_tile_id": "01a1ea44-9932-7602-8675-462e3f7f725b",
+      "occurrence_ids": [
+        "01a1ea44-9935-71b2-b503-d3b96de9aa96",
+        "01a1ea44-9935-71b2-b503-d3c86849af26"
+      ],
+      "placement_ids": [
+        "01a1ea44-993a-7951-999b-ed9a99e1367c",
+        "01a1ea44-993b-73b3-bc3b-b71fa1cf6707"
+      ],
+      "prompt_id": null,
+      "unplaced_occurrences": []
+    }
+  }
+}

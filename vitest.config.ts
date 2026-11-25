@@ -55,6 +55,9 @@ export default defineConfig({
     // accept the warning so the gate output is honest about what the
     // runtime emits (see evidence/web-warning-filter.txt).
     pool: "forks",
+    // This host reports 173 CPUs; unbounded file fan-out makes jsdom interaction tests
+    // exceed their 5s timeouts. Keep isolated workers while limiting concurrent forks.
+    maxWorkers: 2,
     // jsdom + Stripe mocks + Next helpers added in 0.1.16 push some
     // workers past the default 4 GB V8 ceiling. The Vitest 4 docs let
     // us pass these to the worker entry without pulling in the legacy

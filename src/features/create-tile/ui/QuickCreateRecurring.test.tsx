@@ -539,6 +539,7 @@ describe("QuickCreateRecurring", () => {
     });
     renderWithMantine(<QuickCreateRecurring />);
     expect(screen.getByTestId("recurring-monthly-day-of-month")).toBeInTheDocument();
+    expect(screen.getByText(/months without that date are skipped/i)).toBeInTheDocument();
     expect(screen.queryByTestId("recurring-monthly-week-of-month")).toBeNull();
     expect(screen.queryByTestId("recurring-monthly-weekday")).toBeNull();
   });

@@ -16,7 +16,9 @@ export function toV1Path(path: string): string {
 }
 
 function getCloudApiBase(): string {
-  if (isE2EBypassEnabled()) return "http://localhost:31400";
+  if (isE2EBypassEnabled()) {
+    return process.env.TASTILE_RUST_API_URL?.trim() || "http://localhost:31400";
+  }
   return getConfiguredCloudApiBase({ assert: true });
 }
 

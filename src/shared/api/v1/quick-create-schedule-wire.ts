@@ -236,16 +236,14 @@ function sourceGeneration(state: QuickCreateScheduleState, now: Date) {
     };
   }
   if (state.recurring.repeatMode === "monthly") {
-    // monthly has no first-class domain support in SourceGenerationKind
-    // (valid: 0 OneTime / 1 Recurring / 2 DemandDriven per v1/02). Map
-    // monthly to Recurring with DAY_MS so the wire stays valid; the
-    // server will expand daily and the date_range_* bounds cap the run.
-    // A future CalendarGenerator unit=monthly wire is the proper fix.
+    // Core v1/02 owns monthly calendar semantics. Keep this separate from
+    // Recurring so missing dates (for example the 31st in February) are
+    // skipped by Core rather than clamped or approximated as daily.
     return {
-      kind: 1 as const,
+      kind: 3 as const,
       starts_at: start ?? now.toISOString(),
-      interval_ms: DAY_MS,
       ends_at: end,
+      monthly_rule: monthlyRuleWire(state),
       ...common,
     };
   }
@@ -340,23 +338,31 @@ function schedulableWindowWire(state: QuickCreateScheduleState):
 
 function monthlyRuleWire(state: QuickCreateScheduleState):
   | null
-  | { by_day: { day_of_month: number } }
-  | { by_weekday: { week: number | "last"; weekday: number } } {
+  | { kind: 0; day_of_month: number }
+  | { kind: 1; week_of_month: number; weekday: number } {
   if (state.recurring.repeatMode !== "monthly") return null;
   if (state.recurring.monthlyKind === "by_day") {
     const dayOfMonth = state.recurring.monthlyDayOfMonth;
-    if (dayOfMonth === null) return null;
-    return { by_day: { day_of_month: dayOfMonth } };
+    if (!Number.isInteger(dayOfMonth) || dayOfMonth === null || dayOfMonth < 1 || dayOfMonth > 31) {
+      return null;
+    }
+    return { kind: 0, day_of_month: dayOfMonth };
   }
   if (state.recurring.monthlyKind === "by_weekday") {
     const week = state.recurring.monthlyWeekOfMonth;
     const weekday = state.recurring.monthlyWeekday;
-    if (week === null || weekday === null) return null;
+    if (
+      !Number.isInteger(week) || week === null || week < 1 || week > 5 ||
+      !Number.isInteger(weekday) || weekday === null || weekday < 0 || weekday > 6
+    ) {
+      return null;
+    }
     return {
-      by_weekday: {
-        week: week === 5 ? "last" : week,
-        weekday,
-      },
+      kind: 1,
+      week_of_month: week,
+      // UI values follow JavaScript's Sunday-first order; Core uses ISO
+      // weekday numbers (Monday=1 through Sunday=7).
+      weekday: weekday === 0 ? 7 : weekday,
     };
   }
   return null;
@@ -619,7 +625,6 @@ export function buildQuickCreateSchedulePayload(
       priority: state.source.priority,
       schedule_kind: scheduleKindWire(state),
       schedulable_window: schedulableWindowWire(state),
-      monthly_rule: monthlyRuleWire(state),
     },
     source_horizon: { start: horizonStart, end: horizonEnd },
     tile: {

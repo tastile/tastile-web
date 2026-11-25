@@ -1,4 +1,5 @@
 import { type Result, getCoreClient } from "@/shared/api/endpoints";
+import { ExecutionState } from "@/shared/model/v1/constants";
 import * as z from "zod";
 
 /**
@@ -15,20 +16,29 @@ export interface V1ActiveTileSnapshot {
   title: string;
   span_start: string;
   span_end: string;
+  /** `ExecutionState` of the open execution: ACTIVE (0) or PAUSED (1). */
+  execution_state: OpenExecutionState;
 }
+
+type OpenExecutionState = typeof ExecutionState.ACTIVE | typeof ExecutionState.PAUSED;
 
 /**
  * Wire schema for the active-tile response. The default `$strip`
  * config keeps unknown fields out of the parsed object so future
  * server additions cannot break the client.
  */
-export const v1ActiveTileSchema: z.ZodType<V1ActiveTileSnapshot> = z.object({
+export const v1ActiveTileSchema: z.ZodType<V1ActiveTileSnapshot, unknown> = z.object({
   tile_id: z.string().uuid(),
   placement_id: z.string().uuid(),
   execution_id: z.union([z.string().uuid(), z.null()]),
   title: z.string(),
   span_start: z.string().datetime(),
   span_end: z.string().datetime(),
+  // Core releases before core#224 only reported ACTIVE executions and did
+  // not send the field, so its absence means ACTIVE.
+  execution_state: z
+    .union([z.literal(ExecutionState.ACTIVE), z.literal(ExecutionState.PAUSED)])
+    .default(ExecutionState.ACTIVE),
 });
 
 /**

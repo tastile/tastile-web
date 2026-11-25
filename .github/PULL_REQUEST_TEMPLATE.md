@@ -42,8 +42,7 @@ pre-merge に発火する。
 
 ## Checks
 
-- [ ] `verify-tastile-change` Skill を発火した
-- [ ] `tastile-precommit-review` Skill (web canonical, ADR-0011) を発火した
+- [ ] `verify-tastile-change` Skill を発火した (PR 直前 binding verification; 旧 `tastile-precommit-review` Skill は 2026-09-29 廃止、ADR-0012)
 - [ ] 関連 ADR / Skill を更新した (この PR が workflow / canonical contract を変える場合)
 - [ ] `docs/HARNESS.md` §n を更新した (この PR が architecture / 手順を変える場合)
 - [ ] `AGENTS.md` の ADR pointer を更新した (この PR が web の binding ADR を変える場合)

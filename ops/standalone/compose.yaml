@@ -1,0 +1,40 @@
+# Tastile web — standalone runtime on a VM (NF04-W01 / tastile-web#252).
+#
+# The image is the multi-stage Containerfile at the repo root: it produces
+# the Next.js `output: "standalone"` bundle on node:*-slim and serves it
+# with `node server.js`. Build-time `NEXT_PUBLIC_*` values are inlined by
+# `bun run build:prod`, which requires Infisical-injected secrets, so the
+# canonical build path is `infisical run` (see ops/standalone/README.md).
+#
+# Usage (from repo root):
+#   infisical run --env=prod --path=/tastile/web -- \
+#     docker compose -f ops/standalone/compose.yaml up -d --build
+#
+# Runtime secrets (CLOUD_API_BASE, TASTILE_AUTH_DATABASE_URL, Stripe, ...)
+# are injected by the same `infisical run` wrapper; do NOT commit an
+# env_file with real values.
+
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: Containerfile
+      args:
+        # TASTILE_INFISICAL_INJECTED=1 tells the Containerfile that the
+        # build runs under `infisical run`; the build fails closed without it.
+        TASTILE_INFISICAL_INJECTED: "1"
+        # APP_VERSION is inlined as NEXT_PUBLIC_APP_VERSION (self-reported
+        # by /api/version and /api/health). Override per release.
+        APP_VERSION: ${APP_VERSION:-0.0.0-dev}
+    image: tastile-web:standalone
+    container_name: tastile-web
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+    restart: unless-stopped
+    # Liveness comes from the image HEALTHCHECK (/api/health). Inspect with
+    # `docker inspect --format '{{.State.Health.Status}}' tastile-web` or
+    # `docker compose -f ops/standalone/compose.yaml ps`.

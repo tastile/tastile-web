@@ -174,7 +174,7 @@ export interface RecurringSlice {
   monthlyDayOfMonth: number | null;
   /** 1-5 (5 is the alias for "last" week of the month). Only meaningful when `monthlyKind === "by_weekday"`. */
   monthlyWeekOfMonth: number | null;
-  /** 0-6 (Mon..Sun). Stored as a single-bit mirror on `weekdayMask` for weekly reuse. */
+  /** 0-6 in the selector's Sunday-first order; the wire maps this to ISO weekday. */
   monthlyWeekday: number | null;
 }
 
@@ -754,7 +754,7 @@ function defaultRecurring(): RecurringSlice {
     monthlyKind: null,
     monthlyDayOfMonth: 1,
     monthlyWeekOfMonth: 1,
-    monthlyWeekday: 0, // bit 0 (Monday) — matches the weekdayMask convention
+    monthlyWeekday: 0, // Sunday — matches weekdayLabelsFor's display order
   };
 }
 
@@ -987,7 +987,7 @@ function defaultsForWorkflow(
         monthlyKind: "by_day",
         monthlyDayOfMonth: now.getDate(),
         monthlyWeekOfMonth: 1,
-        monthlyWeekday: 0,
+        monthlyWeekday: 0, // Sunday — matches weekdayLabelsFor's display order
       },
       identity: {
         ...defaultIdentity(),

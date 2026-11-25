@@ -53,16 +53,14 @@ interface TileResponse {
   next_actionable_tile_id?: string | null;
   next_actionable_start_at?: string | null;
 }
-function isTileListResponse(value: unknown): value is TileResponse {
-  // The v1/tiles endpoint returns a plain JSON array of TileListView objects,
-  // not the {tiles: [...]} wrapper this validator was originally written for.
-  // Accept both shapes so the dashboard pages (which lean on this hook) render
-  // real tile rows instead of an empty state when the daemon is reachable.
-  if (Array.isArray(value)) return true;
-  return Boolean(
-    value && typeof value === "object" && Array.isArray((value as { tiles?: unknown }).tiles),
-  );
-}
+
+/**
+ * OpenAPI v3.0.0 `GET /v1/tiles` is keyset-paginated
+ * (`{items, count, next_cursor}`, page size 1..=1000). `limit` is a page
+ * size on the wire; `callAllPages` + `maxItems` reproduce the legacy
+ * "first N rows" cap the dashboard callers intend.
+ */
+const TILE_PAGE_SIZE_MAX = 1000;
 
 export function useTileList(args: UseTileListArgs = {}) {
   const queryClient = useQueryClient();
@@ -92,31 +90,28 @@ export function useTileList(args: UseTileListArgs = {}) {
   const query = useQuery({
     queryKey: [...queryKeys.tiles, keyArgs] as const,
     queryFn: async (): Promise<TileResponse> => {
-      const res = await getCoreClient().call<TileResponse | TileListView[]>("getTiles", {
+      const pageSize = Math.min(args.limit ?? TILE_PAGE_SIZE_MAX, TILE_PAGE_SIZE_MAX);
+      const res = await getCoreClient().callAllPages<TileListView>("getTiles", {
         query: {
           view_mode: args.viewMode,
           lifecycle: args.lifecycle,
-          limit: args.limit,
+          limit: pageSize,
           search: args.search,
           exclude_future: args.excludeFuture,
           range: args.range,
           granularity: args.granularity,
           owner_ids: ownerIdsKey || undefined,
         },
+        maxItems: args.limit,
       });
       if (!res.ok) throw new Error(res.error.message);
-      if (!isTileListResponse(res.data))
-        throw new Error("Unexpected /v1/tiles response shape: missing tiles array");
-      // v1/tiles returns a plain array; normalize so downstream consumers can
-      // always read .tiles / .next_actionable_tile_id uniformly.
-      if (Array.isArray(res.data)) {
-        return {
-          tiles: res.data,
-          next_actionable_tile_id: null,
-          next_actionable_start_at: null,
-        };
-      }
-      return res.data;
+      // The paged envelope carries no next-actionable fields; keep the
+      // TileResponse shape so downstream consumers stay uniform.
+      return {
+        tiles: res.data,
+        next_actionable_tile_id: null,
+        next_actionable_start_at: null,
+      };
     },
   });
   useEffect(() => {

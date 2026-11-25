@@ -127,7 +127,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const expiresAtIso = cliTokenExpiresAtIso();
   const minted = await mintTastileApiTokenForUser({
     userSub: consumed.userSub,
-    label: "tastile-cli",
+    // The grant's client_id is the token label so the account token list
+    // can tell `tastile-cli` and `tastile-desktop` credentials apart
+    // (web#253 contract). Both are registered, reviewed values — never
+    // caller-supplied free text.
+    label: consumed.clientId,
     scopes: consumed.scopesEffective,
     expiresAtIso,
   });

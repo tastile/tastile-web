@@ -8,8 +8,10 @@
  * failure states (validation / forbidden / stale revision / etc.) without
  * try/catch noise.
  *
- * Auth: the Cognito id_token is fetched via `client.getIdToken` on every
- * call so silent renewals are honored.
+ * Auth: callers supply `getIdToken`, which returns the current core API
+ * token (Better Auth session → bridge-issued `tastile_api_token` cookie,
+ * or a minted API token). It is resolved per call so token rotation is
+ * honored.
  */
 
 import { ApiErrorKind } from "@/shared/model/v1/constants";
@@ -22,6 +24,109 @@ export interface ApiClient {
 }
 
 export type Result<T> = { ok: true; data: T; status: number } | { ok: false; error: ApiError };
+
+/**
+ * Envelope shared by every keyset-paginated v1 list endpoint
+ * (`{items, count, next_cursor}`; OpenAPI contract v2.0.0). `next_cursor`
+ * is absent or null on the last page.
+ */
+export interface PagedRead<T> {
+  items: T[];
+  count: number;
+  next_cursor?: string | null;
+}
+
+/** Upper bound on followed pages; guards against a non-terminating cursor. */
+const MAX_LIST_PAGES = 1000;
+
+function withQuery(
+  path: string,
+  params: Record<string, string | number | undefined>,
+): string {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) search.set(key, String(value));
+  }
+  const query = search.toString();
+  if (!query) return path;
+  return `${path}${path.includes("?") ? "&" : "?"}${query}`;
+}
+
+/**
+ * Follow `next_cursor` until null, concatenating every page's items.
+ * Never silently truncates: a repeated cursor or the page cap surfaces as
+ * a RETRYABLE error instead of a partial list.
+ */
+export async function followPages<T>(
+  first: PagedRead<T>,
+  firstStatus: number,
+  fetchNext: (cursor: string) => Promise<Result<PagedRead<T>>>,
+): Promise<Result<T[]>> {
+  if (!Array.isArray(first?.items)) {
+    return {
+      ok: false,
+      error: networkError("list response is missing an items array"),
+    };
+  }
+  const items = [...first.items];
+  const seenCursors = new Set<string>();
+  let status = firstStatus;
+  let cursor = first.next_cursor ?? null;
+  for (let page = 0; cursor !== null; page += 1) {
+    if (page >= MAX_LIST_PAGES) {
+      return {
+        ok: false,
+        error: networkError(`pagination exceeded ${MAX_LIST_PAGES} pages`),
+      };
+    }
+    if (seenCursors.has(cursor)) {
+      return {
+        ok: false,
+        error: networkError("pagination cursor did not advance"),
+      };
+    }
+    seenCursors.add(cursor);
+    const res = await fetchNext(cursor);
+    if (!res.ok) return { ok: false, error: res.error };
+    if (!Array.isArray(res.data?.items)) {
+      return {
+        ok: false,
+        error: networkError("list page is missing an items array"),
+      };
+    }
+    status = res.status;
+    items.push(...res.data.items);
+    cursor = res.data.next_cursor ?? null;
+  }
+  return { ok: true, data: items, status };
+}
+
+/**
+ * GET a keyset-paginated list endpoint and return ALL items across pages.
+ * `params` are sent on every request; `cursorParam` names the cursor query
+ * parameter (default `cursor`).
+ */
+export async function getAllPages<T>(
+  client: ApiClient,
+  path: string,
+  options?: {
+    params?: Record<string, string | number | undefined>;
+    cursorParam?: string;
+  },
+): Promise<Result<T[]>> {
+  const cursorParam = options?.cursorParam ?? "cursor";
+  const first = await getRead<PagedRead<T>>(
+    client,
+    withQuery(path, { ...options?.params, [cursorParam]: undefined }),
+  );
+  if (!first.ok) return { ok: false, error: first.error };
+  return followPages(first.data, first.status, (cursor) =>
+    getRead<PagedRead<T>>(
+      client,
+      withQuery(path, { ...options?.params, [cursorParam]: cursor }),
+    ),
+  );
+}
 
 const FORBIDDEN_NO_TOKEN: ApiError = {
   kind: ApiErrorKind.FORBIDDEN,

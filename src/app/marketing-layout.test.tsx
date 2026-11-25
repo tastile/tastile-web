@@ -27,7 +27,8 @@ vi.mock("@/shared/i18n/use-translation", () => ({
 				"auth.signup.emailLabel": "Email",
 				"auth.signup.passwordLabel": "Password",
 				"auth.signup.backToSignin": "Back to sign in",
-				"auth.signup.success": "Verification email sent. Confirm your address, then sign in.",
+				"auth.signup.success": "Account created. Continue to Tastile below.",
+				"auth.signup.continueToApp": "Open Tastile",
 				"auth.signup.termsLink": "Terms of Service",
 				"auth.signup.privacyLink": "Privacy Policy",
 				"auth.signup.legalNotice":

@@ -9,6 +9,14 @@ describe("getClient", () => {
     expect(client?.scopes).toEqual(["tastile.read", "tastile.write"]);
   });
 
+  it("registers tastile-desktop with the same public-client scopes (web#253)", () => {
+    const client = getClient("tastile-desktop");
+    expect(client?.id).toBe("tastile-desktop");
+    expect(client?.scopes).toEqual(["tastile.read", "tastile.write"]);
+    // Public clients never receive `all` / OwnerAdmin scopes.
+    expect(client?.scopes).not.toContain("all");
+  });
+
   it("returns undefined for an unknown id (no leakage of registered names)", () => {
     expect(getClient("not-a-client")).toBeUndefined();
     expect(getClient("")).toBeUndefined();

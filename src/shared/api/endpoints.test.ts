@@ -206,6 +206,98 @@ describe("CoreClient", () => {
   });
 });
 
+describe("CoreClient.callAllPages", () => {
+  function pagedClient(fetchImpl: ReturnType<typeof vi.fn>) {
+    return new CoreClient({
+      baseUrl: "/api/proxy",
+      tokenProvider: async () => null,
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      useProxyBridge: true,
+    });
+  }
+
+  function page(items: unknown[], nextCursor: string | null) {
+    return new Response(JSON.stringify({ items, count: items.length, next_cursor: nextCursor }));
+  }
+
+  it("follows next_cursor until null and concatenates items", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(page([{ id: "t1" }], "c2"))
+      .mockResolvedValueOnce(page([{ id: "t2" }], null));
+    const client = pagedClient(fetchImpl);
+
+    const res = await client.callAllPages<{ id: string }>("getTiles");
+
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data.map((t) => t.id)).toEqual(["t1", "t2"]);
+    expect(calledUrls(fetchImpl)).toEqual([
+      "/api/proxy/read/tiles",
+      "/api/proxy/read/tiles?cursor=c2",
+    ]);
+  });
+
+  it("preserves query params on every page request", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(page([], "c2"))
+      .mockResolvedValueOnce(page([], null));
+    const client = pagedClient(fetchImpl);
+
+    await client.callAllPages("getTiles", { query: { lifecycle: "ready", limit: 50 } });
+
+    expect(calledUrls(fetchImpl)).toEqual([
+      "/api/proxy/read/tiles?lifecycle=ready&limit=50",
+      "/api/proxy/read/tiles?lifecycle=ready&limit=50&cursor=c2",
+    ]);
+  });
+
+  it("stops at maxItems and slices to the cap", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(page([{ id: "a" }, { id: "b" }, { id: "c" }], "c2"));
+    const client = pagedClient(fetchImpl);
+
+    const res = await client.callAllPages<{ id: string }>("getTiles", { maxItems: 2 });
+
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data.map((t) => t.id)).toEqual(["a", "b"]);
+    // The cap was reached on page 1, so no cursor follow-up is issued.
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("accepts a bare-array body as a single final page", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify([{ id: "t1" }])));
+    const client = pagedClient(fetchImpl);
+
+    const res = await client.callAllPages<{ id: string }>("getTiles");
+
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.data).toHaveLength(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("fails when the cursor does not advance", async () => {
+    const fetchImpl = vi.fn(async () => page([{ id: "t1" }], "same"));
+    const client = pagedClient(fetchImpl);
+
+    const res = await client.callAllPages<{ id: string }>("getTiles");
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.message).toBe("pagination cursor did not advance");
+  });
+
+  it("fails on a body without an items array", async () => {
+    const fetchImpl = vi.fn(async () => new Response(JSON.stringify({ tiles: [] })));
+    const client = pagedClient(fetchImpl);
+
+    const res = await client.callAllPages("getTiles");
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.message).toContain("missing items array");
+  });
+});
+
 describe("getCoreClient", () => {
   // Reset the lazy singleton between tests so the URL/provider decision is
   // isolated per scenario.
@@ -280,9 +372,10 @@ describe("CORE_V1_ENDPOINTS", () => {
         "GET /v1/api-tokens",
         "PATCH /v1/api-tokens/{id}",
         "DELETE /v1/api-tokens/{id}",
+        "GET /v1/sessions",
       ]),
     );
-    expect(CORE_V1_ENDPOINTS).toHaveLength(149);
+    expect(CORE_V1_ENDPOINTS).toHaveLength(150);
   });
 });
 
