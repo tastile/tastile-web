@@ -2,7 +2,7 @@
  * [D3a] FrameRule persistence E2E
  *
  * Issue: rebui-coder/tastile-web#47
- * Plan:  tastile-web/docs/plans/D3a-frame-rule-e2e.md
+ * Plan:  tastile-web/docs/archive/plans/2026-08-quickcreate-e2e-campaign/plans/D3a-frame-rule-e2e.md
  *
  * Runtime end-to-end test that opens the QuickCreate panel, configures a
  * single weekday FrameRule (daily, 09:00-17:00, Mon-Fri), submits, and

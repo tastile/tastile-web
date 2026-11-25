@@ -128,7 +128,7 @@ CI 側の gating:
 - **`playwright.config.ts`**: `webServer.env` ブロックがインデント崩れている既存形（commit
   `ecb4afc3` で audit issue #96 由来の `TASTILE_WEB_BRIDGE_SECRET` 追加）。`env` 内に収めるのが本来形。
 - **`.gitignore`**: `.tmp/`、`.reference/`、`evidence/*.{log,network-response}`、
-  `openapi.json`、`.openapi-cache.json`、`dev-server.{log,pid}`、`docs/plans/evidence/**/screenshots/`
+  `openapi.json`、`.openapi-cache.json`、`dev-server.{log,pid}`、`docs/evidence/**/screenshots/`
   等が ignore 対象（policy §30/§31 準拠）。
 
 ## Environment & secrets
