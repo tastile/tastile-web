@@ -123,3 +123,10 @@
 - `updateTile` endpoint (`src/lib/api/endpoints.ts:203-210`): `POST /commands/tile/update` with v7 envelope shape.
 - Data path is viable once `updateTileCommand` is extended: `getTile` provides the snapshot, QuickTileCreate's unified edit form collects changes, and the extended `updateTileCommand` carries `recurrence` through to the backend.
 - Path divergence note: `endpoints.ts:203-210` advertises `POST /commands/tile/update` but `updateTileCommand` in `tile-commands.ts:115` actually calls `POST /v1/tiles/{tileId}/update`. Task 3 must confirm which path the backend serves before extending the builder.
+
+## 2026-11-24 static product site on Cloudflare Pages (NF04-W05 / #256)
+
+- The public marketing surface (`/`, `/pricing`, `/download`, `/privacy`, `/terms`, `/tokushoho`) is now also built as a static site into `site/dist/` by `scripts/build-site.mts` (`bun run site:build`) for Cloudflare Pages Free hosting, so product information renders even when the Core API or the Next.js deployment is down.
+- Boundary: the static site owns only pure-content marketing pages. `/login`, `/auth/*`, `/dashboard`, `/app`, `/cli`, `/docs/api`, and `/api/*` remain on the Next.js app; `site/dist/_redirects` forwards those apex paths to `TASTILE_SITE_APP_ORIGIN` (default `https://app.tastile.app`).
+- The generator renders the real `src/app/**/page.tsx` components with `react-dom/server` `renderToStaticMarkup` and shims `next/link`, `next/navigation`, `next/headers`, and CSS imports via a Bun plugin, so copy cannot drift from `src/` i18n dictionaries. `?lang=` switcher links are rewritten to locale paths (`/`, `/ja/`, `/zh-CN/`, `/ko/`, `/es/` prefixes; legal pages stay English-only like the app).
+- `/docs/api` stays dynamic because Scalar fetches `/api/openapi` at runtime. Deployment to Pages (`wrangler pages deploy`) and DNS cutover are manual steps documented in `site/README.md`.
