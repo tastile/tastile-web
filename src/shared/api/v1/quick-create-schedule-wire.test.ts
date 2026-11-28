@@ -223,11 +223,10 @@ describe("buildQuickCreateSchedulePayload", () => {
       kind: 0,
       ordering: { primary: 1, point: 0, direction: 0 },
       duration_expression: {
-        ReferenceSpan: {
-          referenced_source_ref: {
-            kind: "existing",
-            source_tile_id: "01900000-0000-7000-8000-000000000011",
-          },
+        kind: "reference_span",
+        referenced_source_ref: {
+          kind: "existing",
+          source_tile_id: "01900000-0000-7000-8000-000000000011",
         },
       },
       split_policy: {
