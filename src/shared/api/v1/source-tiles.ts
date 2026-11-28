@@ -344,7 +344,7 @@ type SourceFlowSignalWire =
   | "ExecutionFinished"
   | "FactChanged"
   | "MetricChanged";
-interface SourceFlowDefinitionWire {
+export interface SourceFlowDefinitionWire {
   observes: SourceFlowSignalWire[];
   when: SourceConditionWire | null;
   candidates: Array<{
@@ -379,7 +379,7 @@ interface SourceFlowDefinitionWire {
 }
 
 /** Server-owned SourceTile IDs are intentionally absent from this payload. */
-interface SourceTileDefinitionWire {
+export interface SourceTileDefinitionWire {
   title: string;
   description: string | null;
   color: string | null;
@@ -388,7 +388,7 @@ interface SourceTileDefinitionWire {
 }
 
 /** Exact top-level `SchedulePlanDefinition` wire contract. */
-interface SourceTilePlanWire {
+export interface SourceTilePlanWire {
   role: number;
   references: SourceReferenceWire[];
   completion: SourceCompletionWire;
@@ -400,7 +400,7 @@ interface SourceTilePlanWire {
   decisions: SourceDecisionWire[];
 }
 
-interface SourceMonthlyRuleWire {
+export interface SourceMonthlyRuleWire {
   /** `MonthlyRuleKind`: 0 = by_day, 1 = by_weekday. */
   kind: 0 | 1;
   day_of_month?: number | null;
@@ -408,7 +408,7 @@ interface SourceMonthlyRuleWire {
   weekday?: number | null;
 }
 
-interface SourceGenerationWire {
+export interface SourceGenerationWire {
   /** `SourceGenerationKind`: 0 = one_time, 1 = recurring, 2 = demand_driven, 3 = monthly. */
   kind: 0 | 1 | 2 | 3;
   at: string | null;
@@ -425,7 +425,7 @@ interface SourceGenerationWire {
   monthly_rule?: SourceMonthlyRuleWire | null;
 }
 
-interface SourceScheduleWire {
+export interface SourceScheduleWire {
   required_duration_ms: number;
   generation: SourceGenerationWire;
   // react-doctor-disable-next-line react-doctor/no-unguarded-browser-global-at-module-scope
@@ -445,7 +445,7 @@ type SourceRelationEndpointRefWire =
   | { kind: "existing"; source_tile_id: SourceWireId };
 
 /** `SourceRelationDefinitionPayload` (command.rs). */
-interface SourceRelationDefinitionWire {
+export interface SourceRelationDefinitionWire {
   client_local_id: SourceWireId;
   subject_source_ref: SourceRelationEndpointRefWire;
   referenced_source_ref: SourceRelationEndpointRefWire;
@@ -520,6 +520,8 @@ type SourceTileDetailReadWire = Schemas["SourceTileDetailRead"];
  */
 export interface SourceTileDetail {
   source: SourceTileRead;
+  /** Write-shaped definition for merge-or-replace editing (v1/14 §17). */
+  definition: Schemas["SourceTileDefinitionSchema"];
   relations: RelationDefinitionRead[];
   occurrences: SourceOccurrenceRead[];
   placements: PlacementTileRead[];
@@ -656,6 +658,7 @@ export async function getSourceTile(
     status: res.status,
     data: {
       source: detail.source,
+      definition: detail.definition,
       relations: detail.relations,
       occurrences: occurrences.data,
       placements: placements.data,
