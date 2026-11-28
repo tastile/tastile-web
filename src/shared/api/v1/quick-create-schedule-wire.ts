@@ -487,6 +487,43 @@ function mapFrameRule(rule: FrameRule): PublishScheduleDefinitionPayload["frame_
   return { id: rule.id, active, rank: 0, generator };
 }
 
+/**
+ * The five core `SourceScheduleDefinition` fields shared by the publish
+ * payload's `source_schedule` and the SourceTile update command's
+ * `schedule`. Daemon-ignored extras (`source_window_include`, `anchor_mode`,
+ * `schedule_kind`, `schedulable_window`) are layered on by the publish
+ * builder only — `PUT /v1/source-tiles/{id}` accepts exactly this shape.
+ */
+export function buildSourceScheduleDefinition(
+  state: QuickCreateScheduleState,
+  now = new Date(),
+): {
+  required_duration_ms: number;
+  generation: ReturnType<typeof sourceGeneration>;
+  window: { start_offset_ms: number; end_offset_ms: number };
+  split_policy: {
+    kind: 0 | 1 | 2;
+    min_segment_ms: number | null;
+    max_segment_ms: number | null;
+    max_segments: number | null;
+  };
+  priority: number;
+} {
+  const duration = requiredDuration(state);
+  return {
+    required_duration_ms: duration,
+    generation: sourceGeneration(state, now),
+    window: sourceWindow(state, duration, now),
+    split_policy: {
+      kind: (SPLIT_KIND_MAP[state.source.splitPolicy.kind] ?? 0) as 0 | 1 | 2,
+      min_segment_ms: state.source.splitPolicy.minSegmentMs,
+      max_segment_ms: state.source.splitPolicy.maxSegmentMs,
+      max_segments: state.source.splitPolicy.maxSegments,
+    },
+    priority: state.source.priority,
+  };
+}
+
 export function buildQuickCreateSchedulePayload(
   state: QuickCreateScheduleState,
   now = new Date(),
@@ -611,18 +648,9 @@ export function buildQuickCreateSchedulePayload(
   return {
     source_client_local_id: sourceClientLocalId,
     source_schedule: {
-      required_duration_ms: duration,
-      generation: sourceGeneration(state, now),
-      window: sourceWindow(state, duration, now),
+      ...buildSourceScheduleDefinition(state, now),
       source_window_include: INCLUDE_MAP[state.source.include] ?? 1,
       anchor_mode: ANCHOR_MAP[state.source.anchorMode] ?? 0,
-      split_policy: {
-        kind: (SPLIT_KIND_MAP[state.source.splitPolicy.kind] ?? 0) as 0 | 1 | 2,
-        min_segment_ms: state.source.splitPolicy.minSegmentMs,
-        max_segment_ms: state.source.splitPolicy.maxSegmentMs,
-        max_segments: state.source.splitPolicy.maxSegments,
-      },
-      priority: state.source.priority,
       schedule_kind: scheduleKindWire(state),
       schedulable_window: schedulableWindowWire(state),
     },
