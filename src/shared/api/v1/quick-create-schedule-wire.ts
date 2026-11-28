@@ -696,12 +696,26 @@ export function buildQuickCreateSchedulePayload(
         kind: "existing" as const,
         source_tile_id: relation.referencedSourceTileId,
       };
+      // Core `SourceRelationDurationExpression` is internally tagged and has
+      // only `fixed` / `reference_span`. The UI's "subject" duration means
+      // "follow the subject Source's span", expressed as a ReferenceSpan
+      // pointing back at the local subject ref.
       const duration_expression =
         relation.durationKind === "fixed"
-          ? { Fixed: { duration_ms: relation.fixedDurationMs ?? duration } }
-          : relation.durationKind === "reference"
-            ? { ReferenceSpan: { referenced_source_ref: referenced } }
-            : ("SubjectSpan" as const);
+          ? {
+              kind: "fixed" as const,
+              duration_ms: relation.fixedDurationMs ?? duration,
+            }
+          : {
+              kind: "reference_span" as const,
+              referenced_source_ref:
+                relation.durationKind === "reference"
+                  ? referenced
+                  : {
+                      kind: "local" as const,
+                      client_local_id: sourceClientLocalId,
+                    },
+            };
       const split_policy =
         relation.splitPolicy.kind === "split"
           ? {

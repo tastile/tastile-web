@@ -5,6 +5,7 @@ import {
   sendCommand,
 } from "@/shared/api/v1/endpoints";
 import { type CommandRequest, nowIso, uuidv7 } from "@/shared/model/v1/envelope";
+import type { SourceChangeRuleWire } from "./source-tiles";
 
 export const ScheduleReferenceUsage = {
   LABEL_SPAN: 1,
@@ -192,6 +193,19 @@ export interface PublishScheduleDefinitionPayload {
               sequence_steps: Array<{
                 wait_before_ms: number;
                 emit_duration_ms: number;
+                target_plan_id?: string | null;
+              }>;
+            };
+          }
+        | {
+            ProposeChangeWithCompanions: {
+              change: SourceChangeRuleWire;
+              change_layer?: number;
+              companions?: Array<{
+                proposal_key: string;
+                target_plan_id: string;
+                span: { start: string; end: string };
+                relation_kind: number;
               }>;
             };
           }
@@ -211,15 +225,13 @@ export interface PublishScheduleDefinitionPayload {
     offset_ms: number;
     ordering: { primary: number; point: number; direction: number };
     duration_expression:
-      | "SubjectSpan"
+      | { kind: "fixed"; duration_ms: number }
       | {
-          ReferenceSpan: {
-            referenced_source_ref:
-              | { kind: "local"; client_local_id: string }
-              | { kind: "existing"; source_tile_id: string };
-          };
-        }
-      | { Fixed: { duration_ms: number } };
+          kind: "reference_span";
+          referenced_source_ref:
+            | { kind: "local"; client_local_id: string }
+            | { kind: "existing"; source_tile_id: string };
+        };
     split_policy:
       | { Unsplit: { required_total_duration_ms: number } }
       | {

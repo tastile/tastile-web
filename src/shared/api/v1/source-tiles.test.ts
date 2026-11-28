@@ -107,6 +107,79 @@ describe("SourceTile client", () => {
     }));
   });
 
+  it("accepts monthly generation and all ScheduleFlowOutputDefinition variants", async () => {
+    const payload: SourceTileCreatePayload = {
+      ...sourceDefinition,
+      schedule: {
+        ...sourceDefinition.schedule,
+        generation: {
+          kind: 3,
+          at: null,
+          starts_at: null,
+          interval_ms: null,
+          ends_at: null,
+          weekday_mask: null,
+          date_range_start: null,
+          date_range_end: null,
+          excluded_dates: [],
+          offset_min: 540,
+          monthly_rule: { kind: 1, week_of_month: 2, weekday: 1 },
+        },
+      },
+      flows: [{
+        observes: ["PlacementCreated"],
+        when: null,
+        candidates: [{
+          when: { Any: [] },
+          rank: 0,
+          outputs: [
+            { ProposeNewPlanPlacement: { span: range } },
+            {
+              ProposeNewPlanPlacementSequence: {
+                proposal: { span: range },
+                sequence_steps: [
+                  { wait_before_ms: 0, emit_duration_ms: 60000, target_plan_id: wireId },
+                ],
+              },
+            },
+            {
+              ProposeChangeWithCompanions: {
+                change: {
+                  change_layer: 1,
+                  id: wireId,
+                  target: { Plan: wireId },
+                  kind: 0,
+                  key: { group: 0, item: null, part: 0 },
+                  value: null,
+                  source: 0,
+                  source_ref: null,
+                  rank: 0,
+                },
+                companions: [
+                  { proposal_key: wireId, target_plan_id: wireId, span: range, relation_kind: 0 },
+                ],
+              },
+            },
+          ],
+        }],
+      }],
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      command_id: "command-1", accepted_at: "2026-07-19T00:00:00Z",
+    }), { status: 200 }));
+
+    await createSourceTile({ client, payload });
+
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.payload.schedule.generation).toMatchObject({
+      kind: 3,
+      offset_min: 540,
+      monthly_rule: { kind: 1, week_of_month: 2, weekday: 1 },
+    });
+    expect(body.payload.flows[0].candidates[0].outputs).toHaveLength(3);
+    expect(body.payload.flows[0].candidates[0].outputs[2]).toHaveProperty("ProposeChangeWithCompanions");
+  });
+
   it("creates and updates through the canonical SourceTile commands", async () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
       command_id: "command-1", accepted_at: "2026-07-19T00:00:00Z",

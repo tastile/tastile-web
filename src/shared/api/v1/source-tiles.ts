@@ -252,7 +252,8 @@ type SourceChangeValueWire =
   | { TimeRequirementRef: SourceWireId }
   | { TaskDefRef: SourceWireId }
   | "None";
-interface SourceChangeRuleWire {
+export interface SourceChangeRuleWire {
+  change_layer?: number;
   id: SourceWireId;
   target: SourceTargetRefWire;
   kind: number;
@@ -349,7 +350,31 @@ interface SourceFlowDefinitionWire {
   candidates: Array<{
     when: SourceConditionWire;
     rank: number;
-    outputs: Array<{ ProposeNewPlanPlacement: { span: UtcSpan } }>;
+    outputs: Array<
+      | { ProposeNewPlanPlacement: { span: UtcSpan } }
+      | {
+          ProposeNewPlanPlacementSequence: {
+            proposal: { span: UtcSpan };
+            sequence_steps?: Array<{
+              wait_before_ms: number;
+              emit_duration_ms: number;
+              target_plan_id?: SourceWireId | null;
+            }>;
+          };
+        }
+      | {
+          ProposeChangeWithCompanions: {
+            change: SourceChangeRuleWire;
+            change_layer?: number;
+            companions?: Array<{
+              proposal_key: SourceWireId;
+              target_plan_id: SourceWireId;
+              span: UtcSpan;
+              relation_kind: number;
+            }>;
+          };
+        }
+    >;
   }>;
 }
 
@@ -375,9 +400,17 @@ interface SourceTilePlanWire {
   decisions: SourceDecisionWire[];
 }
 
-interface SourceGenerationWire {
-  /** Core's current `SourceGenerationKind` numeric registry value. */
+interface SourceMonthlyRuleWire {
+  /** `MonthlyRuleKind`: 0 = by_day, 1 = by_weekday. */
   kind: 0 | 1;
+  day_of_month?: number | null;
+  week_of_month?: number | null;
+  weekday?: number | null;
+}
+
+interface SourceGenerationWire {
+  /** `SourceGenerationKind`: 0 = one_time, 1 = recurring, 2 = demand_driven, 3 = monthly. */
+  kind: 0 | 1 | 2 | 3;
   at: string | null;
   starts_at: string | null;
   interval_ms: number | null;
@@ -386,6 +419,10 @@ interface SourceGenerationWire {
   date_range_start: string | null;
   date_range_end: string | null;
   excluded_dates?: string[];
+  /** Local calendar offset in minutes east of UTC; absent inherits the owner profile. */
+  offset_min?: number | null;
+  /** Required iff `kind == 3` (monthly); must be absent for other kinds. */
+  monthly_rule?: SourceMonthlyRuleWire | null;
 }
 
 interface SourceScheduleWire {
@@ -402,16 +439,53 @@ interface SourceScheduleWire {
   priority: number;
 }
 
-/** `POST /v1/source-tiles` payload. */
+/** `SourceRelationEndpointRef`: internally tagged `{kind, ...}` wire shape. */
+type SourceRelationEndpointRefWire =
+  | { kind: "local"; client_local_id: SourceWireId }
+  | { kind: "existing"; source_tile_id: SourceWireId };
+
+/** `SourceRelationDefinitionPayload` (command.rs). */
+interface SourceRelationDefinitionWire {
+  client_local_id: SourceWireId;
+  subject_source_ref: SourceRelationEndpointRefWire;
+  referenced_source_ref: SourceRelationEndpointRefWire;
+  kind: number;
+  point: number;
+  offset_ms: number;
+  ordering: { primary: number; point: number; direction: number };
+  duration_expression:
+    | { kind: "fixed"; duration_ms: number }
+    | { kind: "reference_span"; referenced_source_ref: SourceRelationEndpointRefWire };
+  split_policy:
+    | { Unsplit: { required_total_duration_ms: number } }
+    | {
+        Split: {
+          required_total_duration_ms: number;
+          min_segment_ms: number;
+          max_segment_ms: number;
+        };
+      };
+  correlation_scope: number;
+  lifecycle_filter: number;
+  eligible_through_revision: number;
+  summary_priority: number;
+}
+
+/** `POST /v1/source-tiles` payload (`CreateSourceTilePayload`). */
 export interface SourceTileCreatePayload {
+  source_client_local_id?: SourceWireId | null;
   tile: SourceTileDefinitionWire;
   plan: SourceTilePlanWire;
   flows: SourceFlowDefinitionWire[];
+  relations?: SourceRelationDefinitionWire[];
   schedule: SourceScheduleWire;
   horizon: UtcSpan;
 }
 
-/** `PUT /v1/source-tiles/{id}` body; the source ID belongs only in the path. */
+/**
+ * `PUT /v1/source-tiles/{id}` body (`UpdateSourceTileBody`). The source ID
+ * is path-derived and must NOT appear in the payload.
+ */
 export type SourceTileUpdatePayload = SourceTileCreatePayload;
 
 // ---------------------------------------------------------------
@@ -457,7 +531,7 @@ export interface SourceTileDetail {
  * the Rust field names, NOT SQL aliases. Numeric codes follow v1/10 §2:
  *   - `kind`            Option<i16>  0=BREAK / 1=SLEEP / null=legacy pre-v0.5.3
  *   - `source_state`    i16          0=ACTIVE / 1=PAUSED / 2=ENDED / 3=CANCELLED
- *   - `generation_kind` i16          0=ONESHOT / 1=RECURRING / 2=DEMAND
+ *   - `generation_kind` i16          0=ONE_TIME / 1=RECURRING / 2=DEMAND_DRIVEN / 3=MONTHLY
  *   - `split_kind`      i16          0=UNSPLIT / 1=SPLIT
  * `kind === null` is preserved (legacy SourceTiles pre-V1_029 must NOT be
  * guessed from display text per v1/10 §9).
