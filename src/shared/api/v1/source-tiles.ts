@@ -505,7 +505,7 @@ export type SourceTileRead = Schemas["SourceTileRead"];
 
 /** Wire shape of `SourceOccurrenceRead`. `blocked` is non-null only while
  *  the occurrence has a current placement failure (v1/14 §4). */
-type SourceOccurrenceRead = Schemas["SourceOccurrenceRead"];
+export type SourceOccurrenceRead = Schemas["SourceOccurrenceRead"];
 
 /** Wire shape of `PlacementTileRead` (source-tile placement rows). */
 export type PlacementTileRead = Schemas["PlacementTileRead"];

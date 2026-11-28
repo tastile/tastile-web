@@ -113,7 +113,7 @@ interface PendingWork {
  * (`UnplacedInfo`, v1/14 §4). `reason` is a `SourceBlockedReason`
  * numeric constant — never branch on a message string.
  */
-interface UnplacedOccurrenceInfo {
+export interface UnplacedOccurrenceInfo {
   occurrenceId: string | null;
   reason: number;
   requiredDurationMs: number | null;

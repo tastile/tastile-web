@@ -12,6 +12,8 @@ import { TileCardCompact } from "@/tile/ui/TileCardCompact";
 import { Alert, Button, Skeleton } from "@mantine/core";
 import { AlertCircle } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { ReflowSourceDialog } from "./ReflowSourceDialog";
 
 export function ScheduleMain() {
   const searchParams = useSearchParams();
@@ -25,6 +27,10 @@ export function ScheduleMain() {
   const recurring = useRecurringTemplates();
   const placementsState = usePlacements();
   const candidatesState = useCandidates();
+  const [reflowTarget, setReflowTarget] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
 
   const { tiles, loading } = useTileList({
     viewMode: view === "recurring" ? "recurring" : "by_state",
@@ -247,16 +253,16 @@ export function ScheduleMain() {
                   return acc;
                 }, [])
                 .map((template) => (
-                  <Button
-                    key={template.id}
-                    type="button"
-                    onClick={() => {
-                      const { loadFromTemplate } =
-                        useQuickCreateStore.getState();
-                      loadFromTemplate(template);
-                    }}
-                    className="w-full px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
-                  >
+                  <div key={template.id} className="flex items-stretch">
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        const { loadFromTemplate } =
+                          useQuickCreateStore.getState();
+                        loadFromTemplate(template);
+                      }}
+                      className="flex-1 px-4 py-3 text-left transition-colors hover:bg-surface-2 flex flex-col gap-1.5 cursor-pointer"
+                    >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <div className="truncate text-sm font-medium text-foreground">
@@ -295,10 +301,31 @@ export function ScheduleMain() {
                           : t("panels.schedule.selectorNone")}
                       </span>
                     </div>
-                  </Button>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="subtle"
+                      size="compact-sm"
+                      className="shrink-0 self-center mr-2"
+                      onClick={() =>
+                        setReflowTarget({ id: template.id, title: template.title })
+                      }
+                    >
+                      {t("panels.schedule.reflow.action")}
+                    </Button>
+                  </div>
                 ))}
             </div>
           )}
+
+        {reflowTarget && (
+          <ReflowSourceDialog
+            opened
+            onClose={() => setReflowTarget(null)}
+            sourceTileId={reflowTarget.id}
+            title={reflowTarget.title}
+          />
+        )}
 
         {/* Upcoming deadlines list matching compact style */}
         {view !== "recurring" && !loading && filteredTiles.length > 0 && (
