@@ -6,6 +6,7 @@ import { twoFactor } from "better-auth/plugins/two-factor";
 import { Pool } from "pg";
 
 import { getPublicOrigin } from "@/shared/auth/public-origin";
+import { ensureWebSignupGateSchema } from "@/lib/migrations/web-signup-gate";
 import { resolveAuthDatabaseUrl } from "./database-url";
 import {
   passwordResetEmailHtml,
@@ -83,10 +84,15 @@ function socialProviders() {
 
 async function createAuth() {
   const publicOrigin = getPublicOrigin();
+  const pool = await authDatabase();
+  // web#258: install the signup gate (policy + invite tables, trigger on
+  // `user`) eagerly; the trigger arm is skipped until BetterAuth's schema
+  // exists and is retried lazily from the before-hook on signup paths.
+  await ensureWebSignupGateSchema(pool).catch(() => undefined);
   return betterAuth({
     baseURL: publicOrigin,
     basePath: "/api/auth",
-    database: await authDatabase(),
+    database: pool,
     trustedOrigins: [publicOrigin],
     emailAndPassword: {
       enabled: true,
@@ -133,6 +139,16 @@ async function createAuth() {
     },
     hooks: {
       before: createAuthMiddleware(async (ctx) => {
+        // web#258: signup-capable paths re-ensure the gate schema so the
+        // `user` trigger is installed even when BetterAuth created its
+        // tables after createAuth ran.  A failure here fails the signup
+        // closed rather than bypassing the registration gate.
+        if (
+          ctx.path.startsWith("/sign-up/") ||
+          ctx.path.startsWith("/callback/")
+        ) {
+          await ensureWebSignupGateSchema(await authDatabase());
+        }
         if (ctx.path !== "/sign-up/email") return;
         const allowed = signupAllowedDomains();
         if (!allowed) return;
