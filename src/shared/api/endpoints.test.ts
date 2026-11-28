@@ -375,7 +375,7 @@ describe("CORE_V1_ENDPOINTS", () => {
         "GET /v1/sessions",
       ]),
     );
-    expect(CORE_V1_ENDPOINTS).toHaveLength(150);
+    expect(CORE_V1_ENDPOINTS).toHaveLength(151);
   });
 });
 

@@ -26,10 +26,10 @@ vi.mock("@/shared/api/v1/tile-commands", () => ({
 }));
 vi.mock("@/shared/api/v1/source-tiles", () => ({
   getSourceTile: vi.fn(async () => ({ ok: true, status: 200, data: { source: { revision: 7 } } })),
-  reflowSourceTile: vi.fn(
+  reflowSourceTileWithRevisionRetry: vi.fn(
     async (o: { sourceTileId: string; expectedRevision: number; range: { start: string; end: string } }) => {
       calls.push(`reflow:${o.sourceTileId}:${o.expectedRevision}:${o.range.start}:${o.range.end}`);
-      return ok;
+      return { ...ok, retried: false };
     },
   ),
 }));

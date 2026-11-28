@@ -218,6 +218,33 @@ function fromWireCommandResponse(raw: unknown): unknown {
       sourceTileId: am.sourceTileId ?? am.source_tile_id ?? null,
       occurrenceIds: am.occurrenceIds ?? am.occurrence_ids ?? [],
       placementIds: am.placementIds ?? am.placement_ids ?? [],
+      unplacedOccurrences: Array.isArray(am.unplacedOccurrences ?? am.unplaced_occurrences)
+        ? ((am.unplacedOccurrences ?? am.unplaced_occurrences) as Record<string, unknown>[]).map(
+            (u) => ({
+              occurrenceId:
+                (u.occurrenceId as string | null | undefined) ??
+                (u.occurrence_id as string | null | undefined) ??
+                null,
+              reason: (u.reason as number | null | undefined) ?? 0,
+              requiredDurationMs:
+                (u.requiredDurationMs as number | null | undefined) ??
+                (u.required_duration_ms as number | null | undefined) ??
+                null,
+              availableDurationMs:
+                (u.availableDurationMs as number | null | undefined) ??
+                (u.available_duration_ms as number | null | undefined) ??
+                null,
+              blockedAt:
+                (u.blockedAt as string | null | undefined) ??
+                (u.blocked_at as string | null | undefined) ??
+                null,
+              conflictingSourceTileId:
+                (u.conflictingSourceTileId as string | null | undefined) ??
+                (u.conflicting_source_tile_id as string | null | undefined) ??
+                null,
+            }),
+          )
+        : undefined,
     };
   }
   return {

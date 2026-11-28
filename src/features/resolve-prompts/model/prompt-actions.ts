@@ -6,7 +6,10 @@ import {
   type PromptView,
   resolvePromptCommand,
 } from "@/shared/api/v1/prompts";
-import { getSourceTile, reflowSourceTile } from "@/shared/api/v1/source-tiles";
+import {
+  getSourceTile,
+  reflowSourceTileWithRevisionRetry,
+} from "@/shared/api/v1/source-tiles";
 import { finishExecutionCommand, startExecutionCommand } from "@/shared/api/v1/tile-commands";
 
 export type PromptActionId =
@@ -78,7 +81,7 @@ export async function runPromptAction(
       if (!subject.sourceTileId) return { ok: false, message: "source unavailable" };
       const source = await getSourceTile(client, subject.sourceTileId);
       if (!source.ok) return { ok: false, message: source.error.message };
-      const reflowed = await reflowSourceTile({
+      const reflowed = await reflowSourceTileWithRevisionRetry({
         client,
         sourceTileId: subject.sourceTileId,
         expectedRevision: source.data.source.revision,

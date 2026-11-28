@@ -108,6 +108,20 @@ interface PendingWork {
   notBefore: string | null;
 }
 
+/**
+ * One Source occurrence the placement algorithm could not place
+ * (`UnplacedInfo`, v1/14 §4). `reason` is a `SourceBlockedReason`
+ * numeric constant — never branch on a message string.
+ */
+interface UnplacedOccurrenceInfo {
+  occurrenceId: string | null;
+  reason: number;
+  requiredDurationMs: number | null;
+  availableDurationMs: number | null;
+  blockedAt: string | null;
+  conflictingSourceTileId: string | null;
+}
+
 interface AggregateMeta {
   tileId: string | null;
   planId: string | null;
@@ -125,6 +139,12 @@ interface AggregateMeta {
   sourceTileId?: string | null;
   occurrenceIds?: string[];
   placementIds?: string[];
+  /**
+   * Occurrences that could not be placed by this command (reflow /
+   * materialize). `occurrenceIds` only carries the placed ones, so this
+   * list is where callers learn *why* something is missing (v1/14 §4).
+   */
+  unplacedOccurrences?: UnplacedOccurrenceInfo[];
 }
 
 export interface CommandResponse {
