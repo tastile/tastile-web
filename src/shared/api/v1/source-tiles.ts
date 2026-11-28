@@ -5,6 +5,7 @@ import {
   nowIso,
   uuidv7,
 } from "@/shared/model/v1/envelope";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
 import {
   type ApiClient,
   type PagedRead,
@@ -502,8 +503,9 @@ type Schemas = components["schemas"];
 /** Wire shape of `SourceTileRead` (GET /v1/source-tiles items). */
 export type SourceTileRead = Schemas["SourceTileRead"];
 
-/** Wire shape of `SourceOccurrenceRead`. */
-type SourceOccurrenceRead = Schemas["SourceOccurrenceRead"];
+/** Wire shape of `SourceOccurrenceRead`. `blocked` is non-null only while
+ *  the occurrence has a current placement failure (v1/14 §4). */
+export type SourceOccurrenceRead = Schemas["SourceOccurrenceRead"];
 
 /** Wire shape of `PlacementTileRead` (source-tile placement rows). */
 export type PlacementTileRead = Schemas["PlacementTileRead"];
@@ -597,6 +599,59 @@ export function reflowSourceTile(options: {
     `/v1/source-tiles/${options.sourceTileId}/reflow`,
     commandEnvelope({ range: options.range }, options.expectedRevision),
   );
+}
+
+/**
+ * Faithful dry-run of the reflow command (core#413, OpenAPI
+ * `preview_source_tile_reflow`). Runs the same code path inside a
+ * transaction that is always rolled back, so the returned
+ * `CommandResponse` classifies the outcome exactly like `apply` —
+ * including `aggregateMeta.unplacedOccurrences` — while writing
+ * nothing. `expected_revision` is enforced identically: a stale
+ * preview returns STALE_REVISION (409) just like apply.
+ */
+export function previewSourceTileReflow(options: {
+  client: ApiClient;
+  sourceTileId: string;
+  expectedRevision: number;
+  range: UtcSpan;
+}): Promise<SourceTileCommandResult> {
+  return sendCommand(
+    options.client,
+    "POST",
+    `/v1/source-tiles/${options.sourceTileId}/reflow/preview`,
+    commandEnvelope({ range: options.range }, options.expectedRevision),
+  );
+}
+
+export type SourceTileReflowOutcome =
+  | { ok: true; data: CommandResponse; status: number; retried: boolean }
+  | { ok: false; error: ApiError; retried: boolean };
+
+/**
+ * Apply a reflow, retrying once when the server rejects with
+ * STALE_REVISION and reports `current_revision` in the error body
+ * (v1/14 §1-4 conflict contract). The retry issues a fresh command
+ * envelope (new idempotency key) against the revision the server
+ * reports, so the user's reflow intent is applied to the latest state
+ * instead of surfacing a bare 409. Any other failure — or a second
+ * STALE_REVISION — is returned unchanged with `retried` marking
+ * whether a retry was attempted.
+ */
+export async function reflowSourceTileWithRevisionRetry(options: {
+  client: ApiClient;
+  sourceTileId: string;
+  expectedRevision: number;
+  range: UtcSpan;
+}): Promise<SourceTileReflowOutcome> {
+  const first = await reflowSourceTile(options);
+  if (first.ok || first.error.kind !== ApiErrorKind.STALE_REVISION) {
+    return { ...first, retried: false };
+  }
+  const currentRevision = first.error.currentRevision;
+  if (currentRevision == null) return { ...first, retried: false };
+  const second = await reflowSourceTile({ ...options, expectedRevision: currentRevision });
+  return { ...second, retried: true };
 }
 
 /**

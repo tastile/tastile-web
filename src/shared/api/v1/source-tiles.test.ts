@@ -4,10 +4,13 @@ import {
   getSourceTile,
   listSourceTilePlacements,
   listSourceTiles,
+  previewSourceTileReflow,
   reflowSourceTile,
+  reflowSourceTileWithRevisionRetry,
   type SourceTileCreatePayload,
   updateSourceTile,
 } from "./source-tiles";
+import { ApiErrorKind } from "@/shared/model/v1/constants";
 
 const client = {
   baseUrl: "https://core.example",
@@ -235,6 +238,107 @@ describe("SourceTile client", () => {
       "https://core.example/v1/source-tiles/source-1/placements",
     ]);
     expect(fetchMock.mock.calls.slice(1).map(([, init]) => (init as RequestInit).method)).toEqual(["POST", "GET"]);
+  });
+
+  it("previews reflow through the dry-run endpoint without applying", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      command_id: "command-1", accepted_at: "2026-07-19T00:00:00Z",
+      aggregate_meta: {
+        source_tile_id: "source-1",
+        occurrence_ids: ["occ-1"],
+        unplaced_occurrences: [
+          {
+            occurrence_id: "occ-2",
+            reason: 0,
+            required_duration_ms: 900000,
+            available_duration_ms: 300000,
+            blocked_at: "2026-07-19T00:00:00Z",
+            conflicting_source_tile_id: null,
+          },
+        ],
+      },
+    }), { status: 200 }));
+
+    const res = await previewSourceTileReflow({ client, sourceTileId: "source-1", expectedRevision: 2, range });
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      "https://core.example/v1/source-tiles/source-1/reflow/preview",
+    ]);
+    expect((fetchMock.mock.calls[0][1] as RequestInit).method).toBe("POST");
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.expected_revision).toBe(2);
+    expect(body.payload).toEqual({ range });
+    expect(res.ok).toBe(true);
+    if (res.ok) {
+      expect(res.data.aggregateMeta?.unplacedOccurrences).toEqual([
+        {
+          occurrenceId: "occ-2",
+          reason: 0,
+          requiredDurationMs: 900000,
+          availableDurationMs: 300000,
+          blockedAt: "2026-07-19T00:00:00Z",
+          conflictingSourceTileId: null,
+        },
+      ]);
+    }
+  });
+
+  it("retries a stale-revision reflow once against the reported current revision", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        kind: ApiErrorKind.STALE_REVISION,
+        message: "stale",
+        current_revision: 9,
+      }), { status: 409 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        command_id: "command-2", accepted_at: "2026-07-19T00:00:00Z",
+      }), { status: 200 }));
+
+    const res = await reflowSourceTileWithRevisionRetry({
+      client, sourceTileId: "source-1", expectedRevision: 2, range,
+    });
+
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.retried).toBe(true);
+    const revisions = fetchMock.mock.calls.map(([, init]) =>
+      JSON.parse((init as RequestInit).body as string).expected_revision,
+    );
+    expect(revisions).toEqual([2, 9]);
+    // Each attempt carries a fresh idempotency key (new command envelope).
+    const keys = fetchMock.mock.calls.map(([, init]) =>
+      JSON.parse((init as RequestInit).body as string).idempotency_key,
+    );
+    expect(keys[0]).not.toBe(keys[1]);
+  });
+
+  it("does not retry a stale-revision reflow without a reported revision", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      kind: ApiErrorKind.STALE_REVISION,
+      message: "stale",
+    }), { status: 409 }));
+
+    const res = await reflowSourceTileWithRevisionRetry({
+      client, sourceTileId: "source-1", expectedRevision: 2, range,
+    });
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.retried).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry non-conflict reflow failures", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({
+      kind: ApiErrorKind.BLOCKED,
+      message: "protected placement",
+    }), { status: 422 }));
+
+    const res = await reflowSourceTileWithRevisionRetry({
+      client, sourceTileId: "source-1", expectedRevision: 2, range,
+    });
+
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.error.kind).toBe(ApiErrorKind.BLOCKED);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("follows next_cursor across list and detail pages", async () => {

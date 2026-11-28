@@ -632,6 +632,7 @@ POST /v1/source-tiles
 GET /v1/source-tiles/{id}
 PUT /v1/source-tiles/{id}
 POST /v1/source-tiles/{id}/reflow
+POST /v1/source-tiles/{id}/reflow/preview
 GET /v1/source-tiles/{id}/placements
 GET /v1/schedule-reference-catalog
 POST /v1/schedule-drafts
